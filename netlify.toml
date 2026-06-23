@@ -1,0 +1,26 @@
+# BarberHQ — språk-routing.
+# Ligg i roten av mappa du drar inn i Netlify (samme nivå som no/ sv/ da/ en/).
+
+[[redirects]]
+  from = "/"
+  to = "/sv/"
+  status = 302
+  conditions = {Language = ["sv"]}
+
+[[redirects]]
+  from = "/"
+  to = "/da/"
+  status = 302
+  conditions = {Language = ["da"]}
+
+[[redirects]]
+  from = "/"
+  to = "/no/"
+  status = 302
+  conditions = {Language = ["nb", "nn", "no"]}
+
+# Resten av verden → engelsk.
+[[redirects]]
+  from = "/"
+  to = "/en/"
+  status = 302
