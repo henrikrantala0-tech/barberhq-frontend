@@ -23,3 +23,56 @@ Søsterrepo: barberhq-backend (Railway).
 - Inntil kobling er live: deployet manuelt via Netlify Drop.
 
 ## Arbeidsspråk: norsk. Planlegg før bygging. Render før deploy.
+
+## Status 23.06
+
+# BarberHQ — Status etter økt 23.06 (mal-polering + kom-i-gang live preview)
+
+## HVA SOM BLE GJORT I DAG
+
+### Booking-side-maler polert (ligger i sandkasse → MÅ landes i barberhq-backend)
+Alle fire layouter fikk distinkt identitet + "dyrt" uttrykk:
+- **Direkte** — INGEN galleri, rett til tjenester (rask booking). Én side.
+- **Profil** — to-skjerms: portrett + bio + kant-til-kant gradient-galleri → "Se tjenester" → tjeneste-skjerm glir opp.
+- **Showcase** — to-skjerms: navn + kant-til-kant gradient-galleri (INGEN portrett) → flytende transparent "Se tjenester" som blir liggende ved scroll. Galleriet blar gjennom ALLE bilder.
+- **Hero** — IKKE bygget med nytt mønster ennå (skal ha stort STÅENDE hovedbilde + navn oppå, IKKE liggende, IKKE galleri).
+
+### Nøkkelbeslutninger låst i dag
+- Forside-layoutene (Profil/Showcase/Hero) er TO-SKJERMS: forside → "Se tjenester" (IKKE "Book nå") → tjeneste-skjerm som glir opp fra bunnen (eksklusiv overgang). Direkte forblir ÉN side.
+- Alle galleribilder STÅENDE (4:5), aldri liggende (Henriks ekte bilder er 0.59 ratio).
+- Galleri = kant-til-kant + gradient-fade (smelter inn i bakgrunn) på Profil + Showcase, IKKE Hero.
+- Bio = frivillig 1-2 setninger på forsiden under undertekst. VALGT: bio nr 3 "Presisjon i hvert klipp. Din barber i hjertet av Oslo." Nytt felt `pitch` i ordre (ikke kollidere med `bio`=spesialitet).
+- Font-valg FJERNET fra kom-i-gang (font velges i dashboard).
+- fyll.cjs: 4-bilde-grensen (slice(0,4)) FJERNET — alle bilder vises nå.
+
+### fyll.cjs endringer (sandkasse-versjon i outputs)
+- La til BIO_BLOCK-håndtering (frivillig pitch, skjul blokk om tom, markør <!-- BIO_START...BIO_SLUTT -->)
+- Fjernet slice(0,4) på galleri
+
+### Hovedoppgaven: kom-i-gang live preview (FERDIG for Profil)
+Den ekte kom-i-gang.html (157KB → nå 615KB) ble endret:
+- Font-velger fjernet (HTML-rad, FONTS-array, design-state, renderDesign, submitFinal)
+- Profil-layout vises nå som FAKTISK MAL KRYMPET i iframe (ikke skisse) — base64-embedded preview-mal med Google-fonter + postMessage-lytter
+- buildPalette portet til JS i kom-i-gang
+- Palett-klikk + lys/mørk sender postMessage til iframe → malen oppdaterer farger LIVE (verifisert: krem+lys funker)
+- De 3 andre layoutene MIDLERTIDIG SKJULT (vises i morgen)
+- Claude Code byttet inn no/kom-i-gang.html i frontend-repoet (IKKE committet ennå — Henrik tester først)
+
+## ÅPENT PROBLEM (tenk på til neste økt)
+**Palett-byttet er for lite synlig på Profil-forhåndsvisningen.** Profil-forsiden er mørk + portrett + galleri (bilder endrer ikke farge), så palett-endring vises bare i bio-tekst/aksent — lett å overse. Hele poenget er at barberen SKAL se fargene. 
+LØSNINGSRETNING: forhåndsvisningen bør vise en del der fargene dominerer — f.eks. tjeneste-skjermen (fargede knapper, prislapper i aksent, kort med bakgrunnsfarge), ikke bare bildetung forside. Eller veksle/scrolle forside↔tjenester så palett-byttet blir tydelig.
+
+## GJENSTÅR (neste økt)
+1. Løs palett-synlighet (over) — viktigst
+2. Bygg de 3 andre layoutene (Showcase/Hero/Direkte) inn i kom-i-gang som live iframes — samme mønster som Profil
+3. Bygg Hero-malen med to-skjerms-mønster (stort stående bilde)
+4. Legg bio-blokk inn i Showcase + Hero (mekanikk finnes i fyll.cjs)
+5. Gi Profil flytende "Se tjenester"-knapp (for mange bilder, som Showcase)
+6. Vurder: filstørrelse blir tung med 4 embedded maler — hente bilder eksternt i stedet?
+7. Land de polerte malene + oppdatert fyll.cjs i barberhq-backend via Claude Code (erstatt gamle .template.html)
+8. Commit + push kom-i-gang når Henrik har testet og godkjent
+
+## FILER I OUTPUTS (kritiske)
+- kom-i-gang.html (615KB) — ferdig, Profil live. Claude Code har byttet inn i repo.
+- profil.template.polert.html, showcase.template.polert.html, direkte.template.polert.html — ferdige maler (IKKE i backend-repo ennå)
+- fyll.cjs — oppdatert (bio + ingen grense) (IKKE i backend-repo ennå)
