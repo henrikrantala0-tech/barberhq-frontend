@@ -1,0 +1,206 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400..600&family=Inter:wght@400..700&display=swap" rel="stylesheet">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<title>Grand Barber</title>
+<meta name="description" content="Book time hos Grand Barber i Oslo.">
+<style>
+/* =========================================================================
+   BarberHQ — Direkte-layout, kundeside
+   Datadrevet. Scriptet fyller {{...}} og injiserer paletten via :root.
+   Paletten kommer fra PALETTES-oppslag på 'palette'-key fra skjemaet
+   (mint/klassisk/purple/krem/minimal/oransje), kombinert med 'mode'
+   (lys/mørk). IKKE avhengig av at skjemaet sender hex.
+   ========================================================================= */
+
+/* --- Palett injiseres her av scriptet. Verdiene under er Krem & Gull / lys
+       som fallback slik at malen kan åpnes frittstående. --- */
+:root{
+  --bg:        #1d1d1f;        /* sidebakgrunn            */
+  --surface:   #2a2a2c;   /* kort / tjenestelinjer   */
+  --ink:       #f5f5f7;       /* primærtekst             */
+  --ink-soft:  #9a9a9c;  /* dempet tekst            */
+  --accent:    #86868b;    /* knapp / pris / aksent   */
+  --accent-ink:#ffffff;/* tekst oppå aksent       */
+  --line:      #404042;      /* hårlinjer / kantlinjer  */
+}
+
+*{margin:0;padding:0;box-sizing:border-box}
+html{-webkit-text-size-adjust:100%}
+body{
+  background:var(--bg);
+  color:var(--ink);
+  font-family:'Inter',-apple-system,system-ui,sans-serif;
+  line-height:1.5;
+  -webkit-font-smoothing:antialiased;
+  min-height:100vh;
+}
+.page{max-width:480px;margin:0 auto;padding:max(56px,env(safe-area-inset-top)) 24px 64px}
+
+/* ---- Header ---- */
+.hdr{text-align:center;margin-bottom:34px}
+.hdr h1{
+  font-family:'Fraunces',serif;
+  font-weight:600;
+  font-size:clamp(36px,9.5vw,48px);
+  letter-spacing:-.025em;
+  line-height:1.0;
+  color:var(--ink);
+}
+.hdr .sub{
+  margin-top:12px;
+  font-size:13px;
+  letter-spacing:.08em;
+  color:var(--ink-soft);
+  text-transform:uppercase;
+  font-weight:600;
+}
+
+/* ---- Tjenesteliste ---- */
+.svc-head{
+  font-family:'Fraunces',serif;
+  font-weight:600;
+  font-size:18px;
+  margin-bottom:14px;
+  color:var(--ink);
+}
+.svc-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  margin-bottom:34px;
+}
+.svc{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:14px;
+  background:var(--surface);
+  border:1px solid var(--line);
+  border-left:3px solid transparent;
+  border-radius:13px;
+  padding:17px 18px 17px 19px;
+  text-decoration:none;
+  color:inherit;
+  transition:border-color .15s ease,transform .15s ease;
+}
+.svc:hover{border-color:var(--accent);border-left-color:var(--accent);transform:translateY(-1px)}
+.svc:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+.svc-left{min-width:0}
+.svc-name{font-size:16px;font-weight:600;color:var(--ink);line-height:1.25}
+.svc-min{font-size:13px;color:var(--ink-soft);margin-top:3px}
+.svc-right{display:flex;align-items:center;gap:10px;flex-shrink:0}
+.svc-price{font-size:17px;font-weight:700;color:var(--accent);white-space:nowrap}
+.svc-arrow{color:var(--ink-soft);display:flex}
+
+/* ---- Book-knapp ---- */
+.book{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:9px;
+  width:100%;
+  background:var(--accent);
+  color:var(--accent-ink);
+  font-family:'Inter',sans-serif;
+  font-size:16px;
+  font-weight:600;
+  border:0;
+  border-radius:99px;
+  padding:17px;
+  text-decoration:none;
+  cursor:pointer;
+  transition:opacity .15s ease;
+}
+.book:hover{opacity:.9}
+.book:focus-visible{outline:2px solid var(--ink);outline-offset:3px}
+
+/* ---- Footer ---- */
+.foot{
+  text-align:center;
+  margin-top:30px;
+  font-size:12.5px;
+  color:var(--ink-soft);
+}
+.foot a{color:var(--ink-soft);text-decoration:none;border-bottom:1px solid var(--line)}
+
+@media(prefers-reduced-motion:reduce){
+  *{transition:none!important}
+}
+</style>
+</head>
+<body>
+  <main class="page">
+    <header class="hdr">
+      <h1>Grand Barber</h1>
+      <p class="sub">Fades · Oslo</p>
+    </header>
+
+    <h2 class="svc-head">Tjenester</h2>
+    <div class="svc-list">
+      <a class="svc" href="#">
+        <div class="svc-left">
+          <div class="svc-name">Herreklipp</div>
+          <div class="svc-min">30 min</div>
+        </div>
+        <div class="svc-right">
+          <div class="svc-price">450 kr</div>
+          <span class="svc-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="svc" href="#">
+        <div class="svc-left">
+          <div class="svc-name">Skin fade</div>
+          <div class="svc-min">40 min</div>
+        </div>
+        <div class="svc-right">
+          <div class="svc-price">500 kr</div>
+          <span class="svc-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="svc" href="#">
+        <div class="svc-left">
+          <div class="svc-name">Klipp &amp; skjegg</div>
+          <div class="svc-min">45 min</div>
+        </div>
+        <div class="svc-right">
+          <div class="svc-price">600 kr</div>
+          <span class="svc-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+      <a class="svc" href="#">
+        <div class="svc-left">
+          <div class="svc-name">Skjeggtrim</div>
+          <div class="svc-min">20 min</div>
+        </div>
+        <div class="svc-right">
+          <div class="svc-price">250 kr</div>
+          <span class="svc-arrow"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 6l6 6-6 6"/></svg></span>
+        </div>
+      </a>
+    </div>
+
+    <a class="book" href="#">
+      Book time
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg>
+    </a>
+
+    <p class="foot">Bygget med <a href="https://trybarberhq.com">BarberHQ</a></p>
+  </main>
+  <script>
+  /* Live-preview: parent (kom-i-gang) sender ferdig-utregnede farger -> vi setter :root. */
+  window.addEventListener('message', function(e){
+    var d = e.data || {};
+    if (d.type !== 'palette') return;
+    var r = document.documentElement.style;
+    var map = {bg:'--bg',surface:'--surface',ink:'--ink',inkSoft:'--ink-soft',
+               accent:'--accent',accentInk:'--accent-ink',line:'--line'};
+    Object.keys(map).forEach(function(k){ if(d[k]) r.setProperty(map[k], d[k]); });
+  });
+  </script>
+</body>
+</html>
