@@ -76,3 +76,25 @@ LØSNINGSRETNING: forhåndsvisningen bør vise en del der fargene dominerer — 
 - kom-i-gang.html (615KB) — ferdig, Profil live. Claude Code har byttet inn i repo.
 - profil.template.polert.html, showcase.template.polert.html, direkte.template.polert.html — ferdige maler (IKKE i backend-repo ennå)
 - fyll.cjs — oppdatert (bio + ingen grense) (IKKE i backend-repo ennå)
+
+## Mersalg / tilleggstjenester (besluttet — bygges i booking+checkout-fasen)
+- Kunder skal kunne hake av tillegg i kassen (f.eks. "+ Skjeggtrim kr 150,-",
+  "+ Hodebunnsmassasje") oppå en hovedtjeneste — i stedet for å duplisere tjenester
+  ("Skinfade" og "Skinfade med skjegg"). Øker timepris uten ekstra tidsbruk.
+- Hører til bookingmotoren, som ikke finnes ennå. MVP har ingen kasse/checkout → wires IKKE inn nå.
+- Forberedes når booking bygges:
+  - `services[]` får valgfri `addons`: `{name, price, min}`.
+    Eks: `{ "name":"Skin fade","min":40,"price":500,
+            "addons":[{"name":"Skjeggtrim","price":150,"min":10}] }`
+  - SQL: egen `addons`-tabell knyttet til tjeneste.
+  - `fyll.cjs` + tjeneste-malen røres ikke nå (tillegg vises i kassen, ikke på tjeneste-lista).
+  - Ikke vist i kom-i-gang-skjemaet i MVP.
+
+## Status etter økt (maler + kom-i-gang)
+- Fire bookingside-maler ferdige og konsistente (Showcase/Hero/Profil/Direkte), minimal som
+  låst galleri-palett. Landet i barberhq-backend (maler + fyll.cjs: bio-mekanikk + ingen
+  4-bilde-grense). Hero var ny.
+- kom-i-gang: layout-galleri (4 statiske klikkbare kort + lightbox) over palett/bakgrunn,
+  + live tjeneste-preview (preview-tjenester.html i iframe, postMessage fra buildPalette)
+  som oppdaterer farge/bakgrunn i sanntid. Font-velger fjernet. ~615KB → ~50KB.
+- kom-i-gang regnes som ferdig for nå.
