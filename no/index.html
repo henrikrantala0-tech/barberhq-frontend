@@ -386,6 +386,39 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   text-shadow:0 1px 10px rgba(0,0,0,.7),0 0 2px rgba(0,0,0,.5);
   pointer-events:none}
 </style>
+<style>
+.pwrap{padding:1rem 0;font-family:'Inter',-apple-system,system-ui,sans-serif}
+.opt{background:#0a0a0a;border:0.5px solid #242424;border-radius:14px;overflow:hidden}
+.pad{padding:52px 40px}
+.pwrap .eyebrow{color:#8a8a8a;font-size:12px;letter-spacing:.22em;font-weight:600;margin-bottom:18px}
+.ph2{color:#fff;font-size:clamp(30px,4.6vw,48px);font-weight:800;line-height:1.02;letter-spacing:-.035em;margin:0}
+.psub{color:#b4b4b4;font-size:16px;line-height:1.6;max-width:540px;margin:18px 0 0}
+.pwrap .pills{display:flex;flex-wrap:wrap;gap:10px;margin-top:28px}
+.pwrap .pill{display:inline-flex;align-items:center;gap:8px;border:0.5px solid #2c2c2c;border-radius:99px;padding:9px 16px;color:#cfcfcf;font-size:14px;background:#0e0e0e}
+.pill i{color:#e0574f;font-size:16px}
+@media(max-width:560px){.pad{padding:40px 22px}}
+</style>
+<style>
+.sys-section{background:#0a0a0a;display:flex;justify-content:center;padding:90px 24px}
+.sys-inner{max-width:1200px;width:100%;display:flex;flex-direction:column;align-items:center;text-align:center}
+.sys-eyebrow{color:#8a8a8a;font-size:13px;letter-spacing:.22em;font-weight:600;margin-bottom:16px;font-family:'Inter',-apple-system,system-ui,sans-serif}
+.sys-h2{color:#fff;font-size:clamp(40px,6vw,64px);font-weight:800;line-height:1;letter-spacing:-.04em;margin:0;font-family:'Inter',-apple-system,system-ui,sans-serif}
+.sys-sub{color:#b4b4b4;font-size:17px;line-height:1.6;max-width:560px;margin:20px auto 0;font-family:'Inter',-apple-system,system-ui,sans-serif}
+.sys-acc{margin-top:48px;width:100%;max-width:780px;display:flex;flex-direction:column;gap:14px;font-family:'Inter',-apple-system,system-ui,sans-serif}
+.sys-row{background:#0e0e0e;border:1px solid #1d1d1d;border-radius:16px;overflow:hidden;transition:border-color .2s}
+.sys-row[data-open="true"]{border-color:#2a2a2a}
+.sys-head{width:100%;background:none;border:0;cursor:pointer;display:flex;align-items:center;gap:16px;padding:22px 24px;text-align:left;font-family:inherit}
+.sys-head-ico{flex-shrink:0;width:46px;height:46px;border-radius:12px;background:#161616;border:1px solid #232323;display:flex;align-items:center;justify-content:center;color:#4d8bff}
+.sys-head-txt{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
+.sys-head-t{color:#fff;font-size:18px;font-weight:700;letter-spacing:-.02em}
+.sys-head-d{color:#8f8f8f;font-size:14px;line-height:1.4}
+.sys-chevron{flex-shrink:0;color:#777;transition:transform .25s ease,color .2s}
+.sys-row[data-open="true"] .sys-chevron{transform:rotate(180deg);color:#fff}
+.sys-panel{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.sys-row[data-open="true"] .sys-panel{max-height:720px}
+.sys-panel-in{padding:10px 24px 34px;display:flex;justify-content:center}
+@media(max-width:560px){.sys-section{padding:64px 22px}.sys-head{padding:18px 18px}.sys-head-d{font-size:13px}}
+</style>
 </head>
 <body>
 
@@ -414,6 +447,24 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   <div style="margin-top:14px;color:#8c8c8c;font-size:13.5px">Ingen binding</div>
   <div class="hero-note"><i class="ti ti-eye"></i>Se siden din ferdig før du betaler</div>
 </header>
+
+<!-- ===== PROBLEMET ===== -->
+<div class="pwrap">
+  <div class="opt">
+    <div class="pad">
+      <div class="eyebrow">PROBLEMET</div>
+      <h2 class="ph2">Booker du fortsatt i DM-en?</h2>
+      <p class="psub">Det funker — helt til det ikke gjør det. En Instagram-profil alene gir ikke alltid det beste førsteinntrykket.</p>
+      <div class="pills">
+        <span class="pill"><i class="ti ti-message-2"></i>Tapte meldinger</span>
+        <span class="pill"><i class="ti ti-arrows-left-right"></i>Frem-og-tilbake</span>
+        <span class="pill"><i class="ti ti-layout-list"></i>Dårlig oversikt</span>
+        <span class="pill"><i class="ti ti-user-x"></i>No-show</span>
+      </div>
+    </div>
+  </div>
+</div>
+
 
 <!-- ===== PRODUKTVISNING ===== -->
 <section class="pv-section">
@@ -471,21 +522,33 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   </div>
 </section>
 
-<!-- ===== VEKST-INTRO ("Vi fyller stolen din") ===== -->
-<section class="section" id="vekst" style="padding:44px 32px 0;text-align:center">
-  <div class="eyebrow" style="color:#7a7a7a;font-size:12px;letter-spacing:.2em;font-weight:600;margin-bottom:14px">OG NÅR DE FØRST HAR BOOKET</div>
-  <h2 style="font-size:clamp(40px,6vw,64px);font-weight:800;line-height:1;letter-spacing:-.04em">Vi fyller stolen din.</h2>
-  <p style="color:#b4b4b4;font-size:17px;line-height:1.6;max-width:520px;margin:18px auto 0">Automatisk rebooking og verving sørger for at kunden kommer tilbake — og tar med seg en kompis.</p>
-</section>
+<!-- ===== SYSTEMER (accordion) ===== -->
+<section id="systemer" class="sys-section">
+  <div class="sys-inner">
+    <div class="sys-eyebrow">DINE STERKESTE VÅPEN</div>
+    <h2 class="sys-h2">Bygd for å fylle stolen.</h2>
+    <p class="sys-sub">To systemer som jobber i bakgrunnen og henter kundene tilbake — helt av seg selv. Trykk for å se hvordan.</p>
 
-<!-- ===== REBOOKING (animasjon) ===== -->
-<section class="rbscope" id="rebooking">
-<section class="section">
-  <div class="eyebrow">DITT STERKESTE VÅPEN</div>
-  <h2>Automatisk rebooking</h2>
-  <p class="sub">Kunden får SMS når det er tid for ny klipp, og booker med ett trykk. Du gjør ingenting.</p>
+    <div class="sys-acc">
 
-  <div class="demo-wrap">
+      <!-- Rad 1: Rebooking -->
+      <div class="sys-row" data-open="false" data-anim="rebooking">
+        <button class="sys-head" aria-expanded="false">
+          <span class="sys-head-ico">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+          </span>
+          <span class="sys-head-txt">
+            <span class="sys-head-t">Rebooking</span>
+            <span class="sys-head-d">Automatisk påminnelse når det er tid for ny klipp.</span>
+          </span>
+          <span class="sys-chevron">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </button>
+        <div class="sys-panel">
+          <div class="sys-panel-in">
+            <div class="rbscope">
+<div class="demo-wrap">
     <div class="demo" id="demo">
 
       <!-- MELDINGS-SKJERM -->
@@ -538,22 +601,28 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     </div>
   </div>
 
-  <div class="pills">
-    <span class="pill"><svg viewBox="0 0 20 20" fill="currentColor" style="width:19px;height:19px;flex-shrink:0"><path d="M10 0a10 10 0 100 20 10 10 0 000-20zm5.3 7.6l-6.1 6.1a1 1 0 01-1.4 0L4.7 10.6a1 1 0 011.4-1.4l2.4 2.4 5.4-5.4a1 1 0 011.4 1.4z"/></svg>Du velger intervallet</span>
-    <span class="pill"><svg viewBox="0 0 20 20" fill="currentColor" style="width:19px;height:19px;flex-shrink:0"><path d="M10 0a10 10 0 100 20 10 10 0 000-20zm5.3 7.6l-6.1 6.1a1 1 0 01-1.4 0L4.7 10.6a1 1 0 011.4-1.4l2.4 2.4 5.4-5.4a1 1 0 011.4 1.4z"/></svg>Helt automatisk</span>
-    <span class="pill"><svg viewBox="0 0 20 20" fill="currentColor" style="width:19px;height:19px;flex-shrink:0"><path d="M10 0a10 10 0 100 20 10 10 0 000-20zm5.3 7.6l-6.1 6.1a1 1 0 01-1.4 0L4.7 10.6a1 1 0 011.4-1.4l2.4 2.4 5.4-5.4a1 1 0 011.4 1.4z"/></svg>Flere gjenkjøp</span>
-  </div>
-</section>
-</section>
+            </div>
+          </div>
+        </div>
+      </div>
 
-<!-- ===== VERVING (animasjon) ===== -->
-<section class="vvscope" id="verving">
-<section class="section">
-
-  <div class="eyebrow">DEN BESTE MÅTEN Å BYGGE KLIENTELL PÅ</div>
-  <h2>Verving</h2>
-  <p class="sub">Fornøyde kunder deler linken din. Når kompisen klipper seg, får begge rabatt — du bestemmer hvor mye.</p>
-
+      <!-- Rad 2: Verving -->
+      <div class="sys-row" data-open="false" data-anim="verving">
+        <button class="sys-head" aria-expanded="false">
+          <span class="sys-head-ico">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
+          <span class="sys-head-txt">
+            <span class="sys-head-t">Verving</span>
+            <span class="sys-head-d">Kunden deler din link — ny kunde gir begge rabatt.</span>
+          </span>
+          <span class="sys-chevron">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </button>
+        <div class="sys-panel">
+          <div class="sys-panel-in">
+            <div class="vvscope">
   <div class="demo-wrap">
     <div class="demo" id="vv_demo">
 
@@ -594,12 +663,13 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     </div>
   </div>
 
-  <div class="pills">
-    <span class="pill"><svg viewBox="0 0 20 20" fill="currentColor" style="width:19px;height:19px;flex-shrink:0"><path d="M10 0a10 10 0 100 20 10 10 0 000-20zm5.3 7.6l-6.1 6.1a1 1 0 01-1.4 0L4.7 10.6a1 1 0 011.4-1.4l2.4 2.4 5.4-5.4a1 1 0 011.4 1.4z"/></svg>Du setter rabatten</span>
-    <span class="pill"><svg viewBox="0 0 20 20" fill="currentColor" style="width:19px;height:19px;flex-shrink:0"><path d="M10 0a10 10 0 100 20 10 10 0 000-20zm5.3 7.6l-6.1 6.1a1 1 0 01-1.4 0L4.7 10.6a1 1 0 011.4-1.4l2.4 2.4 5.4-5.4a1 1 0 011.4 1.4z"/></svg>Kun nye kunder</span>
-    <span class="pill"><svg viewBox="0 0 20 20" fill="currentColor" style="width:19px;height:19px;flex-shrink:0"><path d="M10 0a10 10 0 100 20 10 10 0 000-20zm5.3 7.6l-6.1 6.1a1 1 0 01-1.4 0L4.7 10.6a1 1 0 011.4-1.4l2.4 2.4 5.4-5.4a1 1 0 011.4 1.4z"/></svg>Kun i stille perioder</span>
+            </div>
+          </div>
+        </div>
+      </div>
+
+    </div>
   </div>
-</section>
 </section>
 
 <section class="section final-cta">
@@ -677,8 +747,9 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     slides.forEach(function(s){s.classList.toggle('on',+s.dataset.i===cur);});
     tabs.forEach(function(t){t.classList.toggle('on',+t.dataset.i===cur);});
     dots.forEach(function(d){d.classList.toggle('on',+d.dataset.i===cur);});}
-  document.getElementById('next').onclick=function(){show(cur+1);};
-  document.getElementById('prev').onclick=function(){show(cur-1);};
+  var __n=document.getElementById('next'),__p=document.getElementById('prev');
+  if(__n)__n.onclick=function(){show(cur+1);};
+  if(__p)__p.onclick=function(){show(cur-1);};
   tabs.forEach(function(t){t.onclick=function(){show(+t.dataset.i);};});
   dots.forEach(function(d){d.onclick=function(){show(+d.dataset.i);};});
 })();
@@ -706,7 +777,6 @@ var demo=document.getElementById('demo'),bubble=document.getElementById('bubble'
 var timers=[];
 function T(fn,ms){timers.push(setTimeout(fn,ms));}
 function clearTimers(){timers.forEach(clearTimeout);timers=[];}
-
 function reset(){
   clearTimers();demo.classList.remove('slid');
   bubble.classList.remove('pop');bookBtn.classList.remove('pop','tapped');
@@ -723,13 +793,8 @@ function play(){
   T(function(){bookBtn.classList.remove('tapped');},2650);
   T(function(){demo.classList.add('slid');},3200);
   T(function(){appt.classList.add('pop');flash.classList.add('go');},4050);
-  T(play,6800);
 }
-var ranR=false;
-new IntersectionObserver(function(es){es.forEach(function(e){
-  if(e.isIntersecting){if(!ranR){ranR=true;play();}}
-  else{ranR=false;reset();}
-});},{threshold:.4}).observe(demo);
+window.playRebooking=play;window.resetRebooking=reset;
 })();
 /* verving-anim */
 (function(){
@@ -755,13 +820,28 @@ function play(){
   T(function(){b3.classList.remove('tapped');},2550);
   T(function(){demo.classList.add('slid');},3100);
   T(function(){chk.classList.add('vvpop');ch3.classList.add('show');cwho.classList.add('show');crow.classList.add('show');},4000);
-  T(play,7200);
 }
-var ranV=false;
-new IntersectionObserver(function(es){es.forEach(function(e){
-  if(e.isIntersecting){if(!ranV){ranV=true;play();}}
-  else{ranV=false;reset();}
-});},{threshold:.4}).observe(demo);
+window.playVerving=play;window.resetVerving=reset;
+})();
+/* accordion-trigger */
+(function(){
+  document.querySelectorAll('.sys-row').forEach(function(row){
+    var head=row.querySelector('.sys-head');
+    var which=row.getAttribute('data-anim');
+    head.addEventListener('click',function(){
+      var open=row.getAttribute('data-open')==='true';
+      var nowOpen=!open;
+      row.setAttribute('data-open',String(nowOpen));
+      head.setAttribute('aria-expanded',String(nowOpen));
+      if(nowOpen){
+        if(which==='rebooking'){window.resetRebooking();window.playRebooking();}
+        if(which==='verving'){window.resetVerving();window.playVerving();}
+      }else{
+        if(which==='rebooking')window.resetRebooking();
+        if(which==='verving')window.resetVerving();
+      }
+    });
+  });
 })();
 </script>
 
