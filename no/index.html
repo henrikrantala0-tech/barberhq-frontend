@@ -42,16 +42,17 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .mobile .m-cta{margin:10px 24px 14px;background:#fff;color:#000;text-align:center;font-weight:600;border-radius:99px;padding:13px}
 
 /* ===== HERO ===== */
-.hero{max-width:900px;margin:0 auto;padding:90px 32px 70px;text-align:center;position:relative}
-.hero::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:100vw;height:100%;background:linear-gradient(to bottom,rgba(10,10,10,.7) 0%,rgba(10,10,10,.55) 35%,rgba(10,10,10,.75) 75%,#0a0a0a 100%),url(../hero-bw.jpg) center 45%/cover no-repeat;z-index:0;pointer-events:none}
-.hero>*{position:relative;z-index:1}
+.hero{max-width:900px;margin:0 auto;padding:90px 32px 35px;text-align:center;position:relative}
+.hero-video{position:absolute;top:50%;left:50%;width:112vw;height:112%;transform:translate(-50%,-50%) scale(0.9);object-fit:cover;object-position:center;z-index:0;pointer-events:none}
+.hero::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:100vw;height:calc(100% + 20px);background:linear-gradient(to bottom,rgba(10,10,10,.65) 0%,rgba(10,10,10,.45) 35%,rgba(10,10,10,.72) 65%,#0a0a0a 85%);z-index:1;pointer-events:none}
+.hero>*:not(.hero-video){position:relative;z-index:2}
 .hero-badge{display:inline-flex;align-items:center;gap:8px;border:1px solid #2a2a2a;background:#0e0e0e;color:#bdbdbd;font-size:12.5px;font-weight:500;letter-spacing:.04em;padding:7px 15px;border-radius:99px;margin-bottom:30px}
 .hero-badge .dot{width:6px;height:6px;border-radius:50%;background:#3ecf7e;box-shadow:0 0 6px 2px rgba(62,207,126,.8),0 0 14px 5px rgba(62,207,126,.35);animation:pulse 2s infinite}
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
-.hero h1{font-size:clamp(44px,8vw,82px);font-weight:800;line-height:1.0;letter-spacing:-.045em}
-.hero h1 .accent{color:#fff;position:relative;display:inline-block}
-.hero h1 .line1{color:#a8a8a8}
-.hero h1 .hl-blue{color:#d4622c}
+.hero h1{font-weight:800;line-height:1.1;letter-spacing:-.045em}
+.hero h1 .h1-big{display:block;font-size:clamp(38px,6vw,70px);animation:heroIn 1.2s cubic-bezier(.22,.61,.36,1) both}
+.hero h1 .h1-small{display:block;font-size:clamp(30px,4.8vw,54px);animation:heroIn 1.2s cubic-bezier(.22,.61,.36,1) .28s both}
+@keyframes heroIn{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
 .hero-sub{color:#b4b4b4;font-size:clamp(16px,2.2vw,19px);line-height:1.6;max-width:560px;margin:26px auto 0}
 .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:38px}
 .btn{display:inline-flex;align-items:center;gap:9px;font-size:15px;font-weight:600;padding:15px 30px;border-radius:99px;text-decoration:none;transition:all .2s;cursor:pointer;border:0}
@@ -209,7 +210,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   .foot-wrap{padding:56px 24px 32px}
   .support-box{padding:28px 22px}
 }
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.hero-badge .dot{animation:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.hero-badge .dot{animation:none}.hero h1 .h1-big,.hero h1 .h1-small{animation:none}}
 
 /* === rebooking-animasjon (scoped) === */
 .rbscope *{margin:0;padding:0;box-sizing:border-box}
@@ -424,7 +425,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   pointer-events:none; z-index:2}
 </style>
 <style>
-.problem-section{background:#0a0a0a;display:flex;justify-content:center;padding:90px 24px}
+.problem-section{background:#0a0a0a;display:flex;justify-content:center;padding:45px 24px}
 .problem-inner{max-width:1200px;width:100%;display:flex;flex-direction:column}
 .problem-head{max-width:620px;margin-bottom:52px}
 .problem-eyebrow{color:#8a8a8a;font-size:13px;letter-spacing:.22em;font-weight:600;margin-bottom:16px;
@@ -528,13 +529,16 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 
 <!-- ===== HERO ===== -->
 <header class="hero" id="top">
+  <video class="hero-video" autoplay muted loop playsinline>
+    <source src="images/hero.mp4" type="video/mp4">
+  </video>
   <div class="hero-badge"><span class="dot"></span>Bygd for uavhengige barberere</div>
-  <h1><span class="line1">Kundene booker <span class="hl-blue">selv</span>.</span><br><span class="accent">Du bare klipper.</span></h1>
+  <h1><span class="h1-big">Kundene booker.</span><span class="h1-small">Du klipper.</span></h1>
   <p class="hero-sub">Din egen bookingside der kundene velger ledig time selv. Ingen meldinger fram og tilbake, ingen dobbeltbookinger.</p>
   <div class="hero-btns">
     <a href="kom-i-gang.html" class="btn btn-fill">Prøv gratis</a>
   </div>
-  <div style="margin-top:14px;color:#8c8c8c;font-size:13.5px">Ingen binding</div>
+  <div style="margin-top:14px;color:#8c8c8c;font-size:13.5px">30 dager gratis · ingen binding</div>
   <div class="hero-note"><i class="ti ti-eye"></i>Se siden din ferdig før du betaler</div>
 </header>
 
