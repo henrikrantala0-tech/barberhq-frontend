@@ -24,6 +24,26 @@ Søsterrepo: barberhq-backend (Railway).
 
 ## Arbeidsspråk: norsk. Planlegg før bygging. Render før deploy.
 
+## no/index.html — seksjonsrekkefølge (låst 26.06)
+1. Hero (`#top`)
+2. Produktvisning (`.pv-section` — fra `produktvisning-seksjon.html`)
+3. Selvbooking (`#selvbooking`)
+4. Vekst-intro (`#vekst`) → Rebooking (`#rebooking`) → Verving (`#verving`)
+5. Avsluttende CTA (`.final-cta`)
+Mangler (skrives separat): Problemet (#2), Din side/anti-marketplace (#5), Prøv gratis 30d (#7).
+sv/, da/, en/ følger ikke denne rekkefølgen ennå — gjøres i oversettelses-jobben.
+
+## no/index.html — kjente fikser og tilstand (02.07)
+- **Telefon-mockup tastatur (02.07):** Delt tastatur i `.rbscope` og `.vvscope`
+  var 210px og klippet knappene "Klikk her"/"Levert" (rebooking) og "Del min link"
+  (verving). Fiks: `.keyboard` height 210→150px, padding `8px 4px 24px`→`6px 4px 14px`,
+  `.msg-input` bottom 218→158px — i begge scopes. GJELDER KUN no/ — sv/da/en tas i
+  oversettelsesfasen.
+- **Død CSS ryddet (02.07):** 13 linjer fjernet — gamle prisplan-klasser
+  (`.plan`, `.plan.pro`, `.badge`, `.plan-name`, `.plan-price`, `.plan-tag`,
+  `.plan-cta`, `.cta-line`, `.cta-fill`) som ble igjen da prisplanen flyttet til
+  priser.html. `.hero-badge` er fortsatt i bruk og ble beholdt.
+
 ## Status 23.06
 
 # BarberHQ — Status etter økt 23.06 (mal-polering + kom-i-gang live preview)
