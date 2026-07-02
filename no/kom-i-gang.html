@@ -162,15 +162,16 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .pcard .sw{display:flex;gap:5px;margin-top:9px}
 .pcard .sw span{width:18px;height:18px;border-radius:5px;border:1px solid rgba(255,255,255,.14)}
 .lthumb{display:block;width:100%;height:auto;border-radius:6px;margin-bottom:8px;background:#0e0e0e;border:1px solid #222;color:#8a8a8a}
-#layGrid{display:flex;gap:12px;overflow-x:auto;padding:2px 2px 12px;scroll-snap-type:x proximity;align-items:flex-start}
+#layGrid{display:flex;gap:12px;overflow-x:auto;padding:12px 2px 12px;scroll-snap-type:x proximity;align-items:flex-start}
 #layGrid::-webkit-scrollbar{height:6px}#layGrid::-webkit-scrollbar-thumb{background:#2a2a2a;border-radius:3px}
-#layGrid .pcard{flex:0 0 196px;padding:0;overflow:hidden;scroll-snap-align:start}
-#layGrid .laywrap{position:relative;line-height:0}
+#layGrid .pcard{flex:0 0 196px;padding:0;overflow:visible;position:relative;scroll-snap-align:start}
+#layGrid .laywrap{position:relative;line-height:0;border-radius:12px 12px 0 0;overflow:hidden}
 #layGrid .lthumb{width:100%;height:auto;display:block;border:0;border-radius:0;margin:0}
 #layGrid .pt{padding:11px 13px 0}
 #layGrid .pd{padding:2px 13px 13px}
 #layGrid .lay-exp{position:absolute;bottom:9px;right:9px;width:33px;height:33px;border-radius:9px;background:rgba(10,10,10,.6);border:1px solid rgba(255,255,255,.22);color:#fff;display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0;transition:background .15s}
 #layGrid .lay-exp:hover{background:rgba(10,10,10,.88)}
+.layout-badge{position:absolute;top:0;right:14px;transform:translateY(-50%);background:#4d8bff;color:#fff;font-size:10px;font-weight:700;padding:3px 10px;border-radius:99px;letter-spacing:0.04em;white-space:nowrap;z-index:2}
 .lay-modal{display:none;position:fixed;inset:0;z-index:300;background:rgba(0,0,0,.82);justify-content:center;padding:34px 16px;overflow-y:auto}
 .lay-modal.on{display:flex}
 .lay-modal-inner{position:relative;width:100%;max-width:330px;margin:auto}
@@ -296,7 +297,7 @@ var design={palette:"mint",mode:"mork",layout:"profil"};
 function renderDesign(){
   document.getElementById('palGrid').innerHTML=PALETTES.map(function(p){return '<button type="button" class="pcard" data-grid="palette" data-key="'+p.key+'" aria-pressed="'+(design.palette===p.key)+'"><div class="pt">'+p.t+'</div><div class="pd">'+p.d+'</div><div class="sw">'+p.sw.map(function(c){return '<span style="background:'+c+'"></span>';}).join("")+'</div></button>';}).join("");
   document.getElementById('layGrid').innerHTML=LAYOUTS.map(function(l){
-    return '<div class="pcard" data-grid="layout" data-key="'+l.key+'" role="button" tabindex="0" aria-pressed="'+(design.layout===l.key)+'">'+'<div class="laywrap"><img class="lthumb" src="'+l.img+'" alt="'+l.t+'">'+'<button type="button" class="lay-exp" aria-label="Se st\u00f8rre"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>'+'</div><div class="pt">'+l.t+'</div><div class="pd">'+l.d+'</div></div>';
+    return '<div class="pcard" data-grid="layout" data-key="'+l.key+'" role="button" tabindex="0" aria-pressed="'+(design.layout===l.key)+'">'+'<div class="laywrap"><img class="lthumb" src="'+l.img+'" alt="'+l.t+'">'+'<button type="button" class="lay-exp" aria-label="Se st\u00f8rre"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>'+'</div>'+(l.key==='showcase'?'<span class="layout-badge">Anbefalt</span>':'')+'<div class="pt">'+l.t+'</div><div class="pd">'+l.d+'</div></div>';
   }).join("");
   Array.prototype.forEach.call(document.querySelectorAll('#modePick .modebtn'),function(b){b.setAttribute('aria-pressed',b.dataset.mode===design.mode);});
   sendPreview();
