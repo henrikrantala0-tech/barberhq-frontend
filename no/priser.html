@@ -53,7 +53,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .price-wrap::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:600px;height:520px;max-width:96vw;background:radial-gradient(ellipse,rgba(220,178,74,.74),rgba(220,178,74,.30) 44%,transparent 72%);filter:blur(56px);z-index:0;pointer-events:none}
 .price-card{position:relative;z-index:1}
 .price-card{width:100%;max-width:420px;background:linear-gradient(180deg,#101010,#0b0b0b);border:1px solid #2a2a2a;border-radius:22px;padding:40px 36px;text-align:center;box-shadow:0 30px 70px -40px rgba(0,0,0,.7)}
-.price-num{font-size:60px;font-weight:800;letter-spacing:-.03em;line-height:1}
+.price-num{font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
 .price-num span{font-size:18px;font-weight:500;color:#9a9a9a;letter-spacing:0}
 .price-card .pc-sub{color:#9a9a9a;font-size:14px;margin-top:12px;margin-bottom:26px}
 .price-list{text-align:left;display:flex;flex-direction:column;gap:12px;margin-bottom:28px}
@@ -61,6 +61,9 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .price-list svg{color:#3ecf7e;width:18px;height:18px;flex-shrink:0;margin-top:2px}
 .price-card .btn-fill{width:100%;justify-content:center;font-size:16px;padding:16px}
 .price-card .pc-note{color:#8c8c8c;font-size:13px;margin-top:14px}
+.pc-price{font-size:13px;color:#7a7a7a;margin-bottom:16px;text-align:center}
+.pc-badge-wrap{margin-top:16px;margin-bottom:28px}
+.pc-badge{display:inline-block;background:rgba(77,139,255,0.12);color:#4d8bff;font-size:13px;font-weight:600;padding:6px 16px;border-radius:99px;letter-spacing:0.02em}
 .price-extra{max-width:420px;margin:22px auto 0;display:flex;flex-direction:column;gap:10px}
 .price-extra div{background:#0e0e0e;border:1px solid #1a1a1a;border-radius:12px;padding:14px 18px;font-size:13.5px;color:#9a9a9a;line-height:1.5}
 .price-extra strong{color:#fff;font-weight:600}
@@ -144,8 +147,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 </header>
 <div class="price-wrap">
   <div class="price-card reveal">
-    <div class="price-num">249 kr<span> /mnd</span></div>
-    <p class="pc-sub">Alt du trenger for å drive bookingen din — på ett sted.</p>
+    <div class="price-num">En måned gratis</div>
+    <div class="pc-badge-wrap"><span class="pc-badge">Ingen binding</span></div>
     <div class="price-list">
       <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Din egen bookingside</div>
       <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Selvbooking — kundene booker selv</div>
@@ -155,8 +158,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>SMS-påminnelser</div>
       <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Galleri for arbeidet ditt</div>
     </div>
+    <p class="pc-price">Deretter 249 kr/mnd</p>
     <a href="kom-i-gang.html" class="btn btn-fill">Prøv gratis</a>
-    <div class="pc-note">Ingen binding — si opp når du vil.</div>
   </div>
 </div>
 <div class="price-extra">
