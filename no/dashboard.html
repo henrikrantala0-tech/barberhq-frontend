@@ -147,6 +147,7 @@
   .fld input,.fld textarea{width:100%;font:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink)}
   .fld textarea{min-height:74px;resize:vertical}
   .fld input:focus,.fld textarea:focus{outline:none;border-color:var(--info)}
+  .fld-hint{font-size:11.5px;color:var(--mut);margin-top:6px;line-height:1.4;letter-spacing:-.01em}
   .svc-head2,.svc-row2{display:grid;grid-template-columns:1fr 104px 78px 36px;gap:9px;align-items:center}
   .svc-head2{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;padding:0 2px 6px}
   .svc-row2{padding:10px 0;border-bottom:1px solid var(--line)}
@@ -386,7 +387,7 @@
     <p class="block-s">Grunninfo som vises på bookingsiden din.</p>
     <div class="fld"><label>Navn</label><input id="pf-name" type="text"></div>
     <div class="fld"><label>Navn på shoppen</label><input id="pf-shop" type="text"></div>
-    <div class="fld"><label>Adresse</label><input id="pf-address" type="text" placeholder="Storgata 12, 0182 Oslo"></div>
+    <div class="fld"><label>Adresse</label><input id="pf-address" type="text"><p class="fld-hint">Skriv full adresse (gate, nummer, postnr, by) så kunder finner frem i kart. Vil du ikke dele nøyaktig sted, skriv bare byen.</p></div>
     <div class="fld"><label>Telefon</label><input id="pf-phone" type="tel"></div>
     <div class="fld"><label>Kort beskrivelse</label><textarea id="pf-bio" placeholder="Noen ord om deg og stilen din"></textarea></div>
     <div class="savebar"><button class="btn" id="saveProfil">Lagre profil</button><span class="saved" id="profilSaved">Lagret &#10003;</span></div>
