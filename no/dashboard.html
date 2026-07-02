@@ -154,6 +154,18 @@
   .svc-row2:last-of-type{border-bottom:0}
   .svc-row2 input{font:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink)}
   .svc-row2 input:focus{outline:none;border-color:var(--info)}
+  .svc-group-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);margin:22px 0 4px}
+  .svc-group-s{font-size:11.5px;color:var(--mut);margin-bottom:10px}
+  .svc-head-h,.svc-row-h{display:grid;grid-template-columns:1fr 96px 66px 34px;gap:8px;align-items:center}
+  .svc-head-t,.svc-row-t{display:grid;grid-template-columns:1fr 96px 34px;gap:8px;align-items:center}
+  .svc-head-h,.svc-head-t{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;padding:0 2px 5px}
+  .svc-row-h,.svc-row-t{padding:8px 0;border-bottom:1px solid var(--line)}
+  .svc-row-h:last-of-type,.svc-row-t:last-of-type{border-bottom:0}
+  .svc-row-h input,.svc-row-t input{font:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink);width:100%}
+  .svc-row-h input:focus,.svc-row-t input:focus{outline:none;border-color:var(--info)}
+  .svc-divider{height:1px;background:var(--line);margin:26px 0 0}
+  .svc-err{font-size:12px;color:#c0392b;margin-top:8px;min-height:15px}
+  .btn:disabled{opacity:.4;cursor:default}
   .svc-rm{appearance:none;border:1px solid var(--line-2);background:var(--surface);color:var(--mut);height:36px;border-radius:7px;cursor:pointer;font-size:16px}
   .svc-rm:hover{color:var(--bad);border-color:var(--bad)}
   .addbtn{appearance:none;border:1px dashed var(--line-2);background:0;color:var(--mut);border-radius:8px;padding:10px;width:100%;max-width:440px;cursor:pointer;font:inherit;font-size:13px;margin-top:10px}
@@ -397,9 +409,22 @@
   <section class="panel" id="tjenester">
     <p class="block-h">Tjenester &amp; priser</p>
     <p class="block-s">Det kundene kan booke. Vises på bookingsiden din.</p>
-    <div class="svc-head2"><span>Tjeneste</span><span>Pris (kr)</span><span>Min.</span><span></span></div>
-    <div id="svcList2"></div>
-    <button class="addbtn" id="addSvc2">+ Legg til tjeneste</button>
+
+    <p class="svc-group-h">Hovedtjenester</p>
+    <p class="svc-group-s">Kunden velger én. Minst én kreves.</p>
+    <div class="svc-head-h"><span>Tjeneste</span><span>Pris (kr)</span><span>Min.</span><span></span></div>
+    <div id="hovedList"></div>
+    <button class="addbtn" id="addHoved">+ Legg til hovedtjeneste</button>
+
+    <div class="svc-divider"></div>
+
+    <p class="svc-group-h">Tillegg</p>
+    <p class="svc-group-s">Kunden kan huke av flere. Valgfritt.</p>
+    <div class="svc-head-t"><span>Tillegg</span><span>Pris (kr)</span><span></span></div>
+    <div id="tilleggList"></div>
+    <button class="addbtn" id="addTillegg">+ Legg til tillegg</button>
+
+    <div class="svc-err" id="svcErr"></div>
     <div class="savebar"><button class="btn" id="saveSvc">Lagre tjenester</button><span class="saved" id="svcSaved">Lagret &#10003;</span></div>
   </section>
 
@@ -895,17 +920,22 @@ $("#saveProfil").addEventListener("click",async function(){const btn=$("#savePro
   if(ok){savedFlash("#profilSaved");}else{alert("Kunne ikke lagre profil. Prøv igjen.");}});
 
 /* ---- Tjenester ---- */
-let services=[{name:"Skinnfade",price:450,min:45},{name:"Klipp + skjegg",price:400,min:45},{name:"Klipp",price:300,min:30}];
-function svcRow2(s,i){return '<div class="svc-row2"><input value="'+esc(s.name)+'" data-i="'+i+'" data-f="name" placeholder="Tjeneste"><input type="number" value="'+s.price+'" data-i="'+i+'" data-f="price" min="0"><input type="number" value="'+s.min+'" data-i="'+i+'" data-f="min" min="0"><button class="svc-rm" data-i="'+i+'" aria-label="Fjern">&times;</button></div>';}
-function renderSvc(){$("#svcList2").innerHTML=services.map(svcRow2).join("");}
+let hoved=[{name:"Skinnfade",price:450,min:45},{name:"Klipp",price:300,min:30}];
+let tillegg=[{name:"Skjegg",price:150},{name:"Hårvask",price:80}];
+function hovedRow(s,i){return '<div class="svc-row-h"><input value="'+esc(s.name)+'" data-l="h" data-i="'+i+'" data-f="name" placeholder="F.eks. Fade"><input type="number" value="'+s.price+'" data-l="h" data-i="'+i+'" data-f="price" min="0"><input type="number" value="'+s.min+'" data-l="h" data-i="'+i+'" data-f="min" min="0"><button class="svc-rm" data-l="h" data-i="'+i+'" aria-label="Fjern">&times;</button></div>';}
+function tilleggRow(s,i){return '<div class="svc-row-t"><input value="'+esc(s.name)+'" data-l="t" data-i="'+i+'" data-f="name" placeholder="F.eks. Skjegg"><input type="number" value="'+s.price+'" data-l="t" data-i="'+i+'" data-f="price" min="0"><button class="svc-rm" data-l="t" data-i="'+i+'" aria-label="Fjern">&times;</button></div>';}
+function renderSvc(){$("#hovedList").innerHTML=hoved.map(hovedRow).join("");$("#tilleggList").innerHTML=tillegg.map(tilleggRow).join("");validateSvc();}
+function validateSvc(){const harHoved=hoved.filter(s=>s.name.trim()).length>0;const btn=$("#saveSvc"),err=$("#svcErr");if(!harHoved){btn.disabled=true;err.textContent="Du må ha minst én hovedtjeneste før du kan lagre.";}else{btn.disabled=false;err.textContent="";}return harHoved;}
 function loadTjenester(){renderSvc();}
-$("#addSvc2").addEventListener("click",function(){services.push({name:"",price:0,min:30});renderSvc();});
-$("#svcList2").addEventListener("input",function(e){var i=+e.target.dataset.i,f=e.target.dataset.f;if(f==null)return;services[i][f]=f==="name"?e.target.value:+e.target.value;});
-$("#svcList2").addEventListener("click",function(e){var b=e.target.closest(".svc-rm");if(!b)return;services.splice(+b.dataset.i,1);renderSvc();});
-$("#saveSvc").addEventListener("click",async function(){const btn=$("#saveSvc");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
-  const ok=await api.saveServices({services:services.filter(function(s){return s.name.trim();})});
-  btn.disabled=false;btn.textContent=orig;
-  if(ok){savedFlash("#svcSaved");}else{alert("Kunne ikke lagre tjenester. Prøv igjen.");}});
+$("#addHoved").addEventListener("click",()=>{hoved.push({name:"",price:0,min:30});renderSvc();});
+$("#addTillegg").addEventListener("click",()=>{tillegg.push({name:"",price:0});renderSvc();});
+$("#hovedList").addEventListener("input",svcInput);
+$("#tilleggList").addEventListener("input",svcInput);
+function svcInput(e){const l=e.target.dataset.l,i=+e.target.dataset.i,f=e.target.dataset.f;if(f==null)return;const arr=l==="h"?hoved:tillegg;arr[i][f]=f==="name"?e.target.value:+e.target.value;validateSvc();}
+$("#hovedList").addEventListener("click",svcRemove);
+$("#tilleggList").addEventListener("click",svcRemove);
+function svcRemove(e){const b=e.target.closest(".svc-rm");if(!b)return;const l=b.dataset.l,i=+b.dataset.i;(l==="h"?hoved:tillegg).splice(i,1);renderSvc();}
+$("#saveSvc").addEventListener("click",async function(){if(!validateSvc())return;const btn=$("#saveSvc");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";const ok=await api.saveServices({hoved:hoved.filter(s=>s.name.trim()),tillegg:tillegg.filter(s=>s.name.trim())});btn.textContent=orig;btn.disabled=false;if(ok){savedFlash("#svcSaved");}else{alert("Kunne ikke lagre tjenester. Prøv igjen.");}});
 
 /* ---- Design (ferdige presets) ---- */
 const PALETTES=[
