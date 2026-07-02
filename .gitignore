@@ -2,3 +2,7 @@
 Thumbs.db
 node_modules/
 *.log
+*.mov
+*.mp4
+_nye-seksjoner/
+live_preview_handoff/
