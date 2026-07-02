@@ -236,7 +236,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       <div class="preview-wrap"><iframe id="tjenesterPreview" src="preview-tjenester.html" scrolling="no" tabindex="-1"></iframe></div>
       <p class="preview-cap">Tjenester — i fargene du velger</p>
     </div>
-    <div class="dgrp"><span class="lab">Bilder <span class="opt">(last opp 1&ndash;5 av arbeidet ditt)</span></span>
+    <div class="dgrp" id="bildeDgrp"><span class="lab">Bilder <span class="opt">(last opp 1&ndash;5 av arbeidet ditt)</span></span>
       <div class="uploader" id="dropZone">
         <div class="ui">&#8682;</div>
         <div class="ut">Trykk for &aring; laste opp bilder</div>
@@ -311,6 +311,9 @@ document.getElementById('obStep2').addEventListener('click',function(e){
   if(grid==='layout'){
     // bytt valgt layout-kort (aria) uten å gjenoppbygge iframe
     Array.prototype.forEach.call(document.querySelectorAll('#layGrid .pcard'),function(c){c.setAttribute('aria-pressed',c.dataset.key===key);});
+    var bildeDgrp=document.getElementById('bildeDgrp');
+    if(key==='direkte'){bildeDgrp.style.display='none';files.length=0;renderThumbs();}
+    else{bildeDgrp.style.display='';}
   } else if(grid==='palette'){
     Array.prototype.forEach.call(document.querySelectorAll('#palGrid .pcard'),function(c){c.setAttribute('aria-pressed',c.dataset.key===key);});
     sendPreview();
@@ -328,6 +331,7 @@ fileInput.addEventListener('change',function(){
   Array.prototype.forEach.call(fileInput.files,function(f){ if(files.length<5 && f.type.indexOf('image/')===0) files.push(f); });
   fileInput.value='';
   renderThumbs();
+  var f=document.getElementById('bildeFeil');if(f)f.textContent='';
 });
 function renderThumbs(){
   document.getElementById('thumbs').innerHTML=files.map(function(f,i){return '<div class="thumb"><img src="'+URL.createObjectURL(f)+'"><button type="button" class="rm" data-i="'+i+'">&times;</button></div>';}).join("");
@@ -335,6 +339,14 @@ function renderThumbs(){
 document.getElementById('thumbs').addEventListener('click',function(e){var b=e.target.closest('.rm');if(!b)return;files.splice(+b.dataset.i,1);renderThumbs();});
 
 async function submitFinal(){
+  if(design.layout!=='direkte'&&files.length===0){
+    var dz=document.getElementById('bildeDgrp');
+    var feil=document.getElementById('bildeFeil');
+    if(!feil){feil=document.createElement('p');feil.id='bildeFeil';feil.style.color='#c0594a';feil.style.fontSize='13px';feil.style.marginTop='8px';dz.appendChild(feil);}
+    feil.textContent='Last opp minst ett bilde, eller velg Direkte-layout.';
+    dz.scrollIntoView({behavior:'smooth',block:'center'});
+    return;
+  }
   var btn=document.querySelector('#obStep2 .ob-submit');
   btn.disabled=true;btn.textContent='Sender...';
   try{
