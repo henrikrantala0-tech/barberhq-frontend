@@ -29,12 +29,22 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .nav.scrolled{border-bottom-color:#1f1f1f;background:rgba(10,10,10,.9)}
 .nav-wrap{max-width:1100px;margin:0 auto;padding:0 32px;height:68px;display:flex;align-items:center;justify-content:space-between}
 .logo{font-size:21px;font-weight:800;letter-spacing:-.03em;color:#fff;text-decoration:none}
-.nav-links{display:flex;align-items:center;gap:6px}
-.nav-links a{color:#bdbdbd;font-size:14.5px;font-weight:500;text-decoration:none;padding:8px 14px;border-radius:8px;transition:color .2s,background .2s}
-.nav-links a:hover{color:#fff;background:#161616}
-.nav-login{color:#fff!important}
-.nav-cta{background:#4d8bff!important;color:#fff!important;font-weight:600!important;padding:10px 20px!important;border-radius:99px!important;margin-left:8px;transition:opacity .2s!important}
-.nav-cta:hover{opacity:.85;background:#4d8bff!important}
+.nav-links{display:flex;align-items:center;gap:28px}
+.nav-links a{color:#c8c8c8;font-size:14px;font-weight:500;text-decoration:none;transition:color .2s}
+.nav-links a:hover{color:#fff}
+.nav-right{display:flex;align-items:center;gap:14px}
+.nav-cta{background:#fff;color:#000;font-size:14px;font-weight:600;padding:9px 18px;border-radius:99px;text-decoration:none;white-space:nowrap;transition:opacity .2s}
+.nav-cta:hover{opacity:.8}
+.nav-burger{display:none;flex-direction:column;justify-content:center;gap:4px;width:32px;height:32px;background:none;border:none;cursor:pointer;padding:6px 4px}
+.nav-burger span{display:block;width:20px;height:2px;background:#fff;border-radius:2px;transition:transform .2s,opacity .2s}
+.nav.open .nav-burger span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.nav.open .nav-burger span:nth-child(2){opacity:0}
+.nav.open .nav-burger span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+.nav-panel{max-height:0;overflow:hidden;background:rgba(10,10,10,.96);transition:max-height .25s ease}
+.nav.open .nav-panel{max-height:280px}
+.nav-panel a{display:block;padding:16px 24px;font-size:15px;color:#e0e0e0;text-decoration:none;border-bottom:1px solid #141414;transition:color .2s}
+.nav-panel a:last-child{border-bottom:none}
+.nav-panel a:hover{color:#fff}
 .mobile{display:none;border-top:1px solid #1f1f1f;background:#0a0a0a;padding:8px 0}
 .mobile.open{display:block}
 .mobile a{display:block;color:#cfcfcf;font-size:15px;font-weight:500;text-decoration:none;padding:14px 32px}
@@ -187,11 +197,11 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 
 /* ===== RESPONSIV ===== */
 @media(max-width:760px){
-  .nav-wrap{padding:0 12px;height:58px;gap:8px}
-  .logo{font-size:18px;flex-shrink:0}
-  .nav-links{flex:1;justify-content:flex-end;gap:2px}
-  .nav-links a{font-size:12px;padding:6px 6px}
-  .nav-cta{padding:8px 13px!important;font-size:12px!important}
+  .nav-wrap{padding:0 16px;height:58px}
+  .logo{font-size:18px}
+  .nav-links{display:none}
+  .nav-burger{display:flex}
+  .nav-cta{padding:8px 14px;font-size:13px}
   .section{padding:64px 20px}
   .hero{padding:54px 20px 54px}
   .feat-grid{grid-template-columns:1fr;max-width:420px}
@@ -521,9 +531,20 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       <a href="funksjoner.html">Funksjoner</a>
       <a href="priser.html">Priser</a>
       <a href="support.html">Support</a>
-      <a href="logg-inn.html" class="nav-login">Logg inn</a>
-      <a href="kom-i-gang.html" class="nav-cta">Prøv gratis</a>
+      <a href="logg-inn.html">Logg inn</a>
     </div>
+    <div class="nav-right">
+      <a href="kom-i-gang.html" class="nav-cta">Prøv gratis</a>
+      <button class="nav-burger" id="nav-burger" aria-label="Meny">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </div>
+  <div class="nav-panel" id="nav-panel">
+    <a href="funksjoner.html">Funksjoner</a>
+    <a href="priser.html">Priser</a>
+    <a href="support.html">Support</a>
+    <a href="logg-inn.html">Logg inn</a>
   </div>
 </nav>
 
@@ -869,6 +890,13 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 // Nav sticky-kant
 var nav=document.getElementById('nav');
 window.addEventListener('scroll',function(){nav.classList.toggle('scrolled',window.scrollY>10);});
+
+// Hamburger-meny
+var burger=document.getElementById('nav-burger');
+burger.addEventListener('click',function(){nav.classList.toggle('open');});
+document.querySelectorAll('#nav-panel a').forEach(function(a){
+  a.addEventListener('click',function(){nav.classList.remove('open');});
+});
 
 // Scroll-reveal
 var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.12});
