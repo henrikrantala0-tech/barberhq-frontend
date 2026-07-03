@@ -590,21 +590,10 @@ const api={
   async markNoShow(id){ if(CONFIG.USE_MOCK){await wait(200);const b=MOCK.bookings.find(x=>x.id===id);if(b)b.status="noshow";return true;}
     const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/bookings/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"noshow"})}); return r.ok; },
   async images(){ const r=await apiFetch('/api/dashboard/images'); if(!r)return []; if(!r.ok)return []; return r.json(); },
-  async uploadImage(file){ if(CONFIG.USE_MOCK){return new Promise(res=>{const rd=new FileReader();rd.onload=()=>res({id:"m"+Date.now(),url:rd.result});rd.readAsDataURL(file);});}
-    const fd=new FormData();fd.append("image",file);
-    const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/images`,{method:"POST",body:fd}); return r.json(); },
-  async deleteImage(id){ if(CONFIG.USE_MOCK)return true;
-    const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/images/${id}`,{method:"DELETE"}); return r.ok; },
   async hours(){ if(CONFIG.USE_MOCK)return MOCK.hours;
     const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/availability`); return r.json(); },
   async saveHours(d){ if(CONFIG.USE_MOCK){await wait(400);return true;}
     const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/availability`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)}); return r.ok; },
-  async saveProfile(d){ if(CONFIG.USE_MOCK){await wait(400);return true;}
-    const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/profile`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)}); return r.ok; },
-  async saveServices(d){ if(CONFIG.USE_MOCK){await wait(400);return true;}
-    const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/services`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)}); return r.ok; },
-  async saveDesign(d){ if(CONFIG.USE_MOCK){await wait(400);return true;}
-    const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/design`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)}); return r.ok; },
   async googleStatus(){ if(CONFIG.USE_MOCK)return {connected:false};
     const r=await fetch(`${CONFIG.API_BASE}/api/google/status?slug=${CONFIG.BARBER_SLUG}`); return r.json(); },
   async googleDisconnect(){ if(CONFIG.USE_MOCK){await wait(200);return true;}
@@ -828,7 +817,14 @@ async function loadVekst(){
 let imgs=[];
 async function loadBilder(){try{imgs=await api.images();}catch(e){imgs=[];}renderImgs();}
 function renderImgs(){$("#imgGrid").innerHTML=imgs.map(im=>`<div class="thumb"><img src="${CONFIG.API_BASE+im.url}" alt="Klippebilde"><button class="rm" data-id="${im.id}" aria-label="Fjern">×</button></div>`).join("");}
-async function handleUpload(f){if(!f||!f.type.startsWith("image/"))return;const r=await api.uploadImage(f);imgs.push(r);renderImgs();}
+async function handleUpload(f){
+  if(!f||!f.type.startsWith("image/"))return;
+  const fd=new FormData();fd.append("image",f);
+  const r=await apiFetch('/api/dashboard/images',{method:'POST',body:fd});
+  if(!r)return;
+  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke laste opp bilde. Prøv igjen.');return;}
+  const img=await r.json();imgs.push(img);renderImgs();
+}
 
 let hours=[];
 async function loadArbeidstider(){try{hours=await api.hours();}catch(e){hours=MOCK.hours;}
@@ -899,8 +895,14 @@ $("#fileInput").addEventListener("change",e=>handleUpload(e.target.files[0]));
 ["dragover","dragenter"].forEach(ev=>$("#uploader").addEventListener(ev,e=>{e.preventDefault();$("#uploader").style.borderColor="var(--ink-2)"}));
 ["dragleave","drop"].forEach(ev=>$("#uploader").addEventListener(ev,e=>{e.preventDefault();$("#uploader").style.borderColor=""}));
 $("#uploader").addEventListener("drop",e=>handleUpload(e.dataTransfer.files[0]));
-$("#imgGrid").addEventListener("click",async e=>{const btn=e.target.closest(".rm");if(!btn)return;
-  if(await api.deleteImage(btn.dataset.id)){imgs=imgs.filter(x=>String(x.id)!==String(btn.dataset.id));renderImgs();}});
+$("#imgGrid").addEventListener("click",async e=>{
+  const btn=e.target.closest(".rm");if(!btn)return;
+  if(!confirm("Slett dette bildet?"))return;
+  const r=await apiFetch('/api/dashboard/images/'+btn.dataset.id,{method:'DELETE'});
+  if(!r)return;
+  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke slette bildet. Prøv igjen.');return;}
+  imgs=imgs.filter(x=>String(x.id)!==String(btn.dataset.id));renderImgs();
+});
 $("#hoursList").addEventListener("change",e=>{const i=+e.target.dataset.i;
   if(e.target.type==="checkbox"){hours[i].on=e.target.checked;e.target.closest(".day").querySelectorAll("input[type=time]").forEach(inp=>inp.disabled=!e.target.checked);}
   else if(e.target.dataset.f){hours[i][e.target.dataset.f]=e.target.value;}});
@@ -941,10 +943,22 @@ async function loadProfil(){
 }
 function savedFlash(sel){var s=$(sel);s.classList.add("show");setTimeout(function(){s.classList.remove("show");},1800);}
 $("#sendIdea").addEventListener("click",function(){var t=$("#ideaBox").value.trim();if(!t)return;console.log(JSON.stringify({type:"idea",text:t}));$("#ideaBox").value="";savedFlash("#ideaSaved");});
-$("#saveProfil").addEventListener("click",async function(){const btn=$("#saveProfil");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
-  const ok=await api.saveProfile({name:$("#pf-name").value,shop:$("#pf-shop").value,address:$("#pf-address").value,phone:$("#pf-phone").value,bio:$("#pf-bio").value});
+$("#saveProfil").addEventListener("click",async function(){
+  const btn=$("#saveProfil");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
+  const r=await apiFetch('/api/dashboard/profile',{method:'PUT',body:JSON.stringify({
+    name:    $("#pf-name").value,
+    shop:    $("#pf-shop").value,
+    address: $("#pf-address").value,
+    phone:   $("#pf-phone").value,
+    bio:     $("#pf-bio").value,
+  })});
   btn.disabled=false;btn.textContent=orig;
-  if(ok){savedFlash("#profilSaved");}else{alert("Kunne ikke lagre profil. Prøv igjen.");}});
+  if(!r)return;
+  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre profil. Prøv igjen.');return;}
+  const displayName=$("#pf-shop").value.trim()||$("#pf-name").value.trim()||"";
+  CONFIG.BARBER_NAME=displayName;var el=$("#barberName");if(el)el.textContent=displayName;
+  savedFlash("#profilSaved");
+});
 
 /* ---- Tjenester ---- */
 let hoved=[{name:"Skinnfade",price:450,min:45},{name:"Klipp",price:300,min:30}];
@@ -970,7 +984,18 @@ function svcInput(e){const l=e.target.dataset.l,i=+e.target.dataset.i,f=e.target
 $("#hovedList").addEventListener("click",svcRemove);
 $("#tilleggList").addEventListener("click",svcRemove);
 function svcRemove(e){const b=e.target.closest(".svc-rm");if(!b)return;const l=b.dataset.l,i=+b.dataset.i;(l==="h"?hoved:tillegg).splice(i,1);renderSvc();}
-$("#saveSvc").addEventListener("click",async function(){if(!validateSvc())return;const btn=$("#saveSvc");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";const ok=await api.saveServices({hoved:hoved.filter(s=>s.name.trim()),tillegg:tillegg.filter(s=>s.name.trim())});btn.textContent=orig;btn.disabled=false;if(ok){savedFlash("#svcSaved");}else{alert("Kunne ikke lagre tjenester. Prøv igjen.");}});
+$("#saveSvc").addEventListener("click",async function(){
+  if(!validateSvc())return;
+  const btn=$("#saveSvc");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
+  const r=await apiFetch('/api/dashboard/services',{method:'PUT',body:JSON.stringify({
+    hoved:   hoved.filter(s=>s.name.trim()),
+    tillegg: tillegg.filter(s=>s.name.trim()),
+  })});
+  btn.disabled=false;btn.textContent=orig;
+  if(!r)return;
+  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre tjenester. Prøv igjen.');return;}
+  savedFlash("#svcSaved");
+});
 
 /* ---- Design (ferdige presets) ---- */
 const PALETTES=[
@@ -1034,13 +1059,24 @@ async function loadDesign(){
 $("#design").addEventListener("click",function(e){var b=e.target.closest(".preset");if(!b)return;design[b.dataset.grid]=b.dataset.key;renderDesign();});
 $("#modePick").addEventListener("click",function(e){var b=e.target.closest(".modebtn");if(!b)return;design.mode=b.dataset.mode;renderDesign();});
 $("#openPreview").addEventListener("click",function(){if(CONFIG.USE_MOCK){alert("I demo. Nar siden er live apner denne hele bookingsiden din i ny fane, med valgene du har gjort.");return;}window.open("https://trybarberhq.com/"+CONFIG.BARBER_SLUG+"?preview=1","_blank");});
-$("#saveDesign").addEventListener("click",async function(){const btn=$("#saveDesign");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
-  const ok=await api.saveDesign({palette:design.palette,font:design.font,layout:design.layout,mode:design.mode});
+$("#saveDesign").addEventListener("click",async function(){
+  const btn=$("#saveDesign");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
+  const r=await apiFetch('/api/dashboard/design',{method:'PUT',body:JSON.stringify({
+    palette: design.palette,
+    layout:  design.layout,
+    mode:    design.mode,
+  })});
   btn.disabled=false;btn.textContent=orig;
-  if(ok){savedFlash("#designSaved");}else{alert("Kunne ikke lagre design. Prøv igjen.");}});
+  if(!r)return;
+  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre design. Prøv igjen.');return;}
+  savedFlash("#designSaved");
+});
 
 /* ---- Abonnement ---- */
-$("#manageSub").addEventListener("click",function(){if(CONFIG.USE_MOCK){alert("I demo. Nar backend er live apner denne Stripe-portalen, der du kan bytte kort, se kvitteringer eller si opp.");return;}window.location.href=CONFIG.API_BASE+"/api/billing/portal?slug="+CONFIG.BARBER_SLUG;});
+$("#manageSub").addEventListener("click",function(){
+  if(CONFIG.USE_MOCK){alert("I demo. Når backend er live åpner denne Stripe-portalen, der du kan bytte kort, se kvitteringer eller si opp.");return;}
+  window.location.href=CONFIG.API_BASE+"/api/dashboard/billing/portal";
+});
 
 /* init */
 initTheme();
