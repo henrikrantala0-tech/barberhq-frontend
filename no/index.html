@@ -56,9 +56,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .hero-video{position:absolute;top:50%;left:50%;width:112vw;height:112%;transform:translate(-50%,-50%) scale(0.9);object-fit:cover;object-position:center;z-index:0;pointer-events:none}
 .hero::before{content:"";position:absolute;top:0;left:50%;transform:translateX(-50%);width:100vw;height:calc(100% + 20px);background:linear-gradient(to bottom,rgba(10,10,10,.65) 0%,rgba(10,10,10,.45) 35%,rgba(10,10,10,.72) 65%,#0a0a0a 85%);z-index:1;pointer-events:none}
 .hero>*:not(.hero-video){position:relative;z-index:2}
-.hero-badge{display:inline-flex;align-items:center;gap:8px;border:1px solid #2a2a2a;background:#0e0e0e;color:#bdbdbd;font-size:12.5px;font-weight:500;letter-spacing:.04em;padding:7px 15px;border-radius:99px;margin-bottom:30px}
-.hero-badge .dot{width:6px;height:6px;border-radius:50%;background:#3ecf7e;box-shadow:0 0 6px 2px rgba(62,207,126,.8),0 0 14px 5px rgba(62,207,126,.35);animation:pulse 2s infinite}
-@keyframes pulse{0%,100%{opacity:1}50%{opacity:.3}}
+.hero-eyebrow{display:block;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9a9a9a;margin-bottom:22px}
 .hero h1{font-weight:800;line-height:1.1;letter-spacing:-.045em}
 .hero h1 .h1-big{display:block;font-size:clamp(44px,7vw,82px);animation:heroIn 1.2s cubic-bezier(.22,.61,.36,1) both}
 .hero h1 .h1-small{display:block;font-size:clamp(34px,5.5vw,64px);animation:heroIn 1.2s cubic-bezier(.22,.61,.36,1) .28s both}
@@ -207,7 +205,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   .foot-wrap{padding:56px 24px 32px}
   .support-box{padding:28px 22px}
 }
-@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.hero-badge .dot{animation:none}.hero h1 .h1-big,.hero h1 .h1-small{animation:none}}
+@media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.hero h1 .h1-big,.hero h1 .h1-small{animation:none}}
 
 /* === rebooking-animasjon (scoped) === */
 .rbscope *{margin:0;padding:0;box-sizing:border-box}
@@ -540,8 +538,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   <video class="hero-video" autoplay muted loop playsinline>
     <source src="images/hero.mp4" type="video/mp4">
   </video>
-  <div class="hero-badge"><span class="dot"></span>Bygd for uavhengige barberere</div>
-  <h1><span class="h1-big">Kundene booker.</span><span class="h1-small">Du klipper.</span></h1>
+  <span class="hero-eyebrow">Slutt å booke i DM-en.</span>
+  <h1><span class="h1-big">Dine kunder. Din side.</span><span class="h1-small">Ingen mellommann.</span></h1>
   <p class="hero-sub">Din egen bookingside der kundene velger ledig time selv. Ingen meldinger fram og tilbake, ingen dobbeltbookinger.</p>
   <div class="hero-btns">
     <a href="kom-i-gang.html" class="btn btn-fill">Prøv gratis</a>
