@@ -1022,7 +1022,7 @@ let design={palette:"mint",font:"fraunces",layout:"direkte",mode:"lys"};
 function pickContrast(hex){var c=hex.replace("#","");if(c.length===3)c=c.split("").map(function(x){return x+x;}).join("");var r=parseInt(c.substr(0,2),16),g=parseInt(c.substr(2,2),16),b=parseInt(c.substr(4,2),16);return (0.299*r+0.587*g+0.114*b)>150?"#111":"#fff";}
 function renderPreview(){
   var p=PALETTES.find(function(x){return x.key===design.palette;});
-  var f=FONTS.find(function(x){return x.key===design.font;});
+  var f=FONTS.find(function(x){return x.key===design.font;})||FONTS[0];
   var dark=design.mode==="mork";
   var bg=dark?p.darkBg:p.lightBg, tx=dark?p.darkText:p.lightText, ac=(dark&&p.accentDark)?p.accentDark:p.accent;
   var line="rgba("+(dark?"255,255,255":"0,0,0")+",.13)", bt=pickContrast(ac);
