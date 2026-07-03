@@ -294,7 +294,7 @@ function renderDesign(){
   document.getElementById('fontGrid').innerHTML=FONTS.map(function(f){return '<button type="button" class="pcard" data-grid="font" data-key="'+f.key+'" aria-pressed="'+(design.font===f.key)+'"><div class="fsamp" style="font-family:'+f.css+';font-weight:'+f.w+'">Barber</div><div class="pd">'+f.t+'</div></button>';}).join("");
   Array.prototype.forEach.call(document.querySelectorAll('#modePick .modebtn'),function(b){b.setAttribute('aria-pressed',b.dataset.mode===design.mode);});
 }
-document.getElementById('obStep2').addEventListener('click',function(e){var x=e.target.closest('.lay-exp');if(x){e.stopPropagation();openLayModal(x.closest('.pcard').dataset.key);return;}var b=e.target.closest('.pcard');if(!b)return;design[b.dataset.grid]=b.dataset.key;renderDesign();});
+document.getElementById('obStep2').addEventListener('click',function(e){var x=e.target.closest('.lay-exp');if(x){e.stopPropagation();openLayModal(x.closest('.pcard').dataset.key);return;}var b=e.target.closest('.pcard');if(!b)return;design[b.dataset.grid]=b.dataset.key;if(b.dataset.grid==='layout'){var heroMax=b.dataset.key==='hero'?1:5;document.getElementById('dropZone').querySelector('.us').textContent='JPG or PNG · max '+heroMax+' photo'+(heroMax===1?'':'s');if(b.dataset.key==='hero'&&files.length>1){files.length=1;renderThumbs();}}renderDesign();});
 function openLayModal(k){var l=LAYOUTS.filter(function(x){return x.key===k;})[0];if(!l)return;document.getElementById('layModalImg').src=l.img;document.getElementById('layModalCap').innerHTML=l.t+' <span>\u2014 '+l.d+'</span>';document.getElementById('layModal').classList.add('on');document.body.style.overflow='hidden';}
 function closeLayModal(){document.getElementById('layModal').classList.remove('on');document.body.style.overflow='';}
 document.getElementById('modePick').addEventListener('click',function(e){var b=e.target.closest('.modebtn');if(!b)return;design.mode=b.dataset.mode;renderDesign();});
@@ -303,7 +303,8 @@ var files=[];
 var fileInput=document.getElementById('fileInput');
 document.getElementById('dropZone').addEventListener('click',function(){fileInput.click();});
 fileInput.addEventListener('change',function(){
-  Array.prototype.forEach.call(fileInput.files,function(f){ if(files.length<5 && f.type.indexOf('image/')===0) files.push(f); });
+  var max=design.layout==='hero'?1:5;
+  Array.prototype.forEach.call(fileInput.files,function(f){ if(files.length<max && f.type.indexOf('image/')===0) files.push(f); });
   fileInput.value='';
   renderThumbs();
 });
