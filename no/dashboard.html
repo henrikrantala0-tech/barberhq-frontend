@@ -478,11 +478,27 @@
 <script>
 const CONFIG={
   USE_MOCK:true,
-  API_BASE:"https://din-backend.up.railway.app",
-  ADMIN_TOKEN:"",
-  BARBER_SLUG:"grandbarber",
-  BARBER_NAME:"Grand Barber",
+  API_BASE:"https://api.trybarberhq.com",
+  BARBER_NAME:null, // settes dynamisk fra GET /api/dashboard/profile
 };
+
+// Sentral fetch-wrapper — credentials alltid med, 401 sender til login.
+// body som string → Content-Type: application/json settes automatisk.
+// body som FormData → ingen Content-Type (browser setter multipart boundary).
+async function apiFetch(path,opts={}){
+  const{body,headers={}, ...rest}=opts;
+  const init={credentials:'include',...rest};
+  if(body!==undefined){
+    init.body=body;
+    if(typeof body==='string') init.headers={'Content-Type':'application/json',...headers};
+    else init.headers={...headers};
+  } else {
+    init.headers={...headers};
+  }
+  const r=await fetch(CONFIG.API_BASE+path,init);
+  if(r.status===401){location.href='/no/logg-inn.html';return null;}
+  return r;
+}
 
 const DAYS=["Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag","Søndag"];
 const MONTHS=["januar","februar","mars","april","mai","juni","juli","august","september","oktober","november","desember"];
@@ -570,12 +586,10 @@ const api={
     const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/attribution?period=${period}`); return r.json(); },
   async monthTotal(ym){ if(CONFIG.USE_MOCK){await wait(120);return MOCK.monthly[ym]??null;}
     const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/stats?month=${ym}`); const d=await r.json(); return d.customers; },
-  async bookings(){ if(CONFIG.USE_MOCK)return MOCK.bookings;
-    const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/bookings`); return r.json(); },
+  async bookings(){ const r=await apiFetch('/api/dashboard/bookings'); if(!r)return []; if(!r.ok)return []; return r.json(); },
   async markNoShow(id){ if(CONFIG.USE_MOCK){await wait(200);const b=MOCK.bookings.find(x=>x.id===id);if(b)b.status="noshow";return true;}
     const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/bookings/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"noshow"})}); return r.ok; },
-  async images(){ if(CONFIG.USE_MOCK)return MOCK.images;
-    const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/images`); return r.json(); },
+  async images(){ const r=await apiFetch('/api/dashboard/images'); if(!r)return []; if(!r.ok)return []; return r.json(); },
   async uploadImage(file){ if(CONFIG.USE_MOCK){return new Promise(res=>{const rd=new FileReader();rd.onload=()=>res({id:"m"+Date.now(),url:rd.result});rd.readAsDataURL(file);});}
     const fd=new FormData();fd.append("image",file);
     const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/images`,{method:"POST",body:fd}); return r.json(); },
@@ -813,7 +827,7 @@ async function loadVekst(){
 
 let imgs=[];
 async function loadBilder(){try{imgs=await api.images();}catch(e){imgs=[];}renderImgs();}
-function renderImgs(){$("#imgGrid").innerHTML=imgs.map(im=>`<div class="thumb"><img src="${im.url}" alt="Klippebilde"><button class="rm" data-id="${im.id}" aria-label="Fjern">×</button></div>`).join("");}
+function renderImgs(){$("#imgGrid").innerHTML=imgs.map(im=>`<div class="thumb"><img src="${CONFIG.API_BASE+im.url}" alt="Klippebilde"><button class="rm" data-id="${im.id}" aria-label="Fjern">×</button></div>`).join("");}
 async function handleUpload(f){if(!f||!f.type.startsWith("image/"))return;const r=await api.uploadImage(f);imgs.push(r);renderImgs();}
 
 let hours=[];
@@ -910,8 +924,21 @@ function initTheme(){var t="dark";try{t=localStorage.getItem("bhq-theme")||"dark
 $("#themeBtn").addEventListener("click",function(){var cur=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";applyTheme(cur);});
 
 /* ---- Profil ---- */
-const MOCK_PROFILE={name:"Grand Barber",shop:"Grand Barber",address:"Storgata 12, 0182 Oslo",phone:"+47 400 00 000",bio:""};
-function loadProfil(){var p=MOCK_PROFILE;$("#pf-name").value=p.name;$("#pf-shop").value=p.shop;$("#pf-address").value=p.address;$("#pf-phone").value=p.phone;$("#pf-bio").value=p.bio;}
+async function loadProfil(){
+  const r=await apiFetch('/api/dashboard/profile');
+  if(!r)return;
+  if(!r.ok)return;
+  const p=await r.json();
+  $("#pf-name").value=p.name||"";
+  $("#pf-shop").value=p.shop||"";
+  $("#pf-address").value=p.address||"";
+  $("#pf-phone").value=p.phone||"";
+  $("#pf-bio").value=p.bio||"";
+  // Sett barber-navn i header — null til dette punktet
+  const displayName=p.shop||p.name||"";
+  CONFIG.BARBER_NAME=displayName;
+  var el=$("#barberName");if(el)el.textContent=displayName;
+}
 function savedFlash(sel){var s=$(sel);s.classList.add("show");setTimeout(function(){s.classList.remove("show");},1800);}
 $("#sendIdea").addEventListener("click",function(){var t=$("#ideaBox").value.trim();if(!t)return;console.log(JSON.stringify({type:"idea",text:t}));$("#ideaBox").value="";savedFlash("#ideaSaved");});
 $("#saveProfil").addEventListener("click",async function(){const btn=$("#saveProfil");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
@@ -926,7 +953,15 @@ function hovedRow(s,i){return '<div class="svc-row-h"><input value="'+esc(s.name
 function tilleggRow(s,i){return '<div class="svc-row-t"><input value="'+esc(s.name)+'" data-l="t" data-i="'+i+'" data-f="name" placeholder="F.eks. Skjegg"><input type="number" value="'+s.price+'" data-l="t" data-i="'+i+'" data-f="price" min="0"><button class="svc-rm" data-l="t" data-i="'+i+'" aria-label="Fjern">&times;</button></div>';}
 function renderSvc(){$("#hovedList").innerHTML=hoved.map(hovedRow).join("");$("#tilleggList").innerHTML=tillegg.map(tilleggRow).join("");validateSvc();}
 function validateSvc(){const harHoved=hoved.filter(s=>s.name.trim()).length>0;const btn=$("#saveSvc"),err=$("#svcErr");if(!harHoved){btn.disabled=true;err.textContent="Du må ha minst én hovedtjeneste før du kan lagre.";}else{btn.disabled=false;err.textContent="";}return harHoved;}
-function loadTjenester(){renderSvc();}
+async function loadTjenester(){
+  const r=await apiFetch('/api/dashboard/services');
+  if(!r){renderSvc();return;}
+  if(!r.ok){renderSvc();return;}
+  const d=await r.json();
+  hoved=(d.hoved||[]).map(function(s){return{name:s.name,price:s.price,min:s.min};});
+  tillegg=(d.tillegg||[]).map(function(s){return{name:s.name,price:s.price};});
+  renderSvc();
+}
 $("#addHoved").addEventListener("click",()=>{hoved.push({name:"",price:0,min:30});renderSvc();});
 $("#addTillegg").addEventListener("click",()=>{tillegg.push({name:"",price:0});renderSvc();});
 $("#hovedList").addEventListener("input",svcInput);
@@ -985,7 +1020,17 @@ function renderDesign(){
   document.querySelectorAll("#modePick .modebtn").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.mode===design.mode);});
   renderPreview();
 }
-function loadDesign(){renderDesign();}
+async function loadDesign(){
+  const r=await apiFetch('/api/dashboard/design');
+  if(!r){renderDesign();return;}
+  if(!r.ok){renderDesign();return;}
+  const d=await r.json();
+  if(d.palette)design.palette=d.palette;
+  if(d.font)design.font=d.font;
+  if(d.layout)design.layout=d.layout;
+  if(d.mode)design.mode=d.mode;
+  renderDesign();
+}
 $("#design").addEventListener("click",function(e){var b=e.target.closest(".preset");if(!b)return;design[b.dataset.grid]=b.dataset.key;renderDesign();});
 $("#modePick").addEventListener("click",function(e){var b=e.target.closest(".modebtn");if(!b)return;design.mode=b.dataset.mode;renderDesign();});
 $("#openPreview").addEventListener("click",function(){if(CONFIG.USE_MOCK){alert("I demo. Nar siden er live apner denne hele bookingsiden din i ny fane, med valgene du har gjort.");return;}window.open("https://trybarberhq.com/"+CONFIG.BARBER_SLUG+"?preview=1","_blank");});
@@ -1000,8 +1045,9 @@ $("#manageSub").addEventListener("click",function(){if(CONFIG.USE_MOCK){alert("I
 /* init */
 initTheme();
 var _mf=$("#mockFlag");if(_mf)_mf.style.display=CONFIG.USE_MOCK?"inline-block":"none";
-$("#barberName").textContent=CONFIG.BARBER_NAME;
+var _bn=$("#barberName");if(_bn)_bn.textContent="";
 buildMonthSelect();
+loadProfil(); // fyller header-navn + profil-fane ved sideload
 loadOversikt();
 </script>
 </body>
