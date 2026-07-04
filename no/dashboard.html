@@ -880,9 +880,9 @@ function slotPortrett(bilde){
 
 function slotHero(bilde){
   const box=bilde
-    ?`<div class="slot-box slot-hero filled" data-slot="hero"><img src="${CONFIG.API_BASE+bilde.url}" alt="Topbilde"><button class="slot-rm" data-id="${bilde.id}" aria-label="Fjern">×</button></div>`
-    :`<div class="slot-box slot-hero" data-slot="hero" tabindex="0" role="button" aria-label="Last opp topbilde"><span class="slot-plus">+</span></div>`;
-  return`<div class="slot-section"><div class="slot-label">Topbilde</div>${box}</div>`;
+    ?`<div class="slot-box slot-hero filled" data-slot="hero"><img src="${CONFIG.API_BASE+bilde.url}" alt="Toppbilde"><button class="slot-rm" data-id="${bilde.id}" aria-label="Fjern">×</button></div>`
+    :`<div class="slot-box slot-hero" data-slot="hero" tabindex="0" role="button" aria-label="Last opp toppbilde"><span class="slot-plus">+</span></div>`;
+  return`<div class="slot-section"><div class="slot-label">Toppbilde</div>${box}</div>`;
 }
 
 function slotGalleri(g){
