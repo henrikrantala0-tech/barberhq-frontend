@@ -503,6 +503,7 @@
   </section>
 </div>
 
+<script src="palett.js"></script>
 <script>
 const CONFIG={
   USE_MOCK:true,
@@ -1026,14 +1027,6 @@ $("#saveSvc").addEventListener("click",async function(){
 });
 
 /* ---- Design (ferdige presets) ---- */
-const PALETTES=[
-  {key:"mint",t:"Street Mint",d:"Friskt gront",accent:"#10b981",lightBg:"#ffffff",darkBg:"#0c1512",lightText:"#0a0a0a",darkText:"#eafff5",sw:["#ffffff","#10b981","#0a0a0a"]},
-  {key:"klassisk",t:"Klassisk BarberHQ",d:"Sort/hvit + bla",accent:"#0071e3",lightBg:"#ffffff",darkBg:"#0a0a0a",lightText:"#0a0a0a",darkText:"#ffffff",sw:["#0a0a0a","#ffffff","#0071e3"]},
-  {key:"purple",t:"Modern Purple",d:"Dyp lilla",accent:"#6b3df0",lightBg:"#faf8ff",darkBg:"#120c1f",lightText:"#1a1320",darkText:"#f1ebff",sw:["#f3f0fb","#6b3df0","#1a1320"]},
-  {key:"krem",t:"Krem & Gull",d:"Varm, klassisk",accent:"#b08c32",lightBg:"#f3efe7",darkBg:"#141210",lightText:"#141210",darkText:"#f3efe7",sw:["#f3efe7","#b08c32","#141210"]},
-  {key:"minimal",t:"Minimalistisk",d:"Svart, hvitt, gratt",accent:"#1d1d1f",accentDark:"#f5f5f7",lightBg:"#f5f5f7",darkBg:"#000000",lightText:"#1d1d1f",darkText:"#f5f5f7",sw:["#f5f5f7","#86868b","#1d1d1f"]},
-  {key:"oransje",t:"Burnt Orange",d:"Brent oransje, sort",accent:"#e8590c",lightBg:"#ffffff",darkBg:"#141210",lightText:"#141210",darkText:"#ffffff",sw:["#ffffff","#e8590c","#141210"]}
-];
 const FONTS=[
   {key:"fraunces",vibe:"Klassisk og elegant",name:"Fraunces",css:"'Fraunces', serif",w:600},
   {key:"grotesk",vibe:"Moderne og markant",name:"Space Grotesk",css:"'Space Grotesk', sans-serif",w:600},
@@ -1046,21 +1039,10 @@ const LAYOUTS=[
   {key:"direkte",t:"Direkte",d:"Rett til booking"}
 ];
 let design={palette:"mint",font:"fraunces",layout:"direkte",mode:"lys"};
-function pickContrast(hex){var c=hex.replace("#","");if(c.length===3)c=c.split("").map(function(x){return x+x;}).join("");var r=parseInt(c.substr(0,2),16),g=parseInt(c.substr(2,2),16),b=parseInt(c.substr(4,2),16);return (0.299*r+0.587*g+0.114*b)>150?"#111":"#fff";}
 var TEMPLATE_BASE='https://api.trybarberhq.com/api/templates/';
 var malCache={};
 var ADDR_PIN='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
-function hexToRgb(h){h=h.replace('#','');if(h.length===3)h=h.split('').map(function(c){return c+c;}).join('');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
-function mixHex(a,b,t){var A=hexToRgb(a),B=hexToRgb(b);return'#'+[0,1,2].map(function(i){var v=Math.round(A[i]+(B[i]-A[i])*t);return('0'+v.toString(16)).slice(-2);}).join('');}
 function galleriFyll(n){var s='';for(var i=0;i<n;i++)s+='<div style="width:100%;aspect-ratio:4/5;background:var(--line)"></div>';return s;}
-function malFarger(){
-  var p=PALETTES.find(function(x){return x.key===design.palette;})||PALETTES[0];
-  var dark=design.mode==='mork';
-  var bg=dark?p.darkBg:p.lightBg;
-  var ink=dark?p.darkText:p.lightText;
-  var accent=(dark&&p.accentDark)?p.accentDark:p.accent;
-  return{bg:bg,surface:mixHex(bg,ink,dark?0.06:0.045),ink:ink,inkSoft:mixHex(ink,bg,0.42),accent:accent,accentInk:pickContrast(accent),line:mixHex(bg,ink,dark?0.16:0.12)};
-}
 function renderAddr(a){
   if(/\d/.test(a))return'<a class="addr" href="https://maps.google.com/?q='+encodeURIComponent(a)+'" target="_blank" rel="noopener">'+ADDR_PIN+'<span>'+esc(a)+'</span></a>';
   return'<span class="addr addr-plain">'+ADDR_PIN+'<span>'+esc(a)+'</span></span>';
@@ -1069,7 +1051,7 @@ function demoHoved(){return'<div class="svc" data-t="h"><div class="svc-left"><s
 function demoTillegg(){return'<div class="svc" data-t="t"><div class="svc-left"><span class="ind box"></span><div class="svc-txt"><div class="svc-name">Skjegg</div></div></div><div class="svc-price">+150 kr</div></div>';}
 function fontFamilyNavn(){var map={fraunces:'Fraunces',grotesk:'Space Grotesk',jakarta:'Plus Jakarta Sans'};return map[design.font]||'Fraunces';}
 function fyllMal(raw,layout){
-  var c=malFarger();
+  var c=window.buildPalette(design.palette,design.mode);
   var shop=($("#pf-shop")&&$("#pf-shop").value)?$("#pf-shop").value:'Grand Barber';
   var addr=($("#pf-address")&&$("#pf-address").value)?$("#pf-address").value:'Storgata 12, 0182 Oslo';
   var out=raw;
@@ -1096,7 +1078,7 @@ function oppdaterPreview(){
 }
 function renderPreview(){oppdaterPreview();}
 function renderDesign(){
-  $("#paletteGrid").innerHTML=PALETTES.map(function(p){return '<button class="preset" data-grid="palette" data-key="'+p.key+'" aria-pressed="'+(design.palette===p.key)+'"><div class="pt">'+p.t+'</div><div class="pd">'+p.d+'</div><div class="swatches">'+p.sw.map(function(c){return '<span style="background:'+c+'"></span>';}).join("")+'</div></button>';}).join("");
+  $("#paletteGrid").innerHTML=window.PALETTES_DISPLAY.map(function(p){return '<button class="preset" data-grid="palette" data-key="'+p.key+'" aria-pressed="'+(design.palette===p.key)+'"><div class="pt">'+p.t+'</div><div class="pd">'+p.d+'</div><div class="swatches">'+p.sw.map(function(c){return '<span style="background:'+c+'"></span>';}).join("")+'</div></button>';}).join("");
   $("#fontGrid").innerHTML=FONTS.map(function(f){return '<button class="preset" data-grid="font" data-key="'+f.key+'" aria-pressed="'+(design.font===f.key)+'"><div class="pt">'+f.vibe+'</div><div class="pd">'+f.name+'</div></button>';}).join("");
   $("#layoutGrid").innerHTML=LAYOUTS.map(function(l){return '<button class="preset" data-grid="layout" data-key="'+l.key+'" aria-pressed="'+(design.layout===l.key)+'"><div class="pt">'+l.t+'</div><div class="pd">'+l.d+'</div></button>';}).join("");
   document.querySelectorAll("#modePick .modebtn").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.mode===design.mode);});

@@ -254,6 +254,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   </div>
 </div>
 
+<script src="palett.js"></script>
 <script>
 function v(id){return document.getElementById(id).value.trim();}
 var API_BASE='https://api.trybarberhq.com';
@@ -272,20 +273,7 @@ function submitOb(){
   window.scrollTo({top:0,behavior:'smooth'});
 }
 
-var BP={mint:{light:'#ffffff',accent:'#10b981',dark:'#0a0a0a'},klassisk:{light:'#0a0a0a',accent:'#0071e3',dark:'#ffffff'},purple:{light:'#f3f0fb',accent:'#6b3df0',dark:'#1a1320'},krem:{light:'#f3efe7',accent:'#b08c32',dark:'#141210'},minimal:{light:'#f5f5f7',accent:'#86868b',dark:'#1d1d1f'},oransje:{light:'#ffffff',accent:'#e8590c',dark:'#141210'}};
-function hx(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
-function lum(h){var v=hx(h);return(0.299*v[0]+0.587*v[1]+0.114*v[2])/255;}
-function mix(h,w,a){var A=hx(h),B=hx(w);return'#'+[0,1,2].map(function(i){return Math.round(A[i]+(B[i]-A[i])*a).toString(16).padStart(2,'0');}).join('');}
-function buildPalette(key,mode){var p=BP[key]||BP.krem;var dk=(mode==='mork'||mode==='mørk'||mode==='dark');var bg=dk?p.dark:p.light,ink=dk?p.light:p.dark;if(!dk&&lum(bg)<lum(ink)){var t=bg;bg=ink;ink=t;}if(dk&&lum(bg)>lum(ink)){var t=bg;bg=ink;ink=t;}return{bg:bg,surface:mix(bg,ink,dk?0.06:0.045),ink:ink,inkSoft:mix(ink,bg,0.42),accent:p.accent,accentInk:lum(p.accent)>0.6?'#141210':'#ffffff',line:mix(bg,ink,dk?0.16:0.12)};}
 function sendPreview(){var f=document.getElementById('tjenesterPreview');if(!f)return;var c=buildPalette(design.palette,design.mode);c.type='palette';try{f.contentWindow.postMessage(c,'*');}catch(e){}}
-var PALETTES=[
-  {key:"mint",t:"Street Mint",d:"Friskt gr\u00f8nt",sw:["#ffffff","#10b981","#0a0a0a"]},
-  {key:"klassisk",t:"Klassisk BarberHQ",d:"Sort/hvit + bl\u00e5",sw:["#0a0a0a","#ffffff","#0071e3"]},
-  {key:"purple",t:"Modern Purple",d:"Dyp lilla",sw:["#f3f0fb","#6b3df0","#1a1320"]},
-  {key:"krem",t:"Krem & Gull",d:"Varm, klassisk",sw:["#f3efe7","#b08c32","#141210"]},
-  {key:"minimal",t:"Minimalistisk",d:"Svart, hvitt, gr\u00e5tt",sw:["#f5f5f7","#86868b","#1d1d1f"]},
-  {key:"oransje",t:"Burnt Orange",d:"Brent oransje, sort",sw:["#ffffff","#e8590c","#141210"]}
-];
 var LAYOUTS=[
   {key:"showcase",t:"Showcase",d:"Galleri i front — bildene fyller forsiden",img:"images/layout-showcase.webp"},
   {key:"hero",t:"Hero",d:"Stort hovedbilde — ett bilde fyller skjermen, navn oppå",img:"images/layout-hero.webp"},
@@ -295,7 +283,7 @@ var LAYOUTS=[
 var design={palette:"mint",mode:"mork",layout:"profil"};
 
 function renderDesign(){
-  document.getElementById('palGrid').innerHTML=PALETTES.map(function(p){return '<button type="button" class="pcard" data-grid="palette" data-key="'+p.key+'" aria-pressed="'+(design.palette===p.key)+'"><div class="pt">'+p.t+'</div><div class="pd">'+p.d+'</div><div class="sw">'+p.sw.map(function(c){return '<span style="background:'+c+'"></span>';}).join("")+'</div></button>';}).join("");
+  document.getElementById('palGrid').innerHTML=window.PALETTES_DISPLAY.map(function(p){return '<button type="button" class="pcard" data-grid="palette" data-key="'+p.key+'" aria-pressed="'+(design.palette===p.key)+'"><div class="pt">'+p.t+'</div><div class="pd">'+p.d+'</div><div class="sw">'+p.sw.map(function(c){return '<span style="background:'+c+'"></span>';}).join("")+'</div></button>';}).join("");
   document.getElementById('layGrid').innerHTML=LAYOUTS.map(function(l){
     return '<div class="pcard" data-grid="layout" data-key="'+l.key+'" role="button" tabindex="0" aria-pressed="'+(design.layout===l.key)+'">'+'<div class="laywrap"><img class="lthumb" src="'+l.img+'" alt="'+l.t+'">'+'<button type="button" class="lay-exp" aria-label="Se st\u00f8rre"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M8 21H5a2 2 0 0 1-2-2v-3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>'+'</div>'+(l.key==='showcase'?'<span class="layout-badge">Anbefalt</span>':'')+'<div class="pt">'+l.t+'</div><div class="pd">'+l.d+'</div></div>';
   }).join("");
