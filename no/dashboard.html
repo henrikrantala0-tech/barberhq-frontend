@@ -87,17 +87,24 @@
   .ref p{font-size:13px;color:var(--ink-2);margin-bottom:4px}
   .ref .small{font-size:12px;color:var(--mut)}
 
-  /* Images */
-  .uploader{border:1.5px dashed var(--line-2);border-radius:12px;padding:28px 20px;text-align:center;cursor:pointer;background:var(--surface);transition:border-color .15s}
-  .uploader:hover{border-color:var(--ink-2)}
-  .uploader i{font-size:24px;color:var(--ink-2)}
-  .uploader .h{font-weight:500;font-size:14px;margin-top:8px}
-  .uploader .s{font-size:12px;color:var(--mut);margin-top:2px}
-  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:11px;margin-top:16px}
-  .thumb{position:relative;aspect-ratio:1;border-radius:9px;overflow:hidden;background:var(--line);border:1px solid var(--line)}
-  .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-  .thumb .rm{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:6px;border:0;background:rgba(10,10,10,.72);color:#fff;cursor:pointer;font-size:15px;display:flex;align-items:center;justify-content:center}
-  .thumb .rm:hover{background:var(--bad)}
+  /* Slot-bokser (Bilder-fane) */
+  .slot-section{margin-bottom:22px}
+  .slot-label{font-size:11px;font-weight:600;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
+  .slot-portrett-wrap{display:flex;justify-content:center}
+  .slot-box{position:relative;cursor:pointer;border-radius:12px;overflow:hidden;background:var(--surface);border:1.5px dashed var(--line-2);display:flex;align-items:center;justify-content:center;transition:border-color .15s}
+  .slot-box:hover{border-color:var(--ink-2)}
+  .slot-box.filled{border-style:solid;border-color:var(--info)}
+  .slot-box img{width:100%;height:100%;object-fit:cover;display:block}
+  .slot-box .slot-rm{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:6px;border:0;background:rgba(10,10,10,.72);color:#fff;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;z-index:2}
+  .slot-box .slot-rm:hover{background:var(--bad)}
+  .slot-box .slot-plus{font-size:28px;color:var(--line-2);pointer-events:none}
+  .slot-portrett{width:100px;height:100px;border-radius:50%!important}
+  .slot-hero{aspect-ratio:16/10;width:100%}
+  .slot-galleri-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .slot-galleri-item{aspect-ratio:4/5}
+  .slot-direkte-msg{text-align:center;padding:36px 20px;border:1.5px dashed var(--line);border-radius:12px;color:var(--mut)}
+  .slot-direkte-msg .dm-icon{font-size:32px;display:block;margin-bottom:12px;opacity:.5}
+  .slot-direkte-msg p{font-size:13px;line-height:1.6;max-width:260px;margin:0 auto}
 
   /* Hours */
   .day{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line)}
@@ -392,14 +399,9 @@
   <!-- BILDER -->
   <section class="panel" id="bilder">
     <p class="block-h">Bilder på siden din</p>
-    <p class="block-s">Dine egne klippebilder. Disse vises på bookingsiden.</p>
-    <div class="uploader" id="uploader" tabindex="0" role="button" aria-label="Last opp bilde">
-      <i class="ti">↑</i>
-      <div class="h">Slipp et bilde her, eller klikk for å velge</div>
-      <div class="s">JPG eller PNG · dine egne bilder</div>
-    </div>
+    <p class="block-s">Trykk på en boks for å laste opp bilde til den plassen.</p>
     <input type="file" id="fileInput" accept="image/*" hidden>
-    <div class="grid" id="imgGrid"></div>
+    <div id="bilderMount"><div class="loading">Laster …</div></div>
   </section>
 
   <!-- ARBEIDSTIDER -->
@@ -844,15 +846,60 @@ async function loadVekst(){
 }
 
 let imgs=[];
-async function loadBilder(){try{imgs=await api.images();}catch(e){imgs=[];}renderImgs();}
-function renderImgs(){$("#imgGrid").innerHTML=imgs.map(im=>`<div class="thumb"><img src="${CONFIG.API_BASE+im.url}" alt="Klippebilde"><button class="rm" data-id="${im.id}" aria-label="Fjern">×</button></div>`).join("");}
-async function handleUpload(f){
+let _designReady=false;
+let _activeSlot=null;
+
+async function loadBilder(){
+  if(!_designReady){
+    try{const r=await apiFetch('/api/dashboard/design');if(r&&r.ok){const d=await r.json();if(d.layout)design.layout=d.layout;}}catch(e){}
+    _designReady=true;
+  }
+  try{imgs=await api.images();}catch(e){imgs=[];}
+  renderSlotView(design.layout,imgs);
+}
+
+function renderSlotView(layout,imgs){
+  const mount=$("#bilderMount");if(!mount)return;
+  if(layout==="direkte"){
+    mount.innerHTML='<div class="slot-direkte-msg"><span class="dm-icon">⊘</span><p>Direkte-layouten har ikke bilder.<br>Bytt layout i Design hvis du vil ha bilder på siden.</p></div>';
+    return;
+  }
+  let html='';
+  if(layout==="profil"){const p=imgs.find(i=>i.slot==="portrett");html+=slotPortrett(p);}
+  if(layout==="profil"||layout==="showcase"){const g=imgs.filter(i=>i.slot==="galleri").sort((a,b)=>a.sort_order-b.sort_order);html+=slotGalleri(g);}
+  if(layout==="hero"){const h=imgs.find(i=>i.slot==="hero");html+=slotHero(h);}
+  mount.innerHTML=html;
+}
+
+function slotPortrett(bilde){
+  const box=bilde
+    ?`<div class="slot-box slot-portrett filled" data-slot="portrett"><img src="${CONFIG.API_BASE+bilde.url}" alt="Portrett"><button class="slot-rm" data-id="${bilde.id}" aria-label="Fjern">×</button></div>`
+    :`<div class="slot-box slot-portrett" data-slot="portrett" tabindex="0" role="button" aria-label="Last opp portrett"><span class="slot-plus">+</span></div>`;
+  return`<div class="slot-section"><div class="slot-label">Portrett</div><div class="slot-portrett-wrap">${box}</div></div>`;
+}
+
+function slotHero(bilde){
+  const box=bilde
+    ?`<div class="slot-box slot-hero filled" data-slot="hero"><img src="${CONFIG.API_BASE+bilde.url}" alt="Topbilde"><button class="slot-rm" data-id="${bilde.id}" aria-label="Fjern">×</button></div>`
+    :`<div class="slot-box slot-hero" data-slot="hero" tabindex="0" role="button" aria-label="Last opp topbilde"><span class="slot-plus">+</span></div>`;
+  return`<div class="slot-section"><div class="slot-label">Topbilde</div>${box}</div>`;
+}
+
+function slotGalleri(g){
+  const MAX=10;
+  const items=g.map(im=>`<div class="slot-box slot-galleri-item filled" data-slot="galleri"><img src="${CONFIG.API_BASE+im.url}" alt="Klippebilde"><button class="slot-rm" data-id="${im.id}" aria-label="Fjern">×</button></div>`).join("");
+  const add=g.length<MAX?`<div class="slot-box slot-galleri-item" data-slot="galleri" tabindex="0" role="button" aria-label="Legg til bilde"><span class="slot-plus">+</span></div>`:"";
+  const teller=g.length>0?` (${g.length}/10)`:"";
+  return`<div class="slot-section"><div class="slot-label">Galleri${teller}</div><div class="slot-galleri-grid">${items}${add}</div></div>`;
+}
+
+async function handleUpload(f,slot){
   if(!f||!f.type.startsWith("image/"))return;
-  const fd=new FormData();fd.append("image",f);
+  const fd=new FormData();fd.append("image",f);if(slot)fd.append("slot",slot);
   const r=await apiFetch('/api/dashboard/images',{method:'POST',body:fd});
   if(!r)return;
   if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke laste opp bilde. Prøv igjen.');return;}
-  const img=await r.json();imgs.push(img);renderImgs();
+  await loadBilder();
 }
 
 let hours=[];
@@ -918,20 +965,20 @@ $("#monthSel").addEventListener("change",async e=>{
   $("#rangeLabel").textContent=`${MONTHS[+m-1]} ${y} — hele måneden`;
   $("#stats").innerHTML=`<div class="stat"><div class="l">Kunder totalt</div><div class="v info">${tot??"—"}</div><div class="sub mut">${MONTHS[+m-1]} ${y}</div></div>`;
 });
-$("#uploader").addEventListener("click",()=>$("#fileInput").click());
-$("#uploader").addEventListener("keydown",e=>{if(e.key==="Enter"||e.key===" ")$("#fileInput").click()});
-$("#fileInput").addEventListener("change",e=>handleUpload(e.target.files[0]));
-["dragover","dragenter"].forEach(ev=>$("#uploader").addEventListener(ev,e=>{e.preventDefault();$("#uploader").style.borderColor="var(--ink-2)"}));
-["dragleave","drop"].forEach(ev=>$("#uploader").addEventListener(ev,e=>{e.preventDefault();$("#uploader").style.borderColor=""}));
-$("#uploader").addEventListener("drop",e=>handleUpload(e.dataTransfer.files[0]));
-$("#imgGrid").addEventListener("click",async e=>{
-  const btn=e.target.closest(".rm");if(!btn)return;
-  if(!confirm("Slett dette bildet?"))return;
-  const r=await apiFetch('/api/dashboard/images/'+btn.dataset.id,{method:'DELETE'});
-  if(!r)return;
-  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke slette bildet. Prøv igjen.');return;}
-  imgs=imgs.filter(x=>String(x.id)!==String(btn.dataset.id));renderImgs();
+$("#bilderMount").addEventListener("click",async e=>{
+  const rm=e.target.closest(".slot-rm");
+  if(rm){
+    if(!confirm("Slett dette bildet?"))return;
+    const r=await apiFetch('/api/dashboard/images/'+rm.dataset.id,{method:'DELETE'});
+    if(!r)return;
+    if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke slette bildet. Prøv igjen.');return;}
+    await loadBilder();return;
+  }
+  const box=e.target.closest(".slot-box");if(!box)return;
+  _activeSlot=box.dataset.slot;
+  $("#fileInput").click();
 });
+$("#fileInput").addEventListener("change",e=>{handleUpload(e.target.files[0],_activeSlot);e.target.value="";});
 $("#hoursList").addEventListener("change",e=>{const i=+e.target.dataset.i;
   if(e.target.type==="checkbox"){hours[i].on=e.target.checked;e.target.closest(".day").querySelectorAll("input[type=time]").forEach(inp=>inp.disabled=!e.target.checked);}
   else if(e.target.dataset.f){hours[i][e.target.dataset.f]=e.target.value;}});
@@ -1097,6 +1144,7 @@ async function loadDesign(){
     if(d.layout)design.layout=d.layout;
     if(d.mode)design.mode=d.mode;
   }catch(e){}
+  _designReady=true;
   renderDesign();
 }
 $("#design").addEventListener("click",function(e){var b=e.target.closest(".preset");if(!b)return;design[b.dataset.grid]=b.dataset.key;renderDesign();});
