@@ -1066,6 +1066,7 @@ function fyllMal(raw,layout){
   out=out.split('{{HOVED_SERVICES}}').join(demoHoved()).split('{{TILLEGG_SERVICES}}').join(demoTillegg());
   out=out.split('{{GALLERY_IMAGES}}').join(galleriFyll(4));
   out=out.replace(/\{\{[A-Z_]+\}\}/g,'');
+  out=out.split('class="book disabled"').join('class="book"');
   return out;
 }
 function oppdaterPreview(){
