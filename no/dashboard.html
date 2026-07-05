@@ -1024,9 +1024,9 @@ function _openCropModal(imgSrc,imgId,slot){
   document.getElementById('cropErr').textContent='';
   document.getElementById('cropSave').disabled=false;
   if(_cropper){_cropper.destroy();_cropper=null;}
-  const ratio=slot==='portrett'?1:slot==='hero'?16/10:4/5;
+  const ratio=slot==='portrett'?1:slot==='hero'?9/19.5:4/5;
   imgEl.onload=function(){
-    _cropper=new Cropper(imgEl,{viewMode:1,aspectRatio:ratio,autoCropArea:0.8,background:false,responsive:true});
+    _cropper=new Cropper(imgEl,{viewMode:2,aspectRatio:ratio,autoCropArea:0.8,background:false,responsive:true});
   };
   imgEl.src=imgSrc;
   modal.classList.add('open');
