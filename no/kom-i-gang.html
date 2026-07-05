@@ -276,7 +276,7 @@ function submitOb(){
 function sendPreview(){var f=document.getElementById('tjenesterPreview');if(!f)return;var c=buildPalette(design.palette,design.mode);c.type='palette';try{f.contentWindow.postMessage(c,'*');}catch(e){}}
 var LAYOUTS=[
   {key:"showcase",t:"Showcase",d:"Galleri i front — bildene fyller forsiden",img:"images/layout-showcase.webp"},
-  {key:"hero",t:"Hero",d:"Stort hovedbilde — ett bilde fyller skjermen, navn oppå",img:"images/layout-hero.webp"},
+  {key:"hero",t:"Hero",d:"Stort forsidebilde — ett bilde fyller skjermen, navn oppå",img:"images/layout-hero.webp"},
   {key:"profil",t:"Profil",d:"Portrett + galleri — logo/bilde øverst, så klippene",img:"images/layout-profil.webp"},
   {key:"direkte",t:"Direkte",d:"Rett til booking — ingen bilder, raskest",img:"images/layout-direkte.webp"}
 ];

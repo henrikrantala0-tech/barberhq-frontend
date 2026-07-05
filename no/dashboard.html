@@ -876,9 +876,9 @@ function slotPortrett(bilde){
 
 function slotHero(bilde){
   const box=bilde
-    ?`<div class="slot-box slot-hero filled" data-slot="hero"><img src="${CONFIG.API_BASE+bilde.url}" alt="Toppbilde"><button class="slot-rm" data-id="${bilde.id}" aria-label="Fjern">×</button></div>`
-    :`<div class="slot-box slot-hero" data-slot="hero" tabindex="0" role="button" aria-label="Last opp toppbilde"><span class="slot-plus">+</span></div>`;
-  return`<div class="slot-section"><div class="slot-label">Toppbilde</div>${box}</div>`;
+    ?`<div class="slot-box slot-hero filled" data-slot="hero"><img src="${CONFIG.API_BASE+bilde.url}" alt="Forsidebilde"><button class="slot-rm" data-id="${bilde.id}" aria-label="Fjern">×</button></div>`
+    :`<div class="slot-box slot-hero" data-slot="hero" tabindex="0" role="button" aria-label="Last opp forsidebilde"><span class="slot-plus">+</span></div>`;
+  return`<div class="slot-section"><div class="slot-label">Forsidebilde</div>${box}</div>`;
 }
 
 function slotGalleri(g){
@@ -1078,7 +1078,7 @@ const FONTS=[
 const LAYOUTS=[
   {key:"profil",t:"Profil",d:"Portrett + info"},
   {key:"showcase",t:"Showcase",d:"Galleri i front"},
-  {key:"hero",t:"Hero",d:"Stort toppbilde"},
+  {key:"hero",t:"Hero",d:"Stort forsidebilde"},
   {key:"direkte",t:"Direkte",d:"Rett til booking"}
 ];
 let design={palette:"mint",font:"fraunces",layout:"direkte",mode:"lys"};
