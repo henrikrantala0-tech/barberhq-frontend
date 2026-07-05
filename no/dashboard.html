@@ -109,9 +109,9 @@
   .slot-popup-btn:hover{background:var(--line)}
   .slot-popup-btn.danger:hover{background:var(--bad);color:#fff}
   .slot-portrett{width:100px;height:100px;border-radius:50%!important}
-  .slot-hero{aspect-ratio:16/10;width:100%}
+  .slot-hero{aspect-ratio:9/19.5;width:100%}
   .slot-galleri-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .slot-galleri-item{aspect-ratio:4/5}
+  .slot-galleri-item{aspect-ratio:3/4}
   .slot-direkte-msg{text-align:center;padding:36px 20px;border:1.5px dashed var(--line);border-radius:12px;color:var(--mut)}
   .slot-direkte-msg .dm-icon{font-size:32px;display:block;margin-bottom:12px;opacity:.5}
   .slot-direkte-msg p{font-size:13px;line-height:1.6;max-width:260px;margin:0 auto}
@@ -1024,7 +1024,7 @@ function _openCropModal(imgSrc,imgId,slot){
   document.getElementById('cropErr').textContent='';
   document.getElementById('cropSave').disabled=false;
   if(_cropper){_cropper.destroy();_cropper=null;}
-  const ratio=slot==='portrett'?1:slot==='hero'?9/19.5:4/5;
+  const ratio=slot==='portrett'?1:slot==='hero'?9/19.5:3/4;
   imgEl.onload=function(){
     _cropper=new Cropper(imgEl,{viewMode:2,aspectRatio:ratio,autoCropArea:0.8,background:false,responsive:true});
   };
@@ -1213,7 +1213,7 @@ let savedLayout=design.layout;
 var TEMPLATE_BASE='https://api.trybarberhq.com/api/templates/';
 var malCache={};
 var ADDR_PIN='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
-function galleriFyll(n){var s='';for(var i=0;i<n;i++)s+='<div style="width:100%;aspect-ratio:4/5;background:var(--line)"></div>';return s;}
+function galleriFyll(n){var s='';for(var i=0;i<n;i++)s+='<div style="width:100%;aspect-ratio:3/4;background:var(--line)"></div>';return s;}
 function renderAddr(a){
   if(/\d/.test(a))return'<a class="addr" href="https://maps.google.com/?q='+encodeURIComponent(a)+'" target="_blank" rel="noopener">'+ADDR_PIN+'<span>'+esc(a)+'</span></a>';
   return'<span class="addr addr-plain">'+ADDR_PIN+'<span>'+esc(a)+'</span></span>';
