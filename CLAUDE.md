@@ -44,6 +44,19 @@ sv/, da/, en/ følger ikke denne rekkefølgen ennå — gjøres i oversettelses-
   `.plan-cta`, `.cta-line`, `.cta-fill`) som ble igjen da prisplanen flyttet til
   priser.html. `.hero-badge` er fortsatt i bruk og ble beholdt.
 
+## ⚠️ Sikkerhetsregel for Code (stående, ikke overstyr)
+**Aldri print miljøvariabler, connection strings eller hemmeligheter til terminalen.**
+Ikke kjør `railway variables`, `printenv`, `cat .env` eller lignende som printer secrets
+til output. DB-passordet ble eksponert to ganger via `railway variables` i chat-sesjon
+(05.07) — rotert begge ganger. Hvis DB-tilgang trengs: spør brukeren, ikke dump variabler.
+
+## Kjente sikkerhetshull (MVP-bevisst, ikke akutt)
+- **Hero-bildegrense er kun klientsiden** — `kom-i-gang.html` begrenser til 1 fil for
+  hero, men backend (`multer`) har kun en generell grense på 5 filer, ingen per-layout-
+  validering. En teknisk bruker kan sende flere hero-bilder direkte mot API-et.
+- **orders.barber_id FK ikke fullt enforced** — vi så en id som ikke matchet uten at DB
+  klaget under testing. Bør verifiseres — kan føre til stille feil ved feil barber_id.
+
 ## Status — sist oppdatert 2026-07-05
 
 ### Ferdig og pushet
@@ -55,21 +68,28 @@ sv/, da/, en/ følger ikke denne rekkefølgen ennå — gjøres i oversettelses-
 - **Dashboard koblet til ekte bookingside** (root-cause) — `bygg.js` bygger nå fra `barbers`-raden (ikke `orders.payload`). Alt barbereren endrer i dashbordet (design, layout, font, adresse, bio, bilder, tjenester) når bookingsiden. Oppslag via `barbers.slug`, status-gating via `barbers.page_status`.
 - **Bildeplasserings-system (lag 1–4):**
   - Lag 1: `slot` (portrett/hero/galleri) + `sort_order`-kolonner på `images` (migrering 009).
-  - Lag 2: backend — opplasting til slot, slett-ved-erstatning (DB+R2), galleri-grense 10, `PATCH /images/:id/slot`, slot-nullstilling ved layout-bytte.
+  - Lag 2: backend — opplasting til slot, slett-ved-erstatning (DB+R2), galleri-grense 10, `PATCH /images/:id/slot`, hard sletting (DB+R2) ved layout-bytte (transaksjonssikret).
   - Lag 3: `byggSideFraBarber()` leser slots (ikke opplastingsrekkefølge) — barberens plassering styrer siden.
   - Lag 4: Bilder-fane med trykkbare slot-bokser per layout (rund portrett, galleri-grid, hero-boks, Direkte-melding).
+- **Layout-drift fikset (05.07)** — `savedLayout` skilt fra `design.layout` i dashboard.
+  Bilder-fanen leser alltid lagret verdi fra DB, ikke ulagret preview-state.
+- **`POST /api/admin/orders/:id/bygg-barber` (05.07)** — oppretter barber fra ordre
+  atomisk: slug mot barbers-tabellen, INSERT barbers, UPDATE orders.barber_id, re-knytter
+  onboarding-bilder til barber_id, auto-tildeler galleri-slots. Idempotent med FOR UPDATE
+  radlås. Verifisert med 201 + 409-test mot produksjon (bart-fades).
 
 ### Beslutninger som ligger til grunn
 - Slot-navn: norsk (`portrett`/`hero`/`galleri`).
 - Profil: 1 portrett + opptil 10 galleri = 11 totalt (unntak fra maks-10). Showcase: opptil 10 galleri. Hero: 1 bilde. Direkte: ingen bilder.
 - Barbereren trykker en boks → laster opp til den slotten. Erstatt portrett/hero = slett gammelt helt (DB+R2). Galleri vokser etter behov.
-- Slot nullstilles kun ved faktisk layout-bytte (ikke ved annen Design-lagring).
+- Slot nullstilles (nå: hard-slettes) kun ved faktisk layout-bytte — ikke ved annen Design-lagring.
 - Én barber = én bookingside (1:1).
 - Bio-ingress gjenbruker `bio`-kolonnen (ett tekstfelt, ikke to).
+- Onboarding-bilder er alltid klippbilder — portrett-slot fylles ALDRI automatisk ved bygg-barber.
 
 ### Gjenstår (til i morgen / senere)
 1. **Galleri-boksene er høye på mobil** — vurder mindre thumbnails, helst testet med ekte bilde.
-2. **DB-passordet må roteres** — ble eksponert i chat-sesjon. Railway → Postgres → regenerer credentials → oppdater `DATABASE_URL`. Høyest prioritet av utestående.
-3. **Test hele bildeflyten med ekte klippbilde** — plasser bilde i slot via Bilder-fanen, verifiser at det havner riktig på ekte side. Systemet er bevist via API, ikke via full klikk-flyt med ekte bilde ennå.
-4. **SESSION_SECRET-deployen** — sjekk om den fortsatt henger (Railway BuildKit-feil fra tidligere).
-5. **Font i templates** — Space Grotesk / Jakarta vises i dashboard-preview, men leveres ikke på ekte side ennå (mangler `.ttf` i templates). Kun Fraunces + Inter er hardkodet i dag.
+2. **Test hele bildeflyten med ekte klippbilde** — plasser bilde i slot via Bilder-fanen, verifiser at det havner riktig på ekte side. Systemet er bevist via API og bart-fades, ikke via full klikk-flyt ennå.
+3. **Font i templates** — Space Grotesk / Jakarta vises i dashboard-preview, men leveres ikke på ekte side ennå (mangler `.ttf` i templates). Kun Fraunces + Inter er hardkodet i dag.
+4. **Hero-bildegrense server-side** — se sikkerhetshull over.
+5. **orders.barber_id FK** — verifiser enforcement, se sikkerhetshull over.
