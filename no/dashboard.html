@@ -95,9 +95,18 @@
   .slot-box:hover{border-color:var(--ink-2)}
   .slot-box.filled{border-style:solid;border-color:var(--info)}
   .slot-box img{width:100%;height:100%;object-fit:cover;display:block}
-  .slot-box .slot-rm{position:absolute;top:6px;right:6px;width:24px;height:24px;border-radius:6px;border:0;background:rgba(10,10,10,.72);color:#fff;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center;z-index:2}
-  .slot-box .slot-rm:hover{background:var(--bad)}
   .slot-box .slot-plus{font-size:28px;color:var(--line-2);pointer-events:none}
+  .slot-wrap{position:relative;display:block;width:100%}
+  .slot-portrett-wrap .slot-wrap{display:inline-block;width:auto}
+  .slot-actions{position:absolute;top:6px;right:6px;display:flex;gap:4px;z-index:2}
+  .slot-act-btn{width:26px;height:26px;border-radius:6px;border:0;background:rgba(10,10,10,.72);color:#fff;cursor:pointer;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .12s}
+  .slot-act-btn:hover{background:rgba(60,60,60,.9)}
+  .slot-menu-btn:hover{background:var(--bad)}
+  .slot-popup{position:fixed;z-index:300;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.55);min-width:136px;overflow:hidden;display:none}
+  .slot-popup.open{display:block}
+  .slot-popup-btn{display:block;width:100%;text-align:left;padding:10px 16px;font-size:13px;font-weight:500;border:0;background:transparent;color:var(--ink);cursor:pointer;white-space:nowrap}
+  .slot-popup-btn:hover{background:var(--line)}
+  .slot-popup-btn.danger:hover{background:var(--bad);color:#fff}
   .slot-portrett{width:100px;height:100px;border-radius:50%!important}
   .slot-hero{aspect-ratio:16/10;width:100%}
   .slot-galleri-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -401,7 +410,12 @@
     <p class="block-h">Bilder på siden din</p>
     <p class="block-s">Trykk på en boks for å laste opp bilde til den plassen.</p>
     <input type="file" id="fileInput" accept="image/*" hidden>
+    <input type="file" id="replaceInput" accept="image/*" hidden>
     <div id="bilderMount"><div class="loading">Laster …</div></div>
+    <div id="slotPopup" class="slot-popup">
+      <button class="slot-popup-btn danger" id="slotPopupFjern">Fjern bilde</button>
+      <button class="slot-popup-btn" id="slotPopupEndre">Endre bilde</button>
+    </div>
   </section>
 
   <!-- ARBEIDSTIDER -->
@@ -847,6 +861,7 @@ async function loadVekst(){
 
 let imgs=[];
 let _activeSlot=null;
+let _activeImgId=null;
 
 async function loadBilder(){
   try{const r=await apiFetch('/api/dashboard/design');if(r&&r.ok){const d=await r.json();if(d.layout){savedLayout=d.layout;}}}catch(e){}
@@ -867,23 +882,26 @@ function renderSlotView(layout,imgs){
   mount.innerHTML=html;
 }
 
+const _cropSvg=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/></svg>`;
+function _slotActions(id){return`<div class="slot-actions"><button class="slot-act-btn slot-crop-btn" data-id="${id}" aria-label="Beskjær">${_cropSvg}</button><button class="slot-act-btn slot-menu-btn" data-id="${id}" aria-label="Alternativer">×</button></div>`;}
+
 function slotPortrett(bilde){
   const box=bilde
-    ?`<div class="slot-box slot-portrett filled" data-slot="portrett"><img src="${CONFIG.API_BASE+bilde.url}" alt="Portrett"><button class="slot-rm" data-id="${bilde.id}" aria-label="Fjern">×</button></div>`
+    ?`<div class="slot-wrap"><div class="slot-box slot-portrett filled" data-slot="portrett"><img src="${CONFIG.API_BASE+bilde.url}" alt="Portrett"></div>${_slotActions(bilde.id)}</div>`
     :`<div class="slot-box slot-portrett" data-slot="portrett" tabindex="0" role="button" aria-label="Last opp portrett"><span class="slot-plus">+</span></div>`;
   return`<div class="slot-section"><div class="slot-label">Portrett</div><div class="slot-portrett-wrap">${box}</div></div>`;
 }
 
 function slotHero(bilde){
   const box=bilde
-    ?`<div class="slot-box slot-hero filled" data-slot="hero"><img src="${CONFIG.API_BASE+bilde.url}" alt="Forsidebilde"><button class="slot-rm" data-id="${bilde.id}" aria-label="Fjern">×</button></div>`
+    ?`<div class="slot-wrap"><div class="slot-box slot-hero filled" data-slot="hero"><img src="${CONFIG.API_BASE+bilde.url}" alt="Forsidebilde"></div>${_slotActions(bilde.id)}</div>`
     :`<div class="slot-box slot-hero" data-slot="hero" tabindex="0" role="button" aria-label="Last opp forsidebilde"><span class="slot-plus">+</span></div>`;
   return`<div class="slot-section"><div class="slot-label">Forsidebilde</div>${box}</div>`;
 }
 
 function slotGalleri(g){
   const MAX=10;
-  const items=g.map(im=>`<div class="slot-box slot-galleri-item filled" data-slot="galleri"><img src="${CONFIG.API_BASE+im.url}" alt="Klippebilde"><button class="slot-rm" data-id="${im.id}" aria-label="Fjern">×</button></div>`).join("");
+  const items=g.map(im=>`<div class="slot-wrap"><div class="slot-box slot-galleri-item filled" data-slot="galleri"><img src="${CONFIG.API_BASE+im.url}" alt="Klippebilde"></div>${_slotActions(im.id)}</div>`).join("");
   const add=g.length<MAX?`<div class="slot-box slot-galleri-item" data-slot="galleri" tabindex="0" role="button" aria-label="Legg til bilde"><span class="slot-plus">+</span></div>`:"";
   const teller=g.length>0?` (${g.length}/10)`:"";
   return`<div class="slot-section"><div class="slot-label">Galleri${teller}</div><div class="slot-galleri-grid">${items}${add}</div></div>`;
@@ -961,19 +979,55 @@ $("#monthSel").addEventListener("change",async e=>{
   $("#rangeLabel").textContent=`${MONTHS[+m-1]} ${y} — hele måneden`;
   $("#stats").innerHTML=`<div class="stat"><div class="l">Kunder totalt</div><div class="v info">${tot??"—"}</div><div class="sub mut">${MONTHS[+m-1]} ${y}</div></div>`;
 });
+const _slotPopup=document.getElementById('slotPopup');
+function _closeSlotPopup(){_slotPopup.classList.remove('open');}
+document.addEventListener('click',e=>{if(!_slotPopup.contains(e.target))_closeSlotPopup();});
+
 $("#bilderMount").addEventListener("click",async e=>{
-  const rm=e.target.closest(".slot-rm");
-  if(rm){
-    if(!confirm("Slett dette bildet?"))return;
-    const r=await apiFetch('/api/dashboard/images/'+rm.dataset.id,{method:'DELETE'});
-    if(!r)return;
-    if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke slette bildet. Prøv igjen.');return;}
-    await loadBilder();return;
+  if(e.target.closest('.slot-crop-btn')){
+    e.stopPropagation();
+    console.log('crop (landing 2), id:',e.target.closest('.slot-crop-btn').dataset.id);
+    return;
+  }
+  const menuBtn=e.target.closest('.slot-menu-btn');
+  if(menuBtn){
+    e.stopPropagation();
+    _activeImgId=menuBtn.dataset.id;
+    const r=menuBtn.getBoundingClientRect();
+    _slotPopup.style.top=(r.bottom+4)+'px';
+    _slotPopup.style.left=Math.min(r.left,window.innerWidth-150)+'px';
+    _slotPopup.classList.add('open');
+    return;
   }
   const box=e.target.closest(".slot-box");if(!box)return;
   _activeSlot=box.dataset.slot;
   $("#fileInput").click();
 });
+
+document.getElementById('slotPopupFjern').addEventListener('click',async()=>{
+  _closeSlotPopup();
+  const id=_activeImgId;if(!id)return;
+  const r=await apiFetch('/api/dashboard/images/'+id,{method:'DELETE'});
+  if(!r)return;
+  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke slette bildet. Prøv igjen.');return;}
+  await loadBilder();
+});
+
+document.getElementById('slotPopupEndre').addEventListener('click',()=>{
+  _closeSlotPopup();
+  $("#replaceInput").click();
+});
+
+$("#replaceInput").addEventListener('change',async e=>{
+  const f=e.target.files[0];e.target.value='';
+  if(!f||!_activeImgId)return;
+  const fd=new FormData();fd.append('image',f);
+  const r=await apiFetch('/api/dashboard/images/'+_activeImgId,{method:'PUT',body:fd});
+  if(!r)return;
+  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke erstatte bildet. Prøv igjen.');return;}
+  await loadBilder();
+});
+
 $("#fileInput").addEventListener("change",e=>{handleUpload(e.target.files[0],_activeSlot);e.target.value="";});
 $("#hoursList").addEventListener("change",e=>{const i=+e.target.dataset.i;
   if(e.target.type==="checkbox"){hours[i].on=e.target.checked;e.target.closest(".day").querySelectorAll("input[type=time]").forEach(inp=>inp.disabled=!e.target.checked);}
