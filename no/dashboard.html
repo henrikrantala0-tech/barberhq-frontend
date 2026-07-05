@@ -846,16 +846,12 @@ async function loadVekst(){
 }
 
 let imgs=[];
-let _designReady=false;
 let _activeSlot=null;
 
 async function loadBilder(){
-  if(!_designReady){
-    try{const r=await apiFetch('/api/dashboard/design');if(r&&r.ok){const d=await r.json();if(d.layout)design.layout=d.layout;}}catch(e){}
-    _designReady=true;
-  }
+  try{const r=await apiFetch('/api/dashboard/design');if(r&&r.ok){const d=await r.json();if(d.layout){savedLayout=d.layout;}}}catch(e){}
   try{imgs=await api.images();}catch(e){imgs=[];}
-  renderSlotView(design.layout,imgs);
+  renderSlotView(savedLayout,imgs);
 }
 
 function renderSlotView(layout,imgs){
@@ -1086,6 +1082,7 @@ const LAYOUTS=[
   {key:"direkte",t:"Direkte",d:"Rett til booking"}
 ];
 let design={palette:"mint",font:"fraunces",layout:"direkte",mode:"lys"};
+let savedLayout=design.layout;
 var TEMPLATE_BASE='https://api.trybarberhq.com/api/templates/';
 var malCache={};
 var ADDR_PIN='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
@@ -1141,10 +1138,9 @@ async function loadDesign(){
     if(d.palette)design.palette=d.palette;
     if(d.font&&FONTS.find(function(f){return f.key===d.font;}))design.font=d.font;
     else design.font="fraunces";
-    if(d.layout)design.layout=d.layout;
+    if(d.layout){design.layout=d.layout;savedLayout=d.layout;}
     if(d.mode)design.mode=d.mode;
   }catch(e){}
-  _designReady=true;
   renderDesign();
 }
 $("#design").addEventListener("click",function(e){var b=e.target.closest(".preset");if(!b)return;design[b.dataset.grid]=b.dataset.key;renderDesign();});
@@ -1160,7 +1156,7 @@ $("#saveDesign").addEventListener("click",async function(){
   btn.disabled=false;btn.textContent=orig;
   if(!r)return;
   if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre design. Prøv igjen.');return;}
-  savedFlash("#designSaved");
+  savedLayout=design.layout;savedFlash("#designSaved");
 });
 
 /* ---- Abonnement ---- */
