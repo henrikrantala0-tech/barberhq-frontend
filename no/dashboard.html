@@ -305,9 +305,19 @@
   .crop-btn-save:hover{background:#3a72e0}
   .crop-btn-save:disabled{opacity:.45;cursor:not-allowed}
   .crop-err{font-size:13px;color:#e57373;min-height:18px;text-align:right}
+
+  /* Demo-banner */
+  .demo-banner{display:none;padding:11px 20px;background:#fff8e1;border-bottom:2px solid #f59e0b;font-size:13.5px;font-weight:500;color:#78350f;text-align:center;line-height:1.4}
+  .demo-banner.show{display:block}
+  .demo-banner a{color:inherit;font-weight:700;text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
+  html[data-theme="dark"] .demo-banner{background:#2d1d00;border-bottom-color:#d97706;color:#fde68a}
 </style>
 </head>
 <body>
+<div class="demo-banner" id="demoBanner" role="alert">
+  <strong>Forhåndsvisning.</strong> Tallene og innholdet her er eksempeldata — de viser <strong>ikke</strong> ekte aktivitet.
+  &nbsp;<a href="/no/kom-i-gang.html">Opprett din egen side →</a>
+</div>
 <div class="topband">
 <div class="wrap">
   <header class="top">
@@ -549,6 +559,8 @@
 <script src="palett.js"></script>
 <script src="lib/cropper.min.js"></script>
 <script>
+let IS_DEMO=false;
+
 const CONFIG={
   USE_MOCK:true,
   API_BASE:"https://api.trybarberhq.com",
@@ -1054,6 +1066,7 @@ document.getElementById('cropSave').addEventListener('click',async()=>{
 });
 
 $("#bilderMount").addEventListener("click",async e=>{
+  if(IS_DEMO)return;
   if(e.target.closest('.slot-crop-btn')){
     e.stopPropagation();
     const btn=e.target.closest('.slot-crop-btn');
@@ -1135,6 +1148,7 @@ async function loadProfil(){
   if(!r)return;
   if(!r.ok)return;
   const p=await r.json();
+  if(p.isDemo&&!IS_DEMO){IS_DEMO=true;applyDemoMode();}
   $("#pf-name").value=p.name||"";
   $("#pf-shop").value=p.shop||"";
   $("#pf-address").value=p.address||"";
@@ -1298,6 +1312,15 @@ $("#manageSub").addEventListener("click",function(){
   if(CONFIG.USE_MOCK){alert("I demo. Når backend er live åpner denne Stripe-portalen, der du kan bytte kort, se kvitteringer eller si opp.");return;}
   window.location.href=CONFIG.API_BASE+"/api/dashboard/billing/portal";
 });
+
+function applyDemoMode(){
+  document.getElementById('demoBanner').classList.add('show');
+  ['saveProfil','saveSvc','saveDesign','saveHours','cropSave',
+   'slotPopupFjern','slotPopupEndre','gcalBtn','manageSub'].forEach(function(id){
+    var el=document.getElementById(id);
+    if(el){el.disabled=true;el.title='Ikke tilgjengelig i forhåndsvisning';}
+  });
+}
 
 /* init */
 initTheme();

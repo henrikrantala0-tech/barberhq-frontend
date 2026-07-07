@@ -35,6 +35,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .nav-right{display:flex;align-items:center;gap:14px}
 .nav-cta{background:#4d8bff;color:#fff;font-size:14px;font-weight:600;padding:9px 18px;border-radius:99px;text-decoration:none;white-space:nowrap;transition:opacity .2s}
 .nav-cta:hover{opacity:.85}
+.nav-demo{color:#a0c4ff;font-size:13px;font-weight:500;text-decoration:none;border:1px solid rgba(160,196,255,.32);padding:6px 14px;border-radius:99px;white-space:nowrap;transition:color .2s,border-color .2s}
+.nav-demo:hover{color:#fff;border-color:rgba(160,196,255,.7)}
 .nav-burger{display:none;flex-direction:column;justify-content:center;gap:4px;width:32px;height:32px;background:none;border:none;cursor:pointer;padding:6px 4px}
 .nav-burger span{display:block;width:20px;height:2px;background:#fff;border-radius:2px;transition:transform .2s,opacity .2s}
 .nav.open .nav-burger span:nth-child(1){transform:translateY(6px) rotate(45deg)}
@@ -517,6 +519,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       <a href="priser.html">Priser</a>
       <a href="support.html">Support</a>
       <a href="logg-inn.html">Logg inn</a>
+      <a href="#" id="demoNavBtn" class="nav-demo">Se dashbordet</a>
     </div>
     <div class="nav-right">
       <a href="kom-i-gang.html" class="nav-cta">Prøv gratis</a>
@@ -530,6 +533,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     <a href="priser.html">Priser</a>
     <a href="support.html">Support</a>
     <a href="logg-inn.html">Logg inn</a>
+    <a href="#" id="demoNavPanelBtn">Se dashbordet</a>
   </div>
 </nav>
 
@@ -871,9 +875,35 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 </footer>
 
 <script>
+// sett true ved launch for å vise demo-preview
+var DEMO_ENABLED = false;
+
 // Nav sticky-kant
 var nav=document.getElementById('nav');
 window.addEventListener('scroll',function(){nav.classList.toggle('scrolled',window.scrollY>10);});
+
+// Demo-login — knapp skjules helt når DEMO_ENABLED = false
+(function(){
+  var btn1=document.getElementById('demoNavBtn');
+  var btn2=document.getElementById('demoNavPanelBtn');
+  if(!DEMO_ENABLED){
+    if(btn1)btn1.remove();
+    if(btn2)btn2.remove();
+    return;
+  }
+  var DEMO_API='https://api.trybarberhq.com';
+  function demoLogin(el,origText){
+    el.style.pointerEvents='none';el.textContent='Åpner …';
+    fetch(DEMO_API+'/api/demo-login',{method:'POST',credentials:'include'})
+      .then(function(r){
+        if(r.ok){window.location.href='/no/dashboard';}
+        else{el.style.pointerEvents='';el.textContent=origText;}
+      })
+      .catch(function(){el.style.pointerEvents='';el.textContent=origText;});
+  }
+  if(btn1)btn1.addEventListener('click',function(e){e.preventDefault();demoLogin(this,'Se dashbordet');});
+  if(btn2)btn2.addEventListener('click',function(e){e.preventDefault();demoLogin(this,'Se dashbordet');});
+})();
 
 // Hamburger-meny
 var burger=document.getElementById('nav-burger');
