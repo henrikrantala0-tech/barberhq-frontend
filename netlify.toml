@@ -1,6 +1,7 @@
-# BarberHQ — språk-routing.
-# Ligg i roten av mappa du drar inn i Netlify (samme nivå som no/ sv/ da/ en/).
+# BarberHQ — ruting og proxy.
+# Rekkefølge er kritisk: første match vinner.
 
+# 1. Språk-redirects (kun /, med Accept-Language-betingelse)
 [[redirects]]
   from = "/"
   to = "/sv/"
@@ -24,3 +25,35 @@
   from = "/"
   to = "/en/"
   status = 302
+
+# 2. Bare språk-koder uten trailing slash → redirect til katalog.
+#    Hindrer at /no, /sv, /da, /en fanges av proxy-regelen under.
+[[redirects]]
+  from = "/no"
+  to = "/no/"
+  status = 301
+
+[[redirects]]
+  from = "/sv"
+  to = "/sv/"
+  status = 301
+
+[[redirects]]
+  from = "/da"
+  to = "/da/"
+  status = 301
+
+[[redirects]]
+  from = "/en"
+  to = "/en/"
+  status = 301
+
+# 3. Proxy: ett-segment-stier → backend.
+#    :slug matcher kun ett segment — /no/priser (to segmenter) fanges aldri.
+#    Status 200 = rewrite/proxy, URL forblir trybarberhq.com i adressefeltet.
+#    force = false (default): eksisterende filer i publish-dir serves direkte.
+[[redirects]]
+  from = "/:slug"
+  to = "https://api.trybarberhq.com/:slug"
+  status = 200
+  force = false
