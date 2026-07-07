@@ -1,9 +1,0 @@
-# BarberHQ — språk-routing for Netlify
-# Plasseres i roten av publish-mappa (samme nivå som no/ sv/ da/ en/).
-
-# Spesifikke språk øverst — første regel som matcher vinner.
-/    /sv/    302    Language=sv
-/    /da/    302    Language=da
-/    /no/    302    Language=nb,nn,no
-# Resten av verden (tysk, estisk, engelsk, ukjent …) → engelsk.
-/    /en/    302
