@@ -1096,10 +1096,14 @@ $("#replaceInput").addEventListener('change',async e=>{
   const f=e.target.files[0];e.target.value='';
   if(!f||!_activeImgId)return;
   const fd=new FormData();fd.append('image',f);
-  const r=await apiFetch('/api/dashboard/images/'+_activeImgId,{method:'PUT',body:fd});
-  if(!r)return;
-  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke erstatte bildet. Prøv igjen.');return;}
-  await loadBilder();
+  try{
+    const r=await apiFetch('/api/dashboard/images/'+_activeImgId,{method:'PUT',body:fd});
+    if(!r)return;
+    if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke erstatte bildet. Prøv igjen.');return;}
+    await loadBilder();
+  }catch(err){
+    alert('Nettverksfeil ved bildebyte. Prøv igjen.');
+  }
 });
 
 $("#fileInput").addEventListener("change",e=>{handleUpload(e.target.files[0],_activeSlot);e.target.value="";});
