@@ -48,7 +48,21 @@
   to = "/en/"
   status = 301
 
-# 3. Proxy: ett-segment-stier → backend.
+# 3. API- og book-proxy → Railway backend.
+#    Må komme FØR /:slug-regelen — Netlify tar første treff.
+[[redirects]]
+  from = "/api/*"
+  to = "https://api.trybarberhq.com/api/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/book/*"
+  to = "https://api.trybarberhq.com/book/:splat"
+  status = 200
+  force = true
+
+# 4. Proxy: ett-segment-stier → backend (barbersider).
 #    :slug matcher kun ett segment — /no/priser (to segmenter) fanges aldri.
 #    Status 200 = rewrite/proxy, URL forblir trybarberhq.com i adressefeltet.
 #    force = false (default): eksisterende filer i publish-dir serves direkte.
