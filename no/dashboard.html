@@ -141,6 +141,19 @@
   .loading{padding:26px;text-align:center;color:var(--mut);font-size:13px}
 
   @media(max-width:560px){.row{flex-wrap:wrap}.row .when{min-width:auto}.periodbar{align-items:flex-start}.chartbars{overflow-x:auto;gap:3px}.cbar-col{min-width:28px}}
+  @media(max-width:480px){
+    .day{padding:10px 12px;gap:8px}
+    .dn{min-width:68px;font-size:12.5px}
+    input[type=time]{padding:5px 5px;font-size:12px}
+    .to{font-size:11.5px}
+    .gcal{flex-wrap:wrap;gap:10px}
+  }
+  @media(max-width:360px){
+    .day{padding:9px 8px;gap:6px}
+    .dn{min-width:56px;font-size:12px;letter-spacing:0}
+    input[type=time]{padding:4px 3px;font-size:11.5px}
+    .to{font-size:11px}
+  }
   .see-all-btn{appearance:none;border:0;background:0;font:inherit;font-size:12.5px;font-weight:500;color:var(--info);padding:10px 0 0;cursor:pointer;letter-spacing:-.01em;display:block}
   .see-all-btn:hover{text-decoration:underline}
 
