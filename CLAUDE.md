@@ -110,6 +110,13 @@ chatten — 1/l og 0/O er uleselige i chatfonten og har forårsaket feil (05.07)
 - Onboarding-bilder er alltid klippbilder — portrett-slot fylles ALDRI automatisk ved bygg-barber.
 - Slug-ruting: barbersider på `api.trybarberhq.com/<slug>` i dag (stygt for deling). Beslutning tatt: flytt til `trybarberhq.com/<slug>` via Netlify-proxy — ikke bygget ennå.
 
+## Kjent teknisk gjeld
+
+- **Tidssone for åpningstider er hardkodet via `barbers.market`** (NO/SE/DK → Europe/Oslo, UK → Europe/London).
+  Dette er en MVP-forenkling. Booking-validering mot `business_hours` bruker denne utledningen.
+  Riktig løsning: egen `timezone`-kolonne på `barbers`, satt per barber ved onboarding, og bruk den
+  i stedet for market-mappingen. Må fikses før vi tar inn barberere utenfor CET/UK.
+
 ### Gjenstår (neste økt / senere)
 1. **Slug-ruting** — flytt barbersider til `trybarberhq.com/<slug>` via Netlify-proxy til backend. Krever reservliste for eksisterende ruter + slug-validering i bygg-barber mot reserverte ord.
 2. **Test full klikk-flyt med ekte klippbilde** — crop + lagring i Bilder-fanen, verifiser at bildet havner riktig i riktig slot på ekte kundeside. Bevist via API, ikke via UI-flyt ennå.
