@@ -324,6 +324,37 @@
   .demo-banner.show{display:block}
   .demo-banner a{color:inherit;font-weight:700;text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
   html[data-theme="dark"] .demo-banner{background:#2d1d00;border-bottom-color:#d97706;color:#fde68a}
+
+  /* ---- Grønn toggle-variant ---- */
+  .sw-green input:checked + .sl{background:#22c55e}
+  html[data-theme="dark"] .sw-green input:checked + .sl{background:#22c55e}
+
+  /* ---- Innstillinger-panel ---- */
+  .sett-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px 18px;margin-bottom:16px}
+  .tog-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
+  .tog-row:last-of-type{border-bottom:0}
+  .tog-label{font-size:13.5px;font-weight:500;letter-spacing:-.01em}
+  .tog-sub{font-size:12px;color:var(--mut);margin-top:2px}
+  .sett-interval{display:flex;align-items:center;gap:12px;padding:14px 0}
+  .sett-interval label{font-size:13.5px;font-weight:500;letter-spacing:-.01em;flex:1}
+  .sett-interval input[type=number]{width:68px;padding:7px 10px;border:1px solid var(--line-2);border-radius:8px;font:inherit;font-size:13px;background:var(--surface);color:var(--ink);text-align:right}
+  .sett-interval input[type=number]:focus{outline:2px solid var(--info);outline-offset:1px}
+  .sett-note{font-size:12px;color:var(--mut);padding:11px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;line-height:1.55}
+
+  /* ---- Vinn-tilbake-liste ---- */
+  .wb-group{margin-bottom:26px}
+  .wb-group-h{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:10px}
+  .wb-empty{font-size:13px;color:var(--mut);padding:14px 0}
+  .wb-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .wb-row{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .wb-row:last-child{border-bottom:0}
+  .wb-info{flex:1;min-width:0}
+  .wb-name{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .wb-meta{font-size:12px;color:var(--mut);margin-top:3px;line-height:1.4}
+  .wb-right{text-align:right;flex-shrink:0}
+  .wb-phone{font-size:13px;font-weight:600;color:var(--info);cursor:pointer;user-select:all;letter-spacing:.01em}
+  .wb-phone:hover{text-decoration:underline}
+  .wb-days{font-size:11.5px;color:var(--mut);margin-top:3px}
 </style>
 </head>
 <body>
@@ -351,6 +382,8 @@
     <button role="tab" aria-selected="false" data-panel="bilder" class="nav-mer">Bilder</button>
     <button role="tab" aria-selected="false" data-panel="design" class="nav-mer">Design</button>
     <button role="tab" aria-selected="false" data-panel="abonnement" class="nav-mer">Abonnement</button>
+    <button role="tab" aria-selected="false" data-panel="innstillinger" class="nav-mer">Innstillinger</button>
+    <button role="tab" aria-selected="false" data-panel="vinn-tilbake" class="nav-mer">Vinn-tilbake</button>
     <div class="nav-mer-wrap">
       <button type="button" class="nav-mer-toggle" aria-expanded="false" aria-haspopup="true">Mer <span class="mer-caret">▾</span></button>
       <div class="nav-mer-meny" role="menu" hidden></div>
@@ -555,6 +588,50 @@
     </div>
   </section>
 
+  <!-- INNSTILLINGER -->
+  <section class="panel" id="innstillinger">
+    <p class="block-h">Innstillinger</p>
+    <p class="block-s">SMS-automatisering og terskler.</p>
+    <div class="sett-card">
+      <div class="tog-row">
+        <div>
+          <div class="tog-label">SMS-påminnelse</div>
+          <div class="tog-sub">Kunden får SMS dagen før timen</div>
+        </div>
+        <label class="sw sw-green"><input type="checkbox" id="tog-paam"><span class="sl"></span></label>
+      </div>
+      <div class="tog-row">
+        <div>
+          <div class="tog-label">SMS-rebooking</div>
+          <div class="tog-sub">Kunden oppfordres til å booke igjen etter timen</div>
+        </div>
+        <label class="sw sw-green"><input type="checkbox" id="tog-rebook"><span class="sl"></span></label>
+      </div>
+      <div class="sett-interval">
+        <label for="rebook-days">Rebooking-intervall</label>
+        <div style="display:flex;align-items:center;gap:6px">
+          <input type="number" id="rebook-days" min="7" max="180" value="28">
+          <span style="font-size:13px;color:var(--mut)">dager</span>
+        </div>
+      </div>
+    </div>
+    <p class="sett-note">SMS-utsending kobles på snart — valget ditt lagres.</p>
+  </section>
+
+  <!-- VINN-TILBAKE -->
+  <section class="panel" id="vinn-tilbake">
+    <p class="block-h">Vinn tilbake</p>
+    <p class="block-s">Kunder som kan trenge en påminnelse om å booke igjen.</p>
+    <div class="wb-group">
+      <div class="wb-group-h">Møtte ikke</div>
+      <div id="wbNoShow"><p class="wb-empty">Laster …</p></div>
+    </div>
+    <div class="wb-group">
+      <div class="wb-group-h">Sovende</div>
+      <div id="wbLapsed"><p class="wb-empty">Laster …</p></div>
+    </div>
+  </section>
+
   <!-- ABONNEMENT -->
   <section class="panel" id="abonnement">
     <p class="block-h">Abonnement</p>
@@ -712,6 +789,20 @@ const api={
   async googleDisconnect(){
     const r=await apiFetch('/api/dashboard/google/disconnect',{method:'POST'});
     return r&&r.ok;
+  },
+  async settings(){
+    const r=await apiFetch('/api/dashboard/settings');
+    if(!r||!r.ok)return{sms_paaminnelse_enabled:false,sms_rebooking_enabled:false,rebooking_interval_days:28};
+    return r.json();
+  },
+  async saveSettings(patch){
+    const r=await apiFetch('/api/dashboard/settings',{method:'PUT',body:JSON.stringify(patch)});
+    return r&&r.ok;
+  },
+  async winback(){
+    const r=await apiFetch('/api/dashboard/winback');
+    if(!r||!r.ok)return{no_show:[],lapsed:[]};
+    return r.json();
   },
 };
 
@@ -1030,6 +1121,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   if(id==="bookinger")loadBookinger();if(id==="vekst")loadVekst();
   if(id==="profil")loadProfil();if(id==="tjenester")loadTjenester();if(id==="design")loadDesign();
   if(id==="bilder")loadBilder();if(id==="arbeidstider")loadArbeidstider();
+  if(id==="innstillinger")loadInnstillinger();if(id==="vinn-tilbake")loadWinback();
 }));
 document.querySelectorAll("#segs button").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll("#segs button").forEach(x=>x.setAttribute("aria-selected","false"));
@@ -1207,6 +1299,45 @@ $("#saveProfil").addEventListener("click",async function(){
   CONFIG.BARBER_NAME=displayName;var el=$("#barberName");if(el)el.textContent=displayName;
   savedFlash("#profilSaved");
 });
+
+/* ---- Innstillinger ---- */
+async function loadInnstillinger(){
+  const s=await api.settings();
+  $("#tog-paam").checked=!!s.sms_paaminnelse_enabled;
+  $("#tog-rebook").checked=!!s.sms_rebooking_enabled;
+  $("#rebook-days").value=s.rebooking_interval_days||28;
+}
+$("#tog-paam").addEventListener("change",function(){api.saveSettings({sms_paaminnelse_enabled:this.checked});});
+$("#tog-rebook").addEventListener("change",function(){api.saveSettings({sms_rebooking_enabled:this.checked});});
+$("#rebook-days").addEventListener("change",function(){
+  var v=Math.max(7,Math.min(180,parseInt(this.value)||28));
+  this.value=v;
+  api.saveSettings({rebooking_interval_days:v});
+});
+
+/* ---- Vinn-tilbake ---- */
+async function loadWinback(){
+  const d=await api.winback();
+  wbRender("wbNoShow",d.no_show||[],"noshow");
+  wbRender("wbLapsed",d.lapsed||[],"lapsed");
+}
+function wbDateStr(iso){if(!iso)return"–";const d=new Date(iso);return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")+"."+d.getFullYear();}
+function wbRender(id,list,type){
+  const el=$("#"+id);
+  if(!list.length){el.innerHTML='<p class="wb-empty">Ingen kunder å vinne tilbake nå.</p>';return;}
+  el.innerHTML='<div class="wb-card">'+list.map(function(c){
+    return '<div class="wb-row">'+
+      '<div class="wb-info">'+
+        '<div class="wb-name">'+esc(c.name||"–")+'</div>'+
+        '<div class="wb-meta">Sist: '+wbDateStr(c.last_visit)+(c.grunn?' · '+esc(c.grunn):'')+'</div>'+
+      '</div>'+
+      '<div class="wb-right">'+
+        '<div class="wb-phone" title="Klikk for å kopiere" onclick="navigator.clipboard.writeText(this.dataset.p)" data-p="'+esc(c.phone||'')+'">'+esc(c.phone||'–')+'</div>'+
+        '<div class="wb-days">'+((c.days_since||0)+' dager siden')+'</div>'+
+      '</div>'+
+    '</div>';
+  }).join('')+'</div>';
+}
 
 /* ---- Tjenester ---- */
 let hoved=[{name:"Skinnfade",price:450,min:45},{name:"Klipp",price:300,min:30}];
