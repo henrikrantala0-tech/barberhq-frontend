@@ -141,6 +141,19 @@
   .loading{padding:26px;text-align:center;color:var(--mut);font-size:13px}
 
   @media(max-width:560px){.row{flex-wrap:wrap}.row .when{min-width:auto}.periodbar{align-items:flex-start}.chartbars{overflow-x:auto;gap:3px}.cbar-col{min-width:28px}}
+  @media(max-width:480px){
+    .day{padding:10px 12px;gap:8px}
+    .dn{min-width:68px;font-size:12.5px}
+    input[type=time]{padding:5px 5px;font-size:12px}
+    .to{font-size:11.5px}
+    .gcal{flex-wrap:wrap;gap:10px}
+  }
+  @media(max-width:360px){
+    .day{padding:9px 8px;gap:6px}
+    .dn{min-width:56px;font-size:12px;letter-spacing:0}
+    input[type=time]{padding:4px 3px;font-size:11.5px}
+    .to{font-size:11px}
+  }
   .see-all-btn{appearance:none;border:0;background:0;font:inherit;font-size:12.5px;font-weight:500;color:var(--info);padding:10px 0 0;cursor:pointer;letter-spacing:-.01em;display:block}
   .see-all-btn:hover{text-decoration:underline}
 
@@ -471,7 +484,7 @@
       </div>
       <button class="btn-outline" id="gcalBtn">Koble til</button>
     </div>
-    <p class="ctx" style="margin-top:10px">Nye bookinger dyttes til Google Kalender så du ser dem der også. Enveis — dashbordet er fortsatt master.</p>
+    <p class="ctx" style="margin-top:10px">Når Google Calendar er tilkoblet sperres opptatte tider automatisk i bookingsiden — kunder kan ikke booke mens du er opptatt. Dashbordet er fortsatt master for arbeidstider.</p>
   </section>
 
   <!-- PROFIL -->
@@ -675,14 +688,31 @@ const api={
   async markNoShow(id){ if(CONFIG.USE_MOCK){await wait(200);const b=MOCK.bookings.find(x=>x.id===id);if(b)b.status="noshow";return true;}
     const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/bookings/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"noshow"})}); return r.ok; },
   async images(){ const r=await apiFetch('/api/dashboard/images'); if(!r)return []; if(!r.ok)return []; return r.json(); },
-  async hours(){ if(CONFIG.USE_MOCK)return MOCK.hours;
-    const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/availability`); return r.json(); },
-  async saveHours(d){ if(CONFIG.USE_MOCK){await wait(400);return true;}
-    const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/availability`,{method:"PUT",headers:{"Content-Type":"application/json"},body:JSON.stringify(d)}); return r.ok; },
-  async googleStatus(){ if(CONFIG.USE_MOCK)return {connected:false};
-    const r=await fetch(`${CONFIG.API_BASE}/api/google/status?slug=${CONFIG.BARBER_SLUG}`); return r.json(); },
-  async googleDisconnect(){ if(CONFIG.USE_MOCK){await wait(200);return true;}
-    const r=await fetch(`${CONFIG.API_BASE}/api/google/disconnect?slug=${CONFIG.BARBER_SLUG}`,{method:"POST"}); return r.ok; },
+  async hours(){
+    const r=await apiFetch('/api/dashboard/hours');
+    if(!r||!r.ok)return MOCK.hours;
+    const data=await r.json();
+    // Backend weekday: 0=søn, 1=man … 6=lør. UI day: 0=man … 6=søn.
+    return [1,2,3,4,5,6,0].map(wd=>{
+      const d=data.find(x=>x.weekday===wd)||{weekday:wd,is_closed:true,open_time:'09:00',close_time:'17:00'};
+      return{day:(wd+6)%7,on:!d.is_closed,start:(d.open_time||'09:00').slice(0,5),end:(d.close_time||'17:00').slice(0,5)};
+    });
+  },
+  async saveHours(d){
+    const r=await apiFetch('/api/dashboard/hours',{method:'PUT',body:JSON.stringify(
+      d.map(h=>({weekday:(h.day+1)%7,is_closed:!h.on,open_time:h.start,close_time:h.end}))
+    )});
+    return r&&r.ok;
+  },
+  async googleStatus(){
+    const r=await apiFetch('/api/dashboard/google/status');
+    if(!r||!r.ok)return{connected:false};
+    return r.json();
+  },
+  async googleDisconnect(){
+    const r=await apiFetch('/api/dashboard/google/disconnect',{method:'POST'});
+    return r&&r.ok;
+  },
 };
 
 const $=s=>document.querySelector(s);
@@ -969,16 +999,15 @@ async function loadArbeidstider(){try{hours=await api.hours();}catch(e){hours=MO
 let gcalConnected=false;
 async function loadGoogleStatus(){
   const st=$("#gcalStatus"), btn=$("#gcalBtn");
-  if(CONFIG.USE_MOCK){ st.textContent="Demo — kobling virker når backend er live."; btn.textContent="Koble til"; return; }
   try{
     const s=await api.googleStatus();
     gcalConnected=!!s.connected;
     if(gcalConnected){
-      st.textContent="Tilkoblet. Nye bookinger dukker opp i kalenderen din.";
+      st.textContent=s.google_email?"Tilkoblet: "+s.google_email:"Tilkoblet.";
       btn.textContent="Koble fra"; btn.classList.add("connected");
     }else{
       st.textContent="Ikke tilkoblet ennå.";
-      btn.textContent="Koble til"; btn.classList.remove("connected");
+      btn.textContent="Koble til Google Calendar"; btn.classList.remove("connected");
     }
   }catch(e){ st.textContent="Kunne ikke sjekke status."; }
 }
@@ -1128,12 +1157,11 @@ $("#saveHours").addEventListener("click",async()=>{const btn=$("#saveHours");btn
   if(ok){const s=$("#hoursSaved");s.classList.add("show");setTimeout(()=>s.classList.remove("show"),1800);}});
 
 $("#gcalBtn").addEventListener("click",async()=>{
-  if(CONFIG.USE_MOCK){alert("I demo. Når backend er live sender denne deg til Google for å godkjenne.");return;}
   if(gcalConnected){
-    if(!confirm("Koble fra Google Kalender? Nye bookinger slutter å dukke opp der."))return;
+    if(!confirm("Koble fra Google Calendar? Opptatte tider fra Google vil ikke lenger sperre bookbare timer."))return;
     await api.googleDisconnect(); loadGoogleStatus();
   }else{
-    window.location.href=`${CONFIG.API_BASE}/api/google/connect?slug=${CONFIG.BARBER_SLUG}`;
+    window.location.href=`${CONFIG.API_BASE}/api/dashboard/google/connect`;
   }
 });
 
