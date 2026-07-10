@@ -1,0 +1,166 @@
+<!DOCTYPE html>
+<html lang="no">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>BarberHQ — Lag et passord</title>
+<meta name="robots" content="noindex">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;color:#fff;min-height:100dvh;display:flex;flex-direction:column;-webkit-font-smoothing:antialiased}
+a{text-decoration:none;color:inherit}
+
+/* ── Nav ── */
+.nav{background:rgba(10,10,10,.9);backdrop-filter:blur(14px);border-bottom:1px solid #1f1f1f;position:sticky;top:0;z-index:50}
+.nav-wrap{max-width:1100px;margin:0 auto;padding:0 24px;height:62px;display:flex;align-items:center}
+.logo{font-size:20px;font-weight:800;letter-spacing:-.03em;color:#fff}
+
+/* ── Senter ── */
+.main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px}
+.card{width:100%;max-width:400px;background:#0e0e0e;border:1px solid #1f1f1f;border-radius:20px;padding:36px 32px}
+
+.card-logo{font-size:22px;font-weight:800;letter-spacing:-.03em;color:#fff;display:block;margin-bottom:20px;text-align:center}
+.card h1{font-size:26px;font-weight:700;letter-spacing:-.03em;margin-bottom:4px;text-align:center}
+.card-sub{color:#9a9a9a;font-size:13.5px;text-align:center;margin-bottom:28px}
+
+/* ── Felter ── */
+.field{margin-bottom:14px;text-align:left}
+.field label{display:block;font-size:12.5px;color:#bdbdbd;font-weight:500;margin-bottom:7px}
+.field input{width:100%;background:#0a0a0a;border:1px solid #2a2a2a;border-radius:10px;padding:13px 15px;color:#fff;font:inherit;font-size:15px;outline:none;transition:border-color .18s;-webkit-appearance:none}
+.field input:focus{border-color:#4d8bff}
+.field input::placeholder{color:#555}
+
+/* ── Feil ── */
+.field-err{color:#c0594a;font-size:12.5px;margin-top:6px;display:none}
+.field-err.show{display:block}
+.form-err{color:#c0594a;font-size:13.5px;margin-bottom:12px;text-align:center;display:none}
+.form-err.show{display:block}
+
+/* ── Knapp ── */
+.btn{width:100%;background:#4d8bff;color:#fff;border:none;border-radius:10px;padding:14px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .18s;margin-top:4px}
+.btn:hover:not(:disabled){opacity:.88}
+.btn:disabled{opacity:.5;cursor:not-allowed}
+
+/* ── Footer ── */
+.foot{border-top:1px solid #1a1a1a;padding:22px 24px;text-align:center}
+.foot span{color:#555;font-size:12.5px}
+
+@media(max-width:440px){
+  .card{padding:28px 20px;border-radius:16px}
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-wrap">
+    <span class="logo">BarberHQ</span>
+  </div>
+</nav>
+
+<main class="main">
+  <div class="card">
+    <span class="card-logo">BarberHQ</span>
+    <h1>Lag et passord</h1>
+    <p class="card-sub">Da slipper du å be om en lenke hver gang.</p>
+
+    <p class="form-err" id="form-err"></p>
+
+    <div class="field">
+      <label for="pw">Passord</label>
+      <input type="password" id="pw" placeholder="Minst 8 tegn"
+             autocomplete="new-password" minlength="8">
+      <p class="field-err" id="pw-err"></p>
+    </div>
+
+    <div class="field">
+      <label for="pw2">Gjenta passord</label>
+      <input type="password" id="pw2" placeholder="••••••••"
+             autocomplete="new-password">
+      <p class="field-err" id="pw2-err"></p>
+    </div>
+
+    <button class="btn" id="submit">Lagre og fortsett</button>
+  </div>
+</main>
+
+<footer class="foot">
+  <span>&copy; 2026 BarberHQ</span>
+</footer>
+
+<script>
+(function () {
+  var API    = 'https://api.trybarberhq.com';
+  var pw     = document.getElementById('pw');
+  var pw2    = document.getElementById('pw2');
+  var submit = document.getElementById('submit');
+  var formErr = document.getElementById('form-err');
+  var pwErr   = document.getElementById('pw-err');
+  var pw2Err  = document.getElementById('pw2-err');
+
+  function showFieldErr(el, msg) { el.textContent = msg; el.classList.add('show'); }
+  function clearFieldErr(el)     { el.textContent = ''; el.classList.remove('show'); }
+  function showFormErr(msg)  { formErr.textContent = msg; formErr.classList.add('show'); }
+  function clearFormErr()    { formErr.classList.remove('show'); }
+
+  [pw, pw2].forEach(function (el) {
+    el.addEventListener('keydown', function (e) { if (e.key === 'Enter') save(); });
+  });
+  submit.addEventListener('click', save);
+
+  async function save() {
+    clearFormErr();
+    clearFieldErr(pwErr);
+    clearFieldErr(pw2Err);
+
+    var p1 = pw.value;
+    var p2 = pw2.value;
+    var ok = true;
+
+    if (p1.length < 8) {
+      showFieldErr(pwErr, 'Passordet må være minst 8 tegn');
+      ok = false;
+    }
+    if (p2 !== p1) {
+      showFieldErr(pw2Err, 'Passordene er ikke like');
+      ok = false;
+    }
+    if (!ok) return;
+
+    submit.disabled    = true;
+    submit.textContent = 'Lagrer …';
+
+    try {
+      var res = await fetch(API + '/api/dashboard/set-password', {
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body: JSON.stringify({ password: p1 }),
+      });
+
+      if (res.status === 401) {
+        location.href = '/no/logg-inn.html';
+        return;
+      }
+      if (res.ok) {
+        location.href = '/no/dashboard.html';
+        return;
+      }
+
+      var data = {};
+      try { data = await res.json(); } catch (_) {}
+      showFormErr(data.error || 'Noe gikk galt, prøv igjen');
+    } catch (_) {
+      showFormErr('Noe gikk galt, prøv igjen');
+    } finally {
+      submit.disabled    = false;
+      submit.textContent = 'Lagre og fortsett';
+    }
+  }
+}());
+</script>
+</body>
+</html>

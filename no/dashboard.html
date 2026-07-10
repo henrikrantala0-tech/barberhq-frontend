@@ -1268,6 +1268,7 @@ async function loadProfil(){
   if(!r)return;
   if(!r.ok)return;
   const p=await r.json();
+  if(!p.hasPassword){location.href='/no/opprett-passord.html';return;}
   if(p.isDemo&&!IS_DEMO){IS_DEMO=true;applyDemoMode();}
   $("#pf-name").value=p.name||"";
   $("#pf-shop").value=p.shop||"";
