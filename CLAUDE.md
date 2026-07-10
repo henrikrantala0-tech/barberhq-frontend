@@ -16,7 +16,9 @@ Søsterrepo: barberhq-backend (Railway).
 - no/ sv/ da/ en/ — én mappe per språk
 - _redirects + netlify.toml — styrer språk-ruting på Netlify
 - Hver språkmappe: index.html (landing), kom-i-gang.html (onboarding),
-  dashboard.html, + funksjoner/priser/support/logg-inn.html
+  dashboard.html, + funksjoner/priser/support/logg-inn.html/opprett-passord.html
+- **Logo:** `assets/logo/` — master SVG + eksportvarianter (email, social, og).
+  Byggpipeline i `tools/logo/`. Favicon er UTSATT (egen enkel-variant forkastet).
 
 ## Deploy
 - Netlify. Skal kobles til dette repoet (auto-deploy fra main).
@@ -116,8 +118,12 @@ chatten — 1/l og 0/O er uleselige i chatfonten og har forårsaket feil (05.07)
 
 Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historikk.
 
+### Innlogging + passord (frontend)
+- **`logg-inn.html`:** passord-innlogging (`POST /api/login`) + «Glemt passord?»-flyt som ber om magisk lenke (`POST /api/send-magic-link` — alltid samme kvittering, avslører ikke om e-post finnes). Håndterer `?error=expired` (utløpt/brukt magisk lenke) over skjemaet.
+- **`opprett-passord.html`:** førstegangs passord-setting etter magisk-lenke-innlogging (`POST /api/dashboard/set-password`, min 8 tegn, felt-validering). Vis/skjul-øye på begge felt (gjenbrukt fra logg-inn). Dashboard redirecter hit når `profile.hasPassword` er false.
+
 ### Dashboard + kundeside
-- **Design-fane:** live mal-preview fra `/api/templates/:layout` (ekte mal, svarte bilde-blokker), synkronisert med palett/font/layout/modus. Layout-kort som ren tekst.
+- **Design-fane:** live forhåndsvisning via `GET /api/dashboard/preview?layout&palette&font&mode` — full **server-render** av barberens EKTE side (`byggSideFraBarber → fill → booking-module.cjs`; `preview:true` hopper over /days+/slots og åpner sheet). Samme kilde som publisert side = ingen drift. `dashboard.html` setter kun `srcdoc` (cache per param-kombo, synlig `previewError` ved feil); ingen klient-fyll. Endepunktet `console.warn`-er på ufylt `{{PLACEHOLDER}}` — erstattet den gamle stille slutt-wipen (`replace(/{{[A-Z_]+}}/g,'')`) som skjulte at booking-modulen (all aksentfarge) aldri ble injisert → helt svart/hvit preview i ~4 mnd (rot-årsak: FASE B `6d06a8d` flyttet booking-UI inn i `{{BOOKING_MODULE}}` som wipen slettet). Layout-kort som ren tekst.
 - **Mobil-nav:** "Mer"-meny (Oversikt · Bookinger · Tjenester synlig, resten i dropdown); desktop uendret. Mobil Design-layout: preview sentrert, rekkefølge valg → preview → Lagre, 2-kolonne kort, breakpoint 700px.
 - **Palett-konsistens:** én delt kilde (`palett.js`) for kom-i-gang + dashboard, i synk med `fyll.cjs`. Ren svart/hvit bakgrunn i mørk modus, aksent skiller.
 - **Kundeside bygges fra `barbers`-raden** (ikke `orders.payload`): alt barbereren endrer (design, layout, font, adresse, bio, bilder, tjenester) når bookingsiden. Oppslag via `barbers.slug`, status-gating via `barbers.page_status`. `savedLayout` er skilt fra `design.layout` — Bilder-fanen leser alltid lagret DB-verdi.
@@ -132,7 +138,7 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
 
 ### Tagline/bio + font
 - `tagline`-kolonne er skilt fra `bio`: `bygg.js` mapper `tagline → {{SPECIALTY}}`, `bio → {{BIO_BLOCK}}`; `fyll.cjs` fjerner tom `.sub` rent. Dashboard Profil-fane har to valgfrie felt (Tagline + Beskrivelse). Onboarding rører ikke tagline/bio.
-- **Font-levering kundeside:** Space Grotesk + Plus Jakarta Sans base64-embeddet i templates (Railway CSP `font-src 'self' data:` blokkerer Google Fonts CDN). `.ttf` i `backend/fonts/`. `{{H1_FONT_FAMILY}}` på h1 + h2 i hero/profil/showcase — kun titler, brødtekst Inter. Dashboard-preview bruker CDN (Netlify, ingen streng CSP).
+- **Font-levering kundeside:** Space Grotesk + Plus Jakarta Sans base64-embeddet i templates (Railway CSP `font-src 'self' data:` blokkerer Google Fonts CDN). `.ttf` i `backend/fonts/`. `{{H1_FONT_FAMILY}}` på h1 + h2 i hero/profil/showcase — kun titler, brødtekst Inter. Dashboard-preview server-renderer nå via samme vei (base64-fonter fra `fontOpts()`), ikke lenger CDN.
 
 ### Beslutninger som ligger til grunn
 - Slot-navn: norsk (`portrett`/`hero`/`galleri`).
@@ -155,3 +161,6 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
 1. **Test full klikk-flyt med ekte klippbilde** — crop + lagring i Bilder-fanen, verifiser at bildet havner riktig i riktig slot på ekte kundeside. Bevist via API, ikke via UI-flyt ennå.
 2. **Hero-bildegrense server-side** — se sikkerhetshull over.
 3. **orders.barber_id FK** — verifiser enforcement, se sikkerhetshull over.
+4. **`logg-inn.html` `?error=expired`-melding** — gjør dempet grå i stedet for rød: «Logg inn med e-post og passord, eller be om en ny lenke.»
+5. **Pris-0-markør i dashboard tjeneste-lista** — rød kant + «Sett pris» (parallell til kundesidens `prisTekst`-vern; gå-live blokkeres allerede server-side).
+6. **Rydd untracked scratchpad-filer** — `git clean -n` FØRST (mange løse `*.mjs`/`*.html`/`*.png` i repo-roten fra render-tester).
