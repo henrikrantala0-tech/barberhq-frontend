@@ -8,6 +8,16 @@
     minimal:  {light:'#ffffff',accent:'#86868b',dark:'#0a0a0a'},
     oransje:  {light:'#ffffff',accent:'#e8590c',dark:'#0a0a0a'},
   };
+  // Dempet/mørkere aksent, ≥4.5:1 som liten tekst mot bg. Lik accent der accent
+  // alt er mørk/lys nok. MÅ holdes i synk med barberhq-backend/fyll.cjs.
+  var ACCENT_TEXT={
+    mint:     {lys:'#0b7a55',mork:'#10b981'},
+    klassisk: {lys:'#0068d1',mork:'#1f82e6'},
+    purple:   {lys:'#6b3df0',mork:'#8c68f3'},
+    krem:     {lys:'#826825',mork:'#b08c32'},
+    minimal:  {lys:'#6b6b6f',mork:'#86868b'},
+    oransje:  {lys:'#b54509',mork:'#e8590c'},
+  };
   var PALETTES_DISPLAY=[
     {key:"mint",     t:"Street Mint",       d:"Friskt grønt",        sw:["#ffffff","#10b981","#0a0a0a"]},
     {key:"klassisk", t:"Klassisk BarberHQ", d:"Sort/hvit + blå",     sw:["#0a0a0a","#ffffff","#0071e3"]},
@@ -25,7 +35,7 @@
     var bg=dk?p.dark:p.light,ink=dk?p.light:p.dark;
     if(!dk&&lum(bg)<lum(ink)){var t=bg;bg=ink;ink=t;}
     if(dk&&lum(bg)>lum(ink)){var t=bg;bg=ink;ink=t;}
-    return{bg:bg,surface:mix(bg,ink,dk?0.06:0.045),ink:ink,inkSoft:mix(ink,bg,0.42),accent:p.accent,accentInk:lum(p.accent)>0.6?'#141210':'#ffffff',line:mix(bg,ink,dk?0.16:0.12)};
+    return{bg:bg,surface:mix(bg,ink,dk?0.06:0.045),ink:ink,inkSoft:mix(ink,bg,0.42),accent:p.accent,accentInk:lum(p.accent)>0.6?'#141210':'#ffffff',accentText:(ACCENT_TEXT[key]||ACCENT_TEXT.krem)[dk?'mork':'lys'],line:mix(bg,ink,dk?0.16:0.12)};
   }
   window.PALETTE_DATA=PALETTE_DATA;
   window.PALETTES_DISPLAY=PALETTES_DISPLAY;

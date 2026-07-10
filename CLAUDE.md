@@ -149,6 +149,7 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
   Dette er en MVP-forenkling. Booking-validering mot `business_hours` bruker denne utledningen.
   Riktig løsning: egen `timezone`-kolonne på `barbers`, satt per barber ved onboarding, og bruk den
   i stedet for market-mappingen. Må fikses før vi tar inn barberere utenfor CET/UK.
+- **buildPalette er duplisert i fyll.cjs og no/palett.js — må holdes i synk manuelt.**
 
 ### Gjenstår (neste økt / senere)
 1. **Test full klikk-flyt med ekte klippbilde** — crop + lagring i Bilder-fanen, verifiser at bildet havner riktig i riktig slot på ekte kundeside. Bevist via API, ikke via UI-flyt ennå.
