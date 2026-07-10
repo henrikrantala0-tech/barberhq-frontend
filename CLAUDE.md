@@ -22,7 +22,58 @@ Søsterrepo: barberhq-backend (Railway).
 - Netlify. Skal kobles til dette repoet (auto-deploy fra main).
 - Inntil kobling er live: deployet manuelt via Netlify Drop.
 
-## Arbeidsspråk: norsk. Planlegg før bygging. Render før deploy.
+## Låste beslutninger (ikke reåpne uten at Henrik ber om det)
+
+- **Pris:** 249 kr/mnd fast (ingen 499-trapp foreløpig). **30 dagers gratis prøveperiode** (trial_period_days: 30) i alle markeder — dette er bevisst og riktig, ikke en feil i koden.
+- **Marked:** fire land samtidig — NO / SE / DK / UK. Tyskland droppet.
+- **Domene:** `trybarberhq.com` + `trybarberhq.no`.
+- **MVP har ingen pengestrøm** gjennom plattformen. Kunder betaler barberen
+  direkte i salongen. Betalingsmetoder vises kun som info.
+- **Stripe Connect Express** utsatt til depositum/no-show-funksjon bygges.
+  Penger skal ALDRI gå via Henriks konto — hver barber egen mottaker.
+- **Kalender:** dashbord er master. Enveis push til Google Calendar (OAuth)
+  etter levering. Aldri toveis sync (CASA-verifisering er fellen).
+  Aldri be om API-nøkler i skjema.
+- **Bilder i onboarding:** primært concierge (Henrik henter fra Instagram) +
+  dashboard-opplasting. Dashbordet MÅ ha bildeopplasting fra dag én.
+- **Anti-marketplace** er kjernedifferensiator — aldri funksjoner som
+  eksponerer barberens kunder for konkurrenter. Aldri marketplace.
+- **Ingen falsk social proof** — null kunder nå; alle påstander må være ærlige.
+- **Font:** valg fjernet fra onboarding (alle får Fraunces). Font velges i
+  dashbordet etterpå.
+- Design er låst: 6 paletter, 4 layouter (Profil/Showcase/Hero/Direkte).
+  Ikke endre uten å spørre.
+
+## Arbeidsregler (Henriks preferanser)
+
+- **Arbeidsspråk: uformell norsk.**
+- **Planlegg før bygging** — Henrik krever detaljert seksjon-for-seksjon-plan
+  før kode skrives. Ikke hopp rett til implementasjon på større oppgaver.
+- **Rot-årsak-fikser** — overflate-patcher avvises. Finn og fiks underliggende
+  årsak.
+- **Boot before push:** enhver backend-endring verifiseres lokalt FØR push —
+  minimum `node --check` på alle endrede `.js`/`.cjs`-filer. En parse-feil i én
+  route-fil tar ned hele serveren (Railway starter aldri forbi `import`-fasen).
+  Brent oss 2026-07-09: `SyntaxError: Identifier 'totalMin' has already been declared`
+  i bookings.js krasjet prod i ~7 min før det ble oppdaget.
+- **Render før deploy** når det gjelder visuelle endringer. Playwright
+  (Chromium, `device_scale_factor=2`). Fonter (Fraunces/Inter variable TTF)
+  fra `raw.githubusercontent.com/google/fonts`.
+- **Valider base64/bilder** etter fil-endringer som rører bilder
+  (PNG-sig `8950`, JPEG-sig `ffd8`).
+- **asyncRoute på alle nye async ruter** — bruk `asyncRoute` fra
+  `src/lib/asyncRoute.js` på alle nye async Express-ruter. Wrapper ruter
+  unhandled rejections til error-middleware → 500-respons og logg, uten å ta
+  ned prosessen. `process.on('unhandledRejection')` i server.js er kun siste
+  skanse — primærforsvaret er asyncRoute + try/catch per rute.
+- **Screenshot-godkjenning:** Code viser Playwright-bildene og STOPPER for Henriks
+  godkjenning før commit — self-rapportering ("ser bra ut") er ikke godkjenning.
+- **Typografiskala:** alle font-størrelser via CSS-variablene `--fs-title/section/body/small/micro`
+  og `--fw-bold/medium/regular` — ingen løse `px`-verdier for font-size eller font-weight.
+- Når Henrik sier "ferdig med saken" er beslutningen låst — gå videre.
+- Push tilbake ærlig på dårlige idéer, men respekter låste beslutninger.
+
+**Arbeidslogger hører ikke hjemme i CLAUDE.md. Bruk git-historikk.**
 
 ## no/index.html — seksjonsrekkefølge (låst 26.06)
 1. Hero (`#top`)
@@ -60,55 +111,37 @@ chatten — 1/l og 0/O er uleselige i chatfonten og har forårsaket feil (05.07)
 - **orders.barber_id FK ikke fullt enforced** — vi så en id som ikke matchet uten at DB
   klaget under testing. Bør verifiseres — kan føre til stille feil ved feil barber_id.
 
-## Status — sist oppdatert 2026-07-05
 
-### Ferdig og pushet
-- **Live mal-preview i Design-fanen** — viser ekte mal fra backend-endepunkt (`/api/templates/:layout`), svarte bilde-blokker (ikke demo-bilder), synkronisert med palett/font/layout/modus.
-- **Layout-kort som bare tekst** i Design-fanen (ikke wireframes/screenshots).
-- **Mobil fane-navigasjon** — "Mer"-meny: Oversikt · Bookinger · Tjenester synlig, resten i dropdown. Desktop uendret.
-- **Palett-konsistens** — én delt kilde (`palett.js`) for kom-i-gang + dashboard, `fyll.cjs` i synk. Alle paletter rene svart/hvit bakgrunn i mørk modus, aksent skiller.
-- **Mobil Design-layout** — preview sentrert, rekkefølge valg → preview → Lagre, kompakte 2-kolonne kort, breakpoint 700px.
-- **Dashboard koblet til ekte bookingside** (root-cause) — `bygg.js` bygger nå fra `barbers`-raden (ikke `orders.payload`). Alt barbereren endrer i dashbordet (design, layout, font, adresse, bio, bilder, tjenester) når bookingsiden. Oppslag via `barbers.slug`, status-gating via `barbers.page_status`.
-- **Bildeplasserings-system (lag 1–4):**
-  - Lag 1: `slot` (portrett/hero/galleri) + `sort_order`-kolonner på `images` (migrering 009).
-  - Lag 2: backend — opplasting til slot, slett-ved-erstatning (DB+R2), galleri-grense 10, `PATCH /images/:id/slot`, hard sletting (DB+R2) ved layout-bytte (transaksjonssikret med BEGIN/COMMIT/ROLLBACK, R2 best-effort utenfor transaksjon).
-  - Lag 3: `byggSideFraBarber()` leser slots (ikke opplastingsrekkefølge) — barberens plassering styrer siden.
-  - Lag 4: Bilder-fane med trykkbare slot-bokser per layout (rund portrett, galleri-grid, hero-boks, Direkte-melding).
-- **Layout-drift fikset (05.07)** — `savedLayout` skilt fra `design.layout` i dashboard.
-  Bilder-fanen leser alltid lagret verdi fra DB, ikke ulagret preview-state. `_designReady`-hack fjernet.
-- **`POST /api/admin/orders/:id/bygg-barber` (05.07)** — oppretter barber fra ordre
-  atomisk: slug mot barbers-tabellen, INSERT barbers, UPDATE orders.barber_id, re-knytter
-  onboarding-bilder til barber_id, auto-tildeler slots (galleri maks 10; hero → første bilde;
-  direkte → ingen; portrett ALDRI auto — klippbilder er ikke portretter). Idempotent med
-  FOR UPDATE radlås (409 ved dobbeltkjøring). Verifisert mot prod (henrik-fades).
-- **Crop-feature (dashboard):** Cropper.js 1.6.2 self-hostet i `no/lib/`. Hvert bilde:
-  beskjær-ikon (Cropper-modal) + ×-ikon (Fjern/Endre). Endre og crop bruker begge
-  `PUT /api/dashboard/images/:id` — bytter R2-fil, bevarer slot/sort_order. Destruktiv
-  klientside-crop (canvas→blob→PUT). Aspect-forhold: portrett 1:1, galleri 3:4 (endret
-  fra 4:5), hero 9:19.5. Hero-template er 100vh fullskjerm — 9:19.5 gjelder crop + dashboard-boks.
-- **Tagline/bio-duplisering fikset (05.07)** — `bygg.js` doblet `barber.bio` inn i
-  både `{{SPECIALTY}}` og `{{BIO_BLOCK}}`. Fikset: ny `tagline`-kolonne (migrasjon 010,
-  kjørt mot prod), `bygg.js` mapper `tagline→{{SPECIALTY}}` + `bio→{{BIO_BLOCK}}`,
-  `fyll.cjs` fjerner tom `.sub` rent (ingen tom `<p>`). Dashboard Profil-fane har to
-  valgfrie felt: Tagline + Beskrivelse. Onboarding-skjemaet rører ikke tagline/bio.
-  Commits: `ddd086a` (backend) + `dadfd4b` (frontend).
-- **Font-levering for kundesider (05.07)** — Space Grotesk + Plus Jakarta Sans
-  base64-embeddet i templates. Railway CSP (`font-src 'self' data:`) krever base64 —
-  Google Fonts CDN er blokkert på kundeside-ruten. `.ttf` i `backend/fonts/` (begge
-  mapper). `fyll.cjs` embedder, `bygg.js fontOpts()` inkluderer alle fire fonter.
-  `{{H1_FONT_FAMILY}}` på h1 + h2 i tre templates (hero/profil/showcase) — kun titler,
-  brødtekst forblir Inter. Dashboard-preview brukte allerede CDN (Netlify, ingen streng CSP).
-  Commit: `07311d7` (backend).
+## Systemtilstand
+
+Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historikk.
+
+### Dashboard + kundeside
+- **Design-fane:** live mal-preview fra `/api/templates/:layout` (ekte mal, svarte bilde-blokker), synkronisert med palett/font/layout/modus. Layout-kort som ren tekst.
+- **Mobil-nav:** "Mer"-meny (Oversikt · Bookinger · Tjenester synlig, resten i dropdown); desktop uendret. Mobil Design-layout: preview sentrert, rekkefølge valg → preview → Lagre, 2-kolonne kort, breakpoint 700px.
+- **Palett-konsistens:** én delt kilde (`palett.js`) for kom-i-gang + dashboard, i synk med `fyll.cjs`. Ren svart/hvit bakgrunn i mørk modus, aksent skiller.
+- **Kundeside bygges fra `barbers`-raden** (ikke `orders.payload`): alt barbereren endrer (design, layout, font, adresse, bio, bilder, tjenester) når bookingsiden. Oppslag via `barbers.slug`, status-gating via `barbers.page_status`. `savedLayout` er skilt fra `design.layout` — Bilder-fanen leser alltid lagret DB-verdi.
+
+### Bildeplasserings-system (slots)
+- `images` har `slot` (portrett/hero/galleri) + `sort_order`. Barbereren trykker en slot-boks per layout → laster opp dit. Galleri-grense 10; erstatning av portrett/hero sletter gammelt helt (DB+R2). `PATCH /images/:id/slot` flytter. Layout-bytte hard-sletter (DB+R2), transaksjonssikret (BEGIN/COMMIT/ROLLBACK, R2 best-effort utenfor transaksjon).
+- `byggSideFraBarber()` leser slots (ikke opplastingsrekkefølge) — barberens plassering styrer siden.
+- **Crop:** Cropper.js 1.6.2 self-hostet i `no/lib/`. Beskjær-ikon (modal) + ×-ikon per bilde. Crop og Endre bruker `PUT /api/dashboard/images/:id` — bytter R2-fil, bevarer slot/sort_order (destruktiv klientside-crop, canvas→blob→PUT). Aspect: portrett 1:1, galleri 3:4, hero 9:19.5.
+
+### Barber fra ordre
+- `POST /api/admin/orders/:id/bygg-barber` oppretter barber atomisk: slug mot `barbers`, INSERT barbers, UPDATE `orders.barber_id`, re-knytter onboarding-bilder til barber_id, auto-tildeler slots (galleri maks 10; hero → første bilde; direkte → ingen; portrett ALDRI auto). Idempotent med FOR UPDATE radlås (409 ved dobbeltkjøring).
+
+### Tagline/bio + font
+- `tagline`-kolonne er skilt fra `bio`: `bygg.js` mapper `tagline → {{SPECIALTY}}`, `bio → {{BIO_BLOCK}}`; `fyll.cjs` fjerner tom `.sub` rent. Dashboard Profil-fane har to valgfrie felt (Tagline + Beskrivelse). Onboarding rører ikke tagline/bio.
+- **Font-levering kundeside:** Space Grotesk + Plus Jakarta Sans base64-embeddet i templates (Railway CSP `font-src 'self' data:` blokkerer Google Fonts CDN). `.ttf` i `backend/fonts/`. `{{H1_FONT_FAMILY}}` på h1 + h2 i hero/profil/showcase — kun titler, brødtekst Inter. Dashboard-preview bruker CDN (Netlify, ingen streng CSP).
 
 ### Beslutninger som ligger til grunn
 - Slot-navn: norsk (`portrett`/`hero`/`galleri`).
 - Profil: 1 portrett + opptil 10 galleri = 11 totalt (unntak fra maks-10). Showcase: opptil 10 galleri. Hero: 1 bilde. Direkte: ingen bilder.
 - Barbereren trykker en boks → laster opp til den slotten. Erstatt portrett/hero = slett gammelt helt (DB+R2). Galleri vokser etter behov.
-- Slot nullstilles (nå: hard-slettes) kun ved faktisk layout-bytte — ikke ved annen Design-lagring.
+- Slot hard-slettes kun ved faktisk layout-bytte — ikke ved annen Design-lagring.
 - Én barber = én bookingside (1:1).
 - Tagline (kort, valgfri) + Bio (lengre, valgfri) er to separate felt. Onboarding samler ikke tagline — barbereren fyller i dashboard.
 - Onboarding-bilder er alltid klippbilder — portrett-slot fylles ALDRI automatisk ved bygg-barber.
-- Slug-ruting: barbersider på `api.trybarberhq.com/<slug>` i dag (stygt for deling). Beslutning tatt: flytt til `trybarberhq.com/<slug>` via Netlify-proxy — ikke bygget ennå.
 
 ## Kjent teknisk gjeld
 
@@ -118,7 +151,6 @@ chatten — 1/l og 0/O er uleselige i chatfonten og har forårsaket feil (05.07)
   i stedet for market-mappingen. Må fikses før vi tar inn barberere utenfor CET/UK.
 
 ### Gjenstår (neste økt / senere)
-1. **Slug-ruting** — flytt barbersider til `trybarberhq.com/<slug>` via Netlify-proxy til backend. Krever reservliste for eksisterende ruter + slug-validering i bygg-barber mot reserverte ord.
-2. **Test full klikk-flyt med ekte klippbilde** — crop + lagring i Bilder-fanen, verifiser at bildet havner riktig i riktig slot på ekte kundeside. Bevist via API, ikke via UI-flyt ennå.
-3. **Hero-bildegrense server-side** — se sikkerhetshull over.
-4. **orders.barber_id FK** — verifiser enforcement, se sikkerhetshull over.
+1. **Test full klikk-flyt med ekte klippbilde** — crop + lagring i Bilder-fanen, verifiser at bildet havner riktig i riktig slot på ekte kundeside. Bevist via API, ikke via UI-flyt ennå.
+2. **Hero-bildegrense server-side** — se sikkerhetshull over.
+3. **orders.barber_id FK** — verifiser enforcement, se sikkerhetshull over.
