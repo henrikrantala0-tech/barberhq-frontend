@@ -33,6 +33,13 @@ a{text-decoration:none;color:inherit}
 .field input:focus{border-color:#4d8bff}
 .field input::placeholder{color:#555}
 
+/* Passord-wrapper med øye-ikon (samme komponent som logg-inn.html) */
+.pw-wrap{position:relative}
+.pw-wrap input{padding-right:44px}
+.pw-toggle{position:absolute;right:12px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:#666;padding:4px;display:flex;align-items:center;transition:color .15s;line-height:0}
+.pw-toggle:hover{color:#bbb}
+.pw-toggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+
 /* ── Feil ── */
 .field-err{color:#c0594a;font-size:12.5px;margin-top:6px;display:none}
 .field-err.show{display:block}
@@ -71,15 +78,27 @@ a{text-decoration:none;color:inherit}
 
     <div class="field">
       <label for="pw">Passord</label>
-      <input type="password" id="pw" placeholder="Minst 8 tegn"
-             autocomplete="new-password" minlength="8">
+      <div class="pw-wrap">
+        <input type="password" id="pw" placeholder="Minst 8 tegn"
+               autocomplete="new-password" minlength="8">
+        <button class="pw-toggle" id="toggle-pw" type="button" aria-label="Vis passord">
+          <svg id="eye-on" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg id="eye-off" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
+      </div>
       <p class="field-err" id="pw-err"></p>
     </div>
 
     <div class="field">
       <label for="pw2">Gjenta passord</label>
-      <input type="password" id="pw2" placeholder="••••••••"
-             autocomplete="new-password">
+      <div class="pw-wrap">
+        <input type="password" id="pw2" placeholder="••••••••"
+               autocomplete="new-password">
+        <button class="pw-toggle" id="toggle-pw2" type="button" aria-label="Vis passord">
+          <svg id="eye-on2" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+          <svg id="eye-off2" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+        </button>
+      </div>
       <p class="field-err" id="pw2-err"></p>
     </div>
 
@@ -100,6 +119,22 @@ a{text-decoration:none;color:inherit}
   var formErr = document.getElementById('form-err');
   var pwErr   = document.getElementById('pw-err');
   var pw2Err  = document.getElementById('pw2-err');
+
+  // Vis/skjul passord — samme komponent som logg-inn.html, ett par per felt.
+  function bindToggle(toggleId, input, eyeOnId, eyeOffId) {
+    var toggle = document.getElementById(toggleId);
+    var eyeOn  = document.getElementById(eyeOnId);
+    var eyeOff = document.getElementById(eyeOffId);
+    toggle.addEventListener('click', function () {
+      var show = input.type === 'password';
+      input.type = show ? 'text' : 'password';
+      eyeOn.style.display  = show ? 'none' : '';
+      eyeOff.style.display = show ? '' : 'none';
+      toggle.setAttribute('aria-label', show ? 'Skjul passord' : 'Vis passord');
+    });
+  }
+  bindToggle('toggle-pw',  pw,  'eye-on',  'eye-off');
+  bindToggle('toggle-pw2', pw2, 'eye-on2', 'eye-off2');
 
   function showFieldErr(el, msg) { el.textContent = msg; el.classList.add('show'); }
   function clearFieldErr(el)     { el.textContent = ''; el.classList.remove('show'); }
