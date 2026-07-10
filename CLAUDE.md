@@ -164,3 +164,14 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
 4. **`logg-inn.html` `?error=expired`-melding** — gjør dempet grå i stedet for rød: «Logg inn med e-post og passord, eller be om en ny lenke.»
 5. **Pris-0-markør i dashboard tjeneste-lista** — rød kant + «Sett pris» (parallell til kundesidens `prisTekst`-vern; gå-live blokkeres allerede server-side).
 6. **Rydd untracked scratchpad-filer** — `git clean -n` FØRST (mange løse `*.mjs`/`*.html`/`*.png` i repo-roten fra render-tester).
+
+### Rydding, neste økt
+`git clean -f` i repo-roten ville slette både søppel OG ekte arbeid — ikke kjør blindt. Splitt:
+- **Refererte/usporede — BESLUTT commit vs. flytt ut (ikke slett):** seksjonsutkastene
+  `din-side-seksjon.html`, `din-side__bilde.html`, `problem-seksjon.html`,
+  `problem-seksjon__venstre.html`, `systemer-seksjon.html`, `produktvisning-seksjon.html`
+  (sistnevnte er referert i CLAUDE.md linje 80) + `SPEC-bytt-seksjoner.md`. Disse er
+  untracked, men er kildeutkast — enten commit dem eller flytt dem ut av repoet.
+- **Scratchpad-test (kan slettes da):** `*_render_test.mjs`, `*_test.mjs`, `demo_*.mjs`,
+  `hero_ratio_measure.mjs`, `screenshot-bilder.mjs`, `pw-screenshots/`.
+- `package.json`/`package-lock.json` (Playwright-tooling) er også untracked — vurder å committe.
