@@ -1391,43 +1391,28 @@ const LAYOUTS=[
 ];
 let design={palette:"mint",font:"fraunces",layout:"direkte",mode:"lys"};
 let savedLayout=design.layout;
-var TEMPLATE_BASE='https://api.trybarberhq.com/api/templates/';
-var malCache={};
-var ADDR_PIN='<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>';
-function galleriFyll(n){var s='';for(var i=0;i<n;i++)s+='<div style="width:100%;aspect-ratio:3/4;background:var(--line)"></div>';return s;}
-function renderAddr(a){
-  if(/\d/.test(a))return'<a class="addr" href="https://maps.google.com/?q='+encodeURIComponent(a)+'" target="_blank" rel="noopener">'+ADDR_PIN+'<span>'+esc(a)+'</span></a>';
-  return'<span class="addr addr-plain">'+ADDR_PIN+'<span>'+esc(a)+'</span></span>';
-}
-function demoHoved(){return'<div class="svc" data-t="h"><div class="svc-left"><span class="ind"></span><div class="svc-txt"><div class="svc-name">Skinnfade</div><div class="svc-min">45 min</div></div></div><div class="svc-price">450 kr</div></div><div class="svc" data-t="h"><div class="svc-left"><span class="ind"></span><div class="svc-txt"><div class="svc-name">Klipp &amp; styling</div><div class="svc-min">30 min</div></div></div><div class="svc-price">350 kr</div></div>';}
-function demoTillegg(){return'<div class="svc" data-t="t"><div class="svc-left"><span class="ind box"></span><div class="svc-txt"><div class="svc-name">Skjegg</div></div></div><div class="svc-price">+150 kr</div></div>';}
-function fontFamilyNavn(){var map={fraunces:'Fraunces',grotesk:'Space Grotesk',jakarta:'Plus Jakarta Sans'};return map[design.font]||'Fraunces';}
-function fyllMal(raw,layout){
-  var c=window.buildPalette(design.palette,design.mode);
-  var shop=($("#pf-shop")&&$("#pf-shop").value)?$("#pf-shop").value:'Grand Barber';
-  var addr=($("#pf-address")&&$("#pf-address").value)?$("#pf-address").value:'Storgata 12, 0182 Oslo';
-  var out=raw;
-  out=out.split('{{C_BG}}').join(c.bg).split('{{C_SURFACE}}').join(c.surface).split('{{C_INK}}').join(c.ink).split('{{C_INK_SOFT}}').join(c.inkSoft).split('{{C_ACCENT}}').join(c.accent).split('{{C_ACCENT_INK}}').join(c.accentInk).split('{{C_LINE}}').join(c.line);
-  out=out.replace(/@font-face\{font-family:'Fraunces'[^}]*\}/g,'').replace(/@font-face\{font-family:'Inter'[^}]*\}/g,'');
-  var fam=fontFamilyNavn();
-  out=out.replace('</head>','<link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,900&family=Space+Grotesk:wght@400;500;600;700&family=Plus+Jakarta+Sans:wght@400;500;600;700&family=Inter:wght@400;500;800&display=swap" rel="stylesheet"><style>h1{font-family:\''+fam+'\',serif !important}</style></head>');
-  out=out.split('{{LANG}}').join('no').split('{{SHOP}}').join(esc(shop)).split('{{CITY_SUFFIX}}').join('').split('{{BOOK_HREF}}').join('#');
-  out=out.replace(/<p class="sub">\{\{SPECIALTY\}\}<\/p>/g,'').split('{{SPECIALTY}}').join('');
-  out=out.split('{{ADDR_BLOCK}}').join(renderAddr(addr));
-  out=out.replace(/<!-- BIO_START[\s\S]*?BIO_SLUTT -->/g,'');
-  out=out.split('{{HOVED_SERVICES}}').join(demoHoved()).split('{{TILLEGG_SERVICES}}').join(demoTillegg());
-  out=out.split('{{GALLERY_IMAGES}}').join(galleriFyll(4));
-  out=out.replace(/\{\{[A-Z_]+\}\}/g,'');
-  out=out.split('class="book disabled"').join('class="book"');
-  return out;
-}
+var previewCache={};
 function oppdaterPreview(){
   var f=$("#pvScreen");
   if(!f)return;
-  var layout=design.layout;
-  function render(raw){f.srcdoc=fyllMal(raw,layout);}
-  if(malCache[layout]){render(malCache[layout]);return;}
-  fetch(TEMPLATE_BASE+layout).then(function(r){if(!r.ok)throw new Error('mal '+r.status);return r.text();}).then(function(raw){malCache[layout]=raw;render(raw);}).catch(function(e){console.error('Preview-mal feilet:',e);});
+  // Server-render av ekte kundeside (samme vei som publisert side). Ulagrede design-
+  // valg sendes som query; backend legger dem oppå barber-raden og bygger med fill()
+  // + booking-modulen. Ingen klient-fyll = ingen drift mellom preview og ekte side.
+  var qs='layout='+encodeURIComponent(design.layout)
+        +'&palette='+encodeURIComponent(design.palette)
+        +'&font='+encodeURIComponent(design.font)
+        +'&mode='+encodeURIComponent(design.mode);
+  if(previewCache[qs]){f.srcdoc=previewCache[qs];return;}
+  apiFetch('/api/dashboard/preview?'+qs).then(function(r){
+    if(!r)return; // 401 → apiFetch har allerede sendt til login
+    if(!r.ok){previewError(f,'Forhåndsvisning feilet ('+r.status+').');return;}
+    return r.text().then(function(html){previewCache[qs]=html;f.srcdoc=html;});
+  }).catch(function(e){console.error('Preview feilet:',e);previewError(f,'Kunne ikke laste forhåndsvisning.');});
+}
+function previewError(f,msg){
+  f.srcdoc='<!DOCTYPE html><html><body style="margin:0;font-family:-apple-system,system-ui,sans-serif;'+
+    'display:flex;align-items:center;justify-content:center;height:100vh;background:#0e0e0e;'+
+    'color:#c0594a;text-align:center;padding:24px;line-height:1.5"><p>'+msg+'</p></body></html>';
 }
 function renderPreview(){oppdaterPreview();}
 function renderDesign(){
