@@ -272,6 +272,7 @@
   .ideacard{margin-top:34px;padding-top:26px;border-top:1px solid var(--line);max-width:440px}
   .ideacard textarea{width:100%;font:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink);min-height:90px;resize:vertical}
   .ideacard textarea:focus{outline:none;border-color:var(--info)}
+  .idea-err{display:none;color:#c0594a;font-size:13px;margin-top:8px;line-height:1.45}
   .daygroup{border-bottom:1px solid var(--line)}
   .daygroup:last-child{border-bottom:0}
   .dayhead{font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);padding:13px 18px 8px;background:var(--bg)}
@@ -591,6 +592,7 @@
       <p class="block-s">Har du en idé til en funksjon, eller ønsker en endring på siden, en ny farge eller layout? Send oss — vi leser alt.</p>
       <textarea id="ideaBox" placeholder="Skriv ønsket eller idéen din her"></textarea>
       <div class="savebar"><button class="btn" id="sendIdea">Send</button><span class="saved" id="ideaSaved">Sendt &#10003;</span></div>
+      <p class="idea-err" id="ideaErr"></p>
     </div>
   </section>
 
@@ -1317,7 +1319,24 @@ async function loadProfil(){
   var el=$("#barberName");if(el)el.textContent=displayName;
 }
 function savedFlash(sel){var s=$(sel);s.classList.add("show");setTimeout(function(){s.classList.remove("show");},1800);}
-$("#sendIdea").addEventListener("click",function(){var t=$("#ideaBox").value.trim();if(!t)return;console.log(JSON.stringify({type:"idea",text:t}));$("#ideaBox").value="";savedFlash("#ideaSaved");});
+$("#sendIdea").addEventListener("click",async function(){
+  if(IS_DEMO)return;
+  var box=$("#ideaBox"),t=box.value.trim();if(!t)return;
+  var btn=$("#sendIdea"),err=$("#ideaErr"),orig=btn.textContent;
+  err.style.display='none';btn.disabled=true;btn.textContent='Sender …';
+  try{
+    // apiFetch → credentials:'include' → sesjon gir barber-kontekst (display_name+slug) på serveren.
+    var r=await apiFetch('/api/feedback',{method:'POST',body:JSON.stringify({type:'idea',text:t})});
+    if(!r)return; // 401 → apiFetch har allerede redirigert til login
+    if(!r.ok)throw new Error('HTTP '+r.status);
+    box.value='';savedFlash("#ideaSaved"); // «Sendt ✓» KUN ved faktisk 2xx
+  }catch(ex){
+    console.warn('idé-innsending feilet',ex);
+    err.textContent='Kunne ikke sende akkurat nå. Prøv igjen om litt.';err.style.display='block';
+  }finally{
+    btn.disabled=false;btn.textContent=orig;
+  }
+});
 $("#saveProfil").addEventListener("click",async function(){
   const btn=$("#saveProfil");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
   const r=await apiFetch('/api/dashboard/profile',{method:'PUT',body:JSON.stringify({
@@ -1497,7 +1516,7 @@ $("#manageSub").addEventListener("click",function(){
 function applyDemoMode(){
   document.getElementById('demoBanner').classList.add('show');
   ['saveProfil','saveSvc','saveDesign','saveHours','cropSave',
-   'slotPopupFjern','slotPopupEndre','gcalBtn','manageSub'].forEach(function(id){
+   'slotPopupFjern','slotPopupEndre','gcalBtn','manageSub','sendIdea'].forEach(function(id){
     var el=document.getElementById(id);
     if(el){el.disabled=true;el.title='Ikke tilgjengelig i forhåndsvisning';}
   });

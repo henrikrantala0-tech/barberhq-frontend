@@ -131,6 +131,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .contact-ok{display:none;text-align:center;background:#0d1f14;border:1px solid #1f4a30;border-radius:14px;padding:30px 26px;margin-top:10px}
 .contact-ok strong{display:block;font-size:18px;margin-bottom:6px;color:#fff}
 .contact-ok span{color:#9a9a9a;font-size:14.5px}
+.contact-err{display:none;margin-top:14px;text-align:center;color:#c0594a;font-size:14px;line-height:1.55}
+.contact-err a{color:#4d8bff;text-decoration:underline}
 </style>
 </head>
 <body>
@@ -169,6 +171,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       </div>
       <div class="field"><label for="c-msg">Melding</label><textarea id="c-msg" placeholder="Hva kan vi hjelpe deg med?"></textarea></div>
       <button type="button" class="btn btn-fill" onclick="sendSupport()">Send melding</button>
+      <p class="contact-err" id="contactErr"></p>
     </div>
     <div class="contact-ok" id="contactOk"><strong>Takk! Meldingen er sendt.</strong><span>Vi svarer deg på e-post så snart vi kan.</span></div>
   </div>
@@ -200,16 +203,25 @@ async function sendSupport(){
   if(e.value.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e.value.trim())){e.style.borderColor='#c0594a';bad=true;}
   if(bad){return;}
   var btn=document.querySelector('.contact .btn-fill');
-  btn.disabled=true;btn.textContent='Sender...';
+  var err=document.getElementById('contactErr');
+  err.style.display='none';
+  btn.disabled=true;btn.textContent='Sender …';
   try {
-    await fetch(API_BASE+'/api/orders',{
+    var r=await fetch(API_BASE+'/api/feedback',{
       method:'POST',
       headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({type:'support_request',name:n.value.trim(),email:e.value.trim(),topic:t.value,message:m.value.trim()})
+      body:JSON.stringify({type:'support',name:n.value.trim(),email:e.value.trim(),topic:t.value,message:m.value.trim()})
     });
-  } catch(e){ console.warn('support-logging feilet',e); }
-  document.getElementById('contactForm').style.display='none';
-  document.getElementById('contactOk').style.display='block';
+    if(!r.ok) throw new Error('HTTP '+r.status);
+    // Suksess KUN ved faktisk 2xx — ingen falsk kvittering lenger.
+    document.getElementById('contactForm').style.display='none';
+    document.getElementById('contactOk').style.display='block';
+  } catch(ex){
+    console.warn('support-innsending feilet',ex);
+    err.innerHTML='Noe gikk galt — vi fikk kanskje ikke meldingen. Prøv igjen, eller send oss en e-post direkte: <a href="mailto:info@trybarberhq.com">info@trybarberhq.com</a>.';
+    err.style.display='block';
+    btn.disabled=false;btn.textContent='Send melding';
+  }
 }
 </script>
 
