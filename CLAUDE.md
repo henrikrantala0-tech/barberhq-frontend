@@ -19,6 +19,9 @@ Søsterrepo: barberhq-backend (Railway).
   dashboard.html, + funksjoner/priser/support/logg-inn.html/opprett-passord.html
 - **Logo:** `assets/logo/` — master SVG + eksportvarianter (email, social, og).
   Byggpipeline i `tools/logo/`. Favicon er UTSATT (egen enkel-variant forkastet).
+  **E-postlogo (side-klar):** plate-variant PNG (mørkt ordmerke på hvit avrundet plate) for å
+  overleve Gmail dark mode. Ny R2-fil under NYTT filnavn (ikke overskriv — cache). `_layout.js`
+  `LOGO_DARK_URL` + img 194×39.
 
 ## Deploy
 - Netlify med **Git-integrasjon: auto-deploy fra `main`** (bekreftet live 11.07 —
@@ -26,6 +29,7 @@ Søsterrepo: barberhq-backend (Railway).
   hver build (språk-redirects + API/book-proxy til Railway).
 - **Konsekvens:** push til main = umiddelbar prod-deploy. Ingen staging. Verifiser
   FØR push (render-before-commit), for det er ingen mellomstasjon.
+- **Credits:** hver deploy koster ~15 credits (tak 1000/mnd). Batch pushes — se Arbeidsregler.
 
 ## Låste beslutninger (ikke reåpne uten at Henrik ber om det)
 
@@ -77,6 +81,16 @@ Søsterrepo: barberhq-backend (Railway).
   og `--fw-bold/medium/regular` — ingen løse `px`-verdier for font-size eller font-weight.
 - Når Henrik sier "ferdig med saken" er beslutningen låst — gå videre.
 - Push tilbake ærlig på dårlige idéer, men respekter låste beslutninger.
+- **Batch pushes (Netlify-credits):** auto-deploy koster ~15 credits/deploy, tak 1000/mnd.
+  67 deploys på én dag (11.07) sprengte kvoten → hele siten 503 «usage_exceeded». Samle flere
+  fikser per commit, verifiser lokalt (Playwright), push sjeldnere/større.
+- **Dashboard-preview testes med «Disable cache» PÅ** — ellers gir browser-cache falske
+  «bug»-spøkelser (layout-preview-«buggen» 11.07 var ren cache, ikke kode).
+- **Test norsk tekst (æøå) via nettleser, ikke PowerShell.** PowerShell (Invoke-RestMethod/
+  curl.exe) sender request-body i feil charset → æøå blir � på serveren. Koden er UTF-8-ren
+  (verifisert 11.07); fella er PS-konsollen.
+- **Railway shell:** engangs-scripts må ha `.cjs`-endelse (package.json er `type:module`) og
+  ligge i `/app` (ikke `/tmp`) for å finne `pg`-modulen.
 
 **Arbeidslogger hører ikke hjemme i CLAUDE.md. Bruk git-historikk.**
 
@@ -127,7 +141,8 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
 
 ### Dashboard + kundeside
 - **Design-fane:** live forhåndsvisning via `GET /api/dashboard/preview?layout&palette&font&mode` — full **server-render** av barberens EKTE side (`byggSideFraBarber → fill → booking-module.cjs`; `preview:true` hopper over /days+/slots og åpner sheet). Samme kilde som publisert side = ingen drift. `dashboard.html` setter kun `srcdoc` (cache per param-kombo, synlig `previewError` ved feil); ingen klient-fyll. Endepunktet `console.warn`-er på ufylt `{{PLACEHOLDER}}` — erstattet den gamle stille slutt-wipen (`replace(/{{[A-Z_]+}}/g,'')`) som skjulte at booking-modulen (all aksentfarge) aldri ble injisert → helt svart/hvit preview i ~4 mnd (rot-årsak: FASE B `6d06a8d` flyttet booking-UI inn i `{{BOOKING_MODULE}}` som wipen slettet). Layout-kort som ren tekst.
-- **Mobil-nav:** "Mer"-meny (Oversikt · Bookinger · Tjenester synlig, resten i dropdown); desktop uendret. Mobil Design-layout: preview sentrert, rekkefølge valg → preview → Lagre, 2-kolonne kort, breakpoint 700px.
+- **Preview 11.07:** booking-sheet auto-open fjernet (`booking-module.cjs`) — preview viser forside først, som live. Tomme forside-felt viser dempede plassholdere i preview (`(spesialitet)`/`(adresse)`/`(bio)` + grå bilde-bokser via delt `{{PH_CSS}}`); live kollapser som før. (Layout-preview-«buggen» var browser-cache, ikke kode.)
+- **Mobil-nav:** "Mer"-meny — **Oversikt + Vekst** alltid synlig, resten (Profil · Tjenester & tider · Design · Konto) i dropdown; desktop viser alle. Mobil Design-layout: preview sentrert, rekkefølge valg → preview → Lagre, 2-kolonne kort, breakpoint 700px.
 - **Palett-konsistens:** én delt kilde (`palett.js`) for kom-i-gang + dashboard, i synk med `fyll.cjs`. Ren svart/hvit bakgrunn i mørk modus, aksent skiller.
 - **Kundeside bygges fra `barbers`-raden** (ikke `orders.payload`): alt barbereren endrer (design, layout, font, adresse, bio, bilder, tjenester) når bookingsiden. Oppslag via `barbers.slug`, status-gating via `barbers.page_status`. `savedLayout` er skilt fra `design.layout` — Bilder-fanen leser alltid lagret DB-verdi.
 
@@ -136,8 +151,13 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
 - `byggSideFraBarber()` leser slots (ikke opplastingsrekkefølge) — barberens plassering styrer siden.
 - **Crop:** Cropper.js 1.6.2 self-hostet i `no/lib/`. Beskjær-ikon (modal) + ×-ikon per bilde. Crop og Endre bruker `PUT /api/dashboard/images/:id` — bytter R2-fil, bevarer slot/sort_order (destruktiv klientside-crop, canvas→blob→PUT). Aspect: portrett 1:1, galleri 3:4, hero 9:19.5.
 
-### Barber fra ordre
-- `POST /api/admin/orders/:id/bygg-barber` oppretter barber atomisk: slug mot `barbers`, INSERT barbers, UPDATE `orders.barber_id`, re-knytter onboarding-bilder til barber_id, auto-tildeler slots (galleri maks 10; hero → første bilde; direkte → ingen; portrett ALDRI auto). Idempotent med FOR UPDATE radlås (409 ved dobbeltkjøring).
+### Ordre → barber (Modell B — automatisk)
+- Ordre inn → `buildBarberFromOrder(orderId,{pool})` (`src/lib/`) kjøres AUTOMATISK: egen transaksjon, idempotent, `rows[0]`-safe. Slug mot `barbers`, INSERT barbers, UPDATE `orders.barber_id`, re-knytt onboarding-bilder, auto-tildel slots (galleri maks 10; hero → første bilde; direkte → ingen; portrett ALDRI auto). Ved suksess: `orders.status = 'forhandsvist'`.
+- **Telegram-varsel** med 2 inline-knapper: 👁 Forhåndsvis (ren URL, `/{slug}`) + 📧 Send e-post (callback → `sendSideKlar`, setter `side_klar_sendt_at`, `editMessage` fjerner knappene + «✅ E-post sendt»). Ingen bygg-/endre-/re-send-knapp — bug-flyt går via ordre-ID → Code manuelt.
+- **Webhook:** `POST /api/telegram/webhook`, sikret med `TELEGRAM_WEBHOOK_SECRET` (`X-Telegram-Bot-Api-Secret-Token`, fail-closed 401). `setWebhook` med `allowed_updates:['callback_query']`. `side_klar_sendt_at TIMESTAMPTZ` på `barbers` = idempotens på e-post-send.
+
+### Feedback (idé + support)
+- `POST /api/feedback` (`type: idea|support`) → Telegram (viser meldingsteksten) + e-post til info@. Idé beriket med barber-kontekst fra sesjon; support offentlig m/rate-limit. Erstattet to feil: `support.html` POStet til `/api/orders` (fantom-leads, tekst forsvant i payload), og dashboard «Ideer & ønsker» var død UI (`console.log`). Begge nå: ekte POST, suksess kun ved 2xx, mailto-fallback.
 
 ### Tagline/bio + font
 - `tagline`-kolonne er skilt fra `bio`: `bygg.js` mapper `tagline → {{SPECIALTY}}`, `bio → {{BIO_BLOCK}}`; `fyll.cjs` fjerner tom `.sub` rent. Dashboard Profil-fane har to valgfrie felt (Tagline + Beskrivelse). Onboarding rører ikke tagline/bio.
@@ -152,32 +172,29 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
 - Tagline (kort, valgfri) + Bio (lengre, valgfri) er to separate felt. Onboarding samler ikke tagline — barbereren fyller i dashboard.
 - Onboarding-bilder er alltid klippbilder — portrett-slot fylles ALDRI automatisk ved bygg-barber.
 
-## Dashboard: fane-sammenslåing (låst 11.07 — 11 → 6)
+## Dashboard: fane-struktur (11 → 6, GJENNOMFØRT 11.07)
 
-Planlagt, ikke bygd ennå. Dagens `no/dashboard.html` har 11 faner (Oversikt,
-Bookinger, Vekst, Profil, Tjenester, Arbeidstider, Bilder, Design, Abonnement,
-Innstillinger, Vinn-tilbake). Ny struktur **låst 11.07**, slås sammen til 6:
+`no/dashboard.html` er slått sammen fra 11 til 6 faner:
 
-1. **Oversikt** = inntekt/KPI + kommende bookinger + booking-liste + vinn-tilbake-**liste**.
-   (Slår sammen: Oversikt + Bookinger + vinn-tilbake-listen.)
-2. **Vekst** = vekst-tall (rebooking-rate, trend, attribusjon) + knotter:
-   SMS-påminnelse, rebooking-intervall, vinn-tilbake-**konfig**.
-   (Slår sammen: Vekst + Innstillinger + vinn-tilbake-konfig. «Innstillinger» som
-   egen fane forsvinner — innholdet var vekst-knotter. Rene preferanser får egen
-   fane senere HVIS/når det finnes noe å legge der.)
-3. **Profil** = navn, bio, adresse, tagline (tekst-innhold).
-4. **Design** = palett, font, layout, preview + bilder (slots/crop).
-   (Slår sammen: Design + Bilder — koblet via layout↔slot.)
+1. **Oversikt** = Oversikt + Bookinger + vinn-tilbake-**liste**. Pengeside-rekkefølge:
+   KPI/omsetning → graf → «Drevet av BarberHQ» → kommende bookinger → full booking-liste
+   (no-show-marker) → vinn-tilbake-liste.
+2. **Vekst** = vekst-tall (rebooking-rate/trend/attribusjon, mock) + SMS-knottene
+   (påminnelse/rebooking/intervall, ekte `GET/PUT /api/dashboard/settings`). Divider mellom
+   måling (over) og kontroll (under). Plassholder-kommentar for vinn-tilbake-**konfig**
+   (auto-SMS ved kansellering/no-show) — bygges med vekstfeaturen.
+3. **Profil** = navn, bio, adresse, tagline (uendret, står alene).
+4. **Design** = palett/font/layout/preview + bilder (slots/crop). Layout↔slot-kobling bevart:
+   slot-visning følger VALGT layout (live), opplasting låst til LAGRET (banner + klikk-guard).
+   Dynamisk bilde-hjelpetekst per layout. Bilder er borte som egen fane.
 5. **Tjenester & tider** = tjenester + arbeidstider.
-6. **Konto** = abonnement/billing + kommende passord-side (punkt 3 på gjenstår-lista
-   bor her).
+6. **Konto** = abonnement (skall — venter på billing + passord-side). Nav-knappen heter fortsatt
+   «Abonnement»; døp om til «Konto» når billing/passord bygges.
 
-- **Vinn-tilbake splittes:** liste → Oversikt, konfig → Vekst. Fanen forsvinner som egen enhet.
-- **Font-velgeren er LEVENDE i dashboardet** (Design-fanen: klikk → `design.font` →
-  `PUT /api/dashboard/design` + preview-qs). Det var **onboarding**-fonten som ble
-  fjernet (alle får Fraunces der), jf. linje 44 — ikke dashboard-velgeren. Ikke behandle
-  den som dead UI.
-- Byggeplan (rekkefølge, hva flyttes hvor, render-before-commit-gates) legges før bygg.
+- **Mobil-nav:** Oversikt + Vekst alltid synlig; Profil/Tjenester & tider/Design/Konto bak «Mer».
+- **Font-velgeren er LEVENDE** (Design: klikk → `design.font` → `PUT /api/dashboard/design` +
+  preview-qs). Det var **onboarding**-fonten som ble fjernet (alle får Fraunces), ikke
+  dashboard-velgeren. Ikke behandle den som dead UI.
 
 ## Kjent teknisk gjeld
 
@@ -187,21 +204,49 @@ Innstillinger, Vinn-tilbake). Ny struktur **låst 11.07**, slås sammen til 6:
   i stedet for market-mappingen. Må fikses før vi tar inn barberere utenfor CET/UK.
 - **buildPalette er duplisert i fyll.cjs og no/palett.js — må holdes i synk manuelt.**
 
-### Gjenstår (neste økt / senere)
-1. **Test full klikk-flyt med ekte klippbilde** — crop + lagring i Bilder-fanen, verifiser at bildet havner riktig i riktig slot på ekte kundeside. Bevist via API, ikke via UI-flyt ennå.
-2. **Hero-bildegrense server-side** — se sikkerhetshull over.
-3. **orders.barber_id FK** — verifiser enforcement, se sikkerhetshull over.
-4. **`logg-inn.html` `?error=expired`-melding** — gjør dempet grå i stedet for rød: «Logg inn med e-post og passord, eller be om en ny lenke.»
-5. **Pris-0-markør i dashboard tjeneste-lista** — rød kant + «Sett pris» (parallell til kundesidens `prisTekst`-vern; gå-live blokkeres allerede server-side).
-6. **Rydd untracked scratchpad-filer** — `git clean -n` FØRST (mange løse `*.mjs`/`*.html`/`*.png` i repo-roten fra render-tester).
+## Må gjøres (prioritert)
 
-### Rydding, neste økt
-`git clean -f` i repo-roten ville slette både søppel OG ekte arbeid — ikke kjør blindt. Splitt:
-- **Refererte/usporede — BESLUTT commit vs. flytt ut (ikke slett):** seksjonsutkastene
-  `din-side-seksjon.html`, `din-side__bilde.html`, `problem-seksjon.html`,
-  `problem-seksjon__venstre.html`, `systemer-seksjon.html`, `produktvisning-seksjon.html`
-  (sistnevnte er referert i CLAUDE.md linje 80) + `SPEC-bytt-seksjoner.md`. Disse er
-  untracked, men er kildeutkast — enten commit dem eller flytt dem ut av repoet.
-- **Scratchpad-test (kan slettes da):** `*_render_test.mjs`, `*_test.mjs`, `demo_*.mjs`,
-  `hero_ratio_measure.mjs`, `screenshot-bilder.mjs`, `pw-screenshots/`.
-- `package.json`/`package-lock.json` (Playwright-tooling) er også untracked — vurder å committe.
+### Høyt — lanseringsblokkere
+1. **Duplikat-e-post (backend):** `barbers.email` har INGEN unik-constraint; login tar `rows[0]`
+   uten `ORDER BY` = ikke-deterministisk lotteri ved duplikat. Fiks: (a) partial unik-indeks
+   `CREATE UNIQUE INDEX ON barbers(lower(email)) WHERE email IS NOT NULL`, (b) deterministisk
+   login (avvis flertreff / `ORDER BY created_at`) i `auth.js:35` + `send-magic-link` `auth.js:113`.
+   De-dup allerede gjort via test-rydding.
+2. **«Gå live»-funksjon** mangler i dashboard — barber kan ikke publisere siden (`page_status`).
+3. **Billing (Stripe):** 1 mnd gratis + betaling etter. Rekkefølge billing vs. vekstfeatures IKKE
+   avgjort — tas når vi kommer dit.
+
+### Medium
+4. **Vekstfeatures (backend):** rebooking, verving, vinn-tilbake auto-SMS. Deretter landingsside-
+   avsnitt under «fyll stolen» som forklarer dem.
+5. **Profil-side i Konto-fanen:** bytt passord m.m. Døp om nav «Abonnement» → «Konto».
+6. **Koble ekte data i Vekst/Oversikt** — mye er fortsatt `USE_MOCK=true` (stats/graf/attribusjon/
+   bookinger i dashboard).
+7. **Test full klikk-flyt med ekte klippbilde** — crop + lagring i Bilder-delen (Design), verifiser
+   riktig slot på ekte kundeside. Bevist via API, ikke UI-flyt ennå.
+8. **Pris-0-markør i tjeneste-lista** — rød kant + «Sett pris» (parallell til kundesidens
+   `prisTekst`-vern; gå-live blokkeres allerede server-side).
+
+### Lav / polish
+9. **WebAuthn-instruksjonsbanner + «App kommer»-banner** i dashboard.
+10. **favicon.ico mangler** — 404 på alle sider (kosmetisk).
+11. **`logg-inn.html` `?error=expired`** — dempet grå i stedet for rød: «Logg inn med e-post og
+    passord, eller be om en ny lenke.»
+
+### Teknisk gjeld
+12. **`buildHeroHeader()` (fyll.cjs) er dødkode** — backend-CLAUDE.md sier feilaktig «Hero bruker
+    `{{HERO_HEADER}}`». Rydd begge.
+13. **R2-foreldreløse bildeblobber** fra de 5 slettede test-barberne.
+14. **Hero-bildegrense server-side** + **orders.barber_id FK-enforcement** — se sikkerhetshull.
+15. **Oversettelse (utsatt fase):** plassholder-strenger (`(spesialitet)`/`(adresse)`/`(bio)`) +
+    4 bilde-hjelpetekster + alt sv/da/en. Greppbar markør i koden: `[oversettelse: sv/da/en]`.
+16. **Tidssone hardkodet via market** + **buildPalette duplisert** (fyll.cjs ↔ palett.js) — se
+    «Kjent teknisk gjeld» over.
+
+### Rydding (untracked repo-filer)
+`git clean -f` ville slette både søppel OG ekte arbeid — ikke kjør blindt. Splitt:
+- **Seksjonsutkast (commit vs. flytt ut, IKKE slett):** `din-side-seksjon.html`,
+  `din-side__bilde.html`, `problem-seksjon.html`, `problem-seksjon__venstre.html`,
+  `systemer-seksjon.html`, `produktvisning-seksjon.html`, `SPEC-bytt-seksjoner.md`.
+- **Scratchpad-test (kan slettes):** `*_render_test.mjs`, `*_test.mjs`, `demo_*.mjs`, `pw-screenshots/`.
+- `package.json`/`package-lock.json` (Playwright-tooling) — vurder å committe.
