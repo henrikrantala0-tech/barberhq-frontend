@@ -88,7 +88,10 @@
   .ref p{font-size:13px;color:var(--ink-2);margin-bottom:4px}
   .ref .small{font-size:12px;color:var(--mut)}
 
-  /* Slot-bokser (Bilder-fane) */
+  /* Slot-bokser (Bilder — nå i Design-fanen) */
+  .bilder-block{margin-top:34px;padding-top:26px;border-top:1px solid var(--line)}
+  .slots-lock-note{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:13px;color:var(--ink-2);line-height:1.45}
+  #bilderMount.slots-locked .slot-section,#bilderMount.slots-locked .slot-direkte-msg{opacity:.5;pointer-events:none}
   .slot-section{margin-bottom:22px}
   .slot-label{font-size:11px;font-weight:600;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
   .slot-portrett-wrap{display:flex;justify-content:center}
@@ -378,7 +381,6 @@
     <button role="tab" aria-selected="false" data-panel="vekst" class="nav-mer">Vekst</button>
     <button role="tab" aria-selected="false" data-panel="profil" class="nav-mer">Profil</button>
     <button role="tab" aria-selected="false" data-panel="tjenester">Tjenester &amp; tider</button>
-    <button role="tab" aria-selected="false" data-panel="bilder" class="nav-mer">Bilder</button>
     <button role="tab" aria-selected="false" data-panel="design" class="nav-mer">Design</button>
     <button role="tab" aria-selected="false" data-panel="abonnement" class="nav-mer">Abonnement</button>
     <button role="tab" aria-selected="false" data-panel="innstillinger" class="nav-mer">Innstillinger</button>
@@ -475,17 +477,7 @@
   </section>
 
   <!-- BILDER -->
-  <section class="panel" id="bilder">
-    <p class="block-h">Bilder på siden din</p>
-    <p class="block-s">Trykk på en boks for å laste opp bilde til den plassen.</p>
-    <input type="file" id="fileInput" accept="image/*" hidden>
-    <input type="file" id="replaceInput" accept="image/*" hidden>
-    <div id="bilderMount"><div class="loading">Laster …</div></div>
-    <div id="slotPopup" class="slot-popup">
-      <button class="slot-popup-btn danger" id="slotPopupFjern">Fjern bilde</button>
-      <button class="slot-popup-btn" id="slotPopupEndre">Endre bilde</button>
-    </div>
-  </section>
+  <!-- Bilder-panelet er slått sammen inn i #design (Design-fanen) -->
   <div id="cropModal" class="crop-modal" aria-modal="true" role="dialog">
     <div class="crop-modal-inner">
       <div class="crop-canvas-wrap">
@@ -578,6 +570,18 @@
         <p class="ctx" style="margin-top:8px;text-align:center">Slik ser bookingsiden din ut.</p>
       </div>
       <div class="savebar"><button class="btn" id="saveDesign">Lagre design</button><span class="saved" id="designSaved">Lagret &#10003;</span></div>
+    </div>
+    <!-- Bilder (slått sammen fra egen fane) — slots følger valgt layout over -->
+    <div class="bilder-block">
+      <p class="block-h">Bilder på siden din</p>
+      <p class="block-s">Trykk på en boks for å laste opp bilde til den plassen.</p>
+      <input type="file" id="fileInput" accept="image/*" hidden>
+      <input type="file" id="replaceInput" accept="image/*" hidden>
+      <div id="bilderMount"><div class="loading">Laster …</div></div>
+      <div id="slotPopup" class="slot-popup">
+        <button class="slot-popup-btn danger" id="slotPopupFjern">Fjern bilde</button>
+        <button class="slot-popup-btn" id="slotPopupEndre">Endre bilde</button>
+      </div>
     </div>
     <div class="ideacard">
       <p class="block-h" style="margin-top:0">Ideer &amp; ønsker</p>
@@ -1025,9 +1029,27 @@ let _activeImgId=null;
 let _cropper=null;
 
 async function loadBilder(){
-  try{const r=await apiFetch('/api/dashboard/design');if(r&&r.ok){const d=await r.json();if(d.layout){savedLayout=d.layout;}}}catch(e){}
+  // savedLayout/design.layout settes av loadDesign (kjøres før denne på Design-fanen).
   try{imgs=await api.images();}catch(e){imgs=[];}
-  renderSlotView(savedLayout,imgs);
+  refreshSlots();
+}
+
+// Rendrer slots for VALGT layout (design.layout), ikke lagret. Slik ser barberen
+// slot-oppsettet skifte live når hen bytter layout. Opplasting/crop/slett er derimot
+// låst til LAGRET layout (savedLayout) — slots hard-slettes kun ved faktisk layout-bytte,
+// så å laste opp til en ulagret layouts slot ville skape DB-inkonsistens.
+function slotsLaast(){return design.layout!==savedLayout;}
+function refreshSlots(){
+  renderSlotView(design.layout,imgs);
+  const mount=$("#bilderMount");if(!mount)return;
+  if(slotsLaast()){
+    mount.classList.add('slots-locked');
+    const nm=(LAYOUTS.find(function(l){return l.key===design.layout;})||{}).t||design.layout;
+    mount.insertAdjacentHTML('afterbegin',
+      '<div class="slots-lock-note">Forhåndsvisning av <b>'+nm+'</b>-layouten. Trykk <b>Lagre design</b> for å laste opp bilder til denne layouten.</div>');
+  }else{
+    mount.classList.remove('slots-locked');
+  }
 }
 
 function renderSlotView(layout,imgs){
@@ -1113,13 +1135,14 @@ function buildMonthSelect(){
 
 /* events */
 document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",()=>{
+  const id=t.dataset.panel;if(!id)return; // «Mer»-toggle er også .nav button, men har ingen panel
   document.querySelectorAll(".nav button").forEach(x=>x.setAttribute("aria-selected","false"));
   t.setAttribute("aria-selected","true");
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
-  const id=t.dataset.panel;$("#"+id).classList.add("active");
+  $("#"+id).classList.add("active");
   if(id==="bookinger")loadBookinger();if(id==="vekst")loadVekst();
-  if(id==="profil")loadProfil();if(id==="tjenester"){loadTjenester();loadArbeidstider();}if(id==="design")loadDesign();
-  if(id==="bilder")loadBilder();
+  if(id==="profil")loadProfil();if(id==="tjenester"){loadTjenester();loadArbeidstider();}
+  if(id==="design"){loadDesign().then(loadBilder);}
   if(id==="innstillinger")loadInnstillinger();if(id==="vinn-tilbake")loadWinback();
 }));
 document.querySelectorAll("#segs button").forEach(b=>b.addEventListener("click",()=>{
@@ -1187,6 +1210,7 @@ document.getElementById('cropSave').addEventListener('click',async()=>{
 
 $("#bilderMount").addEventListener("click",async e=>{
   if(IS_DEMO)return;
+  if(slotsLaast())return; // opplasting/crop/slett låst til lagret layout
   if(e.target.closest('.slot-crop-btn')){
     e.stopPropagation();
     const btn=e.target.closest('.slot-crop-btn');
@@ -1435,7 +1459,7 @@ async function loadDesign(){
   }catch(e){}
   renderDesign();
 }
-$("#design").addEventListener("click",function(e){var b=e.target.closest(".preset");if(!b)return;design[b.dataset.grid]=b.dataset.key;renderDesign();});
+$("#design").addEventListener("click",function(e){var b=e.target.closest(".preset");if(!b)return;design[b.dataset.grid]=b.dataset.key;renderDesign();if(b.dataset.grid==="layout")refreshSlots();});
 $("#modePick").addEventListener("click",function(e){var b=e.target.closest(".modebtn");if(!b)return;design.mode=b.dataset.mode;renderDesign();});
 $("#saveDesign").addEventListener("click",async function(){
   const btn=$("#saveDesign");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
@@ -1449,6 +1473,7 @@ $("#saveDesign").addEventListener("click",async function(){
   if(!r)return;
   if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre design. Prøv igjen.');return;}
   savedLayout=design.layout;savedFlash("#designSaved");
+  await loadBilder(); // re-hent bilder (layout-bytte kan ha hard-slettet slots) + lås opp slots
 });
 
 /* ---- Abonnement ---- */
