@@ -177,9 +177,9 @@
   .themebtn:hover{color:var(--ink);border-color:var(--ink-2)}
   .nav{overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
   .nav button{white-space:nowrap}
-  /* Desktop: alle sju knapper i raden, Mer-knapp skjult */
+  /* Desktop: alle seks knapper i raden, Mer-knapp skjult */
   .nav-mer-wrap{display:none}
-  /* Mobil: fem nav-mer-knapper skjult fra raden, Mer-knapp og dropdown synlig */
+  /* Mobil: fire nav-mer-knapper skjult fra raden, Mer-knapp og dropdown synlig */
   @media(max-width:719px){
     button.nav-mer{display:none}
     .nav-mer-wrap{display:block;position:relative;align-self:center;flex-shrink:0;margin-left:auto}
@@ -337,6 +337,7 @@
   html[data-theme="dark"] .sw-green input:checked + .sl{background:#22c55e}
 
   /* ---- Innstillinger-panel ---- */
+  .vekst-knobs{margin-top:34px;padding-top:26px;border-top:1px solid var(--line)}
   .sett-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px 18px;margin-bottom:16px}
   .tog-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
   .tog-row:last-of-type{border-bottom:0}
@@ -381,12 +382,11 @@
 
   <nav class="nav" role="tablist">
     <button role="tab" aria-selected="true" data-panel="oversikt">Oversikt</button>
-    <button role="tab" aria-selected="false" data-panel="vekst" class="nav-mer">Vekst</button>
+    <button role="tab" aria-selected="false" data-panel="vekst">Vekst</button>
     <button role="tab" aria-selected="false" data-panel="profil" class="nav-mer">Profil</button>
-    <button role="tab" aria-selected="false" data-panel="tjenester">Tjenester &amp; tider</button>
+    <button role="tab" aria-selected="false" data-panel="tjenester" class="nav-mer">Tjenester &amp; tider</button>
     <button role="tab" aria-selected="false" data-panel="design" class="nav-mer">Design</button>
     <button role="tab" aria-selected="false" data-panel="abonnement" class="nav-mer">Abonnement</button>
-    <button role="tab" aria-selected="false" data-panel="innstillinger" class="nav-mer">Innstillinger</button>
     <div class="nav-mer-wrap">
       <button type="button" class="nav-mer-toggle" aria-expanded="false" aria-haspopup="true">Mer <span class="mer-caret">▾</span></button>
       <div class="nav-mer-meny" role="menu" hidden></div>
@@ -485,6 +485,39 @@
     <p class="block-h">Nye kunder fordelt på kilde</p>
     <p class="block-s">I valgt periode.</p>
     <div class="attrib" id="vekstAttrib"></div>
+
+    <!-- Vekst-knottene (slått sammen fra Innstillinger): måling over, kontroll under.
+         Mekanismene som driver rebooking/retensjon hører sammen med vekst-tallene. -->
+    <div class="vekst-knobs">
+      <p class="block-h">Automatisering</p>
+      <p class="block-s">Knottene som driver rebooking og retensjon.</p>
+      <div class="sett-card">
+        <div class="tog-row">
+          <div>
+            <div class="tog-label">SMS-påminnelse</div>
+            <div class="tog-sub">Kunden får SMS dagen før timen</div>
+          </div>
+          <label class="sw sw-green"><input type="checkbox" id="tog-paam"><span class="sl"></span></label>
+        </div>
+        <div class="tog-row">
+          <div>
+            <div class="tog-label">SMS-rebooking</div>
+            <div class="tog-sub">Kunden oppfordres til å booke igjen etter timen</div>
+          </div>
+          <label class="sw sw-green"><input type="checkbox" id="tog-rebook"><span class="sl"></span></label>
+        </div>
+        <div class="sett-interval">
+          <label for="rebook-days">Rebooking-intervall</label>
+          <div style="display:flex;align-items:center;gap:6px">
+            <input type="number" id="rebook-days" min="7" max="180" value="28">
+            <span style="font-size:13px;color:var(--mut)">dager</span>
+          </div>
+        </div>
+      </div>
+      <p class="sett-note">SMS-utsending kobles på snart — valget ditt lagres.</p>
+      <!-- TODO (vekstfeature): vinn-tilbake-KONFIG hit — auto-SMS ved kansellering/no-show
+           (terskel-dager, mal, på/av). Featuren finnes ikke ennå; kun plassholder, ingen UI. -->
+    </div>
   </section>
 
   <!-- BILDER -->
@@ -604,35 +637,7 @@
     </div>
   </section>
 
-  <!-- INNSTILLINGER -->
-  <section class="panel" id="innstillinger">
-    <p class="block-h">Innstillinger</p>
-    <p class="block-s">SMS-automatisering og terskler.</p>
-    <div class="sett-card">
-      <div class="tog-row">
-        <div>
-          <div class="tog-label">SMS-påminnelse</div>
-          <div class="tog-sub">Kunden får SMS dagen før timen</div>
-        </div>
-        <label class="sw sw-green"><input type="checkbox" id="tog-paam"><span class="sl"></span></label>
-      </div>
-      <div class="tog-row">
-        <div>
-          <div class="tog-label">SMS-rebooking</div>
-          <div class="tog-sub">Kunden oppfordres til å booke igjen etter timen</div>
-        </div>
-        <label class="sw sw-green"><input type="checkbox" id="tog-rebook"><span class="sl"></span></label>
-      </div>
-      <div class="sett-interval">
-        <label for="rebook-days">Rebooking-intervall</label>
-        <div style="display:flex;align-items:center;gap:6px">
-          <input type="number" id="rebook-days" min="7" max="180" value="28">
-          <span style="font-size:13px;color:var(--mut)">dager</span>
-        </div>
-      </div>
-    </div>
-    <p class="sett-note">SMS-utsending kobles på snart — valget ditt lagres.</p>
-  </section>
+  <!-- Innstillinger-panelet er slått sammen inn i #vekst (knottene under vekst-tallene) -->
 
   <!-- Vinn-tilbake-listen er slått sammen inn i #oversikt; SMS-konfig blir i Innstillinger (→ Vekst senere) -->
 
@@ -1146,10 +1151,9 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
   $("#"+id).classList.add("active");
   if(id==="oversikt"){loadOversikt();loadBookinger();loadWinback();}
-  if(id==="vekst")loadVekst();
+  if(id==="vekst"){loadVekst();loadInnstillinger();}
   if(id==="profil")loadProfil();if(id==="tjenester"){loadTjenester();loadArbeidstider();}
   if(id==="design"){loadDesign().then(loadBilder);}
-  if(id==="innstillinger")loadInnstillinger();
 }));
 document.querySelectorAll("#segs button").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll("#segs button").forEach(x=>x.setAttribute("aria-selected","false"));
