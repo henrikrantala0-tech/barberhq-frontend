@@ -90,6 +90,8 @@
 
   /* Slot-bokser (Bilder — nå i Design-fanen) */
   .bilder-block{margin-top:34px;padding-top:26px;border-top:1px solid var(--line)}
+  .slot-hint{font-size:12px;color:var(--mut);margin:-6px 0 16px;line-height:1.45}
+  .slot-hint:empty{display:none}
   .slots-lock-note{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:13px;color:var(--ink-2);line-height:1.45}
   #bilderMount.slots-locked .slot-section,#bilderMount.slots-locked .slot-direkte-msg{opacity:.5;pointer-events:none}
   .slot-section{margin-bottom:22px}
@@ -575,6 +577,7 @@
     <div class="bilder-block">
       <p class="block-h">Bilder på siden din</p>
       <p class="block-s">Trykk på en boks for å laste opp bilde til den plassen.</p>
+      <p class="slot-hint" id="layoutHint"></p>
       <input type="file" id="fileInput" accept="image/*" hidden>
       <input type="file" id="replaceInput" accept="image/*" hidden>
       <div id="bilderMount"><div class="loading">Laster …</div></div>
@@ -1039,8 +1042,17 @@ async function loadBilder(){
 // låst til LAGRET layout (savedLayout) — slots hard-slettes kun ved faktisk layout-bytte,
 // så å laste opp til en ulagret layouts slot ville skape DB-inkonsistens.
 function slotsLaast(){return design.layout!==savedLayout;}
+// Hjelpetekst per layout — hvor mange/hvilke bilder layouten tar. Følger VALGT
+// layout (design.layout), i takt med slot-visningen. [oversettelse: sv/da/en]
+const LAYOUT_HINT={
+  hero:'Hero: ett forsidebilde',
+  profil:'Profil: ett portrett + opptil 10 i galleriet',
+  showcase:'Showcase: opptil 10 bilder i galleriet',
+  direkte:'Direkte: ingen bilder på siden'
+};
 function refreshSlots(){
   renderSlotView(design.layout,imgs);
+  const hint=$("#layoutHint");if(hint)hint.textContent=LAYOUT_HINT[design.layout]||'';
   const mount=$("#bilderMount");if(!mount)return;
   if(slotsLaast()){
     mount.classList.add('slots-locked');
