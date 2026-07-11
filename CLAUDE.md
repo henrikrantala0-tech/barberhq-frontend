@@ -21,8 +21,11 @@ Søsterrepo: barberhq-backend (Railway).
   Byggpipeline i `tools/logo/`. Favicon er UTSATT (egen enkel-variant forkastet).
 
 ## Deploy
-- Netlify. Skal kobles til dette repoet (auto-deploy fra main).
-- Inntil kobling er live: deployet manuelt via Netlify Drop.
+- Netlify med **Git-integrasjon: auto-deploy fra `main`** (bekreftet live 11.07 —
+  push til main går live automatisk, ingen manuell Drop). netlify.toml leses på
+  hver build (språk-redirects + API/book-proxy til Railway).
+- **Konsekvens:** push til main = umiddelbar prod-deploy. Ingen staging. Verifiser
+  FØR push (render-before-commit), for det er ingen mellomstasjon.
 
 ## Låste beslutninger (ikke reåpne uten at Henrik ber om det)
 
