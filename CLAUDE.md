@@ -149,6 +149,33 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
 - Tagline (kort, valgfri) + Bio (lengre, valgfri) er to separate felt. Onboarding samler ikke tagline — barbereren fyller i dashboard.
 - Onboarding-bilder er alltid klippbilder — portrett-slot fylles ALDRI automatisk ved bygg-barber.
 
+## Dashboard: fane-sammenslåing (låst 11.07 — 11 → 6)
+
+Planlagt, ikke bygd ennå. Dagens `no/dashboard.html` har 11 faner (Oversikt,
+Bookinger, Vekst, Profil, Tjenester, Arbeidstider, Bilder, Design, Abonnement,
+Innstillinger, Vinn-tilbake). Ny struktur **låst 11.07**, slås sammen til 6:
+
+1. **Oversikt** = inntekt/KPI + kommende bookinger + booking-liste + vinn-tilbake-**liste**.
+   (Slår sammen: Oversikt + Bookinger + vinn-tilbake-listen.)
+2. **Vekst** = vekst-tall (rebooking-rate, trend, attribusjon) + knotter:
+   SMS-påminnelse, rebooking-intervall, vinn-tilbake-**konfig**.
+   (Slår sammen: Vekst + Innstillinger + vinn-tilbake-konfig. «Innstillinger» som
+   egen fane forsvinner — innholdet var vekst-knotter. Rene preferanser får egen
+   fane senere HVIS/når det finnes noe å legge der.)
+3. **Profil** = navn, bio, adresse, tagline (tekst-innhold).
+4. **Design** = palett, font, layout, preview + bilder (slots/crop).
+   (Slår sammen: Design + Bilder — koblet via layout↔slot.)
+5. **Tjenester & tider** = tjenester + arbeidstider.
+6. **Konto** = abonnement/billing + kommende passord-side (punkt 3 på gjenstår-lista
+   bor her).
+
+- **Vinn-tilbake splittes:** liste → Oversikt, konfig → Vekst. Fanen forsvinner som egen enhet.
+- **Font-velgeren er LEVENDE i dashboardet** (Design-fanen: klikk → `design.font` →
+  `PUT /api/dashboard/design` + preview-qs). Det var **onboarding**-fonten som ble
+  fjernet (alle får Fraunces der), jf. linje 44 — ikke dashboard-velgeren. Ikke behandle
+  den som dead UI.
+- Byggeplan (rekkefølge, hva flyttes hvor, render-before-commit-gates) legges før bygg.
+
 ## Kjent teknisk gjeld
 
 - **Tidssone for åpningstider er hardkodet via `barbers.market`** (NO/SE/DK → Europe/Oslo, UK → Europe/London).
