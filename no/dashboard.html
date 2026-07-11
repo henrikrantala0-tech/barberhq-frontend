@@ -377,8 +377,7 @@
     <button role="tab" aria-selected="false" data-panel="bookinger">Bookinger</button>
     <button role="tab" aria-selected="false" data-panel="vekst" class="nav-mer">Vekst</button>
     <button role="tab" aria-selected="false" data-panel="profil" class="nav-mer">Profil</button>
-    <button role="tab" aria-selected="false" data-panel="tjenester">Tjenester</button>
-    <button role="tab" aria-selected="false" data-panel="arbeidstider" class="nav-mer">Arbeidstider</button>
+    <button role="tab" aria-selected="false" data-panel="tjenester">Tjenester &amp; tider</button>
     <button role="tab" aria-selected="false" data-panel="bilder" class="nav-mer">Bilder</button>
     <button role="tab" aria-selected="false" data-panel="design" class="nav-mer">Design</button>
     <button role="tab" aria-selected="false" data-panel="abonnement" class="nav-mer">Abonnement</button>
@@ -501,25 +500,6 @@
   </div>
 
   <!-- ARBEIDSTIDER -->
-  <section class="panel" id="arbeidstider">
-    <p class="block-h">Arbeidstider</p>
-    <p class="block-s">Kunder kan bare booke i tidene du slår på. Endringer gjelder nye luker — eksisterende bookinger står.</p>
-    <div class="card" id="hoursList"><div class="loading">Laster …</div></div>
-    <div class="savebar">
-      <button class="btn" id="saveHours">Lagre arbeidstider</button>
-      <span class="saved" id="hoursSaved">Lagret ✓</span>
-    </div>
-
-    <div class="gcal" id="gcal">
-      <div class="gcal-info">
-        <p class="block-h" style="margin-top:0">Google Kalender</p>
-        <p class="block-s" id="gcalStatus" style="margin-bottom:0">Sjekker tilkobling …</p>
-      </div>
-      <button class="btn-outline" id="gcalBtn">Koble til</button>
-    </div>
-    <p class="ctx" style="margin-top:10px">Når Google Calendar er tilkoblet sperres opptatte tider automatisk i bookingsiden — kunder kan ikke booke mens du er opptatt. Dashbordet er fortsatt master for arbeidstider.</p>
-  </section>
-
   <!-- PROFIL -->
   <section class="panel" id="profil">
     <p class="block-h">Profil</p>
@@ -554,6 +534,25 @@
 
     <div class="svc-err" id="svcErr"></div>
     <div class="savebar"><button class="btn" id="saveSvc">Lagre tjenester</button><span class="saved" id="svcSaved">Lagret &#10003;</span></div>
+
+    <div class="svc-divider"></div>
+
+    <p class="block-h">Arbeidstider</p>
+    <p class="block-s">Kunder kan bare booke i tidene du slår på. Endringer gjelder nye luker — eksisterende bookinger står.</p>
+    <div class="card" id="hoursList"><div class="loading">Laster …</div></div>
+    <div class="savebar">
+      <button class="btn" id="saveHours">Lagre arbeidstider</button>
+      <span class="saved" id="hoursSaved">Lagret ✓</span>
+    </div>
+
+    <div class="gcal" id="gcal">
+      <div class="gcal-info">
+        <p class="block-h" style="margin-top:0">Google Kalender</p>
+        <p class="block-s" id="gcalStatus" style="margin-bottom:0">Sjekker tilkobling …</p>
+      </div>
+      <button class="btn-outline" id="gcalBtn">Koble til</button>
+    </div>
+    <p class="ctx" style="margin-top:10px">Når Google Calendar er tilkoblet sperres opptatte tider automatisk i bookingsiden — kunder kan ikke booke mens du er opptatt. Dashbordet er fortsatt master for arbeidstider.</p>
   </section>
 
   <!-- DESIGN -->
@@ -1119,8 +1118,8 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
   const id=t.dataset.panel;$("#"+id).classList.add("active");
   if(id==="bookinger")loadBookinger();if(id==="vekst")loadVekst();
-  if(id==="profil")loadProfil();if(id==="tjenester")loadTjenester();if(id==="design")loadDesign();
-  if(id==="bilder")loadBilder();if(id==="arbeidstider")loadArbeidstider();
+  if(id==="profil")loadProfil();if(id==="tjenester"){loadTjenester();loadArbeidstider();}if(id==="design")loadDesign();
+  if(id==="bilder")loadBilder();
   if(id==="innstillinger")loadInnstillinger();if(id==="vinn-tilbake")loadWinback();
 }));
 document.querySelectorAll("#segs button").forEach(b=>b.addEventListener("click",()=>{
