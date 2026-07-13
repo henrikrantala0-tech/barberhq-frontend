@@ -36,8 +36,8 @@
   .panel.active{display:block}
 
   /* Period selector */
-  .periodbar{display:flex;align-items:center;justify-content:space-between;gap:14px;margin-bottom:24px;flex-wrap:wrap}
-  .segs{display:inline-flex;background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:3px}
+  .periodbar{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin-bottom:24px}
+  .segs{display:inline-flex;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:3px}
   .segs button{appearance:none;border:0;background:0;font:inherit;font-size:12.5px;font-weight:500;color:var(--mut);padding:6px 13px;border-radius:6px;cursor:pointer;letter-spacing:-.01em}
   .segs button[aria-selected=true]{background:var(--ink);color:#fff}
   .monthpick{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);font-weight:500}
@@ -145,7 +145,7 @@
   .saved{font-size:12.5px;color:var(--good);font-weight:600;opacity:0;transition:opacity .2s}.saved.show{opacity:1}
   .loading{padding:26px;text-align:center;color:var(--mut);font-size:13px}
 
-  @media(max-width:560px){.row{flex-wrap:wrap}.row .when{min-width:auto}.periodbar{align-items:flex-start}.chartbars{overflow-x:auto;gap:3px}.cbar-col{min-width:28px}}
+  @media(max-width:560px){.row{flex-wrap:wrap}.row .when{min-width:auto}.chartbars{overflow-x:auto;gap:3px}.cbar-col{min-width:28px}}
   @media(max-width:480px){
     .day{padding:10px 12px;gap:8px}
     .dn{min-width:68px;font-size:12.5px}
@@ -293,10 +293,6 @@
   .cbar-bar{width:100%;max-width:52px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,#5b96ff 0%,#3f74e0 100%);min-height:4px;transition:height .25s ease}
   .cbar-lbl{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;text-align:center;line-height:1.3}
   .cbar-lbl-sub{font-size:9px;display:block;opacity:.7;text-transform:none;letter-spacing:0}
-  .chart-nav{display:none;align-items:center;gap:8px;margin-top:4px}
-  .chart-nav-btn{appearance:none;background:var(--surface2);border:1px solid var(--line);border-radius:6px;padding:3px 10px;cursor:pointer;color:var(--ink);font-size:14px;line-height:1.4}
-  .chart-nav-btn:disabled{opacity:.3;cursor:default}
-  .chart-nav-lbl{font-size:12px;color:var(--mut);min-width:130px;text-align:center}
   /* ----- Drevet av BarberHQ ----- */
   .drv-row{padding:11px 0;border-bottom:1px solid var(--line)}
   .drv-row:last-child{border-bottom:0}
@@ -403,7 +399,6 @@
         <button role="tab" aria-selected="true" data-p="uke">Siste uke</button>
         <button role="tab" aria-selected="false" data-p="2uker">Siste 2 uker</button>
         <button role="tab" aria-selected="false" data-p="maaned">Denne måneden</button>
-        <button role="tab" aria-selected="false" data-p="uker">Ukentlig</button>
       </div>
       <div class="monthpick">
         <span>Tidligere:</span>
@@ -420,11 +415,6 @@
         <div>
           <p class="block-h" id="chartTitle">Omsetning · — kr</p>
           <p class="block-s" id="chartSub">Estimert, siste 7 dager</p>
-          <div class="chart-nav" id="chartNav">
-            <button class="chart-nav-btn" id="chartPrev" title="Eldre uker">←</button>
-            <span class="chart-nav-lbl" id="chartNavLabel"></span>
-            <button class="chart-nav-btn" id="chartNext" title="Nyere uker">→</button>
-          </div>
         </div>
       </div>
       <div class="chartbars" id="chartBars"></div>
@@ -692,34 +682,8 @@ const MOCK_STATS={
   uke:     {customers:33, completed:28, noshow:1, rebooked:16, recovered:1200, newCust:5, estRevenue:9800},
   "2uker": {customers:61, completed:52, noshow:2, rebooked:30, recovered:2400, newCust:9, estRevenue:18200},
   maaned:  {customers:120, completed:98, noshow:5, rebooked:57, recovered:4650, newCust:17, estRevenue:34300},
-  uker:    {customers:0, completed:0, noshow:0, rebooked:0, recovered:0, newCust:0, estRevenue:0},
 };
 
-/* Genererer 52 uker med mock-data (deterministisk, ingen random) */
-const MOCK_WEEK_DATA=(function(){
-  var weeks=[];
-  var today=new Date();
-  var dayOfWeek=(today.getDay()+6)%7; // 0=mandag
-  var monday=new Date(today);
-  monday.setDate(today.getDate()-dayOfWeek);
-  monday.setHours(0,0,0,0);
-  for(var i=51;i>=0;i--){
-    var wStart=new Date(monday);
-    wStart.setDate(monday.getDate()-i*7);
-    var wEnd=new Date(wStart);
-    wEnd.setDate(wStart.getDate()+6);
-    var m=MONTHS[wStart.getMonth()];
-    var mCap=m.charAt(0).toUpperCase()+m.slice(1,3);
-    var weekOfMonth=Math.ceil(wStart.getDate()/7);
-    var startDay=wStart.getDate();
-    var lastOfMonth=new Date(wStart.getFullYear(),wStart.getMonth()+1,0).getDate();
-    var endDay=Math.min(wEnd.getDate(),lastOfMonth);
-    /* Deterministisk kr-verdi basert på uke-indeks */
-    var kr=Math.round((6200+Math.sin(i*2.5)*2400+Math.cos(i*1.7)*1600)/100)*100;
-    weeks.push({l:mCap+" u"+weekOfMonth,l2:startDay+"–"+endDay,kr:Math.max(kr,1200)});
-  }
-  return weeks;
-})();
 const MOCK_ATTRIB={
   uke:[{key:"Verving",n:2},{key:"Vinn-tilbake",n:2}],
   "2uker":[{key:"Verving",n:4},{key:"Vinn-tilbake",n:3}],
@@ -824,24 +788,12 @@ function fmtDate(iso){const d=new Date(iso);const dag=DAYS[(d.getDay()+6)%7].sli
 function esc(s){return(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}
 
 let curPeriod="uke";
-let curWeekPage=0;
 
 function rangeText(p){
   const now=new Date(); const d=now.getDate(), m=MONTHS[now.getMonth()];
   if(p==="uke")return "Siste 7 dager";
   if(p==="2uker")return "Siste 14 dager";
-  if(p==="uker")return "Ukentlig historikk — siste 12 måneder";
   return `1.–${d}. ${m} (så langt denne måneden)`;
-}
-
-function weekSliceStats(){
-  var endIdx=MOCK_WEEK_DATA.length-curWeekPage*7;
-  var startIdx=Math.max(0,endIdx-7);
-  var slice=MOCK_WEEK_DATA.slice(startIdx,endIdx);
-  var rev=slice.reduce(function(a,b){return a+b.kr;},0);
-  var cust=Math.round(rev/350);
-  var comp=Math.round(cust*0.88);
-  return {customers:cust,completed:comp,estRevenue:rev};
 }
 
 function gradeRate(rate,goodWhenHigh){
@@ -849,32 +801,8 @@ function gradeRate(rate,goodWhenHigh){
                       : (rate<=5?"good":rate<=12?"info":"bad");
 }
 
-function renderWeekStats(){
-  var ws=weekSliceStats();
-  $("#stats").innerHTML=`
-    <div class="stat">
-      <div class="l">Kunder (est.)</div>
-      <div class="v info">${ws.customers}</div>
-      <div class="sub mut">fullført ${ws.completed} av ${ws.customers}</div>
-    </div>
-    <div class="stat">
-      <div class="l">Estimert omsetning <span title="Anslaget baseres på fullførte timer × gjennomsnittspris. No-shows og kommende bookinger er ikke inkludert." style="cursor:help;font-size:11px;opacity:.55;vertical-align:1px;margin-left:2px">ℹ</span></div>
-      <div class="v" style="color:#35d07a"><span id="estRevValue">${ws.estRevenue.toLocaleString("no-NO")}</span><span class="u"> kr</span></div>
-      <div class="sub mut">fra fullførte timer</div>
-    </div>`;
-}
-
 async function loadOversikt(){
   $("#rangeLabel").textContent=rangeText(curPeriod);
-
-  if(curPeriod==="uker"){
-    renderWeekStats();
-    renderBarChart("uker");
-    var dl=$("#drivenByLabel");if(dl)dl.textContent="Slik ble stolen fylt — ukentlig historikk.";
-    renderDrivenBy("maaned");
-    loadUpcoming();
-    return;
-  }
 
   const s=await api.stats(curPeriod);
 
@@ -906,25 +834,9 @@ function renderAttrib(sel,data){
 }
 function renderBarChart(period){
   var data,total,sub;
-  if(period==="uker"){
-    var totalWeeks=MOCK_WEEK_DATA.length;
-    var maxPage=Math.ceil(totalWeeks/7)-1;
-    var endIdx=totalWeeks-curWeekPage*7;
-    var startIdx=Math.max(0,endIdx-7);
-    data=MOCK_WEEK_DATA.slice(startIdx,endIdx);
-    total=data.reduce(function(a,b){return a+b.kr;},0);
-    sub="Ukentlig fordeling · 7 uker av gangen";
-    var navLbl=data[0].l+" – "+data[data.length-1].l;
-    $("#chartNavLabel").textContent=navLbl;
-    $("#chartNav").style.display="flex";
-    $("#chartPrev").disabled=(curWeekPage>=maxPage);
-    $("#chartNext").disabled=(curWeekPage<=0);
-  }else{
-    data=MOCK_CHART[period]||MOCK_CHART.uke;
-    total=data.reduce(function(a,b){return a+b.kr;},0);
-    sub=period==="uke"?"Daglig fordeling, siste 7 dager":period==="2uker"?"Daglig fordeling, siste 14 dager":"Ukentlig fordeling, denne måneden";
-    $("#chartNav").style.display="none";
-  }
+  data=MOCK_CHART[period]||MOCK_CHART.uke;
+  total=data.reduce(function(a,b){return a+b.kr;},0);
+  sub=period==="uke"?"Daglig fordeling, siste 7 dager":period==="2uker"?"Daglig fordeling, siste 14 dager":"Ukentlig fordeling, denne måneden";
   var max=Math.max.apply(null,data.map(function(d){return d.kr;}))||1;
   var MAXH=120;
   $("#chartTitle").textContent="Omsetning · "+total.toLocaleString("no-NO")+" kr";
@@ -1157,15 +1069,8 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
 }));
 document.querySelectorAll("#segs button").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll("#segs button").forEach(x=>x.setAttribute("aria-selected","false"));
-  b.setAttribute("aria-selected","true");$("#monthSel").value="";curWeekPage=0;curPeriod=b.dataset.p;loadOversikt();
+  b.setAttribute("aria-selected","true");$("#monthSel").value="";curPeriod=b.dataset.p;loadOversikt();
 }));
-$("#chartPrev").addEventListener("click",function(){
-  var maxPage=Math.ceil(MOCK_WEEK_DATA.length/7)-1;
-  if(curWeekPage<maxPage){curWeekPage++;renderBarChart("uker");renderWeekStats();}
-});
-$("#chartNext").addEventListener("click",function(){
-  if(curWeekPage>0){curWeekPage--;renderBarChart("uker");renderWeekStats();}
-});
 $("#monthSel").addEventListener("change",async e=>{
   const ym=e.target.value;if(!ym){curPeriod="uke";document.querySelector('#segs button[data-p=uke]').click();return;}
   document.querySelectorAll("#segs button").forEach(x=>x.setAttribute("aria-selected","false"));
