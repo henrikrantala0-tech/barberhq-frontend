@@ -308,11 +308,25 @@
   @keyframes barlift{from{transform:translateY(0)}to{transform:translateY(-6px)}}
   .chart-pointer{position:absolute;width:2px;border-radius:2px;background:var(--mut);opacity:.5;pointer-events:none;display:none}
   .chart-wrap.sel .chart-pointer{display:block}
-  /* Reduced-motion (lag 3): nøytraliser HELE diagrammets bevegelse — entré, height-glid, lag 2-bounce/demp */
+  /* ----- Uke-rekord: dempet fotnote + gull-tilstand (lag 4, additivt) ----- */
+  .rekord-note{font-size:11px;color:var(--mut-2);margin-top:3px;font-weight:500;letter-spacing:-.01em}
+  .rekord-gull{
+    background:linear-gradient(180deg,#FFF4B2 0%,#FFE08A 38%,#F0C24B 72%,#C8960F 100%);
+    -webkit-background-clip:text;background-clip:text;
+    -webkit-text-fill-color:transparent;color:transparent;
+    filter:drop-shadow(0 0 2px rgba(255,224,138,.9)) drop-shadow(0 0 8px rgba(240,194,75,.55)) drop-shadow(0 0 16px rgba(240,194,75,.28));
+  }
+  @keyframes rekordPuls{
+    0%,100%{filter:drop-shadow(0 0 2px rgba(255,224,138,.9)) drop-shadow(0 0 8px rgba(240,194,75,.55)) drop-shadow(0 0 16px rgba(240,194,75,.28));}
+    40%{filter:drop-shadow(0 0 4px rgba(255,240,180,1)) drop-shadow(0 0 16px rgba(255,210,90,.8)) drop-shadow(0 0 30px rgba(240,194,75,.5));}
+  }
+  .rekord-puls{animation:rekordPuls .7s ease-out 1}
+  /* Reduced-motion (lag 3+4): nøytraliser HELE diagrammets bevegelse + rekord-puls (gull-farge står — ikke bevegelse) */
   @media (prefers-reduced-motion: reduce){
     .cbar-bar{transition:none}
     .cbar-col.active .cbar-bar{animation:none}
     .chartbars.scanning .cbar-col{transition:none}
+    .rekord-puls{animation:none}
   }
   /* ----- Drevet av BarberHQ ----- */
   .drv-row{padding:11px 0;border-bottom:1px solid var(--line)}
@@ -847,6 +861,7 @@ async function loadOversikt(){
       <div class="l">Estimert omsetning <span title="Anslaget baseres på fullførte timer × gjennomsnittspris. No-shows og kommende bookinger er ikke inkludert." style="cursor:help;font-size:11px;opacity:.55;vertical-align:1px;margin-left:2px">ℹ</span></div>
       <div class="v" style="color:#35d07a"><span id="estRevValue">${totalRev.toLocaleString("no-NO")}</span><span class="u"> kr</span></div>
       <div class="sub mut">fra fullførte timer</div>
+      <div class="rekord-note" id="rekordNote"></div>
     </div>`;
 
   // lag 3: tell-opp begge KPI kun første render (leses FØR renderBarChart flipper chartEntered)
@@ -855,6 +870,7 @@ async function loadOversikt(){
     countUp($("#kpiCount"), totalCount, 600, false);
     countUp($("#estRevValue"), totalRev, 600, true);
   }
+  applyRekord(payload); // lag 4: fotnote + gull-tilstand (gull-klasse sameksisterer med tell-opp)
 
   var drivenLbl=curPeriod==="uke"?"siste uke":curPeriod==="2uker"?"siste 2 uker":"denne måneden";
   var dl=$("#drivenByLabel");if(dl)dl.textContent="Slik ble stolen fylt — "+drivenLbl+".";
@@ -977,6 +993,7 @@ function initChartTouch(){
 }
 // ----- Entré-animasjon + tell-opp (lag 3, additivt — via height, ikke transform → ingen konflikt med lag 2-løft) -----
 var chartEntered=false;
+var rekordPulsed=false; // lag 4: puls kun første gang rekord-tilstanden vises
 var UNIFORM_MS=150, OUT_QUART='cubic-bezier(.165,.84,.44,1)';
 // Entré (valgt variant D): stagger-step mellom stolper + stolpe-varighet, med hardt tak på total entré-tid.
 var ENTRY_STEP=95, ENTRY_RISE=350, ENTRY_MAX_TOTAL=3000; // (N-1)*step + rise ≤ 3000ms → 90-heatmap kappes, sprenger aldri
@@ -1008,6 +1025,24 @@ function countUp(el,target,ms,fmt){
     else el.textContent=fmt?target.toLocaleString('no-NO'):String(target); // eksakt sluttall
   }
   requestAnimationFrame(frame);
+}
+// ----- Uke-rekord (lag 4): dempet fotnote + gull-tilstand på #estRevValue. Data fra /stats-payload. -----
+function applyRekord(p){
+  var note=$("#rekordNote"), rev=$("#estRevValue");
+  if(!note||!rev) return;
+  var hasRecord = p && p.best_week_start!=null;
+  var beaten = hasRecord && p.current_week_revenue > p.best_week_revenue;
+  rev.classList.toggle('rekord-gull', !!beaten);
+  if(beaten){
+    note.textContent="Ny rekord denne uka";
+    if(!rekordPulsed && !prefersReduced()){ rev.classList.add('rekord-puls'); rekordPulsed=true; } // puls kun første gang
+  } else if(!hasRecord){
+    note.textContent="Rekord settes denne uka"; // fersk: invitasjon, aldri "0 kr"
+  } else {
+    var mnd=new Date(p.best_week_start+'T12:00:00').toLocaleDateString('nb-NO',{month:'long'}); // T12 unngår tz-slip
+    var kr=(p.best_week_approximate?'ca. ':'')+p.best_week_revenue.toLocaleString('no-NO')+' kr';
+    note.textContent="Beste uke: "+kr+" · "+mnd;
+  }
 }
 function renderDrivenBy(period){
   var d=MOCK_DRIVEN[period]||MOCK_DRIVEN.uke;
