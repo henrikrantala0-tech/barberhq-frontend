@@ -52,6 +52,18 @@ Søsterrepo: barberhq-backend (Railway).
   dashbordet etterpå.
 - Design er låst: 6 paletter, 4 layouter (Profil/Showcase/Hero/Direkte).
   Ikke endre uten å spørre.
+- **Oversikt = uke-rekord-akse; Vekst = måned-rekord-akse.** Persentil + progress-bar bor
+  på Oversikt og er UKE-relative (måned har for få datapunkter for meningsfull persentil;
+  uke-jakt gir hyppigere motivasjon). «Beste måned» (+ gullstolpe-på-rekord-måned) hører til
+  Vekst — ÉN rekord-akse per flate, ikke doble.
+- **Diagram-fargekoding er RELATIV** til beste stolpe i visningen (`colorForRatio(d.kr/max)`),
+  ikke absolutt. Bevisst «deg-mot-deg-selv». Ingen tynt-data-demping (svakest i
+  onboarding-vinduet — akseptert).
+- **Attribusjon = definisjon A (utfallsbasert), ikke B (handlingsbasert).** Manuell
+  vinn-tilbake-DM utenfor systemet kan ikke trackes; A observerer kun UTFALL (kom tilbake),
+  lover ikke at verktøyet gjorde det. Framing MÅ matche: vekk fra «Drevet av / slik ble stolen
+  fylt» (antyder verktøy-bragd) → ærlige utfalls-titler.
+- **Attribusjons-prioritet:** vervet > recovery > rebooking; hver booking i én kategori (sum er sann).
 
 ## Arbeidsregler (Henriks preferanser)
 
@@ -146,6 +158,18 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
 - **Palett-konsistens:** én delt kilde (`palett.js`) for kom-i-gang + dashboard, i synk med `fyll.cjs`. Ren svart/hvit bakgrunn i mørk modus, aksent skiller.
 - **Kundeside bygges fra `barbers`-raden** (ikke `orders.payload`): alt barbereren endrer (design, layout, font, adresse, bio, bilder, tjenester) når bookingsiden. Oppslag via `barbers.slug`, status-gating via `barbers.page_status`. `savedLayout` er skilt fra `design.layout` — Bilder-fanen leser alltid lagret DB-verdi.
 
+### Oversikt-diagram (Oversikt-fanen)
+Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(days[], ym)` null-fyller til `[{l,kr,l2,count,new,returning}]` → `renderBarChart(data, period)` (leser `d.l/d.kr/d.l2`). Samme skårne array mater KPI-kortene (Σcount=Kunder, Σrevenue=Estimert omsetning). Diagrammet dekker hele historikken.
+- **Perioder:** pill-er (Siste uke=7d / Siste 2 uker=14d / Denne måneden=1.→i dag), rullende, forankret Oslo-i-dag. `daily[]` = 90-dagers vindu fra `/stats`.
+- **Månedsvelger:** «Tidligere»-dropdown fra `/stats.months_with_data` (nyest øverst, ekskl. inneværende måned). Valg → `GET /api/dashboard/stats/month?ym=YYYY-MM` (sparse `days[]` + måned-totaler, ym-validering→400) → `sliceMonth` (dag-antall via `new Date(år,mnd,0).getDate()` → korrekt 28/29/30/31) → bytter BÅDE diagram + KPI. Pill↔måned-state isolert (pill-klikk nullstiller dropdown; ingen lekkasje).
+- **Volum-farge (lag 1):** `colorForRatio(d.kr/max)` — glidende lineær RGB dempet blågrå → brand-blå → brand-grønn, relativt til beste stolpe i visningen. Per-stolpe gradient (mørk bunn→lys topp av stolpens EGEN farge), ingen glow.
+- **HUD + touch (lag 2, variant A):** magnetisk `pointerdown`/`pointermove` på `#chartBars`, snap via `getBoundingClientRect`. Valgt stolpe → **kort forankret til stolpen** (`#chartHud`, absolutt i `.chart-wrap`): dato liten/dempet, beløp stort + «· N klipp», pills nye (blå) / gjengangere (grønn). Løsrevet caret (`#chartCaret`) på stolpe-senter + peker-linje til stolpetopp; horisontal clamping innenfor kort-padding ved kant-stolper; skann-glid `transition:left .09s`. `pointer-events:none` på kort/caret → tap/skann/undo treffer stolpene under. Undo: tap valgt stolpe → `clearSel()`, tap-vs-dra <8px.
+- **Entré + tell-opp (lag 3):** stolper stiger staggered venstre→høyre (variant D: step 95ms / rise 350ms, clamp `ENTRY_MAX_TOTAL=3000` → 90-heatmap sprenger aldri), KPI teller 0→target, KUN første render (`chartEntered`-flagg); pill/tab = uniform vekst, ingen tell-opp. Respekterer `prefers-reduced-motion`.
+- **Uke-rekord (lag 4) — KUN pill-modus inneværende uke:** `current_week_revenue`/`best_week_revenue`/`best_week_start` fra `/stats` (backend-beregnet, on-read/Oslo, best = MAX ferdige uker). Gull-KPI (`#estRevValue` gull-gradient + drop-shadow-glow + puls) tenner kun ved `current > best` OG `curPeriod==="uke"`. Dempet «Beste uke: X kr · [mnd]»-fotnote ellers.
+- **Persentil + rekord-bar (batch 2) — KUN pill-modus inneværende uke:** fra `/stats.weekly_revenue` (`[{week_start,revenue}]`, all-time ferdige uker, on-read/Oslo, `max==best_week_revenue` per konstruksjon). Persentil «Bedre enn X% av dine egne uker» vist ved ≥6 uker OG pct≥50 (over median), undertrykt ved rekord. Rekord-bar `current/best`: <0.80 skjul · 0.80–1.0 «X kr unna» · ≥1.0 «Ny rekord denne uka! 🔥» 100% gull. Baren eier rekord-budskapet (tømmer `#rekordNote`) → ingen dobbelt. Skjult på 2uker/måned/historisk måned.
+- **Merk (aldri sett live):** mot volum-test er `current_week` (~10 550) « `best` (13 950 = 76%) → persentil + rekord-bar naturlig SKJULT. «unna»/«rekord»-tilstand kun Playwright/deterministisk verifisert. `gull-demo.cjs`-fixtur (backend-repo) kan heve `current` over tersklene for å se dem live.
+- **«Drevet av BarberHQ»:** p.t. REN MOCK (`MOCK_DRIVEN` × flat 350 kr, ikke koblet). Erstattes av ekte attribution-endepunkt — se Må gjøres + Kjent teknisk gjeld.
+
 ### Bildeplasserings-system (slots)
 - `images` har `slot` (portrett/hero/galleri) + `sort_order`. Barbereren trykker en slot-boks per layout → laster opp dit. Galleri-grense 10; erstatning av portrett/hero sletter gammelt helt (DB+R2). `PATCH /images/:id/slot` flytter. Layout-bytte hard-sletter (DB+R2), transaksjonssikret (BEGIN/COMMIT/ROLLBACK, R2 best-effort utenfor transaksjon).
 - `byggSideFraBarber()` leser slots (ikke opplastingsrekkefølge) — barberens plassering styrer siden.
@@ -203,6 +227,13 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
   Riktig løsning: egen `timezone`-kolonne på `barbers`, satt per barber ved onboarding, og bruk den
   i stedet for market-mappingen. Må fikses før vi tar inn barberere utenfor CET/UK.
 - **buildPalette er duplisert i fyll.cjs og no/palett.js — må holdes i synk manuelt.**
+- **«Drevet av BarberHQ»-seksjonen (Oversikt) er ren mock** (`MOCK_DRIVEN` × flat 350 kr, ikke
+  koblet). Erstattes av ekte `GET /api/dashboard/attribution` — se Må gjøres. Viser oppdiktede
+  tall til da (bryter ikke ingen-fabrikkerte-regelen før ekte kunde, men launch er ikke her).
+- **Dødt attribusjons-stillas på Vekst-fanen:** `api.attribution` (`dashboard.html:806`) kaller et
+  slug-basert `/api/barbers/:slug/attribution` som IKKE finnes på backend + `MOCK_ATTRIB` +
+  `renderAttrib`/`#vekstAttrib`. Nytt session-endepunkt (`/api/dashboard/attribution`) bør betjene
+  BÅDE «Drevet av» (Oversikt) og Vekst; fjern det døde slug-kallet når Vekst bygges.
 
 ## Må gjøres (prioritert)
 
@@ -220,12 +251,22 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
 4. **Vekstfeatures (backend):** rebooking, verving, vinn-tilbake auto-SMS. Deretter landingsside-
    avsnitt under «fyll stolen» som forklarer dem.
 5. **Profil-side i Konto-fanen:** bytt passord m.m. Døp om nav «Abonnement» → «Konto».
-6. **Koble ekte data i Vekst/Oversikt** — mye er fortsatt `USE_MOCK=true` (stats/graf/attribusjon/
-   bookinger i dashboard).
+6. **Koble ekte data i Vekst** — Oversikt (diagram/KPI/rekord/månedsvelger) er nå EKTE mot
+   `/stats` + `/stats/month`. Gjenstår: Vekst-fanen (stats/trend) + attribusjon «Drevet av»
+   (backend `/api/dashboard/attribution` bygges først). Bookinger-liste ekte; no-show-knapp mock.
 7. **Test full klikk-flyt med ekte klippbilde** — crop + lagring i Bilder-delen (Design), verifiser
    riktig slot på ekte kundeside. Bevist via API, ikke UI-flyt ennå.
 8. **Pris-0-markør i tjeneste-lista** — rød kant + «Sett pris» (parallell til kundesidens
    `prisTekst`-vern; gå-live blokkeres allerede server-side).
+9. **«Drevet av»-attribusjon ekte (backend-first, NESTE OPP):** erstatter mock-seksjonen.
+   Backend (barberhq-backend) bygger tre kategorier HVER FOR SEG, verifisert mot volum-test før
+   neste: rebooking (`rn>1`) → recovered (LAG, prev `ikke_mott`/gap>60d) → vervet
+   (`customers.referred_by`, ÅPEN: kun første booking vs alle besøk). Deretter én
+   `ranked→classified`-CASE-query (prioritet vervet>recovery>rebooking, ekte `price_nok`)
+   eksponert som `GET /api/dashboard/attribution?period=uke|2uker|maaned` (session, vinduer
+   matcher `sliceDaily`). **Query-plan + åpen vervet-beslutning: se barberhq-backend CLAUDE.md.**
+   Frontend her: `renderDrivenBy` async mot endepunktet, A-framing-titler (ikke «slik ble stolen
+   fylt»), skjul på måneds-visning (samme mønster som persentil/rekord-bar). Deretter Vekst-fanen.
 
 ### Lav / polish
 9. **WebAuthn-instruksjonsbanner + «App kommer»-banner** i dashboard.
