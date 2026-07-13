@@ -284,8 +284,8 @@
   .tcol .tn{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
   .tcol .tl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
   /* ----- Stolpediagram (omsetning) ----- */
-  .chart-wrap{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:24px}
-  .chart-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap}
+  .chart-wrap{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:24px;position:relative}
+  .chart-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;min-height:52px}
   .logo{font-size:21px;font-weight:800;letter-spacing:-.03em}
   .chartbars{display:flex;align-items:flex-end;gap:5px;height:160px;padding:0 2px}
   .cbar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;min-width:0}
@@ -293,6 +293,21 @@
   .cbar-bar{width:100%;max-width:52px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--bar-top),var(--bar-bot));min-height:4px;transition:height .25s ease}
   .cbar-lbl{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;text-align:center;line-height:1.3}
   .cbar-lbl-sub{font-size:9px;display:block;opacity:.7;text-transform:none;letter-spacing:0}
+  /* ----- Diagram-HUD + magnetisk touch (lag 2, additivt) ----- */
+  #chartBars{touch-action:pan-y}
+  .chart-hud{display:none}
+  .chart-wrap.sel .chart-head-default{display:none}
+  .chart-wrap.sel .chart-hud{display:block}
+  .hud-day{font-size:13px;font-weight:700;letter-spacing:-.01em}
+  .hud-metrics{display:flex;gap:14px;margin-top:2px;font-variant-numeric:tabular-nums;font-size:13px}
+  .hud-kr{font-weight:700} .hud-cuts{color:var(--mut)}
+  .hud-split{font-size:12px;color:var(--mut);margin-top:2px}
+  .chartbars.scanning .cbar-col{opacity:.34;transition:opacity .14s ease}
+  .chartbars.scanning .cbar-col.active{opacity:1}
+  .cbar-col.active .cbar-bar{animation:barlift .16s cubic-bezier(.34,1.56,.64,1) forwards}
+  @keyframes barlift{from{transform:translateY(0)}to{transform:translateY(-6px)}}
+  .chart-pointer{position:absolute;width:2px;border-radius:2px;background:var(--mut);opacity:.5;pointer-events:none;display:none}
+  .chart-wrap.sel .chart-pointer{display:block}
   /* ----- Drevet av BarberHQ ----- */
   .drv-row{padding:11px 0;border-bottom:1px solid var(--line)}
   .drv-row:last-child{border-bottom:0}
@@ -412,12 +427,18 @@
 
     <div class="chart-wrap">
       <div class="chart-header">
-        <div>
+        <div class="chart-head-default">
           <p class="block-h" id="chartTitle">Omsetning · — kr</p>
           <p class="block-s" id="chartSub">Estimert, siste 7 dager</p>
         </div>
+        <div class="chart-hud">
+          <div class="hud-day" id="hudDay"></div>
+          <div class="hud-metrics"><span class="hud-kr" id="hudKr"></span><span class="hud-cuts" id="hudCuts"></span></div>
+          <div class="hud-split" id="hudSplit"></div>
+        </div>
       </div>
       <div class="chartbars" id="chartBars"></div>
+      <div class="chart-pointer" id="chartPointer"></div>
     </div>
 
     <div class="bottom-grid">
@@ -850,10 +871,13 @@ function sliceDaily(daily,period){
     var d=new Date(anchor.getTime()-i*86400000);
     var key=d.toISOString().slice(0,10);
     var v=map[key]||{count:0,revenue:0,new:0,returning:0};
+    var wd=DAYS[(d.getUTCDay()+6)%7].slice(0,3);
+    var ddmm=String(d.getUTCDate()).padStart(2,"0")+"."+String(d.getUTCMonth()+1).padStart(2,"0");
+    var dlabel=wd+" "+ddmm; // HUD: "Ons 08.07" på alle perioder
     var l,l2;
     if(period==="maaned"){ l=String(d.getUTCDate()); l2=undefined; }
-    else { l=DAYS[(d.getUTCDay()+6)%7].slice(0,3); l2=String(d.getUTCDate()).padStart(2,"0")+"."+String(d.getUTCMonth()+1).padStart(2,"0"); }
-    out.push({l:l,kr:v.revenue,l2:l2,count:v.count,new:v.new,returning:v.returning});
+    else { l=wd; l2=ddmm; }
+    out.push({l:l,kr:v.revenue,l2:l2,dlabel:dlabel,count:v.count,new:v.new,returning:v.returning});
   }
   return out;
 }
@@ -885,6 +909,55 @@ function renderBarChart(data,period){
     var lbl=d.l2?'<span>'+d.l+'</span><span class="cbar-lbl-sub">'+d.l2+'</span>':d.l;
     return '<div class="cbar-col"><div class="cbar-val">'+val+'</div><div class="cbar-bar" style="height:'+h+'px;--bar-top:'+col.top+';--bar-bot:'+col.bot+'"></div><div class="cbar-lbl">'+lbl+'</div></div>';
   }).join("");
+  chartDays=data; clearSel(); // lag 2: HUD leser herfra; nullstill til default ved (re)render
+}
+// ----- Diagram-HUD + magnetisk touch (lag 2, additivt overlay — rører ikke lag 1) -----
+var chartDays=[], selIdx=-1;
+var _chartBars=null, _chartWrap=null;
+function colForX(x){
+  var cols=_chartBars.querySelectorAll('.cbar-col'), best=0, bd=Infinity;
+  for(var i=0;i<cols.length;i++){ var r=cols[i].getBoundingClientRect(); var d=Math.abs(x-(r.left+r.width/2)); if(d<bd){bd=d;best=i;} }
+  return best;
+}
+function fillHud(d){
+  $("#hudDay").textContent=d.dlabel;
+  $("#hudKr").textContent=d.kr.toLocaleString("no-NO")+" kr";
+  $("#hudCuts").textContent=d.count+" klipp";
+  $("#hudSplit").textContent=d.new+" nye · "+d.returning+" gjengangere";
+}
+function positionPointer(i){
+  var col=_chartBars.querySelectorAll('.cbar-col')[i]; if(!col)return;
+  var bar=col.querySelector('.cbar-bar');
+  var wrap=_chartWrap.getBoundingClientRect();
+  var hdr=_chartWrap.querySelector('.chart-header').getBoundingClientRect();
+  var b=bar.getBoundingClientRect();
+  var p=$("#chartPointer");
+  p.style.left=(b.left+b.width/2-wrap.left)+"px";
+  p.style.top=(hdr.bottom-wrap.top)+"px";
+  p.style.height=Math.max(0,(b.top-6)-hdr.bottom)+"px"; // -6 = møter løftet stolpetopp
+}
+function selectBar(i){
+  if(i===selIdx) return; // allerede valgt — peker er korrekt, ikke re-mål (unngår lift-drift)
+  selIdx=i;
+  var cols=_chartBars.querySelectorAll('.cbar-col');
+  for(var k=0;k<cols.length;k++) cols[k].classList.toggle('active', k===i);
+  _chartBars.classList.add('scanning'); _chartWrap.classList.add('sel');
+  fillHud(chartDays[i]); positionPointer(i);
+}
+function clearSel(){
+  selIdx=-1;
+  if(!_chartBars)return;
+  _chartBars.classList.remove('scanning'); _chartWrap.classList.remove('sel');
+  var a=_chartBars.querySelectorAll('.cbar-col.active');
+  for(var k=0;k<a.length;k++) a[k].classList.remove('active');
+}
+function initChartTouch(){
+  _chartBars=$("#chartBars"); _chartWrap=document.querySelector('.chart-wrap');
+  var scanning=false;
+  _chartBars.addEventListener('pointerdown',function(e){ scanning=true; try{_chartBars.setPointerCapture(e.pointerId);}catch(_){} selectBar(colForX(e.clientX)); });
+  _chartBars.addEventListener('pointermove',function(e){ if(scanning) selectBar(colForX(e.clientX)); });
+  _chartBars.addEventListener('pointerup',function(){ scanning=false; }); // behold valgt til neste trykk
+  _chartBars.addEventListener('pointercancel',function(){ scanning=false; });
 }
 function renderDrivenBy(period){
   var d=MOCK_DRIVEN[period]||MOCK_DRIVEN.uke;
@@ -1466,6 +1539,7 @@ initTheme();
 var _mf=$("#mockFlag");if(_mf)_mf.style.display=CONFIG.USE_MOCK?"inline-block":"none";
 var _bn=$("#barberName");if(_bn)_bn.textContent="";
 buildMonthSelect();
+initChartTouch(); // lag 2: koble pointer-events på #chartBars (én gang; overlever innerHTML-rebuild)
 loadProfil(); // fyller header-navn + profil-fane ved sideload
 loadOversikt();loadBookinger();loadWinback(); // Oversikt rommer nå booking-liste + vinn-tilbake
 
