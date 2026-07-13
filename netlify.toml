@@ -71,3 +71,38 @@
   to = "https://api.trybarberhq.com/:slug"
   status = 200
   force = false
+
+# 5. noindex for sv/da/en (bevisst utdaterte — ventes til oversettelsesfasen).
+#    no/ nevnes ALDRI → forblir indekserbar. Tillater crawling og sender noindex,
+#    så Google leser headeren og holder de tre språkene ute av indeksen.
+#    Fjern språkets blokk-par når det er ferdig oversatt ved lansering.
+#    Splat + bar-katalog per språk (belte-og-seler: /sv/ uten filnavn dekkes også).
+[[headers]]
+  for = "/sv/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/sv/"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/da/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/da/"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/en/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/en/"
+  [headers.values]
+    X-Robots-Tag = "noindex"
