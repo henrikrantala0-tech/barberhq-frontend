@@ -1032,8 +1032,9 @@ function applyRekord(p){
   if(!note||!rev) return;
   var hasRecord = p && p.best_week_start!=null;
   var beaten = hasRecord && p.current_week_revenue > p.best_week_revenue;
-  rev.classList.toggle('rekord-gull', !!beaten);
-  if(beaten){
+  var showGold = beaten && curPeriod==="uke"; // gull-tenning KUN på "Siste uke" — andre perioder viser en annen tidsrammes sum
+  rev.classList.toggle('rekord-gull', !!showGold);
+  if(showGold){
     note.textContent="Ny rekord denne uka";
     if(!rekordPulsed && !prefersReduced()){ rev.classList.add('rekord-puls'); rekordPulsed=true; } // puls kun første gang
   } else if(!hasRecord){
