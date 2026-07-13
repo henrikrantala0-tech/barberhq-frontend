@@ -694,11 +694,6 @@ const MOCK_DRIVEN={
   "2uker": {completed:52, rebooket:30, vinn_tilbake:14, verving:8, avg_kr:350},
   maaned:  {completed:98, rebooket:57, vinn_tilbake:25, verving:16, avg_kr:350},
 };
-const MOCK_CHART={
-  uke:    [{l:"Man",kr:900},{l:"Tir",kr:1400},{l:"Ons",kr:1200},{l:"Tor",kr:2450},{l:"Fre",kr:2100},{l:"Lør",kr:1400},{l:"Søn",kr:350}],
-  "2uker":[{l:"Man",kr:700},{l:"Tir",kr:1400},{l:"Ons",kr:1750},{l:"Tor",kr:2100},{l:"Fre",kr:1750},{l:"Lør",kr:1400},{l:"Søn",kr:700},{l:"Man",kr:600},{l:"Tir",kr:1200},{l:"Ons",kr:1400},{l:"Tor",kr:1800},{l:"Fre",kr:1500},{l:"Lør",kr:1200},{l:"Søn",kr:700}],
-  maaned: [{l:"Uke 1",kr:8400},{l:"Uke 2",kr:9100},{l:"Uke 3",kr:8750},{l:"Uke 4",kr:8050}],
-};
 const MOCK={
   bookings:[
     {id:"b0",start:"2026-06-01T10:00:00Z",name:"Eldre Booking",service:"Klipp",price:300,status:"fullfort"},
@@ -730,6 +725,12 @@ const MOCK={
 const api={
   async stats(period){ if(CONFIG.USE_MOCK){await wait(150);return MOCK_STATS[period];}
     const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/stats?period=${period}`); return r.json(); },
+  // Ekte, session-basert 90-dagers daily[] — Oversikt-diagram + omsetnings-KPI. Vekst (api.stats) er urørt mock.
+  async statsDaily(){
+    const r=await apiFetch('/api/dashboard/stats');
+    if(!r||!r.ok)return{daily:[]}; // 401 → apiFetch har alt redirigert; tom → tom akse, ingen krasj
+    return r.json();
+  },
   async attribution(period){ if(CONFIG.USE_MOCK){return MOCK_ATTRIB[period];}
     const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/attribution?period=${period}`); return r.json(); },
   async monthTotal(ym){ if(CONFIG.USE_MOCK){await wait(120);return MOCK.monthly[ym]??null;}
@@ -804,23 +805,26 @@ function gradeRate(rate,goodWhenHigh){
 async function loadOversikt(){
   $("#rangeLabel").textContent=rangeText(curPeriod);
 
-  const s=await api.stats(curPeriod);
+  const payload=await api.statsDaily();
+  const days=sliceDaily(payload.daily||[],curPeriod);
+  const totalRev=days.reduce(function(a,d){return a+d.kr;},0);
+  const totalCount=days.reduce(function(a,d){return a+d.count;},0);
 
   $("#stats").innerHTML=`
     <div class="stat">
       <div class="l">Kunder</div>
-      <div class="v info">${s.customers}</div>
-      <div class="sub mut">fullført ${s.completed} av ${s.customers}</div>
+      <div class="v info">${totalCount}</div>
+      <div class="sub mut">fullførte klipp</div>
     </div>
     <div class="stat">
       <div class="l">Estimert omsetning <span title="Anslaget baseres på fullførte timer × gjennomsnittspris. No-shows og kommende bookinger er ikke inkludert." style="cursor:help;font-size:11px;opacity:.55;vertical-align:1px;margin-left:2px">ℹ</span></div>
-      <div class="v" style="color:#35d07a"><span id="estRevValue">${MOCK_CHART[curPeriod].reduce(function(a,b){return a+b.kr;},0).toLocaleString("no-NO")}</span><span class="u"> kr</span></div>
+      <div class="v" style="color:#35d07a"><span id="estRevValue">${totalRev.toLocaleString("no-NO")}</span><span class="u"> kr</span></div>
       <div class="sub mut">fra fullførte timer</div>
     </div>`;
 
   var drivenLbl=curPeriod==="uke"?"siste uke":curPeriod==="2uker"?"siste 2 uker":"denne måneden";
   var dl=$("#drivenByLabel");if(dl)dl.textContent="Slik ble stolen fylt — "+drivenLbl+".";
-  renderBarChart(curPeriod);
+  renderBarChart(days,curPeriod);
   renderDrivenBy(curPeriod);
   loadUpcoming();
 }
@@ -832,11 +836,31 @@ function renderAttrib(sel,data){
       <div class="sv">${s.n}</div>
       <div class="bar"><i style="width:${Math.round(s.n/total*100)}%"></i></div></div>`).join("");
 }
-function renderBarChart(period){
-  var data,total,sub;
-  data=MOCK_CHART[period]||MOCK_CHART.uke;
+// Skjær daily[] til en tett dags-akse for valgt pill, null-fyll manglende dager.
+// Anker = faktisk i dag i Oslo (tz-trygt via Intl) → trailing tomme dager vises som 0-stolper.
+// Tom daily[] → hele aksen blir 0-stolper (bevisst valg, IKKE blank akse — ikke gjeninnfør tidlig return []).
+function sliceDaily(daily,period){
+  var map={};
+  (daily||[]).forEach(function(d){map[d.day]={count:d.count||0,revenue:d.revenue||0,new:d.new||0,returning:d.returning||0};});
+  var osloToday=new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Oslo'}).format(new Date()); // "YYYY-MM-DD"
+  var anchor=new Date(osloToday+'T00:00:00Z'); // parse i UTC → getUTC*/toISOString matcher strengen, ingen lokal drift
+  var n = period==="uke" ? 7 : period==="2uker" ? 14 : anchor.getUTCDate(); // maaned: 1. → i dag
+  var out=[];
+  for(var i=n-1;i>=0;i--){
+    var d=new Date(anchor.getTime()-i*86400000);
+    var key=d.toISOString().slice(0,10);
+    var v=map[key]||{count:0,revenue:0,new:0,returning:0};
+    var l,l2;
+    if(period==="maaned"){ l=String(d.getUTCDate()); l2=undefined; }
+    else { l=DAYS[(d.getUTCDay()+6)%7].slice(0,3); l2=String(d.getUTCDate()).padStart(2,"0")+"."+String(d.getUTCMonth()+1).padStart(2,"0"); }
+    out.push({l:l,kr:v.revenue,l2:l2,count:v.count,new:v.new,returning:v.returning});
+  }
+  return out;
+}
+function renderBarChart(data,period){
+  var total,sub;
   total=data.reduce(function(a,b){return a+b.kr;},0);
-  sub=period==="uke"?"Daglig fordeling, siste 7 dager":period==="2uker"?"Daglig fordeling, siste 14 dager":"Ukentlig fordeling, denne måneden";
+  sub=period==="uke"?"Daglig fordeling, siste 7 dager":period==="2uker"?"Daglig fordeling, siste 14 dager":"Daglig fordeling, denne måneden";
   var max=Math.max.apply(null,data.map(function(d){return d.kr;}))||1;
   var MAXH=120;
   $("#chartTitle").textContent="Omsetning · "+total.toLocaleString("no-NO")+" kr";
