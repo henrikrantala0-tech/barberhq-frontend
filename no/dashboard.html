@@ -310,6 +310,17 @@
   .chart-wrap.sel .chart-pointer{display:block}
   /* ----- Uke-rekord: dempet fotnote + gull-tilstand (lag 4, additivt) ----- */
   .rekord-note{font-size:11px;color:var(--mut-2);margin-top:3px;font-weight:500;letter-spacing:-.01em}
+  /* ----- Uke-innsikt: persentil + rekord-progress-bar (batch 2) ----- */
+  .week-insight{display:flex;flex-direction:column;gap:8px;margin:2px 0 20px}
+  .week-insight[hidden]{display:none}
+  .wi-pct{font-size:12px;color:var(--mut-2);font-weight:500;letter-spacing:-.01em}
+  .wi-pct[hidden]{display:none}
+  .wi-record[hidden]{display:none}
+  .wi-track{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
+  .wi-fill{height:100%;border-radius:99px;background:var(--good);transition:width .5s cubic-bezier(.165,.84,.44,1)}
+  .wi-fill.rekord{background:linear-gradient(90deg,#F0C24B,#FFE08A)}
+  .wi-text{font-size:12px;color:var(--mut-2);font-weight:500;letter-spacing:-.01em;margin-top:2px}
+  .wi-text.rekord{color:#E8B84B;font-weight:600}
   .rekord-gull{
     background:linear-gradient(180deg,#FFF4B2 0%,#FFE08A 38%,#F0C24B 72%,#C8960F 100%);
     -webkit-background-clip:text;background-clip:text;
@@ -444,6 +455,14 @@
     <p class="ctx" id="ctxNote" style="display:none"></p>
 
     <div class="stats" id="stats"><div class="loading">Laster …</div></div>
+
+    <div class="week-insight" id="weekInsight" hidden>
+      <div class="wi-pct" id="wiPct" hidden></div>
+      <div class="wi-record" id="wiRecord" hidden>
+        <div class="wi-track"><div class="wi-fill" id="wiFill"></div></div>
+        <div class="wi-text" id="wiText"></div>
+      </div>
+    </div>
 
     <div class="chart-wrap">
       <div class="chart-header">
@@ -892,6 +911,7 @@ async function loadOversikt(){
     countUp($("#estRevValue"), totalRev, 600, true);
   }
   applyRekord(payload); // lag 4: fotnote + gull-tilstand (gull-klasse sameksisterer med tell-opp)
+  renderWeekInsight(payload); // batch 2: persentil + rekord-bar (tømmer #rekordNote hvis baren vises)
 
   var drivenLbl=curPeriod==="uke"?"siste uke":curPeriod==="2uker"?"siste 2 uker":"denne måneden";
   var dl=$("#drivenByLabel");if(dl)dl.textContent="Slik ble stolen fylt — "+drivenLbl+".";
@@ -958,8 +978,8 @@ function colorForRatio(r){
   function lerp(a,b,t){return a+(b-a)*t;}
   function mix(c,d,t){return [Math.round(lerp(c[0],d[0],t)),Math.round(lerp(c[1],d[1],t)),Math.round(lerp(c[2],d[2],t))];}
   var c = r<=0.5 ? mix(A0,A5,r/0.5) : mix(A5,A1,(r-0.5)/0.5);
-  var top = mix(c,[255,255,255],0.14); // topp litt lysere
-  var bot = mix(c,[0,0,0],0.12);       // bunn litt mørkere
+  var top = mix(c,[255,255,255],0.22); // topp lysere (synlig, men subtil per-stolpe-gradient av stolpens egen farge)
+  var bot = mix(c,[0,0,0],0.20);       // bunn mørkere — grunnfargen (volum-koding) uendret
   return { top:'rgb('+top.join(',')+')', bot:'rgb('+bot.join(',')+')' };
 }
 function renderBarChart(data,period){
@@ -1027,11 +1047,24 @@ function clearSel(){
 }
 function initChartTouch(){
   _chartBars=$("#chartBars"); _chartWrap=document.querySelector('.chart-wrap');
-  var scanning=false;
-  _chartBars.addEventListener('pointerdown',function(e){ scanning=true; try{_chartBars.setPointerCapture(e.pointerId);}catch(_){} selectBar(colForX(e.clientX)); });
-  _chartBars.addEventListener('pointermove',function(e){ if(scanning) selectBar(colForX(e.clientX)); });
-  _chartBars.addEventListener('pointerup',function(){ scanning=false; }); // behold valgt til neste trykk
-  _chartBars.addEventListener('pointercancel',function(){ scanning=false; });
+  var scanning=false, downX=0, moved=false, tapClearIdx=-1;
+  _chartBars.addEventListener('pointerdown',function(e){
+    scanning=true; downX=e.clientX; moved=false;
+    try{_chartBars.setPointerCapture(e.pointerId);}catch(_){}
+    var i=colForX(e.clientX);
+    if(i===selIdx){ tapClearIdx=i; }          // alt valgt → vent på pointerup for tap-vs-dra
+    else { tapClearIdx=-1; selectBar(i); }
+  });
+  _chartBars.addEventListener('pointermove',function(e){
+    if(!scanning) return;
+    if(Math.abs(e.clientX-downX)>=8) moved=true; // ≥8px = dra/skann, ikke tap
+    if(moved){ tapClearIdx=-1; selectBar(colForX(e.clientX)); } // dra avbryter evt. toggle-clear
+  });
+  _chartBars.addEventListener('pointerup',function(){
+    if(tapClearIdx!==-1 && !moved) clearSel();  // tap på alt-valgt stolpe → fjern valg
+    scanning=false; tapClearIdx=-1;
+  });
+  _chartBars.addEventListener('pointercancel',function(){ scanning=false; tapClearIdx=-1; });
 }
 // ----- Entré-animasjon + tell-opp (lag 3, additivt — via height, ikke transform → ingen konflikt med lag 2-løft) -----
 var chartEntered=false;
@@ -1086,6 +1119,35 @@ function applyRekord(p){
     var kr=(p.best_week_approximate?'ca. ':'')+p.best_week_revenue.toLocaleString('no-NO')+' kr';
     note.textContent="Beste uke: "+kr+" · "+mnd;
   }
+}
+// Uke-innsikt (batch 2): persentil + rekord-progress. KUN pill-modus inneværende uke.
+function renderWeekInsight(p){
+  var wi=$("#weekInsight"); if(!wi) return;
+  if(curPeriod!=="uke" || !p){ wi.hidden=true; return; } // 2uker/måned/historisk måned → skjul rent
+  var wr=p.weekly_revenue||[], cur=p.current_week_revenue||0, best=p.best_week_revenue||0;
+  var beaten = best>0 && cur>=best;
+  // Persentil: andel ferdige uker med revenue < inneværende. Vis kun ≥6 uker & ≥50% & ikke rekord (redundant).
+  var showPct=false, pct=0;
+  if(wr.length>=6 && !beaten){
+    var below=0; for(var i=0;i<wr.length;i++){ if(wr[i].revenue<cur) below++; }
+    pct=Math.round(below/wr.length*100); showPct=pct>=50;
+  }
+  var pctEl=$("#wiPct"); pctEl.hidden=!showPct;
+  if(showPct) pctEl.textContent="Bedre enn "+pct+" % av dine egne uker";
+  // Rekord-bar: <0.80 skjul, 0.80–1.0 "unna", ≥1.0 "ny rekord".
+  var ratio = best>0 ? cur/best : 0, showBar = best>0 && ratio>=0.80;
+  var rec=$("#wiRecord"), fill=$("#wiFill"), txt=$("#wiText"); rec.hidden=!showBar;
+  if(showBar){
+    if(beaten){
+      fill.style.width="100%"; fill.classList.add('rekord'); txt.classList.add('rekord');
+      txt.textContent="Ny rekord denne uka! 🔥";
+    } else {
+      fill.style.width=Math.round(ratio*100)+"%"; fill.classList.remove('rekord'); txt.classList.remove('rekord');
+      txt.textContent=(best-cur).toLocaleString("no-NO")+" kr unna din beste uke noensinne";
+    }
+    var rn=$("#rekordNote"); if(rn) rn.textContent=""; // baren eier best-uke/rekord-budskapet → unngå dobbel
+  }
+  wi.hidden = !(showPct || showBar); // ingen tomme bokser når begge er under terskel
 }
 function renderDrivenBy(period){
   var d=MOCK_DRIVEN[period]||MOCK_DRIVEN.uke;
@@ -1321,6 +1383,7 @@ $("#monthSel").addEventListener("change",async e=>{
   $("#rangeLabel").textContent=`${MONTHS[+m-1]} ${y} — hele måneden`;
   $("#stats").innerHTML=kpiCardsHtml(totalCount,totalRev); // samme to kort som pill-modus
   $("#rekordNote").textContent=""; // ingen uke-rekord på måneds-visning (/month leverer bevisst ingen)
+  $("#weekInsight").hidden=true; // persentil + rekord-bar er inneværende-uke-konsepter → skjul på historisk måned
   renderBarChart(monthDays,ym); // ym som period → egen sub-tekst, ingen tell-opp (chartEntered alt true)
 });
 const _slotPopup=document.getElementById('slotPopup');
