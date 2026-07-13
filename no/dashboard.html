@@ -295,18 +295,29 @@
   .cbar-lbl-sub{font-size:9px;display:block;opacity:.7;text-transform:none;letter-spacing:0}
   /* ----- Diagram-HUD + magnetisk touch (lag 2, additivt) ----- */
   #chartBars{touch-action:pan-y}
-  .chart-hud{display:none}
   .chart-wrap.sel .chart-head-default{display:none}
+  /* HUD som forankret kort (variant A) — absolutt i .chart-wrap, pointer-events:none så tap/skann treffer stolpene under */
+  .chart-hud{position:absolute;display:none;z-index:5;box-sizing:border-box;width:194px;
+    background:#151515;border:1px solid #2a2a2a;border-radius:12px;padding:11px 12px;
+    pointer-events:none;transition:left .09s ease-out}
   .chart-wrap.sel .chart-hud{display:block}
-  .hud-day{font-size:13px;font-weight:700;letter-spacing:-.01em}
-  .hud-metrics{display:flex;gap:14px;margin-top:2px;font-variant-numeric:tabular-nums;font-size:13px}
-  .hud-kr{font-weight:700} .hud-cuts{color:var(--mut)}
-  .hud-split{font-size:12px;color:var(--mut);margin-top:2px}
+  .hud-day{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--mut)}
+  .hud-main{margin-top:4px;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .hud-kr{font-size:19px;font-weight:800;color:#fff;letter-spacing:-.02em}
+  .hud-cuts{font-size:12px;color:var(--mut);margin-left:6px}
+  .hud-pills{display:flex;gap:6px;margin-top:9px}
+  .hud-new,.hud-ret{font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;white-space:nowrap}
+  .hud-new{background:rgba(77,139,255,.14);color:#4d8bff}
+  .hud-ret{background:rgba(62,207,126,.14);color:#3ecf7e}
+  .chart-caret{position:absolute;display:none;z-index:4;width:9px;height:9px;background:#151515;
+    border-right:1px solid #2a2a2a;border-bottom:1px solid #2a2a2a;transform:rotate(45deg);
+    pointer-events:none;transition:left .09s ease-out}
+  .chart-wrap.sel .chart-caret{display:block}
   .chartbars.scanning .cbar-col{opacity:.34;transition:opacity .14s ease}
   .chartbars.scanning .cbar-col.active{opacity:1}
   .cbar-col.active .cbar-bar{animation:barlift .16s cubic-bezier(.34,1.56,.64,1) forwards}
   @keyframes barlift{from{transform:translateY(0)}to{transform:translateY(-6px)}}
-  .chart-pointer{position:absolute;width:2px;border-radius:2px;background:var(--mut);opacity:.5;pointer-events:none;display:none}
+  .chart-pointer{position:absolute;width:2px;border-radius:2px;background:var(--mut);opacity:.5;pointer-events:none;display:none;transition:left .09s ease-out,height .09s ease-out}
   .chart-wrap.sel .chart-pointer{display:block}
   /* ----- Uke-rekord: dempet fotnote + gull-tilstand (lag 4, additivt) ----- */
   .rekord-note{font-size:11px;color:var(--mut-2);margin-top:3px;font-weight:500;letter-spacing:-.01em}
@@ -470,14 +481,15 @@
           <p class="block-h" id="chartTitle">Omsetning · — kr</p>
           <p class="block-s" id="chartSub">Estimert, siste 7 dager</p>
         </div>
-        <div class="chart-hud">
-          <div class="hud-day" id="hudDay"></div>
-          <div class="hud-metrics"><span class="hud-kr" id="hudKr"></span><span class="hud-cuts" id="hudCuts"></span></div>
-          <div class="hud-split" id="hudSplit"></div>
-        </div>
       </div>
       <div class="chartbars" id="chartBars"></div>
       <div class="chart-pointer" id="chartPointer"></div>
+      <div class="chart-caret" id="chartCaret"></div>
+      <div class="chart-hud" id="chartHud">
+        <div class="hud-day" id="hudDay"></div>
+        <div class="hud-main"><span class="hud-kr" id="hudKr"></span><span class="hud-cuts" id="hudCuts"></span></div>
+        <div class="hud-pills"><span class="hud-new" id="hudNew"></span><span class="hud-ret" id="hudRet"></span></div>
+      </div>
     </div>
 
     <div class="bottom-grid">
@@ -1016,19 +1028,29 @@ function colForX(x){
 function fillHud(d){
   $("#hudDay").textContent=d.dlabel;
   $("#hudKr").textContent=d.kr.toLocaleString("no-NO")+" kr";
-  $("#hudCuts").textContent=d.count+" klipp";
-  $("#hudSplit").textContent=d.new+" nye · "+d.returning+" gjengangere";
+  $("#hudCuts").textContent="· "+d.count+" klipp";
+  $("#hudNew").textContent=d.new+" nye";
+  $("#hudRet").textContent=d.returning+" gjengangere";
 }
 function positionPointer(i){
   var col=_chartBars.querySelectorAll('.cbar-col')[i]; if(!col)return;
   var bar=col.querySelector('.cbar-bar');
   var wrap=_chartWrap.getBoundingClientRect();
-  var hdr=_chartWrap.querySelector('.chart-header').getBoundingClientRect();
   var b=bar.getBoundingClientRect();
-  var p=$("#chartPointer");
-  p.style.left=(b.left+b.width/2-wrap.left)+"px";
-  p.style.top=(hdr.bottom-wrap.top)+"px";
-  p.style.height=Math.max(0,(b.top-6)-hdr.bottom)+"px"; // -6 = møter løftet stolpetopp
+  var centerX=b.left+b.width/2-wrap.left; // stolpens senter, relativt til .chart-wrap
+  var hud=$("#chartHud"), caret=$("#chartCaret"), p=$("#chartPointer");
+  var PAD=22, CARD_TOP=15; // fast vertikal → ingen hopping når stolpehøyder varierer
+  var cardW=hud.offsetWidth||194;
+  // Horisontalt: kortets senter følger stolpen, clamped innenfor .chart-wraps innside (padding respekteres)
+  var cardLeft=Math.max(PAD, Math.min(centerX-cardW/2, wrap.width-PAD-cardW));
+  hud.style.left=cardLeft+"px"; hud.style.top=CARD_TOP+"px";
+  var cardBottom=CARD_TOP+hud.offsetHeight;
+  // Caret løsrevet: alltid på stolpens senter, langs kort-bunn — også når kortet er clamped
+  caret.style.left=(centerX-4.5)+"px"; caret.style.top=(cardBottom-4.5)+"px";
+  // Peker-linje: fra kort-bunn til (løftet) stolpetopp
+  p.style.left=(centerX-1)+"px";
+  p.style.top=cardBottom+"px";
+  p.style.height=Math.max(0,(b.top-6-wrap.top)-cardBottom)+"px";
 }
 function selectBar(i){
   if(i===selIdx) return; // allerede valgt — peker er korrekt, ikke re-mål (unngår lift-drift)
