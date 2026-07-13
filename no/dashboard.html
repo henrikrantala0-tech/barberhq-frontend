@@ -308,6 +308,12 @@
   @keyframes barlift{from{transform:translateY(0)}to{transform:translateY(-6px)}}
   .chart-pointer{position:absolute;width:2px;border-radius:2px;background:var(--mut);opacity:.5;pointer-events:none;display:none}
   .chart-wrap.sel .chart-pointer{display:block}
+  /* Reduced-motion (lag 3): nøytraliser HELE diagrammets bevegelse — entré, height-glid, lag 2-bounce/demp */
+  @media (prefers-reduced-motion: reduce){
+    .cbar-bar{transition:none}
+    .cbar-col.active .cbar-bar{animation:none}
+    .chartbars.scanning .cbar-col{transition:none}
+  }
   /* ----- Drevet av BarberHQ ----- */
   .drv-row{padding:11px 0;border-bottom:1px solid var(--line)}
   .drv-row:last-child{border-bottom:0}
@@ -834,7 +840,7 @@ async function loadOversikt(){
   $("#stats").innerHTML=`
     <div class="stat">
       <div class="l">Kunder</div>
-      <div class="v info">${totalCount}</div>
+      <div class="v info" id="kpiCount">${totalCount}</div>
       <div class="sub mut">fullførte klipp</div>
     </div>
     <div class="stat">
@@ -842,6 +848,13 @@ async function loadOversikt(){
       <div class="v" style="color:#35d07a"><span id="estRevValue">${totalRev.toLocaleString("no-NO")}</span><span class="u"> kr</span></div>
       <div class="sub mut">fra fullførte timer</div>
     </div>`;
+
+  // lag 3: tell-opp begge KPI kun første render (leses FØR renderBarChart flipper chartEntered)
+  if(!chartEntered && !prefersReduced()){
+    $("#kpiCount").textContent="0"; $("#estRevValue").textContent="0"; // start på 0 (samme frame, ingen flash)
+    countUp($("#kpiCount"), totalCount, 600, false);
+    countUp($("#estRevValue"), totalRev, 600, true);
+  }
 
   var drivenLbl=curPeriod==="uke"?"siste uke":curPeriod==="2uker"?"siste 2 uker":"denne måneden";
   var dl=$("#drivenByLabel");if(dl)dl.textContent="Slik ble stolen fylt — "+drivenLbl+".";
@@ -910,6 +923,9 @@ function renderBarChart(data,period){
     return '<div class="cbar-col"><div class="cbar-val">'+val+'</div><div class="cbar-bar" style="height:'+h+'px;--bar-top:'+col.top+';--bar-bot:'+col.bot+'"></div><div class="cbar-lbl">'+lbl+'</div></div>';
   }).join("");
   chartDays=data; clearSel(); // lag 2: HUD leser herfra; nullstill til default ved (re)render
+  var entering=!chartEntered; // lag 3: entré kun første render
+  if(!prefersReduced()) animateBars(entering); // reduced → hopp: stolper står allerede på target
+  if(entering) chartEntered=true; // sett uansett så entré aldri re-kjører (pill/tab)
 }
 // ----- Diagram-HUD + magnetisk touch (lag 2, additivt overlay — rører ikke lag 1) -----
 var chartDays=[], selIdx=-1;
@@ -958,6 +974,35 @@ function initChartTouch(){
   _chartBars.addEventListener('pointermove',function(e){ if(scanning) selectBar(colForX(e.clientX)); });
   _chartBars.addEventListener('pointerup',function(){ scanning=false; }); // behold valgt til neste trykk
   _chartBars.addEventListener('pointercancel',function(){ scanning=false; });
+}
+// ----- Entré-animasjon + tell-opp (lag 3, additivt — via height, ikke transform → ingen konflikt med lag 2-løft) -----
+var chartEntered=false;
+var RISE_MS=220, UNIFORM_MS=150, OUT_QUART='cubic-bezier(.165,.84,.44,1)';
+function prefersReduced(){ return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }
+function animateBars(entering){
+  var bars=_chartBars.querySelectorAll('.cbar-bar'), targets=[];
+  for(var j=0;j<bars.length;j++){ targets.push(bars[j].style.height); bars[j].style.height='0px'; } // født på target → kollaps til 0
+  void _chartBars.offsetHeight; // tving reflow (0 males før flipp)
+  var N=bars.length, step=Math.max(6,Math.min(16,Math.round(140/N)));
+  for(var i=0;i<bars.length;i++){
+    var b=bars[i];
+    b.style.transitionProperty='height';
+    b.style.transitionTimingFunction=OUT_QUART;
+    b.style.transitionDuration=(entering?RISE_MS:UNIFORM_MS)+'ms';
+    b.style.transitionDelay=(entering? i*step : 0)+'ms'; // stagger kun ved entré (venstre→høyre)
+    b.style.height=targets[i]; // flipp → transition kjører 0→target
+  }
+}
+function countUp(el,target,ms,fmt){
+  if(!el)return;
+  var t0=null;
+  function frame(t){ if(t0===null)t0=t;
+    var p=Math.min(1,(t-t0)/ms), v=Math.round(target*p); // lineær (lesbarhet)
+    el.textContent=fmt?v.toLocaleString('no-NO'):String(v);
+    if(p<1) requestAnimationFrame(frame);
+    else el.textContent=fmt?target.toLocaleString('no-NO'):String(target); // eksakt sluttall
+  }
+  requestAnimationFrame(frame);
 }
 function renderDrivenBy(period){
   var d=MOCK_DRIVEN[period]||MOCK_DRIVEN.uke;
