@@ -977,18 +977,23 @@ function initChartTouch(){
 }
 // ----- Entré-animasjon + tell-opp (lag 3, additivt — via height, ikke transform → ingen konflikt med lag 2-løft) -----
 var chartEntered=false;
-var RISE_MS=220, UNIFORM_MS=150, OUT_QUART='cubic-bezier(.165,.84,.44,1)';
+var UNIFORM_MS=150, OUT_QUART='cubic-bezier(.165,.84,.44,1)';
+// Entré (valgt variant D): stagger-step mellom stolper + stolpe-varighet, med hardt tak på total entré-tid.
+var ENTRY_STEP=95, ENTRY_RISE=350, ENTRY_MAX_TOTAL=3000; // (N-1)*step + rise ≤ 3000ms → 90-heatmap kappes, sprenger aldri
 function prefersReduced(){ return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }
 function animateBars(entering){
   var bars=_chartBars.querySelectorAll('.cbar-bar'), targets=[];
   for(var j=0;j<bars.length;j++){ targets.push(bars[j].style.height); bars[j].style.height='0px'; } // født på target → kollaps til 0
   void _chartBars.offsetHeight; // tving reflow (0 males før flipp)
-  var N=bars.length, step=Math.max(6,Math.min(16,Math.round(140/N)));
+  var N=bars.length;
+  // Clamp: hvis (N-1)*step + rise ville overstige taket, skaleres steppet ned så total = taket.
+  // Mye stagger på få stolper (tydelig kaskade), lite på mange (90-heatmap holder seg ≤ ENTRY_MAX_TOTAL).
+  var step=(N>1 && (N-1)*ENTRY_STEP+ENTRY_RISE>ENTRY_MAX_TOTAL) ? Math.floor((ENTRY_MAX_TOTAL-ENTRY_RISE)/(N-1)) : ENTRY_STEP;
   for(var i=0;i<bars.length;i++){
     var b=bars[i];
     b.style.transitionProperty='height';
     b.style.transitionTimingFunction=OUT_QUART;
-    b.style.transitionDuration=(entering?RISE_MS:UNIFORM_MS)+'ms';
+    b.style.transitionDuration=(entering?ENTRY_RISE:UNIFORM_MS)+'ms';
     b.style.transitionDelay=(entering? i*step : 0)+'ms'; // stagger kun ved entré (venstre→høyre)
     b.style.height=targets[i]; // flipp → transition kjører 0→target
   }
