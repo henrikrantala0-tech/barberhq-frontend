@@ -774,8 +774,12 @@ const api={
   },
   async attribution(period){ if(CONFIG.USE_MOCK){return MOCK_ATTRIB[period];}
     const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/attribution?period=${period}`); return r.json(); },
-  async monthTotal(ym){ if(CONFIG.USE_MOCK){await wait(120);return MOCK.monthly[ym]??null;}
-    const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/stats?month=${ym}`); const d=await r.json(); return d.customers; },
+  // Ekte månedsdata for én vilkårlig måned (Oversikt-diagram + KPI). Sparse days[] — frontend null-fyller.
+  async statsMonth(ym){
+    const r=await apiFetch('/api/dashboard/stats/month?ym='+encodeURIComponent(ym));
+    if(!r||!r.ok)return null;
+    return r.json();
+  },
   async bookings(){ const r=await apiFetch('/api/dashboard/bookings'); if(!r)return []; if(!r.ok)return []; return r.json(); },
   async markNoShow(id){ if(CONFIG.USE_MOCK){await wait(200);const b=MOCK.bookings.find(x=>x.id===id);if(b)b.status="noshow";return true;}
     const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/bookings/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"noshow"})}); return r.ok; },
@@ -843,26 +847,43 @@ function gradeRate(rate,goodWhenHigh){
                       : (rate<=5?"good":rate<=12?"info":"bad");
 }
 
-async function loadOversikt(){
-  $("#rangeLabel").textContent=rangeText(curPeriod);
-
-  const payload=await api.statsDaily();
-  const days=sliceDaily(payload.daily||[],curPeriod);
-  const totalRev=days.reduce(function(a,d){return a+d.kr;},0);
-  const totalCount=days.reduce(function(a,d){return a+d.count;},0);
-
-  $("#stats").innerHTML=`
+// De to KPI-kortene (Kunder = Σcount, Estimert omsetning = Σrevenue). Delt av pill- OG måneds-visning.
+function kpiCardsHtml(count,rev){
+  return `
     <div class="stat">
       <div class="l">Kunder</div>
-      <div class="v info" id="kpiCount">${totalCount}</div>
+      <div class="v info" id="kpiCount">${count}</div>
       <div class="sub mut">fullførte klipp</div>
     </div>
     <div class="stat">
       <div class="l">Estimert omsetning <span title="Anslaget baseres på fullførte timer × gjennomsnittspris. No-shows og kommende bookinger er ikke inkludert." style="cursor:help;font-size:11px;opacity:.55;vertical-align:1px;margin-left:2px">ℹ</span></div>
-      <div class="v" style="color:#35d07a"><span id="estRevValue">${totalRev.toLocaleString("no-NO")}</span><span class="u"> kr</span></div>
+      <div class="v" style="color:#35d07a"><span id="estRevValue">${rev.toLocaleString("no-NO")}</span><span class="u"> kr</span></div>
       <div class="sub mut">fra fullførte timer</div>
       <div class="rekord-note" id="rekordNote"></div>
     </div>`;
+}
+// Inneværende Oslo-måned ("YYYY-MM") — ekskluderes fra "Tidligere"-dropdownen (dekket av pill-en).
+function osloYm(){ return new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Oslo'}).format(new Date()).slice(0,7); }
+// Fyll #monthSel fra months_with_data (nyest øverst, ekskl. inneværende måned). Ingen tom måned kan velges.
+function fillMonths(months){
+  var sel=$("#monthSel"); if(!sel) return;
+  var cur=osloYm();
+  var opts=(months||[]).filter(function(m){return m!==cur;}).slice().reverse(); // ASC → nyest øverst
+  var html='<option value="">— velg måned —</option>';
+  for(var i=0;i<opts.length;i++){ var ym=opts[i]; html+='<option value="'+ym+'">'+MONTHS[+ym.slice(5,7)-1]+' '+ym.slice(0,4)+'</option>'; }
+  sel.innerHTML=html;
+}
+
+async function loadOversikt(){
+  $("#rangeLabel").textContent=rangeText(curPeriod);
+
+  const payload=await api.statsDaily();
+  fillMonths(payload.months_with_data); // sync "Tidligere"-dropdown med ekte måneder
+  const days=sliceDaily(payload.daily||[],curPeriod);
+  const totalRev=days.reduce(function(a,d){return a+d.kr;},0);
+  const totalCount=days.reduce(function(a,d){return a+d.count;},0);
+
+  $("#stats").innerHTML=kpiCardsHtml(totalCount,totalRev);
 
   // lag 3: tell-opp begge KPI kun første render (leses FØR renderBarChart flipper chartEntered)
   if(!chartEntered && !prefersReduced()){
@@ -910,6 +931,24 @@ function sliceDaily(daily,period){
   }
   return out;
 }
+// Måneds-variant av sliceDaily: samme output-form, forankret på valgt måned (1.→siste dag).
+// days[] er sparse (kun dager med data) → null-fyll resten. Speiler "maaned"-etikettene (l=dagnr).
+function sliceMonth(days,ym){
+  var map={};
+  (days||[]).forEach(function(d){map[d.day]={count:d.count||0,revenue:d.revenue||0,new:d.new||0,returning:d.returning||0};});
+  var parts=ym.split('-'), year=+parts[0], mon=+parts[1]; // mon 1-12
+  var nDays=new Date(year,mon,0).getDate(); // korrekt 28/29/30/31 (mon 0-indeksert +1 → siste dag i mon)
+  var out=[];
+  for(var day=1;day<=nDays;day++){
+    var key=year+'-'+String(mon).padStart(2,'0')+'-'+String(day).padStart(2,'0');
+    var v=map[key]||{count:0,revenue:0,new:0,returning:0};
+    var dt=new Date(key+'T00:00:00Z'); // UTC-parse → tz-trygg ukedag
+    var wd=DAYS[(dt.getUTCDay()+6)%7].slice(0,3);
+    var ddmm=String(day).padStart(2,'0')+'.'+String(mon).padStart(2,'0');
+    out.push({l:String(day),kr:v.revenue,l2:undefined,dlabel:wd+' '+ddmm,count:v.count,new:v.new,returning:v.returning});
+  }
+  return out;
+}
 // Volum-farge: ratio (dagens kr / periodens max) → {top,bot} gradient-shades.
 // Glidende lineær RGB gjennom tre ankre: dempet blågrå → brand-blå → brand-grønn.
 function colorForRatio(r){
@@ -926,7 +965,10 @@ function colorForRatio(r){
 function renderBarChart(data,period){
   var total,sub;
   total=data.reduce(function(a,b){return a+b.kr;},0);
-  sub=period==="uke"?"Daglig fordeling, siste 7 dager":period==="2uker"?"Daglig fordeling, siste 14 dager":"Daglig fordeling, denne måneden";
+  sub=period==="uke"?"Daglig fordeling, siste 7 dager"
+     :period==="2uker"?"Daglig fordeling, siste 14 dager"
+     :/^\d{4}-\d{2}$/.test(period)?"Daglig fordeling, "+MONTHS[+period.slice(5,7)-1]+" "+period.slice(0,4) // historisk måned (period = ym)
+     :"Daglig fordeling, denne måneden"; // "maaned"-pill
   var max=Math.max.apply(null,data.map(function(d){return d.kr;}))||1;
   var MAXH=120;
   $("#chartTitle").textContent="Omsetning · "+total.toLocaleString("no-NO")+" kr";
@@ -1244,12 +1286,7 @@ async function loadGoogleStatus(){
 }
 
 function buildMonthSelect(){
-  const sel=$("#monthSel"); const now=new Date();
-  let html='<option value="">— velg måned —</option>';
-  for(let i=1;i<=11;i++){const d=new Date(now.getFullYear(),now.getMonth()-i,1);
-    const ym=`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}`;
-    html+=`<option value="${ym}">${MONTHS[d.getMonth()]} ${d.getFullYear()}</option>`;}
-  sel.innerHTML=html;
+  const sel=$("#monthSel"); if(sel) sel.innerHTML='<option value="">— velg måned —</option>'; // placeholder; fillMonths() fyller ekte måneder etter /stats
 }
 
 /* events */
@@ -1269,11 +1306,22 @@ document.querySelectorAll("#segs button").forEach(b=>b.addEventListener("click",
   b.setAttribute("aria-selected","true");$("#monthSel").value="";curPeriod=b.dataset.p;loadOversikt();
 }));
 $("#monthSel").addEventListener("change",async e=>{
-  const ym=e.target.value;if(!ym){curPeriod="uke";document.querySelector('#segs button[data-p=uke]').click();return;}
-  document.querySelectorAll("#segs button").forEach(x=>x.setAttribute("aria-selected","false"));
-  const tot=await api.monthTotal(ym);const [y,m]=ym.split("-");
+  const ym=e.target.value;
+  if(!ym){ // tom → tilbake til pill-modus (aktiv pill re-renderer daily-slice + pill-KPI, rydder opp)
+    document.querySelector('#segs button[data-p="'+curPeriod+'"]').click();
+    return;
+  }
+  document.querySelectorAll("#segs button").forEach(x=>x.setAttribute("aria-selected","false")); // deaktiver pills visuelt
+  const resp=await api.statsMonth(ym);
+  if(!resp)return; // 401→redirigert, ellers feil: la valget stå, ingen krasj
+  const monthDays=sliceMonth(resp.days||[],ym);
+  const totalRev=monthDays.reduce(function(a,d){return a+d.kr;},0);
+  const totalCount=monthDays.reduce(function(a,d){return a+d.count;},0);
+  const [y,m]=ym.split("-");
   $("#rangeLabel").textContent=`${MONTHS[+m-1]} ${y} — hele måneden`;
-  $("#stats").innerHTML=`<div class="stat"><div class="l">Kunder totalt</div><div class="v info">${tot??"—"}</div><div class="sub mut">${MONTHS[+m-1]} ${y}</div></div>`;
+  $("#stats").innerHTML=kpiCardsHtml(totalCount,totalRev); // samme to kort som pill-modus
+  $("#rekordNote").textContent=""; // ingen uke-rekord på måneds-visning (/month leverer bevisst ingen)
+  renderBarChart(monthDays,ym); // ym som period → egen sub-tekst, ingen tell-opp (chartEntered alt true)
 });
 const _slotPopup=document.getElementById('slotPopup');
 function _closeSlotPopup(){_slotPopup.classList.remove('open');}
