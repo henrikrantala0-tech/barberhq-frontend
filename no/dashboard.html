@@ -276,7 +276,21 @@
   .daygroup{border-bottom:1px solid var(--line)}
   .daygroup:last-child{border-bottom:0}
   .dayhead{font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);padding:13px 18px 8px;background:var(--bg)}
-  .row .when.t{min-width:52px;font-weight:700;color:var(--ink);font-size:14px}
+  .row .when.t{min-width:52px;font-weight:700;color:var(--info);font-size:14px}
+  /* Kommende bookinger — dag-gruppert, kompakt/utvidet (accent-klokkeslett) */
+  .up-body{padding:14px 16px}
+  .up-day{margin:0 0 8px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
+  .up-day:not(:first-child){margin-top:14px}
+  .up-rows{display:flex;flex-direction:column;gap:8px}
+  .up-row{display:flex;align-items:center;gap:10px}
+  .up-time{min-width:44px;font-size:13px;font-weight:600;color:var(--info);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .up-name{flex:1;font-size:14px;font-weight:500}
+  .up-svc{font-size:12px;color:var(--mut)}
+  .up-empty{margin:0;font-size:12.5px;color:var(--mut-2)}
+  .up-scroll{max-height:210px;overflow-y:auto;padding-right:6px}
+  .up-more{width:100%;margin-top:14px;padding:8px;font:inherit;font-size:13px;font-weight:500;background:transparent;border:1px solid var(--line-2);border-radius:8px;color:var(--ink-2);cursor:pointer;letter-spacing:-.01em;display:flex;align-items:center;justify-content:center;gap:6px;transition:border-color .12s,color .12s}
+  .up-more:hover{border-color:var(--mut-2);color:var(--ink)}
+  .up-more .chev{font-size:11px}
   .trend{display:flex;align-items:flex-end;gap:10px;padding:8px 4px 0;border-bottom:1px solid var(--line)}
   .tcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px}
   .tbar{width:100%;max-width:46px;background:var(--info);border-radius:6px 6px 0 0;min-height:5px}
@@ -508,9 +522,8 @@
 
     <!-- Full booking-liste (slått sammen fra Bookinger-fanen; no-show-marker via rowHTML2) -->
     <div class="ovs-block">
-      <p class="block-h">Alle bookinger</p>
-      <p class="block-s">Dashbordet er master-kalenderen din.</p>
-      <div class="card" id="bookingList"><div class="loading">Laster …</div></div>
+      <p class="block-h">Siste bookinger</p>
+      <div id="bookingList"><div class="loading">Laster …</div></div>
     </div>
 
     <!-- Vinn tilbake-liste (slått sammen fra Vinn-tilbake-fanen; SMS-konfig ligger urørt i Innstillinger) -->
@@ -860,8 +873,6 @@ const $=s=>document.querySelector(s);
 function switchPanel(id){document.querySelector('.nav button[data-panel="'+id+'"]').click();}
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const pct=(a,b)=>b?Math.round(a/b*100):0;
-function fmtDate(iso){const d=new Date(iso);const dag=DAYS[(d.getDay()+6)%7].slice(0,3);
-  return `${dag} ${String(d.getDate()).padStart(2,"0")}.${String(d.getMonth()+1).padStart(2,"0")} ${String(d.getHours()).padStart(2,"0")}:${String(d.getMinutes()).padStart(2,"0")}`;}
 function esc(s){return(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}
 
 let curPeriod="uke";
@@ -1188,11 +1199,39 @@ function renderDrivenBy(period){
       +'</div>';
   }).join("");
 }
+// Kommende bookinger: dag-gruppert. «I dag» + «I morgen» er faste ankere (alltid
+// synlig, også tomme). Dager lenger frem vises kun med bookinger, datert. Kompakt
+// viser bare ankerne; «Vis mer» åpner intern scroll t.o.m. booking-horisonten.
+var _upcoming=[]; var upcomingExpanded=false;
 async function loadUpcoming(){
   var b=await api.bookings();
   var now=Date.now();
-  b=b.filter(function(x){return new Date(x.start).getTime()>now;}).sort(function(a,c){return new Date(a.start)-new Date(c.start);}).slice(0,4);
-  $("#upcomingList").innerHTML=b.length?b.map(rowHTML).join(""):emptyHTML("Ingen kommende bookinger");
+  _upcoming=b.filter(function(x){return new Date(x.start).getTime()>now;})
+             .sort(function(a,c){return new Date(a.start)-new Date(c.start);});
+  renderUpcoming();
+}
+function upRow(b){return '<div class="up-row"><span class="up-time">'+timeOnly(b.start)+'</span>'
+  +'<span class="up-name">'+esc(b.name)+'</span><span class="up-svc">'+esc(b.service||"")+'</span></div>';}
+function upSection(label,items){
+  var body=items.length?'<div class="up-rows">'+items.map(upRow).join("")+'</div>'
+                       :'<p class="up-empty">Ingen bookinger</p>';
+  return '<p class="up-day">'+label+'</p>'+body;
+}
+function renderUpcoming(){
+  var t=new Date();t.setHours(0,0,0,0);var today=t.getTime();var tomorrow=today+86400000;
+  var byKey={};
+  _upcoming.forEach(function(x){var k=new Date(x.start);k.setHours(0,0,0,0);k=k.getTime();(byKey[k]=byKey[k]||[]).push(x);});
+  var anchors=upSection("I dag",byKey[today]||[])+upSection("I morgen",byKey[tomorrow]||[]);
+  var futureKeys=Object.keys(byKey).map(Number).filter(function(k){return k>tomorrow;}).sort(function(a,c){return a-c;});
+  var el=$("#upcomingList");
+  if(!upcomingExpanded){
+    var more=futureKeys.length?'<button class="up-more" data-up-toggle>Vis mer <span class="chev">▾</span></button>':'';
+    el.innerHTML='<div class="up-body">'+anchors+more+'</div>';
+  }else{
+    var future=futureKeys.map(function(k){return upSection(dayHead(new Date(k)),byKey[k]);}).join("");
+    el.innerHTML='<div class="up-body"><div class="up-scroll">'+anchors+future+'</div>'
+      +'<button class="up-more" data-up-toggle>Vis mindre <span class="chev">▴</span></button></div>';
+  }
 }
 /* Beregn VISNINGS-status fra rå status + tid.
    Regel: passert tid + ikke eksplisitt no-show => "fullfort" automatisk.
@@ -1209,27 +1248,37 @@ function effectiveStatus(b){
   var ferdigTid=new Date(b.start).getTime()+COMPLETE_BUFFER_MIN*60000;
   return Date.now()>=ferdigTid ? "fullfort" : "booket";
 }
-function rowHTML(b){var st=effectiveStatus(b);const c=st==="noshow"?"n":st==="fullfort"?"f":st==="venter"?"v":"b";
-  const t=st==="noshow"?"No-show":st==="fullfort"?"Fullført":st==="venter"?"Venter":"Booket";
-  // Angre-knapp: venter ELLER auto-fullført (men ikke allerede no-show) kan merkes no-show
-  const kanMerkeNoShow=(st==="venter"||st==="fullfort");
-  const action=kanMerkeNoShow?`<button class="noshowbtn" data-id="${b.id}" title="Marker som no-show"><span class="x">&times;</span> No-show</button>`:"";
-  return `<div class="row"><div class="when">${fmtDate(b.start)}</div>
-    <div class="name">${esc(b.name)} <span class="svc">· ${esc(b.service||"")}</span></div>
-    ${action}<span class="tag ${c}">${t}</span></div>`;}
 function emptyHTML(t){return `<div class="empty"><i>○</i><p>${t}</p></div>`}
 
-function dayLabel(d){var t=new Date();t.setHours(0,0,0,0);var dd=new Date(d);dd.setHours(0,0,0,0);var diff=Math.round((dd-t)/86400000);if(diff===0)return "I dag";if(diff===1)return "I morgen";if(diff===-1)return "I gar";return DAYS[(dd.getDay()+6)%7]+" "+String(dd.getDate()).padStart(2,"0")+"."+String(dd.getMonth()+1).padStart(2,"0");}
+// Delt dato-header for kommende + siste: relative ord nær i tid, ellers datert
+// (f.eks. «TOR 17. JUL»). Gjelder både bakover og framover.
+function dayHead(d){var t=new Date();t.setHours(0,0,0,0);var dd=new Date(d);dd.setHours(0,0,0,0);var diff=Math.round((dd-t)/86400000);if(diff===0)return "I dag";if(diff===1)return "I morgen";if(diff===-1)return "I går";return DAYS[(dd.getDay()+6)%7].slice(0,3).toUpperCase()+" "+dd.getDate()+". "+MONTHS[dd.getMonth()].slice(0,3).toUpperCase();}
 function timeOnly(iso){var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
 function rowHTML2(b){var st=effectiveStatus(b);var c=st==="noshow"?"n":st==="fullfort"?"f":st==="venter"?"v":"b";var t=st==="noshow"?"No-show":st==="fullfort"?"Fullført":st==="venter"?"Venter":"Booket";var kanMerkeNoShow=(st==="venter"||st==="fullfort");var action=kanMerkeNoShow?'<button class="noshowbtn" data-id="'+b.id+'" title="Marker som no-show"><span class="x">&times;</span> No-show</button>':"";return '<div class="row"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+' <span class="svc">\u00b7 '+esc(b.service||"")+'</span></div>'+action+'<span class="tag '+c+'">'+t+'</span></div>';}
+// Siste bookinger: bakoverskuende logg (t.o.m. i dag, ingen framtidige — de bor i
+// Kommende). Default 2 dager (i går + i dag); «Vis mer» åpner hele 30-dagers-vinduet
+// som allerede finnes i responsen. Radstruktur (rowHTML2) med no-show-knapp beholdt.
+var _bookinger=[]; var bookingerExpanded=false;
 async function loadBookinger(){
   var b=await api.bookings();
-  var cutoff=Date.now()-14*86400000;
-  b=b.filter(function(x){return new Date(x.start).getTime()>=cutoff;}).sort(function(a,c){return new Date(a.start)-new Date(c.start);});
-  if(!b.length){$("#bookingList").innerHTML=emptyHTML("Ingen bookinger siste to uker");return;}
+  var endToday=new Date();endToday.setHours(23,59,59,999);var et=endToday.getTime();
+  _bookinger=b.filter(function(x){return new Date(x.start).getTime()<=et;})
+              .sort(function(a,c){return new Date(a.start)-new Date(c.start);});
+  renderBookinger();
+}
+function renderBookinger(){
+  var t=new Date();t.setHours(0,0,0,0);var today=t.getTime();
+  var yesterday=today-86400000;var floor30=today-29*86400000;
+  var floor=bookingerExpanded?floor30:yesterday;
+  var list=_bookinger.filter(function(x){var k=new Date(x.start);k.setHours(0,0,0,0);return k.getTime()>=floor;});
+  var hasOlder=_bookinger.some(function(x){var k=new Date(x.start);k.setHours(0,0,0,0);var kt=k.getTime();return kt<yesterday&&kt>=floor30;});
+  var el=$("#bookingList");
+  if(!list.length){el.innerHTML=emptyHTML("Ingen bookinger");return;}
   var groups={},order=[];
-  b.forEach(function(x){var k=new Date(x.start);k.setHours(0,0,0,0);k=k.getTime();if(!groups[k]){groups[k]=[];order.push(k);}groups[k].push(x);});
-  $("#bookingList").innerHTML=order.reverse().map(function(k){return '<div class="daygroup"><div class="dayhead">'+dayLabel(new Date(+k))+'</div>'+groups[k].map(rowHTML2).join("")+'</div>';}).join("");
+  list.forEach(function(x){var k=new Date(x.start);k.setHours(0,0,0,0);k=k.getTime();if(!groups[k]){groups[k]=[];order.push(k);}groups[k].push(x);});
+  var rows=order.sort(function(a,c){return c-a;}).map(function(k){return '<div class="daygroup"><div class="dayhead">'+dayHead(new Date(k))+'</div>'+groups[k].map(rowHTML2).join("")+'</div>';}).join("");
+  var more=hasOlder?'<button class="see-all-btn" data-bk-toggle>'+(bookingerExpanded?'Vis mindre':'Vis mer')+'</button>':'';
+  el.innerHTML='<div class="card">'+rows+'</div>'+more;
 }
 
 async function handleNoShow(id){
@@ -1238,6 +1287,8 @@ async function handleNoShow(id){
 }
 document.body.addEventListener("click",e=>{
   const btn=e.target.closest(".noshowbtn"); if(btn)handleNoShow(btn.dataset.id);
+  if(e.target.closest("[data-up-toggle]")){upcomingExpanded=!upcomingExpanded;renderUpcoming();}
+  if(e.target.closest("[data-bk-toggle]")){bookingerExpanded=!bookingerExpanded;renderBookinger();}
 });
 
 function renderTrend(){
