@@ -618,7 +618,6 @@
     <div class="fld"><label>Navn</label><input id="pf-name" type="text"></div>
     <div class="fld"><label>Navn på shoppen</label><input id="pf-shop" type="text"></div>
     <div class="fld"><label>Adresse</label><input id="pf-address" type="text"><p class="fld-hint">Skriv full adresse (gate, nummer, postnr, by) så kunder finner frem i kart. Vil du ikke dele nøyaktig sted, skriv bare byen.</p></div>
-    <div class="fld"><label>Telefon</label><input id="pf-phone" type="tel"></div>
     <div class="fld"><label>Tagline <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><input id="pf-tagline" type="text" placeholder="Kort tagline under barbernavnet" maxlength="60"></div>
     <div class="fld"><label>Beskrivelse <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><textarea id="pf-bio" placeholder="Noen ord om deg og stilen din"></textarea></div>
     <div class="savebar"><button class="btn" id="saveProfil">Lagre profil</button><span class="saved" id="profilSaved">Lagret &#10003;</span></div>
@@ -1592,7 +1591,6 @@ async function loadProfil(){
   $("#pf-name").value=p.name||"";
   $("#pf-shop").value=p.shop||"";
   $("#pf-address").value=p.address||"";
-  $("#pf-phone").value=p.phone||"";
   $("#pf-tagline").value=p.tagline||"";
   $("#pf-bio").value=p.bio||"";
   // Sett barber-navn i header — null til dette punktet
@@ -1625,7 +1623,6 @@ $("#saveProfil").addEventListener("click",async function(){
     name:    $("#pf-name").value,
     shop:    $("#pf-shop").value,
     address: $("#pf-address").value,
-    phone:   $("#pf-phone").value,
     tagline: $("#pf-tagline").value,
     bio:     $("#pf-bio").value,
   })});
