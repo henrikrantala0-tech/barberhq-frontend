@@ -75,7 +75,8 @@
   .row .svc{font-size:12px;color:var(--mut);font-weight:400}
   .tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:5px;letter-spacing:.01em}
   .tag.b{background:var(--info-bg);color:var(--info)} .tag.f{background:var(--good-bg);color:var(--good)} .tag.n{background:var(--bad-bg);color:var(--bad)}
-  .tag.v{background:#f1f0ec;color:var(--mut)}
+  .tag.v{background:#f1f0ec;color:var(--mut)} .tag.avlyst{background:var(--bad-bg);color:var(--bad)}
+  .row.avlyst{opacity:.55} .row.avlyst .name{text-decoration:line-through}
   .noshowbtn{appearance:none;border:1px solid var(--line-2);background:var(--surface);font:inherit;font-size:12px;font-weight:500;color:var(--mut);padding:4px 9px;border-radius:6px;cursor:pointer;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:5px;transition:color .12s,border-color .12s,background .12s}
   .noshowbtn .x{font-size:13px;line-height:1;font-weight:600}
   .noshowbtn:hover{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
@@ -1205,7 +1206,7 @@ var _upcoming=[]; var upcomingExpanded=false;
 async function loadUpcoming(){
   var b=await api.bookings();
   var now=Date.now();
-  _upcoming=b.filter(function(x){return new Date(x.start).getTime()>now;})
+  _upcoming=b.filter(function(x){return new Date(x.start).getTime()>now && x.status!=='avlyst';})
              .sort(function(a,c){return new Date(a.start)-new Date(c.start);});
   renderUpcoming();
 }
@@ -1253,7 +1254,7 @@ function emptyHTML(t){return `<div class="empty"><i>○</i><p>${t}</p></div>`}
 // (f.eks. «TOR 17. JUL»). Gjelder både bakover og framover.
 function dayHead(d){var t=new Date();t.setHours(0,0,0,0);var dd=new Date(d);dd.setHours(0,0,0,0);var diff=Math.round((dd-t)/86400000);if(diff===0)return "I dag";if(diff===1)return "I morgen";if(diff===-1)return "I går";return DAYS[(dd.getDay()+6)%7].slice(0,3).toUpperCase()+" "+dd.getDate()+". "+MONTHS[dd.getMonth()].slice(0,3).toUpperCase();}
 function timeOnly(iso){var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
-function rowHTML2(b){var st=effectiveStatus(b);var c=st==="noshow"?"n":st==="fullfort"?"f":st==="venter"?"v":"b";var t=st==="noshow"?"No-show":st==="fullfort"?"Fullført":st==="venter"?"Venter":"Booket";var kanMerkeNoShow=(st==="venter"||st==="fullfort");var action=kanMerkeNoShow?'<button class="noshowbtn" data-id="'+b.id+'" title="Marker som no-show"><span class="x">&times;</span> No-show</button>':"";return '<div class="row"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+' <span class="svc">\u00b7 '+esc(b.service||"")+'</span></div>'+action+'<span class="tag '+c+'">'+t+'</span></div>';}
+function rowHTML2(b){if(b.status==='avlyst')return '<div class="row avlyst"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+' <span class="svc">· '+esc(b.service||"")+'</span></div><span class="tag avlyst">Avbestilt</span></div>';var st=effectiveStatus(b);var c=st==="noshow"?"n":st==="fullfort"?"f":st==="venter"?"v":"b";var t=st==="noshow"?"No-show":st==="fullfort"?"Fullført":st==="venter"?"Venter":"Booket";var kanMerkeNoShow=(st==="venter"||st==="fullfort");var action=kanMerkeNoShow?'<button class="noshowbtn" data-id="'+b.id+'" title="Marker som no-show"><span class="x">&times;</span> No-show</button>':"";return '<div class="row"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+' <span class="svc">\u00b7 '+esc(b.service||"")+'</span></div>'+action+'<span class="tag '+c+'">'+t+'</span></div>';}
 // Siste bookinger: bakoverskuende logg (t.o.m. i dag, ingen framtidige — de bor i
 // Kommende). Default 2 dager (i går + i dag); «Vis mer» åpner hele 30-dagers-vinduet
 // som allerede finnes i responsen. Radstruktur (rowHTML2) med no-show-knapp beholdt.
