@@ -300,12 +300,14 @@
   .up-more{width:100%;margin-top:14px;padding:8px;font:inherit;font-size:13px;font-weight:500;background:transparent;border:1px solid var(--line-2);border-radius:8px;color:var(--ink-2);cursor:pointer;letter-spacing:-.01em;display:flex;align-items:center;justify-content:center;gap:6px;transition:border-color .12s,color .12s}
   .up-more:hover{border-color:var(--mut-2);color:var(--ink)}
   .up-more .chev{font-size:11px}
-  .trend{display:flex;align-items:flex-end;gap:10px;padding:8px 4px 0;border-bottom:1px solid var(--line)}
-  .tcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px}
-  .tbar{width:100%;max-width:46px;background:var(--info);border-radius:6px 6px 0 0;min-height:5px}
-  .tbar.dim{opacity:.5}
-  .tcol .tn{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums}
-  .tcol .tl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
+  .trend{display:flex;align-items:flex-end;gap:10px;padding:8px 4px 0;border-bottom:1px solid var(--line);min-height:150px}
+  /* Vekst måneds-diagram: Oversikts gradient-stolpe-mekanikk, men TRE diskrete tilstander (blå/grønn/gull) */
+  .mcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
+  .mval{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink-2);letter-spacing:-.01em}
+  .mbar{width:100%;max-width:46px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--bar-top),var(--bar-bot));min-height:5px;transition:height .25s ease}
+  .mlbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
+  .mbar.gull{filter:drop-shadow(0 0 2px rgba(255,224,138,.9)) drop-shadow(0 0 8px rgba(240,194,75,.55)) drop-shadow(0 0 16px rgba(240,194,75,.28))} /* identisk glød som Oversikts .rekord-gull */
+  /* Gull-tallet gjenbruker .rekord-gull (samme gradient + glød som Oversikts rekord-KPI) — se renderMonthChart */
   /* ----- Stolpediagram (omsetning) ----- */
   .chart-wrap{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:24px;position:relative}
   .chart-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;min-height:52px}
@@ -787,12 +789,6 @@ async function apiFetch(path,opts={}){
 const DAYS=["Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag","Søndag"];
 const MONTHS=["januar","februar","mars","april","mai","juni","juli","august","september","oktober","november","desember"];
 
-/* Demo-statistikk per periode. Backend gir disse tallene ferdig utregnet. */
-const MOCK_STATS={
-  uke:     {customers:33, completed:28, noshow:1, rebooked:16, recovered:1200, newCust:5, estRevenue:9800},
-  "2uker": {customers:61, completed:52, noshow:2, rebooked:30, recovered:2400, newCust:9, estRevenue:18200},
-  maaned:  {customers:120, completed:98, noshow:5, rebooked:57, recovered:4650, newCust:17, estRevenue:34300},
-};
 
 const MOCK_ATTRIB={
   uke:[{key:"Verving",n:2},{key:"Vinn-tilbake",n:2}],
@@ -829,15 +825,10 @@ const MOCK={
     {day:4,on:true,start:"10:00",end:"18:00"},{day:5,on:true,start:"11:00",end:"16:00"},
     {day:6,on:false,start:"10:00",end:"16:00"},
   ],
-  monthly:{ /* tidligere måneder: bare totalt antall kunder */
-    "2026-05":61,"2026-04":58,"2026-03":49,"2026-02":40,"2026-01":33,
-  },
 };
 
 const api={
-  async stats(period){ if(CONFIG.USE_MOCK){await wait(150);return MOCK_STATS[period];}
-    const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/stats?period=${period}`); return r.json(); },
-  // Ekte, session-basert 90-dagers daily[] — Oversikt-diagram + omsetnings-KPI. Vekst (api.stats) er urørt mock.
+  // Ekte, session-basert 90-dagers daily[] + months/rekord/klipp-total — Oversikt-diagram + Vekst-KPI/diagram.
   async statsDaily(){
     const r=await apiFetch('/api/dashboard/stats');
     if(!r||!r.ok)return{daily:[]}; // 401 → apiFetch har alt redirigert; tom → tom akse, ingen krasj
@@ -1384,24 +1375,52 @@ document.body.addEventListener("click",e=>{
   if(e.target.closest("[data-bk-toggle]")){bookingerExpanded=!bookingerExpanded;renderBookinger();}
 });
 
-function renderTrend(){
-  var now=new Date(),arr=[];
-  for(var i=5;i>=1;i--){var d=new Date(now.getFullYear(),now.getMonth()-i,1);var ym=d.getFullYear()+"-"+String(d.getMonth()+1).padStart(2,"0");arr.push({label:MONTHS[d.getMonth()].slice(0,3),n:MOCK.monthly[ym]||0});}
-  arr.push({label:MONTHS[now.getMonth()].slice(0,3),n:MOCK_STATS.maaned.customers,cur:true});
-  var max=Math.max.apply(null,arr.map(function(x){return x.n;}))||1;
-  $("#trend").innerHTML=arr.map(function(x){var hh=Math.round(x.n/max*120)+6;return '<div class="tcol"><div class="tn">'+x.n+'</div><div class="tbar'+(x.cur?'':' dim')+'" style="height:'+hh+'px"></div><div class="tl">'+x.label+'</div></div>';}).join("");
+function monthLbl(ym){ return MONTHS[(+String(ym).slice(5,7))-1] || ""; } // "2026-07" → "juli"
+
+// KPI: snitt kunder/måned over MÅNEDER-MED-DATA (ikke fast 6) + all-time klipp-total. Ekte /stats.
+function renderVekstKpi(stats){
+  var months=(stats&&stats.months)||[];
+  var rec=stats&&stats.record_customers_month;
+  var total=months.reduce(function(a,m){return a+(m.customers||0);},0);
+  var avg=months.length?Math.round(total/months.length):0;
+  var bestSub=rec?("Beste måned: "+monthLbl(rec.ym).slice(0,3)+" ("+rec.customers+")"):"Ingen data ennå";
+  var klipp=(stats&&stats.completed_all_time)||0;
+  $("#vekstStats").innerHTML=
+     '<div class="stat"><div class="l">Snitt kunder/måned</div><div class="v info">'+avg+'</div><div class="sub mut">'+bestSub+'</div></div>'
+    +'<div class="stat"><div class="l">Klipp totalt</div><div class="v info">'+klipp.toLocaleString("no-NO")+'</div><div class="sub mut">gjennom hele historikken</div></div>';
 }
+
+// Måneds-diagram: gjenbruker Oversikts gradient-stolpe-mekanikk, men TRE DISKRETE tilstander:
+//   gull  = EKTE all-time rekord (matcher record_customers_month på ym OG customers)
+//   grønn = høyest i synlig vindu, men IKKE rekord (rekorden ligger utenfor vinduet)
+//   blå   = vanlig
+function renderMonthChart(stats){
+  var el=$("#trend"); if(!el)return;
+  var months=((stats&&stats.months)||[]).slice(-6); // siste 6 mnd, kronologisk (months[] er ASC)
+  if(!months.length){ el.innerHTML='<div class="empty" style="border:0"><p>Ingen måneder med data ennå</p></div>'; return; }
+  var rec=stats&&stats.record_customers_month;
+  var max=Math.max.apply(null,months.map(function(m){return m.customers||0;}))||1;
+  var MAXH=120;
+  // gull = Oversikts EKTE rekord-gull (.wi-fill.rekord-paret #F0C24B/#FFE08A), ikke amber #d4af37
+  var GRAD={ blue:{top:'#4d8bff',bot:'#2a4a7f'}, green:{top:'#3ecf7e',bot:'#1a7f4f'}, gull:{top:'#FFE08A',bot:'#F0C24B'} };
+  el.innerHTML=months.map(function(m){
+    var c=m.customers||0;
+    var isRecord = !!rec && m.ym===rec.ym && c===rec.customers; // EKTE rekord (ym+antall)
+    var state = isRecord ? 'gull' : (c===max ? 'green' : 'blue'); // høyest-synlig-ikke-rekord → grønn
+    var g=GRAD[state];
+    var h=Math.max(Math.round(c/max*MAXH),5);
+    var gullCls=state==='gull'?' gull':'';
+    return '<div class="mcol'+gullCls+'"><div class="mval'+(state==='gull'?' rekord-gull':'')+'">'+c+'</div>'
+      +'<div class="mbar'+gullCls+'" style="height:'+h+'px;--bar-top:'+g.top+';--bar-bot:'+g.bot+'"></div>'
+      +'<div class="mlbl">'+monthLbl(m.ym).slice(0,3)+'</div></div>';
+  }).join("");
+}
+
 async function loadVekst(){
-  var s=await api.stats(curPeriod);
-  var vals=Object.keys(MOCK.monthly).map(function(k){return MOCK.monthly[k];});
-  var avgWeek=Math.round((vals.reduce(function(a,b){return a+b;},0)/vals.length)/4.345);
-  var rebookRate=pct(s.rebooked,s.completed),newRate=pct(s.newCust,s.customers);
-  $("#vekstStats").innerHTML='<div class="stat"><div class="l">Snitt kunder/uke</div><div class="v info">'+avgWeek+'</div><div class="sub mut">siste maneder</div></div>'
-    +'<div class="stat"><div class="l">Nye kunder</div><div class="v info">'+s.newCust+'</div><div class="sub info"><span class="pct">'+newRate+'%</span> av kundene</div></div>'
-    +'<div class="stat"><div class="l">Rebooking-rate</div><div class="v '+gradeRate(rebookRate,true)+'">'+rebookRate+'%</div><div class="sub mut">av fullforte timer</div></div>';
-  renderTrend();
-  // Vekst-attribusjonen er fortsatt mock (dødt stillas). api.attribution er nå Oversikt/«Drevet av» sin ekte kilde
-  // (annen form), så Vekst leser MOCK_ATTRIB direkte til Vekst-fanen bygges. [oversettelse: sv/da/en]
+  var stats=await api.statsDaily(); // EKTE /stats (months/record_customers_month/completed_all_time). Tom {daily:[]} ved feil → KPI 0 / tomt diagram, ingen krasj.
+  renderVekstKpi(stats);
+  renderMonthChart(stats);
+  // Vekst-attribusjonen er fortsatt mock (dødt stillas) til Vekst-attribusjon bygges. [oversettelse: sv/da/en]
   renderAttrib("#vekstAttrib", MOCK_ATTRIB[curPeriod]);
 }
 
