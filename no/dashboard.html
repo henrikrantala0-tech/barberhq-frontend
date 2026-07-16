@@ -161,6 +161,7 @@
     .to{font-size:11px}
   }
   .see-all-btn{appearance:none;border:0;background:0;font:inherit;font-size:12.5px;font-weight:500;color:var(--info);padding:10px 0 0;cursor:pointer;letter-spacing:-.01em;display:block}
+  .see-all-btn[hidden]{display:none} /* klasse-display:block overstyrer ellers UA [hidden] → tvunget skjul */
   .see-all-btn:hover{text-decoration:underline}
 
   /* ---- Morkt tema ---- */
@@ -366,15 +367,29 @@
     .rekord-puls{animation:none}
   }
   /* ----- Drevet av BarberHQ ----- */
-  .drv-row{padding:11px 0;border-bottom:1px solid var(--line)}
-  .drv-row:last-child{border-bottom:0}
-  .drv-main{display:flex;justify-content:space-between;align-items:baseline;gap:8px}
-  .drv-name{font-size:13px;font-weight:500;color:var(--ink-2);letter-spacing:-.01em}
-  .drv-kr{font-size:14px;font-weight:700;color:var(--ink);font-variant-numeric:tabular-nums}
-  .drv-sub{font-size:11.5px;color:var(--mut);margin-top:3px}
-  .drv-bar-wrap{margin-top:6px;height:3px;border-radius:99px;background:var(--line);overflow:hidden}
-  .drv-bar-fill{height:100%;border-radius:99px}
-  #drivenBy{padding:0 14px}
+  /* Drevet av BarberHQ — hero-tall + tre rader (pengeverdien BarberHQ hentet inn) */
+  .drv-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:3px}
+  .drv-period{font-size:12px;color:var(--mut);flex-shrink:0}
+  #drivenBy{margin-top:2px}
+  .drv-hero{text-align:center;padding:22px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:16px}
+  .drv-hero-lbl{margin:0 0 8px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
+  /* Søsken med «Estimert omsetning»-KPI (.stat .v): samme font (arvet Inter), vekt 800, spacing, grønn #35d07a — bare større */
+  .drv-hero-num{margin:0;font-size:44px;font-weight:800;color:#35d07a;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
+  .drv-delta{margin:12px 0 0;font-size:12.5px;color:var(--info)}
+  .drv-rows{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+  .drv-row2{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px}
+  .drv-row2+.drv-row2{border-top:1px solid var(--line)}
+  .drv-left{display:flex;align-items:center;gap:10px;min-width:0}
+  .drv-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  .drv-nm{font-size:14px;font-weight:600;color:var(--ink-2);letter-spacing:-.01em;white-space:nowrap}
+  .drv-right{display:flex;align-items:center;gap:14px;flex-shrink:0}
+  .drv-cuts{font-size:13px;color:var(--mut);min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
+  .drv-val{font-size:15px;font-weight:700;color:var(--ink);min-width:64px;text-align:right;font-variant-numeric:tabular-nums}
+  .drv-trust{margin:14px 0 0;font-size:11.5px;color:var(--mut-2);text-align:center}
+  .drv-empty{text-align:center;padding:34px 24px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
+  .drv-empty-mark{width:40px;height:40px;border-radius:50%;background:var(--good-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:20px;color:var(--good)}
+  .drv-empty-h{margin:0 0 8px;font-size:16px;font-weight:600;color:var(--ink-2)}
+  .drv-empty-p{margin:0 auto;max-width:280px;font-size:13px;color:var(--mut);line-height:1.55}
   html[data-theme="dark"] body{background:#0a0a0a}
 /* ----- Tre-kolonns bunnrad ----- */
   .bottom-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:24px;align-items:start}
@@ -508,11 +523,14 @@
     </div>
 
     <div class="bottom-grid">
-      <div>
-        <p class="block-h">Drevet av BarberHQ</p>
-        <p class="block-s" id="drivenByLabel">Slik ble stolen fylt — siste uke.</p>
-        <div class="card" id="drivenBy"></div>
-        <button class="see-all-btn" onclick="switchPanel('vekst')">Se alt i Vekst →</button>
+      <div id="drivenByWrap">
+        <div class="drv-head">
+          <p class="block-h" style="margin:0">Drevet av BarberHQ</p>
+          <span class="drv-period" id="drivenByPeriod">denne uka</span>
+        </div>
+        <p class="block-s" id="drivenByLabel">Klipp BarberHQ hentet inn eller hentet tilbake.</p>
+        <div id="drivenBy"></div>
+        <button class="see-all-btn" id="drivenBySeeAll" onclick="switchPanel('vekst')">Se alt i Vekst →</button>
       </div>
       <div>
         <p class="block-h">Kommende bookinger</p>
@@ -774,10 +792,12 @@ const MOCK_ATTRIB={
   "2uker":[{key:"Verving",n:4},{key:"Vinn-tilbake",n:3}],
   maaned:[{key:"Verving",n:6},{key:"Vinn-tilbake",n:8}],
 };
-const MOCK_DRIVEN={
-  uke:     {completed:28, rebooket:16, vinn_tilbake:7, verving:5, avg_kr:350},
-  "2uker": {completed:52, rebooket:30, vinn_tilbake:14, verving:8, avg_kr:350},
-  maaned:  {completed:98, rebooket:57, vinn_tilbake:25, verving:16, avg_kr:350},
+// «Drevet av BarberHQ»-mock i EKTE endepunkt-form {vervet,recovery,rebooking:{count,revenue}}.
+// uke matcher design-mockupen (sum 9 800). 2uker−uke gir «forrige uke» → delta +1 400 på uke-visning.
+const MOCK_ATTRIBUTION={
+  uke:    {period:"uke",    rebooking:{count:16,revenue:5600}, recovery:{count:7,revenue:2450}, vervet:{count:5,revenue:1750}},
+  "2uker":{period:"2uker",  rebooking:{count:30,revenue:10500},recovery:{count:12,revenue:4200},vervet:{count:10,revenue:3500}},
+  maaned: {period:"maaned", rebooking:{count:57,revenue:19950},recovery:{count:22,revenue:7700},vervet:{count:16,revenue:5600}},
 };
 const MOCK={
   bookings:[
@@ -816,8 +836,11 @@ const api={
     if(!r||!r.ok)return{daily:[]}; // 401 → apiFetch har alt redirigert; tom → tom akse, ingen krasj
     return r.json();
   },
-  async attribution(period){ if(CONFIG.USE_MOCK){return MOCK_ATTRIB[period];}
-    const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/attribution?period=${period}`); return r.json(); },
+  // Ekte, session-basert attribusjon → {period,vervet,recovery,rebooking:{count,revenue}}. Mater «Drevet av BarberHQ» (Oversikt).
+  async attribution(period){ if(CONFIG.USE_MOCK){await wait(120);return MOCK_ATTRIBUTION[period];}
+    const r=await apiFetch('/api/dashboard/attribution?period='+encodeURIComponent(period));
+    if(!r||!r.ok)return null; // 401→apiFetch redirigerte; annen feil→null (panel viser ingenting, ingen krasj)
+    return r.json(); },
   // Ekte månedsdata for én vilkårlig måned (Oversikt-diagram + KPI). Sparse days[] — frontend null-fyller.
   async statsMonth(ym){
     const r=await apiFetch('/api/dashboard/stats/month?ym='+encodeURIComponent(ym));
@@ -936,8 +959,7 @@ async function loadOversikt(){
   applyRekord(payload); // lag 4: fotnote + gull-tilstand (gull-klasse sameksisterer med tell-opp)
   renderWeekInsight(payload); // batch 2: persentil + rekord-bar (tømmer #rekordNote hvis baren vises)
 
-  var drivenLbl=curPeriod==="uke"?"siste uke":curPeriod==="2uker"?"siste 2 uker":"denne måneden";
-  var dl=$("#drivenByLabel");if(dl)dl.textContent="Slik ble stolen fylt — "+drivenLbl+".";
+  var dw=$("#drivenByWrap");if(dw)dw.hidden=false; // pill-modus: alltid synlig (skjules kun på historisk måned)
   renderBarChart(days,curPeriod);
   renderDrivenBy(curPeriod);
   loadUpcoming();
@@ -1182,22 +1204,69 @@ function renderWeekInsight(p){
   }
   wi.hidden = !(showPct || showBar); // ingen tomme bokser når begge er under terskel
 }
-function renderDrivenBy(period){
-  var d=MOCK_DRIVEN[period]||MOCK_DRIVEN.uke;
+function krFmt(n){return (n||0).toLocaleString("no-NO")+" kr";} // "9 800 kr" (kr bak, no-NO tusenskille)
+function attribSum(a){ if(!a)return 0; return (a.rebooking&&a.rebooking.revenue||0)+(a.recovery&&a.recovery.revenue||0)+(a.vervet&&a.vervet.revenue||0); }
+
+// «Drevet av BarberHQ» (Oversikt): hero-tall + delta + tre rader fra EKTE /attribution (count+revenue).
+// Henter SITT eget periode-tall — ikke stolpediagrammets total (diagram = alle klipp, panel = funksjons-klipp).
+async function renderDrivenBy(period){
+  var wrap=$("#drivenBy"); if(!wrap)return;
+  var perLbl=period==="uke"?"denne uka":period==="2uker"?"siste 2 uker":"denne måneden";
+  var pe=$("#drivenByPeriod"); if(pe)pe.textContent=perLbl;
+
+  var seeAll=$("#drivenBySeeAll");
+  var data=await api.attribution(period);
+  if(!data){ wrap.innerHTML=""; if(seeAll)seeAll.hidden=true; return; } // feil/401 → tomt, ingen krasj
+
+  var reb=data.rebooking||{count:0,revenue:0};
+  var rec=data.recovery ||{count:0,revenue:0};
+  var ver=data.vervet   ||{count:0,revenue:0};
+  var totalCount=(reb.count||0)+(rec.count||0)+(ver.count||0);
+
+  // Tomtilstand: ingen funksjons-klipp i perioden → skjul rader + delta + «Se alt i Vekst» (ingenting å se der ennå).
+  if(totalCount===0){
+    if(seeAll)seeAll.hidden=true;
+    wrap.innerHTML='<div class="drv-empty">'
+      +'<div class="drv-empty-mark">✦</div>'
+      +'<p class="drv-empty-h">Her bygger verdien seg opp</p>'
+      +'<p class="drv-empty-p">Etter hvert som kunder rebooker, kommer tilbake eller verver venner, ser du hvor mye BarberHQ henter inn for deg.</p>'
+      +'</div>';
+    return;
+  }
+
+  var totalRev=attribSum(data);
+
+  // Delta: KUN på uke, kun positiv. «Forrige uke» = 2uker-sum − uke-sum (rullende, disjunkte 7-dagersblokker).
+  var deltaHtml="";
+  if(period==="uke"){
+    var two=await api.attribution("2uker");
+    if(two){
+      var prevWeek=attribSum(two)-totalRev;
+      var delta=totalRev-prevWeek;
+      if(delta>0) deltaHtml='<p class="drv-delta">↑ '+krFmt(delta)+' fra forrige uke</p>';
+    }
+  }
+
   var rows=[
-    {name:"Rebooking",    count:d.rebooket,     kr:Math.round(d.rebooket*d.avg_kr),     color:"#35d07a"},
-    {name:"Vinn-tilbake", count:d.vinn_tilbake, kr:Math.round(d.vinn_tilbake*d.avg_kr), color:"#4d8bff"},
-    {name:"Vervet",       count:d.verving,      kr:Math.round(d.verving*d.avg_kr),      color:"#E66824"},
+    {name:"Rebooking",    o:reb, color:"var(--good)"}, // grønn #3ecf7e
+    {name:"Vinn-tilbake", o:rec, color:"var(--info)"}, // blå #4d8bff
+    {name:"Vervet",       o:ver, color:"#e0844a"},     // oransje
   ];
-  var maxKr=Math.max.apply(null,rows.map(function(r){return r.kr;}))||1;
-  $("#drivenBy").innerHTML=rows.map(function(r){
-    var barW=Math.round(r.kr/maxKr*100);
-    return '<div class="drv-row">'
-      +'<div class="drv-main"><span class="drv-name">'+r.name+'</span><span class="drv-kr">kr '+r.kr.toLocaleString("no-NO")+'</span></div>'
-      +'<div class="drv-sub">'+r.count+' klipp</div>'
-      +'<div class="drv-bar-wrap"><div class="drv-bar-fill" style="width:'+barW+'%;background:'+r.color+'"></div></div>'
+  var rowsHtml=rows.map(function(r){
+    return '<div class="drv-row2">'
+      +'<div class="drv-left"><span class="drv-dot" style="background:'+r.color+'"></span><span class="drv-nm">'+r.name+'</span></div>'
+      +'<div class="drv-right"><span class="drv-cuts">'+(r.o.count||0)+' klipp</span><span class="drv-val">'+krFmt(r.o.revenue||0)+'</span></div>'
       +'</div>';
   }).join("");
+
+  if(seeAll)seeAll.hidden=false; // fylt tilstand → Vekst-lenken synlig
+  wrap.innerHTML='<div class="drv-hero">'
+    +'<p class="drv-hero-lbl">Hentet inn med BarberHQ</p>'
+    +'<p class="drv-hero-num">'+krFmt(totalRev)+'</p>'
+    +deltaHtml
+    +'</div>'
+    +'<div class="drv-rows">'+rowsHtml+'</div>'
+    +'<p class="drv-trust">Kun fullførte, betalte klipp. Estimert fra dine priser.</p>';
 }
 // Kommende bookinger: dag-gruppert. «I dag» + «I morgen» er faste ankere (alltid
 // synlig, også tomme). Dager lenger frem vises kun med bookinger, datert. Kompakt
@@ -1307,7 +1376,9 @@ async function loadVekst(){
     +'<div class="stat"><div class="l">Nye kunder</div><div class="v info">'+s.newCust+'</div><div class="sub info"><span class="pct">'+newRate+'%</span> av kundene</div></div>'
     +'<div class="stat"><div class="l">Rebooking-rate</div><div class="v '+gradeRate(rebookRate,true)+'">'+rebookRate+'%</div><div class="sub mut">av fullforte timer</div></div>';
   renderTrend();
-  renderAttrib("#vekstAttrib", await api.attribution(curPeriod));
+  // Vekst-attribusjonen er fortsatt mock (dødt stillas). api.attribution er nå Oversikt/«Drevet av» sin ekte kilde
+  // (annen form), så Vekst leser MOCK_ATTRIB direkte til Vekst-fanen bygges. [oversettelse: sv/da/en]
+  renderAttrib("#vekstAttrib", MOCK_ATTRIB[curPeriod]);
 }
 
 let imgs=[];
@@ -1457,6 +1528,7 @@ $("#monthSel").addEventListener("change",async e=>{
   $("#stats").innerHTML=kpiCardsHtml(totalCount,totalRev); // samme to kort som pill-modus
   $("#rekordNote").textContent=""; // ingen uke-rekord på måneds-visning (/month leverer bevisst ingen)
   $("#weekInsight").hidden=true; // persentil + rekord-bar er inneværende-uke-konsepter → skjul på historisk måned
+  var dw=$("#drivenByWrap");if(dw)dw.hidden=true; // /attribution serverer kun uke|2uker|maaned → skjul på historisk måned
   renderBarChart(monthDays,ym); // ym som period → egen sub-tekst, ingen tell-opp (chartEntered alt true)
 });
 const _slotPopup=document.getElementById('slotPopup');
