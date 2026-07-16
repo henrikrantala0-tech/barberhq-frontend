@@ -71,15 +71,21 @@
   .row{display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid var(--line)}
   .row:last-child{border-bottom:0}
   .row .when{font-variant-numeric:tabular-nums;font-weight:500;min-width:118px;font-size:13px;color:var(--ink-2);letter-spacing:-.01em}
-  .row .name{flex:1;font-size:14px;font-weight:500}
+  /* Venstre-blokk (tid+navn+tjeneste) kan wrappe fritt; høyre-blokk (knapp+tag) ligger ALLTID til høyre, aldri ut av raden */
+  .row-left{flex:1;min-width:0;display:flex;align-items:center;gap:14px}
+  .row-right{flex-shrink:0;display:flex;align-items:center;gap:14px}
+  .row .name{flex:1;min-width:0;overflow-wrap:break-word;font-size:14px;font-weight:500}
   .row .svc{font-size:12px;color:var(--mut);font-weight:400}
   .tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:5px;letter-spacing:.01em}
   .tag.b{background:var(--info-bg);color:var(--info)} .tag.f{background:var(--good-bg);color:var(--good)} .tag.n{background:var(--bad-bg);color:var(--bad)}
   .tag.v{background:#f1f0ec;color:var(--mut)} .tag.avlyst{background:var(--bad-bg);color:var(--bad)}
   .row.avlyst{opacity:.55} .row.avlyst .name{text-decoration:line-through}
-  .noshowbtn{appearance:none;border:1px solid var(--line-2);background:var(--surface);font:inherit;font-size:12px;font-weight:500;color:var(--mut);padding:4px 9px;border-radius:6px;cursor:pointer;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:5px;transition:color .12s,border-color .12s,background .12s}
+  /* No-show: tydelig annerledes enn Fullført (dempet tekst + gjennomstreket navn), men Angre-knappen holdes skarp */
+  .row.noshow .name{text-decoration:line-through;color:var(--mut)} .row.noshow .when{color:var(--mut)}
+  .noshowbtn,.undobtn{appearance:none;border:1px solid var(--line-2);background:var(--surface);font:inherit;font-size:12px;font-weight:500;color:var(--mut);padding:4px 9px;border-radius:6px;cursor:pointer;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:5px;transition:color .12s,border-color .12s,background .12s}
   .noshowbtn .x{font-size:13px;line-height:1;font-weight:600}
   .noshowbtn:hover{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+  .undobtn:hover{background:var(--info-bg);border-color:var(--info);color:var(--info)}
   .empty{padding:38px 24px;text-align:center;color:var(--mut)}
   .empty i{font-size:26px;opacity:.5}.empty p{margin-top:8px;font-size:13px}
 
@@ -146,7 +152,8 @@
   .saved{font-size:12.5px;color:var(--good);font-weight:600;opacity:0;transition:opacity .2s}.saved.show{opacity:1}
   .loading{padding:26px;text-align:center;color:var(--mut);font-size:13px}
 
-  @media(max-width:560px){.row{flex-wrap:wrap}.row .when{min-width:auto}.chartbars{overflow-x:auto;gap:3px}.cbar-col{min-width:28px}}
+  /* Mobil: stable høyre-blokk vertikalt (tag over knapp) → smalere, gir navnet plass i stedet for tegn-brekk */
+  @media(max-width:560px){.row .when{min-width:auto}.row-right{flex-direction:column-reverse;align-items:flex-end;gap:7px}.chartbars{overflow-x:auto;gap:3px}.cbar-col{min-width:28px}}
   @media(max-width:480px){
     .day{padding:10px 12px;gap:8px}
     .dn{min-width:68px;font-size:12.5px}
@@ -848,8 +855,10 @@ const api={
     return r.json();
   },
   async bookings(){ const r=await apiFetch('/api/dashboard/bookings'); if(!r)return []; if(!r.ok)return []; return r.json(); },
-  async markNoShow(id){ if(CONFIG.USE_MOCK){await wait(200);const b=MOCK.bookings.find(x=>x.id===id);if(b)b.status="noshow";return true;}
-    const r=await fetch(`${CONFIG.API_BASE}/api/barbers/${CONFIG.BARBER_SLUG}/bookings/${id}`,{method:"PATCH",headers:{"Content-Type":"application/json"},body:JSON.stringify({status:"noshow"})}); return r.ok; },
+  // Ekte, session-basert status-endring. PATCH /api/dashboard/bookings/:id/status  { status: fullfort | ikke_mott | avlyst }
+  async setBookingStatus(id,status){
+    const r=await apiFetch('/api/dashboard/bookings/'+encodeURIComponent(id)+'/status',{method:'PATCH',body:JSON.stringify({status:status})});
+    return !!(r&&r.ok); },
   async images(){ const r=await apiFetch('/api/dashboard/images'); if(!r)return []; if(!r.ok)return []; return r.json(); },
   async hours(){
     const r=await apiFetch('/api/dashboard/hours');
@@ -1310,7 +1319,7 @@ function renderUpcoming(){
    auto-fullført skal telle i statistikk/omsetning/rebooking. */
 var COMPLETE_BUFFER_MIN=30; // tid etter start før timen regnes som ferdig
 function effectiveStatus(b){
-  if(b.status==="noshow")return "noshow";   // barberen har aktivt merket
+  if(b.status==="noshow"||b.status==="ikke_mott")return "noshow";   // barberen har aktivt merket (ikke_mott = backend-verdi)
   if(b.status==="venter")return "venter";   // venter på bekreftelse
   if(b.status==="fullfort")return "fullfort";
   // status er "booket" (eller ukjent) -> avgjør på tid
@@ -1323,7 +1332,11 @@ function emptyHTML(t){return `<div class="empty"><i>○</i><p>${t}</p></div>`}
 // (f.eks. «TOR 17. JUL»). Gjelder både bakover og framover.
 function dayHead(d){var t=new Date();t.setHours(0,0,0,0);var dd=new Date(d);dd.setHours(0,0,0,0);var diff=Math.round((dd-t)/86400000);if(diff===0)return "I dag";if(diff===1)return "I morgen";if(diff===-1)return "I går";return DAYS[(dd.getDay()+6)%7].slice(0,3).toUpperCase()+" "+dd.getDate()+". "+MONTHS[dd.getMonth()].slice(0,3).toUpperCase();}
 function timeOnly(iso){var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
-function rowHTML2(b){if(b.status==='avlyst')return '<div class="row avlyst"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+' <span class="svc">· '+esc(b.service||"")+'</span></div><span class="tag avlyst">Avbestilt</span></div>';var st=effectiveStatus(b);var c=st==="noshow"?"n":st==="fullfort"?"f":st==="venter"?"v":"b";var t=st==="noshow"?"No-show":st==="fullfort"?"Fullført":st==="venter"?"Venter":"Booket";var kanMerkeNoShow=(st==="venter"||st==="fullfort");var action=kanMerkeNoShow?'<button class="noshowbtn" data-id="'+b.id+'" title="Marker som no-show"><span class="x">&times;</span> No-show</button>':"";return '<div class="row"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+' <span class="svc">\u00b7 '+esc(b.service||"")+'</span></div>'+action+'<span class="tag '+c+'">'+t+'</span></div>';}
+function rowHTML2(b){if(b.status==='avlyst')return '<div class="row avlyst"><div class="row-left"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+' <span class="svc">· '+esc(b.service||"")+'</span></div></div><div class="row-right"><span class="tag avlyst">Avbestilt</span></div></div>';var st=effectiveStatus(b);var c=st==="noshow"?"n":st==="fullfort"?"f":st==="venter"?"v":"b";var t=st==="noshow"?"No-show":st==="fullfort"?"Fullført":st==="venter"?"Venter":"Booket";var action="";
+  if(st==="noshow") action='<button class="undobtn" data-id="'+b.id+'" title="Angre no-show">\u21a9 Angre</button>'; // Angre kun etter no-show
+  else if(st==="venter"||st==="fullfort") action='<button class="noshowbtn" data-id="'+b.id+'" title="Marker som no-show"><span class="x">&times;</span> No-show</button>';
+  var rowClass=st==="noshow"?"row noshow":"row";
+  return '<div class="'+rowClass+'"><div class="row-left"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+' <span class="svc">\u00b7 '+esc(b.service||"")+'</span></div></div><div class="row-right">'+action+'<span class="tag '+c+'">'+t+'</span></div></div>';}
 // Siste bookinger: bakoverskuende logg (t.o.m. i dag, ingen framtidige — de bor i
 // Kommende). Default 2 dager (i går + i dag); «Vis mer» åpner hele 30-dagers-vinduet
 // som allerede finnes i responsen. Radstruktur (rowHTML2) med no-show-knapp beholdt.
@@ -1350,12 +1363,23 @@ function renderBookinger(){
   el.innerHTML='<div class="card">'+rows+'</div>'+more;
 }
 
-async function handleNoShow(id){
-  if(!confirm("Marker denne timen som no-show? Den teller da ikke som omsetning."))return;
-  if(await api.markNoShow(id)){ loadOversikt(); loadBookinger(); }
+// No-show / Angre er en ren toggle på samme endepunkt. Ved 200: oppdater raden IN-PLACE
+// (bytt No-show↔Angre + status-tag) uten å re-hente booking-lista; refresh KUN penge-
+// aggregatene (loadOversikt) — backend ekskluderer ikke_mott fra stats/attribusjon.
+async function handleBookingStatus(btn,status){
+  var id=btn.dataset.id, rowEl=btn.closest(".row");
+  btn.disabled=true; // hindre dobbeltrykk mens kallet er i lufta
+  var ok=await api.setBookingStatus(id,status);
+  if(!ok){ btn.disabled=false; return; } // feil/401 → apiFetch håndterer redirect; ellers ingen endring
+  var b=_bookinger.find(function(x){return String(x.id)===String(id);});
+  if(b){ b.status = (status==='ikke_mott') ? 'ikke_mott' : 'fullfort';
+         if(rowEl) rowEl.outerHTML=rowHTML2(b); }   // rad byttes in-place, ny knapp arves av delegasjonen
+  else { loadBookinger(); }                          // fallback (bør ikke skje)
+  loadOversikt();                                    // penge-KPI/attribusjon reflekterer endringen; booking-lista røres ikke
 }
 document.body.addEventListener("click",e=>{
-  const btn=e.target.closest(".noshowbtn"); if(btn)handleNoShow(btn.dataset.id);
+  const nb=e.target.closest(".noshowbtn"); if(nb){handleBookingStatus(nb,'ikke_mott');return;}
+  const ub=e.target.closest(".undobtn");   if(ub){handleBookingStatus(ub,'fullfort');return;}
   if(e.target.closest("[data-up-toggle]")){upcomingExpanded=!upcomingExpanded;renderUpcoming();}
   if(e.target.closest("[data-bk-toggle]")){bookingerExpanded=!bookingerExpanded;renderBookinger();}
 });
