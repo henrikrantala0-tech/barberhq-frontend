@@ -222,6 +222,11 @@
   .svc-row-h:last-of-type,.svc-row-t:last-of-type{border-bottom:0}
   .svc-row-h input,.svc-row-t input{font:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink);width:100%}
   .svc-row-h input:focus,.svc-row-t input:focus{outline:none;border-color:var(--info)}
+  /* Betaling — rad = én betalingsmetode (tekstfelt + ×), samme uttrykk som tjeneste-radene */
+  .pay-row{display:grid;grid-template-columns:1fr 34px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);max-width:440px}
+  .pay-row:last-of-type{border-bottom:0}
+  .pay-row input{font:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink);width:100%}
+  .pay-row input:focus{outline:none;border-color:var(--info)}
   .svc-divider{height:1px;background:var(--line);margin:26px 0 0}
   .svc-err{font-size:12px;color:#c0392b;margin-top:8px;min-height:15px}
   .btn:disabled{opacity:.4;cursor:default}
@@ -429,7 +434,6 @@
   html[data-theme="dark"] .sw-green input:checked + .sl{background:#22c55e}
 
   /* ---- Innstillinger-panel ---- */
-  .vekst-knobs{margin-top:34px;padding-top:26px;border-top:1px solid var(--line)}
   .sett-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px 18px;margin-bottom:16px}
   .tog-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
   .tog-row:last-of-type{border-bottom:0}
@@ -450,7 +454,7 @@
   .wb-info{flex:1;min-width:0}
   .wb-name{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .wb-meta{font-size:12px;color:var(--mut);margin-top:3px;line-height:1.4}
-  .wb-right{text-align:right;flex-shrink:0}
+  .wb-right{text-align:right;flex-shrink:0;max-width:54%}
   .wb-phone{font-size:13px;font-weight:600;color:var(--info);cursor:pointer;user-select:all;letter-spacing:.01em}
   .wb-phone:hover{text-decoration:underline}
   .wb-days{font-size:11.5px;color:var(--mut);margin-top:3px}
@@ -476,6 +480,57 @@
   .verv-modal-note{font-size:12px;color:var(--mut);margin:10px 0 0}
   .verv-modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
   .verv-modal-actions button[disabled]{opacity:.5;cursor:not-allowed}
+
+  /* ---- Flytmodell (Vekst) — port av mockup, repo-tokens + literal brand-tint (jf. .rpill.blue) ---- */
+  .flow{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 20px 16px;margin-top:28px}
+  .flow-h{font-size:15px;font-weight:700;letter-spacing:-.01em;margin-bottom:4px}
+  .flow-sub{color:var(--mut);font-size:12.5px;line-height:1.5;margin-bottom:18px}
+  .flow-steps{display:grid;grid-template-columns:1fr 22px 1.25fr 22px 1.25fr;gap:8px;align-items:stretch}
+  .flow-step{border-radius:11px;padding:13px 14px}
+  .fs-dag{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;margin-bottom:8px}
+  .fs-t{font-size:14px;font-weight:600;display:flex;align-items:center;gap:7px;margin-bottom:3px;letter-spacing:-.01em}
+  .fs-d{font-size:12px;line-height:1.45}
+  .flow-step svg{width:16px;height:16px;flex-shrink:0}
+  .fs-null{background:var(--bg);border:1px solid var(--line-2)}
+  .fs-null .fs-dag{color:var(--mut)} .fs-null .fs-d{color:var(--mut)}
+  .fs-auto{background:rgba(62,207,126,.12)}
+  .fs-auto .fs-dag{color:rgba(62,207,126,.9)} .fs-auto .fs-t{color:#3ecf7e} .fs-auto .fs-d{color:rgba(62,207,126,.85)}
+  .fs-du{background:rgba(77,139,255,.12)}
+  .fs-du .fs-dag{color:rgba(77,139,255,.9)} .fs-du .fs-t{color:#4d8bff} .fs-du .fs-d{color:rgba(77,139,255,.85)}
+  .flow-arrow{display:flex;align-items:center;justify-content:center;color:var(--mut-2);font-size:15px}
+  .flow-arrow .fa-down{display:none}
+  .flow-noshow{display:flex;align-items:center;gap:11px;margin-top:12px;border:1px dashed var(--line-2);border-radius:11px;padding:11px 13px}
+  .flow-noshow svg{width:18px;height:18px;color:#4d8bff;flex-shrink:0}
+  .flow-noshow p{font-size:12.5px;line-height:1.5;color:var(--ink-2)}
+  .flow-noshow strong{color:#4d8bff;font-weight:600}
+  .flow-legend{display:flex;gap:18px;margin-top:14px;font-size:11.5px;color:var(--mut)}
+  .flow-legend span{display:flex;align-items:center;gap:7px}
+  .fl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+  @media(max-width:640px){
+    .flow-steps{grid-template-columns:1fr}
+    .flow-arrow{padding:2px 0}
+    .flow-arrow .fa-right{display:none}
+    .flow-arrow .fa-down{display:block}
+  }
+
+  /* ---- Accordion (Vekst) ---- */
+  .acc-list{display:flex;flex-direction:column;gap:12px;margin-top:20px}
+  .acc{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .acc-head{width:100%;display:flex;align-items:flex-start;gap:12px;text-align:left;appearance:none;border:0;background:0;font:inherit;color:var(--ink);padding:15px 17px;cursor:pointer}
+  .acc-htext{flex:1;min-width:0}
+  .acc-title{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600;letter-spacing:-.01em}
+  .acc-sub{display:block;font-size:12px;color:var(--mut);margin-top:3px;line-height:1.5}
+  .acc-chev{flex-shrink:0;color:var(--mut);font-size:12px;transition:transform .18s;margin-top:4px}
+  .acc-head[aria-expanded="true"] .acc-chev{transform:rotate(180deg)}
+  .acc-body{padding:2px 17px 18px}
+  .acc-lead{font-size:12.5px;color:var(--mut);line-height:1.55;margin:0 0 14px}
+  .acc-badge[hidden]{display:none}
+  .acc-badge{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 6px;border-radius:99px;background:rgba(77,139,255,.14);color:#4d8bff;font-size:11px;font-weight:700}
+
+  /* ---- Vinn-tilbake høyre-kontekst + toast ---- */
+  .wb-ctx{font-size:11.5px;color:var(--mut);line-height:1.4}
+  .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);background:#1a1a1a;color:#fff;font-size:13px;font-weight:500;padding:11px 18px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:500;letter-spacing:-.01em}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
@@ -573,13 +628,8 @@
     <div class="ovs-block">
       <p class="block-h">Siste bookinger</p>
       <div id="bookingList"><div class="loading">Laster …</div></div>
-    </div>
-
-    <!-- Vinn-tilbake (spec 3): KUN no-show (lapsed utsatt). Låst beskrivelse, ferskest øverst, «Kontaktet»-knapp. -->
-    <div class="ovs-block">
-      <p class="block-h">Vinn tilbake</p>
-      <p class="block-s">Kunder som ikke møtte opp, eller som har vært borte lenge. Disse fortjener en personlig melding fra deg — ikke en maskin. Følg opp raskt, så er de lettere å hente tilbake.</p>
-      <div id="wbNoShow"><p class="wb-empty">Laster …</p></div>
+      <!-- Nudge: ferske no-shows å følge opp — lever nå i Vekst › Vinn tilbake. Skjult når 0. -->
+      <button class="see-all-btn" id="ovsWbNudge" onclick="switchPanel('vekst')" hidden></button>
     </div>
   </section>
 
@@ -593,75 +643,151 @@
     <p class="block-h" style="margin-top:28px">Kunder per måned</p>
     <p class="block-s">Siste seks måneder.</p>
     <div class="trend" id="trend"></div>
-    <!-- Verving-seksjon (spec 2): beskrivelse → innstillinger → utløste belønninger → send-lenke-liste -->
-    <div class="verv-section" id="vervSection" style="margin-top:28px">
-      <p class="block-h">Verving</p>
-      <p class="block-s">Send verve-lenka til kundene du vet er fornøyde. Deler de den med en venn som booker og møter opp, utløses rabatten du selv har satt. Du velger hvem som får den — kvalitet, ikke spam.</p>
-
-      <!-- 2b: innstillinger -->
-      <div class="sett-card">
-        <div class="sett-pills-row">
-          <label>Hvem får rabatt?</label>
-          <div class="segs" id="vervRecipient" role="group" aria-label="Hvem får rabatt">
-            <button type="button" data-r="begge" aria-selected="false">Begge</button>
-            <button type="button" data-r="verver" aria-selected="false">Kun den som verver</button>
-            <button type="button" data-r="ny" aria-selected="false">Kun ny kunde</button>
-          </div>
+    <!-- FLYTMODELL — «Slik henger det sammen» (over alle accordions, alltid åpen) -->
+    <div class="flow">
+      <h3 class="flow-h">Slik henger det sammen</h3>
+      <p class="flow-sub">Automatikken tar de første ukene. Etter 60 dager er det din tur.</p>
+      <div class="flow-steps">
+        <div class="flow-step fs-null">
+          <div class="fs-dag">Dag 0</div>
+          <div class="fs-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>Kunden klippes</div>
+          <div class="fs-d">Klokka starter</div>
         </div>
-        <div class="sett-num-row">
-          <label for="vervPct">Rabatt</label>
-          <div class="sett-num-in">
-            <input type="number" id="vervPct" min="5" max="50" step="1" value="20">
-            <span>%</span>
-          </div>
+        <div class="flow-arrow"><span class="fa-right">&#8594;</span><span class="fa-down">&#8595;</span></div>
+        <div class="flow-step fs-auto">
+          <div class="fs-dag">Dag 28–45 · automatisk</div>
+          <div class="fs-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Rebooking-SMS</div>
+          <div class="fs-d">Med booking-lenka di</div>
         </div>
-        <p class="sett-hint" id="vervPctErr" hidden></p>
+        <div class="flow-arrow"><span class="fa-right">&#8594;</span><span class="fa-down">&#8595;</span></div>
+        <div class="flow-step fs-du">
+          <div class="fs-dag">Dag 60+ · du tar over</div>
+          <div class="fs-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Vinn tilbake</div>
+          <div class="fs-d">Personlig melding fra deg</div>
+        </div>
       </div>
-
-      <!-- 2c: utløste belønninger -->
-      <p class="block-h" style="margin-top:26px">Utløste belønninger</p>
-      <div id="vervReferrals"><p class="wb-empty">Laster …</p></div>
-
-      <!-- 2d: send verve-lenke til nylig klippede -->
-      <p class="block-h" style="margin-top:26px">Send verve-lenke</p>
-      <p class="block-s">Kunder du nylig har klippet. Send lenka til dem du vet er fornøyde.</p>
-      <div id="vervSendList"><p class="wb-empty">Laster …</p></div>
+      <div class="flow-noshow">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="14" x2="14" y2="18"/><line x1="14" y1="14" x2="10" y2="18"/></svg>
+        <p>No-show? Hopper over hele løpet — rett inn i <strong>Vinn tilbake</strong> samme dag. Følg opp innen 1–3 dager.</p>
+      </div>
+      <div class="flow-legend">
+        <span><span class="fl-dot" style="background:#3ecf7e"></span>Automatikken jobber</span>
+        <span><span class="fl-dot" style="background:#4d8bff"></span>Din tur</span>
+      </div>
     </div>
 
-    <!-- Vekst-knottene (slått sammen fra Innstillinger): måling over, kontroll under.
-         Mekanismene som driver rebooking/retensjon hører sammen med vekst-tallene. -->
-    <!-- Rebooking-seksjon (spec 1): låst beskrivelse → toggle → intervall-pills (28/35/45). SMS-påminnelse beholdt. -->
-    <div class="vekst-knobs" id="rebookSection">
-      <p class="block-h">Rebooking</p>
-      <p class="block-s">Kunder som var hos deg for en stund siden, men ikke har booket ny time. Skru på, velg intervall, og de får automatisk en påminnelse med booking-lenken din — før de glir helt unna.</p>
-      <div class="sett-card">
-        <div class="tog-row">
-          <div>
-            <div class="tog-label">SMS-rebooking</div>
-            <div class="tog-sub">Kunden oppfordres til å booke igjen etter timen</div>
+    <!-- ACCORDIONS: maskin først (Rebooking, SMS-påminnelse), menneske etterpå (Vinn tilbake, Verving).
+         IDer på kontrollene er BEVART fra gammel struktur → loadInnstillinger/loadVerving/loadWinback treffer som før. -->
+    <div class="acc-list">
+
+      <!-- SMS-påminnelse -->
+      <div class="acc" id="accPaam">
+        <button type="button" class="acc-head" aria-expanded="false">
+          <span class="acc-htext">
+            <span class="acc-title">SMS-påminnelse</span>
+            <span class="acc-sub">Kunden får en SMS dagen før timen — færre glemte avtaler.</span>
+          </span>
+          <span class="acc-chev">▾</span>
+        </button>
+        <div class="acc-body" hidden>
+          <div class="sett-card">
+            <div class="tog-row">
+              <div>
+                <div class="tog-label">SMS-påminnelse</div>
+                <div class="tog-sub">Kunden får SMS dagen før timen</div>
+              </div>
+              <label class="sw sw-green"><input type="checkbox" id="tog-paam"><span class="sl"></span></label>
+            </div>
           </div>
-          <label class="sw sw-green"><input type="checkbox" id="tog-rebook"><span class="sl"></span></label>
-        </div>
-        <div class="sett-pills-row">
-          <label>Rebooking-intervall</label>
-          <div class="segs" id="rebookPills" role="group" aria-label="Rebooking-intervall">
-            <button type="button" data-days="28" aria-selected="false">Ofte · 28 dager</button>
-            <button type="button" data-days="35" aria-selected="false">Normalt · 35 dager</button>
-            <button type="button" data-days="45" aria-selected="false">Sjeldnere · 45 dager</button>
-          </div>
-          <p class="sett-hint" id="rebookHint" hidden>Velg et intervall</p>
-        </div>
-        <div class="tog-row">
-          <div>
-            <div class="tog-label">SMS-påminnelse</div>
-            <div class="tog-sub">Kunden får SMS dagen før timen</div>
-          </div>
-          <label class="sw sw-green"><input type="checkbox" id="tog-paam"><span class="sl"></span></label>
+          <p class="sett-note">SMS-utsending kobles på snart — valget ditt lagres.</p>
         </div>
       </div>
-      <p class="sett-note">SMS-utsending kobles på snart — valget ditt lagres.</p>
-      <!-- TODO (vekstfeature): vinn-tilbake-KONFIG hit — auto-SMS ved kansellering/no-show
-           (terskel-dager, mal, på/av). Featuren finnes ikke ennå; kun plassholder, ingen UI. -->
+
+      <!-- Rebooking -->
+      <div class="acc" id="accRebook">
+        <button type="button" class="acc-head" aria-expanded="false">
+          <span class="acc-htext">
+            <span class="acc-title">Rebooking</span>
+            <span class="acc-sub">Automatisk påminnelse med booking-lenka til kunder som ikke har booket ny time.</span>
+          </span>
+          <span class="acc-chev">▾</span>
+        </button>
+        <div class="acc-body" hidden>
+          <div class="sett-card">
+            <div class="tog-row">
+              <div>
+                <div class="tog-label">SMS-rebooking</div>
+                <div class="tog-sub">Kunden oppfordres til å booke igjen etter timen</div>
+              </div>
+              <label class="sw sw-green"><input type="checkbox" id="tog-rebook"><span class="sl"></span></label>
+            </div>
+            <div class="sett-pills-row">
+              <label>Rebooking-intervall</label>
+              <div class="segs" id="rebookPills" role="group" aria-label="Rebooking-intervall">
+                <button type="button" data-days="28" aria-selected="false">Ofte · 28 dager</button>
+                <button type="button" data-days="35" aria-selected="false">Normalt · 35 dager</button>
+                <button type="button" data-days="45" aria-selected="false">Sjeldnere · 45 dager</button>
+              </div>
+              <p class="sett-hint" id="rebookHint" hidden>Velg et intervall</p>
+            </div>
+          </div>
+          <p class="sett-note">SMS-utsending kobles på snart — valget ditt lagres.</p>
+        </div>
+      </div>
+
+      <!-- Vinn tilbake — badge = ferske no-shows (≤3 dager) når >0, ellers stum -->
+      <div class="acc" id="accWinback">
+        <button type="button" class="acc-head" aria-expanded="false">
+          <span class="acc-htext">
+            <span class="acc-title">Vinn tilbake <span class="acc-badge" id="wbBadge" hidden></span></span>
+            <span class="acc-sub">Kunder som ikke møtte opp, eller har vært borte lenge. En personlig melding fra deg — ikke en maskin.</span>
+          </span>
+          <span class="acc-chev">▾</span>
+        </button>
+        <div class="acc-body" hidden>
+          <div id="wbList"><p class="wb-empty">Laster …</p></div>
+        </div>
+      </div>
+
+      <!-- Verving -->
+      <div class="acc" id="accVerv">
+        <button type="button" class="acc-head" aria-expanded="false">
+          <span class="acc-htext">
+            <span class="acc-title">Verving</span>
+            <span class="acc-sub">Send verve-lenka til kundene du vet er fornøyde — kvalitet, ikke spam.</span>
+          </span>
+          <span class="acc-chev">▾</span>
+        </button>
+        <div class="acc-body" hidden>
+          <p class="acc-lead">Du sender lenka → vennen booker → møter opp → rabatten utløses.</p>
+          <div class="sett-card">
+            <div class="sett-pills-row">
+              <label>Hvem får rabatt?</label>
+              <div class="segs" id="vervRecipient" role="group" aria-label="Hvem får rabatt">
+                <button type="button" data-r="begge" aria-selected="false">Begge</button>
+                <button type="button" data-r="verver" aria-selected="false">Kun den som verver</button>
+                <button type="button" data-r="ny" aria-selected="false">Kun ny kunde</button>
+              </div>
+            </div>
+            <div class="sett-num-row">
+              <label for="vervPct">Rabatt</label>
+              <div class="sett-num-in">
+                <input type="number" id="vervPct" min="5" max="50" step="1" value="20">
+                <span>%</span>
+              </div>
+            </div>
+            <p class="sett-hint" id="vervPctErr" hidden></p>
+          </div>
+
+          <p class="block-h" style="margin-top:22px">Utløste belønninger</p>
+          <div id="vervReferrals"><p class="wb-empty">Laster …</p></div>
+
+          <p class="block-h" style="margin-top:22px">Send verve-lenke</p>
+          <p class="block-s">Kunder du nylig har klippet. Send lenka til dem du vet er fornøyde.</p>
+          <div id="vervSendList"><p class="wb-empty">Laster …</p></div>
+        </div>
+      </div>
+
     </div>
   </section>
 
@@ -728,6 +854,15 @@
 
     <div class="svc-err" id="svcErr"></div>
     <div class="savebar"><button class="btn" id="saveSvc">Lagre tjenester</button><span class="saved" id="svcSaved">Lagret &#10003;</span></div>
+
+    <div class="svc-divider"></div>
+
+    <!-- BETALING (valgfri): 0–1 metode → ingen betalingsseksjon på bookingsiden; ≥2 → pills. Lagres til PUT /api/dashboard/payment-methods. -->
+    <p class="block-h">Betaling</p>
+    <p class="block-s">Hvordan betaler kundene deg? Valgfritt — legger du ikke inn noe, vises ingen betalingsseksjon.</p>
+    <div id="payList"></div>
+    <button class="addbtn" id="addPay">+ Legg til betalingsmetode</button>
+    <div class="savebar"><button class="btn" id="savePay">Lagre betaling</button><span class="saved" id="paySaved">Lagret &#10003;</span></div>
 
     <div class="svc-divider"></div>
 
@@ -1431,6 +1566,7 @@ async function handleBookingStatus(btn,status){
          if(rowEl) rowEl.outerHTML=rowHTML2(b); }   // rad byttes in-place, ny knapp arves av delegasjonen
   else { loadBookinger(); }                          // fallback (bør ikke skje)
   loadOversikt();                                    // penge-KPI/attribusjon reflekterer endringen; booking-lista røres ikke
+  if(status==='ikke_mott'){ showToast('Lagt i Vinn tilbake'); loadWinback(); } // umiddelbar feedback + oppdater nudge/badge
 }
 document.body.addEventListener("click",e=>{
   const nb=e.target.closest(".noshowbtn"); if(nb){handleBookingStatus(nb,'ikke_mott');return;}
@@ -1607,8 +1743,8 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   t.setAttribute("aria-selected","true");
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
   $("#"+id).classList.add("active");
-  if(id==="oversikt"){loadOversikt();loadBookinger();loadWinback();}
-  if(id==="vekst"){loadVekst();loadInnstillinger();loadVerving();}
+  if(id==="oversikt"){loadOversikt();loadBookinger();}
+  if(id==="vekst"){loadVekst();loadInnstillinger();loadVerving();loadWinback();}
   if(id==="profil")loadProfil();if(id==="tjenester"){loadTjenester();loadArbeidstider();}
   if(id==="design"){loadDesign().then(loadBilder);}
 }));
@@ -1895,36 +2031,85 @@ $("#vervSendList").addEventListener('click',function(e){ var b=e.target.closest(
 $("#vervCancel").addEventListener('click',closeVervModal);
 $("#vervModal").addEventListener('click',function(e){ if(e.target===this) closeVervModal(); });
 
-/* ---- Vinn-tilbake ---- */
-async function loadWinback(){
-  const d=await api.winback('no_show');   // KUN no-show (lapsed utsatt, spec 3b)
-  wbRender(d.no_show||[]);
+/* ---- Toast (kort, ikke-blokkerende feedback) ---- */
+let _toastT;
+function showToast(msg){
+  var t=$("#toast"); if(!t)return;
+  t.textContent=msg; t.classList.add('show');
+  clearTimeout(_toastT); _toastT=setTimeout(function(){ t.classList.remove('show'); },1900);
 }
-function wbDateStr(iso){if(!iso)return"–";const d=new Date(iso);return String(d.getDate()).padStart(2,"0")+"."+String(d.getMonth()+1).padStart(2,"0")+"."+d.getFullYear();}
-function wbRel(iso,days){ if(days===0)return'i dag'; if(days===1)return'i går'; if(days!=null)return days+' dager siden'; return wbDateStr(iso); }
-function wbRender(list){   // ferskest øverst (backend sorterer last_booking_at DESC)
-  const el=$("#wbNoShow");
-  if(!list.length){el.innerHTML='<p class="wb-empty">Ingen å følge opp nå — bra jobba.</p>';return;}
-  el.innerHTML='<div class="wb-card">'+list.map(function(c){
-    var ny=(c.days_since!=null&&c.days_since<3)?'<span class="wb-newdot" title="Ny"></span>':''; // <3 dager → «Ny»-markering
+
+/* ---- Accordion (Vekst) — chevron + aria + skjul/vis body ---- */
+document.querySelectorAll('.acc-head').forEach(function(h){
+  h.addEventListener('click',function(){
+    var open=h.getAttribute('aria-expanded')==='true';
+    h.setAttribute('aria-expanded',String(!open));
+    var body=h.nextElementSibling;
+    if(body && body.classList.contains('acc-body')) body.hidden=open;
+  });
+});
+
+/* ---- Vinn-tilbake (to grupper: «Møtte ikke opp» = no_show, «Ikke vært her på en stund» = lapsed) ---- */
+let wbFresh=0;   // ferske no-shows (≤3 dager) — driver badge (Vekst) + Oversikt-nudge
+async function loadWinback(){
+  const d=await api.winback();            // begge grupper (backend consent-filtrert; lapsed kan være tynn/tom → ikke en bug)
+  const ns=d.no_show||[], lap=d.lapsed||[];
+  wbRender(ns, lap);
+  wbFresh=ns.filter(function(c){return c.days_since!=null && c.days_since<=3;}).length;
+  updateWbSignals(wbFresh);
+}
+function updateWbSignals(n){
+  var badge=$("#wbBadge"); if(badge){ badge.textContent=n; badge.hidden=!(n>0); }
+  var nudge=$("#ovsWbNudge"); if(nudge){ nudge.textContent=n+' å følge opp i Vinn tilbake →'; nudge.hidden=!(n>0); }
+}
+function wbMonthDay(iso){ if(!iso)return'–'; var d=new Date(iso); return d.getDate()+'. '+MONTHS[d.getMonth()]; } // «14. juli»
+function wbNoShowCtx(c){                     // «no-show i dag» / «no-show i går» / «no-show 14. juli»
+  if(c.days_since===0)return'no-show i dag';
+  if(c.days_since===1)return'no-show i går';
+  return 'no-show '+wbMonthDay(c.last_booking_at);
+}
+function wbLapsedCtx(c){                     // «sist her 4. mai — 74 dager siden»
+  var since=(c.days_since!=null)?(' — '+c.days_since+' dager siden'):'';
+  return 'sist her '+wbMonthDay(c.last_booking_at)+since;
+}
+function wbGroupHtml(list,kind){
+  return '<div class="wb-card">'+list.map(function(c){
+    var ny=(kind==='no_show'&&c.days_since!=null&&c.days_since<=3)?'<span class="wb-newdot" title="Ny"></span>':''; // 1–3-dagers-nudge
+    var ctx=(kind==='no_show')?wbNoShowCtx(c):wbLapsedCtx(c);
     return '<div class="wb-row">'+
       '<div class="wb-info">'+
         '<div class="wb-name">'+ny+esc(c.name||"–")+'</div>'+
-        '<div class="wb-meta">'+(c.completed_count||0)+' klipp · no-show '+wbRel(c.last_booking_at,c.days_since)+'</div>'+
+        '<div class="wb-meta">'+(c.completed_count||0)+' klipp</div>'+
       '</div>'+
-      '<div class="wb-right"><button class="verv-btn" data-contact="'+esc(c.customer_id)+'">Kontaktet</button></div>'+
+      '<div class="wb-right">'+
+        '<div class="wb-ctx">'+ctx+'</div>'+
+        '<button class="verv-btn" data-contact="'+esc(c.customer_id)+'" style="margin-top:6px">Kontaktet</button>'+
+      '</div>'+
     '</div>';
   }).join('')+'</div>';
 }
-// «Kontaktet» → POST contacted → optimistisk fjern rad (kom tilbake ved feil). 45d snooze håndteres backend.
-$("#wbNoShow").addEventListener('click',async function(e){
+function wbRender(ns,lap){   // no-show: ferskest øverst (backend DESC). lapsed: flest klipp øverst.
+  const el=$("#wbList"); if(!el)return;
+  ns=ns||[];
+  lap=(lap||[]).slice().sort(function(a,b){return (b.completed_count||0)-(a.completed_count||0);});
+  if(!ns.length && !lap.length){ el.innerHTML='<p class="wb-empty">Ingen å følge opp nå — bra jobba.</p>'; return; }
+  var html='';
+  if(ns.length)  html+='<div class="wb-group"><p class="wb-group-h">Møtte ikke opp</p>'+wbGroupHtml(ns,'no_show')+'</div>';
+  if(lap.length) html+='<div class="wb-group"><p class="wb-group-h">Ikke vært her på en stund</p>'+wbGroupHtml(lap,'lapsed')+'</div>';
+  el.innerHTML=html;
+}
+// «Kontaktet» → POST contacted → optimistisk fjern rad (kom tilbake ved feil). 45d snooze håndteres backend. Gjelder BEGGE grupper.
+$("#wbList").addEventListener('click',async function(e){
   var b=e.target.closest('[data-contact]'); if(!b)return;
   var row=b.closest('.wb-row'); if(!row)return;
+  var wasFresh=!!row.querySelector('.wb-newdot');
   b.disabled=true; row.style.opacity='.4';
   var ok=await api.winbackContacted(b.dataset.contact);
   if(!ok){ row.style.opacity=''; b.disabled=false; return; }   // feil → kom tilbake
-  row.remove();
-  if(!$("#wbNoShow").querySelector('.wb-row')) $("#wbNoShow").innerHTML='<p class="wb-empty">Ingen å følge opp nå — bra jobba.</p>';
+  var group=row.closest('.wb-group'); row.remove();
+  if(group && !group.querySelector('.wb-row')) group.remove();  // tom gruppe → fjern overskriften også
+  if(!$("#wbList").querySelector('.wb-row')) $("#wbList").innerHTML='<p class="wb-empty">Ingen å følge opp nå — bra jobba.</p>';
+  if(wasFresh){ wbFresh=Math.max(0,wbFresh-1); updateWbSignals(wbFresh); }
 });
 
 /* ---- Tjenester ---- */
@@ -1962,6 +2147,33 @@ $("#saveSvc").addEventListener("click",async function(){
   if(!r)return;
   if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre tjenester. Prøv igjen.');return;}
   savedFlash("#svcSaved");
+});
+
+/* ---- Betaling (valgfri): rader = betalingsmetoder. Lastes fra innstillings-loaderen ved init. ---- */
+let payMethods=[];
+function payRow(v,i){return '<div class="pay-row"><input value="'+esc(v)+'" data-i="'+i+'" placeholder="Cash" aria-label="Betalingsmetode"><button class="svc-rm" data-pi="'+i+'" aria-label="Fjern betalingsmetode">&times;</button></div>';}
+function renderPay(){var el=$("#payList");if(!el)return;el.innerHTML=payMethods.map(payRow).join("");var add=$("#addPay");if(add)add.style.display=payMethods.length>=6?'none':'';}
+async function loadPayment(){                       // innstillings-loaderen (api.settings) → payment_methods
+  var s=await api.settings();
+  payMethods=((s&&s.payment_methods)||[]).slice();
+  if(!payMethods.length)payMethods=['']; // seed én tom rad så «Cash»-placeholderen vises
+  renderPay();
+}
+$("#payList").addEventListener('input',function(e){var inp=e.target.closest('input[data-i]');if(!inp)return;payMethods[+inp.dataset.i]=inp.value;});
+$("#payList").addEventListener('click',function(e){var b=e.target.closest('[data-pi]');if(!b)return;payMethods.splice(+b.dataset.pi,1);renderPay();});
+$("#addPay").addEventListener('click',function(){
+  if(payMethods.length>=6)return;
+  payMethods.push('');renderPay();
+  var inputs=$("#payList").querySelectorAll('input');if(inputs.length)inputs[inputs.length-1].focus();
+});
+$("#savePay").addEventListener('click',async function(){
+  var btn=$("#savePay"),orig=btn.textContent;btn.disabled=true;btn.textContent='Lagrer …';
+  var methods=payMethods.map(function(m){return (m||'').trim();}).filter(function(m){return m;}); // trimmet, ikke-tom, radrekkefølge
+  var r=await apiFetch('/api/dashboard/payment-methods',{method:'PUT',body:JSON.stringify({methods:methods})});
+  btn.disabled=false;btn.textContent=orig;
+  if(!r)return;
+  if(!r.ok){var d=await r.json().catch(function(){});alert((d&&d.error)||'Kunne ikke lagre betaling. Prøv igjen.');return;}
+  savedFlash("#paySaved");
 });
 
 /* ---- Design (ferdige presets) ---- */
@@ -2048,7 +2260,7 @@ $("#manageSub").addEventListener("click",function(){
 
 function applyDemoMode(){
   document.getElementById('demoBanner').classList.add('show');
-  ['saveProfil','saveSvc','saveDesign','saveHours','cropSave',
+  ['saveProfil','saveSvc','savePay','saveDesign','saveHours','cropSave',
    'slotPopupFjern','slotPopupEndre','gcalBtn','manageSub','sendIdea'].forEach(function(id){
     var el=document.getElementById(id);
     if(el){el.disabled=true;el.title='Ikke tilgjengelig i forhåndsvisning';}
@@ -2062,7 +2274,9 @@ var _bn=$("#barberName");if(_bn)_bn.textContent="";
 buildMonthSelect();
 initChartTouch(); // lag 2: koble pointer-events på #chartBars (én gang; overlever innerHTML-rebuild)
 loadProfil(); // fyller header-navn + profil-fane ved sideload
-loadOversikt();loadBookinger();loadWinback(); // Oversikt rommer nå booking-liste + vinn-tilbake
+loadOversikt();loadBookinger();
+loadWinback(); // vinn-tilbake bor nå i Vekst; init-kallet fyller Oversikt-nudgen (ferske no-shows) + badge ved sideload
+loadPayment(); // betalingsmetoder (Tjenester-fanen) fra innstillings-loaderen
 
 /* ---- Mer-meny (mobil nav) ---- */
 (function(){
@@ -2138,5 +2352,6 @@ loadOversikt();loadBookinger();loadWinback(); // Oversikt rommer nå booking-lis
   updateToggle();
 })();
 </script>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 </body>
 </html>
