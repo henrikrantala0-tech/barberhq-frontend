@@ -62,6 +62,12 @@
   status = 200
   force = true
 
+[[redirects]]
+  from = "/avmeld/*"
+  to = "https://api.trybarberhq.com/avmeld/:splat"
+  status = 200
+  force = true
+
 # 4. Proxy: ett-segment-stier → backend (barbersider).
 #    :slug matcher kun ett segment — /no/priser (to segmenter) fanges aldri.
 #    Status 200 = rewrite/proxy, URL forblir trybarberhq.com i adressefeltet.
