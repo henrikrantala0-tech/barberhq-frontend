@@ -1,0 +1,157 @@
+<!DOCTYPE html><html lang="no"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Systemer-seksjon</title>
+<style>*{margin:0;padding:0;box-sizing:border-box}body{background:#0a0a0a}</style>
+</head><body>
+<!-- ===== BarberHQ systemer-seksjon (accordion) ===== -->
+<section id="systemer" class="sys-section">
+  <div class="sys-inner">
+    <div class="sys-eyebrow">DINE STERKESTE VÅPEN</div>
+    <h2 class="sys-h2">Bygd for å fylle stolen.</h2>
+    <p class="sys-sub">To systemer som jobber i bakgrunnen og henter kundene tilbake — helt av seg selv. Trykk for å se hvordan.</p>
+
+    <div class="sys-acc">
+
+      <!-- Rad 1: Rebooking -->
+      <div class="sys-row" data-open="false" data-anim="rebooking">
+        <button class="sys-head" aria-expanded="false">
+          <span class="sys-head-ico">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
+          </span>
+          <span class="sys-head-txt">
+            <span class="sys-head-t">Rebooking</span>
+            <span class="sys-head-d">Automatisk påminnelse når det er tid for ny klipp.</span>
+          </span>
+          <span class="sys-chevron">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </button>
+        <div class="sys-panel">
+          <div class="sys-panel-in">
+            <!-- ============================================================== -->
+            <!-- CLAUDE CODE: lim HELE rebooking-mockup-en inn her.             -->
+            <!-- Det er <div class="demo-wrap">...<div class="demo" id="demo">  -->
+            <!-- ...</div></div> fra den gamle #rebooking-seksjonen.            -->
+            <!-- Behold .rbscope-wrapperen rundt slik at CSS-en treffer.        -->
+            <!-- Se trigger-instruksjon i <script> nederst.                     -->
+            <!-- ============================================================== -->
+            <div class="sys-mockup-placeholder">← rebooking-mockup (300×600) limes inn her</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rad 2: Verving -->
+      <div class="sys-row" data-open="false" data-anim="verving">
+        <button class="sys-head" aria-expanded="false">
+          <span class="sys-head-ico">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
+          <span class="sys-head-txt">
+            <span class="sys-head-t">Verving</span>
+            <span class="sys-head-d">Kunden deler din link — ny kunde gir begge rabatt.</span>
+          </span>
+          <span class="sys-chevron">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </button>
+        <div class="sys-panel">
+          <div class="sys-panel-in">
+            <!-- ============================================================== -->
+            <!-- CLAUDE CODE: lim HELE verving-mockup-en inn her.               -->
+            <!-- <div class="demo-wrap">...<div class="demo" id="vv_demo">      -->
+            <!-- ...</div></div> fra den gamle #verving-seksjonen.              -->
+            <!-- Behold .vvscope-wrapperen rundt.                               -->
+            <!-- ============================================================== -->
+            <div class="sys-mockup-placeholder">← verving-mockup (300×600) limes inn her</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+  </div>
+</section>
+
+<style>
+.sys-section{background:#0a0a0a;display:flex;justify-content:center;padding:90px 24px}
+.sys-inner{max-width:1200px;width:100%;display:flex;flex-direction:column;align-items:center;text-align:center}
+.sys-eyebrow{color:#8a8a8a;font-size:13px;letter-spacing:.22em;font-weight:600;margin-bottom:16px;
+  font-family:'Inter',-apple-system,system-ui,sans-serif}
+.sys-h2{color:#fff;font-size:clamp(40px,6vw,64px);font-weight:800;line-height:1;letter-spacing:-.04em;margin:0;
+  font-family:'Inter',-apple-system,system-ui,sans-serif}
+.sys-sub{color:#b4b4b4;font-size:17px;line-height:1.6;max-width:560px;margin:20px auto 0;
+  font-family:'Inter',-apple-system,system-ui,sans-serif}
+
+.sys-acc{margin-top:48px;width:100%;max-width:780px;display:flex;flex-direction:column;gap:14px;
+  font-family:'Inter',-apple-system,system-ui,sans-serif}
+.sys-row{background:#0e0e0e;border:1px solid #1d1d1d;border-radius:16px;overflow:hidden;transition:border-color .2s}
+.sys-row[data-open="true"]{border-color:#2a2a2a}
+.sys-head{width:100%;background:none;border:0;cursor:pointer;display:flex;align-items:center;gap:16px;
+  padding:22px 24px;text-align:left;font-family:inherit}
+.sys-head-ico{flex-shrink:0;width:46px;height:46px;border-radius:12px;background:#161616;border:1px solid #232323;
+  display:flex;align-items:center;justify-content:center;color:#4d8bff}
+.sys-head-txt{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
+.sys-head-t{color:#fff;font-size:18px;font-weight:700;letter-spacing:-.02em}
+.sys-head-d{color:#8f8f8f;font-size:14px;line-height:1.4}
+.sys-chevron{flex-shrink:0;color:#777;transition:transform .25s ease,color .2s}
+.sys-row[data-open="true"] .sys-chevron{transform:rotate(180deg);color:#fff}
+
+/* Panel: fast maks-høyde tilpasset 300x600 mockup + padding.
+   Mockupen har fast høyde (600px), så vi trenger ikke scrollHeight-måling. */
+.sys-panel{max-height:0;overflow:hidden;transition:max-height .4s ease}
+.sys-row[data-open="true"] .sys-panel{max-height:720px}
+.sys-panel-in{padding:10px 24px 34px;display:flex;justify-content:center}
+.sys-mockup-placeholder{width:300px;height:600px;border:1px dashed #2c2c2c;border-radius:24px;
+  display:flex;align-items:center;justify-content:center;color:#5a5a5a;font-size:13px;text-align:center;background:#0b0b0b}
+
+@media(max-width:560px){.sys-section{padding:64px 22px}.sys-head{padding:18px 18px}.sys-head-d{font-size:13px}}
+</style>
+
+<script>
+/* ====================================================================
+   ACCORDION + ANIMASJONS-TRIGGER
+
+   CLAUDE CODE — VIKTIG:
+   De gamle #rebooking / #verving seksjonene bruker IntersectionObserver
+   til å starte animasjonen. INNI denne accordion-en skal observeren IKKE
+   brukes (mockupen er skjult med max-height:0 til raden åpnes, så
+   observeren fyrer upålitelig).
+
+   Gjør slik når du flytter mockupene inn:
+   1. Behold play()/reset()-funksjonene fra hver animasjon, men FJERN
+      IntersectionObserver-blokken som kaller dem.
+   2. Eksponer play/reset så de kan kalles herfra. Enten:
+      - gi dem globale navn (f.eks. window.playRebooking / window.resetRebooking
+        og window.playVerving / window.resetVerving), ELLER
+      - flytt kall-logikken inn i toggle-funksjonen under.
+   3. I toggle under: når en rad ÅPNES → kall reset() så play() for den
+      raden (reset først nullstiller, så spiller den på nytt — bruker ønsker
+      replay ved hver åpning). Når raden LUKKES → kall reset() for å stoppe.
+   4. Loopen i play() (setTimeout som kaller play() igjen) kan beholdes ELLER
+      fjernes — bruker valgte "spill på nytt ved hver åpning", så loop er valgfritt.
+      Hvis du beholder loopen, sørg for at reset() ved lukking også stopper
+      den ventende timeren (clearTimeout), ellers spiller den videre skjult.
+   ==================================================================== */
+(function(){
+  document.querySelectorAll('.sys-row').forEach(function(row){
+    var head = row.querySelector('.sys-head');
+    var which = row.getAttribute('data-anim'); // "rebooking" | "verving"
+    head.addEventListener('click', function(){
+      var open = row.getAttribute('data-open') === 'true';
+      var nowOpen = !open;
+      row.setAttribute('data-open', String(nowOpen));
+      head.setAttribute('aria-expanded', String(nowOpen));
+
+      // CLAUDE CODE: koble play/reset her.
+      // if (nowOpen) {
+      //   if (which === 'rebooking') { window.resetRebooking(); window.playRebooking(); }
+      //   if (which === 'verving')   { window.resetVerving();   window.playVerving();   }
+      // } else {
+      //   if (which === 'rebooking') window.resetRebooking();
+      //   if (which === 'verving')   window.resetVerving();
+      // }
+    });
+  });
+})();
+</script>
+<!-- ===== /systemer-seksjon ===== -->
+</body></html>

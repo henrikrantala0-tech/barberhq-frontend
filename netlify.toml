@@ -1,6 +1,16 @@
 # BarberHQ — ruting og proxy.
 # Rekkefølge er kritisk: første match vinner.
 
+# 0. Interne utkast/notater — versjonert i git, men ALDRI offentlig.
+#    Publish-dir er repo-roten, så filer i _utkast/ ville ellers servert som råtekst.
+#    force = true evalueres FØR statisk fil-serving → svar 404 (body = no/-forsiden),
+#    aldri utkastets innhold. _utkast/ er to segmenter → /:slug-proxyen rører den ikke.
+[[redirects]]
+  from = "/_utkast/*"
+  to = "/no/"
+  status = 404
+  force = true
+
 # 1. Språk-redirects (kun /, med Accept-Language-betingelse)
 [[redirects]]
   from = "/"
