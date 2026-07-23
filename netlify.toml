@@ -1,16 +1,20 @@
 # BarberHQ — ruting og proxy.
 # Rekkefølge er kritisk: første match vinner.
 
-# 0. Interne filer — versjonert i git, men ALDRI offentlig.
-#    Publish-dir er repo-roten, så disse ville ellers servert som råtekst/kildekode.
-#    force = true evalueres FØR statisk fil-serving → svar 404 (body = no/-forsiden),
-#    aldri filens innhold.
-#
-#    ⚠️ CASE-FELLE (verifisert mot Netlify-docs/staff): statisk fil-serving er
-#    case-INSENSITIV — Netlify normaliserer stien til lowercase, så CLAUDE.md serveres
-#    på /claude.md. Redirect-`from` er derimot case-SENSITIV. Derfor MÅ guarden matche
-#    den normaliserte (lowercase) stien: `/claude.md` er den funksjonelle regelen,
-#    `/CLAUDE.md` er belte-og-seler. tools/ .claude/ _utkast/ er allerede lowercase.
+# Publish = kun site/. Selve siden (no/ sv/ da/ en/) bor der; alt annet på repo-roten
+# (CLAUDE.md, tools/, .claude/, _utkast/, assets/, config) ligger UTENFOR publish og kan
+# strukturelt ikke serveres. Dette er PRIMÆRVERNET mot lekkasje av interne filer.
+# Bakgrunn: redirect-guards alene er IKKE vanntette — Netlifys fil-serving er
+# case-INSENSITIV (serverer CLAUDE.md for /Claude.md, /CLAUDE.MD, …) mens redirect-`from`
+# er case-SENSITIV, så case-varianter omgår enhver enumerert guard (empirisk bekreftet
+# mot prod). Kun «ikke i publish» lukker hele klassen.
+[build]
+  publish = "site"
+
+# 0. Guards på interne stier — SEKUNDÆRT nett bak publish=site (defense-in-depth,
+#    fanger eksakt-case hvis publish-settingen noen gang skulle ryke). force = true
+#    evalueres før statisk fil-serving → 404. Lowercase `/claude.md` er den funksjonelle
+#    varianten (se case-notatet over); `/CLAUDE.md` er belte-og-seler.
 [[redirects]]
   from = "/claude.md"
   to = "/no/"
