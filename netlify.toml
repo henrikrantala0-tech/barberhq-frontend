@@ -1,10 +1,40 @@
 # BarberHQ — ruting og proxy.
 # Rekkefølge er kritisk: første match vinner.
 
-# 0. Interne utkast/notater — versjonert i git, men ALDRI offentlig.
-#    Publish-dir er repo-roten, så filer i _utkast/ ville ellers servert som råtekst.
+# 0. Interne filer — versjonert i git, men ALDRI offentlig.
+#    Publish-dir er repo-roten, så disse ville ellers servert som råtekst/kildekode.
 #    force = true evalueres FØR statisk fil-serving → svar 404 (body = no/-forsiden),
-#    aldri utkastets innhold. _utkast/ er to segmenter → /:slug-proxyen rører den ikke.
+#    aldri filens innhold.
+#
+#    ⚠️ CASE-FELLE (verifisert mot Netlify-docs/staff): statisk fil-serving er
+#    case-INSENSITIV — Netlify normaliserer stien til lowercase, så CLAUDE.md serveres
+#    på /claude.md. Redirect-`from` er derimot case-SENSITIV. Derfor MÅ guarden matche
+#    den normaliserte (lowercase) stien: `/claude.md` er den funksjonelle regelen,
+#    `/CLAUDE.md` er belte-og-seler. tools/ .claude/ _utkast/ er allerede lowercase.
+[[redirects]]
+  from = "/claude.md"
+  to = "/no/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/CLAUDE.md"
+  to = "/no/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/tools/*"
+  to = "/no/"
+  status = 404
+  force = true
+
+[[redirects]]
+  from = "/.claude/*"
+  to = "/no/"
+  status = 404
+  force = true
+
 [[redirects]]
   from = "/_utkast/*"
   to = "/no/"
@@ -120,5 +150,34 @@
 
 [[headers]]
   for = "/en/"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+# 6. noindex på interne stier — belte-og-seler bak guardene i seksjon 0.
+#    Hvis en guard-regel ryker ved en senere netlify.toml-endring og fila serveres
+#    med 200, sikrer denne headeren at søkemotorer ikke indekserer den likevel.
+#    /claude.md i lowercase (samme case-felle som guarden — se seksjon 0).
+[[headers]]
+  for = "/claude.md"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/CLAUDE.md"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/tools/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/.claude/*"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/_utkast/*"
   [headers.values]
     X-Robots-Tag = "noindex"
