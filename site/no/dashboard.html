@@ -246,7 +246,15 @@
   .subcard .pln b{font-size:26px;font-weight:800;letter-spacing:-.03em}
   .subcard .pln span{font-size:13px;color:var(--mut)}
   .substatus{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--good);background:var(--good-bg);padding:5px 11px;border-radius:7px;margin-bottom:16px}
+  .substatus.bad{color:var(--bad);background:var(--bad-bg)}
+  .substatus.mut{color:var(--mut);background:var(--line)}
   .subcard p{font-size:13px;color:var(--ink-2);margin-bottom:16px;line-height:1.5}
+  .sub-banner{max-width:520px;padding:12px 15px;border-radius:10px;font-size:13px;line-height:1.5;margin-bottom:16px}
+  .sub-banner.bad{background:var(--bad-bg);color:var(--bad);border:1px solid var(--bad)}
+  .sub-banner.info{background:var(--info-bg);color:var(--info);border:1px solid var(--info)}
+  .sub-banner.mut{background:var(--surface);color:var(--mut);border:1px solid var(--line)}
+  .sub-banner strong{font-weight:700}
+  .sub-micro{font-size:12px;color:var(--mut);margin:9px 2px 0;line-height:1.45;max-width:520px}
 
   .dlbl{font-size:12px;color:var(--mut);font-weight:600;margin:16px 0 4px;letter-spacing:-.01em}
   .design-wrap{display:grid;grid-template-columns:1fr 281px;grid-template-rows:auto auto;gap:0 30px;align-items:start}
@@ -938,13 +946,17 @@
   <section class="panel" id="abonnement">
     <p class="block-h">Abonnement</p>
     <p class="block-s">Planen din og betaling.</p>
+    <div class="sub-banner" id="subReturn" role="status" style="display:none"></div>
+    <div class="sub-banner" id="subBanner" role="alert" style="display:none"></div>
     <div class="subcard">
-      <div class="substatus" id="subStatus">&#9679; Gratisperiode — 23 dager igjen</div>
+      <div class="substatus" id="subStatus">&#9679; Henter abonnementsstatus …</div>
       <div class="pln"><b>249 kr</b><span>/ mnd</span></div>
-      <p>Alt inkludert. Ingen binding — du kan si opp når som helst. Første trekk skjer når gratisperioden er over.</p>
-      <button class="btn-outline" id="manageSub">Administrer abonnement</button>
+      <p id="subBlurb">Alt inkludert. Ingen binding — du kan si opp når som helst.</p>
+      <button class="btn" id="startSub" style="display:none">Start 30 dager gratis</button>
+      <p class="sub-micro" id="startMicro" style="display:none">Kortet trekkes ikke før etter 30 dager. Si opp når som helst.</p>
+      <button class="btn-outline" id="manageSub" style="display:none">Administrer abonnement</button>
     </div>
-    <p class="ctx" style="margin-top:12px">«Administrer abonnement» åpner Stripe, der du kan bytte kort, se kvitteringer eller si opp.</p>
+    <p class="ctx" id="subCtx" style="margin-top:12px;display:none">«Administrer abonnement» åpner Stripe, der du kan bytte kort, se kvitteringer eller si opp.</p>
   </section>
 </div>
 
@@ -2252,16 +2264,95 @@ $("#saveDesign").addEventListener("click",async function(){
   await loadBilder(); // re-hent bilder (layout-bytte kan ha hard-slettet slots) + lås opp slots
 });
 
-/* ---- Abonnement ---- */
+/* ---- Abonnement / billing (ekte, aldri mock) ---- */
+// GET /billing/status → {subscription_status, trial_ends_at, page_status, days_left}.
+// subscription_status er null før første checkout, ellers trialing|active|past_due|canceled|unpaid.
+async function loadBilling(){
+  const r=await apiFetch('/api/dashboard/billing/status');
+  if(!r||!r.ok)return; // 401 → apiFetch redirigerte; annen feil → behold «henter …»-tekst, ingen krasj
+  renderBilling(await r.json());
+}
+function renderBilling(b){
+  const st=String((b&&b.subscription_status)||'').toLowerCase();
+  const dl=(b&&typeof b.days_left==='number')?b.days_left:null;
+  const status=$("#subStatus"),blurb=$("#subBlurb"),banner=$("#subBanner"),
+        start=$("#startSub"),micro=$("#startMicro"),manage=$("#manageSub"),ctx=$("#subCtx");
+  // nullstill
+  status.className='substatus';
+  banner.style.display='none';banner.className='sub-banner';
+  start.style.display='none';micro.style.display='none';manage.style.display='none';ctx.style.display='none';
+  const showStart=()=>{start.style.display='';micro.style.display='';};
+  const showManage=()=>{manage.style.display='';ctx.style.display='';};
+  const dager=n=>n+' dag'+(n===1?'':'er');
+  if(st==='trialing'){
+    status.innerHTML='&#9679; Gratisperiode'+(dl!=null?' — '+dager(dl)+' igjen':'');
+    blurb.textContent='Alt inkludert. Ingen binding — du kan si opp når som helst. Første trekk skjer når gratisperioden er over.';
+    showManage();
+  }else if(st==='active'){
+    status.innerHTML='&#9679; Aktivt abonnement';
+    blurb.textContent='Alt inkludert. Ingen binding — du kan si opp når som helst.';
+    showManage();
+  }else if(st==='past_due'){
+    status.className='substatus bad';status.innerHTML='&#9679; Betaling feilet';
+    banner.className='sub-banner bad';banner.style.display='';
+    banner.innerHTML='<strong>Betaling feilet — oppdater kortet ditt.</strong> Siden din står fortsatt.';
+    blurb.textContent='Oppdater kortet i Stripe for å beholde abonnementet.';
+    showManage();
+  }else if(st==='canceled'||st==='unpaid'){
+    status.className='substatus bad';status.innerHTML='&#9679; Abonnementet er avsluttet';
+    banner.className='sub-banner bad';banner.style.display='';
+    banner.innerHTML='<strong>Abonnementet er avsluttet — siden er tatt ned.</strong> Start på nytt for å publisere igjen.';
+    blurb.textContent='Start abonnementet på nytt for å ta siden i bruk igjen.';
+    showStart();
+  }else{
+    // ingen subscription ennå (null / ukjent)
+    status.className='substatus mut';status.innerHTML='&#9679; Ingen aktivt abonnement';
+    blurb.textContent='Prøv gratis i 30 dager. Deretter 249 kr/mnd — ingen binding, si opp når som helst.';
+    showStart();
+  }
+}
+// POST /billing/checkout → {url}. Setter IKKE siden live (separat «Gå live»-handling).
+$("#startSub").addEventListener("click",async function(){
+  if(IS_DEMO)return;
+  const btn=this;btn.disabled=true;
+  try{
+    const r=await apiFetch('/api/dashboard/billing/checkout',{method:'POST',body:'{}'});
+    if(!r)return; // 401 redirigert
+    if(!r.ok){const d=await r.json().catch(()=>({}));alert(d.error||'Kunne ikke starte betaling. Prøv igjen.');btn.disabled=false;return;}
+    const d=await r.json().catch(()=>({}));
+    if(d&&d.url){window.location.href=d.url;} // Stripe Checkout
+    else{alert('Kunne ikke starte betaling. Prøv igjen.');btn.disabled=false;}
+  }catch(e){alert('Kunne ikke starte betaling. Prøv igjen.');btn.disabled=false;}
+});
+// GET /billing/portal → 303 til Stripe (browser følger redirect).
 $("#manageSub").addEventListener("click",function(){
-  if(CONFIG.USE_MOCK){alert("I demo. Når backend er live åpner denne Stripe-portalen, der du kan bytte kort, se kvitteringer eller si opp.");return;}
+  if(IS_DEMO)return;
   window.location.href=CONFIG.API_BASE+"/api/dashboard/billing/portal";
 });
+// Retur fra Stripe Checkout. Betaling ≠ publisering: barberen må selv trykke «Gå live».
+function applyBillingReturn(){
+  const q=new URLSearchParams(location.search);
+  const live=q.get('live')==='1',avbrutt=q.get('avbrutt')==='1';
+  if(!live&&!avbrutt)return;
+  if(typeof switchPanel==='function')switchPanel('abonnement');
+  const el=$("#subReturn");
+  if(el){
+    if(live){
+      el.className='sub-banner info';
+      el.innerHTML='<strong>Betaling registrert ✓</strong> Siden er ikke live ennå — den publiseres ikke automatisk. Trykk «Gå live» når du er klar.';
+    }else{
+      el.className='sub-banner mut';
+      el.innerHTML='Betalingen ble avbrutt. Du kan starte når som helst.';
+    }
+    el.style.display='';
+  }
+  history.replaceState(null,'',location.pathname); // rydd flagg → refresh viser ikke banneret igjen
+}
 
 function applyDemoMode(){
   document.getElementById('demoBanner').classList.add('show');
   ['saveProfil','saveSvc','savePay','saveDesign','saveHours','cropSave',
-   'slotPopupFjern','slotPopupEndre','gcalBtn','manageSub','sendIdea'].forEach(function(id){
+   'slotPopupFjern','slotPopupEndre','gcalBtn','manageSub','startSub','sendIdea'].forEach(function(id){
     var el=document.getElementById(id);
     if(el){el.disabled=true;el.title='Ikke tilgjengelig i forhåndsvisning';}
   });
@@ -2277,6 +2368,7 @@ loadProfil(); // fyller header-navn + profil-fane ved sideload
 loadOversikt();loadBookinger();
 loadWinback(); // vinn-tilbake bor nå i Vekst; init-kallet fyller Oversikt-nudgen (ferske no-shows) + badge ved sideload
 loadPayment(); // betalingsmetoder (Tjenester-fanen) fra innstillings-loaderen
+loadBilling().then(applyBillingReturn); // abonnementsstatus (ekte) → deretter ev. retur-flagg fra Stripe
 
 /* ---- Mer-meny (mobil nav) ---- */
 (function(){
