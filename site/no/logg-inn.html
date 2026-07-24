@@ -45,6 +45,11 @@ a{text-decoration:none;color:inherit}
 .error{color:#c0594a;font-size:13.5px;margin-bottom:12px;text-align:center;display:none}
 .error.show{display:block}
 
+/* Nøytral merknad — utløpt/brukt magisk lenke er ikke en brukerfeil, så den
+   dempes til grå i stedet for rød feilfarge. */
+.notice{color:#9a9a9a;font-size:13.5px;margin-bottom:12px;text-align:center;display:none}
+.notice.show{display:block}
+
 /* ── Knapp ── */
 .btn-login{width:100%;background:#4d8bff;color:#fff;border:none;border-radius:10px;padding:14px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .18s;margin-top:4px}
 .btn-login:hover:not(:disabled){opacity:.88}
@@ -89,7 +94,7 @@ a{text-decoration:none;color:inherit}
     <h1>Logg inn</h1>
     <p class="card-sub">Velkommen tilbake.</p>
 
-    <p class="error" id="expired-msg"></p>
+    <p class="notice" id="expired-msg"></p>
 
     <div class="field">
       <label for="email">E-post</label>
@@ -158,7 +163,7 @@ a{text-decoration:none;color:inherit}
   var params = new URLSearchParams(location.search);
   if (params.get('error') === 'expired') {
     var expEl = document.getElementById('expired-msg');
-    expEl.textContent = 'Lenken har utløpt eller er brukt. Be om en ny.';
+    expEl.textContent = 'Logg inn med e-post og passord, eller be om en ny lenke.';
     expEl.classList.add('show');
   }
 
