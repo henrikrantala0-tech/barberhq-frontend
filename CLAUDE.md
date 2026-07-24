@@ -277,8 +277,6 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 ### Lav / polish
 9. **WebAuthn-instruksjonsbanner + «App kommer»-banner** i dashboard.
 10. **favicon.ico mangler** — 404 på alle sider (kosmetisk).
-11. **`logg-inn.html` `?error=expired`** — dempet grå i stedet for rød: «Logg inn med e-post og
-    passord, eller be om en ny lenke.»
 
 ### Teknisk gjeld
 12. **`buildHeroHeader()` (fyll.cjs) er dødkode** — backend-CLAUDE.md sier feilaktig «Hero bruker
