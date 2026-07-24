@@ -13,8 +13,14 @@ Søsterrepo: barberhq-backend (Railway).
 - Oversettelse av dashboard gjøres via oversett_dash.py (i backend-repo/verktøy).
 
 ## Struktur
-- no/ sv/ da/ en/ — én mappe per språk
-- _redirects + netlify.toml — styrer språk-ruting på Netlify
+- **Publish-rot er `site/`** (satt i netlify.toml `[build] publish = "site"`, commit `04558f9`).
+  Alt utenfor `site/` — CLAUDE.md, tools/, .claude/, _utkast/, assets/, config — ligger
+  strukturelt utenfor prod og kan ikke serveres.
+- site/no/ site/sv/ site/da/ site/en/ — én mappe per språk.
+  **Kortform:** `no/`, `sv/`, `da/`, `en/` brukes videre i dette dokumentet som språk-kortform;
+  på disk er stien alltid `site/<språk>/`.
+- netlify.toml — styrer språk-ruting på Netlify. (`_redirects` er BORTE — rutingen ble
+  konsolidert inn i netlify.toml i commit `6c4be83`.)
 - Hver språkmappe: index.html (landing), kom-i-gang.html (onboarding),
   dashboard.html, + funksjoner/priser/support/logg-inn.html/opprett-passord.html
 - **Logo:** `assets/logo/` — master SVG + eksportvarianter (email, social, og).
@@ -106,16 +112,16 @@ Søsterrepo: barberhq-backend (Railway).
 
 **Arbeidslogger hører ikke hjemme i CLAUDE.md. Bruk git-historikk.**
 
-## no/index.html — seksjonsrekkefølge (låst 26.06)
+## site/no/index.html — seksjonsrekkefølge (låst 26.06)
 1. Hero (`#top`)
-2. Produktvisning (`.pv-section` — fra `produktvisning-seksjon.html`)
+2. Produktvisning (`.pv-section` — fra `_utkast/produktvisning-seksjon.html`)
 3. Selvbooking (`#selvbooking`)
 4. Vekst-intro (`#vekst`) → Rebooking (`#rebooking`) → Verving (`#verving`)
 5. Avsluttende CTA (`.final-cta`)
 Mangler (skrives separat): Problemet (#2), Din side/anti-marketplace (#5), Prøv gratis 30d (#7).
 sv/, da/, en/ følger ikke denne rekkefølgen ennå — gjøres i oversettelses-jobben.
 
-## no/index.html — kjente fikser og tilstand (02.07)
+## site/no/index.html — kjente fikser og tilstand (02.07)
 - **Telefon-mockup tastatur (02.07):** Delt tastatur i `.rbscope` og `.vvscope`
   var 210px og klippet knappene "Klikk her"/"Levert" (rebooking) og "Del min link"
   (verving). Fiks: `.keyboard` height 210→150px, padding `8px 4px 24px`→`6px 4px 14px`,
@@ -155,7 +161,7 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
 - **Design-fane:** live forhåndsvisning via `GET /api/dashboard/preview?layout&palette&font&mode` — full **server-render** av barberens EKTE side (`byggSideFraBarber → fill → booking-module.cjs`; `preview:true` hopper over /days+/slots og åpner sheet). Samme kilde som publisert side = ingen drift. `dashboard.html` setter kun `srcdoc` (cache per param-kombo, synlig `previewError` ved feil); ingen klient-fyll. Endepunktet `console.warn`-er på ufylt `{{PLACEHOLDER}}` — erstattet den gamle stille slutt-wipen (`replace(/{{[A-Z_]+}}/g,'')`) som skjulte at booking-modulen (all aksentfarge) aldri ble injisert → helt svart/hvit preview i ~4 mnd (rot-årsak: FASE B `6d06a8d` flyttet booking-UI inn i `{{BOOKING_MODULE}}` som wipen slettet). Layout-kort som ren tekst.
 - **Preview 11.07:** booking-sheet auto-open fjernet (`booking-module.cjs`) — preview viser forside først, som live. Tomme forside-felt viser dempede plassholdere i preview (`(spesialitet)`/`(adresse)`/`(bio)` + grå bilde-bokser via delt `{{PH_CSS}}`); live kollapser som før. (Layout-preview-«buggen» var browser-cache, ikke kode.)
 - **Mobil-nav:** "Mer"-meny — **Oversikt + Vekst** alltid synlig, resten (Profil · Tjenester & tider · Design · Konto) i dropdown; desktop viser alle. Mobil Design-layout: preview sentrert, rekkefølge valg → preview → Lagre, 2-kolonne kort, breakpoint 700px.
-- **Palett-konsistens:** én delt kilde (`palett.js`) for kom-i-gang + dashboard, i synk med `fyll.cjs`. Ren svart/hvit bakgrunn i mørk modus, aksent skiller.
+- **Palett-konsistens:** én delt kilde (`site/no/palett.js`) for kom-i-gang + dashboard, i synk med `fyll.cjs`. Ren svart/hvit bakgrunn i mørk modus, aksent skiller.
 - **Kundeside bygges fra `barbers`-raden** (ikke `orders.payload`): alt barbereren endrer (design, layout, font, adresse, bio, bilder, tjenester) når bookingsiden. Oppslag via `barbers.slug`, status-gating via `barbers.page_status`. `savedLayout` er skilt fra `design.layout` — Bilder-fanen leser alltid lagret DB-verdi.
 
 ### Oversikt-diagram (Oversikt-fanen)
@@ -173,7 +179,7 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 ### Bildeplasserings-system (slots)
 - `images` har `slot` (portrett/hero/galleri) + `sort_order`. Barbereren trykker en slot-boks per layout → laster opp dit. Galleri-grense 10; erstatning av portrett/hero sletter gammelt helt (DB+R2). `PATCH /images/:id/slot` flytter. Layout-bytte hard-sletter (DB+R2), transaksjonssikret (BEGIN/COMMIT/ROLLBACK, R2 best-effort utenfor transaksjon).
 - `byggSideFraBarber()` leser slots (ikke opplastingsrekkefølge) — barberens plassering styrer siden.
-- **Crop:** Cropper.js 1.6.2 self-hostet i `no/lib/`. Beskjær-ikon (modal) + ×-ikon per bilde. Crop og Endre bruker `PUT /api/dashboard/images/:id` — bytter R2-fil, bevarer slot/sort_order (destruktiv klientside-crop, canvas→blob→PUT). Aspect: portrett 1:1, galleri 3:4, hero 9:19.5.
+- **Crop:** Cropper.js 1.6.2 self-hostet i `site/no/lib/`. Beskjær-ikon (modal) + ×-ikon per bilde. Crop og Endre bruker `PUT /api/dashboard/images/:id` — bytter R2-fil, bevarer slot/sort_order (destruktiv klientside-crop, canvas→blob→PUT). Aspect: portrett 1:1, galleri 3:4, hero 9:19.5.
 
 ### Ordre → barber (Modell B — automatisk)
 - Ordre inn → `buildBarberFromOrder(orderId,{pool})` (`src/lib/`) kjøres AUTOMATISK: egen transaksjon, idempotent, `rows[0]`-safe. Slug mot `barbers`, INSERT barbers, UPDATE `orders.barber_id`, re-knytt onboarding-bilder, auto-tildel slots (galleri maks 10; hero → første bilde; direkte → ingen; portrett ALDRI auto). Ved suksess: `orders.status = 'forhandsvist'`.
@@ -198,7 +204,7 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 
 ## Dashboard: fane-struktur (11 → 6, GJENNOMFØRT 11.07)
 
-`no/dashboard.html` er slått sammen fra 11 til 6 faner:
+`site/no/dashboard.html` er slått sammen fra 11 til 6 faner:
 
 1. **Oversikt** = Oversikt + Bookinger + vinn-tilbake-**liste**. Pengeside-rekkefølge:
    KPI/omsetning → graf → «Drevet av BarberHQ» → kommende bookinger → full booking-liste
@@ -226,7 +232,7 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
   Dette er en MVP-forenkling. Booking-validering mot `business_hours` bruker denne utledningen.
   Riktig løsning: egen `timezone`-kolonne på `barbers`, satt per barber ved onboarding, og bruk den
   i stedet for market-mappingen. Må fikses før vi tar inn barberere utenfor CET/UK.
-- **buildPalette er duplisert i fyll.cjs og no/palett.js — må holdes i synk manuelt.**
+- **buildPalette er duplisert i fyll.cjs og site/no/palett.js — må holdes i synk manuelt.**
 - **«Drevet av BarberHQ»-seksjonen (Oversikt) er ren mock** (`MOCK_DRIVEN` × flat 350 kr, ikke
   koblet). Erstattes av ekte `GET /api/dashboard/attribution` — se Må gjøres. Viser oppdiktede
   tall til da (bryter ikke ingen-fabrikkerte-regelen før ekte kunde, men launch er ikke her).
@@ -281,13 +287,14 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 14. **Hero-bildegrense server-side** + **orders.barber_id FK-enforcement** — se sikkerhetshull.
 15. **Oversettelse (utsatt fase):** plassholder-strenger (`(spesialitet)`/`(adresse)`/`(bio)`) +
     4 bilde-hjelpetekster + alt sv/da/en. Greppbar markør i koden: `[oversettelse: sv/da/en]`.
-16. **Tidssone hardkodet via market** + **buildPalette duplisert** (fyll.cjs ↔ palett.js) — se
+16. **Tidssone hardkodet via market** + **buildPalette duplisert** (fyll.cjs ↔ site/no/palett.js) — se
     «Kjent teknisk gjeld» over.
 
-### Rydding (untracked repo-filer)
-`git clean -f` ville slette både søppel OG ekte arbeid — ikke kjør blindt. Splitt:
-- **Seksjonsutkast (commit vs. flytt ut, IKKE slett):** `din-side-seksjon.html`,
-  `din-side__bilde.html`, `problem-seksjon.html`, `problem-seksjon__venstre.html`,
-  `systemer-seksjon.html`, `produktvisning-seksjon.html`, `SPEC-bytt-seksjoner.md`.
-- **Scratchpad-test (kan slettes):** `*_render_test.mjs`, `*_test.mjs`, `demo_*.mjs`, `pw-screenshots/`.
-- `package.json`/`package-lock.json` (Playwright-tooling) — vurder å committe.
+### Hvor filer bor (plasseringsregler)
+- **Seksjonsutkast bor i `_utkast/`** — `din-side-seksjon.html`, `din-side__bilde.html`,
+  `problem-seksjon.html`, `problem-seksjon__venstre.html`, `systemer-seksjon.html`,
+  `produktvisning-seksjon.html`, `SPEC-bytt-seksjoner.md`. Katalogen ligger utenfor publish-rota
+  `site/` og serveres aldri. Nye utkast hører hjemme her, ikke i repo-rota.
+- **Playwright-tooling** (`package.json`/`package-lock.json`) hører hjemme i repo-rota.
+- **Scratchpad-testfiler** (`*_render_test.mjs`, `*_test.mjs`, `demo_*.mjs`, `pw-screenshots/`)
+  hører ikke hjemme i repoet i det hele tatt — legg dem i scratchpad-katalogen utenfor repoet.
