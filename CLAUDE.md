@@ -283,7 +283,9 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 13. **R2-foreldreløse bildeblobber** fra de 5 slettede test-barberne.
 14. **Hero-bildegrense server-side** + **orders.barber_id FK-enforcement** — se sikkerhetshull.
 15. **Oversettelse (utsatt fase):** plassholder-strenger (`(spesialitet)`/`(adresse)`/`(bio)`) +
-    4 bilde-hjelpetekster + alt sv/da/en. Greppbar markør i koden: `[oversettelse: sv/da/en]`.
+    4 bilde-hjelpetekster + Vekst-flytens nye ledd (Påminnelse-boks «Kvelden før» + kortede
+    undertekster + SMS-samtykke-linja i Rebooking-trekkspillet) + alt sv/da/en. Greppbar markør i
+    koden: `[oversettelse: sv/da/en]`.
 16. **Tidssone hardkodet via market** + **buildPalette duplisert** (fyll.cjs ↔ site/no/palett.js) — se
     «Kjent teknisk gjeld» over.
 
