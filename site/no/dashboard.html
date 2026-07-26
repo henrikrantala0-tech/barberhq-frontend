@@ -491,7 +491,7 @@
   .flow{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 20px 16px;margin-top:28px}
   .flow-h{font-size:15px;font-weight:700;letter-spacing:-.01em;margin-bottom:4px}
   .flow-sub{color:var(--mut);font-size:12.5px;line-height:1.5;margin-bottom:18px}
-  .flow-steps{display:grid;grid-template-columns:1fr 22px 1.25fr 22px 1.25fr;gap:8px;align-items:stretch}
+  .flow-steps{display:grid;grid-template-columns:1fr 20px 1fr 20px 1fr 20px 1fr;gap:7px;align-items:stretch}
   .flow-step{border-radius:11px;padding:13px 14px}
   .fs-dag{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;margin-bottom:8px}
   .fs-t{font-size:14px;font-weight:600;display:flex;align-items:center;gap:7px;margin-bottom:3px;letter-spacing:-.01em}
@@ -501,6 +501,8 @@
   .fs-null .fs-dag{color:var(--mut)} .fs-null .fs-d{color:var(--mut)}
   .fs-auto{background:rgba(62,207,126,.12)}
   .fs-auto .fs-dag{color:rgba(62,207,126,.9)} .fs-auto .fs-t{color:#3ecf7e} .fs-auto .fs-d{color:rgba(62,207,126,.85)}
+  /* Lys modus: dempet grønn skrift for lesbarhet på lys grønn-tint (dark urørt) */
+  html[data-theme="light"] .fs-auto .fs-dag{color:#158a4e} html[data-theme="light"] .fs-auto .fs-t{color:#0f8a48} html[data-theme="light"] .fs-auto .fs-d{color:#1c9455}
   .fs-du{background:rgba(77,139,255,.12)}
   .fs-du .fs-dag{color:rgba(77,139,255,.9)} .fs-du .fs-t{color:#4d8bff} .fs-du .fs-d{color:rgba(77,139,255,.85)}
   .flow-arrow{display:flex;align-items:center;justify-content:center;color:var(--mut-2);font-size:15px}
@@ -649,27 +651,35 @@
     <p class="block-h" style="margin-top:28px">Kunder per måned</p>
     <p class="block-s">Siste seks måneder.</p>
     <div class="trend" id="trend"></div>
-    <!-- FLYTMODELL — «Slik henger det sammen» (over alle accordions, alltid åpen) -->
+    <!-- FLYTMODELL — «Slik henger det sammen» (over alle accordions, alltid åpen).
+         [oversettelse: sv/da/en] nye strenger: Kvelden før · Påminnelse · Automatisk · Booket via siden din · Du tar over
+         + acc-lead i Rebooking-trekkspillet (SMS-samtykke vs. Påminnelse). -->
     <div class="flow">
       <h3 class="flow-h">Slik henger det sammen</h3>
       <p class="flow-sub">Automatikken tar de første ukene. Etter 60 dager er det din tur.</p>
       <div class="flow-steps">
+        <div class="flow-step fs-auto">
+          <div class="fs-dag">Kvelden før</div>
+          <div class="fs-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Påminnelse</div>
+          <div class="fs-d">Automatisk</div>
+        </div>
+        <div class="flow-arrow"><span class="fa-right">&#8594;</span><span class="fa-down">&#8595;</span></div>
         <div class="flow-step fs-null">
           <div class="fs-dag">Dag 0</div>
           <div class="fs-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>Kunden klippes</div>
-          <div class="fs-d">Klokka starter</div>
+          <div class="fs-d">Booket via siden din</div>
         </div>
         <div class="flow-arrow"><span class="fa-right">&#8594;</span><span class="fa-down">&#8595;</span></div>
         <div class="flow-step fs-auto">
-          <div class="fs-dag">Dag 28–45 · automatisk</div>
-          <div class="fs-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Rebooking-SMS</div>
-          <div class="fs-d">Med booking-lenka di</div>
+          <div class="fs-dag">Dag 28–45</div>
+          <div class="fs-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Rebooking</div>
+          <div class="fs-d">Automatisk</div>
         </div>
         <div class="flow-arrow"><span class="fa-right">&#8594;</span><span class="fa-down">&#8595;</span></div>
         <div class="flow-step fs-du">
-          <div class="fs-dag">Dag 60+ · du tar over</div>
+          <div class="fs-dag">Dag 60+</div>
           <div class="fs-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Vinn tilbake</div>
-          <div class="fs-d">Personlig melding fra deg</div>
+          <div class="fs-d">Du tar over</div>
         </div>
       </div>
       <div class="flow-noshow">
@@ -719,6 +729,7 @@
           <span class="acc-chev">▾</span>
         </button>
         <div class="acc-body" hidden>
+          <p class="acc-lead">Rebooking-SMS går kun til kunder som har samtykket til SMS ved booking. Påminnelse har ingen slik begrensning.</p>
           <div class="sett-card">
             <div class="tog-row">
               <div>
