@@ -174,7 +174,7 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 - **Uke-rekord (lag 4) — KUN pill-modus inneværende uke:** `current_week_revenue`/`best_week_revenue`/`best_week_start` fra `/stats` (backend-beregnet, on-read/Oslo, best = MAX ferdige uker). Gull-KPI (`#estRevValue` gull-gradient + drop-shadow-glow + puls) tenner kun ved `current > best` OG `curPeriod==="uke"`. Dempet «Beste uke: X kr · [mnd]»-fotnote ellers.
 - **Persentil + rekord-bar (batch 2) — KUN pill-modus inneværende uke:** fra `/stats.weekly_revenue` (`[{week_start,revenue}]`, all-time ferdige uker, on-read/Oslo, `max==best_week_revenue` per konstruksjon). Persentil «Bedre enn X% av dine egne uker» vist ved ≥6 uker OG pct≥50 (over median), undertrykt ved rekord. Rekord-bar `current/best`: <0.80 skjul · 0.80–1.0 «X kr unna» · ≥1.0 «Ny rekord denne uka! 🔥» 100% gull. Baren eier rekord-budskapet (tømmer `#rekordNote`) → ingen dobbelt. Skjult på 2uker/måned/historisk måned.
 - **Merk (aldri sett live):** mot volum-test er `current_week` (~10 550) « `best` (13 950 = 76%) → persentil + rekord-bar naturlig SKJULT. «unna»/«rekord»-tilstand kun Playwright/deterministisk verifisert. `gull-demo.cjs`-fixtur (backend-repo) kan heve `current` over tersklene for å se dem live.
-- **«Drevet av BarberHQ»:** p.t. REN MOCK (`MOCK_DRIVEN` × flat 350 kr, ikke koblet). Erstattes av ekte attribution-endepunkt — se Må gjøres + Kjent teknisk gjeld.
+- **«Drevet av BarberHQ» (Oversikt):** `renderDrivenBy` henter alltid ekte `GET /api/dashboard/attribution?period=uke|2uker|maaned` (session) via `api.attribution` — mock (`MOCK_ATTRIBUTION` + `USE_MOCK`-flagget) fjernet i `fa02e3f`. Tre rader (rebooking/vinn-tilbake/vervet); 0-rad-kategori rendrer «0 klipp · 0 kr», alle tre 0 → tomtilstand «Her bygger verdien seg opp». Delta «fra forrige uke» kun på uke-pill (2uker−uke). Skjult på historisk måneds-visning. Gjenstår: backend-query + verifiser ekte/seedet tall mot prod — se Må gjøres.
 
 ### Bildeplasserings-system (slots)
 - `images` har `slot` (portrett/hero/galleri) + `sort_order`. Barbereren trykker en slot-boks per layout → laster opp dit. Galleri-grense 10; erstatning av portrett/hero sletter gammelt helt (DB+R2). `PATCH /images/:id/slot` flytter. Layout-bytte hard-sletter (DB+R2), transaksjonssikret (BEGIN/COMMIT/ROLLBACK, R2 best-effort utenfor transaksjon).
@@ -233,13 +233,11 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
   Riktig løsning: egen `timezone`-kolonne på `barbers`, satt per barber ved onboarding, og bruk den
   i stedet for market-mappingen. Må fikses før vi tar inn barberere utenfor CET/UK.
 - **buildPalette er duplisert i fyll.cjs og site/no/palett.js — må holdes i synk manuelt.**
-- **«Drevet av BarberHQ»-seksjonen (Oversikt) er ren mock** (`MOCK_DRIVEN` × flat 350 kr, ikke
-  koblet). Erstattes av ekte `GET /api/dashboard/attribution` — se Må gjøres. Viser oppdiktede
-  tall til da (bryter ikke ingen-fabrikkerte-regelen før ekte kunde, men launch er ikke her).
-- **Dødt attribusjons-stillas på Vekst-fanen:** `api.attribution` (`dashboard.html:806`) kaller et
-  slug-basert `/api/barbers/:slug/attribution` som IKKE finnes på backend + `MOCK_ATTRIB` +
-  `renderAttrib`/`#vekstAttrib`. Nytt session-endepunkt (`/api/dashboard/attribution`) bør betjene
-  BÅDE «Drevet av» (Oversikt) og Vekst; fjern det døde slug-kallet når Vekst bygges.
+- **Attribusjon-mock er FJERNET (`fa02e3f`):** «Drevet av»-panelet er ikke lenger mock, og det gamle
+  slug-stillaset (slug-basert `/api/barbers/:slug/attribution` + `MOCK_ATTRIB` + `renderAttrib`/`#vekstAttrib`)
+  var allerede borte før dette. `api.attribution` kaller nå kun session-endepunktet
+  `/api/dashboard/attribution` (mater `renderDrivenBy` på Oversikt). Utestående gjeld ligger på backend-
+  siden (query + seedet/ekte tall) — se Må gjøres «Drevet av»-attribusjon.
 
 ## Må gjøres (prioritert)
 
@@ -271,8 +269,9 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
    `ranked→classified`-CASE-query (prioritet vervet>recovery>rebooking, ekte `price_nok`)
    eksponert som `GET /api/dashboard/attribution?period=uke|2uker|maaned` (session, vinduer
    matcher `sliceDaily`). **Query-plan + åpen vervet-beslutning: se barberhq-backend CLAUDE.md.**
-   Frontend her: `renderDrivenBy` async mot endepunktet, A-framing-titler (ikke «slik ble stolen
-   fylt»), skjul på måneds-visning (samme mønster som persentil/rekord-bar). Deretter Vekst-fanen.
+   Frontend her: GJORT (`fa02e3f`) — `renderDrivenBy` async mot session-endepunktet, mock/`USE_MOCK`
+   fjernet, A-framing-titler, 0-rad-håndtering, skjul på historisk måneds-visning. Gjenstår: backend-
+   query + verifiser ekte/seedet tall mot prod. Deretter Vekst-fanen.
 
 ### Lav / polish
 9. **WebAuthn-instruksjonsbanner + «App kommer»-banner** i dashboard.
