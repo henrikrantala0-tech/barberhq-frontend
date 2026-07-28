@@ -12,6 +12,23 @@ Søsterrepo: barberhq-backend (Railway).
 - da/ og sv/ MANGLER dashboard.html foreløpig. Fikses i oversettelses-jobben.
 - Oversettelse av dashboard gjøres via oversett_dash.py (i backend-repo/verktøy).
 
+### Land + tidssone i site/en/kom-i-gang.html (bygget 27.07, committet 28.07)
+Verifisert på 320/375. **Committet lokalt, IKKE pushet** — ligger sammen med
+layout-galleriet i én commit:
+- **Land-felt** (`#countryPick`, UK/USA, ingen forhåndsvalgt verdi) mellom By og E-post.
+  `market` sendes nå fra dette valget, ikke fra språk — `L2M`-mappen er FJERNET i en/.
+  no/, sv/, da/ har fortsatt sin egen `L2M`-linje og er urørt.
+- **Tidssone-felt** (`#o-tz`, seks IANA-soner) som vises kun ved USA, sendes som `timezone`
+  topp-nivå, nullstilles og utelates ved bytte tilbake til UK.
+- **City-placeholder** følger landvalget (UK «e.g. London» / USA «e.g. Miami»).
+- Payload verifisert med avlyttet fetch: UK ⇒ `market=UK` uten timezone; US ⇒ `market=US` +
+  `timezone`; US→UK ⇒ timezone droppet. Validering blokkerer steg 2 ved manglende land og ved
+  USA uten tidssone.
+- **Backend tar ikke imot dette ennå:** `market='US'` treffer ingen gren, og `timezone` ignoreres
+  (tidssone utledes fortsatt av `barbers.market`). Se «Kjent teknisk gjeld».
+- Merk: `kom-i-gang.html` har ingen lys variant — sida er hardkodet mørk, ingen
+  `prefers-color-scheme`. Lys/mørk-bryteren i steg 2 gjelder kundesida, ikke skjemaet.
+
 ## Struktur
 - **Publish-rot er `site/`** (satt i netlify.toml `[build] publish = "site"`, commit `04558f9`).
   Alt utenfor `site/` — CLAUDE.md, tools/, .claude/, _utkast/, assets/, config — ligger
@@ -238,6 +255,97 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
   var allerede borte før dette. `api.attribution` kaller nå kun session-endepunktet
   `/api/dashboard/attribution` (mater `renderDrivenBy` på Oversikt). Utestående gjeld ligger på backend-
   siden (query + seedet/ekte tall) — se Må gjøres «Drevet av»-attribusjon.
+- **Demo-fotoene til layout-galleriet fantes ikke som kildefiler** — `site/no/images/layout-*.webp`
+  er ferdig komponerte mockups levert utenfra (832×1740, transparent bakgrunn, telefonramme), og
+  fotoene måtte klippes ut av dem igjen for hvert nytt språk. **Løst 28.07:** utklippene ligger nå
+  som kilder i `_utkast/layout_gallery_en/kilder/` (utenfor publish-rot) sammen med hele
+  renderkjeden. Klipp aldri ut på nytt fra webp-ene — bruk kildene.
+
+## Layout-galleri på engelsk — FERDIG 28.07 (committet, ikke pushet)
+
+Galleriet er bygget, rammet inn og koblet i `site/en/kom-i-gang.html`. Hele kjeden ligger i
+`_utkast/layout_gallery_en/` (fem scripts + kilder) — kjør dem i rekkefølge for å bygge på nytt.
+Scriptene har absolutte scratchpad-stier og må repekes.
+
+Målt og verifisert, gjenbrukbart neste gang:
+- **Telefonrammen:** skjermflaten er 780×1688 med origo (26,26) i den 832×1740 store webp-en —
+  altså Playwright-viewport 390×844 med `device_scale_factor=2`. Status-linje (9:41) + Dynamic
+  Island er tegnet OPPÅ skjermflaten i mockupen, så de må enten reproduseres eller unngås ved
+  utklipp.
+- **Rendring:** backendens egen `fill()` fra `fyll.cjs` brukes direkte med
+  `{palette:'minimal', mode:'mork', font:'fraunces'}` og tom `adresse` (tom adresse ⇒ `CITY_SUFFIX`
+  og `ADDR_BLOCK` blir tomme ⇒ ingen stedsnavn noe sted). Fonter sendes som base64 via `fontOpts`.
+  Bilder MÅ sendes som egne filer ved siden av HTML-en — data-URI ga `ERR_INVALID_URL` på ett bilde.
+- **Demo-innhold (godkjent):** Grand Barber · «Fades & classic cuts» ·
+  «Precision in every cut. Sharp fades, clean lines, no rush.» · Men's cut 30/Skin fade 40/
+  Cut & beard 45/Beard trim 20/Student cut 30. Priser i £.
+- **Engelsk UI er ETTERBEHANDLING av HTML-en, ikke i18n.** Malene (`booking-module.cjs`,
+  `*.template.html`) er norsk-hardkodet — «Se tjenester», «Velg tjeneste», «Bygget med», og
+  `prisTekst()` hardkoder `' kr'`. `2-render.mjs` har et norsk→engelsk-kart som kjøres på ferdig
+  HTML. Rører IKKE backend. Blir liggende til malene faktisk oversettes.
+- **Utklipp av demo-foto fra `site/no/images/` (sharp `.extract`) — bare til referanse, kildene
+  ligger nå i `_utkast/layout_gallery_en/kilder/`:** galleri fra `layout-showcase.webp` —
+  `{top:487,height:484}` og `{top:975,height:484}`, kolonner `{left:26,width:388}` og
+  `{left:417,width:388}`. Hero-bånd fra `layout-hero.webp`: `{left:26,top:180,width:780,height:995}`
+  — **995, ikke 900**: den innbrente teksten starter først på skjermrad 1149.
+- **Rammen settes sammen igjen i `3-ramme.mjs`:** basen er `no/layout-direkte.webp` (flat bakgrunn
+  i toppen ⇒ ren nøkling). Skjermflaten byttes ut, maskert med skjermens egen hjørneform hentet fra
+  basen, og status-linja legges tilbake oppå — nøklet på avstand fra basens bakgrunnsfarge, så
+  Dynamic Island (svart) og glyfene (hvite) følger med mens bakgrunnen blir gjennomsiktig.
+
+### en/ ↔ no/ kom-i-gang: hva som faktisk skiller (kartlagt 27.07)
+**Steg 1 er strukturelt identisk** — kun språk skiller. Hele deltaet ligger i steg 2:
+no/ har layout FØRST (med hjelpetekst), ekte `images/layout-*.webp` i
+stedet for inline base64, «Anbefalt»-badge på showcase, live tjeneste-preview i iframe
+(`preview-tjenester.html`, refarges via postMessage fra `buildPalette`), `palett.js` som delt
+kilde, maks 10 bilder med dynamisk grense per layout (hero=1, direkte skjuler bolken), krav om
+minst ett bilde med mindre layout=direkte, og `design={mint,mørk,profil}`.
+CSS-deltaet er lite: `.lay-help`, `.preview-wrap`, `#tjenesterPreview`, `.preview-cap`,
+`.layout-badge`. De reviderte `#layGrid`-reglene er portet 28.07 — en/ hadde
+`.lthumb{height:288px;object-fit:cover}` som klippet thumbnailen til øverste halvdel av
+telefonen; nå `height:auto` som i no/. Resten av stilarket er allerede likt.
+**en/ mangler to filer no/ har:** `palett.js`, `preview-tjenester.html`. (`images/` er på plass.)
+**Uavklart:** `palett.js` har norske palettnavn og inneholder `buildPalette` — en kopi til en/
+gjør den duplisert i TRE filer (fyll.cjs, no/, en/). Alternativet er å dele logikken og skille ut
+tekstene, men det rører no/ også. Henrik har ikke tatt stilling ennå.
+
+Løst 28.07:
+1. ~~Hero-bildet~~ **LØST.** Kantkopieringen er borte. `1-bygg-hero.mjs` legger det rene båndet
+   (skalert 1,2× og senterbeskåret til 780 bredt) øverst på et 780×1688-lerret i `#0a0a0a` og toner
+   det ned i bakgrunnsfargen over de siste ~215 px. Ingen piksler oppfinnes ⇒ ingen striper.
+   Malens egen bunn-scrim ligger uansett oppå.
+2. ~~Profil-portrettet~~ **LØST.** Henrik valgte logoen. «EST. OSLO» er retusjert bort i
+   `4-retusj-logo.mjs`: for hver rad speiles rene piksler fra samme rad inn over teksten (venstre
+   halvdel fra venstre side, høyre fra høyre), med 5 px alpharampe på kantene — beholder gradient
+   og korn. Retusjen gjøres på **logo-utklippet**, ikke på den ferdige `layout-profil.webp`, ellers
+   overskrives den ved neste render. Resultat: 0 piksler over terskel der teksten sto (var 141).
+3. ~~Font-velgeren i en/~~ **FJERNET 28.07.** Sto igjen i en/ med norske etiketter («Klassisk
+   serif», «Ren sans», «Kraftig»). Det var ikke oversettelsesetterslep — det var at en/ ikke
+   speilet no/, som fjernet velgeren med vilje (alle får Fraunces, font velges i dashbordet).
+   Samme snitt i en/: Font-blokka i steg 2, `FONTS`-arrayet, `font`-nøkkelen i `design`,
+   `fontGrid`-rendringen og `fd.append('font')`. `.fsamp`-CSS og Google Fonts-`<link>`-ene står
+   igjen i BEGGE — død CSS, bevisst beholdt for å holde filene like.
+   **Dashboard-velgeren er urørt og fortsatt levende** — ikke forveksle de to.
+
+Fortsatt åpent:
+3. **Direkte-thumbnailen er markant annerledes enn no/:** malen rendrer nå FASE B-booking-
+   modulen (3 steg), ikke den gamle enkle tjenestelista. Riktig ifølge WYSIWYG-prinsippet i
+   `_utkast/layout_gallery_handoff/HANDOFF.md`, men en bevisst synlig endring. no/-galleriet viser
+   fortsatt den gamle lista og bør rendres på nytt fra samme kjede.
+4. **Valuta i Direkte-thumbnailen:** eneste layout som viser priser, og en/ dekker to valutaer.
+   Nå £ i begge. Skisse: to varianter (`layout-direkte-uk.webp` / `-us.webp`) byttet på landvalget.
+   Men det er plaster på det hardkodede `' kr'` i backend, ikke en fiks.
+5. **`.manage-link` kolliderer med statuslinja på notch-telefon (ekte bug, ikke bare mockup):**
+   `direkte.template.html:77` har `position:absolute;top:18px` inne i en `.page` med
+   `padding:max(56px,env(safe-area-inset-top))`. Med `viewport-fit=cover` havner «Endre/avbestill»
+   under statuslinja på enhver iPhone med notch. Mockupen dytter den ned i `2-render.mjs`; malen er
+   IKKE fikset. Hører hjemme i backend-repoet.
+6. **Palett-navnene i `site/en/kom-i-gang.html` står fortsatt på norsk.** `PALETTES`-arrayet er
+   inline i fila og har norske titler/beskrivelser («Klassisk BarberHQ», «Krem & Gull»,
+   «Minimalistisk», «Friskt grønt», «Sort/hvit + blå», «Brent oransje, sort») — synlig i steg 2.
+   Tas i oversettelsesfasen sammen med resten av en/. Henger sammen med den uavklarte
+   `palett.js`-delingen over: løses den ved å skille tekst fra logikk, forsvinner dette punktet
+   av seg selv.
 
 ## Må gjøres (prioritert)
 
@@ -250,6 +358,13 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 2. **«Gå live»-funksjon** mangler i dashboard — barber kan ikke publisere siden (`page_status`).
 3. **Billing (Stripe):** 1 mnd gratis + betaling etter. Rekkefølge billing vs. vekstfeatures IKKE
    avgjort — tas når vi kommer dit.
+4. **KUNDESIDEN ER HARDKODET NORSK — blokkerer hele en/-markedet (funnet 27.07).**
+   `booking-module.cjs` (backend) har ingen i18n: «Velg tjeneste», «Velg time», «Dato og tid»,
+   «Dine opplysninger», «Velg minst én tjeneste for å booke», «Se tjenester», «Har du time?
+   Endre eller avbestill», «Bygget med BarberHQ» er faste norske strenger. `prisTekst()` i samme
+   fil hardkoder `' kr'` — det finnes ingen valuta-abstraksjon i det hele tatt. En UK/US-barberer
+   som onboarder via en/ får altså en norsk bookingside med kroner. Må løses i backend FØR en/
+   kan ta imot ekte barberere; er uavhengig av (og større enn) land/tidssone-feltene i skjemaet.
 
 ### Medium
 4. **Vekstfeatures (backend):** rebooking, verving, vinn-tilbake auto-SMS. Deretter landingsside-
@@ -285,7 +400,8 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 15. **Oversettelse (utsatt fase):** plassholder-strenger (`(spesialitet)`/`(adresse)`/`(bio)`) +
     4 bilde-hjelpetekster + Vekst-flytens nye ledd (Påminnelse-boks «Kvelden før» + kortede
     undertekster + SMS-samtykke-linja i Rebooking-trekkspillet) + alt sv/da/en. Greppbar markør i
-    koden: `[oversettelse: sv/da/en]`.
+    koden: `[oversettelse: sv/da/en]`. **Også: norske palett-navn i `PALETTES` i
+    `site/en/kom-i-gang.html`** — se «Layout-galleri på engelsk», punkt 6.
 16. **Tidssone hardkodet via market** + **buildPalette duplisert** (fyll.cjs ↔ site/no/palett.js) — se
     «Kjent teknisk gjeld» over.
 
