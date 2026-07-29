@@ -147,6 +147,11 @@
   .btn-outline:hover{border-color:var(--ink)}
   .btn-outline.connected{color:var(--good);border-color:var(--good-bg);background:var(--good-bg)}
   .gcal{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:26px;padding:18px 20px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
+  /* Tredje tilstand: tilkoblet, men skriving når ikke fram (scope_ok:false).
+     Ser annerledes ut enn både «tilkoblet» og «ikke tilkoblet» — ellers drukner den.
+     MÅ stå utenfor @media — varselet gjelder alle skjermbredder, ikke bare mobil. */
+  .gcal.gcal-warn{border-color:var(--bad);background:var(--bad-bg)}
+  .gcal.gcal-warn #gcalStatus{color:var(--bad);font-weight:500}
   .savebar{display:flex;align-items:center;gap:13px;margin-top:14px}
   .saved{font-size:12.5px;color:var(--good);font-weight:600;opacity:0;transition:opacity .2s}.saved.show{opacity:1}
   .loading{padding:26px;text-align:center;color:var(--mut);font-size:13px}
@@ -1068,7 +1073,7 @@ const api={
   },
   async googleStatus(){
     const r=await apiFetch('/api/dashboard/google/status');
-    if(!r||!r.ok)return{connected:false};
+    if(!r||!r.ok)return{connected:false,scope_ok:false,missing_scopes:[]};
     return r.json();
   },
   async googleDisconnect(){
@@ -1729,16 +1734,28 @@ async function loadArbeidstider(){try{hours=await api.hours();}catch(e){hours=MO
     <input type="time" value="${h.end}" data-i="${i}" data-f="end" ${h.on?"":"disabled"}></div>`).join("");
   loadGoogleStatus();}
 
-let gcalConnected=false;
+/* Hva knappen gjør — ikke det samme som "er tilkoblet". I den tredje tilstanden ER
+   barbereren tilkoblet, men knappen skal koble til PÅ NYTT, ikke koble fra. */
+let gcalAction="connect";
 async function loadGoogleStatus(){
-  const st=$("#gcalStatus"), btn=$("#gcalBtn");
+  const st=$("#gcalStatus"), btn=$("#gcalBtn"), box=$("#gcal");
   try{
     const s=await api.googleStatus();
-    gcalConnected=!!s.connected;
-    if(gcalConnected){
+    box.classList.remove("gcal-warn");
+    if(s.connected&&s.scope_ok===false){
+      /* Tilkoblet, men skriving når ikke fram. Teksten sier konsekvensen, ikke
+         mekanismen — «mangler calendar.events» betyr ingenting for en barberer.
+         Eksplisitt ===false: eldre backend uten feltet skal ikke utløse varselet. */
+      gcalAction="connect";
+      st.textContent="Bookinger havner ikke i kalenderen din. Koble til på nytt.";
+      box.classList.add("gcal-warn");
+      btn.textContent="Koble til på nytt"; btn.classList.remove("connected");
+    }else if(s.connected){
+      gcalAction="disconnect";
       st.textContent=s.google_email?"Tilkoblet: "+s.google_email:"Tilkoblet.";
       btn.textContent="Koble fra"; btn.classList.add("connected");
     }else{
+      gcalAction="connect";
       st.textContent="Ikke tilkoblet ennå.";
       btn.textContent="Koble til Google Calendar"; btn.classList.remove("connected");
     }
@@ -1894,7 +1911,7 @@ $("#saveHours").addEventListener("click",async()=>{const btn=$("#saveHours");btn
   if(ok){const s=$("#hoursSaved");s.classList.add("show");setTimeout(()=>s.classList.remove("show"),1800);}});
 
 $("#gcalBtn").addEventListener("click",async()=>{
-  if(gcalConnected){
+  if(gcalAction==="disconnect"){
     if(!confirm("Koble fra Google Calendar? Opptatte tider fra Google vil ikke lenger sperre bookbare timer."))return;
     await api.googleDisconnect(); loadGoogleStatus();
   }else{

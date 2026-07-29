@@ -178,6 +178,16 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
 - **Design-fane:** live forhåndsvisning via `GET /api/dashboard/preview?layout&palette&font&mode` — full **server-render** av barberens EKTE side (`byggSideFraBarber → fill → booking-module.cjs`; `preview:true` hopper over /days+/slots og åpner sheet). Samme kilde som publisert side = ingen drift. `dashboard.html` setter kun `srcdoc` (cache per param-kombo, synlig `previewError` ved feil); ingen klient-fyll. Endepunktet `console.warn`-er på ufylt `{{PLACEHOLDER}}` — erstattet den gamle stille slutt-wipen (`replace(/{{[A-Z_]+}}/g,'')`) som skjulte at booking-modulen (all aksentfarge) aldri ble injisert → helt svart/hvit preview i ~4 mnd (rot-årsak: FASE B `6d06a8d` flyttet booking-UI inn i `{{BOOKING_MODULE}}` som wipen slettet). Layout-kort som ren tekst.
 - **Preview 11.07:** booking-sheet auto-open fjernet (`booking-module.cjs`) — preview viser forside først, som live. Tomme forside-felt viser dempede plassholdere i preview (`(spesialitet)`/`(adresse)`/`(bio)` + grå bilde-bokser via delt `{{PH_CSS}}`); live kollapser som før. (Layout-preview-«buggen» var browser-cache, ikke kode.)
 - **Mobil-nav:** "Mer"-meny — **Oversikt + Vekst** alltid synlig, resten (Profil · Tjenester & tider · Design · Konto) i dropdown; desktop viser alle. Mobil Design-layout: preview sentrert, rekkefølge valg → preview → Lagre, 2-kolonne kort, breakpoint 700px.
+- **Google Kalender-blokka har TRE tilstander** (Tjenester & tider), ikke to. Den tredje er
+  `connected && scope_ok===false` fra `GET /api/dashboard/google/status`: tilkoblet, men skriving når
+  ikke fram — enten manglende scope eller en 403 backend har flagget. Rød ramme (`.gcal-warn`) +
+  «Bookinger havner ikke i kalenderen din. Koble til på nytt.» Teksten sier KONSEKVENSEN, ikke
+  mekanismen — «mangler calendar.events» betyr ingenting for en barberer. `gcalAction` (ikke
+  `gcalConnected`) styrer knappen, fordi «er tilkoblet» og «hva knappen gjør» sluttet å være samme
+  spørsmål: i tredje tilstand ER man tilkoblet, men knappen skal koble til PÅ NYTT. `scope_ok===false`
+  sjekkes eksplisitt så en eldre backend uten feltet ikke utløser varselet.
+  **`.gcal-warn` MÅ ligge utenfor `@media`-blokkene** — første forsøk havnet inni en `max-width`-regel,
+  og da var varselet usynlig på desktop mens 320/375-screenshotene så helt riktige ut.
 - **Palett-konsistens:** én delt kilde (`site/no/palett.js`) for kom-i-gang + dashboard, i synk med `fyll.cjs`. Ren svart/hvit bakgrunn i mørk modus, aksent skiller.
 - **Kundeside bygges fra `barbers`-raden** (ikke `orders.payload`): alt barbereren endrer (design, layout, font, adresse, bio, bilder, tjenester) når bookingsiden. Oppslag via `barbers.slug`, status-gating via `barbers.page_status`. `savedLayout` er skilt fra `design.layout` — Bilder-fanen leser alltid lagret DB-verdi.
 
