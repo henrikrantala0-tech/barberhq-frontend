@@ -375,6 +375,11 @@ Fortsatt åpent:
    fil hardkoder `' kr'` — det finnes ingen valuta-abstraksjon i det hele tatt. En UK/US-barberer
    som onboarder via en/ får altså en norsk bookingside med kroner. Må løses i backend FØR en/
    kan ta imot ekte barberere; er uavhengig av (og større enn) land/tidssone-feltene i skjemaet.
+5. **«Forgot password?» er død i en/ — `site/en/logg-inn.html:146` peker på `href="#"`.**
+   Magisk-lenke-flyten (`POST /api/send-magic-link` + `opprett-passord.html`) finnes i no/, men
+   er aldri portet til en/. En barberer som ikke kommer inn i dashbordet har ikke et produkt —
+   dette er en lanseringsblokker, ikke en død footer-lenke. Krever både lenke/flyt i
+   `en/logg-inn.html` og en engelsk `opprett-passord.html` (fila finnes bare i no/ i dag).
 
 ### Medium
 4. **Vekstfeatures (backend):** rebooking, verving, vinn-tilbake auto-SMS. Deretter landingsside-
@@ -397,6 +402,12 @@ Fortsatt åpent:
    Frontend her: GJORT (`fa02e3f`) — `renderDrivenBy` async mot session-endepunktet, mock/`USE_MOCK`
    fjernet, A-framing-titler, 0-rad-håndtering, skjul på historisk måneds-visning. Gjenstår: backend-
    query + verifiser ekte/seedet tall mot prod. Deretter Vekst-fanen.
+10. **Terms- og Cookies-sider mangler — gjelder BÅDE en/ og no/.** Footerne på alle fire sider
+    per språk (`index`, `funksjoner`, `priser`, `support`) har `<a href="#">` for Terms/Vilkår og
+    Cookies. Privacy er løst i en/ (`privacy.html`); no/ har fortsatt `href="#"` på alle tre og
+    trenger en oversatt `personvern.html` i tillegg. Sidene finnes ikke noe sted i repoet.
+    Merk `netlify.toml`: hele `/en/*` har `X-Robots-Tag: noindex` til oversettelsesfasen er
+    ferdig — juridiske sider under en/ blir altså ikke indeksert før den fjernes.
 
 ### Lav / polish
 9. **WebAuthn-instruksjonsbanner + «App kommer»-banner** i dashboard.
