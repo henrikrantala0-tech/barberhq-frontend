@@ -12,9 +12,8 @@ Søsterrepo: barberhq-backend (Railway).
 - da/ og sv/ MANGLER dashboard.html foreløpig. Fikses i oversettelses-jobben.
 - Oversettelse av dashboard gjøres via oversett_dash.py (i backend-repo/verktøy).
 
-### Land + tidssone i site/en/kom-i-gang.html (bygget 27.07, committet 28.07)
-Verifisert på 320/375. **Committet lokalt, IKKE pushet** — ligger sammen med
-layout-galleriet i én commit:
+### Land + tidssone i site/en/kom-i-gang.html (bygget 27.07, pushet 28.07)
+Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac98`:**
 - **Land-felt** (`#countryPick`, UK/USA, ingen forhåndsvalgt verdi) mellom By og E-post.
   `market` sendes nå fra dette valget, ikke fra språk — `L2M`-mappen er FJERNET i en/.
   no/, sv/, da/ har fortsatt sin egen `L2M`-linje og er urørt.
@@ -195,6 +194,10 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
 Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(days[], ym)` null-fyller til `[{l,kr,l2,count,new,returning}]` → `renderBarChart(data, period)` (leser `d.l/d.kr/d.l2`). Samme skårne array mater KPI-kortene (Σcount=Kunder, Σrevenue=Estimert omsetning). Diagrammet dekker hele historikken.
 - **Perioder:** pill-er (Siste uke=7d / Siste 2 uker=14d / Denne måneden=1.→i dag), rullende, forankret Oslo-i-dag. `daily[]` = 90-dagers vindu fra `/stats`.
 - **Månedsvelger:** «Tidligere»-dropdown fra `/stats.months_with_data` (nyest øverst, ekskl. inneværende måned). Valg → `GET /api/dashboard/stats/month?ym=YYYY-MM` (sparse `days[]` + måned-totaler, ym-validering→400) → `sliceMonth` (dag-antall via `new Date(år,mnd,0).getDate()` → korrekt 28/29/30/31) → bytter BÅDE diagram + KPI. Pill↔måned-state isolert (pill-klikk nullstiller dropdown; ingen lekkasje).
+- **Ingen tall over stolpene (31.07).** `.cbar-val` (beløp i småskrift over hver stolpe) er fjernet
+  helt — både CSS-regelen og `renderBarChart`-markupen. På fullt månedsdiagram (28–31 stolper)
+  overlappet tallene hverandre til uleselig grøt. Beløpet bor i HUD-kortet ved trykk (lag 2), som
+  allerede viser det større og med kontekst. Ikke legg dem tilbake uten å løse tettheten.
 - **Volum-farge (lag 1):** `colorForRatio(d.kr/max)` — glidende lineær RGB dempet blågrå → brand-blå → brand-grønn, relativt til beste stolpe i visningen. Per-stolpe gradient (mørk bunn→lys topp av stolpens EGEN farge), ingen glow.
 - **HUD + touch (lag 2, variant A):** magnetisk `pointerdown`/`pointermove` på `#chartBars`, snap via `getBoundingClientRect`. Valgt stolpe → **kort forankret til stolpen** (`#chartHud`, absolutt i `.chart-wrap`): dato liten/dempet, beløp stort + «· N klipp», pills nye (blå) / gjengangere (grønn). Løsrevet caret (`#chartCaret`) på stolpe-senter + peker-linje til stolpetopp; horisontal clamping innenfor kort-padding ved kant-stolper; skann-glid `transition:left .09s`. `pointer-events:none` på kort/caret → tap/skann/undo treffer stolpene under. Undo: tap valgt stolpe → `clearSel()`, tap-vs-dra <8px.
 - **Entré + tell-opp (lag 3):** stolper stiger staggered venstre→høyre (variant D: step 95ms / rise 350ms, clamp `ENTRY_MAX_TOTAL=3000` → 90-heatmap sprenger aldri), KPI teller 0→target, KUN første render (`chartEntered`-flagg); pill/tab = uniform vekst, ingen tell-opp. Respekterer `prefers-reduced-motion`.
@@ -229,9 +232,9 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 - Tagline (kort, valgfri) + Bio (lengre, valgfri) er to separate felt. Onboarding samler ikke tagline — barbereren fyller i dashboard.
 - Onboarding-bilder er alltid klippbilder — portrett-slot fylles ALDRI automatisk ved bygg-barber.
 
-## Dashboard: fane-struktur (11 → 6, GJENNOMFØRT 11.07)
+## Dashboard: fane-struktur (11 → 6, GJENNOMFØRT 11.07; +Innstillinger 31.07 = 7)
 
-`site/no/dashboard.html` er slått sammen fra 11 til 6 faner:
+`site/no/dashboard.html` er slått sammen fra 11 til 6 faner (+ Innstillinger, se under):
 
 1. **Oversikt** = Oversikt + Bookinger + vinn-tilbake-**liste**. Pengeside-rekkefølge:
    KPI/omsetning → graf → «Drevet av BarberHQ» → kommende bookinger → full booking-liste
@@ -247,8 +250,22 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 5. **Tjenester & tider** = tjenester + arbeidstider.
 6. **Konto** = abonnement (skall — venter på billing + passord-side). Nav-knappen heter fortsatt
    «Abonnement»; døp om til «Konto» når billing/passord bygges.
+7. **Innstillinger** (ny 31.07) = innstillinger for DASHBORDET, ikke for bookingsiden.
+   Foreløpig kun «Utseende» med mørk/lys-toggle. Egen fane fordi tema-knappen ikke lenger
+   bor i headeren — se under.
 
-- **Mobil-nav:** Oversikt + Vekst alltid synlig; Profil/Tjenester & tider/Design/Konto bak «Mer».
+- **Tema-toggle flyttet fra header til Innstillinger (31.07).** `#themeBtn` er samme knapp og
+  samme id (all eksisterende tema-JS er urørt), men står nå i en `.tog-row` i Innstillinger med
+  etikett «Mørk modus» + «Huskes i denne nettleseren». Headerens `.who` har nå kun barbernavnet.
+  Underteksten sier eksplisitt at dette gjelder dashbordet, ikke kundesida — lys/mørk for
+  bookingsida velges under Design, og de to ble blandet sammen så lenge knappen sto løs i headeren.
+- **«Bytt passord» hører hjemme i Innstillinger, men er BEVISST IKKE bygget** — det ligger kun en
+  HTML-kommentar der. Årsak: `POST /api/dashboard/set-password` tar kun `{password}` og verifiserer
+  ikke nåværende passord. Den ruta er laget for førstegangs-setting etter magisk lenke; brukt som
+  «bytt passord» i et innlogget dashbord ville den latt hvem som helst med en kapret sesjon bytte
+  passordet uten å kunne det gamle. Venter på backend-rute som krever nåværende passord.
+- **Mobil-nav:** Oversikt + Vekst alltid synlig; Profil/Tjenester & tider/Design/Konto/Innstillinger
+  bak «Mer» (fanen har `class="nav-mer"` og plukkes opp av «Mer»-menyen automatisk).
 - **Font-velgeren er LEVENDE** (Design: klikk → `design.font` → `PUT /api/dashboard/design` +
   preview-qs). Det var **onboarding**-fonten som ble fjernet (alle får Fraunces), ikke
   dashboard-velgeren. Ikke behandle den som dead UI.
@@ -271,7 +288,7 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
   som kilder i `_utkast/layout_gallery_en/kilder/` (utenfor publish-rot) sammen med hele
   renderkjeden. Klipp aldri ut på nytt fra webp-ene — bruk kildene.
 
-## Layout-galleri på engelsk — FERDIG 28.07 (committet, ikke pushet)
+## Layout-galleri på engelsk — FERDIG 28.07 (pushet, `aa7ac98`)
 
 Galleriet er bygget, rammet inn og koblet i `site/en/kom-i-gang.html`. Hele kjeden ligger i
 `_utkast/layout_gallery_en/` (fem scripts + kilder) — kjør dem i rekkefølge for å bygge på nytt.
@@ -384,7 +401,10 @@ Fortsatt åpent:
 ### Medium
 4. **Vekstfeatures (backend):** rebooking, verving, vinn-tilbake auto-SMS. Deretter landingsside-
    avsnitt under «fyll stolen» som forklarer dem.
-5. **Profil-side i Konto-fanen:** bytt passord m.m. Døp om nav «Abonnement» → «Konto».
+5. **Bytt passord i Innstillinger — BLOKKERT PÅ BACKEND.** UI-en er ikke bygget med vilje:
+   `POST /api/dashboard/set-password` verifiserer ikke nåværende passord (laget for førstegangs-
+   setting etter magisk lenke). Trenger en backend-rute som krever `currentPassword` før frontend
+   kan bygges. Døp samtidig om nav «Abonnement» → «Konto».
 6. **Koble ekte data i Vekst** — Oversikt (diagram/KPI/rekord/månedsvelger) er nå EKTE mot
    `/stats` + `/stats/month`. Gjenstår: Vekst-fanen (stats/trend) + attribusjon «Drevet av»
    (backend `/api/dashboard/attribution` bygges først). Bookinger-liste ekte; no-show-knapp mock.
@@ -408,6 +428,24 @@ Fortsatt åpent:
     trenger en oversatt `personvern.html` i tillegg. Sidene finnes ikke noe sted i repoet.
     Merk `netlify.toml`: hele `/en/*` har `X-Robots-Tag: noindex` til oversettelsesfasen er
     ferdig — juridiske sider under en/ blir altså ikke indeksert før den fjernes.
+11. **Døde lenker i footeren på no/ (kartlagt 29.07).** Ikke bare de juridiske:
+    - `Vilkår` / `Personvern` / `Cookies` (`site/no/index.html:861–863`) — `href="#"`, sidene
+      finnes ikke. Samme sak som punkt 10.
+    - `Alt på ett sted` (`:851`) — peker på `#alt-pa-ett-sted`, men **ingen seksjon har den id-en**.
+      Produktvisningen heter `id="produkt"`. Enten repek lenka eller gi seksjonen riktig id.
+    - `Funksjoner`, `Priser`, `Kom i gang`, e-post og Instagram ER koblet — ikke rør dem.
+    - `Se dashbordet` (`:522`, `:536`) er `href="#"` med vilje — styres av `DEMO_ENABLED = false`
+      og skrus på ved launch. Ikke en bug.
+    Samme gjennomgang må gjøres på `funksjoner.html`, `priser.html`, `support.html` og i en/.
+12. **Produktvisningen (`.pv-section`, `site/no/index.html:605`) skal se bedre ut.** Henriks
+    vurdering 29.07 — ikke spesifisert hva som er galt ennå. Krever egen runde: se på den,
+    bli enige om hva som feiler, så bygg. Seksjonen er én `dashboard-produkt.png` med tre
+    absolutt-posisjonerte `.pv-title`-etiketter (`left/top` i %) oppå — etikett-posisjonene er
+    hardkodet mot akkurat det bildet og brekker hvis bildet byttes.
+13. **«Bygd for å fylle stolen»-seksjonen (`.sys-h2`, `site/no/index.html:673`) skal endres.**
+    Henriks vurdering 29.07 — omfang ikke bestemt (tekst? layout? hele seksjonen?). Avklares før
+    kode. Merk at CTA-en nederst (`:821` «Klar til å fylle stolen?») gjenbruker samme bilde —
+    endres budskapet her, må de to henge sammen.
 
 ### Lav / polish
 9. **WebAuthn-instruksjonsbanner + «App kommer»-banner** i dashboard.
