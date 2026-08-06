@@ -125,6 +125,8 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
   (verifisert 11.07); fella er PS-konsollen.
 - **Railway shell:** engangs-scripts må ha `.cjs`-endelse (package.json er `type:module`) og
   ligge i `/app` (ikke `/tmp`) for å finne `pg`-modulen.
+- **Launch-plan ligger i backend-repoets CLAUDE.md (LAUNCH-PLAN-seksjonen) — les den ved
+  /oppstart før frontend-arbeid prioriteres.**
 
 **Arbeidslogger hører ikke hjemme i CLAUDE.md. Bruk git-historikk.**
 
