@@ -443,7 +443,7 @@
   .sw-green input:checked + .sl{background:#22c55e}
   html[data-theme="dark"] .sw-green input:checked + .sl{background:#22c55e}
 
-  /* ---- Innstillinger-panel ---- */
+  /* ---- Innstillings-kort (Vekst: SMS-knotter · Konto: Utseende) ---- */
   .sett-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px 18px;margin-bottom:16px}
   .tog-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
   .tog-row:last-of-type{border-bottom:0}
@@ -454,7 +454,10 @@
   .sett-hint{font-size:12px;color:var(--mut);margin-top:9px}
   .sett-note{font-size:12px;color:var(--mut);padding:11px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;line-height:1.55}
   .sett-h{font-size:13px;font-weight:700;letter-spacing:-.01em;margin:26px 0 3px}
-  #innstillinger .sett-h:first-of-type{margin-top:0}
+  /* Utseende-kortet i Konto skal ha samme bredde som .subcard over det (520px),
+     ikke strekke seg over hele 1120px-wrappen. Gjelder KUN Konto — Vekst-kortene
+     skal fortsatt være fullbredde. */
+  #abonnement .sett-card{max-width:520px}
 
   /* ---- Vinn-tilbake-liste ---- */
   .wb-group{margin-bottom:26px}
@@ -567,8 +570,10 @@
     <button role="tab" aria-selected="false" data-panel="profil" class="nav-mer">Profil</button>
     <button role="tab" aria-selected="false" data-panel="tjenester" class="nav-mer">Tjenester &amp; tider</button>
     <button role="tab" aria-selected="false" data-panel="design" class="nav-mer">Design</button>
-    <button role="tab" aria-selected="false" data-panel="abonnement" class="nav-mer">Abonnement</button>
-    <button role="tab" aria-selected="false" data-panel="innstillinger" class="nav-mer">Innstillinger</button>
+    <!-- data-panel="abonnement" er BEVART med vilje selv om fanen heter «Konto» —
+         id-en henger sammen med #abonnement, switchPanel('abonnement') (:2376) og
+         billing-koden. Bare etiketten er byttet. -->
+    <button role="tab" aria-selected="false" data-panel="abonnement" class="nav-mer">Konto</button>
     <div class="nav-mer-wrap">
       <button type="button" class="nav-mer-toggle" aria-expanded="false" aria-haspopup="true">Mer <span class="mer-caret">▾</span></button>
       <div class="nav-mer-meny" role="menu" hidden></div>
@@ -699,7 +704,7 @@
     </div>
 
     <!-- ACCORDIONS: maskin først (Rebooking, SMS-påminnelse), menneske etterpå (Vinn tilbake, Verving).
-         IDer på kontrollene er BEVART fra gammel struktur → loadInnstillinger/loadVerving/loadWinback treffer som før. -->
+         IDer på kontrollene er BEVART fra gammel struktur → loadSmsInnstillinger/loadVerving/loadWinback treffer som før. -->
     <div class="acc-list">
 
       <!-- SMS-påminnelse -->
@@ -972,15 +977,12 @@
       <button class="btn-outline" id="manageSub" style="display:none">Administrer abonnement</button>
     </div>
     <p class="ctx" id="subCtx" style="margin-top:12px;display:none">«Administrer abonnement» åpner Stripe, der du kan bytte kort, se kvitteringer eller si opp.</p>
-  </section>
 
-  <!-- INNSTILLINGER -->
-  <section class="panel" id="innstillinger">
-    <p class="block-h">Innstillinger</p>
-    <p class="block-s">Innstillinger for dashbordet ditt.</p>
-    <!-- «Bytt passord» hører hjemme her, men er IKKE bygget: POST /api/dashboard/set-password
-         tar kun {password} og verifiserer ikke nåværende passord. Venter på backend-rute. -->
-
+    <!-- Utseende lå tidligere i en egen Innstillinger-fane. Slått inn her (31.07 → 06.08):
+         abonnement ØVERST fordi det er det barbereren kommer til Konto for; dashbord-
+         innstillinger under. «Bytt passord» hører hjemme her, men er IKKE bygget:
+         POST /api/dashboard/set-password tar kun {password} og verifiserer ikke nåværende
+         passord. Venter på backend-rute. -->
     <p class="sett-h">Utseende</p>
     <p class="block-s">Gjelder bare dashbordet. Lyst/mørkt på bookingsiden din velger du under Design.</p>
     <div class="sett-card">
@@ -1795,7 +1797,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
   $("#"+id).classList.add("active");
   if(id==="oversikt"){loadOversikt();loadBookinger();}
-  if(id==="vekst"){loadVekst();loadInnstillinger();loadVerving();loadWinback();}
+  if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();}
   if(id==="profil")loadProfil();if(id==="tjenester"){loadTjenester();loadArbeidstider();}
   if(id==="design"){loadDesign().then(loadBilder);}
 }));
@@ -2000,8 +2002,10 @@ $("#saveProfil").addEventListener("click",async function(){
   savedFlash("#profilSaved");
 });
 
-/* ---- Innstillinger ---- */
-async function loadInnstillinger(){
+/* ---- SMS-knotter (Vekst-fanen) ---- */
+// Het loadInnstillinger() da SMS-knottene bodde i en egen Innstillinger-fane.
+// Kontrollene bor i #vekst; navnet er byttet så det ikke forveksles med Konto.
+async function loadSmsInnstillinger(){
   const s=await api.settings();
   $("#tog-paam").checked=!!s.sms_paaminnelse_enabled;
   $("#tog-rebook").checked=!!s.sms_rebooking_enabled;

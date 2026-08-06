@@ -234,9 +234,11 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 - Tagline (kort, valgfri) + Bio (lengre, valgfri) er to separate felt. Onboarding samler ikke tagline — barbereren fyller i dashboard.
 - Onboarding-bilder er alltid klippbilder — portrett-slot fylles ALDRI automatisk ved bygg-barber.
 
-## Dashboard: fane-struktur (11 → 6, GJENNOMFØRT 11.07; +Innstillinger 31.07 = 7)
+## Dashboard: fane-struktur (11 → 6, GJENNOMFØRT 11.07; Innstillinger inn i Konto 06.08 = 6)
 
-`site/no/dashboard.html` er slått sammen fra 11 til 6 faner (+ Innstillinger, se under):
+`site/no/dashboard.html` har SEKS faner. Innstillinger var kort en egen fane (31.07–06.08),
+men er slått inn i Konto — én toggle bar ikke en egen fane, og «Konto» er stedet barbereren
+leter etter både abonnement og dashbord-innstillinger:
 
 1. **Oversikt** = Oversikt + Bookinger + vinn-tilbake-**liste**. Pengeside-rekkefølge:
    KPI/omsetning → graf → «Drevet av BarberHQ» → kommende bookinger → full booking-liste
@@ -250,24 +252,39 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
    slot-visning følger VALGT layout (live), opplasting låst til LAGRET (banner + klikk-guard).
    Dynamisk bilde-hjelpetekst per layout. Bilder er borte som egen fane.
 5. **Tjenester & tider** = tjenester + arbeidstider.
-6. **Konto** = abonnement (skall — venter på billing + passord-side). Nav-knappen heter fortsatt
-   «Abonnement»; døp om til «Konto» når billing/passord bygges.
-7. **Innstillinger** (ny 31.07) = innstillinger for DASHBORDET, ikke for bookingsiden.
-   Foreløpig kun «Utseende» med mørk/lys-toggle. Egen fane fordi tema-knappen ikke lenger
-   bor i headeren — se under.
+6. **Konto** = abonnement ØVERST + «Utseende» (tema-toggle) under. Nav-etiketten er «Konto»,
+   men `data-panel`/`id` er fortsatt `abonnement` — BEVISST, id-en henger sammen med
+   `switchPanel('abonnement')` (Stripe-returen) og hele billing-koden. Ikke døp om id-en.
 
-- **Tema-toggle flyttet fra header til Innstillinger (31.07).** `#themeBtn` er samme knapp og
-  samme id (all eksisterende tema-JS er urørt), men står nå i en `.tog-row` i Innstillinger med
-  etikett «Mørk modus» + «Huskes i denne nettleseren». Headerens `.who` har nå kun barbernavnet.
+- **Abonnement-blokka er IKKE et skall — den er fullt koblet.** Dokumentasjonen sa lenge
+  «skall — venter på billing»; det var feil. `loadBilling()` → `GET /api/dashboard/billing/status`
+  → `renderBilling(b)` som bytter på `subscription_status`: `trialing`/`active`/`past_due` viser
+  «Administrer abonnement» (full navigasjon til `GET /api/dashboard/billing/portal`, som svarer
+  303 videre til Stripe Customer Portal), `canceled`/`unpaid`/ukjent viser «Start 30 dager gratis»
+  (`POST /api/dashboard/billing/checkout` → redirect til `{url}`). Retur fra Stripe håndteres av
+  `applyBillingReturn()` på `?live=1` / `?avbrutt=1` — tvinger fram Konto-fanen, viser kvitterings-
+  banner og stripper query-en med `replaceState`. Betaling ≠ publisering: «Gå live» er separat.
+- **Tema-toggle: header (→31.07) → egen Innstillinger-fane (31.07) → Konto (06.08).** `#themeBtn`
+  er samme knapp og samme id hele veien (all tema-JS er urørt), nå i en `.tog-row` nederst i Konto
+  med etikett «Mørk modus» + «Huskes i denne nettleseren». Headerens `.who` har kun barbernavnet.
   Underteksten sier eksplisitt at dette gjelder dashbordet, ikke kundesida — lys/mørk for
   bookingsida velges under Design, og de to ble blandet sammen så lenge knappen sto løs i headeren.
-- **«Bytt passord» hører hjemme i Innstillinger, men er BEVISST IKKE bygget** — det ligger kun en
+  **`$("#themeBtn").addEventListener` har ingen null-sjekk** — flytter du knappen igjen, må den
+  finnes i DOM-en ved sideload, ellers kaster init.
+- **«Bytt passord» hører hjemme i Konto, men er BEVISST IKKE bygget** — det ligger kun en
   HTML-kommentar der. Årsak: `POST /api/dashboard/set-password` tar kun `{password}` og verifiserer
   ikke nåværende passord. Den ruta er laget for førstegangs-setting etter magisk lenke; brukt som
   «bytt passord» i et innlogget dashbord ville den latt hvem som helst med en kapret sesjon bytte
-  passordet uten å kunne det gamle. Venter på backend-rute som krever nåværende passord.
-- **Mobil-nav:** Oversikt + Vekst alltid synlig; Profil/Tjenester & tider/Design/Konto/Innstillinger
-  bak «Mer» (fanen har `class="nav-mer"` og plukkes opp av «Mer»-menyen automatisk).
+  passordet uten å kunne det gamle. Venter på backend-rute som krever nåværende passord (dag 2).
+- **Mobil-nav:** Oversikt + Vekst alltid synlig; Profil/Tjenester & tider/Design/Konto bak «Mer»
+  (fanen har `class="nav-mer"` og plukkes opp av «Mer»-menyen automatisk). Verifisert 320/375
+  etter sammenslåingen: fire faner i menyen, toggle-etiketten blir «Konto ▾» når fanen er valgt.
+- **`loadSmsInnstillinger()` hører til VEKST, ikke Konto.** Het `loadInnstillinger()` da SMS-
+  knottene bodde i en egen fane; omdøpt 06.08 så navnet ikke lokker noen til å lete i Konto.
+- **Fanene er hardkodet tre steder som må holdes i synk:** nav-knapp (`data-panel`), `<section
+  class="panel" id="…">`, og ev. lazy-load-gren i klikk-handleren. Ingen array, ingen konfig.
+  `switchPanel(id)` har ingen null-sjekk — fjerner du en fane med en gjenværende kaller, kaster
+  den `TypeError` på `.click()` av `null`.
 - **Font-velgeren er LEVENDE** (Design: klikk → `design.font` → `PUT /api/dashboard/design` +
   preview-qs). Det var **onboarding**-fonten som ble fjernet (alle får Fraunces), ikke
   dashboard-velgeren. Ikke behandle den som dead UI.
@@ -399,14 +416,23 @@ Fortsatt åpent:
    er aldri portet til en/. En barberer som ikke kommer inn i dashbordet har ikke et produkt —
    dette er en lanseringsblokker, ikke en død footer-lenke. Krever både lenke/flyt i
    `en/logg-inn.html` og en engelsk `opprett-passord.html` (fila finnes bare i no/ i dag).
+6. **Full mobil-gjennomgang av HELE dashbordet (`site/no/dashboard.html`) — ikke gjort.**
+   Dashbordet er bygget og verifisert fra desktop, men **de fleste barberere vil bruke det fra
+   telefonen** — mobil er primærflaten, ikke et sidespor. Alle seks faner må gås gjennom systematisk
+   på 320/375/390 (Playwright, `device_scale_factor=2`, «Disable cache» PÅ): Oversikt (diagram +
+   HUD-kort + KPI + «Drevet av» + booking-lister), Vekst, Profil, Design (preview + slot-bokser +
+   crop-modal), Tjenester & tider (inkl. `.gcal-warn`), Konto. Se særlig etter
+   horisontal overflow, for små trykkflater, tabeller/lister som ikke brekker, modaler som ikke
+   får plass, og «Mer»-menyen. Egen runde — kartlegg først, bli enige om lista, så fiks.
 
 ### Medium
 4. **Vekstfeatures (backend):** rebooking, verving, vinn-tilbake auto-SMS. Deretter landingsside-
    avsnitt under «fyll stolen» som forklarer dem.
-5. **Bytt passord i Innstillinger — BLOKKERT PÅ BACKEND.** UI-en er ikke bygget med vilje:
+5. **Bytt passord i Konto — BLOKKERT PÅ BACKEND (dag 2).** UI-en er ikke bygget med vilje:
    `POST /api/dashboard/set-password` verifiserer ikke nåværende passord (laget for førstegangs-
    setting etter magisk lenke). Trenger en backend-rute som krever `currentPassword` før frontend
-   kan bygges. Døp samtidig om nav «Abonnement» → «Konto».
+   kan bygges. Plassen er klar — HTML-kommentar i `#abonnement`. (Nav-omdøpingen «Abonnement» →
+   «Konto» er GJORT 06.08, sammen med sammenslåingen av Innstillinger.)
 6. **Koble ekte data i Vekst** — Oversikt (diagram/KPI/rekord/månedsvelger) er nå EKTE mot
    `/stats` + `/stats/month`. Gjenstår: Vekst-fanen (stats/trend) + attribusjon «Drevet av»
    (backend `/api/dashboard/attribution` bygges først). Bookinger-liste ekte; no-show-knapp mock.
