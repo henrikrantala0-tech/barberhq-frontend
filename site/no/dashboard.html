@@ -1286,10 +1286,15 @@ function sliceMonth(days,ym){
 }
 // Volum-farge: ratio (dagens kr / periodens max) → {top,bot} gradient-shades.
 // Glidende lineær RGB gjennom tre ankre: dempet blågrå → brand-blå → brand-grønn.
+// ⚠ DELT AV BEGGE DIAGRAMMENE — Oversikts dagsdiagram (renderBarChart) OG Vekst-fanens
+// månedsdiagram (renderMonthChart). Endrer du et anker, endrer du begge flater.
+// A0 var #4E5D78; senket til #3A4560 (06.08) fordi det gamle bunnpunktet var for lyst
+// til å lese som «svak måned/dag». Merk at stolpens EGEN gradient trekker bunnen
+// ytterligere 20 % mot svart, så A0 er lysere enn det man faktisk ser nederst i stolpen.
 function colorForRatio(r){
   r = r>1?1 : r<0?0 : r; // klemme; NaN (0/0-vernet av max||1) → behandles som 0 nedenfor
   if(!(r>0)) r=0;
-  var A0=[78,93,120], A5=[77,139,255], A1=[62,207,126]; // #4E5D78 / #4D8BFF / #3ECF7E
+  var A0=[58,69,96], A5=[77,139,255], A1=[62,207,126]; // #3A4560 / #4D8BFF / #3ECF7E
   function lerp(a,b,t){return a+(b-a)*t;}
   function mix(c,d,t){return [Math.round(lerp(c[0],d[0],t)),Math.round(lerp(c[1],d[1],t)),Math.round(lerp(c[2],d[2],t))];}
   var c = r<=0.5 ? mix(A0,A5,r/0.5) : mix(A5,A1,(r-0.5)/0.5);
@@ -1681,10 +1686,13 @@ function renderVekstKpi(stats){
     +'<div class="stat"><div class="l">Klipp totalt</div><div class="v info">'+klipp.toLocaleString("no-NO")+'</div><div class="sub mut">gjennom hele historikken</div></div>';
 }
 
-// Måneds-diagram: gjenbruker Oversikts gradient-stolpe-mekanikk, men TRE DISKRETE tilstander:
-//   gull  = EKTE all-time rekord (matcher record_customers_month på ym OG customers)
-//   grønn = høyest i synlig vindu, men IKKE rekord (rekorden ligger utenfor vinduet)
-//   blå   = vanlig
+// Måneds-diagram: SAMME glidende fargeskala som Oversikt — colorForRatio(customers/max),
+// relativt til beste måned i visningen. Funksjonen er DELT, ikke kopiert; endrer du ankerne
+// der, endrer du begge flater samtidig.
+// Gull er eneste diskrete tilstand igjen: EKTE all-time rekord (record_customers_month må
+// matche på BÅDE ym og customers) overstyrer skalaen, med glød beholdt.
+// Den gamle 'green'-tilstanden («høyest i vinduet, men ikke rekord») er fjernet — skalaen
+// sier det av seg selv ved at den høyeste stolpen alltid treffer toppen av rampen.
 function renderMonthChart(stats){
   var el=$("#trend"); if(!el)return;
   var months=((stats&&stats.months)||[]).slice(-6); // siste 6 mnd, kronologisk (months[] er ASC)
@@ -1700,16 +1708,16 @@ function renderMonthChart(stats){
   var rec=stats&&stats.record_customers_month;
   var max=Math.max.apply(null,months.map(function(m){return m.customers||0;}))||1;
   var MAXH=120;
-  // gull = Oversikts EKTE rekord-gull (.wi-fill.rekord-paret #F0C24B/#FFE08A), ikke amber #d4af37
-  var GRAD={ blue:{top:'#4d8bff',bot:'#2a4a7f'}, green:{top:'#3ecf7e',bot:'#1a7f4f'}, gull:{top:'#FFE08A',bot:'#F0C24B'} };
+  // gull = Oversikts EKTE rekord-gull (.wi-fill.rekord-paret #F0C24B/#FFE08A), ikke amber #d4af37.
+  // Eneste gjenværende diskrete tilstand — resten kommer fra colorForRatio.
+  var GULL={top:'#FFE08A',bot:'#F0C24B'};
   el.innerHTML=months.map(function(m){
     var c=m.customers||0;
     var isRecord = !!rec && m.ym===rec.ym && c===rec.customers; // EKTE rekord (ym+antall)
-    var state = isRecord ? 'gull' : (c===max ? 'green' : 'blue'); // høyest-synlig-ikke-rekord → grønn
-    var g=GRAD[state];
+    var g=isRecord ? GULL : colorForRatio(c/max); // DELT med Oversikt — samme {top,bot}-form
     var h=Math.max(Math.round(c/max*MAXH),5);
-    var gullCls=state==='gull'?' gull':'';
-    return '<div class="mcol'+gullCls+'"><div class="mval'+(state==='gull'?' rekord-gull':'')+'">'+c+'</div>'
+    var gullCls=isRecord?' gull':'';
+    return '<div class="mcol'+gullCls+'"><div class="mval'+(isRecord?' rekord-gull':'')+'">'+c+'</div>'
       +'<div class="mbar'+gullCls+'" style="height:'+h+'px;--bar-top:'+g.top+';--bar-bot:'+g.bot+'"></div>'
       +'<div class="mlbl">'+monthLbl(m.ym).slice(0,3)+'</div></div>';
   }).join("");
