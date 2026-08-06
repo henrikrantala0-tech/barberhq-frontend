@@ -127,6 +127,12 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
   ligge i `/app` (ikke `/tmp`) for å finne `pg`-modulen.
 - **Launch-plan ligger i backend-repoets CLAUDE.md (LAUNCH-PLAN-seksjonen) — les den ved
   /oppstart før frontend-arbeid prioriteres.**
+- **ÉN Code-sesjon per repo.** To sesjoner på samme repo deler arbeidstre og kan committe
+  hverandres endringer. Skjedde 6. august: en parallell sesjon committet endringer den ikke
+  hadde skrevet (`46b3940` og `ecacf83` i backend-repoet). Det gikk bra den gangen fordi begge
+  dro i samme retning — men `git add -A` fra én sesjon sveiper med seg halvferdig arbeid fra
+  den andre, og to pusher kan kollidere. Startup-scriptet `C:\start.ps1` åpner én terminal per
+  repo. **Blir det flere, steng dem.**
 
 **Arbeidslogger hører ikke hjemme i CLAUDE.md. Bruk git-historikk.**
 
