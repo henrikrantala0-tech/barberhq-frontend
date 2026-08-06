@@ -424,6 +424,10 @@ Fortsatt åpent:
    crop-modal), Tjenester & tider (inkl. `.gcal-warn`), Konto. Se særlig etter
    horisontal overflow, for små trykkflater, tabeller/lister som ikke brekker, modaler som ikke
    får plass, og «Mer»-menyen. Egen runde — kartlegg først, bli enige om lista, så fiks.
+   **Kjent funn allerede (06.08, bevisst utsatt):** periodepillene brekker til to linjer på 320
+   — «Siste uke / Siste 2 uker» på første linje, «Denne måneden» alene under. Skyldes
+   `.segs{flex-wrap:wrap}`, som er DELT CSS mellom Oversiktens `#segs` og Vekstens `#attrPeriod`,
+   så en fiks treffer begge flater samtidig. Derfor ikke tatt som del av Vekst-arbeidet.
 
 ### Medium
 4. **Vekstfeatures (backend):** rebooking, verving, vinn-tilbake auto-SMS. Deretter landingsside-

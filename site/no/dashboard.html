@@ -316,9 +316,18 @@
   .up-more{width:100%;margin-top:14px;padding:8px;font:inherit;font-size:13px;font-weight:500;background:transparent;border:1px solid var(--line-2);border-radius:8px;color:var(--ink-2);cursor:pointer;letter-spacing:-.01em;display:flex;align-items:center;justify-content:center;gap:6px;transition:border-color .12s,color .12s}
   .up-more:hover{border-color:var(--mut-2);color:var(--ink)}
   .up-more .chev{font-size:11px}
-  .trend{display:flex;align-items:flex-end;gap:10px;padding:8px 4px 0;border-bottom:1px solid var(--line);min-height:150px}
+  /* width:fit-content + max-width:100% — stolpene står tett fra venstre uansett antall,
+     og akse-linja (border-bottom) slutter der stolpene slutter. Med flex:1 på .mcol ble
+     overskytende bredde til luft rundt hver stolpe, så fire måneder så spredt ut mens
+     akse-linja fortsatte tomt mot høyre. På smal skjerm tar max-width over: kolonnene
+     krymper under 46px i stedet for å flyte utenfor. */
+  .trend{display:flex;align-items:flex-end;gap:10px;padding:8px 4px 0;border-bottom:1px solid var(--line);min-height:150px;width:fit-content;max-width:100%}
   /* Vekst måneds-diagram: Oversikts gradient-stolpe-mekanikk, men TRE diskrete tilstander (blå/grønn/gull) */
-  .mcol{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
+  /* flex:0 1 46px — vokser ALDRI forbi 46px (det var det som spredte stolpene), men
+     krymper når .trend treffer max-width:100% på smal skjerm.
+     `width:46px` i tillegg: flex-basis alene gir ingen intrinsisk breddekontribusjon,
+     så width:fit-content på .trend krympet kolonnene til månedsetikettens bredde (23px). */
+  .mcol{flex:0 1 46px;width:46px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
   .mval{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink-2);letter-spacing:-.01em}
   .mbar{width:100%;max-width:46px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--bar-top),var(--bar-bot));min-height:5px;transition:height .25s ease}
   .mlbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
@@ -660,8 +669,27 @@
     <p class="block-s">Hvordan praksisen din vokser over tid.</p>
     <div class="stats" id="vekstStats"></div>
     <p class="block-h" style="margin-top:28px">Kunder per måned</p>
-    <p class="block-s">Siste seks måneder.</p>
+    <!-- Teksten settes av renderMonthChart — «Siste seks måneder» løy så lenge
+         barbereren hadde færre enn seks måneder med data. [oversettelse: sv/da/en] -->
+    <p class="block-s" id="trendSub">Siste seks måneder.</p>
     <div class="trend" id="trend"></div>
+
+    <!-- ATTRIBUSJON — «Hvor kundene kommer fra».
+         VIKTIG: summen av de tre kategoriene er IKKE alle klipp i perioden. Backend
+         klassifiserer også kategorien 'ny' (kundens første booking, uten verving), men
+         filtrerer den bort i `WHERE kategori <> 'ny'`. Tallene her er altså et UTVALG,
+         ikke en fordeling — presenter dem ALDRI som «X % av klippene».
+         Omsetning er RABATTERT (price_nok minus discount_pct), ikke listepris.
+         Fargene matcher «Drevet av BarberHQ» på Oversikt med vilje: samme kategori =
+         samme farge på begge flater. [oversettelse: sv/da/en] -->
+    <p class="block-h" style="margin-top:28px">Hvor kundene kommer fra</p>
+    <p class="block-s">Klipp BarberHQ kan tilskrives — ikke alle klipp i perioden.</p>
+    <div class="segs" id="attrPeriod" role="group" aria-label="Periode for attribusjon">
+      <button type="button" data-p="uke" aria-selected="false">Siste uke</button>
+      <button type="button" data-p="2uker" aria-selected="false">Siste 2 uker</button>
+      <button type="button" data-p="maaned" aria-selected="true">Denne måneden</button>
+    </div>
+    <div id="attrRows"><p class="wb-empty">Laster …</p></div>
     <!-- FLYTMODELL — «Slik henger det sammen» (over alle accordions, alltid åpen).
          [oversettelse: sv/da/en] nye strenger: Kvelden før · Påminnelse · Automatisk · Booket via siden din · Du tar over
          + acc-lead i Rebooking-trekkspillet (SMS-samtykke vs. Påminnelse). -->
@@ -1481,10 +1509,13 @@ async function renderDrivenBy(period){
     }
   }
 
+  // Etikettene MÅ matche trekkspillene i Vekst («Vinn tilbake», «Verving») — det er DER
+  // barbereren møter mekanismene og lærer hva de heter. Het tidligere «Vinn-tilbake» og
+  // «Vervet» her; to navn på samme kategori på to flater er én ting for mye å holde styr på.
   var rows=[
     {name:"Rebooking",    o:reb, color:"var(--good)"}, // grønn #3ecf7e
-    {name:"Vinn-tilbake", o:rec, color:"var(--info)"}, // blå #4d8bff
-    {name:"Vervet",       o:ver, color:"#e0844a"},     // oransje
+    {name:"Vinn tilbake", o:rec, color:"var(--info)"}, // blå #4d8bff
+    {name:"Verving",      o:ver, color:"#e0844a"},     // oransje
   ];
   var rowsHtml=rows.map(function(r){
     return '<div class="drv-row2">'
@@ -1638,6 +1669,14 @@ function renderVekstKpi(stats){
 function renderMonthChart(stats){
   var el=$("#trend"); if(!el)return;
   var months=((stats&&stats.months)||[]).slice(-6); // siste 6 mnd, kronologisk (months[] er ASC)
+  // Undertittel følger FAKTISK antall måneder (etter slice, så maks 6). Ved 0 skjules
+  // den helt — diagrammet sier selv «Ingen måneder med data ennå», og «Siste 0 måneder»
+  // ville vært tull.
+  var sub=$("#trendSub");
+  if(sub){
+    sub.hidden=!months.length;
+    sub.textContent=months.length===1?"Denne måneden.":"Siste "+months.length+" måneder.";
+  }
   if(!months.length){ el.innerHTML='<div class="empty" style="border:0"><p>Ingen måneder med data ennå</p></div>'; return; }
   var rec=stats&&stats.record_customers_month;
   var max=Math.max.apply(null,months.map(function(m){return m.customers||0;}))||1;
@@ -1661,7 +1700,50 @@ async function loadVekst(){
   var stats=await api.statsDaily(); // EKTE /stats (months/record_customers_month/completed_all_time). Tom {daily:[]} ved feil → KPI 0 / tomt diagram, ingen krasj.
   renderVekstKpi(stats);
   renderMonthChart(stats);
+  renderAttribusjon();
 }
+
+/* ---- Attribusjon (Vekst): «Hvor kundene kommer fra» ---- */
+// Egen periode-state, bevisst skilt fra Oversiktens curPeriod: de to flatene skal kunne
+// stå på hver sin periode uten å dra hverandre med seg. Default 'maaned' — samme default
+// som backend faller tilbake på ved ukjent ?period=.
+//
+// SUMMEN AV DE TRE ER IKKE ALLE KLIPP I PERIODEN. Backend klassifiserer også 'ny' og
+// filtrerer den bort før den svarer. Derfor ingen prosentandeler her — kun absolutte tall.
+// Omsetningen er rabattert (price_nok minus discount_pct), ikke listepris.
+var attrPeriod="maaned";
+async function renderAttribusjon(){
+  var el=$("#attrRows"); if(!el)return;
+  var data=await api.attribution(attrPeriod);
+  if(!data){ el.innerHTML='<p class="wb-empty">Kunne ikke hente tallene akkurat nå.</p>'; return; } // 401→redirigert; annen feil→ærlig melding
+  var ver=data.vervet||{count:0,revenue:0};
+  var rec=data.recovery||{count:0,revenue:0};
+  var reb=data.rebooking||{count:0,revenue:0};
+  if(!((ver.count||0)+(rec.count||0)+(reb.count||0))){
+    el.innerHTML='<p class="wb-empty">Ingen tilskrevne klipp i denne perioden ennå.</p>';
+    return;
+  }
+  // Fargene er de SAMME som «Drevet av BarberHQ» på Oversikt — samme kategori, samme farge.
+  var rows=[
+    {name:"Verving",      o:ver, color:"#e0844a"},     // oransje
+    {name:"Vinn tilbake", o:rec, color:"var(--info)"}, // blå #4d8bff
+    {name:"Rebooking",    o:reb, color:"var(--good)"}, // grønn #3ecf7e
+  ];
+  el.innerHTML='<div class="drv-rows">'+rows.map(function(r){
+    return '<div class="drv-row2">'
+      +'<div class="drv-left"><span class="drv-dot" style="background:'+r.color+'"></span><span class="drv-nm">'+r.name+'</span></div>'
+      +'<div class="drv-right"><span class="drv-cuts">'+(r.o.count||0)+' klipp</span><span class="drv-val">'+krFmt(r.o.revenue||0)+'</span></div>'
+      +'</div>';
+  }).join("")+'</div>';
+}
+document.querySelectorAll('#attrPeriod button').forEach(function(b){
+  b.addEventListener('click',function(){
+    if(attrPeriod===b.dataset.p)return;
+    attrPeriod=b.dataset.p;
+    document.querySelectorAll('#attrPeriod button').forEach(function(x){ x.setAttribute('aria-selected', x===b?'true':'false'); });
+    renderAttribusjon();
+  });
+});
 
 let imgs=[];
 let _activeSlot=null;
