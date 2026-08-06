@@ -321,7 +321,7 @@
      overskytende bredde til luft rundt hver stolpe, så fire måneder så spredt ut mens
      akse-linja fortsatte tomt mot høyre. På smal skjerm tar max-width over: kolonnene
      krymper under 46px i stedet for å flyte utenfor. */
-  .trend{display:flex;align-items:flex-end;gap:10px;padding:8px 4px 0;border-bottom:1px solid var(--line);min-height:150px;width:fit-content;max-width:100%}
+  .trend{display:flex;align-items:flex-end;gap:10px;padding:8px 0 0;border-bottom:1px solid var(--line);min-height:150px;width:fit-content;max-width:100%;margin-inline:auto}
   /* Vekst måneds-diagram: Oversikts gradient-stolpe-mekanikk, men TRE diskrete tilstander (blå/grønn/gull) */
   /* flex:0 1 46px — vokser ALDRI forbi 46px (det var det som spredte stolpene), men
      krymper når .trend treffer max-width:100% på smal skjerm.
@@ -401,8 +401,7 @@
   }
   /* ----- Drevet av BarberHQ ----- */
   /* Drevet av BarberHQ — hero-tall + tre rader (pengeverdien BarberHQ hentet inn) */
-  .drv-head{display:flex;align-items:baseline;justify-content:space-between;gap:8px;margin-bottom:3px}
-  .drv-period{font-size:12px;color:var(--mut);flex-shrink:0}
+  /* .drv-head + .drv-period er FJERNET — perioden bor nå i beskrivelsessetningen. */
   #drivenBy{margin-top:2px}
   .drv-hero{text-align:center;padding:22px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:16px}
   .drv-hero-lbl{margin:0 0 8px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
@@ -419,6 +418,11 @@
   .drv-cuts{font-size:13px;color:var(--mut);min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
   .drv-val{font-size:15px;font-weight:700;color:var(--ink);min-width:64px;text-align:right;font-variant-numeric:tabular-nums}
   .drv-trust{margin:14px 0 0;font-size:11.5px;color:var(--mut-2);text-align:center}
+  /* Totalrad (Vekst): kraftigere skillelinje enn radene over, så den leses som en sum
+     og ikke som en fjerde kategori. Må stå ETTER .drv-row2+.drv-row2 — samme spesifisitet. */
+  .drv-row2.attr-total{border-top:1px solid var(--line-2)}
+  .attr-total .drv-nm{color:var(--ink)}
+  .attr-note{margin:9px 2px 0;font-size:11.5px;color:var(--mut-2);line-height:1.5}
   .drv-empty{text-align:center;padding:34px 24px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
   .drv-empty-mark{width:40px;height:40px;border-radius:50%;background:var(--good-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:20px;color:var(--good)}
   .drv-empty-h{margin:0 0 8px;font-size:16px;font-weight:600;color:var(--ink-2)}
@@ -637,10 +641,10 @@
 
     <div class="bottom-grid">
       <div id="drivenByWrap">
-        <div class="drv-head">
-          <p class="block-h" style="margin:0">Drevet av BarberHQ</p>
-          <span class="drv-period" id="drivenByPeriod">denne uka</span>
-        </div>
+        <!-- ⚠ Tittel + basissetning er DELT med attribusjonsseksjonen i Vekst — hold dem i synk.
+             Perioden lå tidligere som en løs «denne uka»-etikett i høyre hjørne; den er flyttet
+             inn i setningen (settes av renderDrivenBy) fordi den så klikkbar ut uten å være det. -->
+        <p class="block-h" style="margin:0 0 3px">Drevet av BarberHQ</p>
         <p class="block-s" id="drivenByLabel">Klipp BarberHQ hentet inn eller hentet tilbake.</p>
         <div id="drivenBy"></div>
         <button class="see-all-btn" id="drivenBySeeAll" onclick="switchPanel('vekst')">Se alt i Vekst →</button>
@@ -682,8 +686,12 @@
          Omsetning er RABATTERT (price_nok minus discount_pct), ikke listepris.
          Fargene matcher «Drevet av BarberHQ» på Oversikt med vilje: samme kategori =
          samme farge på begge flater. [oversettelse: sv/da/en] -->
-    <p class="block-h" style="margin-top:28px">Hvor kundene kommer fra</p>
-    <p class="block-s">Klipp BarberHQ kan tilskrives — ikke alle klipp i perioden.</p>
+    <!-- ⚠ Tittel + beskrivelse er DELT med «Drevet av BarberHQ» på Oversikt — hold dem i synk.
+         Eneste tilsiktede forskjell: Oversikt henger perioden på setningen («… — denne uka.»),
+         fordi panelet der ikke har en periodevelger ved siden av seg. Her står velgeren rett
+         under, så en periode i teksten ville bare dublet den. -->
+    <p class="block-h" style="margin-top:28px">Drevet av BarberHQ</p>
+    <p class="block-s">Klipp BarberHQ hentet inn eller hentet tilbake.</p>
     <div class="segs" id="attrPeriod" role="group" aria-label="Periode for attribusjon">
       <button type="button" data-p="uke" aria-selected="false">Siste uke</button>
       <button type="button" data-p="2uker" aria-selected="false">Siste 2 uker</button>
@@ -1473,8 +1481,14 @@ function attribSum(a){ if(!a)return 0; return (a.rebooking&&a.rebooking.revenue|
 // Henter SITT eget periode-tall — ikke stolpediagrammets total (diagram = alle klipp, panel = funksjons-klipp).
 async function renderDrivenBy(period){
   var wrap=$("#drivenBy"); if(!wrap)return;
+  // Perioden sto tidligere som en løs etikett i høyre hjørne av overskriftsraden, der den
+  // leste som en klikkbar velger. Den er ren tekst, så den hører hjemme i setningen.
+  // ⚠ BASISSETNINGEN ER DELT MED renderAttribusjon() I VEKST — HOLD DEM I SYNK.
+  // Forskjellen er tilsiktet: her henger perioden på, fordi Oversikt ikke har en egen
+  // periodevelger ved siden av panelet. Vekst har det, og ville dublert informasjonen.
   var perLbl=period==="uke"?"denne uka":period==="2uker"?"siste 2 uker":"denne måneden";
-  var pe=$("#drivenByPeriod"); if(pe)pe.textContent=perLbl;
+  var lbl=$("#drivenByLabel");
+  if(lbl)lbl.textContent="Klipp BarberHQ hentet inn eller hentet tilbake — "+perLbl+".";
 
   var seeAll=$("#drivenBySeeAll");
   var data=await api.attribution(period);
@@ -1512,10 +1526,15 @@ async function renderDrivenBy(period){
   // Etikettene MÅ matche trekkspillene i Vekst («Vinn tilbake», «Verving») — det er DER
   // barbereren møter mekanismene og lærer hva de heter. Het tidligere «Vinn-tilbake» og
   // «Vervet» her; to navn på samme kategori på to flater er én ting for mye å holde styr på.
+  //
+  // ⚠ REKKEFØLGEN ER SPEILET AV renderAttribusjon() I VEKST — HOLD DEM I SYNK.
+  // Rebooking → Verving → Vinn tilbake, med samme farge per kategori begge steder.
+  // Sto tidligere i motsatt orden på de to flatene: samme tre farger, ulik rekkefølge,
+  // som er nøyaktig oppskriften på å lese feil rad ved rask skanning.
   var rows=[
     {name:"Rebooking",    o:reb, color:"var(--good)"}, // grønn #3ecf7e
-    {name:"Vinn tilbake", o:rec, color:"var(--info)"}, // blå #4d8bff
     {name:"Verving",      o:ver, color:"#e0844a"},     // oransje
+    {name:"Vinn tilbake", o:rec, color:"var(--info)"}, // blå #4d8bff
   ];
   var rowsHtml=rows.map(function(r){
     return '<div class="drv-row2">'
@@ -1723,18 +1742,32 @@ async function renderAttribusjon(){
     el.innerHTML='<p class="wb-empty">Ingen tilskrevne klipp i denne perioden ennå.</p>';
     return;
   }
-  // Fargene er de SAMME som «Drevet av BarberHQ» på Oversikt — samme kategori, samme farge.
+  // ⚠ REKKEFØLGEN ER SPEILET AV renderDrivenBy() PÅ OVERSIKT — HOLD DEM I SYNK.
+  // Rebooking → Verving → Vinn tilbake, med samme farge per kategori begge steder.
+  // Sto tidligere i motsatt orden på de to flatene: samme tre farger, ulik rekkefølge,
+  // som er nøyaktig oppskriften på å lese feil rad ved rask skanning.
   var rows=[
+    {name:"Rebooking",    o:reb, color:"var(--good)"}, // grønn #3ecf7e
     {name:"Verving",      o:ver, color:"#e0844a"},     // oransje
     {name:"Vinn tilbake", o:rec, color:"var(--info)"}, // blå #4d8bff
-    {name:"Rebooking",    o:reb, color:"var(--good)"}, // grønn #3ecf7e
   ];
+  // Totalen er summen av DISSE TRE — ikke alle klipp i perioden. Kategorien 'ny' (kundens
+  // første booking uten verving) klassifiseres i backend og filtreres bort før svaret.
+  // Derfor «Tilskrevet totalt», ikke «Totalt», og derfor aldri en prosentandel.
+  var totCount=(ver.count||0)+(rec.count||0)+(reb.count||0);
+  var totRev=(ver.revenue||0)+(rec.revenue||0)+(reb.revenue||0);
   el.innerHTML='<div class="drv-rows">'+rows.map(function(r){
     return '<div class="drv-row2">'
       +'<div class="drv-left"><span class="drv-dot" style="background:'+r.color+'"></span><span class="drv-nm">'+r.name+'</span></div>'
       +'<div class="drv-right"><span class="drv-cuts">'+(r.o.count||0)+' klipp</span><span class="drv-val">'+krFmt(r.o.revenue||0)+'</span></div>'
       +'</div>';
-  }).join("")+'</div>';
+  }).join("")
+    +'<div class="drv-row2 attr-total">'
+      +'<div class="drv-left"><span class="drv-nm">Totalt</span></div>'
+      +'<div class="drv-right"><span class="drv-cuts">'+totCount+' klipp</span><span class="drv-val">'+krFmt(totRev)+'</span></div>'
+    +'</div>'
+  +'</div>'
+  +'<p class="attr-note">Ikke alle klipp i perioden. Kunder som fant deg på egen hånd telles ikke med her.</p>';
 }
 document.querySelectorAll('#attrPeriod button').forEach(function(b){
   b.addEventListener('click',function(){
