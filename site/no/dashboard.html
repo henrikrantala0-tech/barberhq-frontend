@@ -499,8 +499,8 @@
   .rpill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;letter-spacing:.01em;white-space:nowrap}
   .rpill.blue{background:rgba(77,139,255,.12);color:#4d8bff}
   .rpill.muted{background:var(--line);color:var(--mut)}
-  /* Forklaringslinje over kundelista + «Vis flere»/«Vis utløste belønninger». */
-  .verv-note{font-size:12px;color:var(--mut-2);line-height:1.55;margin:0 0 12px}
+  /* «Vis flere» / «Vis utløste belønninger». (.verv-note er fjernet — forklaringen bor nå
+     i undertittelen, der den ikke dubler seg selv.) */
   .more-btn{appearance:none;border:0;background:0;font:inherit;font-size:12.5px;font-weight:500;color:var(--info);padding:10px 0 0;cursor:pointer;letter-spacing:-.01em;display:block}
   .more-btn[hidden]{display:none} /* klasse-display:block overstyrer ellers UA [hidden] */
   .more-btn:hover{text-decoration:underline}
@@ -597,12 +597,22 @@
   .segs-val button{border:1px solid var(--line);border-radius:8px;padding:6px 11px;color:var(--mut)}
   .segs-val button[aria-selected=true]{background:var(--line);color:var(--ink);border-color:var(--line-2)}
   html[data-theme="dark"] .segs-val button[aria-selected=true]{background:var(--line);color:var(--ink);border-color:var(--line-2)}
-  .acc-lead{font-size:12.5px;color:var(--mut);line-height:1.55;margin:0 0 14px}
+  /* .acc-lead er FJERNET — siste bruk var i Verving, der acc-sub nå forklarer mekanismen.
+     (Rebooking sin ble slått sammen med noten tidligere samme dag.) */
   .acc-badge[hidden]{display:none}
   .acc-badge{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 6px;border-radius:99px;background:rgba(77,139,255,.14);color:#4d8bff;font-size:11px;font-weight:700}
 
   /* ---- Vinn-tilbake høyre-kontekst + toast ---- */
   .wb-ctx{font-size:11.5px;color:var(--mut);line-height:1.4}
+  /* Angre-tilstand: raden blir stående nedtonet i WB_ANGRE_MS før markeringen skrives. */
+  .wb-marked{background:rgba(127,127,127,.05)}
+  .wb-undo-txt{font-size:12px;color:var(--mut);line-height:1.5}
+  /* Nummeret er informasjon, ikke handling — derfor dempet og på egen linje. */
+  .wb-tel{display:block;margin-top:2px;font-size:11.5px;color:var(--mut-2);font-variant-numeric:tabular-nums}
+  /* «Skjul» er sekundær: ingen ramme, ingen aksentfarge. Skal kunne finnes, ikke tiltrekke. */
+  .wb-skjul{appearance:none;border:0;background:0;font:inherit;font-size:12px;color:var(--mut);
+    cursor:pointer;padding:6px 0 0;display:block;margin-left:auto;letter-spacing:-.01em}
+  .wb-skjul:hover{color:var(--ink-2);text-decoration:underline}
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);background:#1a1a1a;color:#fff;font-size:13px;font-weight:500;padding:11px 18px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:500;letter-spacing:-.01em}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
@@ -743,8 +753,8 @@
     </div>
     <div id="attrRows"><p class="wb-empty">Laster …</p></div>
     <!-- FLYTMODELL — «Slik henger det sammen» (over alle accordions, alltid åpen).
-         [oversettelse: sv/da/en] nye strenger: Kvelden før · Påminnelse · Automatisk · Booket via siden din · Du tar over
-         + acc-lead i Rebooking-trekkspillet (SMS-samtykke vs. Påminnelse). -->
+         [oversettelse: sv/da/en] nye strenger: Kvelden før · Påminnelse · Automatisk · Booket via siden din · Du tar over.
+         (Den gamle acc-lead-en i Rebooking finnes ikke lenger — slått sammen med noten 06.08.) -->
     <div class="flow">
       <h3 class="flow-h">Slik henger det sammen</h3>
       <p class="flow-sub">Automatikken tar de første ukene. Etter 60 dager er det din tur.</p>
@@ -802,6 +812,10 @@
           <label class="sw sw-green acc-sw"><input type="checkbox" id="tog-paam"><span class="sl"></span></label>
         </div>
         <div class="acc-body" hidden>
+          <!-- Noten skal BORT når meldings-forhåndsvisningen bygges (påminnelser er klare til
+               å kobles på, så forbeholdet er ikke sant lenger). Men den blir stående til da:
+               fjernes den alene, åpner trekkspillet til en tom kropp, og det er verre enn en
+               utdatert setning. Se buildRebookingBody i smsRunner.js for kilden. -->
           <p class="sett-note">SMS-utsending kobles på snart — valget ditt lagres.</p>
         </div>
       </div>
@@ -855,7 +869,10 @@
         <button type="button" class="acc-head" aria-expanded="false">
           <span class="acc-htext">
             <span class="acc-title">Verving</span>
-            <span class="acc-sub">Send verve-lenka til kundene du vet er fornøyde — kvalitet, ikke spam.</span>
+            <!-- Sier hva verving ER, ikke hva du gjør med den — det står i undertittelen
+                 lenger nede. Het «Send verve-lenka til kundene du vet er fornøyde», som både
+                 gjentok den undertittelen og sa «send» om en knapp som nå heter «Kopier». -->
+            <span class="acc-sub">Kunder som verver en venn utløser rabatt når vennen har vært innom.</span>
           </span>
           <!-- Chevron fordi denne raden IKKE har bryter — se regelen ved .acc-chev. -->
           <span class="acc-chev">▾</span>
@@ -864,9 +881,9 @@
           <!-- Variant B, som Rebooking: ingen .sett-card, ingen .sett-pills-row (den hadde
                border-bottom som hang igjen under siste rad). Begge innstillingene er setninger
                med grå ledetekst foran, og pillene deler .segs-val med intervall-pillene —
-               samme regel, ikke en kopi. acc-lead står før innstillingene, der noten sto i
-               Rebooking. Verving har ingen bryter, så tittelraden står alene. -->
-          <p class="acc-lead">Du sender lenka → vennen booker → møter opp → rabatten utløses.</p>
+               samme regel, ikke en kopi. Verving har ingen bryter, så tittelraden står alene.
+               .acc-lead («Du sender lenka → vennen booker → …») er FJERNET: acc-sub i headeren
+               forklarer nå mekanismen, og de to sto stablet og sa det samme. -->
           <div class="seg-line">
             <span class="seg-lead">Hvem får rabatt?</span>
             <div class="segs segs-val" id="vervRecipient" role="group" aria-label="Hvem får rabatt">
@@ -887,8 +904,10 @@
           <!-- Handlingen først, kvitteringen etter: kundelista øverst, utløste belønninger under
                og kollapset. [oversettelse: sv/da/en] -->
           <p class="block-h" style="margin-top:22px">Kopier verve-lenke</p>
-          <p class="block-s">Kopier lenka og send den til kompisen.</p>
-          <p class="verv-note">Hver kunde har sin egen lenke — det er sånn du vet hvem som skal ha bonusen.</p>
+          <!-- Undertittelen forklarer HVORFOR lenkene er ulike; tittelen sier hva du gjør.
+               Den erstatter en egen .verv-note som sa nøyaktig det samme («Hver kunde har sin
+               egen lenke …») rett under en undertittel som bare gjentok tittelen. -->
+          <p class="block-s">Hver kunde har sin egen lenke — send den til dem du vet er fornøyde.</p>
           <div id="vervSendList"><p class="wb-empty">Laster …</p></div>
           <button class="more-btn" id="vervSendMore" type="button" hidden></button>
 
@@ -2213,10 +2232,19 @@ document.querySelectorAll('#rebookPills button').forEach(function(b){
 });
 
 /* ---- Verving (spec 2) ---- */
+// SIST LAGREDE verving-innstillinger — kilden meldingsteksten bygges av.
+// IKKE #vervPct.value: det feltet er rå input. Tomt felt ga «20» via ||-fallbacken, og en
+// avvist verdi (utenfor 5–50, PUT-en feiler) ble stående i feltet — begge deler ville fått
+// meldingen til å love en prosent backend aldri lagret. Kunden ser lovnaden, bookingsiden
+// leser backend-verdien, og de to spriker.
+// Oppdateres KUN etter bekreftet lagring (og ved lasting fra /settings).
+var _vervLagret = { pct: 20, recipient: 'begge' };
 async function loadVerving(){
   var s=await api.settings();
   setVervRecipient(s.referral_reward_recipient||'begge');
   $("#vervPct").value=(s.referral_discount_pct!=null?s.referral_discount_pct:20);
+  _vervLagret.recipient = s.referral_reward_recipient || 'begge';
+  _vervLagret.pct       = (s.referral_discount_pct != null ? s.referral_discount_pct : 20);
   $("#vervPctErr").hidden=true;
   renderReferrals(await api.referrals());
   // /customers/recent, IKKE /rebooking. Den siste finner kunder som ikke har booket ny time
@@ -2301,14 +2329,24 @@ $("#vervRefToggle").addEventListener('click',function(){
   this.textContent = apen ? 'Vis utløste belønninger' : 'Skjul utløste belønninger';
 });
 document.querySelectorAll('#vervRecipient button').forEach(function(b){
-  b.addEventListener('click',function(){ setVervRecipient(b.dataset.r); api.saveSettings({referral_reward_recipient:b.dataset.r}); });
+  // Optimistisk pille, men _vervLagret flyttes KUN ved bekreftet lagring. Feiler PUT-en,
+  // rulles pillen tilbake: står pillen på «Kun den som verver» mens backend fortsatt har
+  // «begge», bygger modalen feil melding — og det er nettopp den uenigheten vi fjerner her.
+  b.addEventListener('click',async function(){
+    var forrige=_vervLagret.recipient, err=$("#vervPctErr");
+    setVervRecipient(b.dataset.r);
+    var ok=await api.saveSettings({referral_reward_recipient:b.dataset.r});
+    if(ok){ _vervLagret.recipient=b.dataset.r; err.hidden=true; }
+    else  { setVervRecipient(forrige); err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false; }
+  });
 });
 $("#vervPct").addEventListener('change',async function(){
   var v=parseInt(this.value,10), err=$("#vervPctErr");
   if(!Number.isInteger(v)||v<5||v>50){ err.textContent='Rabatt må være et heltall mellom 5 og 50 %.'; err.hidden=false; return; }
   err.hidden=true;
   var r=await apiFetch('/api/dashboard/settings',{method:'PUT',body:JSON.stringify({referral_discount_pct:v})});
-  if(r&&!r.ok){ var d=await r.json().catch(function(){return{};}); err.textContent=(d&&d.error)||'Kunne ikke lagre.'; err.hidden=false; } // backend-feil pent
+  if(r&&!r.ok){ var d=await r.json().catch(function(){return{};}); err.textContent=(d&&d.error)||'Kunne ikke lagre.'; err.hidden=false; return; } // backend-feil pent
+  _vervLagret.pct=v;   // først NÅ er prosenten sann å love bort
 });
 // Kopier-modal (spec 2d): redigerbar melding + ekte verve-lenke, kopieres til utklippstavla.
 // Het «send» og hadde en disabled Send-knapp da SMS var planen; verving sendes ikke via SMS
@@ -2316,11 +2354,25 @@ $("#vervPct").addEventListener('change',async function(){
 // EKTE lenke: referral_code kommer nå med fra GET /customers/recent. Sto tidligere som
 // bokstavelig «?ref=…» fordi koden aldri hadde vært eksponert i dashboard-API-et.
 function vervLenke(code){ return 'trybarberhq.com/'+(CONFIG.BARBER_SLUG||'din-side')+'?ref='+code; }
+// Meldingen forgrenes på hvem rabatten faktisk tilfaller. Teksten var hardkodet til
+// ny-varianten, og ved recipient='verver' lovet den vennen en rabatt hun aldri får:
+// recipientCoversNy('verver') er false, så bookingsiden viser full pris (book-v2.js) og
+// oppgjøret gir ny-siden ingenting (referralSettle.js). Barbereren sendte altså, i eget navn,
+// et løfte systemet motsier i neste steg. Den ene kombinasjonen der vi selv laget bruddet.
+//
+// «du» = kunden som får meldingen (ververen). «vennen» = den nye. Kjønnsnøytralt med vilje.
+var VERV_TEKST={
+  ny:     function(p){ return 'Del gjerne denne med en venn — vennen får '+p+'% på første klipp og booker enkelt her:'; },
+  verver: function(p){ return 'Del gjerne denne med en venn — du får '+p+'% neste gang, når vennen har vært innom. Vennen booker her:'; },
+  begge:  function(p){ return 'Del gjerne denne med en venn — dere får begge '+p+'%: vennen på første klipp, du neste gang. Vennen booker her:'; }
+};
 function openVervModal(name,code){
   if(!code)return;                                   // uten kode: ingen lenke å kopiere (knappen er alt disabled)
   $("#vervModalName").textContent=name||'kunden';
-  var pct=parseInt($("#vervPct").value,10)||20;
-  $("#vervMsg").value='Hei '+(name||'')+'! Takk for sist 💈\n\nDel gjerne denne med en venn — de får '+pct+'% på første klipp og booker enkelt her:\n'+vervLenke(code);
+  // Fra _vervLagret, ikke fra feltene: se kommentaren ved erklæringen. Ukjent recipient faller
+  // til 'begge' — samme verdi som DB-defaulten, så gjetningen bommer bare hvis /settings feilet.
+  var pct=_vervLagret.pct, lag=VERV_TEKST[_vervLagret.recipient]||VERV_TEKST.begge;
+  $("#vervMsg").value='Hei '+(name||'')+'! Takk for sist 💈\n\n'+lag(pct)+'\n'+vervLenke(code);
   var b=$("#vervCopy"); if(b){ b.textContent='Kopier melding'; b.disabled=false; }
   $("#vervModal").classList.add('open');
 }
@@ -2403,11 +2455,20 @@ function wbGroupHtml(list,kind){
     return '<div class="wb-row">'+
       '<div class="wb-info">'+
         '<div class="wb-name">'+ny+esc(c.name||"–")+'</div>'+
-        '<div class="wb-meta">'+(c.completed_count||0)+' klipp</div>'+
+        // Nummeret vises, men er IKKE en handling — den som vil ringe kan lese det.
+        // Bevisst ikke tel:-lenke: på desktop åpner den ingenting nyttig, og et trykk
+        // ville konkurrert med primærhandlingen om hva raden egentlig ber deg gjøre.
+        '<div class="wb-meta">'+(c.completed_count||0)+' klipp'+
+          (c.phone?'<span class="wb-tel">'+esc(c.phone)+'</span>':'')+'</div>'+
       '</div>'+
       '<div class="wb-right">'+
         '<div class="wb-ctx">'+ctx+'</div>'+
-        '<button class="verv-btn" data-contact="'+esc(c.customer_id)+'" style="margin-top:6px">Kontaktet</button>'+
+        // Primærhandlingen er å KOPIERE meldinga, ikke å bokføre. «Marker som kontaktet» var
+        // ærlig, men ba barbereren om et administrativt klikk uten gevinst — han hadde alt
+        // tatt kontakt. Nå gjør trykket den nyttige tingen, OG er markeringen.
+        '<button class="verv-btn" data-wbcopy="'+esc(c.customer_id)+'" data-kind="'+kind+'" data-name="'+esc(c.name||'')+'" style="margin-top:6px">Kopier melding</button>'+
+        // Dempet, fordi det er unntaket: kunden han ikke vil følge opp.
+        '<button class="wb-skjul" data-contact="'+esc(c.customer_id)+'">Skjul</button>'+
       '</div>'+
     '</div>';
   }).join('')+'</div>';
@@ -2422,18 +2483,90 @@ function wbRender(ns,lap){   // no-show: ferskest øverst (backend DESC). lapsed
   if(lap.length) html+='<div class="wb-group"><p class="wb-group-h">Ikke vært her på en stund</p>'+wbGroupHtml(lap,'lapsed')+'</div>';
   el.innerHTML=html;
 }
-// «Kontaktet» → POST contacted → optimistisk fjern rad (kom tilbake ved feil). 45d snooze håndteres backend. Gjelder BEGGE grupper.
-$("#wbList").addEventListener('click',async function(e){
-  var b=e.target.closest('[data-contact]'); if(!b)return;
+// «Marker som kontaktet» → UTSATT POST med angre-vindu. Gjelder BEGGE grupper.
+//
+// POST-en fyres IKKE ved klikk. Raden bytter til en angre-tilstand i WB_ANGRE_MS, og først
+// når vinduet løper ut skrives markeringen. Grunnen er at det ikke finnes noen vei tilbake
+// server-side: winback_contacts har UNIQUE (barber_id, customer_id) og NOT NULL contacted_at,
+// og det eksisterer ingen DELETE-rute. Et feilklikk ville derfor snoozet kunden i 45 dager.
+// Å utsette skrivingen gir angre uten et nytt endepunkt — og angre blir umiddelbar i stedet
+// for avhengig av at enda et nettverkskall lykkes.
+//
+// Prisen er at markeringen kan gå tapt hvis fanen lukkes i vinduet. Derfor wbFlush() på
+// pagehide/visibilitychange med keepalive:true, som lar requesten fullføre etter at siden er
+// borte. Bytter man fane innen vinduet, committes markeringen tidlig — angre ryker, men
+// handlingen barbereren faktisk ba om, overlever. Det er riktig vei å feile.
+var WB_ANGRE_MS = 6000;
+var _wbVenter = {};   // customer_id → { timer, row, original, wasFresh }
+
+// Vinn-tilbake-meldingene. Ingen låst formulering fantes (docs/vekstmekanismer.md:452:
+// «Det er ingen getWinbackSendList og ingen buildWinbackBody»), så disse er nye.
+// Personlig og skamfri: ingen rabatt (låst beslutning), ingen «vi savner deg»-språk, og
+// ingen antydning om at no-showen var et problem. Barbereren limer selv inn i Snap/DM/SMS.
+function wbMelding(kind, navn){
+  var fornavn=String(navn||'').trim().split(/\s+/)[0];
+  var hei=fornavn?('Hei '+fornavn+'!'):'Hei!';
+  var url='trybarberhq.com/'+(CONFIG.BARBER_SLUG||'din-side');
+  return kind==='no_show'
+    ? hei+' Alt ok? Book gjerne ny time når det passer: '+url
+    : hei+' Lenge siden sist — book gjerne en time når det passer: '+url;
+}
+function wbMarker(b){
   var row=b.closest('.wb-row'); if(!row)return;
+  var id=b.dataset.contact||b.dataset.wbcopy; if(!id || _wbVenter[id])return;
   var wasFresh=!!row.querySelector('.wb-newdot');
-  b.disabled=true; row.style.opacity='.4';
-  var ok=await api.winbackContacted(b.dataset.contact);
-  if(!ok){ row.style.opacity=''; b.disabled=false; return; }   // feil → kom tilbake
-  var group=row.closest('.wb-group'); row.remove();
-  if(group && !group.querySelector('.wb-row')) group.remove();  // tom gruppe → fjern overskriften også
+  var original=row.innerHTML;
+  row.classList.add('wb-marked');
+  // Snooze-varigheten står HER, ikke som hjelpetekst i trekkspillet: den er bare relevant
+  // i det sekundet man har trykket, og en fast linje over lista ville vært enda en
+  // forklaringstekst ingen leser.
+  row.innerHTML=
+    '<div class="wb-info"><div class="wb-undo-txt">Markert som kontaktet. Kommer tilbake i lista om 45 dager hvis kunden fortsatt kvalifiserer.</div></div>'+
+    '<div class="wb-right"><button class="verv-btn" data-undo="'+esc(id)+'">Angre</button></div>';
+  _wbVenter[id]={ timer:setTimeout(function(){ wbFullfor(id); }, WB_ANGRE_MS), row:row, original:original, wasFresh:wasFresh };
+}
+function wbAngre(id){
+  var v=_wbVenter[id]; if(!v)return;
+  clearTimeout(v.timer);
+  v.row.classList.remove('wb-marked');
+  v.row.innerHTML=v.original;
+  delete _wbVenter[id];
+}
+async function wbFullfor(id){
+  var v=_wbVenter[id]; if(!v)return;
+  delete _wbVenter[id];
+  var ok=await api.winbackContacted(id);
+  if(!ok){ wbAngre(id); return; }              // feil → raden kommer tilbake (v er allerede løsrevet)
+  var group=v.row.closest('.wb-group'); v.row.remove();
+  if(group && !group.querySelector('.wb-row')) group.remove();   // tom gruppe → fjern overskriften også
   if(!$("#wbList").querySelector('.wb-row')) $("#wbList").innerHTML='<p class="wb-empty">Ingen å følge opp nå — bra jobba.</p>';
-  if(wasFresh){ wbFresh=Math.max(0,wbFresh-1); updateWbSignals(wbFresh); }
+  if(v.wasFresh){ wbFresh=Math.max(0,wbFresh-1); updateWbSignals(wbFresh); }
+}
+// keepalive lar requesten fullføre etter at siden er borte — uten den ville en lukket fane
+// stilltiende forkastet markeringen, og kunden dukket opp igjen som om ingenting skjedde.
+function wbFlush(){
+  Object.keys(_wbVenter).forEach(function(id){
+    clearTimeout(_wbVenter[id].timer);
+    delete _wbVenter[id];
+    apiFetch('/api/dashboard/winback/'+encodeURIComponent(id)+'/contacted',{method:'POST',body:'{}',keepalive:true});
+  });
+}
+window.addEventListener('pagehide', wbFlush);
+document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') wbFlush(); });
+
+$("#wbList").addEventListener('click',async function(e){
+  var u=e.target.closest('[data-undo]');   if(u){ wbAngre(u.dataset.undo); return; }
+  var k=e.target.closest('[data-wbcopy]');
+  if(k){
+    // Kopieringen ER markeringen. Men bare hvis den lyktes: uten teksten på utklippstavla
+    // har barbereren ingenting å lime inn, og da skal kunden IKKE snoozes i 45 dager.
+    var ok=await kopierTekst(wbMelding(k.dataset.kind, k.dataset.name));
+    if(!ok){ showToast('Kunne ikke kopiere'); return; }
+    showToast('Melding kopiert');
+    wbMarker(k);
+    return;
+  }
+  var b=e.target.closest('[data-contact]'); if(b) wbMarker(b);   // «Skjul»: samme utsatte POST, ingen kopiering
 });
 
 /* ---- Tjenester ---- */
