@@ -466,6 +466,9 @@
   .sett-pills-row>label{display:block;font-size:13.5px;font-weight:500;letter-spacing:-.01em;margin-bottom:9px}
   .sett-hint{font-size:12px;color:var(--mut);margin-top:9px}
   .sett-note{font-size:12px;color:var(--mut);padding:11px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;line-height:1.55}
+  /* Står noten FØRST i trekkspillet, må den ha egen luft under — global reset nuller
+     p-margin, og avstanden kom tidligere fra .sett-card{margin-bottom} under den. */
+  .sett-note-top{margin-bottom:12px}
   .sett-h{font-size:13px;font-weight:700;letter-spacing:-.01em;margin:26px 0 3px}
   /* Utseende-kortet i Konto skal ha samme bredde som .subcard over det (520px),
      ikke strekke seg over hele 1120px-wrappen. Gjelder KUN Konto — Vekst-kortene
@@ -550,9 +553,32 @@
   .acc-htext{flex:1;min-width:0}
   .acc-title{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600;letter-spacing:-.01em}
   .acc-sub{display:block;font-size:12px;color:var(--mut);margin-top:3px;line-height:1.5}
-  .acc-chev{flex-shrink:0;color:var(--mut);font-size:12px;transition:transform .18s;margin-top:4px}
-  .acc-head[aria-expanded="true"] .acc-chev{transform:rotate(180deg)}
+  /* Chevronen er FJERNET (06.08). Da er hover + fokus eneste signal om at raden kan åpnes,
+     så de må finnes — cursor:pointer alene sees ikke på touch og ikke før man treffer. */
+  .acc-head:hover{background:rgba(127,127,127,.06)}
+  .acc-head:focus-visible{outline:2px solid var(--info);outline-offset:-2px}
   .acc-body{padding:2px 17px 18px}
+  /* Bryter på tittelraden (variant B). .acc-head er en <button>, så bryteren kan IKKE ligge
+     inni den: nøstet interaktivt element er ugyldig HTML, og et klikk på bryteren ville
+     samtidig slått trekkspillet av/på. Den ligger derfor som SØSKEN i .acc-row — og derfor
+     finner accordion-JS-en body via .acc, ikke via nextElementSibling.
+     Bryteren ligger ABSOLUTT oppå raden, ikke i en flex-kolonne ved siden av: da kan
+     .acc-head være full bredde, og hover-flaten dekker HELE raden i stedet for å stoppe
+     i en synlig kant før bryteren. Bryteren fanger sitt eget klikk fordi den ligger over. */
+  .acc-row{position:relative}
+  .acc-row .acc-head{padding-right:62px}
+  .acc-sw{position:absolute;right:17px;top:14px}
+  /* Intervall som setning: «Send etter» + piller på samme linje. */
+  .seg-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
+  .seg-lead{font-size:12.5px;color:var(--mut-2);flex-shrink:0}
+  /* Intervall-pillene er en VERDI, ikke en av/på-tilstand. Derfor IKKE blå — blå betyr «på»
+     ellers i dashbordet (.sw, og .segs på Oversikt der pillen er et valgt filter). Valgt pille
+     markeres med lysere ramme + svak flate. Ingen container-boks rundt gruppa (flat, variant B).
+     Må stå etter den mørke .segs-regelen for å vinne på like spesifisitet. */
+  .segs-val{background:none;border:0;border-radius:0;padding:0;gap:6px}
+  .segs-val button{border:1px solid var(--line);border-radius:8px;padding:6px 11px;color:var(--mut)}
+  .segs-val button[aria-selected=true]{background:var(--line);color:var(--ink);border-color:var(--line-2)}
+  html[data-theme="dark"] .segs-val button[aria-selected=true]{background:var(--line);color:var(--ink);border-color:var(--line-2)}
   .acc-lead{font-size:12.5px;color:var(--mut);line-height:1.55;margin:0 0 14px}
   .acc-badge[hidden]{display:none}
   .acc-badge{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 6px;border-radius:99px;background:rgba(77,139,255,.14);color:#4d8bff;font-size:11px;font-weight:700}
@@ -744,58 +770,48 @@
     <div class="acc-list">
 
       <!-- SMS-påminnelse -->
+      <!-- Variant B: flat, ingen boks i boks. Bryteren står på tittelraden, tittel + beskrivelse
+           er ENESTE tekst (tog-label/tog-sub var en duplikat av headeren). [oversettelse: sv/da/en] -->
       <div class="acc" id="accPaam">
-        <button type="button" class="acc-head" aria-expanded="false">
-          <span class="acc-htext">
-            <span class="acc-title">SMS-påminnelse</span>
-            <span class="acc-sub">Kunden får en SMS dagen før timen — færre glemte avtaler.</span>
-          </span>
-          <span class="acc-chev">▾</span>
-        </button>
+        <div class="acc-row">
+          <button type="button" class="acc-head" aria-expanded="false">
+            <span class="acc-htext">
+              <span class="acc-title">SMS-påminnelse</span>
+              <span class="acc-sub">Alle kunder med time neste dag får én SMS kvelden før — færre glemte avtaler.</span>
+            </span>
+          </button>
+          <label class="sw sw-green acc-sw"><input type="checkbox" id="tog-paam"><span class="sl"></span></label>
+        </div>
         <div class="acc-body" hidden>
-          <div class="sett-card">
-            <div class="tog-row">
-              <div>
-                <div class="tog-label">SMS-påminnelse</div>
-                <div class="tog-sub">Kunden får SMS dagen før timen</div>
-              </div>
-              <label class="sw sw-green"><input type="checkbox" id="tog-paam"><span class="sl"></span></label>
-            </div>
-          </div>
           <p class="sett-note">SMS-utsending kobles på snart — valget ditt lagres.</p>
         </div>
       </div>
 
       <!-- Rebooking -->
+      <!-- Variant B: flat, ingen boks i boks. Bryteren på tittelraden, intervallet som setning.
+           .sett-card og .sett-pills-row er BORTE her — det var den hengende border-bottom-en
+           under pillene. Noten om at utsending ikke er koblet på er fjernet fra dette
+           trekkspillet. [oversettelse: sv/da/en] -->
       <div class="acc" id="accRebook">
-        <button type="button" class="acc-head" aria-expanded="false">
-          <span class="acc-htext">
-            <span class="acc-title">Rebooking</span>
-            <span class="acc-sub">Automatisk påminnelse med booking-lenka til kunder som ikke har booket ny time.</span>
-          </span>
-          <span class="acc-chev">▾</span>
-        </button>
+        <div class="acc-row">
+          <button type="button" class="acc-head" aria-expanded="false">
+            <span class="acc-htext">
+              <span class="acc-title">Rebooking</span>
+              <span class="acc-sub">Kunder som ikke har booket ny time får én SMS når intervallet er passert.</span>
+            </span>
+          </button>
+          <label class="sw sw-green acc-sw"><input type="checkbox" id="tog-rebook"><span class="sl"></span></label>
+        </div>
         <div class="acc-body" hidden>
-          <p class="acc-lead">Rebooking-SMS går kun til kunder som har samtykket til SMS ved booking. Påminnelse har ingen slik begrensning.</p>
-          <div class="sett-card">
-            <div class="tog-row">
-              <div>
-                <div class="tog-label">SMS-rebooking</div>
-                <div class="tog-sub">Kunden oppfordres til å booke igjen etter timen</div>
-              </div>
-              <label class="sw sw-green"><input type="checkbox" id="tog-rebook"><span class="sl"></span></label>
-            </div>
-            <div class="sett-pills-row">
-              <label>Rebooking-intervall</label>
-              <div class="segs" id="rebookPills" role="group" aria-label="Rebooking-intervall">
-                <button type="button" data-days="28" aria-selected="false">Ofte · 28 dager</button>
-                <button type="button" data-days="35" aria-selected="false">Normalt · 35 dager</button>
-                <button type="button" data-days="45" aria-selected="false">Sjeldnere · 45 dager</button>
-              </div>
-              <p class="sett-hint" id="rebookHint" hidden>Velg et intervall</p>
+          <div class="seg-line">
+            <span class="seg-lead">Send etter</span>
+            <div class="segs segs-val" id="rebookPills" role="group" aria-label="Rebooking-intervall">
+              <button type="button" data-days="28" aria-selected="false">28 dager</button>
+              <button type="button" data-days="35" aria-selected="false">35 dager</button>
+              <button type="button" data-days="45" aria-selected="false">45 dager</button>
             </div>
           </div>
-          <p class="sett-note">SMS-utsending kobles på snart — valget ditt lagres.</p>
+          <p class="sett-hint" id="rebookHint" hidden>Velg et intervall</p>
         </div>
       </div>
 
@@ -806,7 +822,6 @@
             <span class="acc-title">Vinn tilbake <span class="acc-badge" id="wbBadge" hidden></span></span>
             <span class="acc-sub">Kunder som ikke møtte opp, eller har vært borte lenge. En personlig melding fra deg — ikke en maskin.</span>
           </span>
-          <span class="acc-chev">▾</span>
         </button>
         <div class="acc-body" hidden>
           <div id="wbList"><p class="wb-empty">Laster …</p></div>
@@ -820,7 +835,6 @@
             <span class="acc-title">Verving</span>
             <span class="acc-sub">Send verve-lenka til kundene du vet er fornøyde — kvalitet, ikke spam.</span>
           </span>
-          <span class="acc-chev">▾</span>
         </button>
         <div class="acc-body" hidden>
           <p class="acc-lead">Du sender lenka → vennen booker → møter opp → rabatten utløses.</p>
@@ -2222,8 +2236,11 @@ document.querySelectorAll('.acc-head').forEach(function(h){
   h.addEventListener('click',function(){
     var open=h.getAttribute('aria-expanded')==='true';
     h.setAttribute('aria-expanded',String(!open));
-    var body=h.nextElementSibling;
-    if(body && body.classList.contains('acc-body')) body.hidden=open;
+    // Via .acc, ikke nextElementSibling: i SMS-trekkspillene ligger .acc-head inne i en
+    // .acc-row sammen med bryteren, så body er ikke lenger neste søsken.
+    var acc=h.closest('.acc');
+    var body=acc && acc.querySelector('.acc-body');
+    if(body) body.hidden=open;
   });
 });
 

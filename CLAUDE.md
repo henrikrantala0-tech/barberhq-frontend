@@ -496,9 +496,14 @@ Fortsatt åpent:
 14. **Hero-bildegrense server-side** + **orders.barber_id FK-enforcement** — se sikkerhetshull.
 15. **Oversettelse (utsatt fase):** plassholder-strenger (`(spesialitet)`/`(adresse)`/`(bio)`) +
     4 bilde-hjelpetekster + Vekst-flytens nye ledd (Påminnelse-boks «Kvelden før» + kortede
-    undertekster + SMS-samtykke-linja i Rebooking-trekkspillet) + alt sv/da/en. Greppbar markør i
-    koden: `[oversettelse: sv/da/en]`. **Også: norske palett-navn i `PALETTES` i
+    undertekster) + de omskrevne SMS-trekkspillene i Vekst (06.08: `acc-sub` på både
+    SMS-påminnelse og Rebooking, «Send etter» + pilletekstene «28/35/45 dager», og
+    `sett-note` i SMS-påminnelse) + alt sv/da/en. Greppbar markør i koden:
+    `[oversettelse: sv/da/en]`. **Også: norske palett-navn i `PALETTES` i
     `site/en/kom-i-gang.html`** — se «Layout-galleri på engelsk», punkt 6.
+    **Merk:** «SMS-samtykke-linja i Rebooking-trekkspillet» sto her tidligere. Den strengen
+    finnes ikke lenger — `acc-lead` ble slått sammen med noten, og noten ble deretter fjernet
+    fra Rebooking helt. Ikke let etter den.
 16. **Tidssone hardkodet via market** + **buildPalette duplisert** (fyll.cjs ↔ site/no/palett.js) — se
     «Kjent teknisk gjeld» over.
 
