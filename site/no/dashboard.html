@@ -499,6 +499,11 @@
   .rpill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;letter-spacing:.01em;white-space:nowrap}
   .rpill.blue{background:rgba(77,139,255,.12);color:#4d8bff}
   .rpill.muted{background:var(--line);color:var(--mut)}
+  /* Forklaringslinje over kundelista + «Vis flere»/«Vis utløste belønninger». */
+  .verv-note{font-size:12px;color:var(--mut-2);line-height:1.55;margin:0 0 12px}
+  .more-btn{appearance:none;border:0;background:0;font:inherit;font-size:12.5px;font-weight:500;color:var(--info);padding:10px 0 0;cursor:pointer;letter-spacing:-.01em;display:block}
+  .more-btn[hidden]{display:none} /* klasse-display:block overstyrer ellers UA [hidden] */
+  .more-btn:hover{text-decoration:underline}
   .verv-btn{appearance:none;border:1px solid var(--line-2);background:var(--surface);font:inherit;font-size:12px;font-weight:500;color:var(--info);padding:5px 11px;border-radius:7px;cursor:pointer;letter-spacing:-.01em;white-space:nowrap}
   .verv-btn:hover{background:var(--info-bg);border-color:var(--info)}
   .verv-modal{position:fixed;inset:0;z-index:400;background:rgba(10,10,10,.6);display:none;align-items:center;justify-content:center;padding:20px}
@@ -553,8 +558,17 @@
   .acc-htext{flex:1;min-width:0}
   .acc-title{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:600;letter-spacing:-.01em}
   .acc-sub{display:block;font-size:12px;color:var(--mut);margin-top:3px;line-height:1.5}
-  /* Chevronen er FJERNET (06.08). Da er hover + fokus eneste signal om at raden kan åpnes,
-     så de må finnes — cursor:pointer alene sees ikke på touch og ikke før man treffer. */
+  /* ALLE fire trekkspill har chevron. Uten den er det ingenting som viser at raden kan
+     utvides — du ser bare tittel og beskrivelse, og hover finnes ikke på touch.
+     Der raden OGSÅ har bryter: chevronen står til VENSTRE for bryteren, inne i
+     <button class="acc-head">. Det er med vilje. Chevronen markerer da høyre kant av det
+     som faktisk er klikkbart, og hover-flaten stopper på nøyaktig samme sted — de to peker
+     på samme grense. Ytterst til høyre ville chevronen ligget UTENFOR knappen, bak en
+     kontroll den ikke har noe med å gjøre. Luft mellom dem: .acc-head padding-right. */
+  /* Større og lysere enn før (12px/--mut): pilen er eneste signal om at raden utvides,
+     og på mørk bakgrunn forsvant den nesten helt. */
+  .acc-chev{flex-shrink:0;color:var(--ink-2);font-size:16px;line-height:1;transition:transform .18s;margin-top:3px}
+  .acc-head[aria-expanded="true"] .acc-chev{transform:rotate(180deg)}
   .acc-head:hover{background:rgba(127,127,127,.06)}
   .acc-head:focus-visible{outline:2px solid var(--info);outline-offset:-2px}
   .acc-body{padding:2px 17px 18px}
@@ -562,18 +576,22 @@
      inni den: nøstet interaktivt element er ugyldig HTML, og et klikk på bryteren ville
      samtidig slått trekkspillet av/på. Den ligger derfor som SØSKEN i .acc-row — og derfor
      finner accordion-JS-en body via .acc, ikke via nextElementSibling.
-     Bryteren ligger ABSOLUTT oppå raden, ikke i en flex-kolonne ved siden av: da kan
-     .acc-head være full bredde, og hover-flaten dekker HELE raden i stedet for å stoppe
-     i en synlig kant før bryteren. Bryteren fanger sitt eget klikk fordi den ligger over. */
-  .acc-row{position:relative}
-  .acc-row .acc-head{padding-right:62px}
-  .acc-sw{position:absolute;right:17px;top:14px}
-  /* Intervall som setning: «Send etter» + piller på samme linje. */
+     Flex, ikke absolutt posisjonering: hover-flaten skal STOPPE der knappen slutter, så den
+     ikke dekker bryteren og antyder at et trykk der utvider raden. 14px mellom chevron og
+     bryter — to separate kontroller skal ikke lese som én gruppe. */
+  .acc-row{display:flex;align-items:flex-start}
+  .acc-row .acc-head{flex:1;min-width:0;padding-right:14px}
+  .acc-sw{flex-shrink:0;margin:14px 17px 0 0}
+  /* Innstilling som setning: grå ledetekst + kontroll på samme linje.
+     Delt av Rebooking («Send etter») og Verving («Hvem får rabatt?», «Rabatt»). */
   .seg-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
+  .seg-line + .seg-line{margin-top:14px}
   .seg-lead{font-size:12.5px;color:var(--mut-2);flex-shrink:0}
-  /* Intervall-pillene er en VERDI, ikke en av/på-tilstand. Derfor IKKE blå — blå betyr «på»
-     ellers i dashbordet (.sw, og .segs på Oversikt der pillen er et valgt filter). Valgt pille
-     markeres med lysere ramme + svak flate. Ingen container-boks rundt gruppa (flat, variant B).
+  .seg-unit{font-size:12.5px;color:var(--mut-2)}
+  /* Verdi-piller (rebooking-intervall + hvem-får-rabatt). En VERDI, ikke en av/på-tilstand.
+     Derfor IKKE blå — blå betyr «på» ellers i dashbordet (.sw, og .segs på Oversikt der pillen
+     er et valgt filter). Valgt pille markeres med lysere ramme + svak flate. Ingen container-boks
+     rundt gruppa (flat, variant B).
      Må stå etter den mørke .segs-regelen for å vinne på like spesifisitet. */
   .segs-val{background:none;border:0;border-radius:0;padding:0;gap:6px}
   .segs-val button{border:1px solid var(--line);border-radius:8px;padding:6px 11px;color:var(--mut)}
@@ -779,6 +797,7 @@
               <span class="acc-title">SMS-påminnelse</span>
               <span class="acc-sub">Alle kunder med time neste dag får én SMS kvelden før — færre glemte avtaler.</span>
             </span>
+            <span class="acc-chev">▾</span>
           </button>
           <label class="sw sw-green acc-sw"><input type="checkbox" id="tog-paam"><span class="sl"></span></label>
         </div>
@@ -799,6 +818,7 @@
               <span class="acc-title">Rebooking</span>
               <span class="acc-sub">Kunder som ikke har booket ny time får én SMS når intervallet er passert.</span>
             </span>
+            <span class="acc-chev">▾</span>
           </button>
           <label class="sw sw-green acc-sw"><input type="checkbox" id="tog-rebook"><span class="sl"></span></label>
         </div>
@@ -822,6 +842,8 @@
             <span class="acc-title">Vinn tilbake <span class="acc-badge" id="wbBadge" hidden></span></span>
             <span class="acc-sub">Kunder som ikke møtte opp, eller har vært borte lenge. En personlig melding fra deg — ikke en maskin.</span>
           </span>
+          <!-- Chevron fordi denne raden IKKE har bryter — se regelen ved .acc-chev. -->
+          <span class="acc-chev">▾</span>
         </button>
         <div class="acc-body" hidden>
           <div id="wbList"><p class="wb-empty">Laster …</p></div>
@@ -835,34 +857,47 @@
             <span class="acc-title">Verving</span>
             <span class="acc-sub">Send verve-lenka til kundene du vet er fornøyde — kvalitet, ikke spam.</span>
           </span>
+          <!-- Chevron fordi denne raden IKKE har bryter — se regelen ved .acc-chev. -->
+          <span class="acc-chev">▾</span>
         </button>
         <div class="acc-body" hidden>
+          <!-- Variant B, som Rebooking: ingen .sett-card, ingen .sett-pills-row (den hadde
+               border-bottom som hang igjen under siste rad). Begge innstillingene er setninger
+               med grå ledetekst foran, og pillene deler .segs-val med intervall-pillene —
+               samme regel, ikke en kopi. acc-lead står før innstillingene, der noten sto i
+               Rebooking. Verving har ingen bryter, så tittelraden står alene. -->
           <p class="acc-lead">Du sender lenka → vennen booker → møter opp → rabatten utløses.</p>
-          <div class="sett-card">
-            <div class="sett-pills-row">
-              <label>Hvem får rabatt?</label>
-              <div class="segs" id="vervRecipient" role="group" aria-label="Hvem får rabatt">
-                <button type="button" data-r="begge" aria-selected="false">Begge</button>
-                <button type="button" data-r="verver" aria-selected="false">Kun den som verver</button>
-                <button type="button" data-r="ny" aria-selected="false">Kun ny kunde</button>
-              </div>
+          <div class="seg-line">
+            <span class="seg-lead">Hvem får rabatt?</span>
+            <div class="segs segs-val" id="vervRecipient" role="group" aria-label="Hvem får rabatt">
+              <button type="button" data-r="begge" aria-selected="false">Begge</button>
+              <button type="button" data-r="verver" aria-selected="false">Kun den som verver</button>
+              <button type="button" data-r="ny" aria-selected="false">Kun ny kunde</button>
             </div>
-            <div class="sett-num-row">
-              <label for="vervPct">Rabatt</label>
-              <div class="sett-num-in">
-                <input type="number" id="vervPct" min="5" max="50" step="1" value="20">
-                <span>%</span>
-              </div>
-            </div>
-            <p class="sett-hint" id="vervPctErr" hidden></p>
           </div>
+          <div class="seg-line">
+            <label class="seg-lead" for="vervPct">Rabatt</label>
+            <div class="sett-num-in">
+              <input type="number" id="vervPct" min="5" max="50" step="1" value="20">
+              <span class="seg-unit">%</span>
+            </div>
+          </div>
+          <p class="sett-hint" id="vervPctErr" hidden></p>
+
+          <!-- Handlingen først, kvitteringen etter: kundelista øverst, utløste belønninger under
+               og kollapset. [oversettelse: sv/da/en] -->
+          <p class="block-h" style="margin-top:22px">Kopier verve-lenke</p>
+          <p class="block-s">Kopier lenka og send den til kompisen.</p>
+          <p class="verv-note">Hver kunde har sin egen lenke — det er sånn du vet hvem som skal ha bonusen.</p>
+          <div id="vervSendList"><p class="wb-empty">Laster …</p></div>
+          <button class="more-btn" id="vervSendMore" type="button" hidden></button>
 
           <p class="block-h" style="margin-top:22px">Utløste belønninger</p>
-          <div id="vervReferrals"><p class="wb-empty">Laster …</p></div>
-
-          <p class="block-h" style="margin-top:22px">Send verve-lenke</p>
-          <p class="block-s">Kunder du nylig har klippet. Send lenka til dem du vet er fornøyde.</p>
-          <div id="vervSendList"><p class="wb-empty">Laster …</p></div>
+          <button class="more-btn" id="vervRefToggle" type="button" aria-expanded="false" aria-controls="vervRefWrap">Vis utløste belønninger</button>
+          <div id="vervRefWrap" hidden>
+            <div id="vervReferrals"><p class="wb-empty">Laster …</p></div>
+            <button class="more-btn" id="vervRefMore" type="button" hidden></button>
+          </div>
         </div>
       </div>
 
@@ -884,16 +919,16 @@
     </div>
   </div>
 
-  <!-- Send verve-lenke-modal (spec 2d): redigerbar melding + preview. SEND disabled (SMS ikke koblet). -->
+  <!-- Kopier verve-lenke-modal (spec 2d): redigerbar melding + ekte lenke → utklippstavla. -->
   <div id="vervModal" class="verv-modal" role="dialog" aria-modal="true">
     <div class="verv-modal-inner">
-      <div class="verv-modal-h">Send verve-lenke</div>
+      <div class="verv-modal-h">Kopier verve-lenke</div>
       <p class="verv-modal-sub">Til <b id="vervModalName">kunden</b></p>
       <textarea id="vervMsg" rows="6"></textarea>
-      <p class="verv-modal-note">SMS kobles på snart — meldingen sendes ikke ennå.</p>
+      <p class="verv-modal-note">Rediger gjerne teksten før du kopierer. BarberHQ sender ingenting — du sender selv.</p>
       <div class="verv-modal-actions">
         <button class="crop-btn-cancel" id="vervCancel" type="button">Lukk</button>
-        <button class="crop-btn-save" id="vervSend" type="button" disabled title="SMS kobles på snart">Send</button>
+        <button class="crop-btn-save" id="vervCopy" type="button">Kopier melding</button>
       </div>
     </div>
   </div>
@@ -1178,6 +1213,17 @@ const api={
   },
   async rebookingCandidates(){ // GET /api/dashboard/rebooking → {enabled,interval_days,customers:[{customer_id,name,phone,last_visit_at,days_since,last_service}]}
     const r=await apiFetch('/api/dashboard/rebooking');
+    if(!r||!r.ok)return{customers:[]};
+    return r.json();
+  },
+  // GET /api/dashboard/customers/recent → {limit,customers:[{customer_id,name,phone,referral_code,last_visit_at,last_service}]}
+  // Kunder etter siste FULLFØRTE klipp, nyeste først. Mater verve-lista.
+  // limit=100 (ruta klemmer til maks 200): «Vis flere» skal kunne nå hele kundebasen for en
+  // garasje-barberer — lista er eneste vei til verve-lenka, så et lavt tak gjør kunder
+  // uoppnåelige. Merk at ruta IKKE returnerer days_since, kun last_visit_at.
+  async recentCustomers(limit){
+    const n=(limit==null?100:limit);
+    const r=await apiFetch('/api/dashboard/customers/recent?limit='+encodeURIComponent(n));
     if(!r||!r.ok)return{customers:[]};
     return r.json();
   },
@@ -2173,33 +2219,87 @@ async function loadVerving(){
   $("#vervPct").value=(s.referral_discount_pct!=null?s.referral_discount_pct:20);
   $("#vervPctErr").hidden=true;
   renderReferrals(await api.referrals());
-  renderSendList((await api.rebookingCandidates()).customers||[]);
+  // /customers/recent, IKKE /rebooking. Den siste finner kunder som ikke har booket ny time
+  // på 28–60 dager — motsatt av «sist klippet», og den kan per definisjon ikke inneholde noen
+  // som var her nylig. Se backend-kommentaren over ruta.
+  renderSendList((await api.recentCustomers()).customers||[]);
 }
 function setVervRecipient(r){
   document.querySelectorAll('#vervRecipient button').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.r===r?'true':'false'); });
 }
 function vervDate(iso){ if(!iso)return'–'; var d=new Date(iso); return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear(); }
+// Begge listene viser 4 først med «Vis flere». Utløste belønninger er i tillegg kollapset
+// bak en egen knapp — den er kvittering, ikke handling, og skal ikke stjele plass fra lista
+// du faktisk skal gjøre noe med.
+var VERV_FORST=4;
+var _vervRefs=[], _vervRefsAlle=false;
+var _vervSend=[], _vervSendAlle=false;
+
 function renderReferrals(list){
-  var el=$("#vervReferrals"); if(!el)return;
-  if(!list||!list.length){ el.innerHTML='<p class="wb-empty">Ingen vervinger ennå — send lenka til en fornøyd kunde.</p>'; return; }
-  el.innerHTML='<div class="wb-card">'+list.map(function(r){
+  if(arguments.length) { _vervRefs=list||[]; _vervRefsAlle=false; }
+  var el=$("#vervReferrals"), mer=$("#vervRefMore"); if(!el)return;
+  if(!_vervRefs.length){
+    el.innerHTML='<p class="wb-empty">Ingen vervinger ennå — send lenka til en fornøyd kunde.</p>';
+    if(mer)mer.hidden=true; return;
+  }
+  var vis=_vervRefsAlle?_vervRefs:_vervRefs.slice(0,VERV_FORST);
+  el.innerHTML='<div class="wb-card">'+vis.map(function(r){
     var pill=r.status==='brukt' ? '<span class="rpill muted">Brukt</span>' : '<span class="rpill blue">Utløst</span>';
     return '<div class="wb-row"><div class="wb-info">'
       +'<div class="wb-name">'+esc(r.referrer_name||'–')+' vervet '+esc(r.referred_name||'–')+'</div>'
       +'<div class="wb-meta">'+(r.discount_pct||0)+'% · '+vervDate(r.created_at)+'</div></div>'
       +'<div class="wb-right">'+pill+'</div></div>';
   }).join('')+'</div>';
+  if(mer){
+    var rest=_vervRefs.length-VERV_FORST;
+    mer.hidden = rest<=0;
+    mer.textContent = _vervRefsAlle ? 'Vis færre' : ('Vis flere ('+rest+')');
+  }
+}
+// «· 3 dager siden». /customers/recent gir last_visit_at, ikke days_since (det gjorde
+// /rebooking), så antallet regnes ut her. 0 og 1 særbehandles fordi lista NÅ faktisk kan
+// inneholde kunder klippet i dag — med /rebooking var minimum 28 dager, så «0 dager siden»
+// kunne aldri oppstå.
+function sisteBesok(c){
+  var d = (c.days_since!=null) ? c.days_since
+        : (c.last_visit_at ? Math.floor((Date.now()-new Date(c.last_visit_at))/86400000) : null);
+  if(d==null || !(d>=0)) return '';
+  return ' · ' + (d===0 ? 'i dag' : d===1 ? 'i går' : d+' dager siden');
 }
 function renderSendList(list){
-  var el=$("#vervSendList"); if(!el)return;
-  if(!list||!list.length){ el.innerHTML='<p class="wb-empty">Ingen nylig klippede kunder akkurat nå.</p>'; return; }
-  el.innerHTML='<div class="wb-card">'+list.map(function(c){
+  if(arguments.length) { _vervSend=list||[]; _vervSendAlle=false; }
+  var el=$("#vervSendList"), mer=$("#vervSendMore"); if(!el)return;
+  if(!_vervSend.length){
+    el.innerHTML='<p class="wb-empty">Ingen kunder å sende til akkurat nå.</p>';
+    if(mer)mer.hidden=true; return;
+  }
+  var vis=_vervSendAlle?_vervSend:_vervSend.slice(0,VERV_FORST);
+  el.innerHTML='<div class="wb-card">'+vis.map(function(c){
     return '<div class="wb-row"><div class="wb-info">'
       +'<div class="wb-name">'+esc(c.name||'–')+'</div>'
-      +'<div class="wb-meta">'+esc(c.last_service||'')+(c.days_since!=null?' · '+c.days_since+' dager siden':'')+'</div></div>'
-      +'<div class="wb-right"><button class="verv-btn" data-name="'+esc(c.name||'')+'">Send verve-lenke</button></div></div>';
+      +'<div class="wb-meta">'+esc(c.last_service||'')+sisteBesok(c)+'</div></div>'
+      // referral_code settes ved kundens FØRSTE booking gjennom BarberHQ. Kunder som er
+      // lagt inn før verving fantes, kan ha NULL. Da skal knappen ikke kunne kopiere en
+      // ødelagt lenke — den sier i stedet at lenka ikke finnes for akkurat den kunden.
+      +'<div class="wb-right">'+(c.referral_code
+        ? '<button class="verv-btn" data-name="'+esc(c.name||'')+'" data-code="'+esc(c.referral_code)+'">Kopier</button>'
+        : '<button class="verv-btn" disabled title="Verve-lenka lages ved kundens første booking gjennom siden din.">Ingen lenke</button>')
+      +'</div></div>';
   }).join('')+'</div>';
+  if(mer){
+    var rest=_vervSend.length-VERV_FORST;
+    mer.hidden = rest<=0;
+    mer.textContent = _vervSendAlle ? 'Vis færre' : ('Vis flere ('+rest+')');
+  }
 }
+$("#vervSendMore").addEventListener('click',function(){ _vervSendAlle=!_vervSendAlle; renderSendList(); });
+$("#vervRefMore").addEventListener('click',function(){ _vervRefsAlle=!_vervRefsAlle; renderReferrals(); });
+$("#vervRefToggle").addEventListener('click',function(){
+  var wrap=$("#vervRefWrap"), apen=this.getAttribute('aria-expanded')==='true';
+  this.setAttribute('aria-expanded',String(!apen));
+  wrap.hidden=apen;
+  this.textContent = apen ? 'Vis utløste belønninger' : 'Skjul utløste belønninger';
+});
 document.querySelectorAll('#vervRecipient button').forEach(function(b){
   b.addEventListener('click',function(){ setVervRecipient(b.dataset.r); api.saveSettings({referral_reward_recipient:b.dataset.r}); });
 });
@@ -2210,16 +2310,45 @@ $("#vervPct").addEventListener('change',async function(){
   var r=await apiFetch('/api/dashboard/settings',{method:'PUT',body:JSON.stringify({referral_discount_pct:v})});
   if(r&&!r.ok){ var d=await r.json().catch(function(){return{};}); err.textContent=(d&&d.error)||'Kunne ikke lagre.'; err.hidden=false; } // backend-feil pent
 });
-// Send-modal (spec 2d): SEND disabled (SMS ikke koblet). Redigering + preview virker.
-function openVervModal(name){
+// Kopier-modal (spec 2d): redigerbar melding + ekte verve-lenke, kopieres til utklippstavla.
+// Het «send» og hadde en disabled Send-knapp da SMS var planen; verving sendes ikke via SMS
+// (LÅST) — barbereren kopierer og sender selv.
+// EKTE lenke: referral_code kommer nå med fra GET /customers/recent. Sto tidligere som
+// bokstavelig «?ref=…» fordi koden aldri hadde vært eksponert i dashboard-API-et.
+function vervLenke(code){ return 'trybarberhq.com/'+(CONFIG.BARBER_SLUG||'din-side')+'?ref='+code; }
+function openVervModal(name,code){
+  if(!code)return;                                   // uten kode: ingen lenke å kopiere (knappen er alt disabled)
   $("#vervModalName").textContent=name||'kunden';
   var pct=parseInt($("#vervPct").value,10)||20;
-  var link='trybarberhq.com/'+(CONFIG.BARBER_SLUG||'din-side')+'?ref=…'; // referral_code ikke eksponert i dashboard-API → ref-token fylles server-side ved sending
-  $("#vervMsg").value='Hei '+(name||'')+'! Takk for sist 💈\n\nDel gjerne denne med en venn — de får '+pct+'% på første klipp og booker enkelt her:\n'+link;
+  $("#vervMsg").value='Hei '+(name||'')+'! Takk for sist 💈\n\nDel gjerne denne med en venn — de får '+pct+'% på første klipp og booker enkelt her:\n'+vervLenke(code);
+  var b=$("#vervCopy"); if(b){ b.textContent='Kopier melding'; b.disabled=false; }
   $("#vervModal").classList.add('open');
 }
+// Utklippstavle med fallback: navigator.clipboard krever secure context og finnes ikke
+// overalt. execCommand er utdatert, men er forskjellen på en knapp som virker og en som
+// later som. Returnerer true/false så knappen kan si fra ærlig.
+async function kopierTekst(txt){
+  try{
+    if(navigator.clipboard && window.isSecureContext){ await navigator.clipboard.writeText(txt); return true; }
+  }catch(e){ /* faller gjennom til fallback */ }
+  try{
+    var ta=document.createElement('textarea');
+    ta.value=txt; ta.setAttribute('readonly',''); ta.style.position='fixed'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.select();
+    var ok=document.execCommand('copy');
+    document.body.removeChild(ta);
+    return ok;
+  }catch(e){ return false; }
+}
 function closeVervModal(){ $("#vervModal").classList.remove('open'); }
-$("#vervSendList").addEventListener('click',function(e){ var b=e.target.closest('.verv-btn'); if(b) openVervModal(b.dataset.name); });
+$("#vervSendList").addEventListener('click',function(e){ var b=e.target.closest('.verv-btn'); if(b && !b.disabled) openVervModal(b.dataset.name, b.dataset.code); });
+$("#vervCopy").addEventListener('click',async function(){
+  var b=this, ok=await kopierTekst($("#vervMsg").value);
+  b.textContent = ok ? 'Kopiert ✓' : 'Kunne ikke kopiere';
+  b.disabled = true;
+  setTimeout(function(){ b.textContent='Kopier melding'; b.disabled=false; }, 1800);
+  if(ok) showToast('Melding kopiert');
+});
 $("#vervCancel").addEventListener('click',closeVervModal);
 $("#vervModal").addEventListener('click',function(e){ if(e.target===this) closeVervModal(); });
 
