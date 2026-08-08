@@ -2820,9 +2820,14 @@ async function loadDesign(){
     if(!r.ok){renderDesign();return;}
     const d=await r.json();
     if(d.palette)design.palette=d.palette;
-    // Ukjent/manglende font faller IKKE lenger tilbake på "fraunces". Den defaulten skrev en
-    // verdi barbereren ikke hadde valgt, og saveDesign ville lagret den ved neste trykk.
-    if(d.font&&FONTS.find(function(f){return f.key===d.font;}))design.font=d.font;
+    // FONTS er velgerens TRE VALG, ikke settet av gyldige verdier. Prod har barbere med
+    // font='inter' i DB — den står ikke i lista. Gammel kode skrev den stille om til
+    // "fraunces"; da den fallbacken ble fjernet, ble font stående null → designKjent() false
+    // → hele forhåndsvisningen erstattet av feilmelding, og «Lagre design» blokkert.
+    // Riktig er å ta imot verdien som den er: serveren rendrer allerede med den (verifisert
+    // mot prod — /preview?font=inter svarer 200). Font-grid-et markerer da ingenting, og det
+    // er sant: ingen av de tre tilbudte fontene er den som faktisk er satt.
+    if(d.font)design.font=d.font;
     if(d.layout){design.layout=d.layout;savedLayout=d.layout;}
     if(d.mode)design.mode=d.mode;
   }catch(e){}
