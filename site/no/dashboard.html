@@ -549,13 +549,9 @@
   .flow-noshow svg{width:18px;height:18px;color:#4d8bff;flex-shrink:0}
   .flow-noshow p{font-size:12.5px;line-height:1.5;color:var(--ink-2)}
   .flow-noshow strong{color:#4d8bff;font-weight:600}
-  /* Gruppeoverskrift under hovedtittelen. Samme mål som .fs-dag (flytmodellens interne
-     overskrifter) så de tre nivåene faktisk leser som tre: .block-h → .grp-h → innhold.
-     Prikken er .fl-dot fra flow-legend, med samme fargebetydning — grønn = automatikken
-     jobber, blå = din tur. TEKSTEN holdes nøytral: grønn skrift ville lest som «på/aktiv»,
-     altså en tilstand, og disse er kategorier. */
-  .grp-h{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:700;
-    letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin:22px 0 10px}
+  /* .grp-h er FJERNET. «Automatikk» og «Din tur» er tilbake på .block-h, altså søsken til
+     «Drevet av BarberHQ» — hierarkiet er to nivåer igjen, ikke tre. .fl-dot lever videre i
+     flow-legend, som er der prikkene forklares. */
   .flow-legend{display:flex;gap:18px;margin-top:14px;font-size:11.5px;color:var(--mut)}
   .flow-legend span{display:flex;align-items:center;gap:7px}
   .fl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -619,15 +615,10 @@
 
   /* ---- Vinn-tilbake høyre-kontekst + toast ---- */
   .wb-ctx{font-size:11.5px;color:var(--mut);line-height:1.4}
-  /* Angre-tilstand: raden blir stående nedtonet i WB_ANGRE_MS før markeringen skrives. */
-  .wb-marked{background:rgba(127,127,127,.05)}
-  .wb-undo-txt{font-size:12px;color:var(--mut);line-height:1.5}
   /* Nummeret er informasjon, ikke handling — derfor dempet og på egen linje. */
   .wb-tel{display:block;margin-top:2px;font-size:11.5px;color:var(--mut-2);font-variant-numeric:tabular-nums}
-  /* «Skjul» er sekundær: ingen ramme, ingen aksentfarge. Skal kunne finnes, ikke tiltrekke. */
-  .wb-skjul{appearance:none;border:0;background:0;font:inherit;font-size:12px;color:var(--mut);
-    cursor:pointer;padding:6px 0 0;display:block;margin-left:auto;letter-spacing:-.01em}
-  .wb-skjul:hover{color:var(--ink-2);text-decoration:underline}
+  /* .wb-marked, .wb-undo-txt og .wb-skjul er FJERNET sammen med angre-mekanikken og
+     handlingsknappene — Vinn tilbake er ren oversikt. */
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);background:#1a1a1a;color:#fff;font-size:13px;font-weight:500;padding:11px 18px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:500;letter-spacing:-.01em}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
@@ -770,16 +761,13 @@
     <!-- FLYTMODELL — «Slik henger det sammen» (over alle accordions, alltid åpen).
          [oversettelse: sv/da/en] nye strenger: Kvelden før · Påminnelse · Automatisk · Booket via siden din · Du tar over.
          (Den gamle acc-lead-en i Rebooking finnes ikke lenger — slått sammen med noten 06.08.) -->
-    <!-- Hovedtittel, søsken til «Drevet av BarberHQ» (.block-h, samme typografi). Under den
-         to gruppeoverskrifter i .grp-h: maskin og menneske. «Automatikk» framfor
-         «SMS-funksjoner» — den står i opposisjon til «Din tur», og flytmodellen under er ikke
-         bare SMS.
-         De to .block-s-linjene som sto her («Går av seg selv …» / «BarberHQ finner kundene …»)
-         er FJERNET: .block-s er 12,5px og ville vært større enn .grp-h på 10,5px — undertekst
-         som overdøver sin egen overskrift. Innholdet finnes uansett i flow-sub og i hvert
-         trekkspills acc-sub. [oversettelse: sv/da/en] -->
-    <p class="block-h" style="margin-top:30px">Slik fyller du stolen</p>
-    <p class="grp-h"><span class="fl-dot" style="background:#3ecf7e"></span>Automatikk</p>
+    <!-- «Automatikk» og «Din tur» deler Vekst i maskin og menneske, begge på .block-h — søsken
+         til «Drevet av BarberHQ». En hovedtittel over dem («Slik fyller du stolen») og prikker
+         foran ble prøvd og forkastet: to nivåer holder, og prikkene forklares uansett i
+         flow-legend rett under.
+         «Automatikk» framfor «SMS-funksjoner»: den står i opposisjon til «Din tur», og
+         flytmodellen under er ikke bare SMS. [oversettelse: sv/da/en] -->
+    <p class="block-h" style="margin-top:30px">Automatikk</p>
     <div class="flow">
       <h3 class="flow-h">Slik henger det sammen</h3>
       <p class="flow-sub">Automatikken tar de første ukene. Etter 60 dager er det din tur.</p>
@@ -883,10 +871,11 @@
          overskrift over hele lista ville lovet automatikk for Vinn tilbake og Verving, som
          begge krever at barbereren gjør noe selv. «Din tur» er samme ord som flytmodellens
          blå forklaring rett over, med vilje. [oversettelse: sv/da/en] -->
-    <p class="grp-h"><span class="fl-dot" style="background:#4d8bff"></span>Din tur</p>
+    <p class="block-h" style="margin-top:30px">Din tur</p>
     <div class="acc-list">
 
-      <!-- Vinn tilbake — badge = ferske no-shows (≤3 dager) når >0, ellers stum -->
+      <!-- Vinn tilbake — badge = ALLE i lista når >0, ellers stum. (Telte ferske no-shows
+           ≤3 dager fram til handlingene ble fjernet; se kommentaren ved loadWinback.) -->
       <div class="acc" id="accWinback">
         <button type="button" class="acc-head" aria-expanded="false">
           <span class="acc-htext">
@@ -1267,10 +1256,8 @@ const api={
     if(!r||!r.ok)return{no_show:[],lapsed:[]};
     return r.json();
   },
-  async winbackContacted(customerId){
-    const r=await apiFetch('/api/dashboard/winback/'+encodeURIComponent(customerId)+'/contacted',{method:'POST',body:'{}'});
-    return r&&r.ok;
-  },
+  // winbackContacted() er FJERNET — Vinn tilbake er ren oversikt og skriver ingenting.
+  // Backend-ruta POST /winback/:id/contacted står urørt, den har bare ingen kaller.
   async referrals(){
     const r=await apiFetch('/api/dashboard/referrals');
     if(!r||!r.ok)return [];
@@ -2493,12 +2480,17 @@ document.querySelectorAll('.acc-head').forEach(function(h){
 });
 
 /* ---- Vinn-tilbake (to grupper: «Møtte ikke opp» = no_show, «Ikke vært her på en stund» = lapsed) ---- */
-let wbFresh=0;   // ferske no-shows (≤3 dager) — driver badge (Vekst) + Oversikt-nudge
+// Badge + Oversikt-nudge teller nå ALLE i lista, ikke bare ferske no-shows (≤3 dager).
+// Grunnen er at «ufulgt» ikke lenger er en tilstand vi kjenner: uten «Fulgt opp»-knappen
+// skrives det ingen contacted-rader, så antallet kan ikke telles ned. Et tall som aldri
+// synker ville løyet om det het «å følge opp» og telte et utvalg — nå teller det lista, og
+// teksten stemmer med det du ser når du åpner den.
+let wbFresh=0;   // antall rader i Vinn tilbake — driver badge (Vekst) + Oversikt-nudge
 async function loadWinback(){
   const d=await api.winback();            // begge grupper (backend consent-filtrert; lapsed kan være tynn/tom → ikke en bug)
   const ns=d.no_show||[], lap=d.lapsed||[];
   wbRender(ns, lap);
-  wbFresh=ns.filter(function(c){return c.days_since!=null && c.days_since<=3;}).length;
+  wbFresh=ns.length+lap.length;
   updateWbSignals(wbFresh);
 }
 function updateWbSignals(n){
@@ -2528,15 +2520,14 @@ function wbGroupHtml(list,kind){
         '<div class="wb-meta">'+(c.completed_count||0)+' klipp'+
           (c.phone?'<span class="wb-tel">'+esc(c.phone)+'</span>':'')+'</div>'+
       '</div>'+
+      // REN OVERSIKT — ingen handlinger på raden. «Fulgt opp»/«Skjul» og hele den utsatte
+      // POST-en med angre-vindu er fjernet. Konsekvens å være klar over: barbereren kan ikke
+      // lenger snooze en kunde, så ingen forsvinner fra lista før hen booker på nytt (alle tre
+      // gruppene har NOT has_upcoming) eller faller ut av vinduet. winback_contacts skrives
+      // ikke lenger fra dashbordet i det hele tatt — 45-dagers-snoozen i /winback-spørringen
+      // står, men får aldri rader å filtrere på.
       '<div class="wb-right">'+
         '<div class="wb-ctx">'+ctx+'</div>'+
-        // «Fulgt opp» beskriver hva barbereren gjorde, ikke en tilstand — og er kortest.
-        // Het «Kontaktet» (leste som en merkelapp systemet hadde satt), så «Marker som
-        // kontaktet» (ærlig, men bokføring), så en periode «Kopier melding» med ferdige
-        // tekster. De tekstene er fjernet: barbereren skriver selv, i sin egen kanal.
-        '<button class="verv-btn" data-contact="'+esc(c.customer_id)+'" style="margin-top:6px">Fulgt opp</button>'+
-        // Dempet, fordi det er unntaket: kunden han ikke vil følge opp.
-        '<button class="wb-skjul" data-contact="'+esc(c.customer_id)+'">Skjul</button>'+
       '</div>'+
     '</div>';
   }).join('')+'</div>';
@@ -2551,76 +2542,13 @@ function wbRender(ns,lap){   // no-show: ferskest øverst (backend DESC). lapsed
   if(lap.length) html+='<div class="wb-group"><p class="wb-group-h">Ikke vært her på en stund</p>'+wbGroupHtml(lap,'lapsed')+'</div>';
   el.innerHTML=html;
 }
-// «Marker som kontaktet» → UTSATT POST med angre-vindu. Gjelder BEGGE grupper.
-//
-// POST-en fyres IKKE ved klikk. Raden bytter til en angre-tilstand i WB_ANGRE_MS, og først
-// når vinduet løper ut skrives markeringen. Grunnen er at det ikke finnes noen vei tilbake
-// server-side: winback_contacts har UNIQUE (barber_id, customer_id) og NOT NULL contacted_at,
-// og det eksisterer ingen DELETE-rute. Et feilklikk ville derfor snoozet kunden i 45 dager.
-// Å utsette skrivingen gir angre uten et nytt endepunkt — og angre blir umiddelbar i stedet
-// for avhengig av at enda et nettverkskall lykkes.
-//
-// Prisen er at markeringen kan gå tapt hvis fanen lukkes i vinduet. Derfor wbFlush() på
-// pagehide/visibilitychange med keepalive:true, som lar requesten fullføre etter at siden er
-// borte. Bytter man fane innen vinduet, committes markeringen tidlig — angre ryker, men
-// handlingen barbereren faktisk ba om, overlever. Det er riktig vei å feile.
-var WB_ANGRE_MS = 6000;
-var _wbVenter = {};   // customer_id → { timer, row, original, wasFresh }
-
-// wbMelding() med ferdigskrevne no-show-/lapsed-tekster er FJERNET. Vinn-tilbake er få
-// kunder med høy verdi, og en mal gjør nettopp den meldingen upersonlig — barbereren skriver
-// selv, i sin egen kanal. (Verving beholder sin mal: der er poenget en LENKE som må være
-// riktig, ikke en formulering.)
-function wbMarker(b){
-  var row=b.closest('.wb-row'); if(!row)return;
-  var id=b.dataset.contact; if(!id || _wbVenter[id])return;
-  var wasFresh=!!row.querySelector('.wb-newdot');
-  var original=row.innerHTML;
-  row.classList.add('wb-marked');
-  // Snooze-varigheten står HER, ikke som hjelpetekst i trekkspillet: den er bare relevant
-  // i det sekundet man har trykket, og en fast linje over lista ville vært enda en
-  // forklaringstekst ingen leser.
-  row.innerHTML=
-    '<div class="wb-info"><div class="wb-undo-txt">Markert som kontaktet. Kommer tilbake i lista om 45 dager hvis kunden fortsatt kvalifiserer.</div></div>'+
-    '<div class="wb-right"><button class="verv-btn" data-undo="'+esc(id)+'">Angre</button></div>';
-  _wbVenter[id]={ timer:setTimeout(function(){ wbFullfor(id); }, WB_ANGRE_MS), row:row, original:original, wasFresh:wasFresh };
-}
-function wbAngre(id){
-  var v=_wbVenter[id]; if(!v)return;
-  clearTimeout(v.timer);
-  v.row.classList.remove('wb-marked');
-  v.row.innerHTML=v.original;
-  delete _wbVenter[id];
-}
-async function wbFullfor(id){
-  var v=_wbVenter[id]; if(!v)return;
-  delete _wbVenter[id];
-  var ok=await api.winbackContacted(id);
-  if(!ok){ wbAngre(id); return; }              // feil → raden kommer tilbake (v er allerede løsrevet)
-  var group=v.row.closest('.wb-group'); v.row.remove();
-  if(group && !group.querySelector('.wb-row')) group.remove();   // tom gruppe → fjern overskriften også
-  if(!$("#wbList").querySelector('.wb-row')) $("#wbList").innerHTML='<p class="wb-empty">Ingen å følge opp nå — bra jobba.</p>';
-  if(v.wasFresh){ wbFresh=Math.max(0,wbFresh-1); updateWbSignals(wbFresh); }
-}
-// keepalive lar requesten fullføre etter at siden er borte — uten den ville en lukket fane
-// stilltiende forkastet markeringen, og kunden dukket opp igjen som om ingenting skjedde.
-function wbFlush(){
-  Object.keys(_wbVenter).forEach(function(id){
-    clearTimeout(_wbVenter[id].timer);
-    delete _wbVenter[id];
-    apiFetch('/api/dashboard/winback/'+encodeURIComponent(id)+'/contacted',{method:'POST',body:'{}',keepalive:true});
-  });
-}
-window.addEventListener('pagehide', wbFlush);
-document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') wbFlush(); });
-
-// «Fulgt opp» og «Skjul» gjør det SAMME mot backend: begge skriver en snooze-rad. Forskjellen
-// er hva barbereren sier til seg selv, ikke hva systemet lagrer — winback_contacts har ingen
-// kolonne for grunn. Ville vi skille dem i data, måtte tabellen utvides.
-$("#wbList").addEventListener('click',function(e){
-  var u=e.target.closest('[data-undo]');   if(u){ wbAngre(u.dataset.undo); return; }
-  var b=e.target.closest('[data-contact]'); if(b) wbMarker(b);
-});
+// INGEN handlinger i Vinn tilbake lenger. Hele blokka som lå her er fjernet:
+// wbMarker/wbAngre/wbFullfor, _wbVenter + WB_ANGRE_MS (angre-vinduet), wbFlush med
+// keepalive på pagehide/visibilitychange, og klikk-handleren på #wbList.
+// Lista er ren oversikt — den skriver ingenting.
+// api.winbackContacted er fjernet i samme slengen. Backend-ruta
+// POST /api/dashboard/winback/:id/contacted finnes fortsatt og er urørt; den har bare
+// ingen kaller igjen i frontend.
 
 /* ---- Tjenester ---- */
 let hoved=[{name:"Skinnfade",price:450,min:45},{name:"Klipp",price:300,min:30}];
