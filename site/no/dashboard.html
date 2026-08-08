@@ -94,8 +94,9 @@
   .ref p{font-size:13px;color:var(--ink-2);margin-bottom:4px}
   .ref .small{font-size:12px;color:var(--mut)}
 
-  /* Slot-bokser (Bilder — nå i Design-fanen) */
-  .bilder-block{margin-top:34px;padding-top:26px;border-top:1px solid var(--line)}
+  /* Slot-bokser (Bilder — trekkspill i «Din side») */
+  /* .bilder-block er FJERNET 08.08: den ga topp-marg + skillelinje for å skille Bilder fra
+     Design da begge lå løst i samme panel. Trekkspillet gjør nå den jobben. */
   .slot-hint{font-size:12px;color:var(--mut);margin:-6px 0 16px;line-height:1.45}
   .slot-hint:empty{display:none}
   .slots-lock-note{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:13px;color:var(--ink-2);line-height:1.45}
@@ -260,15 +261,22 @@
   .sub-micro{font-size:12px;color:var(--mut);margin:9px 2px 0;line-height:1.45;max-width:520px}
 
   .dlbl{font-size:12px;color:var(--mut);font-weight:600;margin:16px 0 4px;letter-spacing:-.01em}
-  .design-wrap{display:grid;grid-template-columns:1fr 281px;grid-template-rows:auto auto;gap:0 30px;align-items:start}
-  .design-controls{grid-column:1;grid-row:1;min-width:0}
-  .design-preview{grid-column:2;grid-row:1/3;position:sticky;top:18px}
-  .design-wrap .savebar{grid-column:1;grid-row:2}
+  /* «Din side»: trekkspill venstre, preview høyre — begge på PANEL-nivå.
+     Erstattet .design-wrap, som var et 2×2-grid der preview lå i kolonne 2 og strakte seg
+     over begge rader (grid-row:1/3). Da preview flyttet ut til panel-nivå, ville det gridet
+     stått igjen med en tom høyrekolonne på 281px — .design-controls er nå eneste barn og
+     ville krympet til venstre halvdel av bredden uten at noe fylte resten.
+     Preview er sticky så den følger med mens man scroller gjennom et langt trekkspill. */
+  .side-wrap{display:grid;grid-template-columns:1fr 281px;gap:0 30px;align-items:start}
+  .side-accs{grid-column:1;min-width:0}
+  .side-accs.acc-list{margin-top:0}
+  .design-preview{grid-column:2;position:sticky;top:18px}
+  .design-controls{min-width:0}
   @media(max-width:719px){
-    .design-wrap{display:flex;flex-direction:column;gap:16px}
-    .design-controls{order:1}
+    /* Mobil: preview UNDER alle tre trekkspillene, ikke ved siden av. */
+    .side-wrap{display:flex;flex-direction:column;gap:16px}
+    .side-accs{order:1}
     .design-preview{order:2;position:static;width:100%;max-width:340px;margin:0 auto}
-    .design-wrap .savebar{order:3}
     .preset-grid{grid-template-columns:repeat(2,1fr)}
     .preset{padding:9px 10px}
     .preset .pt{font-size:12px}
@@ -549,16 +557,26 @@
   .flow-noshow svg{width:18px;height:18px;color:#4d8bff;flex-shrink:0}
   .flow-noshow p{font-size:12.5px;line-height:1.5;color:var(--ink-2)}
   .flow-noshow strong{color:#4d8bff;font-weight:600}
-  /* Seksjonstittel for «Automatikk» og «Din tur» — nivået OVER .block-h.
-     18px/800 er valgt mot det som allerede finnes i fanen: .flow-h er 15px og .acc-title
-     14px, altså det største innholdet under overskriften. Tittelen må slå dem tydelig for å
-     lese som en seksjon og ikke som enda et kort, men holder seg under .brand (19px) så
-     ingenting i fanen konkurrerer med logoen.
-     Brukes av Veksts TRE seksjoner: «Drevet av BarberHQ», «Automatikk» og «Din tur».
-     .block-h (13px) er blokknivået inni dem — «Kunder per måned», «Kopier verve-lenke» osv.
-     ⚠ Oversiktens «Drevet av BarberHQ» er IKKE med: den står i et panel-kort og beholder
+  /* Tittelnivå 1 — sidetittel (.panel-h) og seksjonstittel (.sec-h).
+     SAMME STØRRELSE, med vilje: de deler ÉN font-size-deklarasjon, så de kan ikke drifte fra
+     hverandre. Skal størrelsen endres, endres den én gang under og treffer begge. Ikke splitt
+     dem opp i to regler «for ryddighetens skyld» — da er drift bare et redigeringsuhell unna,
+     og det var nettopp det som gjorde sidetittelen mindre enn seksjonene sine (13px mot 18px).
+     16px/800 er valgt mot innholdet i Vekst: .flow-h er 15px/700, .acc-title 14px/600. 1px
+     pluss et helt vektsteg skiller tittelen fra det tyngste innholdet under, og den holder seg
+     under .brand (19px) så ingenting i fanen konkurrerer med logoen. .sec-h var 18px fram til
+     08.08 — senket da sidetittelen ble løftet opp på samme nivå.
+     Eneste tilsiktede forskjell mellom de to er MARGIN: .panel-h står øverst i et panel og skal
+     ligge tett på sin .block-s; .sec-h deler opp innhold lenger nede og trenger luft over seg.
+     .panel-h: de FEM sidetitlene (Vekst, Profil, Tjenester & priser, Design, Abonnement).
+       Oversikt har ingen sidetittel — det panelet starter rett på periodevelgeren.
+     .sec-h:   Veksts TRE seksjoner «Drevet av BarberHQ», «Automatikk» og «Personlig».
+     .block-h (13px) er blokknivået INNI dem — «Kunder per måned», «Kopier verve-lenke» osv.
+     ⚠ Oversiktens «Drevet av BarberHQ» er IKKE en .sec-h: den står i et panel-kort og beholder
      .block-h. Samme tittel, to steder, to nivåer — fordi konteksten er ulik. */
-  .sec-h{font-size:18px;font-weight:800;letter-spacing:-.02em;color:var(--ink);margin:34px 0 10px}
+  .panel-h,.sec-h{font-size:16px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
+  .panel-h{margin:0 0 3px}
+  .sec-h{margin:34px 0 10px}
   .flow-legend{display:flex;gap:18px;margin-top:14px;font-size:11.5px;color:var(--mut)}
   .flow-legend span{display:flex;align-items:center;gap:7px}
   .fl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -647,9 +665,11 @@
   <nav class="nav" role="tablist">
     <button role="tab" aria-selected="true" data-panel="oversikt">Oversikt</button>
     <button role="tab" aria-selected="false" data-panel="vekst">Vekst</button>
-    <button role="tab" aria-selected="false" data-panel="profil" class="nav-mer">Profil</button>
     <button role="tab" aria-selected="false" data-panel="tjenester" class="nav-mer">Tjenester &amp; tider</button>
-    <button role="tab" aria-selected="false" data-panel="design" class="nav-mer">Design</button>
+    <!-- data-panel="design" er BEVART selv om fanen heter «Din side» — Profil-fanen ble slått
+         INN her 08.08, og id-en #design henger sammen med loadDesign(), oppdaterPreview() og
+         hele design-koden. Samme resonnement som «Konto»/#abonnement under. Ikke døp om id-en. -->
+    <button role="tab" aria-selected="false" data-panel="design" class="nav-mer">Din side</button>
     <!-- data-panel="abonnement" er BEVART med vilje selv om fanen heter «Konto» —
          id-en henger sammen med #abonnement, switchPanel('abonnement') (:2376) og
          billing-koden. Bare etiketten er byttet. -->
@@ -736,7 +756,7 @@
 
   <!-- VEKST -->
   <section class="panel" id="vekst">
-    <p class="block-h">Vekst</p>
+    <p class="panel-h">Vekst</p>
     <p class="block-s">Hvordan praksisen din vokser over tid.</p>
     <div class="stats" id="vekstStats"></div>
     <p class="block-h" style="margin-top:28px">Kunder per måned</p>
@@ -757,8 +777,8 @@
          Eneste tilsiktede forskjell: Oversikt henger perioden på setningen («… — denne uka.»),
          fordi panelet der ikke har en periodevelger ved siden av seg. Her står velgeren rett
          under, så en periode i teksten ville bare dublet den. -->
-    <!-- .sec-h, ikke .block-h: dette er Veksts TREDJE seksjon, søsken til «Automatikk» og
-         «Din tur». ⚠ Gjelder KUN denne forekomsten. Oversiktens «Drevet av BarberHQ»
+    <!-- .sec-h, ikke .block-h: dette er Veksts FØRSTE seksjon, søsken til «Automatikk» og
+         «Personlig». ⚠ Gjelder KUN denne forekomsten. Oversiktens «Drevet av BarberHQ»
          (#drivenByWrap) står i et panel-kort og beholder .block-h — hever man den også,
          sprenger den kortet den ligger i. -->
     <p class="sec-h">Drevet av BarberHQ</p>
@@ -772,11 +792,11 @@
     <!-- FLYTMODELL — «Slik henger det sammen» (over alle accordions, alltid åpen).
          [oversettelse: sv/da/en] nye strenger: Kvelden før · Påminnelse · Automatisk · Booket via siden din · Du tar over.
          (Den gamle acc-lead-en i Rebooking finnes ikke lenger — slått sammen med noten 06.08.) -->
-    <!-- «Automatikk» og «Din tur» er SEKSJONSTITLER (.sec-h, 18px) og deler Vekst i maskin og
-         menneske. De er med vilje større enn .block-h: en egen hovedtittel over dem («Slik
+    <!-- «Automatikk» og «Personlig» er SEKSJONSTITLER (.sec-h, 18px) og deler Vekst i maskin
+         og menneske. De er med vilje større enn .block-h: en egen hovedtittel over dem («Slik
          fyller du stolen») og prikker foran ble prøvd og forkastet — i stedet for et tredje
          nivå ble de to hevet ett.
-         «Automatikk» framfor «SMS-funksjoner»: den står i opposisjon til «Din tur», og
+         «Automatikk» framfor «SMS-funksjoner»: den står i opposisjon til «Personlig», og
          flytmodellen under er ikke bare SMS. [oversettelse: sv/da/en] -->
     <p class="sec-h">Automatikk</p>
     <div class="flow">
@@ -817,7 +837,7 @@
       </div>
     </div>
 
-    <!-- ACCORDIONS: to lister, ikke én — maskin under «Automatikk», menneske under «Din tur».
+    <!-- ACCORDIONS: to lister, ikke én — maskin under «Automatikk», menneske under «Personlig».
          IDer på kontrollene er BEVART fra gammel struktur → loadSmsInnstillinger/loadVerving/loadWinback treffer som før. -->
     <div class="acc-list">
 
@@ -878,11 +898,18 @@
     </div>
 
     <!-- Egen .acc-list, ikke bare rekkefølge. Alle fire lå tidligere i ÉN liste — de
-         menneskelige var sortert sist, men ingenting skilte dem visuelt. En «Automatikk»-
-         overskrift over hele lista ville lovet automatikk for Vinn tilbake og Verving, som
-         begge krever at barbereren gjør noe selv. «Din tur» er samme ord som flytmodellens
-         blå forklaring rett over, med vilje. [oversettelse: sv/da/en] -->
-    <p class="sec-h">Din tur</p>
+         menneskelige var sortert sist, men ingenting skilte dem visuelt. Uten tittel her
+         faller skillet til .acc-list-ens margin-top:20px mot gap:12px inni lista — 8px, som
+         er usynlig (målt i Playwright). Da leses «Automatikk» som om den dekker alle fire.
+         «Personlig», ikke «Din tur»: aksen er MASKIN ↔ MENNESKE, ikke FØRST ↔ ETTERPÅ.
+         «Din tur»/«Du tar over» beskriver Vinn tilbake (dag 60+, automatikken ga seg), men
+         ikke Verving — der er det kunden som gjør jobben, ikke en stafettveksling fra
+         automatikken. «Personlig» dekker begge: en melding til en som forsvant, en lenke til
+         en som er fornøyd. Ordet ekko-er dessuten Vinn tilbakes egen acc-sub («En personlig
+         melding fra deg — ikke en maskin»), og unngår å si «din tur» en fjerde gang —
+         flytmodellen rett over sier det alt i flow-sub, i siste steg og i legenden.
+         [oversettelse: sv/da/en] -->
+    <p class="sec-h">Personlig</p>
     <div class="acc-list">
 
       <!-- Vinn tilbake — badge = ALLE i lista når >0, ellers stum. (Telte ferske no-shows
@@ -989,22 +1016,11 @@
     </div>
   </div>
 
-  <!-- ARBEIDSTIDER -->
-  <!-- PROFIL -->
-  <section class="panel" id="profil">
-    <p class="block-h">Profil</p>
-    <p class="block-s">Grunninfo som vises på bookingsiden din.</p>
-    <div class="fld"><label>Navn</label><input id="pf-name" type="text"></div>
-    <div class="fld"><label>Navn på shoppen</label><input id="pf-shop" type="text"></div>
-    <div class="fld"><label>Adresse</label><input id="pf-address" type="text"><p class="fld-hint">Skriv full adresse (gate, nummer, postnr, by) så kunder finner frem i kart. Vil du ikke dele nøyaktig sted, skriv bare byen.</p></div>
-    <div class="fld"><label>Tagline <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><input id="pf-tagline" type="text" placeholder="Kort tagline under barbernavnet" maxlength="60"></div>
-    <div class="fld"><label>Beskrivelse <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><textarea id="pf-bio" placeholder="Noen ord om deg og stilen din"></textarea></div>
-    <div class="savebar"><button class="btn" id="saveProfil">Lagre profil</button><span class="saved" id="profilSaved">Lagret &#10003;</span></div>
-  </section>
+  <!-- PROFIL-panelet er FJERNET 08.08 — innholdet bor nå som trekkspill i #design («Din side»). -->
 
   <!-- TJENESTER -->
   <section class="panel" id="tjenester">
-    <p class="block-h">Tjenester &amp; priser</p>
+    <p class="panel-h">Tjenester &amp; priser</p>
     <p class="block-s">Det kundene kan booke. Vises på bookingsiden din.</p>
 
     <p class="svc-group-h">Hovedtjenester</p>
@@ -1054,41 +1070,99 @@
   </section>
 
   <!-- DESIGN -->
+  <!-- DIN SIDE — Profil + Design + Bilder slått sammen 08.08. Tre trekkspill, én preview.
+       Preview lå før inne i .design-wrap og tilhørte Design alene. Nå står den på PANEL-nivå
+       (.side-wrap, høyre kolonne) fordi alle tre trekkspillene endrer den samme siden: navn og
+       tagline like mye som palett og bilder. Den skal ALDRI flyttes inn i en .acc-body — da
+       forsvinner den når trekkspillet lukkes, og de to andre mister forhåndsvisningen sin. -->
   <section class="panel" id="design">
-    <p class="block-h">Design</p>
-    <p class="block-s">Velg utseendet på bookingsiden din. Endringene vises i forhåndsvisningen med en gang.</p>
-    <div class="design-wrap">
-      <div class="design-controls">
-        <p class="dlbl">Palett</p>
-        <div class="preset-grid" id="paletteGrid"></div>
-        <p class="dlbl">Bakgrunn</p>
-        <div class="modepick" id="modePick">
-          <button class="modebtn" data-mode="lys" aria-pressed="true">Lys</button>
-          <button class="modebtn" data-mode="mork" aria-pressed="false">Mørk</button>
+    <p class="panel-h">Din side</p>
+    <p class="block-s">Alt som former bookingsiden din. Endringer vises i forhåndsvisningen.</p>
+    <div class="side-wrap">
+      <!-- data-single: ETT trekkspill åpent om gangen. Markøren er på lista, ikke global —
+           Vekst-fanens .acc-list er umerket og beholder flere åpne samtidig. -->
+      <div class="acc-list side-accs" id="sideAccs" data-single>
+
+        <!-- Profil — åpen som standard (aria-expanded="true", .acc-body uten hidden). -->
+        <div class="acc" id="accProfil">
+          <button type="button" class="acc-head" aria-expanded="true">
+            <span class="acc-htext">
+              <span class="acc-title">Profil</span>
+              <span class="acc-sub">Grunninfo som vises på bookingsiden din.</span>
+            </span>
+            <span class="acc-chev">▾</span>
+          </button>
+          <div class="acc-body">
+            <div class="fld"><label>Navn</label><input id="pf-name" type="text"></div>
+            <div class="fld"><label>Navn på shoppen</label><input id="pf-shop" type="text"></div>
+            <div class="fld"><label>Adresse</label><input id="pf-address" type="text"><p class="fld-hint">Skriv full adresse (gate, nummer, postnr, by) så kunder finner frem i kart. Vil du ikke dele nøyaktig sted, skriv bare byen.</p></div>
+            <div class="fld"><label>Tagline <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><input id="pf-tagline" type="text" placeholder="Kort tagline under barbernavnet" maxlength="60"></div>
+            <!-- bioHint: se refreshSlots(). Direkte-malen har ingen {{BIO_BLOCK}}, så
+                 beskrivelsen lagres men er usynlig i preview — uten denne linja leser det
+                 som at lagringen ikke virket. [oversettelse: sv/da/en] -->
+            <div class="fld"><label>Beskrivelse <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><textarea id="pf-bio" placeholder="Noen ord om deg og stilen din"></textarea><p class="fld-hint" id="bioHint" hidden>Direkte-layouten viser ikke beskrivelsen. Den lagres, og dukker opp hvis du bytter layout.</p></div>
+            <div class="savebar"><button class="btn" id="saveProfil">Lagre profil</button><span class="saved" id="profilSaved">Lagret &#10003;</span></div>
+          </div>
         </div>
-        <p class="dlbl">Skrift</p>
-        <div class="preset-grid" id="fontGrid"></div>
-        <p class="dlbl">Layout</p>
-        <div class="preset-grid" id="layoutGrid"></div>
+
+        <!-- Design — hver .acc-body beholder SIN EGEN savebar og sitt eget endepunkt.
+             Tre knapper, tre PUT-er: /profile, /design, /images. Ikke slått sammen. -->
+        <div class="acc" id="accDesign">
+          <button type="button" class="acc-head" aria-expanded="false">
+            <span class="acc-htext">
+              <span class="acc-title">Design</span>
+              <span class="acc-sub">Palett, bakgrunn, skrift og layout på bookingsiden din.</span>
+            </span>
+            <span class="acc-chev">▾</span>
+          </button>
+          <div class="acc-body" hidden>
+            <div class="design-controls">
+              <p class="dlbl">Palett</p>
+              <div class="preset-grid" id="paletteGrid"></div>
+              <p class="dlbl">Bakgrunn</p>
+              <div class="modepick" id="modePick">
+                <button class="modebtn" data-mode="lys" aria-pressed="true">Lys</button>
+                <button class="modebtn" data-mode="mork" aria-pressed="false">Mørk</button>
+              </div>
+              <p class="dlbl">Skrift</p>
+              <div class="preset-grid" id="fontGrid"></div>
+              <p class="dlbl">Layout</p>
+              <div class="preset-grid" id="layoutGrid"></div>
+            </div>
+            <div class="savebar"><button class="btn" id="saveDesign">Lagre design</button><span class="saved" id="designSaved">Lagret &#10003;</span></div>
+          </div>
+        </div>
+
+        <!-- Bilder — slot-visningen følger VALGT layout i Design-trekkspillet over.
+             Den koblingen (refreshSlots ved layout-bytte) er uendret av sammenslåingen. -->
+        <div class="acc" id="accBilder">
+          <button type="button" class="acc-head" aria-expanded="false">
+            <span class="acc-htext">
+              <span class="acc-title">Bilder</span>
+              <span class="acc-sub">Trykk på en boks for å laste opp bilde til den plassen.</span>
+            </span>
+            <span class="acc-chev">▾</span>
+          </button>
+          <div class="acc-body" hidden>
+            <p class="slot-hint" id="layoutHint"></p>
+            <input type="file" id="fileInput" accept="image/*" hidden>
+            <input type="file" id="replaceInput" accept="image/*" hidden>
+            <div id="bilderMount"><div class="loading">Laster …</div></div>
+          </div>
+        </div>
+
       </div>
       <div class="design-preview">
         <div class="pv-frame"><iframe class="pv-screen" id="pvScreen" scrolling="no" tabindex="-1"></iframe></div>
         <p class="ctx" style="margin-top:8px;text-align:center">Slik ser bookingsiden din ut.</p>
       </div>
-      <div class="savebar"><button class="btn" id="saveDesign">Lagre design</button><span class="saved" id="designSaved">Lagret &#10003;</span></div>
     </div>
-    <!-- Bilder (slått sammen fra egen fane) — slots følger valgt layout over -->
-    <div class="bilder-block">
-      <p class="block-h">Bilder på siden din</p>
-      <p class="block-s">Trykk på en boks for å laste opp bilde til den plassen.</p>
-      <p class="slot-hint" id="layoutHint"></p>
-      <input type="file" id="fileInput" accept="image/*" hidden>
-      <input type="file" id="replaceInput" accept="image/*" hidden>
-      <div id="bilderMount"><div class="loading">Laster …</div></div>
-      <div id="slotPopup" class="slot-popup">
-        <button class="slot-popup-btn danger" id="slotPopupFjern">Fjern bilde</button>
-        <button class="slot-popup-btn" id="slotPopupEndre">Endre bilde</button>
-      </div>
+    <!-- #slotPopup står på PANEL-nivå, ikke inne i Bilder-trekkspillet: den er position:fixed
+         og plasseres av JS mot knappens rect. Lå den i .acc-body, ville [hidden] på body-en
+         skjult den idet et annet trekkspill åpnes mens popupen står åpen. -->
+    <div id="slotPopup" class="slot-popup">
+      <button class="slot-popup-btn danger" id="slotPopupFjern">Fjern bilde</button>
+      <button class="slot-popup-btn" id="slotPopupEndre">Endre bilde</button>
     </div>
     <div class="ideacard">
       <p class="block-h" style="margin-top:0">Ideer &amp; ønsker</p>
@@ -1105,7 +1179,7 @@
 
   <!-- ABONNEMENT -->
   <section class="panel" id="abonnement">
-    <p class="block-h">Abonnement</p>
+    <p class="panel-h">Abonnement</p>
     <p class="block-s">Planen din og betaling.</p>
     <div class="sub-banner" id="subReturn" role="status" style="display:none"></div>
     <div class="sub-banner" id="subBanner" role="alert" style="display:none"></div>
@@ -1920,6 +1994,16 @@ async function loadBilder(){
   refreshSlots();
 }
 
+// Bruk denne — IKKE loadBilder() — etter enhver operasjon som ENDRER bilder (opplasting,
+// sletting, erstatning, beskjæring). Bildene er server-rendret inn i preview, men ligger ikke
+// i previewCache-nøkkelen, så slot-visningen må oppdateres OG cachen tømmes. Å legge
+// invaliderPreview() inn i loadBilder() selv ville vært feil: den kalles også ved fane-inngang,
+// og da hadde cachen blitt nullet hver eneste gang barbereren åpner «Din side».
+async function bilderEndret(){
+  await loadBilder();
+  invaliderPreview();
+}
+
 // Rendrer slots for VALGT layout (design.layout), ikke lagret. Slik ser barberen
 // slot-oppsettet skifte live når hen bytter layout. Opplasting/crop/slett er derimot
 // låst til LAGRET layout (savedLayout) — slots hard-slettes kun ved faktisk layout-bytte,
@@ -1936,6 +2020,11 @@ const LAYOUT_HINT={
 function refreshSlots(){
   renderSlotView(design.layout,imgs);
   const hint=$("#layoutHint");if(hint)hint.textContent=LAYOUT_HINT[design.layout]||'';
+  // Bio-varselet henger på denne funksjonen med vilje — den kjøres allerede ved BÅDE
+  // fane-inngang (loadBilder) og layout-bytte (:design-klikk), som er nøyaktig de to
+  // øyeblikkene svaret kan endre seg. En egen lytter ville vært et tredje sted å holde i synk.
+  // Følger VALGT layout, ikke lagret — samme regel som slot-visningen rett over.
+  const bh=$("#bioHint");if(bh)bh.hidden=design.layout!=='direkte';
   const mount=$("#bilderMount");if(!mount)return;
   if(slotsLaast()){
     mount.classList.add('slots-locked');
@@ -1991,7 +2080,7 @@ async function handleUpload(f,slot){
   const r=await apiFetch('/api/dashboard/images',{method:'POST',body:fd});
   if(!r)return;
   if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke laste opp bilde. Prøv igjen.');return;}
-  await loadBilder();
+  await bilderEndret();
 }
 
 let hours=[];
@@ -2044,8 +2133,10 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   $("#"+id).classList.add("active");
   if(id==="oversikt"){loadOversikt();loadBookinger();}
   if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();}
-  if(id==="profil")loadProfil();if(id==="tjenester"){loadTjenester();loadArbeidstider();}
-  if(id==="design"){loadDesign().then(loadBilder);}
+  if(id==="tjenester"){loadTjenester();loadArbeidstider();}
+  // «Din side» laster alle tre trekkspillene. loadProfil FØRST — den inneholder
+  // hasPassword-redirecten, og den skal treffe før vi bruker tid på design + bilder.
+  if(id==="design"){loadProfil();loadDesign().then(loadBilder);}
 }));
 document.querySelectorAll("#segs button").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll("#segs button").forEach(x=>x.setAttribute("aria-selected","false"));
@@ -2109,7 +2200,7 @@ document.getElementById('cropSave').addEventListener('click',async()=>{
     const r=await apiFetch('/api/dashboard/images/'+_activeImgId,{method:'PUT',body:fd});
     if(!r||!r.ok){const d=await r?.json().catch(()=>{});errEl.textContent=d?.error||'Feil ved lagring. Prøv igjen.';saveBtn.disabled=false;return;}
     _closeCropModal();
-    await loadBilder();
+    await bilderEndret();
   }catch(err){
     errEl.textContent='Beskjæring feilet: '+err.message;
     saveBtn.disabled=false;
@@ -2149,7 +2240,7 @@ document.getElementById('slotPopupFjern').addEventListener('click',async()=>{
   const r=await apiFetch('/api/dashboard/images/'+id,{method:'DELETE'});
   if(!r)return;
   if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke slette bildet. Prøv igjen.');return;}
-  await loadBilder();
+  await bilderEndret();
 });
 
 document.getElementById('slotPopupEndre').addEventListener('click',()=>{
@@ -2165,7 +2256,7 @@ $("#replaceInput").addEventListener('change',async e=>{
     const r=await apiFetch('/api/dashboard/images/'+_activeImgId,{method:'PUT',body:fd});
     if(!r)return;
     if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke erstatte bildet. Prøv igjen.');return;}
-    await loadBilder();
+    await bilderEndret();
   }catch(err){
     alert('Nettverksfeil ved bildebyte. Prøv igjen.');
   }
@@ -2246,6 +2337,7 @@ $("#saveProfil").addEventListener("click",async function(){
   const displayName=$("#pf-shop").value.trim()||$("#pf-name").value.trim()||"";
   CONFIG.BARBER_NAME=displayName;var el=$("#barberName");if(el)el.textContent=displayName;
   savedFlash("#profilSaved");
+  invaliderPreview(); // navn/tagline/bio/adresse står i preview-HTML-en, men ikke i cache-nøkkelen
 });
 
 /* ---- SMS-knotter (Vekst-fanen) ---- */
@@ -2477,14 +2569,27 @@ function showToast(msg){
   clearTimeout(_toastT); _toastT=setTimeout(function(){ t.classList.remove('show'); },1900);
 }
 
-/* ---- Accordion (Vekst) — chevron + aria + skjul/vis body ---- */
+/* ---- Accordion (Vekst + «Din side») — chevron + aria + skjul/vis body ---- */
 document.querySelectorAll('.acc-head').forEach(function(h){
   h.addEventListener('click',function(){
     var open=h.getAttribute('aria-expanded')==='true';
-    h.setAttribute('aria-expanded',String(!open));
     // Via .acc, ikke nextElementSibling: i SMS-trekkspillene ligger .acc-head inne i en
     // .acc-row sammen med bryteren, så body er ikke lenger neste søsken.
     var acc=h.closest('.acc');
+    // ETT ÅPENT OM GANGEN — kun i lister merket data-single («Din side»). Markøren sitter på
+    // .acc-list, ikke i denne funksjonen, fordi Vekst har fire uavhengige trekkspill der flere
+    // skal kunne stå åpne samtidig. Scopet er lista, ikke dokumentet: to data-single-lister på
+    // samme side ville ikke lukket hverandre.
+    var enkelt=acc && acc.closest('.acc-list[data-single]');
+    if(enkelt && !open){
+      enkelt.querySelectorAll(':scope > .acc').forEach(function(a){
+        if(a===acc)return;
+        var hd=a.querySelector('.acc-head'), bd=a.querySelector('.acc-body');
+        if(hd) hd.setAttribute('aria-expanded','false');
+        if(bd) bd.hidden=true;
+      });
+    }
+    h.setAttribute('aria-expanded',String(!open));
     var body=acc && acc.querySelector('.acc-body');
     if(body) body.hidden=open;
   });
@@ -2663,6 +2768,15 @@ function previewError(f,msg){
     'color:#c0594a;text-align:center;padding:24px;line-height:1.5"><p>'+msg+'</p></body></html>';
 }
 function renderPreview(){oppdaterPreview();}
+// Preview er en SERVER-RENDER av barber-raden, men previewCache er nøklet kun på de fire
+// design-parameterne (layout/palette/font/mode). Alt annet som siden viser — navn, tagline,
+// bio, adresse, bilder — ligger utenfor nøkkelen. Endrer barbereren et av dem, treffer neste
+// oppdatering samme cache-nøkkel og serverer den GAMLE HTML-en: lagringen gikk gjennom, men
+// forhåndsvisningen viser den ikke. Det så ut som om lagringen ikke virket.
+// Fiksen er å tømme cachen, ikke å utvide nøkkelen: legger vi profilfeltene i query-strengen,
+// må backend også ta imot dem, og vi får to kilder til samme sannhet. Med tom cache henter
+// serveren feltene fra barber-raden av seg selv.
+function invaliderPreview(){previewCache={};oppdaterPreview();}
 function renderDesign(){
   $("#paletteGrid").innerHTML=window.PALETTES_DISPLAY.map(function(p){return '<button class="preset" data-grid="palette" data-key="'+p.key+'" aria-pressed="'+(design.palette===p.key)+'"><div class="pt">'+p.t+'</div><div class="pd">'+p.d+'</div><div class="swatches">'+p.sw.map(function(c){return '<span style="background:'+c+'"></span>';}).join("")+'</div></button>';}).join("");
   $("#fontGrid").innerHTML=FONTS.map(function(f){return '<button class="preset" data-grid="font" data-key="'+f.key+'" aria-pressed="'+(design.font===f.key)+'"><div class="pt">'+f.vibe+'</div><div class="pd">'+f.name+'</div></button>';}).join("");
@@ -2698,7 +2812,10 @@ $("#saveDesign").addEventListener("click",async function(){
   if(!r)return;
   if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre design. Prøv igjen.');return;}
   savedLayout=design.layout;savedFlash("#designSaved");
-  await loadBilder(); // re-hent bilder (layout-bytte kan ha hard-slettet slots) + lås opp slots
+  // bilderEndret, ikke loadBilder: et layout-bytte HARD-SLETTER slots (DB+R2). Cache-entryene
+  // for de ANDRE layout/palett/font-kombinasjonene viser da bilder som ikke finnes lenger.
+  // Den nåværende kombinasjonen ville rendret riktig uansett — det er de gamle som råtner.
+  await bilderEndret(); // re-hent bilder + lås opp slots + tøm preview-cache
 });
 
 /* ---- Abonnement / billing (ekte, aldri mock) ---- */
