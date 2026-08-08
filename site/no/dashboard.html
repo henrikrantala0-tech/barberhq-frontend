@@ -466,6 +466,13 @@
   .sett-pills-row>label{display:block;font-size:13.5px;font-weight:500;letter-spacing:-.01em;margin-bottom:9px}
   .sett-hint{font-size:12px;color:var(--mut);margin-top:9px}
   .sett-note{font-size:12px;color:var(--mut);padding:11px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;line-height:1.55}
+  /* SMS-forhåndsvisning: les-bare boble som ligner en mottatt melding. Ett hjørne stramt
+     (nederst venstre) er den vanlige «innkommende»-formen — den signaliserer at teksten er
+     noe kunden MOTTAR, ikke et felt barbereren skal fylle ut. */
+  .sms-prev-lbl{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut-2);margin:0 0 8px}
+  .sms-bubble{background:var(--surface);border:1px solid var(--line-2);border-radius:14px 14px 14px 4px;
+    padding:12px 14px;font-size:13.5px;line-height:1.5;color:var(--ink-2);max-width:min(100%,340px);
+    white-space:normal;overflow-wrap:anywhere}
   /* Står noten FØRST i trekkspillet, må den ha egen luft under — global reset nuller
      p-margin, og avstanden kom tidligere fra .sett-card{margin-bottom} under den. */
   .sett-note-top{margin-bottom:12px}
@@ -812,11 +819,10 @@
           <label class="sw sw-green acc-sw"><input type="checkbox" id="tog-paam"><span class="sl"></span></label>
         </div>
         <div class="acc-body" hidden>
-          <!-- Noten skal BORT når meldings-forhåndsvisningen bygges (påminnelser er klare til
-               å kobles på, så forbeholdet er ikke sant lenger). Men den blir stående til da:
-               fjernes den alene, åpner trekkspillet til en tom kropp, og det er verre enn en
-               utdatert setning. Se buildRebookingBody i smsRunner.js for kilden. -->
-          <p class="sett-note">SMS-utsending kobles på snart — valget ditt lagres.</p>
+          <!-- Startinnholdet ER fallbacken. Svarer ikke /sms-preview — eller kjører JS-en
+               aldri — blir noten stående, og trekkspillet åpner til noe i stedet for ingenting.
+               renderSmsPreview() bytter den ut først når den har en ekte tekst å vise. -->
+          <div id="paamPreview"><p class="sett-note">SMS-utsending kobles på snart — valget ditt lagres.</p></div>
         </div>
       </div>
 
@@ -837,6 +843,10 @@
           <label class="sw sw-green acc-sw"><input type="checkbox" id="tog-rebook"><span class="sl"></span></label>
         </div>
         <div class="acc-body" hidden>
+          <!-- Samme fallback-mønster som i SMS-påminnelse: noten står til en ekte tekst
+               erstatter den. Forhåndsvisningen kommer FØR intervallet — den svarer på «hva
+               gjør denne bryteren», intervallet er finjusteringen etterpå. -->
+          <div id="rebookPreview"><p class="sett-note">SMS-utsending kobles på snart — valget ditt lagres.</p></div>
           <div class="seg-line">
             <span class="seg-lead">Send etter</span>
             <div class="segs segs-val" id="rebookPills" role="group" aria-label="Rebooking-intervall">
@@ -1210,6 +1220,15 @@ const api={
   async settings(){
     const r=await apiFetch('/api/dashboard/settings');
     if(!r||!r.ok)return{sms_paaminnelse_enabled:false,sms_rebooking_enabled:false,rebooking_interval_days:28};
+    return r.json();
+  },
+  // GET /api/dashboard/sms-preview?kind=paaminnelse|rebooking → {kind,body,tegn,segmenter,
+  // gsm7,ugyldige_tegn,transaksjonell,eksempeldata}. Les-bare, ingen sending, ingen kvote.
+  // Vi bruker KUN body. tegn/segmenter/gsm7/ugyldige_tegn er driftstall for oss — en
+  // barberer skal ikke måtte forholde seg til GSM-7-alfabetet for å lese sin egen SMS.
+  async smsPreview(kind){
+    const r=await apiFetch('/api/dashboard/sms-preview?kind='+encodeURIComponent(kind));
+    if(!r||!r.ok)return null;   // 404/400/401 → null → fallback-noten blir stående
     return r.json();
   },
   async saveSettings(patch){
@@ -2212,6 +2231,20 @@ async function loadSmsInnstillinger(){
   $("#tog-paam").checked=!!s.sms_paaminnelse_enabled;
   $("#tog-rebook").checked=!!s.sms_rebooking_enabled;
   setRebookPills(s.rebooking_interval_days);
+  renderSmsPreview('paaminnelse','paamPreview');
+  renderSmsPreview('rebooking','rebookPreview');
+}
+// Rendrer den EKTE meldingsteksten som en les-bare SMS-boble. Ingen redigering: teksten er
+// backendens (buildPaaminnelseBody/buildRebookingBody), og den skal barbereren kunne stole
+// på gjenkjenner det kunden faktisk får.
+// Feiler kallet, rører vi ikke elementet — fallback-noten i markupen blir stående. Det er
+// bevisst: alternativet er en tom kropp bak en pil som lover innhold.
+async function renderSmsPreview(kind, elId){
+  var el=$("#"+elId); if(!el)return;
+  var d=await api.smsPreview(kind);
+  if(!d || !d.body) return;
+  el.innerHTML='<p class="sms-prev-lbl">Dette får kunden</p>'+
+    '<div class="sms-bubble">'+esc(d.body).replace(/\n/g,'<br>')+'</div>';
 }
 // Intervall-pills: aktiv = lagret verdi hvis den er i settet {28,35,45}; ellers ingen aktiv + hint (gammel 30-verdi o.l.)
 function setRebookPills(days){
