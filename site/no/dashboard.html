@@ -1121,7 +1121,9 @@
               <div class="preset-grid" id="paletteGrid"></div>
               <p class="dlbl">Bakgrunn</p>
               <div class="modepick" id="modePick">
-                <button class="modebtn" data-mode="lys" aria-pressed="true">Lys</button>
+                <!-- aria-pressed="false" i statisk markup: før loadDesign har svart vet vi ikke
+                     hva som er valgt. Sto "true" og markerte Lys som valgt fra første frame. -->
+                <button class="modebtn" data-mode="lys" aria-pressed="false">Lys</button>
                 <button class="modebtn" data-mode="mork" aria-pressed="false">Mørk</button>
               </div>
               <p class="dlbl">Skrift</p>
@@ -2008,7 +2010,10 @@ async function bilderEndret(){
 // slot-oppsettet skifte live når hen bytter layout. Opplasting/crop/slett er derimot
 // låst til LAGRET layout (savedLayout) — slots hard-slettes kun ved faktisk layout-bytte,
 // så å laste opp til en ulagret layouts slot ville skape DB-inkonsistens.
-function slotsLaast(){return design.layout!==savedLayout;}
+// Ukjent layout ⇒ LÅST. `null!==null` er false, så uten den første testen ville en feilet
+// /design-henting låst OPP opplasting i stedet for ned — bilder kunne lastes til en slot vi
+// ikke vet finnes. Fail-closed er eneste forsvarlige retning her.
+function slotsLaast(){return design.layout===null||design.layout!==savedLayout;}
 // Hjelpetekst per layout — hvor mange/hvilke bilder layouten tar. Følger VALGT
 // layout (design.layout), i takt med slot-visningen. [oversettelse: sv/da/en]
 const LAYOUT_HINT={
@@ -2018,6 +2023,15 @@ const LAYOUT_HINT={
   direkte:'Direkte: ingen bilder på siden'
 };
 function refreshSlots(){
+  // Vet vi ikke hvilken layout barbereren har, sier vi INGENTING: ingen slot-bokser, ingen
+  // layout-hjelpetekst, ingen bio-varsel. Alt tre er påstander om et valg vi ikke kjenner.
+  // Tomt panel er ærlig; Direkte-farget panel er en gjetning som ser ut som et faktum.
+  if(design.layout===null){
+    const m=$("#bilderMount");if(m){m.innerHTML='';m.classList.remove('slots-locked');}
+    const lh=$("#layoutHint");if(lh)lh.textContent='';
+    const b0=$("#bioHint");if(b0)b0.hidden=true;
+    return;
+  }
   renderSlotView(design.layout,imgs);
   const hint=$("#layoutHint");if(hint)hint.textContent=LAYOUT_HINT[design.layout]||'';
   // Bio-varselet henger på denne funksjonen med vilje — den kjøres allerede ved BÅDE
@@ -2742,8 +2756,17 @@ const LAYOUTS=[
   {key:"hero",t:"Hero",d:"Stort forsidebilde"},
   {key:"direkte",t:"Direkte",d:"Rett til booking"}
 ];
-let design={palette:"mint",font:"fraunces",layout:"direkte",mode:"lys"};
+// null = VET IKKE ENNÅ. Ikke en gjettet default.
+// Sto før som {mint, fraunces, direkte, lys}. Svarte ikke GET /design, beholdt panelet de
+// verdiene og oppførte seg som om barbereren hadde valgt dem: slot-visningen sa «Direkte-
+// layouten har ikke bilder», bio-varselet sa «Direkte viser ikke beskrivelsen», og «Mint»
+// sto markert som valgt palett. Alt sammen usant for en barberer med Profil + Krem & Gull.
+// Med null sier panelet ingenting i stedet. Hver leser under må tåle det — se guardene i
+// refreshSlots(), slotsLaast(), oppdaterPreview() og saveDesign.
+let design={palette:null,font:null,layout:null,mode:null};
 let savedLayout=design.layout;
+// Har vi et fullstendig design å rendre/lagre? Alle fire må være kjent.
+function designKjent(){return !!(design.layout&&design.palette&&design.font&&design.mode);}
 var previewCache={};
 function oppdaterPreview(){
   var f=$("#pvScreen");
@@ -2751,6 +2774,10 @@ function oppdaterPreview(){
   // Server-render av ekte kundeside (samme vei som publisert side). Ulagrede design-
   // valg sendes som query; backend legger dem oppå barber-raden og bygger med fill()
   // + booking-modulen. Ingen klient-fyll = ingen drift mellom preview og ekte side.
+  // Uten alle fire kan vi ikke be om en forhåndsvisning: encodeURIComponent(null) gir
+  // strengen "null", så vi ville sendt layout=null&palette=null… og fått en side bygget på
+  // søppel — eller en 500 — i stedet for å si at vi ikke fikk hentet innstillingene.
+  if(!designKjent()){previewError(f,'Fikk ikke hentet designinnstillingene dine. Last siden på nytt.');return;}
   var qs='layout='+encodeURIComponent(design.layout)
         +'&palette='+encodeURIComponent(design.palette)
         +'&font='+encodeURIComponent(design.font)
@@ -2787,12 +2814,15 @@ function renderDesign(){
 async function loadDesign(){
   try{
     const r=await apiFetch('/api/dashboard/design');
+    // Feiler kallet, lar vi feltene stå null. renderDesign() tegner da et panel uten noe
+    // markert, og oppdaterPreview() skriver feilmeldingen i preview-flaten.
     if(!r){renderDesign();return;}
     if(!r.ok){renderDesign();return;}
     const d=await r.json();
     if(d.palette)design.palette=d.palette;
+    // Ukjent/manglende font faller IKKE lenger tilbake på "fraunces". Den defaulten skrev en
+    // verdi barbereren ikke hadde valgt, og saveDesign ville lagret den ved neste trykk.
     if(d.font&&FONTS.find(function(f){return f.key===d.font;}))design.font=d.font;
-    else design.font="fraunces";
     if(d.layout){design.layout=d.layout;savedLayout=d.layout;}
     if(d.mode)design.mode=d.mode;
   }catch(e){}
@@ -2801,6 +2831,8 @@ async function loadDesign(){
 $("#design").addEventListener("click",function(e){var b=e.target.closest(".preset");if(!b)return;design[b.dataset.grid]=b.dataset.key;renderDesign();if(b.dataset.grid==="layout")refreshSlots();});
 $("#modePick").addEventListener("click",function(e){var b=e.target.closest(".modebtn");if(!b)return;design.mode=b.dataset.mode;renderDesign();});
 $("#saveDesign").addEventListener("click",async function(){
+  // Uten alle fire ville PUT-en skrevet null over det barbereren faktisk har lagret fra før.
+  if(!designKjent()){alert('Fikk ikke hentet designinnstillingene dine. Last siden på nytt før du lagrer.');return;}
   const btn=$("#saveDesign");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
   const r=await apiFetch('/api/dashboard/design',{method:'PUT',body:JSON.stringify({
     palette: design.palette,
