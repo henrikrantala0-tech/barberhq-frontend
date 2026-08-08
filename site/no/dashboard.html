@@ -473,6 +473,7 @@
   .sms-bubble{background:var(--surface);border:1px solid var(--line-2);border-radius:14px 14px 14px 4px;
     padding:12px 14px;font-size:13.5px;line-height:1.5;color:var(--ink-2);max-width:min(100%,340px);
     white-space:normal;overflow-wrap:anywhere}
+  .sms-prev-note{font-size:11.5px;color:var(--mut-2);line-height:1.5;margin:9px 0 0;max-width:min(100%,340px)}
   /* Står noten FØRST i trekkspillet, må den ha egen luft under — global reset nuller
      p-margin, og avstanden kom tidligere fra .sett-card{margin-bottom} under den. */
   .sett-note-top{margin-bottom:12px}
@@ -548,6 +549,13 @@
   .flow-noshow svg{width:18px;height:18px;color:#4d8bff;flex-shrink:0}
   .flow-noshow p{font-size:12.5px;line-height:1.5;color:var(--ink-2)}
   .flow-noshow strong{color:#4d8bff;font-weight:600}
+  /* Gruppeoverskrift under hovedtittelen. Samme mål som .fs-dag (flytmodellens interne
+     overskrifter) så de tre nivåene faktisk leser som tre: .block-h → .grp-h → innhold.
+     Prikken er .fl-dot fra flow-legend, med samme fargebetydning — grønn = automatikken
+     jobber, blå = din tur. TEKSTEN holdes nøytral: grønn skrift ville lest som «på/aktiv»,
+     altså en tilstand, og disse er kategorier. */
+  .grp-h{display:flex;align-items:center;gap:8px;font-size:10.5px;font-weight:700;
+    letter-spacing:.09em;text-transform:uppercase;color:var(--mut);margin:22px 0 10px}
   .flow-legend{display:flex;gap:18px;margin-top:14px;font-size:11.5px;color:var(--mut)}
   .flow-legend span{display:flex;align-items:center;gap:7px}
   .fl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -762,6 +770,16 @@
     <!-- FLYTMODELL — «Slik henger det sammen» (over alle accordions, alltid åpen).
          [oversettelse: sv/da/en] nye strenger: Kvelden før · Påminnelse · Automatisk · Booket via siden din · Du tar over.
          (Den gamle acc-lead-en i Rebooking finnes ikke lenger — slått sammen med noten 06.08.) -->
+    <!-- Hovedtittel, søsken til «Drevet av BarberHQ» (.block-h, samme typografi). Under den
+         to gruppeoverskrifter i .grp-h: maskin og menneske. «Automatikk» framfor
+         «SMS-funksjoner» — den står i opposisjon til «Din tur», og flytmodellen under er ikke
+         bare SMS.
+         De to .block-s-linjene som sto her («Går av seg selv …» / «BarberHQ finner kundene …»)
+         er FJERNET: .block-s er 12,5px og ville vært større enn .grp-h på 10,5px — undertekst
+         som overdøver sin egen overskrift. Innholdet finnes uansett i flow-sub og i hvert
+         trekkspills acc-sub. [oversettelse: sv/da/en] -->
+    <p class="block-h" style="margin-top:30px">Slik fyller du stolen</p>
+    <p class="grp-h"><span class="fl-dot" style="background:#3ecf7e"></span>Automatikk</p>
     <div class="flow">
       <h3 class="flow-h">Slik henger det sammen</h3>
       <p class="flow-sub">Automatikken tar de første ukene. Etter 60 dager er det din tur.</p>
@@ -800,7 +818,7 @@
       </div>
     </div>
 
-    <!-- ACCORDIONS: maskin først (Rebooking, SMS-påminnelse), menneske etterpå (Vinn tilbake, Verving).
+    <!-- ACCORDIONS: to lister, ikke én — maskin under «Automatikk», menneske under «Din tur».
          IDer på kontrollene er BEVART fra gammel struktur → loadSmsInnstillinger/loadVerving/loadWinback treffer som før. -->
     <div class="acc-list">
 
@@ -858,6 +876,15 @@
           <p class="sett-hint" id="rebookHint" hidden>Velg et intervall</p>
         </div>
       </div>
+    </div>
+
+    <!-- Egen .acc-list, ikke bare rekkefølge. Alle fire lå tidligere i ÉN liste — de
+         menneskelige var sortert sist, men ingenting skilte dem visuelt. En «Automatikk»-
+         overskrift over hele lista ville lovet automatikk for Vinn tilbake og Verving, som
+         begge krever at barbereren gjør noe selv. «Din tur» er samme ord som flytmodellens
+         blå forklaring rett over, med vilje. [oversettelse: sv/da/en] -->
+    <p class="grp-h"><span class="fl-dot" style="background:#4d8bff"></span>Din tur</p>
+    <div class="acc-list">
 
       <!-- Vinn tilbake — badge = ferske no-shows (≤3 dager) når >0, ellers stum -->
       <div class="acc" id="accWinback">
@@ -2243,8 +2270,15 @@ async function renderSmsPreview(kind, elId){
   var el=$("#"+elId); if(!el)return;
   var d=await api.smsPreview(kind);
   if(!d || !d.body) return;
+  // Forklaringslinja leses av transaksjonell-feltet, ikke av kind: backend eier
+  // klassifiseringen, og den avgjør BÅDE om samtykke kreves og om avmeldingslenke legges på.
+  // Å utlede det av kind her ville duplisert en regel som bor ett sted.
+  var forklaring = d.transaksjonell
+    ? 'Går til alle som har time. En påminnelse om noe kunden allerede har avtalt krever ikke samtykke, og har derfor ingen avmeldingslenke.'
+    : 'Går kun til kunder som har samtykket til SMS ved booking. Avmeldingslenka legges til automatisk.';
   el.innerHTML='<p class="sms-prev-lbl">Dette får kunden</p>'+
-    '<div class="sms-bubble">'+esc(d.body).replace(/\n/g,'<br>')+'</div>';
+    '<div class="sms-bubble">'+esc(d.body).replace(/\n/g,'<br>')+'</div>'+
+    '<p class="sms-prev-note">'+forklaring+'</p>';
 }
 // Intervall-pills: aktiv = lagret verdi hvis den er i settet {28,35,45}; ellers ingen aktiv + hint (gammel 30-verdi o.l.)
 function setRebookPills(days){
@@ -2496,10 +2530,11 @@ function wbGroupHtml(list,kind){
       '</div>'+
       '<div class="wb-right">'+
         '<div class="wb-ctx">'+ctx+'</div>'+
-        // Primærhandlingen er å KOPIERE meldinga, ikke å bokføre. «Marker som kontaktet» var
-        // ærlig, men ba barbereren om et administrativt klikk uten gevinst — han hadde alt
-        // tatt kontakt. Nå gjør trykket den nyttige tingen, OG er markeringen.
-        '<button class="verv-btn" data-wbcopy="'+esc(c.customer_id)+'" data-kind="'+kind+'" data-name="'+esc(c.name||'')+'" style="margin-top:6px">Kopier melding</button>'+
+        // «Fulgt opp» beskriver hva barbereren gjorde, ikke en tilstand — og er kortest.
+        // Het «Kontaktet» (leste som en merkelapp systemet hadde satt), så «Marker som
+        // kontaktet» (ærlig, men bokføring), så en periode «Kopier melding» med ferdige
+        // tekster. De tekstene er fjernet: barbereren skriver selv, i sin egen kanal.
+        '<button class="verv-btn" data-contact="'+esc(c.customer_id)+'" style="margin-top:6px">Fulgt opp</button>'+
         // Dempet, fordi det er unntaket: kunden han ikke vil følge opp.
         '<button class="wb-skjul" data-contact="'+esc(c.customer_id)+'">Skjul</button>'+
       '</div>'+
@@ -2532,21 +2567,13 @@ function wbRender(ns,lap){   // no-show: ferskest øverst (backend DESC). lapsed
 var WB_ANGRE_MS = 6000;
 var _wbVenter = {};   // customer_id → { timer, row, original, wasFresh }
 
-// Vinn-tilbake-meldingene. Ingen låst formulering fantes (docs/vekstmekanismer.md:452:
-// «Det er ingen getWinbackSendList og ingen buildWinbackBody»), så disse er nye.
-// Personlig og skamfri: ingen rabatt (låst beslutning), ingen «vi savner deg»-språk, og
-// ingen antydning om at no-showen var et problem. Barbereren limer selv inn i Snap/DM/SMS.
-function wbMelding(kind, navn){
-  var fornavn=String(navn||'').trim().split(/\s+/)[0];
-  var hei=fornavn?('Hei '+fornavn+'!'):'Hei!';
-  var url='trybarberhq.com/'+(CONFIG.BARBER_SLUG||'din-side');
-  return kind==='no_show'
-    ? hei+' Alt ok? Book gjerne ny time når det passer: '+url
-    : hei+' Lenge siden sist — book gjerne en time når det passer: '+url;
-}
+// wbMelding() med ferdigskrevne no-show-/lapsed-tekster er FJERNET. Vinn-tilbake er få
+// kunder med høy verdi, og en mal gjør nettopp den meldingen upersonlig — barbereren skriver
+// selv, i sin egen kanal. (Verving beholder sin mal: der er poenget en LENKE som må være
+// riktig, ikke en formulering.)
 function wbMarker(b){
   var row=b.closest('.wb-row'); if(!row)return;
-  var id=b.dataset.contact||b.dataset.wbcopy; if(!id || _wbVenter[id])return;
+  var id=b.dataset.contact; if(!id || _wbVenter[id])return;
   var wasFresh=!!row.querySelector('.wb-newdot');
   var original=row.innerHTML;
   row.classList.add('wb-marked');
@@ -2587,19 +2614,12 @@ function wbFlush(){
 window.addEventListener('pagehide', wbFlush);
 document.addEventListener('visibilitychange', function(){ if(document.visibilityState==='hidden') wbFlush(); });
 
-$("#wbList").addEventListener('click',async function(e){
+// «Fulgt opp» og «Skjul» gjør det SAMME mot backend: begge skriver en snooze-rad. Forskjellen
+// er hva barbereren sier til seg selv, ikke hva systemet lagrer — winback_contacts har ingen
+// kolonne for grunn. Ville vi skille dem i data, måtte tabellen utvides.
+$("#wbList").addEventListener('click',function(e){
   var u=e.target.closest('[data-undo]');   if(u){ wbAngre(u.dataset.undo); return; }
-  var k=e.target.closest('[data-wbcopy]');
-  if(k){
-    // Kopieringen ER markeringen. Men bare hvis den lyktes: uten teksten på utklippstavla
-    // har barbereren ingenting å lime inn, og da skal kunden IKKE snoozes i 45 dager.
-    var ok=await kopierTekst(wbMelding(k.dataset.kind, k.dataset.name));
-    if(!ok){ showToast('Kunne ikke kopiere'); return; }
-    showToast('Melding kopiert');
-    wbMarker(k);
-    return;
-  }
-  var b=e.target.closest('[data-contact]'); if(b) wbMarker(b);   // «Skjul»: samme utsatte POST, ingen kopiering
+  var b=e.target.closest('[data-contact]'); if(b) wbMarker(b);
 });
 
 /* ---- Tjenester ---- */
