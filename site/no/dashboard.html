@@ -282,9 +282,20 @@
   .sub-micro{font-size:12px;color:var(--mut);margin:10px 0 0;line-height:1.45;max-width:520px}
   /* Publisering — egen blokk under abonnementskortet. Gjenbruker .subcard/.substatus. */
   .pubcard{margin-top:22px}
-  .pub-link{font-size:13px;color:var(--ink-2);margin-top:12px;word-break:break-all}
+  /* word-break:break-all sto her fra da blokka VAR bare URL-en. Den arves, og da blokka
+     fikk en setning under lenka brøt den norsk brødtekst midt i ord: «tar ikke i / mot»,
+     «publiser / er». Bryting hører til URL-en, ikke til containeren — se .pub-url-row>a. */
+  .pub-link{font-size:13px;color:var(--ink-2);margin-top:12px}
   .pub-link a{color:var(--info);text-decoration:none}
   .pub-link a:hover{text-decoration:underline}
+  /* URL og kopier-knapp på samme rad, brekker til to linjer når det er trangt.
+     min-width:0 er ikke pynt: uten den nekter flex-elementet å krympe under sin egen
+     innholdsbredde, og en lang URL dytter hele kortet ut i horisontal overflow på 320.
+     overflow-wrap:anywhere, ikke word-break:break-all: den bryter ved «/» og «-» når den
+     kan, og hvor som helst kun når den må — break-all delte «grand-barber» som «gran|d-». */
+  .pub-url-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
+  .pub-url-row>a{min-width:0;overflow-wrap:anywhere}
+  .pub-note{font-size:12px;color:var(--mut);margin:8px 0 0;line-height:1.45}
   /* Avpubliser er med vilje dempet til en tekstlenke, ikke en knapp: den er sjelden og
      destruktiv-ish (tar sida ned), og skal ikke konkurrere visuelt med «Publiser siden». */
   .lnk-quiet{appearance:none;border:0;background:0;font:inherit;font-size:12px;color:var(--mut);
@@ -1305,7 +1316,10 @@
            steder å holde etiketten og aksjonen i synk. -->
       <button class="btn" id="kontoAksjon" style="display:none"></button>
       <p class="sub-micro" id="kontoMikro" style="display:none"></p>
-      <p class="pub-link" id="pubLink" style="display:none"></p>
+      <!-- <div>, ikke <p>: forhåndsvisnings-tilstanden legger en <p class="pub-note"> under
+           lenka, og <p> inne i <p> er ugyldig HTML — parseren lukker den ytre og noten havner
+           utenfor blokka som skjules/vises. [oversettelse: sv/da/en] -->
+      <div class="pub-link" id="pubLink" style="display:none"></div>
       <!-- Sekundærhandlinger som dempede tekstlenker. Avpubliser skal ALDRI være en knapp:
            den tar en live side ned og skal ikke konkurrere visuelt med hovedhandlingen. -->
       <div class="konto-lenker">
@@ -3335,13 +3349,8 @@ function renderKonto(b){
 
   // Avpubliser: tekstlenke i ALLE tilstander der siden faktisk står live. Aldri en knapp.
   if(live)av.style.display='';
-  // Adressen vises når siden er live. Krever slug fra /profile — lander den etter dette
-  // kallet, tegner loadProfil blokka på nytt. Mangler den, vises ingen lenke (aldri gjettet).
-  if(live&&CONFIG.BARBER_SLUG){
-    const url=CONFIG.SITE_BASE+'/'+CONFIG.BARBER_SLUG;
-    lenke.innerHTML='Adressen din: <a href="'+url+'" target="_blank" rel="noopener">'+url+'</a>';
-    lenke.style.display='';
-  }
+  // Adressen: egen funksjon, kalt UTENFOR if/else-kjeden over. Se settLenkeblokk.
+  settLenkeblokk(b);
   // Prikkene følger needs_attention fra serveren — ALDRI «har besøkt fanen». Blir feltet
   // false ved neste /billing/status, forsvinner de av seg selv.
   // TO prikker, samme kilde: nav-knappen (finn fanen) og trekkspill-headeren (finn
@@ -3349,6 +3358,92 @@ function renderKonto(b){
   if(dot)dot.hidden=!b.needs_attention;
   const accDot=$("#kontoAccDot"); if(accDot)accDot.hidden=!b.needs_attention;
   oppdaterMerPrikk(); // Konto ligger bak «Mer» på mobil — toggelen må speile prikken
+}
+
+// Lenke-blokka styres av page_status ALENE, og ligger derfor utenfor if/else-kjeden i
+// renderKonto. Billing-grenen svarer på «hva må jeg gjøre nå?»; adressen svarer på «hvor bor
+// sida mi?» — to ulike spørsmål. Legges den inne i kjeden, forsvinner adressen i det
+// øyeblikket en betalingsgren tar over: en barberer i myk periode (C) har fortsatt en LIVE
+// side som kunder booker på, og skal kunne dele lenka mens han ordner kortet.
+//
+// Tre tilstander:
+//   live          → hele URL-en synlig + «Kopier lenke»
+//   forhandsvist  → «Se forhåndsvisning» + hva som mangler før kunder slipper inn
+//   ellers        → ingenting
+//
+// 'forhandsvist' + attention_grunn 'trial_utlopt_nedtatt' er UNNTATT fra tilstand 2, selv om
+// statusen er den samme: der er 'forhandsvist' ikke «ennå ikke publisert», men resultatet av
+// at sida BLE tatt ned da prøveperioden gikk ut. En forhåndsvisningslenke med «tar ikke imot
+// bookinger før du publiserer» ville lest som om han bare hadde glemt å trykke på knappen.
+// Kortet over sier allerede «Siden din er ikke synlig» + «Legg inn kort» — det er beskjeden.
+function settLenkeblokk(b){
+  const boks=$("#pubLink"); if(!boks)return;
+  boks.textContent=''; boks.style.display='none';   // full nullstilling: ingen rester fra forrige tilstand
+  const slug=CONFIG.BARBER_SLUG;
+  // Uten slug fra /profile gjetter vi ALDRI en adresse. Lander den etter dette kallet,
+  // tegner loadProfil blokka på nytt (den re-renderen er ikke betinget av live).
+  if(!slug)return;
+
+  const st=b.page_status;
+  const nedtatt=b.attention_grunn==='trial_utlopt_nedtatt';
+  const forhandsvist=(st==='forhandsvist'&&!nedtatt);
+  if(st!=='live'&&!forhandsvist)return;             // draft / avslag / nedtatt / ukjent
+
+  // HELE https://…, ikke bare sluggen: lenka limes inn i Instagram-bio og SMS, og de
+  // autolinker ikke uten protokoll. Samme streng vises og kopieres — én kilde.
+  const url=CONFIG.SITE_BASE+'/'+slug;
+
+  const rad=document.createElement('div');
+  rad.className='pub-url-row';
+  const a=document.createElement('a');
+  a.href=url; a.target='_blank'; a.rel='noopener';
+  a.textContent = st==='live' ? url : 'Se forhåndsvisning';
+  rad.appendChild(a);
+
+  if(st==='live'){
+    // .btn-outline, ikke .btn: i tilstand B står «Legg inn kort» som hovedknapp rett over,
+    // og to fylte knapper i samme kort konkurrerer om det samme trykket.
+    const knapp=document.createElement('button');
+    knapp.type='button';
+    knapp.className='btn-outline';
+    knapp.textContent='Kopier lenke';
+    knapp.addEventListener('click',function(){kopierLenke(knapp,url,a);});
+    rad.appendChild(knapp);
+  }
+  boks.appendChild(rad);
+
+  if(forhandsvist){
+    const note=document.createElement('p');
+    note.className='pub-note';
+    note.textContent='Siden kan ses, men tar ikke imot bookinger før du publiserer.';
+    boks.appendChild(note);
+  }
+  boks.style.display='';
+}
+
+// Kvittering i knappen selv, ikke alert(): en modal for en vellykket kopiering krever et
+// klikk til for noe som allerede gikk bra.
+// navigator.clipboard finnes ikke i usikker kontekst og kan avvises av brukeren — da er
+// stille feil det verste utfallet, for han tror lenka ligger på utklippstavla. Vi markerer
+// URL-teksten i stedet, så et vanlig Ctrl+C / «Kopier» tar den, og sier at han må gjøre det.
+function kopierLenke(knapp,url,urlEl){
+  const tilbake=function(){
+    clearTimeout(knapp._kopiT);
+    knapp._kopiT=setTimeout(function(){knapp.textContent='Kopier lenke';},2000);
+  };
+  const merk=function(){
+    knapp.textContent='Merket — kopier selv';
+    try{
+      const r=document.createRange(); r.selectNodeContents(urlEl);
+      const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
+    }catch(e){}
+    tilbake();
+  };
+  if(!navigator.clipboard||!navigator.clipboard.writeText){merk();return;}
+  navigator.clipboard.writeText(url).then(function(){
+    knapp.textContent='Kopiert';
+    tilbake();
+  },merk);
 }
 
 /* ---- Publisering (page_status) ---- */
