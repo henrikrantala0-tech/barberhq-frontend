@@ -186,14 +186,24 @@
   html[data-theme="dark"] .who .dot{background:#fff;color:#0a0a0a}
   html[data-theme="dark"] .segs button[aria-selected=true]{background:var(--info);color:#fff}
   html[data-theme="dark"] .sw input:checked + .sl{background:#4d8bff}
-  .themebtn{appearance:none;border:1px solid var(--line-2);background:var(--surface);color:var(--ink-2);width:32px;height:32px;border-radius:7px;cursor:pointer;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center}
-  .themebtn:hover{color:var(--ink);border-color:var(--ink-2)}
+  /* .themebtn er FJERNET 08.08 — tema velges nå med to .preset-kort, ikke en toggle-knapp. */
   .nav{overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
   .nav button{white-space:nowrap}
-  /* Desktop: alle seks knapper i raden, Mer-knapp skjult */
+  /* Desktop: alle fem knapper i raden, Mer-knapp skjult */
   .nav-mer-wrap{display:none}
-  /* Mobil: fire nav-mer-knapper skjult fra raden, Mer-knapp og dropdown synlig */
+  /* Mobil: Tjenester & tider + Konto i dropdown; Oversikt, Vekst og Din side blir stående.
+     Konto bærer varselprikken, og toggelen speiler den (oppdaterMerPrikk).
+     Målt på 320 (272px tilgjengelig, toggelen er 54 MED prikk — 42 uten):
+       3 synlige + toggel @ marg 26 → 278px,  −6px   passer ikke
+       3 synlige + toggel @ marg 20 → 260px,  12px   akkurat på kravet
+       3 synlige + toggel @ marg 16 → 248px,  24px  ← valgt, tåler lengre sv/da/en-etiketter
+       4 synlige + toggel @ marg  6 → 263px,   9px   fire får ALDRI 12px, uansett marg
+     ⚠ Mål med geometri (siste knapps høyrekant mot toggelens venstrekant), IKKE med
+     scrollWidth: .nav-mer-wrap har margin-left:auto, som spiser slakken og klemmer
+     clientWidth−scrollWidth til 0 uansett hvor god plass det er.
+     Margen senkes KUN her — desktop beholder 26. */
   @media(max-width:719px){
+    .nav button{margin-right:16px}
     button.nav-mer{display:none}
     .nav-mer-wrap{display:block;position:relative;align-self:center;flex-shrink:0;margin-left:auto}
     .nav-mer-toggle{appearance:none;border:0;background:0;font:inherit;font-size:13px;font-weight:500;color:var(--mut);padding:14px 2px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px;letter-spacing:-.01em}
@@ -243,12 +253,21 @@
   .preset[aria-pressed=true]{border-color:var(--info)}
   .preset .pt{font-size:13px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
   .preset .pd{font-size:11.5px;color:var(--mut);margin-top:2px}
+  /* Miniatyr inne i et .preset-kort: temaets bakgrunn med «Aa» i temaets tekstfarge.
+     Intern i .preset, som .swatches — ikke en ny komponent. */
+  .theme-mini{display:flex;align-items:center;justify-content:center;height:62px;border-radius:7px;
+              border:1px solid rgba(127,127,127,.3);margin-bottom:9px;font-size:19px;font-weight:700;
+              letter-spacing:-.02em}
+  .theme-grid{max-width:380px;margin-bottom:10px}
   .swatches{display:flex;gap:5px;margin-top:9px}
   .swatches span{width:18px;height:18px;border-radius:5px;border:1px solid rgba(127,127,127,.3)}
   .subcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 24px;max-width:520px}
   .subcard .pln{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
   .subcard .pln b{font-size:26px;font-weight:800;letter-spacing:-.03em}
   .subcard .pln span{font-size:13px;color:var(--mut)}
+  /* Undertittel under hovedtallet («av prøveperioden»). Egen node fordi den skal stå på
+     EGEN linje — .pln er flex/baseline og ville lagt den ved siden av tallet. */
+  .pln-sub{font-size:13px;color:var(--mut);margin:-2px 0 4px;letter-spacing:-.01em}
   .substatus{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--good);background:var(--good-bg);padding:5px 11px;border-radius:7px;margin-bottom:16px}
   .substatus.bad{color:var(--bad);background:var(--bad-bg)}
   .substatus.mut{color:var(--mut);background:var(--line)}
@@ -258,7 +277,37 @@
   .sub-banner.info{background:var(--info-bg);color:var(--info);border:1px solid var(--info)}
   .sub-banner.mut{background:var(--surface);color:var(--mut);border:1px solid var(--line)}
   .sub-banner strong{font-weight:700}
-  .sub-micro{font-size:12px;color:var(--mut);margin:9px 2px 0;line-height:1.45;max-width:520px}
+  /* margin-left var 2px — arvet fra da klassen satt under en knapp med egen innrykk. Nå står
+     den alene under hovedhandlingen og skal flukte med resten av teksten i kortet. */
+  .sub-micro{font-size:12px;color:var(--mut);margin:10px 0 0;line-height:1.45;max-width:520px}
+  /* Publisering — egen blokk under abonnementskortet. Gjenbruker .subcard/.substatus. */
+  .pubcard{margin-top:22px}
+  .pub-link{font-size:13px;color:var(--ink-2);margin-top:12px;word-break:break-all}
+  .pub-link a{color:var(--info);text-decoration:none}
+  .pub-link a:hover{text-decoration:underline}
+  /* Avpubliser er med vilje dempet til en tekstlenke, ikke en knapp: den er sjelden og
+     destruktiv-ish (tar sida ned), og skal ikke konkurrere visuelt med «Publiser siden». */
+  .lnk-quiet{appearance:none;border:0;background:0;font:inherit;font-size:12px;color:var(--mut);
+             text-decoration:underline;cursor:pointer;padding:0;margin-top:14px;display:block}
+  .lnk-quiet:hover{color:var(--ink-2)}
+  /* E-post som REN VISNING — ingen input, fordi det ikke finnes en endre-rute. */
+  .fld-vis{margin-bottom:16px}
+  .fld-vis-l{font-size:12px;color:var(--mut);font-weight:500;margin-bottom:4px;letter-spacing:-.01em}
+  .fld-vis-v{font-size:14px;color:var(--ink);word-break:break-all}
+  .pw-felt{padding-top:16px;border-top:1px solid var(--line)}
+  .pw-felt .fld{max-width:340px}
+  .hjelp-p{font-size:13px;color:var(--ink-2);line-height:1.5;margin-bottom:14px}
+  .hjelp-lenke{display:inline-block;text-decoration:none}
+  .konto-lenker{display:flex;flex-wrap:wrap;gap:18px;margin-top:14px}
+  .konto-lenker .lnk-quiet{margin-top:0}
+  /* Prikk på Konto-fanen ved needs_attention. Ingen tall — den sier «se her», ikke «hvor mye».
+     Ligger inni nav-knappen, så den overlever flyttingen til «Mer»-menyen på mobil. */
+  .nav-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--bad);
+           margin-left:6px;vertical-align:middle}
+  .nav-dot[hidden]{display:none}
+  .pub-err{display:none;color:#c0594a;font-size:13px;margin-top:12px;line-height:1.45;max-width:520px}
+  .pub-err button{appearance:none;border:0;background:0;font:inherit;font-size:13px;
+                  color:var(--info);text-decoration:underline;cursor:pointer;padding:0}
 
   .dlbl{font-size:12px;color:var(--mut);font-weight:600;margin:16px 0 4px;letter-spacing:-.01em}
   /* «Din side»: trekkspill venstre, preview høyre — begge på PANEL-nivå.
@@ -303,6 +352,11 @@
   #pvScreen{position:absolute;top:0;left:0;width:390px;height:780px;border:0;padding:0;transform:scale(0.72);transform-origin:top left;pointer-events:none;border-radius:17px}
 
   .ideacard{margin-top:34px;padding-top:26px;border-top:1px solid var(--line);max-width:440px}
+  /* Ideer-boksen inne i et trekkspill: dropp .ideacard sin egen topp-marg og skillelinje —
+     .acc-body er allerede ramma, og .ideacard oppå ga kort-i-kort med en løs strek.
+     ⚠ MÅ stå ETTER .ideacard: lik spesifisitet, så rekkefølgen avgjør. Sto først lenger
+     opp i fila og ble overstyrt uten å si fra. */
+  .ideacard-flat{margin-top:0;padding-top:0;border-top:0;max-width:none}
   .ideacard textarea{width:100%;font:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink);min-height:90px;resize:vertical}
   .ideacard textarea:focus{outline:none;border-color:var(--info)}
   .idea-err{display:none;color:#c0594a;font-size:13px;margin-top:8px;line-height:1.45}
@@ -466,10 +520,8 @@
 
   /* ---- Innstillings-kort (Vekst: SMS-knotter · Konto: Utseende) ---- */
   .sett-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:4px 18px;margin-bottom:16px}
-  .tog-row{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:14px 0;border-bottom:1px solid var(--line)}
-  .tog-row:last-of-type{border-bottom:0}
-  .tog-label{font-size:13.5px;font-weight:500;letter-spacing:-.01em}
-  .tog-sub{font-size:12px;color:var(--mut);margin-top:2px}
+  /* .tog-row/.tog-label/.tog-sub er FJERNET 08.08 sammen med tema-toggelen — de var
+     eneste bruksstedet. (Kommentaren ved SMS-trekkspillene nevner dem historisk.) */
   .sett-pills-row{padding:14px 0;border-bottom:1px solid var(--line)}
   .sett-pills-row>label{display:block;font-size:13.5px;font-weight:500;letter-spacing:-.01em;margin-bottom:9px}
   .sett-hint{font-size:12px;color:var(--mut);margin-top:9px}
@@ -664,18 +716,28 @@
 
   <nav class="nav" role="tablist">
     <button role="tab" aria-selected="true" data-panel="oversikt">Oversikt</button>
+    <!-- TRE faner får plass i raden på mobil, ikke fire. Målt på 320: 272px tilgjengelig,
+         «Mer»-toggelen spiser 54 av dem (42 + 12 for prikken). Fire synlige + toggel er
+         263px selv med 6px marg = 9px klaring, altså under kravet uansett hva margen settes
+         til. Tre er taket, ikke et valg. Se marg-tabellen i CSS-en over. -->
     <button role="tab" aria-selected="false" data-panel="vekst">Vekst</button>
     <button role="tab" aria-selected="false" data-panel="tjenester" class="nav-mer">Tjenester &amp; tider</button>
     <!-- data-panel="design" er BEVART selv om fanen heter «Din side» — Profil-fanen ble slått
          INN her 08.08, og id-en #design henger sammen med loadDesign(), oppdaterPreview() og
          hele design-koden. Samme resonnement som «Konto»/#abonnement under. Ikke døp om id-en. -->
-    <button role="tab" aria-selected="false" data-panel="design" class="nav-mer">Din side</button>
+    <button role="tab" aria-selected="false" data-panel="design">Din side</button>
     <!-- data-panel="abonnement" er BEVART med vilje selv om fanen heter «Konto» —
          id-en henger sammen med #abonnement, switchPanel('abonnement') (:2376) og
          billing-koden. Bare etiketten er byttet. -->
-    <button role="tab" aria-selected="false" data-panel="abonnement" class="nav-mer">Konto</button>
+    <!-- Konto ligger i «Mer» på mobil, og bærer varselprikken. En prikk inne i en lukket meny
+         er usynlig (målt 0×0 på 320/375), så toggelen speiler den — se oppdaterMerPrikk().
+         BEGGE vises samtidig, og prikken i menyen forsvinner IKKE når menyen åpnes: et
+         varsel om at siden snart tas ned skal ikke kunne forsvinne fordi noen kikket på det.
+         Den slukkes kun når needs_attention blir false. -->
+    <button role="tab" aria-selected="false" data-panel="abonnement" class="nav-mer">Konto<span class="nav-dot" id="kontoDot" hidden></span></button>
     <div class="nav-mer-wrap">
-      <button type="button" class="nav-mer-toggle" aria-expanded="false" aria-haspopup="true">Mer <span class="mer-caret">▾</span></button>
+      <!-- #merDot koster 12px bredde (toggel 42 → 54). Det er regnet inn i marg-valget under. -->
+      <button type="button" class="nav-mer-toggle" aria-expanded="false" aria-haspopup="true"><span id="merLabel">Mer</span><span class="nav-dot" id="merDot" hidden></span> <span class="mer-caret">▾</span></button>
       <div class="nav-mer-meny" role="menu" hidden></div>
     </div>
   </nav>
@@ -1023,6 +1085,24 @@
     <p class="panel-h">Tjenester &amp; priser</p>
     <p class="block-s">Det kundene kan booke. Vises på bookingsiden din.</p>
 
+    <!-- Google Kalender ØVERST (flyttet 08.08). Sto først nederst, deretter mellom Tjenester
+         og Arbeidstider — men de to hører sammen (hva du tilbyr, og når), og kalenderen brøt
+         den sammenhengen på midten. Øverst er den også umulig å overse, og den er en
+         forutsetning for at tidene under faktisk stemmer: den sperrer opptatte timer.
+         Ingen endring i logikk eller i feltene den leser (connected / scope_ok /
+         google_email). Blokka har TILSTAND og finnes KUN her — en kopi i Konto ville kunnet
+         vise en annen status enn denne. -->
+    <div class="gcal" id="gcal">
+      <div class="gcal-info">
+        <p class="block-h" style="margin-top:0">Google Kalender</p>
+        <p class="block-s" id="gcalStatus" style="margin-bottom:0">Sjekker tilkobling …</p>
+      </div>
+      <button class="btn-outline" id="gcalBtn">Koble til</button>
+    </div>
+    <p class="ctx" style="margin-top:10px">Når Google Calendar er tilkoblet sperres opptatte tider automatisk i bookingsiden — kunder kan ikke booke mens du er opptatt. Dashbordet er fortsatt master for arbeidstider.</p>
+
+    <div class="svc-divider"></div>
+
     <p class="svc-group-h">Hovedtjenester</p>
     <p class="svc-group-s">Kunden velger én. Minst én kreves.</p>
     <div class="svc-head-h"><span>Tjeneste</span><span>Pris (kr)</span><span>Min.</span><span></span></div>
@@ -1058,15 +1138,6 @@
       <button class="btn" id="saveHours">Lagre arbeidstider</button>
       <span class="saved" id="hoursSaved">Lagret ✓</span>
     </div>
-
-    <div class="gcal" id="gcal">
-      <div class="gcal-info">
-        <p class="block-h" style="margin-top:0">Google Kalender</p>
-        <p class="block-s" id="gcalStatus" style="margin-bottom:0">Sjekker tilkobling …</p>
-      </div>
-      <button class="btn-outline" id="gcalBtn">Koble til</button>
-    </div>
-    <p class="ctx" style="margin-top:10px">Når Google Calendar er tilkoblet sperres opptatte tider automatisk i bookingsiden — kunder kan ikke booke mens du er opptatt. Dashbordet er fortsatt master for arbeidstider.</p>
   </section>
 
   <!-- DESIGN -->
@@ -1169,9 +1240,12 @@
     <div class="ideacard">
       <p class="block-h" style="margin-top:0">Ideer &amp; ønsker</p>
       <p class="block-s">Har du en idé til en funksjon, eller ønsker en endring på siden, en ny farge eller layout? Send oss — vi leser alt.</p>
-      <textarea id="ideaBox" placeholder="Skriv ønsket eller idéen din her"></textarea>
-      <div class="savebar"><button class="btn" id="sendIdea">Send</button><span class="saved" id="ideaSaved">Sendt &#10003;</span></div>
-      <p class="idea-err" id="ideaErr"></p>
+      <!-- Suffiks «-side»: samme boks finnes i Konto («-konto-ide»), og der ligger også en
+           support-boks («-konto-support»). Alle tre deler bindFeedbackBoks(). Prefikset er
+           «fb», ikke «idea» — feltene bærer nå både idé og support. -->
+      <textarea id="fbBox-side" placeholder="Skriv ønsket eller idéen din her"></textarea>
+      <div class="savebar"><button class="btn" id="fbSend-side">Send</button><span class="saved" id="fbSaved-side">Sendt &#10003;</span></div>
+      <p class="idea-err" id="fbErr-side"></p>
     </div>
   </section>
 
@@ -1181,35 +1255,166 @@
 
   <!-- ABONNEMENT -->
   <section class="panel" id="abonnement">
-    <p class="panel-h">Abonnement</p>
-    <p class="block-s">Planen din og betaling.</p>
+    <!-- Tittelen var «Abonnement». Kortet dekker nå BÅDE abonnement og publisering — de to
+         henger sammen etter trial-omleggingen — så den gamle tittelen navnga halve innholdet.
+         Nav-etiketten har hett «Konto» siden 06.08; nå sier de to det samme. (id-en
+         #abonnement er fortsatt bevart — den henger sammen med applyBillingReturn.) -->
+    <p class="panel-h">Konto</p>
+    <p class="block-s">Abonnement, publisering og innstillinger.</p>
     <div class="sub-banner" id="subReturn" role="status" style="display:none"></div>
-    <div class="sub-banner" id="subBanner" role="alert" style="display:none"></div>
-    <div class="subcard">
-      <div class="substatus" id="subStatus">&#9679; Henter abonnementsstatus …</div>
-      <div class="pln"><b>249 kr</b><span>/ mnd</span></div>
-      <p id="subBlurb">Alt inkludert. Ingen binding — du kan si opp når som helst.</p>
-      <button class="btn" id="startSub" style="display:none">Start 30 dager gratis</button>
-      <p class="sub-micro" id="startMicro" style="display:none">Kortet trekkes ikke før etter 30 dager. Si opp når som helst.</p>
-      <button class="btn-outline" id="manageSub" style="display:none">Administrer abonnement</button>
-    </div>
-    <p class="ctx" id="subCtx" style="margin-top:12px;display:none">«Administrer abonnement» åpner Stripe, der du kan bytte kort, se kvitteringer eller si opp.</p>
 
-    <!-- Utseende lå tidligere i en egen Innstillinger-fane. Slått inn her (31.07 → 06.08):
-         abonnement ØVERST fordi det er det barbereren kommer til Konto for; dashbord-
-         innstillinger under. «Bytt passord» hører hjemme her, men er IKKE bygget:
-         POST /api/dashboard/set-password tar kun {password} og verifiserer ikke nåværende
-         passord. Venter på backend-rute. -->
-    <p class="sett-h">Utseende</p>
-    <p class="block-s">Gjelder bare dashbordet. Lyst/mørkt på bookingsiden din velger du under Design.</p>
-    <div class="sett-card">
-      <div class="tog-row">
-        <div>
-          <div class="tog-label">Mørk modus</div>
-          <div class="tog-sub">Huskes i denne nettleseren.</div>
-        </div>
-        <button class="themebtn" id="themeBtn" aria-label="Bytt lyst/morkt">&#9790;</button>
+    <!-- Fire trekkspill, samme mønster og samme .acc-CSS som «Din side». data-single →
+         ett åpent om gangen (Vekst-fanens .acc-list er umerket og beholder flere åpne).
+         Abonnement er åpen som standard: det er spørsmålet barbereren kommer hit for. -->
+    <div class="acc-list side-accs" id="kontoAccs" data-single>
+
+      <div class="acc" id="accAbonnement">
+        <button type="button" class="acc-head" aria-expanded="true">
+          <span class="acc-htext">
+            <!-- Prikken gjentar nav-prikken. Med data-single lukkes denne seksjonen når du
+                 åpner en annen, og da er headeren eneste sted sporet kan fortsette. Vist
+                 ALLTID ved needs_attention, også når seksjonen er åpen: et varsel som
+                 forsvinner fordi du foldet ut noe, er verre enn ett som står stille.
+                 Samme .nav-dot-klasse og samme plassering som .acc-badge på «Vinn tilbake». -->
+            <!-- Ingen .acc-sub på Konto-trekkspillene: fire toradede headere fylte nesten hele
+                 320-skjermen før noe var åpnet. Panel-undertittelen over sier hva fanen er;
+                 forklaringene bor INNE i seksjonene, der de faktisk trengs. -->
+            <span class="acc-title">Abonnement og publisering<span class="nav-dot" id="kontoAccDot" hidden></span></span>
+          </span>
+          <span class="acc-chev">▾</span>
+        </button>
+        <div class="acc-body">
+
+    <!-- ETT kort, ÉN knapp. Abonnement og publisering var to kort med hver sin statuspille
+         og hver sin knapp — men de beskrev samme spørsmål: «hva må jeg gjøre nå?».
+         Etter trial-omleggingen (041) er de heller ikke uavhengige: publisering STARTER
+         prøveperioden, og kort kreves før den er ute. To kort ville vist to halve svar.
+         Én knapp, som skifter etikett og handling med tilstanden — se renderKonto().
+         [oversettelse: sv/da/en] -->
+    <div class="subcard">
+      <div class="substatus" id="kontoStatus">&#9679; Henter status …</div>
+      <!-- Hovedtallet er TILSTANDSAVHENGIG, ikke alltid prisen. Før publisering er 249 kr
+           ikke det barbereren lurer på — han har ikke begynt å bruke noe ennå. I
+           prøveperioden er det dagene som teller ned som er tallet. Prisen flytter da til
+           mikroteksten, der den fortsatt er ærlig uten å være det første øyet lander på. -->
+      <div class="pln" id="kontoTall" style="display:none"><b id="kontoTallStor"></b><span id="kontoTallSuff"></span></div>
+      <p class="pln-sub" id="kontoTallSub" style="display:none"></p>
+      <p id="kontoTekst"></p>
+      <!-- ÉN node for hovedhandlingen. «Vekten» er en klasse-bytte (.btn ↔ .lnk-quiet), ikke
+           to elementer — samme tekst, samme handler, samme id. To noder ville betydd to
+           steder å holde etiketten og aksjonen i synk. -->
+      <button class="btn" id="kontoAksjon" style="display:none"></button>
+      <p class="sub-micro" id="kontoMikro" style="display:none"></p>
+      <p class="pub-link" id="pubLink" style="display:none"></p>
+      <!-- Sekundærhandlinger som dempede tekstlenker. Avpubliser skal ALDRI være en knapp:
+           den tar en live side ned og skal ikke konkurrere visuelt med hovedhandlingen. -->
+      <div class="konto-lenker">
+        <button class="lnk-quiet" id="manageSub" style="display:none">Administrer abonnement</button>
+        <button class="lnk-quiet" id="unpublish" style="display:none">Avpubliser bookingside</button>
       </div>
+      <p class="pub-err" id="pubErr"></p>
+    </div>
+        </div>
+      </div>
+
+      <!-- ── INNLOGGING ──────────────────────────────────────────────────────────────
+           E-post er REN VISNING: det finnes ingen rute for å endre den. En redigerbar
+           input uten sted å lagre er verre enn ingen input. [oversettelse: sv/da/en] -->
+      <div class="acc" id="accInnlogging">
+        <button type="button" class="acc-head" aria-expanded="false">
+          <span class="acc-htext">
+            <span class="acc-title">Innlogging</span>
+          </span>
+          <span class="acc-chev">▾</span>
+        </button>
+        <div class="acc-body" hidden>
+          <div class="fld-vis">
+            <div class="fld-vis-l">E-post</div>
+            <div class="fld-vis-v" id="kontoEpost">—</div>
+          </div>
+          <div class="pw-felt">
+            <div class="fld"><label>Nåværende passord</label><input id="pw-current" type="password" autocomplete="current-password"></div>
+            <div class="fld"><label>Nytt passord</label><input id="pw-new" type="password" autocomplete="new-password" placeholder="Minst 8 tegn"></div>
+            <div class="savebar"><button class="btn" id="savePw">Bytt passord</button><span class="saved" id="pwSaved">Endret &#10003;</span></div>
+            <p class="pub-err" id="pwErr"></p>
+          </div>
+          <button class="lnk-quiet" id="loggUt">Logg ut</button>
+        </div>
+      </div>
+
+      <!-- ── UTSEENDE ────────────────────────────────────────────────────────────────
+           Lå i egen Innstillinger-fane (31.07) → Konto (06.08) → trekkspill (08.08).
+           Undertittelen sier eksplisitt at dette gjelder DASHBORDET: lys/mørk for
+           bookingsida velges under «Din side», og de to ble blandet sammen før. -->
+      <div class="acc" id="accUtseende">
+        <button type="button" class="acc-head" aria-expanded="false">
+          <span class="acc-htext">
+            <span class="acc-title">Utseende</span>
+          </span>
+          <span class="acc-chev">▾</span>
+        </button>
+        <div class="acc-body" hidden>
+          <!-- Flyttet hit fra headeren: denne sier noe ekte (hvilken flate temaet gjelder),
+               og de to ble blandet sammen før. Hører derfor hjemme ved valget, ikke i en
+               undertittel man leser før man har åpnet noe. -->
+          <p class="block-s">Gjelder bare dashbordet. Lyst/mørkt på bookingsiden din velger du under Din side.</p>
+    <!-- To preview-kort i stedet for en toggle. Gjenbruker .preset-grid/.preset fra «Din
+         side» — inkludert .preset[aria-pressed=true]{border-color:var(--info)} som er
+         markeringen av valgt kort. Det ENESTE som ikke fantes fra før er miniatyren:
+         .swatches viser fargebrikker uten tekst, .lthumb forventer en <img>. Derfor én ny
+         indre klasse, .theme-mini — intern i .preset, samme rolle som .swatches.
+         Fargene er hardkodet, ikke var(--bg)/var(--ink): begge kortene skal vise SITT tema
+         uansett hvilket tema dashbordet står i akkurat nå. Verdiene speiler :root (:14) og
+         html[data-theme="dark"] (:181) — endres de der, må de endres her.
+         Logikken er uendret: applyTheme() + localStorage['bhq-theme']. -->
+          <div class="preset-grid theme-grid" id="themeGrid"></div>
+          <p class="sub-micro" style="display:block;margin-top:0">Huskes i denne nettleseren.</p>
+        </div>
+      </div>
+
+      <!-- ── HJELP ───────────────────────────────────────────────────────────────────
+           LENKE til support.html, ikke en kopi av FAQ-en. Duplisert FAQ ville betydd to
+           steder å oppdatere, og de to ville drevet fra hverandre. Dashbordet hadde ingen
+           vei til support i det hele tatt før nå (null treff på «support» i fila).
+           [oversettelse: sv/da/en] -->
+      <div class="acc" id="accHjelp">
+        <button type="button" class="acc-head" aria-expanded="false">
+          <span class="acc-htext">
+            <span class="acc-title">Hjelp</span>
+          </span>
+          <span class="acc-chev">▾</span>
+        </button>
+        <div class="acc-body" hidden>
+          <!-- 1. Supportsida FØRST: FAQ-en svarer på mye uten at noen må vente på svar. -->
+          <p class="hjelp-p">Vanlige spørsmål og kontaktskjema ligger på supportsiden.</p>
+          <a class="btn-outline hjelp-lenke" href="/no/support.html" target="_blank" rel="noopener">Åpne support</a>
+
+          <!-- 2. FEIL — type:'support'. Teksten over skiller den fra idé-boksen: dette er
+               «noe er i stykker», ikke «jeg ønsker meg noe». Uten det ville to like
+               tekstfelt under hverandre vært umulige å velge mellom.
+               ⚠ Backend krever name+email+topic+message for type 'support' (feedback.js) og
+               beriker IKKE fra sesjonen slik 'idea' gjør. De tre første fylles fra profilen
+               vi allerede har — se sendFeedback(). [oversettelse: sv/da/en] -->
+          <p class="block-h" style="margin-top:26px">Noe som ikke virker?</p>
+          <p class="block-s">Beskriv hva som skjer, så ser vi på det. Vi svarer på e-posten din.</p>
+          <div class="ideacard ideacard-flat">
+            <textarea id="fbBox-konto-support" placeholder="Hva skjer, og hvor i dashbordet?"></textarea>
+            <div class="savebar"><button class="btn" id="fbSend-konto-support">Send</button><span class="saved" id="fbSaved-konto-support">Sendt &#10003;</span></div>
+            <p class="idea-err" id="fbErr-konto-support"></p>
+          </div>
+
+          <!-- 3. ØNSKE — type:'idea'. Samme boks som på «Din side»; markupen er duplisert
+               (to tekstfelt kan ikke være samme node), men handleren er det IKKE. -->
+          <p class="block-h" style="margin-top:26px">Ideer &amp; ønsker</p>
+          <p class="block-s">Ønsker du en ny funksjon, farge eller layout? Send oss — vi leser alt.</p>
+          <div class="ideacard ideacard-flat">
+            <textarea id="fbBox-konto-ide" placeholder="Skriv ønsket eller idéen din her"></textarea>
+            <div class="savebar"><button class="btn" id="fbSend-konto-ide">Send</button><span class="saved" id="fbSaved-konto-ide">Sendt &#10003;</span></div>
+            <p class="idea-err" id="fbErr-konto-ide"></p>
+          </div>
+        </div>
+      </div>
+
     </div>
   </section>
 </div>
@@ -1221,14 +1426,23 @@ let IS_DEMO=false;
 
 const CONFIG={
   API_BASE:"https://api.trybarberhq.com",
+  // Offentlig side-domene (kundesida bor på /:slug). Skilt fra API_BASE fordi de to kan
+  // peke ulike steder. vervLenke() hardkoder fortsatt samme domene — bør peke hit senere.
+  SITE_BASE:"https://trybarberhq.com",
   BARBER_NAME:null, // settes dynamisk fra GET /api/dashboard/profile
 };
 
 // Sentral fetch-wrapper — credentials alltid med, 401 sender til login.
 // body som string → Content-Type: application/json settes automatisk.
 // body som FormData → ingen Content-Type (browser setter multipart boundary).
+// raw401: slå AV auto-redirecten for dette ene kallet. Brukes kun av passordbytte, der 401
+// også betyr «feil nåværende passord» (code:'mangler_naavaerende_passord') — uten unntaket
+// ble barbereren kastet til innlogging idet han skrev feil gammelt passord, og det leser som
+// en feil i innloggingen. Flagget hører hjemme på kallstedet: apiFetch måtte ellers lest
+// kroppen på hver eneste 401 og kjent til backend-koder den ikke har noe med å gjøre.
+// ⚠ Setter du raw401, må kallstedet SELV håndtere ekte sesjonsutløp.
 async function apiFetch(path,opts={}){
-  const{body,headers={}, ...rest}=opts;
+  const{body,headers={},raw401, ...rest}=opts;
   const init={credentials:'include',...rest};
   if(body!==undefined){
     init.body=body;
@@ -1238,7 +1452,7 @@ async function apiFetch(path,opts={}){
     init.headers={...headers};
   }
   const r=await fetch(CONFIG.API_BASE+path,init);
-  if(r.status===401){location.href='/no/logg-inn.html';return null;}
+  if(r.status===401&&!raw401){location.href='/no/logg-inn.html';return null;}
   return r;
 }
 
@@ -2294,9 +2508,35 @@ $("#gcalBtn").addEventListener("click",async()=>{
 });
 
 /* ---- Tema (lyst/morkt) ---- */
-function applyTheme(t){document.documentElement.setAttribute("data-theme",t);var b=$("#themeBtn");if(b)b.innerHTML=t==="dark"?"&#9728;":"&#9790;";try{localStorage.setItem("bhq-theme",t);}catch(e){}}
+// Tema-valgene som preview-kort. Fargene MÅ være literaler: begge kortene viser sitt eget
+// tema samtidig, så var(--bg)/var(--ink) ville gitt to like kort i gjeldende tema.
+// Speiler :root og html[data-theme="dark"] — holdes i synk manuelt.
+const TEMAER=[
+  {key:"light",navn:"Lys",  bg:"#fafafa",ink:"#0a0a0a"},
+  {key:"dark", navn:"Mørk", bg:"#0a0a0a",ink:"#ffffff"},
+];
+function renderTemaValg(aktiv){
+  var g=$("#themeGrid"); if(!g)return;
+  g.innerHTML=TEMAER.map(function(t){
+    return '<button class="preset" data-tema="'+t.key+'" aria-pressed="'+(aktiv===t.key)+'">'
+      +'<div class="theme-mini" style="background:'+t.bg+';color:'+t.ink+'">Aa</div>'
+      +'<div class="pt">'+t.navn+'</div></button>';
+  }).join("");
+}
+// UENDRET logikk: samme attributt, samme localStorage-nøkkel, samme default.
+function applyTheme(t){
+  document.documentElement.setAttribute("data-theme",t);
+  renderTemaValg(t);
+  try{localStorage.setItem("bhq-theme",t);}catch(e){}
+}
 function initTheme(){var t="dark";try{t=localStorage.getItem("bhq-theme")||"dark";}catch(e){}applyTheme(t);}
-$("#themeBtn").addEventListener("click",function(){var cur=document.documentElement.getAttribute("data-theme")==="dark"?"light":"dark";applyTheme(cur);});
+// Delegert på gridet, ikke på kortene: renderTemaValg bygger innerHTML på nytt ved hvert
+// bytte, så lyttere på kortene ville dødd etter første klikk. (Den gamle #themeBtn-lytteren
+// hadde ingen null-sjekk og ville kastet ved init nå som knappen er borte.)
+$("#themeGrid").addEventListener("click",function(e){
+  var b=e.target.closest('.preset[data-tema]'); if(!b)return;
+  applyTheme(b.dataset.tema);
+});
 
 /* ---- Profil ---- */
 async function loadProfil(){
@@ -2305,7 +2545,14 @@ async function loadProfil(){
   if(!r.ok)return;
   const p=await r.json();
   if(!p.hasPassword){location.href='/no/opprett-passord.html';return;}
-  if(p.slug)CONFIG.BARBER_SLUG=p.slug; // brukes i verve-lenke-preview (spec 2d)
+  if(p.slug)CONFIG.BARBER_SLUG=p.slug; // brukes i verve-lenke-preview (spec 2d) + publiserings-lenka
+  // E-posten brukes to steder: visning i Innlogging, og support-payloaden (som backend
+  // krever, men ikke beriker selv). Lagres på CONFIG så begge leser samme kilde.
+  CONFIG.BARBER_EMAIL=p.email||null;
+  var ep=$("#kontoEpost");if(ep)ep.textContent=p.email||'—'; // Innlogging-seksjonen, ren visning
+  // /profile og /billing/status lastes parallelt. Rakk billing å tegne publiseringsblokka
+  // før sluggen var her, mangler den lenka til den publiserte sida — tegn på nytt nå.
+  if(_billing&&typeof renderKonto==='function')renderKonto(_billing);
   if(p.isDemo&&!IS_DEMO){IS_DEMO=true;applyDemoMode();}
   $("#pf-name").value=p.name||"";
   $("#pf-shop").value=p.shop||"";
@@ -2318,23 +2565,108 @@ async function loadProfil(){
   var el=$("#barberName");if(el)el.textContent=displayName;
 }
 function savedFlash(sel){var s=$(sel);s.classList.add("show");setTimeout(function(){s.classList.remove("show");},1800);}
-$("#sendIdea").addEventListener("click",async function(){
+// TRE tilbakemeldingsbokser: idé på «Din side», og idé + support i Konto. Markupen må være
+// tre noder (tre tekstfelt kan ikke dele DOM), men logikken er ÉN funksjon — kalt én gang
+// per boks med suffiks og type. Kopierte handlere ville betydd tre steder å rette samme
+// feilhåndtering.
+//
+// De to typene har ULIK payload-kontrakt i backend (feedback.js):
+//   idea    → {text}. Serveren beriker selv med display_name + slug fra sesjonen.
+//   support → {name,email,topic,message}, ALLE påkrevd, og INGEN sesjons-berikelse.
+// Derfor fyller vi de tre ekstra feltene fra profilen vi allerede har lastet. Å be en
+// innlogget barberer skrive sin egen e-post på nytt ville vært å spørre om noe vi vet.
+function feedbackPayload(type,tekst){
+  if(type==='idea')return{type:'idea',text:tekst};
+  return{
+    type:'support',
+    name:  CONFIG.BARBER_NAME||'Barberer',
+    email: CONFIG.BARBER_EMAIL||'',
+    // topic bærer slug-en: support-grenen får ingen barber-kontekst fra serveren, så uten
+    // den ville meldinga kommet inn uten å si hvem den gjelder.
+    topic: 'Dashbord'+(CONFIG.BARBER_SLUG?' – '+CONFIG.BARBER_SLUG:''),
+    message: tekst,
+  };
+}
+function bindFeedbackBoks(suffiks,type){
+  var btn=$("#fbSend-"+suffiks); if(!btn)return;
+  btn.addEventListener("click",async function(){
+    if(IS_DEMO)return;
+    var box=$("#fbBox-"+suffiks),t=box.value.trim();if(!t)return;
+    var err=$("#fbErr-"+suffiks),orig=btn.textContent;
+    err.style.display='none';
+    // E-post er nullbar i DB. Uten den svarer support-grenen 400 uansett hva vi sender —
+    // si det rett ut i stedet for å la serveren avvise med en melding om felter
+    // barbereren aldri har sett.
+    if(type==='support'&&!CONFIG.BARBER_EMAIL){
+      err.innerHTML='Vi mangler e-postadressen din. Send oss en e-post direkte: <a href="mailto:info@trybarberhq.com">info@trybarberhq.com</a>.';
+      err.style.display='block';return;
+    }
+    btn.disabled=true;btn.textContent='Sender …';
+    try{
+      var r=await apiFetch('/api/feedback',{method:'POST',body:JSON.stringify(feedbackPayload(type,t))});
+      if(!r)return; // 401 → apiFetch har allerede redirigert til login
+      if(!r.ok){
+        // Vis serverens tekst når den finnes (400 «Fyll ut …», 429 «For mange forsøk …») —
+        // den er mer presis enn vår generiske.
+        var d=await r.json().catch(function(){return{};});
+        throw new Error(d.error||('HTTP '+r.status));
+      }
+      box.value='';savedFlash("#fbSaved-"+suffiks); // «Sendt ✓» KUN ved faktisk 2xx
+    }catch(ex){
+      console.warn('tilbakemelding feilet',ex);
+      err.textContent=ex.message||'Kunne ikke sende akkurat nå. Prøv igjen om litt.';
+      err.style.display='block';
+    }finally{
+      btn.disabled=false;btn.textContent=orig;
+    }
+  });
+}
+bindFeedbackBoks('side','idea');
+bindFeedbackBoks('konto-ide','idea');
+bindFeedbackBoks('konto-support','support');
+
+/* ---- Innlogging: e-post (visning), bytt passord, logg ut ---- */
+$("#savePw").addEventListener("click",async function(){
   if(IS_DEMO)return;
-  var box=$("#ideaBox"),t=box.value.trim();if(!t)return;
-  var btn=$("#sendIdea"),err=$("#ideaErr"),orig=btn.textContent;
-  err.style.display='none';btn.disabled=true;btn.textContent='Sender …';
+  const btn=this,err=$("#pwErr"),orig=btn.textContent;
+  const naa=$("#pw-current").value,ny=$("#pw-new").value;
+  err.style.display='none';
+  if(!ny||ny.length<8){err.textContent='Passordet må være minst 8 tegn';err.style.display='block';return;}
+  btn.disabled=true;btn.textContent='Lagrer …';
+  let r;
   try{
-    // apiFetch → credentials:'include' → sesjon gir barber-kontekst (display_name+slug) på serveren.
-    var r=await apiFetch('/api/feedback',{method:'POST',body:JSON.stringify({type:'idea',text:t})});
-    if(!r)return; // 401 → apiFetch har allerede redirigert til login
-    if(!r.ok)throw new Error('HTTP '+r.status);
-    box.value='';savedFlash("#ideaSaved"); // «Sendt ✓» KUN ved faktisk 2xx
-  }catch(ex){
-    console.warn('idé-innsending feilet',ex);
-    err.textContent='Kunne ikke sende akkurat nå. Prøv igjen om litt.';err.style.display='block';
-  }finally{
+    // raw401: se apiFetch. Denne ruta svarer 401 BÅDE ved utløpt sesjon og ved feil
+    // nåværende passord — vi må lese kroppen for å vite hvilken, og det kan ikke
+    // apiFetch gjøre for oss uten å kjenne backend-koden.
+    r=await apiFetch('/api/dashboard/set-password',{method:'POST',raw401:true,
+      body:JSON.stringify({current_password:naa,password:ny})});
+  }catch(e){
     btn.disabled=false;btn.textContent=orig;
+    err.textContent='Nettverksfeil. Prøv igjen.';err.style.display='block';return;
   }
+  btn.disabled=false;btn.textContent=orig;
+  if(!r){err.textContent='Nettverksfeil. Prøv igjen.';err.style.display='block';return;}
+  const d=await r.json().catch(function(){return{};});
+  if(r.ok){
+    $("#pw-current").value='';$("#pw-new").value='';
+    savedFlash("#pwSaved");
+    return;
+  }
+  // FEIL GAMMELT PASSORD — bli i dashbordet. Uten denne grenen (og raw401 over) ville
+  // barbereren blitt sendt til innlogging, som leser som en feil i innloggingen.
+  if(r.status===401&&d.code==='mangler_naavaerende_passord'){
+    err.textContent=d.error||'Du må oppgi nåværende passord';err.style.display='block';return;
+  }
+  // EKTE sesjonsutløp. raw401 slo av auto-redirecten, så den må gjøres her.
+  if(r.status===401){location.href='/no/logg-inn.html';return;}
+  err.textContent=d.error||'Kunne ikke bytte passord. Prøv igjen.';err.style.display='block';
+});
+$("#loggUt").addEventListener("click",async function(){
+  if(IS_DEMO)return;
+  // Serveren rydder sesjonen; vi går til login uansett utfall — å bli stående innlogget
+  // i UI-et etter et mislykket utloggingskall er verre enn en overflødig redirect.
+  try{ await apiFetch('/api/logout',{method:'POST',body:'{}',raw401:true}); }catch(e){}
+  location.href='/no/logg-inn.html';
 });
 $("#saveProfil").addEventListener("click",async function(){
   const btn=$("#saveProfil");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
@@ -2855,71 +3187,264 @@ $("#saveDesign").addEventListener("click",async function(){
   await bilderEndret(); // re-hent bilder + lås opp slots + tøm preview-cache
 });
 
-/* ---- Abonnement / billing (ekte, aldri mock) ---- */
-// GET /billing/status → {subscription_status, trial_ends_at, page_status, days_left}.
-// subscription_status er null før første checkout, ellers trialing|active|past_due|canceled|unpaid.
+/* ---- Konto: abonnement + publisering, ÉN blokk (ekte, aldri mock) ---- */
+// GET /billing/status →
+//   subscription_status  null før første checkout, ellers trialing|active|past_due|canceled|unpaid
+//   page_status          draft|forhandsvist|live|avslag
+//   trial_start_at       VÅR prøveperiode startet (settes av PUT /page-status), null = ikke startet
+//   trial_days_left      null = ikke startet · 0 = UTLØPT · >0 = dager igjen  ← tre tilstander
+//   myk_periode          trial ute, siden står fortsatt, Stripe dekker ikke
+//   needs_attention      barbereren må gjøre noe (drives prikken på fanen)
+//   attention_grunn      past_due | trial_utlopt_nedtatt | trial_utlopt | trial_slutter | null
+//   days_left / trial_ends_at  ← STRIPES trial. Leses IKKE her. Se advarselen under.
+//
+// ⚠ VI BRUKER trial_days_left, ALDRI days_left. days_left kommer fra Stripes trial_ends_at og
+// finnes ikke før kort er lagt inn — den viste «Gratisperiode — N dager igjen» på et tall som
+// var null i nettopp den tilstanden der barbereren trengte tallet mest. Backend advarer
+// eksplisitt mot forvekslingen (dashboard.js: «days_left er STRIPES trial … trial_days_left
+// under er VÅR»), og de to kan avvike med opptil to dager pga. 48-timers-klemmen i checkout.
+//
+// ⚠ null !== 0. `typeof x === 'number'` slår sammen «ikke startet» og «utløpt» til samme
+// gren — to helt ulike tilstander (A mot C/D). Sjekk === null og === 0 hver for seg.
+var _billing=null;
 async function loadBilling(){
   const r=await apiFetch('/api/dashboard/billing/status');
   if(!r||!r.ok)return; // 401 → apiFetch redirigerte; annen feil → behold «henter …»-tekst, ingen krasj
-  renderBilling(await r.json());
+  _billing=await r.json();
+  renderKonto(_billing);
 }
-function renderBilling(b){
-  const st=String((b&&b.subscription_status)||'').toLowerCase();
-  const dl=(b&&typeof b.days_left==='number')?b.days_left:null;
-  const status=$("#subStatus"),blurb=$("#subBlurb"),banner=$("#subBanner"),
-        start=$("#startSub"),micro=$("#startMicro"),manage=$("#manageSub"),ctx=$("#subCtx");
-  // nullstill
+// Hovedhandlingen er ÉN knapp. `_kontoAksjon` sier hva et trykk skal gjøre i nåværende
+// tilstand — knappen har ingen egen lytter per tilstand, og vi speiler ingen tilstandsmaskin.
+var _kontoAksjon=null; // 'publiser' | 'checkout' | 'portal' | null
+const _dager=n=>n+' dag'+(n===1?'':'er');
+
+// ⚠ ENESTE STED frontend regner på trial-datoer. Serveren sender myk_periode som boolsk, men
+// ikke hvor mange dager som er igjen av den — og teksten i C skal si det tallet. Konstantene
+// under DUPLISERER src/lib/trial.js (TRIAL_DAGER=30, MYK_PERIODE_DAGER=7). Endres de der uten
+// at de endres her, lyver nedtellingen. Riktig løsning er et felt fra API-et
+// (nedtaking_dager_igjen); til det finnes, er dette den kjente gjelden.
+const TRIAL_DAGER=30, MYK_PERIODE_DAGER=7;
+function nedtakingDagerIgjen(trialStartAt){
+  if(!trialStartAt)return null;
+  const start=new Date(trialStartAt); if(isNaN(start))return null;
+  const frist=start.getTime()+(TRIAL_DAGER+MYK_PERIODE_DAGER)*864e5;
+  return Math.max(0,Math.ceil((frist-Date.now())/864e5));
+}
+
+function renderKonto(b){
+  b=b||{};
+  const status=$("#kontoStatus"),tekst=$("#kontoTekst"),knapp=$("#kontoAksjon"),
+        lenke=$("#pubLink"),manage=$("#manageSub"),av=$("#unpublish"),dot=$("#kontoDot"),
+        tall=$("#kontoTall"),tallStor=$("#kontoTallStor"),tallSuff=$("#kontoTallSuff"),
+        tallSub=$("#kontoTallSub"),mikro=$("#kontoMikro");
+  if(!status)return;
+  // nullstill (pubErr ryddes IKKE her — settPubFeil skriver den etter en re-synk)
   status.className='substatus';
-  banner.style.display='none';banner.className='sub-banner';
-  start.style.display='none';micro.style.display='none';manage.style.display='none';ctx.style.display='none';
-  const showStart=()=>{start.style.display='';micro.style.display='';};
-  const showManage=()=>{manage.style.display='';ctx.style.display='';};
-  const dager=n=>n+' dag'+(n===1?'':'er');
-  if(st==='trialing'){
-    status.innerHTML='&#9679; Gratisperiode'+(dl!=null?' — '+dager(dl)+' igjen':'');
-    blurb.textContent='Alt inkludert. Ingen binding — du kan si opp når som helst. Første trekk skjer når gratisperioden er over.';
-    showManage();
-  }else if(st==='active'){
-    status.innerHTML='&#9679; Aktivt abonnement';
-    blurb.textContent='Alt inkludert. Ingen binding — du kan si opp når som helst.';
-    showManage();
-  }else if(st==='past_due'){
-    status.className='substatus bad';status.innerHTML='&#9679; Betaling feilet';
-    banner.className='sub-banner bad';banner.style.display='';
-    banner.innerHTML='<strong>Betaling feilet — oppdater kortet ditt.</strong> Siden din står fortsatt.';
-    blurb.textContent='Oppdater kortet i Stripe for å beholde abonnementet.';
-    showManage();
-  }else if(st==='canceled'||st==='unpaid'){
+  knapp.style.display='none';lenke.style.display='none';
+  manage.style.display='none';av.style.display='none';
+  tall.style.display='none';tallSub.style.display='none';mikro.style.display='none';
+  _kontoAksjon=null;
+
+  const sub   = String(b.subscription_status||'').toLowerCase();
+  const grunn = b.attention_grunn||null;
+  const igjen = b.trial_days_left;            // null | 0 | >0 — tre tilstander
+  const live  = b.page_status==='live';
+  // tung=true → hvit knapp (.btn). tung=false → tekstlenke (.lnk-quiet). Samme tekst, samme
+  // handling — kun visuell vekt. Brukes til å la hastverket i tilstanden styre hvor mye
+  // plass handlingen tar: en barberer med 18 dager igjen skal ikke møte en rød-alarm-knapp.
+  const settKnapp=(etikett,aksjon,tung)=>{
+    knapp.textContent=etikett;
+    knapp.className=(tung===false)?'lnk-quiet':'btn';
+    knapp.style.display='';
+    _kontoAksjon=aksjon;
+  };
+  const settTall=(stor,suffiks,under)=>{
+    tallStor.textContent=stor; tallSuff.textContent=suffiks||'';
+    tall.style.display='';
+    if(under){tallSub.textContent=under;tallSub.style.display='';}
+  };
+  const settMikro=t=>{mikro.textContent=t;mikro.style.display='';};
+  const PRIS='249 kr', PRIS_SUFF='/ mnd';
+
+  // attention_grunn er serverens PRIORITERTE signal (past_due > nedtatt > myk > slutter).
+  // Vi rangerer ikke på nytt — to implementasjoner av samme prioritet driver fra hverandre.
+  if(grunn==='past_due'){                                                    // E
+    status.className='substatus bad';status.innerHTML='&#9679; Betalingen gikk ikke gjennom';
+    settTall(PRIS,PRIS_SUFF);
+    tekst.textContent='Vi fikk ikke trukket kortet ditt. Oppdater det for å beholde siden.';
+    settKnapp('Oppdater kort','portal');
+  }else if(grunn==='trial_utlopt_nedtatt'){                                  // D
+    status.className='substatus bad';status.innerHTML='&#9679; Siden din er ikke synlig';
+    settTall(PRIS,PRIS_SUFF);
+    tekst.textContent='Legg inn kort for å publisere igjen.';
+    settKnapp('Legg inn kort','checkout');   // haster → hvit knapp
+  }else if(grunn==='trial_utlopt'||b.myk_periode){                           // C
+    const n=nedtakingDagerIgjen(b.trial_start_at);
+    status.className='substatus bad';status.innerHTML='&#9679; Prøveperioden er over';
+    settTall(PRIS,PRIS_SUFF);
+    tekst.textContent=n!=null
+      ? 'Siden din tas ned om '+_dager(n)+' hvis du ikke legger inn kort.'
+      : 'Siden din tas ned snart hvis du ikke legger inn kort.';
+    settKnapp('Legg inn kort','checkout');   // haster → hvit knapp
+  }else if(sub==='active'||sub==='trialing'){                                // F
+    // trialing er IKKE i spec-lista, men er en ekte tilstand: kortet ER lagt inn og Stripe
+    // kjører sin egen trial. Uten denne grenen ville han falt ned på `igjen>0` og fått
+    // «Legg inn kort» med kortet allerede inne.
+    status.innerHTML='&#9679; Abonnementet er aktivt';
+    settTall(PRIS,PRIS_SUFF);
+    tekst.textContent=sub==='trialing'
+      ? 'Kortet er lagt inn. Første trekk skjer når prøveperioden er over. Ingen binding.'
+      : 'Alt inkludert. Ingen binding — du kan si opp når som helst.';
+    manage.style.display='';
+  }else if(sub==='canceled'||sub==='unpaid'){                                // (utenfor spec)
     status.className='substatus bad';status.innerHTML='&#9679; Abonnementet er avsluttet';
-    banner.className='sub-banner bad';banner.style.display='';
-    banner.innerHTML='<strong>Abonnementet er avsluttet — siden er tatt ned.</strong> Start på nytt for å publisere igjen.';
-    blurb.textContent='Start abonnementet på nytt for å ta siden i bruk igjen.';
-    showStart();
+    settTall(PRIS,PRIS_SUFF);
+    tekst.textContent='Legg inn kort for å ta siden i bruk igjen.';
+    settKnapp('Legg inn kort','checkout');
+  }else if(typeof igjen==='number'&&igjen>0){                                // B
+    // Hovedtallet er DAGENE, ikke prisen. Prisen flytter til mikroteksten.
+    status.className='substatus mut';status.innerHTML='&#9679; Prøveperiode';
+    settTall(_dager(igjen),'igjen','av prøveperioden');
+    tekst.textContent='Legg inn kort før prøveperioden er slutt for å fortsette.';
+    settMikro('249 kr/mnd etter prøveperioden. Ingen binding.');
+    // Vekten følger hastverket: over en uke igjen er dette en påminnelse, ikke et krav.
+    // VARSEL_DAGER=7 i backend (trial.js) er samme grense som utløser attention_grunn
+    // 'trial_slutter' — den kommer vi aldri hit med, men tallet skal være det samme.
+    settKnapp('Legg inn kort','checkout', igjen<=7);
+  }else if(igjen===null&&b.page_status==='forhandsvist'){                     // A
+    // INGEN hovedtall. 249 kr er ikke det barbereren lurer på før han har publisert —
+    // han har ikke tatt noe i bruk ennå. Prisen står i mikroteksten under knappen.
+    status.className='substatus mut';status.innerHTML='&#9679; Ikke publisert';
+    // Teksten over knappen sier KONSEKVENSEN (ingen kan booke), ikke vilkårene. Vilkårene
+    // står i mikroteksten under. Sto tidligere «… Du får 30 dager gratis — ingen kort
+    // nødvendig» begge steder; da leste kortet som om det var to ulike tilbud.
+    tekst.textContent='Bookingsiden din er klar, men ingen kan booke ennå.';
+    settKnapp('Publiser og start gratis prøveperiode','publiser');
+    settMikro('Gratis i 30 dager, ingen kort. Deretter 249 kr/mnd — si opp når som helst.');
   }else{
-    // ingen subscription ennå (null / ukjent)
+    // draft / avslag / live-uten-trial_start_at (rader publisert før migrasjon 041).
+    // Ingen handling vi kan tilby med sikkerhet — si det heller enn å gjette en knapp.
     status.className='substatus mut';status.innerHTML='&#9679; Ingen aktivt abonnement';
-    blurb.textContent='Prøv gratis i 30 dager. Deretter 249 kr/mnd — ingen binding, si opp når som helst.';
-    showStart();
+    tekst.textContent='Ta kontakt hvis du vil publisere siden din.';
   }
+
+  // Avpubliser: tekstlenke i ALLE tilstander der siden faktisk står live. Aldri en knapp.
+  if(live)av.style.display='';
+  // Adressen vises når siden er live. Krever slug fra /profile — lander den etter dette
+  // kallet, tegner loadProfil blokka på nytt. Mangler den, vises ingen lenke (aldri gjettet).
+  if(live&&CONFIG.BARBER_SLUG){
+    const url=CONFIG.SITE_BASE+'/'+CONFIG.BARBER_SLUG;
+    lenke.innerHTML='Adressen din: <a href="'+url+'" target="_blank" rel="noopener">'+url+'</a>';
+    lenke.style.display='';
+  }
+  // Prikkene følger needs_attention fra serveren — ALDRI «har besøkt fanen». Blir feltet
+  // false ved neste /billing/status, forsvinner de av seg selv.
+  // TO prikker, samme kilde: nav-knappen (finn fanen) og trekkspill-headeren (finn
+  // seksjonen når data-single har lukket den). Aldri ute av synk — de settes her sammen.
+  if(dot)dot.hidden=!b.needs_attention;
+  const accDot=$("#kontoAccDot"); if(accDot)accDot.hidden=!b.needs_attention;
+  oppdaterMerPrikk(); // Konto ligger bak «Mer» på mobil — toggelen må speile prikken
 }
-// POST /billing/checkout → {url}. Setter IKKE siden live (separat «Gå live»-handling).
-$("#startSub").addEventListener("click",async function(){
+
+/* ---- Publisering (page_status) ---- */
+// PUT /api/dashboard/page-status er ENESTE vei mellom 'forhandsvist' og 'live'.
+// Tilstandsmaskinen bor på serveren (ALLOWED_TRANSITIONS): forhandsvist↔live, alt annet 400.
+// Vi speiler den ikke her — vi viser bare knappen som svarer til nåværende status, og lar
+// serveren avvise resten. Å duplisere maskinen i frontend ville gitt to sannheter.
+// (renderPubliser er FJERNET 08.08 — slått inn i renderKonto. Ett kort, én knapp.)
+// Greiner KUN på statuskode, aldri på feilteksten — ruta gir ingen maskinlesbar kode, og
+// tekst-matching ville røket stille hvis backend endret ordlyd. Serverteksten vises ordrett.
+function settPubFeil(kode,tekst){
+  const feil=$("#pubErr"); if(!feil)return;
+  const t=tekst||'Noe gikk galt. Prøv igjen.';
+  let handling='';
+  if(kode===402){
+    // «Legg inn kort», ikke «Start abonnementet»: etter trial-omleggingen kan 402 like gjerne
+    // bety at prøveperioden er ute som at abonnement mangler. Serverteksten over sier hvilken
+    // — knappen sier bare hva som fikser begge.
+    handling='<button type="button" data-pub-act="kort">Legg inn kort</button>';
+  }else if(kode===400){
+    // De to 400-ene (pris=0 og ugyldig overgang) er ikke skillbare uten tekst-matching.
+    // Pris-tilfellet er det eneste barbereren kan gjøre noe med; det andre har allerede
+    // rettet seg selv via re-synken før denne meldinga vises.
+    handling='<button type="button" data-pub-act="tjenester">Gå til Tjenester &amp; tider</button>';
+  }
+  // Handlingslenka på EGEN linje. Serverteksten mangler punktum, så limt rett bak ble det
+  // én sammenhengende setning: «… kreves for å gå live Start abonnementet».
+  feil.innerHTML=esc(t)+(handling?'<br>'+handling:'');
+  // 'block', ikke '': .pub-err har display:none i KLASSEN, så å tømme inline-stilen faller
+  // tilbake på none og meldinga forblir usynlig. (Samme felle som .idea-err.)
+  feil.style.display='block';
+}
+function nullstillPubFeil(){const f=$("#pubErr");if(f){f.style.display='none';f.textContent='';}}
+// Felles for begge retninger. nyStatus: 'live' | 'forhandsvist'.
+async function settSideStatus(nyStatus,btn){
+  nullstillPubFeil();
+  const orig=btn.textContent;btn.disabled=true;btn.textContent='Lagrer …';
+  let r;
+  try{
+    r=await apiFetch('/api/dashboard/page-status',{method:'PUT',body:JSON.stringify({status:nyStatus})});
+  }catch(e){
+    btn.disabled=false;btn.textContent=orig;
+    settPubFeil(0,'Nettverksfeil. Sjekk tilkoblingen og prøv igjen.');
+    return;
+  }
+  btn.disabled=false;btn.textContent=orig;
+  if(!r)return; // 401 → apiFetch har allerede sendt til login
+  const d=await r.json().catch(function(){return{};});
+  if(r.ok){
+    // PUT /page-status skriver også trial_start_at ved publisering (COALESCE — settes én
+    // gang, aldri restartet) og returnerer den. Vi tar imot begge feltene i stedet for å
+    // hente hele statusen på nytt: da vet kortet umiddelbart at prøveperioden har startet.
+    await loadBilling();
+    showToast(nyStatus==='live'?'Siden er publisert':'Bookingsiden er avpublisert');
+    return;
+  }
+  // RE-SYNK FØR MELDING. Var UI-en utdatert (400 «Ugyldig overgang»), retter den seg her.
+  // Motsatt rekkefølge ville latt renderKonto overskrive feilmeldinga vi nettopp skrev.
+  await loadBilling();
+  settPubFeil(r.status,d&&d.error);
+}
+// ÉN knapp, tre mulige handlinger. Hva den gjør bestemmes av _kontoAksjon, satt av
+// renderKonto — knappen har ingen kunnskap om tilstand, og tilstanden ingen om knappen.
+$("#kontoAksjon").addEventListener("click",function(){
   if(IS_DEMO)return;
-  const btn=this;btn.disabled=true;
+  if(_kontoAksjon==='publiser')      settSideStatus('live',this);
+  else if(_kontoAksjon==='checkout') startCheckout(this);
+  else if(_kontoAksjon==='portal')   aapnePortal();
+});
+$("#manageSub").addEventListener("click",function(){ if(IS_DEMO)return; aapnePortal(); });
+$("#unpublish").addEventListener("click",function(){
+  if(IS_DEMO)return;
+  if(!confirm('Avpubliser bookingsiden? Kunder kommer ikke inn før du publiserer igjen.'))return;
+  settSideStatus('forhandsvist',this);
+});
+// Handlingslenkene i feilmeldinga — delegert, fordi innerHTML byttes ved hver feil.
+$("#pubErr").addEventListener("click",function(e){
+  const b=e.target.closest('[data-pub-act]'); if(!b)return;
+  if(b.dataset.pubAct==='tjenester'){switchPanel('tjenester');}
+  else if(b.dataset.pubAct==='kort'){startCheckout(b);}
+});
+
+// POST /billing/checkout → {url}. Setter IKKE siden live — publisering er en egen handling,
+// og etter omleggingen er det publisering som STARTER prøveperioden, ikke denne.
+// Backend velger selv trial-parametrene (checkoutTrialParams): har barbereren allerede en
+// løpende lokal trial, sendes trial_end = hans EGEN sluttdato, så han beholder dagene sine.
+// Derfor sender vi ingenting — knappen betyr «legg inn kort», ikke «start prøveperiode».
+async function startCheckout(btn){
+  if(btn)btn.disabled=true;
+  const frigi=()=>{if(btn)btn.disabled=false;};
   try{
     const r=await apiFetch('/api/dashboard/billing/checkout',{method:'POST',body:'{}'});
     if(!r)return; // 401 redirigert
-    if(!r.ok){const d=await r.json().catch(()=>({}));alert(d.error||'Kunne ikke starte betaling. Prøv igjen.');btn.disabled=false;return;}
     const d=await r.json().catch(()=>({}));
+    if(!r.ok){alert(d.error||'Kunne ikke starte betaling. Prøv igjen.');frigi();return;}
     if(d&&d.url){window.location.href=d.url;} // Stripe Checkout
-    else{alert('Kunne ikke starte betaling. Prøv igjen.');btn.disabled=false;}
-  }catch(e){alert('Kunne ikke starte betaling. Prøv igjen.');btn.disabled=false;}
-});
+    else{alert('Kunne ikke starte betaling. Prøv igjen.');frigi();}
+  }catch(e){alert('Kunne ikke starte betaling. Prøv igjen.');frigi();}
+}
 // GET /billing/portal → 303 til Stripe (browser følger redirect).
-$("#manageSub").addEventListener("click",function(){
-  if(IS_DEMO)return;
-  window.location.href=CONFIG.API_BASE+"/api/dashboard/billing/portal";
-});
+function aapnePortal(){ window.location.href=CONFIG.API_BASE+"/api/dashboard/billing/portal"; }
 // Retur fra Stripe Checkout. Betaling ≠ publisering: barberen må selv trykke «Gå live».
 function applyBillingReturn(){
   const q=new URLSearchParams(location.search);
@@ -2943,7 +3468,10 @@ function applyBillingReturn(){
 function applyDemoMode(){
   document.getElementById('demoBanner').classList.add('show');
   ['saveProfil','saveSvc','savePay','saveDesign','saveHours','cropSave',
-   'slotPopupFjern','slotPopupEndre','gcalBtn','manageSub','startSub','sendIdea'].forEach(function(id){
+   'slotPopupFjern','slotPopupEndre','gcalBtn',
+   'fbSend-side','fbSend-konto-ide','fbSend-konto-support',  // tre bokser, én handler
+   // Konto: én hovedknapp + tekstlenker (startSub/goLive er slått sammen til kontoAksjon)
+   'kontoAksjon','manageSub','unpublish','savePw','loggUt'].forEach(function(id){
     var el=document.getElementById(id);
     if(el){el.disabled=true;el.title='Ikke tilgjengelig i forhåndsvisning';}
   });
@@ -2959,6 +3487,27 @@ loadOversikt();loadBookinger();
 loadWinback(); // vinn-tilbake bor nå i Vekst; init-kallet fyller Oversikt-nudgen (ferske no-shows) + badge ved sideload
 loadPayment(); // betalingsmetoder (Tjenester-fanen) fra innstillings-loaderen
 loadBilling().then(applyBillingReturn); // abonnementsstatus (ekte) → deretter ev. retur-flagg fra Stripe
+
+/* ---- Varselprikk på «Mer»-toggelen ---- */
+// GENERELL REGEL, ikke hardkodet mot Konto: har EN AV knappene som havner bak «Mer» en
+// synlig prikk, får toggelen prikk. En ny fane trenger bare class="nav-mer" og en
+// <span class="nav-dot"> for å bli med — ingen endring her.
+//
+// Spør DOM-en direkte i stedet for å lukke over `merBtns` i Mer-meny-modulen: funksjonen
+// kalles også fra renderKonto(), som ligger utenfor den closuren. Én regel, to kallsteder —
+// ikke to kopier av samme telling.
+//
+// Toggelens prikk SLUKKES IKKE når menyen åpnes. Da ville et varsel om at siden snart tas
+// ned kunne forsvinne uten at noe var gjort med det. Begge prikkene henger på samme kilde
+// (needs_attention) og slukkes samtidig når den blir false.
+//
+// På desktop er toggelen selv display:none, så prikken der er uansett usynlig; regelen
+// trenger derfor ingen bredde-sjekk.
+function oppdaterMerPrikk(){
+  var t=document.querySelector('#merDot'); if(!t)return;
+  var noen=!!document.querySelector('.nav button.nav-mer .nav-dot:not([hidden])');
+  t.hidden=!noen;
+}
 
 /* ---- Mer-meny (mobil nav) ---- */
 (function(){
@@ -2982,7 +3531,11 @@ loadBilling().then(applyBillingReturn); // abonnementsstatus (ekte) → deretter
   function moveToNav(){merBtns.forEach(function(b,i){navEl.insertBefore(b,anchors[i]);});}
 
   var mq=window.matchMedia('(max-width:719px)');
-  function applyLayout(e){if(e.matches)moveToMeny();else moveToNav();}
+  // oppdaterMerPrikk ETTER flyttingen: en knapp som havner i menyen tar prikken sin med seg
+  // inn i noe lukket, og toggelen må da overta varselet. Dette er det ANDRE kallstedet —
+  // det første er renderKonto(), som slår prikken av/på. Uten begge er den bare riktig
+  // halvparten av tiden: rett etter et statusbytte, eller rett etter en breddeendring.
+  function applyLayout(e){if(e.matches)moveToMeny();else moveToNav();oppdaterMerPrikk();}
   mq.addEventListener('change',applyLayout);
   applyLayout(mq);
 
@@ -3005,16 +3558,17 @@ loadBilling().then(applyBillingReturn); // abonnementsstatus (ekte) → deretter
   });
   menyEl.addEventListener('click',function(e){e.stopPropagation();});
 
-  // Oppdater toggle-label og aktiv-klasse
+  // Oppdater toggle-label og aktiv-klasse.
+  // ⚠ Skriver til #merLabel, IKKE til toggleEl.innerHTML. Den gamle varianten bygget hele
+  // knappen på nytt ved hvert kall og slettet alt annet inni den. Behold denne formen —
+  // legger noen en indikator i toggelen senere, overlever den et etikettbytte.
+  var labelEl=document.querySelector('#merLabel');
   function updateToggle(){
     var activeBtn=merBtns.find(function(b){return b.getAttribute('aria-selected')==='true';});
-    if(activeBtn){
-      toggleEl.innerHTML=activeBtn.textContent.trim()+' <span class="mer-caret">▾</span>';
-      toggleEl.classList.add('aktiv');
-    }else{
-      toggleEl.innerHTML='Mer <span class="mer-caret">▾</span>';
-      toggleEl.classList.remove('aktiv');
-    }
+    // textContent på knappen tar med prikkens (tomme) span — trim holder, men vi leser
+    // .acc-title-fri tekst her uansett siden nav-knappene kun har tekst + ev. prikk.
+    if(labelEl)labelEl.textContent=activeBtn?activeBtn.textContent.trim():'Mer';
+    toggleEl.classList.toggle('aktiv',!!activeBtn);
   }
 
   // Lukk meny og oppdater toggle når en Mer-fane klikkes
