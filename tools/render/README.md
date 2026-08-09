@@ -50,3 +50,26 @@ Scriptene rapporterer tall, ikke bare bilder — `getBoundingClientRect`,
   høyde skaleres forskjellig i visningen, så «den fonten ser større ut» kan være ren
   skaleringsforskjell. Sammenlign med `getComputedStyle`, eller klipp ut i native
   piksler og stable.
+- **`fullPage: true` + scroll-reveal = tomme flater.** Salgssidene (`index`, `priser`,
+  `funksjoner`, `support`) skjuler innhold med `.reveal{opacity:0}` til en
+  IntersectionObserver legger på `.in` ved scroll. `fullPage` fanger hele sida uten å
+  scrolle, så observeren fyrer aldri under folden. 2746px av priser.html kom ut som tom
+  mørk flate — det så ut som manglende innhold, men sida var i orden. Tving fram først:
+
+  ```js
+  await page.evaluate(() => document.querySelectorAll('.reveal').forEach(e => e.classList.add('in')));
+  await page.waitForTimeout(800);   // transition er .7s
+  ```
+
+  Denne løy MOTSATT vei av de andre: den viste et problem som ikke fantes. Begge
+  retninger koster like mye tid — mål før du konkluderer.
+- **`fullPage` + `position:sticky` + scroll = falsk overlapp.** Salgssidenes `.nav` er
+  `position:sticky;top:0`. Scroller du før du regner ut en `clip` og så skyter med
+  `fullPage:true`, males headeren på sin fastlåste posisjon — altså oppå dokumentinnholdet
+  der scroll-offsetet var. Det så ut som at headeren dekket hero-teksten på priser.html.
+  Målt i vanlig viewport-skudd ved `scrollY=0`: nav-bunn 69px, hero-eyebrow 153px — 84px
+  klaring, ingen overlapp.
+
+  Skal du dokumentere hva en bruker ser: ta et **vanlig viewport-skudd**, ikke `fullPage`
+  med clip. Trenger du en seksjon lenger ned, scroll dit og skyt viewporten — ikke bland
+  scroll og `fullPage`.

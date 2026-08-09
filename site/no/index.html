@@ -70,8 +70,13 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .btn-fill:hover{opacity:.85}
 .btn-line{background:transparent;color:#fff;border:1px solid #2e2e2e}
 .btn-line:hover{border-color:#fff}
-.hero-note{color:#8c8c8c;font-size:13.5px;margin-top:20px;display:inline-flex;align-items:center;gap:7px}
-.hero-note i{font-size:16px;color:#fff}
+/* align-items:flex-start, IKKE center: center sentrerer ikonet mot hele flex-boksen, og
+   den vokser når teksten brekker. På én linje traff det riktig; på to havnet ikonet 11px
+   for lavt, og feilen økte med hver ekstra linje — altså også ved lengre sv/da/en-tekst.
+   line-height:inherit gir ikonet samme boks-høyde som ÉN tekstlinje, så glyfen sentreres
+   i første linje uten en hardkodet offset som må rettes hvis linjehøyden endres. */
+.hero-note{color:#8c8c8c;font-size:13.5px;margin-top:20px;display:inline-flex;align-items:flex-start;gap:7px}
+.hero-note i{font-size:16px;color:#fff;line-height:inherit}
 
 /* ===== FUNKSJONER ===== */
 .feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:840px;margin:0 auto}
@@ -548,7 +553,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   <div class="hero-btns">
     <a href="kom-i-gang.html" class="btn btn-fill">Prøv gratis</a>
   </div>
-  <div class="hero-note"><i class="ti ti-eye"></i>Se siden din ferdig før du betaler</div>
+  <div class="hero-note"><i class="ti ti-eye"></i>Du trenger ikke legge inn betalingskort for å prøve.</div>
 </header>
 
 <!-- ===== PROBLEMET ===== -->
@@ -819,7 +824,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 <section class="section final-cta">
   <div class="reveal">
     <h2>Klar til å fylle stolen?</h2>
-    <p>Vi setter opp siden din. Du ser den ferdig før du betaler.</p>
+    <p>Vi setter opp siden din. Du publiserer når du er fornøyd — 30 dager gratis.</p>
     <a href="kom-i-gang.html" class="btn btn-fill">Prøv gratis</a>
     <div class="final-note">Ingen binding</div>
   </div>
