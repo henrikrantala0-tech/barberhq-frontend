@@ -1,0 +1,81 @@
+// Footeren på alle fem no/-salgssidene etter at nyhetsbrev-blokka ble fjernet.
+//
+// Nyhetsbrevet var ikke koblet til noe: subscribe() skrev e-posten til console.log og viste
+// «Takk! Du er påmeldt.» Ingen rute, ingen tabell i backend. Blokka er borte, CSS-en står.
+//
+// ⚠ 1200 ER MED MED VILJE. .foot-top var et to-kolonners grid (1.3fr 1fr), og media-spørringen
+// setter det til 1fr under 760px. Hullet etter den fjernede kolonnen kunne derfor BARE oppstå
+// på desktop — måler vi kun 320/375, ser en tom halv footer helt riktig ut.
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { chromium } from 'playwright';
+
+const ROOT = path.resolve(import.meta.dirname, '../../site');
+const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
+fs.mkdirSync(OUT,{recursive:true});
+
+const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css',
+            '.webp':'image/webp','.png':'image/png','.svg':'image/svg+xml'};
+const server=http.createServer((q,r)=>{const f=path.join(ROOT,decodeURIComponent(q.url.split('?')[0]));
+  fs.readFile(f,(e,b)=>{if(e){r.writeHead(404);r.end('404');return;}
+    r.writeHead(200,{'Content-Type':MIME[path.extname(f)]||'application/octet-stream'});r.end(b);});});
+await new Promise(r=>server.listen(0,r));
+const PORT=server.address().port;
+
+const SIDER=['index','priser','funksjoner','support','vilkar'];
+const browser=await chromium.launch();
+const rapport=[];
+
+for(const bredde of [320,375,1200]){
+  for(const side of SIDER){
+    const page=await browser.newPage({viewport:{width:bredde,height:900},deviceScaleFactor:2});
+    const errs=[]; page.on('pageerror',e=>errs.push(e.message));
+    await page.route('**/api/**',r=>r.fulfill({status:200,contentType:'application/json',body:'{}'}));
+    await page.goto(`http://localhost:${PORT}/no/${side}.html`,{waitUntil:'networkidle'});
+    await page.evaluate(()=>document.querySelectorAll('.reveal').forEach(e=>e.classList.add('in')));
+    await page.waitForTimeout(700);
+
+    const m=await page.evaluate(()=>{
+      const top=document.querySelector('.foot-top');
+      const brand=document.querySelector('.foot-brand');
+      if(!top||!brand) return {mangler:true};
+      const rt=top.getBoundingClientRect(), rb=brand.getBoundingClientRect();
+      return {
+        mangler:false,
+        // Tom plass til høyre for merkevare-blokka INNI .foot-top. Er den stor, står det
+        // en tom rutenettkolonne igjen der nyhetsbrevet var.
+        tomHoyre: Math.round(rt.right-rb.right),
+        kolonner: getComputedStyle(top).gridTemplateColumns.split(' ').length,
+        barn: top.children.length,
+        footCols: document.querySelectorAll('.foot-cols .foot-col').length,
+        rester: ['#subEmail','.sub-row','.foot-sub','#subOk']
+                  .filter(s=>document.querySelector(s)).join(' ')||'—',
+        meldKnapp: [...document.querySelectorAll('button')]
+                     .some(b=>b.textContent.trim()==='Meld meg på')?'JA ✗':'nei',
+      };
+    });
+
+    if(bredde!==375) { /* skudd kun på 320 og 1200 — 375 måles, men gir ikke nytt bilde */ }
+    await page.locator('.foot').screenshot({path:`${OUT}/${bredde}-foot-${side}.png`});
+
+    rapport.push({bredde,side,
+      'foot-top barn':m.mangler?'MANGLER ✗':m.barn,
+      kolonner:m.mangler?'—':m.kolonner,
+      'tom plass høyre':m.mangler?'—':m.tomHoyre+'px',
+      'foot-col':m.mangler?'—':m.footCols,
+      rester:m.mangler?'—':m.rester,
+      'Meld meg på':m.mangler?'—':m.meldKnapp,
+      overflow: await page.evaluate(w=>document.documentElement.scrollWidth>w,bredde)?'JA ✗':'nei',
+      jsfeil: errs.length?errs.join('; ').slice(0,40):'ingen'});
+    await page.close();
+  }
+}
+
+console.table(rapport);
+console.log('\njsfeil:            ', rapport.some(r=>r.jsfeil!=='ingen')?'JA ✗':'ingen');
+console.log('overflow:          ', rapport.some(r=>r.overflow!=='nei')?'JA ✗':'nei');
+console.log('nyhetsbrev-rester: ', rapport.some(r=>r.rester!=='—')?'JA ✗':'ingen');
+console.log('«Meld meg på»:     ', rapport.some(r=>r['Meld meg på']==='JA ✗')?'JA ✗':'borte');
+console.log('tomt hull i .foot-top:', rapport.some(r=>parseInt(r['tom plass høyre'])>40)?'JA ✗':'nei');
+await browser.close(); server.close();

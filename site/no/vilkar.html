@@ -3,8 +3,8 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>BarberHQ — Support</title>
-<meta name="description" content="Trenger du hjelp? Kontakt BarberHQ-support eller les vanlige spørsmål.">
+<title>BarberHQ — Vilkår og personvern</title>
+<meta name="description" content="Vilkår, priser og personvern for BarberHQ.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -133,6 +133,15 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .contact-ok span{color:#9a9a9a;font-size:14.5px}
 .contact-err{display:none;margin-top:14px;text-align:center;color:#c0594a;font-size:14px;line-height:1.55}
 .contact-err a{color:#4d8bff;text-decoration:underline}
+.legal{max-width:720px;margin:0 auto;padding:0 32px 56px}
+.legal .oppdatert{color:#8c8c8c;font-size:14px;margin-bottom:6px}
+.legal h2{font-size:21px;font-weight:700;letter-spacing:-.02em;margin:40px 0 12px}
+.legal p{color:#b4b4b4;font-size:15.5px;line-height:1.7;margin-bottom:14px}
+.legal ul{margin:0 0 14px;padding-left:20px}
+.legal li{color:#b4b4b4;font-size:15.5px;line-height:1.7;margin-bottom:10px}
+.legal a{color:#4d8bff;text-decoration:none}
+.legal a:hover{text-decoration:underline}
+@media(max-width:760px){.legal{padding:0 24px 40px}.legal h2{font-size:19px;margin-top:32px}}
 </style>
 </head>
 <body>
@@ -149,81 +158,70 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     </div>
   </div>
 </nav>
-<header class="ph-hero">
-  <span class="eyebrow">SUPPORT</span>
-  <h1>Vi er her for å <span class="hl-blue">hjelpe</span>.</h1>
-  <p>Spørsmål, endringer eller noe som ikke funker? Send oss en melding — vi svarer raskt.</p>
-</header>
-<section class="section" style="padding-top:20px">
-  <div class="sec-head reveal"><h2>Send oss en melding</h2></div>
-  <div class="contact reveal">
-    <div id="contactForm">
-      <div class="field"><label for="c-name">Navn</label><input type="text" id="c-name" placeholder="Ditt navn"></div>
-      <div class="field"><label for="c-email">E-post</label><input type="email" id="c-email" placeholder="din@epost.no"></div>
-      <div class="field"><label for="c-topic">Emne</label>
-        <select id="c-topic">
-          <option>Generelt spørsmål</option>
-          <option>Endre siden min</option>
-          <option>Teknisk problem</option>
-          <option>Faktura og abonnement</option>
-          <option>Annet</option>
-        </select>
-      </div>
-      <div class="field"><label for="c-msg">Melding</label><textarea id="c-msg" placeholder="Hva kan vi hjelpe deg med?"></textarea></div>
-      <button type="button" class="btn btn-fill" onclick="sendSupport()">Send melding</button>
-      <p class="contact-err" id="contactErr"></p>
-    </div>
-    <div class="contact-ok" id="contactOk"><strong>Takk! Meldingen er sendt.</strong><span>Vi svarer deg på e-post så snart vi kan.</span></div>
-  </div>
-</section>
-<section class="section" style="padding-top:24px">
-  <div class="sec-head reveal"><span class="eyebrow">SPØRSMÅL</span><h2>Vanlige spørsmål</h2></div>
-  <div class="faq">
-    <div class="faq-item reveal"><h4>Hvor raskt får jeg svar?</h4><p>Vi svarer normalt innen én virkedag — ofte raskere.</p></div>
-    <div class="faq-item reveal"><h4>Hvordan endrer jeg noe på siden min?</h4><p>Send oss en melding her, eller gjør det selv i dashbordet. Vi hjelper deg med større endringer.</p></div>
-    <div class="faq-item reveal"><h4>Kan jeg bytte design eller farger senere?</h4><p>Ja. Du kan endre layout, farger og bilder når som helst — bare si fra.</p></div>
-    <div class="faq-item reveal"><h4>Hva gjør jeg hvis en kunde ikke møter opp?</h4><p>No-show-beskyttelse med depositum kommer som oppgradering. Inntil da kan du sperre tider manuelt i dashbordet.</p></div>
-    <div class="faq-item reveal"><h4>Hvordan sier jeg opp?</h4><p>Ingen binding — send oss en melding, så avslutter vi abonnementet ditt med en gang.</p></div>
-  </div>
-</section>
-<section class="final-cta">
-  <div class="reveal">
-    <h2>Fant du ikke svar?</h2>
-    <p>Send oss en e-post direkte, så hjelper vi deg.</p>
-    <a href="mailto:info@trybarberhq.com" class="btn btn-fill">info@trybarberhq.com</a>
-  </div>
-</section>
 
-<script>
-var API_BASE='https://api.trybarberhq.com';
-async function sendSupport(){
-  var n=document.getElementById('c-name'),e=document.getElementById('c-email'),m=document.getElementById('c-msg'),t=document.getElementById('c-topic');
-  var bad=false;
-  [n,e,m].forEach(function(f){ if(!f.value.trim()){f.style.borderColor='#c0594a';bad=true;} else {f.style.borderColor='#2a2a2a';} });
-  if(e.value.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(e.value.trim())){e.style.borderColor='#c0594a';bad=true;}
-  if(bad){return;}
-  var btn=document.querySelector('.contact .btn-fill');
-  var err=document.getElementById('contactErr');
-  err.style.display='none';
-  btn.disabled=true;btn.textContent='Sender …';
-  try {
-    var r=await fetch(API_BASE+'/api/feedback',{
-      method:'POST',
-      headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({type:'support',name:n.value.trim(),email:e.value.trim(),topic:t.value,message:m.value.trim()})
-    });
-    if(!r.ok) throw new Error('HTTP '+r.status);
-    // Suksess KUN ved faktisk 2xx — ingen falsk kvittering lenger.
-    document.getElementById('contactForm').style.display='none';
-    document.getElementById('contactOk').style.display='block';
-  } catch(ex){
-    console.warn('support-innsending feilet',ex);
-    err.innerHTML='Noe gikk galt — vi fikk kanskje ikke meldingen. Prøv igjen, eller send oss en e-post direkte: <a href="mailto:info@trybarberhq.com">info@trybarberhq.com</a>.';
-    err.style.display='block';
-    btn.disabled=false;btn.textContent='Send melding';
-  }
-}
-</script>
+<header class="ph-hero">
+  <h1>Vilkår og <span class="hl-blue">personvern</span></h1>
+</header>
+
+<main class="legal">
+  <p class="oppdatert">Sist oppdatert: 9. august 2026</p>
+
+  <h2>Hvem du handler med</h2>
+  <p>BarberHQ drives av Henrik Rantala, org.nr [ORG.NR]. Spørsmål: <a href="mailto:info@trybarberhq.com">info@trybarberhq.com</a> — vi svarer på e-post.</p>
+
+  <h2>Hva BarberHQ er</h2>
+  <p>BarberHQ gir deg din egen bookingside og et dashbord der du styrer tjenester, priser og arbeidstider. Siden er din — den er ikke en profil i en markedsplass, og vi viser aldri andre barberere på den.</p>
+  <p>Vi tar ikke imot betaling fra kundene dine. De betaler deg direkte, akkurat som før.</p>
+
+  <h2>Pris</h2>
+  <p>249 kr per måned. Egen domene koster 99 kr per måned i tillegg. Ingen binding, ingen etableringsgebyr.</p>
+
+  <h2>Prøveperiode</h2>
+  <p>Du får 30 dager gratis. Perioden starter når du publiserer siden din — ikke når du fyller ut skjemaet. Du trenger ikke legge inn betalingskort for å komme i gang.</p>
+  <p>Avpubliserer du underveis, fortsetter perioden å løpe. Den starter ikke på nytt.</p>
+
+  <h2>Betaling</h2>
+  <p>Betaling håndteres av Stripe. Vi lagrer aldri kortnummeret ditt. Første trekk skjer når prøveperioden er over, deretter månedlig.</p>
+
+  <h2>Oppsigelse</h2>
+  <p>Du kan si opp når som helst fra Konto-fanen i dashbordet. Siden er tilgjengelig ut perioden du har betalt for. Vi ber ikke om en begrunnelse, og du trenger ikke kontakte oss først.</p>
+
+  <h2>Hvis du ikke betaler</h2>
+  <p>Legger du ikke inn kort når prøveperioden er over, får du sju dager til. Deretter tas bookingsiden ned, og kundene dine kan ikke lenger booke time.</p>
+  <p>Innholdet ditt slettes ikke. Legger du inn kort, er siden oppe igjen med det samme.</p>
+
+  <h2>Angrerett</h2>
+  <p>Du har 14 dagers angrerett fra første betaling. Angrer du, får du pengene tilbake. Send en e-post til <a href="mailto:info@trybarberhq.com">info@trybarberhq.com</a>.</p>
+
+  <h2>Innholdet ditt</h2>
+  <p>Bildene, teksten og prisene dine er dine. Vi bruker dem kun til å vise bookingsiden din, og vi bruker dem ikke i markedsføring uten at du har sagt ja.</p>
+  <p>Sier du opp, kan du be om å få innholdet ditt utlevert eller slettet.</p>
+
+  <h2>Kundene dine</h2>
+  <p>Når noen booker time hos deg, lagrer vi navn, telefonnummer og hva som ble bestilt. Dette er dine kunder og dine data. Du bestemmer over dem — vi behandler dem kun på dine vegne, for at bookingen skal fungere.</p>
+  <p>Vi selger dem ikke. Vi deler dem ikke. Vi kontakter dem aldri på egen hånd.</p>
+
+  <h2>SMS</h2>
+  <p>BarberHQ sender to typer meldinger til kundene dine på dine vegne:</p>
+  <ul>
+    <li>Påminnelse om en time som er booket. Denne hører til selve bestillingen, og sendes uansett.</li>
+    <li>Rebooking — en melding når det er en stund siden sist, som du selv slår på og styrer intervallet for. Den sendes bare til kunder som har sagt ja, og aldri til noen som har meldt seg av.</li>
+  </ul>
+  <p>Kunden kan melde seg av rebooking når som helst via lenken i meldingen. Avmelding gjelder umiddelbart og påvirker ikke påminnelser om timer han faktisk har bestilt.</p>
+
+  <h2>Data om deg</h2>
+  <p>Vi lagrer navn, e-post, telefonnummer og opplysningene om virksomheten din. Vi bruker dem til å drive tjenesten og til å kontakte deg om ting som gjelder kontoen din.</p>
+  <p>Du kan be om innsyn i, retting av eller sletting av opplysningene dine ved å sende en e-post.</p>
+
+  <h2>Underleverandører</h2>
+  <p>Vi bruker Stripe (betaling), Railway (drift), Netlify (nettsider), Cloudflare (bilder), Resend (e-post) og GatewayAPI (SMS). Bruker du Google Kalender-koblingen, sendes bookingene dine dit.</p>
+
+  <h2>Ansvar</h2>
+  <p>Vi gjør vårt beste for at tjenesten skal være tilgjengelig hele tiden, men vi kan ikke garantere det. Oppstår det feil, retter vi dem så raskt vi kan.</p>
+
+  <h2>Endringer</h2>
+  <p>Endrer vi vilkårene, sier vi fra på e-post i god tid. Er du uenig i endringen, kan du si opp.</p>
+</main>
 
 <footer class="foot">
   <div class="foot-wrap">
@@ -264,11 +262,5 @@ async function sendSupport(){
   </div>
 </footer>
 
-<script>
-var nav=document.getElementById('nav');
-window.addEventListener('scroll',function(){nav.classList.toggle('scrolled',window.scrollY>10);});
-var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.12});
-document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
-</script>
 </body>
 </html>

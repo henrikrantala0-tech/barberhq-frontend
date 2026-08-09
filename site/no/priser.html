@@ -99,7 +99,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .login-alt a:hover{text-decoration:underline}
 .foot{border-top:1px solid #1f1f1f;background:#0a0a0a}
 .foot-wrap{max-width:1100px;margin:0 auto;padding:72px 32px 36px}
-.foot-top{display:grid;grid-template-columns:1.3fr 1fr;gap:56px;padding-bottom:52px;border-bottom:1px solid #1a1a1a}
+.foot-top{display:grid;grid-template-columns:1fr;gap:56px;padding-bottom:52px;border-bottom:1px solid #1a1a1a}
 .foot-brand .logo{font-size:26px}
 .foot-tag{color:#8c8c8c;font-size:14px;line-height:1.6;margin-top:16px;max-width:300px}
 .sub-label{color:#8a8a8a;font-size:12px;letter-spacing:.18em;font-weight:600;margin-bottom:14px}
@@ -204,15 +204,6 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
         <div class="logo">BarberHQ</div>
         <p class="foot-tag">Din egen bookingside med automatisk rebooking, SMS-påminnelser og galleri. Vi setter opp alt for deg.</p>
       </div>
-      <div class="foot-sub">
-        <div class="sub-label">NYHETER OG TILBUD</div>
-        <div class="sub-row">
-          <input type="email" id="subEmail" placeholder="E-postadresse" aria-label="E-postadresse">
-          <button type="button" onclick="subscribe()">Meld meg på</button>
-        </div>
-        <p class="sub-note">Få beskjed om nye funksjoner og tilbud. Meld deg av når som helst.</p>
-        <p class="sub-ok" id="subOk">Takk! Du er påmeldt.</p>
-      </div>
     </div>
     <div class="foot-cols">
       <div class="foot-col">
@@ -229,8 +220,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       </div>
       <div class="foot-col">
         <h5>Juridisk</h5>
-        <a href="#">Vilkår</a>
-        <a href="#">Personvern</a>
+        <a href="vilkar.html">Vilkår</a>
+        <a href="vilkar.html">Personvern</a>
         <a href="#">Cookies</a>
       </div>
     </div>
@@ -250,16 +241,6 @@ var nav=document.getElementById('nav');
 window.addEventListener('scroll',function(){nav.classList.toggle('scrolled',window.scrollY>10);});
 var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.12});
 document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
-function subscribe(){
-  var input=document.getElementById('subEmail');if(!input)return;
-  var email=input.value.trim();
-  if(!email||!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(email)){input.style.borderColor='#c0594a';input.focus();return;}
-  console.log(JSON.stringify({type:'newsletter_signup',email:email}));
-  input.value='';
-  document.querySelector('.sub-row').style.display='none';
-  document.querySelector('.sub-note').style.display='none';
-  document.getElementById('subOk').style.display='block';
-}
 </script>
 </body>
 </html>

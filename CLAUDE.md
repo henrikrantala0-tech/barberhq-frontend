@@ -151,6 +151,19 @@ sv/, da/, en/ følger ikke denne rekkefølgen ennå — gjøres i oversettelses-
   (verving). Fiks: `.keyboard` height 210→150px, padding `8px 4px 24px`→`6px 4px 14px`,
   `.msg-input` bottom 218→158px — i begge scopes. GJELDER KUN no/ — sv/da/en tas i
   oversettelsesfasen.
+- **Rebooking- og verving-demoene deler to ting. Skal en av dem noen gang fjernes, er det
+  disse to som ryker stille (kartlagt 09.08 — begge står, ingenting er fjernet).**
+  1. **CSS-regelen med `.no-js`-fallbacken er DELT:**
+     `.no-js .rbscope .bubble, … , .no-js .vvscope .bub, .no-js .vvscope .link-card, …
+     {opacity:1!important}` (`site/no/index.html`, siste `.rbscope`-linje). Fjernes
+     `.rbscope`-CSS-en som blokk, kan IKKE denne linja tas hel — `.vvscope`-halvdelen er i
+     bruk. Splitt den først.
+  2. **`document.documentElement.classList.remove('no-js')` gjelder BEGGE demoene**, men lå
+     under overskriften for rebooking-animasjonen og leste som en del av den. Sletter noen
+     rebooking-blokka som én enhet, forsvinner linja med — og da slutter VERVING-animasjonen
+     å animere: alt vises på én gang, uten at noe feiler synlig, uten JS-feil, og
+     skjermbildene ser nesten riktige ut. Linja er flyttet OVER overskriften med en
+     kommentar som sier hvorfor. Ikke flytt den tilbake.
 - **Død CSS ryddet (02.07):** 13 linjer fjernet — gamle prisplan-klasser
   (`.plan`, `.plan.pro`, `.badge`, `.plan-name`, `.plan-price`, `.plan-tag`,
   `.plan-cta`, `.cta-line`, `.cta-fill`) som ble igjen da prisplanen flyttet til

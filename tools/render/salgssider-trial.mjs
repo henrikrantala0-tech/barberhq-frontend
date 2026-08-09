@@ -21,7 +21,9 @@ const PORT=server.address().port;
 // Påstander som var sanne i den GAMLE modellen (kort ved signup) og er usanne nå.
 const FORBUDT=[/betaler først/i, /før du betaler/i, /En måned gratis/i];
 
-const SIDER=['priser.html','kom-i-gang.html','index.html','funksjoner.html'];
+// support.html lagt til 09.08: den har samme foot-tag-påstander som de andre sidene, men lå
+// utenfor testen — en salgsside uten dekning.
+const SIDER=['priser.html','kom-i-gang.html','index.html','funksjoner.html','support.html'];
 const browser=await chromium.launch();
 const rapport=[];
 
