@@ -6,3 +6,4 @@ node_modules/
 *.mp4
 _nye-seksjoner/
 live_preview_handoff/
+.render-ut/

@@ -513,5 +513,17 @@ Fortsatt åpent:
   `produktvisning-seksjon.html`, `SPEC-bytt-seksjoner.md`. Katalogen ligger utenfor publish-rota
   `site/` og serveres aldri. Nye utkast hører hjemme her, ikke i repo-rota.
 - **Playwright-tooling** (`package.json`/`package-lock.json`) hører hjemme i repo-rota.
-- **Scratchpad-testfiler** (`*_render_test.mjs`, `*_test.mjs`, `demo_*.mjs`, `pw-screenshots/`)
-  hører ikke hjemme i repoet i det hele tatt — legg dem i scratchpad-katalogen utenfor repoet.
+- **Skillet går på LEVETID, ikke på filtype.** Begge deler er Playwright-scripts; forskjellen
+  er om de skal kunne kjøres igjen.
+  - **`tools/render/` — faste render-tester.** Verifiserer flater vi endrer om igjen (Konto,
+    nav-bredder, feedback-payload). De er en del av «render før deploy», og en
+    verifiseringsrutine som bare finnes i en midlertidig katalog er ingen rutine — scratchpad
+    ble slettet midt i en økt 08.08. Skjermbilder går til `.render-ut/` (gitignorert).
+    **`page.on('pageerror')` er obligatorisk** i hvert script: den fanget en `Unexpected end
+    of input` i dashboard.html der en `}` havnet bak en `//`-kommentar, så hele dashboard-JS-en
+    var død — mens UI-et så helt normalt ut, bare med tomme lister. Se `tools/render/README.md`.
+  - **Scratchpad — engangsundersøkelser.** Måler du én ting for å svare på ett spørsmål, og
+    svaret er alt du trenger, hører scriptet hjemme i scratchpad-katalogen utenfor repoet.
+    Samme for `demo_*.mjs` og løse `pw-screenshots/`.
+  Regelen het før «scratchpad-testfiler hører ikke hjemme i repoet i det hele tatt». Den var
+  for grov: den dyttet også de gjenbrukbare testene ut i en katalog som ryddes bort.
