@@ -1033,7 +1033,7 @@
           <!-- Undertittelen forklarer HVORFOR lenkene er ulike; tittelen sier hva du gjør.
                Den erstatter en egen .verv-note som sa nøyaktig det samme («Hver kunde har sin
                egen lenke …») rett under en undertittel som bare gjentok tittelen. -->
-          <p class="block-s">Hver kunde har sin egen lenke — send den til dem du vet er fornøyde.</p>
+          <p class="block-s">Hver kunde har sin egen lenke.</p>
           <div id="vervSendList"><p class="wb-empty">Laster …</p></div>
           <button class="more-btn" id="vervSendMore" type="button" hidden></button>
 
@@ -3193,6 +3193,9 @@ $("#saveDesign").addEventListener("click",async function(){
 //   page_status          draft|forhandsvist|live|avslag
 //   trial_start_at       VÅR prøveperiode startet (settes av PUT /page-status), null = ikke startet
 //   trial_days_left      null = ikke startet · 0 = UTLØPT · >0 = dager igjen  ← tre tilstander
+//   nedtaking_dager_igjen dager til siden faktisk tas ned (trial + myk periode).
+//                        null = ingen nedtelling (ikke startet, ELLER fristen er passert)
+//                        ⚠ ANNEN null-konvensjon enn trial_days_left — se renderKonto
 //   myk_periode          trial ute, siden står fortsatt, Stripe dekker ikke
 //   needs_attention      barbereren må gjøre noe (drives prikken på fanen)
 //   attention_grunn      past_due | trial_utlopt_nedtatt | trial_utlopt | trial_slutter | null
@@ -3218,18 +3221,18 @@ async function loadBilling(){
 var _kontoAksjon=null; // 'publiser' | 'checkout' | 'portal' | null
 const _dager=n=>n+' dag'+(n===1?'':'er');
 
-// ⚠ ENESTE STED frontend regner på trial-datoer. Serveren sender myk_periode som boolsk, men
-// ikke hvor mange dager som er igjen av den — og teksten i C skal si det tallet. Konstantene
-// under DUPLISERER src/lib/trial.js (TRIAL_DAGER=30, MYK_PERIODE_DAGER=7). Endres de der uten
-// at de endres her, lyver nedtellingen. Riktig løsning er et felt fra API-et
-// (nedtaking_dager_igjen); til det finnes, er dette den kjente gjelden.
-const TRIAL_DAGER=30, MYK_PERIODE_DAGER=7;
-function nedtakingDagerIgjen(trialStartAt){
-  if(!trialStartAt)return null;
-  const start=new Date(trialStartAt); if(isNaN(start))return null;
-  const frist=start.getTime()+(TRIAL_DAGER+MYK_PERIODE_DAGER)*864e5;
-  return Math.max(0,Math.ceil((frist-Date.now())/864e5));
-}
+// Frontend regner IKKE på trial-datoer lenger. TRIAL_DAGER/MYK_PERIODE_DAGER lå her som
+// kopier av src/lib/trial.js for å kunne vise nedtellingen i C — to sannheter om samme
+// regel. Backend sender nå `nedtaking_dager_igjen` (d525d17), og det er eneste kilde.
+//
+// ⚠ DE TO NEDTELLINGENE HAR ULIK NULL-KONVENSJON, MED VILJE — ikke harmoniser dem:
+//   trial_days_left       0 ved utløp. «0 dager igjen av prøveperioden» er en ekte tilstand
+//                         barbereren står i: myk periode, siden er fortsatt oppe.
+//   nedtaking_dager_igjen null når fristen er passert. «0 dager til nedtaking» er IKKE en
+//                         tilstand — nedtakingen har skjedd, og det finnes ingen nedtelling
+//                         igjen å vise. null betyr «ingen nedtelling», ikke «null dager».
+// Derfor sjekkes den med != null (ikke truthy): 0 er en gyldig verdi å vise for den ene og
+// en umulig verdi for den andre.
 
 function renderKonto(b){
   b=b||{};
@@ -3279,7 +3282,9 @@ function renderKonto(b){
     tekst.textContent='Legg inn kort for å publisere igjen.';
     settKnapp('Legg inn kort','checkout');   // haster → hvit knapp
   }else if(grunn==='trial_utlopt'||b.myk_periode){                           // C
-    const n=nedtakingDagerIgjen(b.trial_start_at);
+    // != null, ikke truthy: se null-konvensjonen over. Mangler feltet (eldre backend) eller
+    // er fristen passert, faller vi til «snart» — aldri til «om 0 dager».
+    const n=b.nedtaking_dager_igjen;
     status.className='substatus bad';status.innerHTML='&#9679; Prøveperioden er over';
     settTall(PRIS,PRIS_SUFF);
     tekst.textContent=n!=null
