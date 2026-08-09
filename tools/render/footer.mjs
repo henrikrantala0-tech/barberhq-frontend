@@ -41,8 +41,16 @@ for(const bredde of [320,375,1200]){
       const brand=document.querySelector('.foot-brand');
       if(!top||!brand) return {mangler:true};
       const rt=top.getBoundingClientRect(), rb=brand.getBoundingClientRect();
+      // NØSTING: .foot-cols og .foot-bottom skal være SØSKEN av .foot-top, ikke barn.
+      // En manglende </div> gjør dem til barn uten at parseren klager og uten at sida
+      // ser tydelig feil ut — det skjedde i vilkar.html 09.08 og ga 482px tomrom på 1200.
+      const cols=document.querySelector('.foot-cols');
+      const bottom=document.querySelector('.foot-bottom');
+      const nøsting = (cols && top.contains(cols)) || (bottom && top.contains(bottom))
+        ? 'NØSTET ✗' : 'søsken';
       return {
         mangler:false,
+        nøsting,
         // Tom plass til høyre for merkevare-blokka INNI .foot-top. Er den stor, står det
         // en tom rutenettkolonne igjen der nyhetsbrevet var.
         tomHoyre: Math.round(rt.right-rb.right),
@@ -61,6 +69,7 @@ for(const bredde of [320,375,1200]){
 
     rapport.push({bredde,side,
       'foot-top barn':m.mangler?'MANGLER ✗':m.barn,
+      nøsting:m.mangler?'—':m.nøsting,
       kolonner:m.mangler?'—':m.kolonner,
       'tom plass høyre':m.mangler?'—':m.tomHoyre+'px',
       'foot-col':m.mangler?'—':m.footCols,
@@ -78,4 +87,6 @@ console.log('overflow:          ', rapport.some(r=>r.overflow!=='nei')?'JA ✗':
 console.log('nyhetsbrev-rester: ', rapport.some(r=>r.rester!=='—')?'JA ✗':'ingen');
 console.log('«Meld meg på»:     ', rapport.some(r=>r['Meld meg på']==='JA ✗')?'JA ✗':'borte');
 console.log('tomt hull i .foot-top:', rapport.some(r=>parseInt(r['tom plass høyre'])>40)?'JA ✗':'nei');
+console.log('feil nøsting:      ', rapport.some(r=>r.nøsting!=='søsken')?'JA ✗':'nei');
+console.log('ett barn i foot-top:', rapport.every(r=>r['foot-top barn']===1)?'ja ✓':'NEI ✗');
 await browser.close(); server.close();
