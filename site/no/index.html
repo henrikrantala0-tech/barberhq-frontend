@@ -696,13 +696,30 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 /* ===== KLONET: dashbordets Oversikt-flate ====================================
    Kilde: site/no/dashboard.html — hentet 9. august 2026. CSS-en er valgt MASKINELT:
    hele stilarket lastes mot klon-markupen i en ekte nettleser, og kun regler som treffer
-   et element beholdes (67 av 56 kB → 9 kB scopet).
+   et element beholdes (56 kB → 10 kB scopet). Lys-tema-reglene er droppet — klonen er
+   alltid mørk, og de kunne aldri treffe.
    Media-reglene er tatt med og er VIEWPORT-baserte — derfor kollapser navet til tre
    faner + «Mer» på mobil helt av seg selv, uten at vi skriver egen mobil-CSS.
+
+   ROTELEMENTET: kildens :root/html/body mappes ALLE til «#produkt .pv-dash». Ble body
+   utelatt, havnet «body{background:var(--bg)}» på «#produkt .pv-dash body» — en selektor
+   som aldri kan treffe. Variablene kom inn, bakgrunnen forsvant, og kortets eget
+   .brw{background:#141414} lyste gjennom som en grå flate bak et svart topp-felt.
+
+   KOLLISJONSVAKTA øverst er maskinelt utledet: landingssida har egne, uscopede regler
+   for klassenavn klonen også bruker (wrap, nav, logo), og de la seg oppå kilden — .nav
+   fikk rgba(10,10,10,.72) + backdrop-filter som ikke finnes i dashboard.html. Vakta
+   tilbakestiller NØYAKTIG de egenskapene landingssida deklarerer, med `revert`, og står
+   FØR de klonede reglene så klonen fortsatt vinner der den selv deklarerer noe.
+
    SYNKPUNKT: endres dashbordets Oversikt-flate, drifter denne kopien. ============= */
+/* Kollisjonsvakt — maskinelt utledet, se .bygg-dash2.mjs. FØR de klonede reglene. */
+#produkt .pv-dash .wrap{max-width:revert;margin-top:revert;margin-right:revert;margin-bottom:revert;margin-left:revert;padding-top:revert;padding-right:revert;padding-bottom:revert;padding-left:revert}
+#produkt .pv-dash .nav{position:revert;top:revert;z-index:revert;background-image:revert;background-position-x:revert;background-position-y:revert;background-size:revert;background-repeat:revert;background-attachment:revert;background-origin:revert;background-clip:revert;background-color:revert;backdrop-filter:revert;border-bottom-width:revert;border-bottom-style:revert;border-bottom-color:revert;transition-behavior:revert;transition-duration:revert;transition-timing-function:revert;transition-delay:revert;transition-property:revert}
+#produkt .pv-dash .logo{font-size:revert;font-weight:revert;letter-spacing:revert;color:revert;text-decoration-line:revert;text-decoration-thickness:revert;text-decoration-style:revert;text-decoration-color:revert}
 #produkt .pv-dash{--bg: #fafafa; --surface: #fff; --ink: #0a0a0a; --ink-2: #3a3a3a; --mut: #7a7a7a; --mut-2: #a8a8a8; --line: #e8e8e8; --line-2: #d8d8d8; --good: #1a7a44; --good-bg: #e8f3ec; --bad: #b3261e; --bad-bg: #fbeae9; --info: #1456a8; --info-bg: #e8f0fb;}
 #produkt .pv-dash *{margin: 0px; padding: 0px; box-sizing: border-box;}
-#produkt .pv-dash body{font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.45; -webkit-font-smoothing: antialiased;}
+#produkt .pv-dash{font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.45; -webkit-font-smoothing: antialiased;}
 #produkt .pv-dash .wrap{max-width: 1120px; margin: 0px auto; padding: 0px 24px;}
 #produkt .pv-dash .top{display: flex; align-items: center; justify-content: space-between; padding: 22px 0px; border-bottom: 1px solid var(--line);}
 #produkt .pv-dash .who{display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--mut);}
@@ -759,16 +776,13 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   0%, 100% { filter: drop-shadow(rgba(255, 224, 138, 0.9) 0px 0px 2px) drop-shadow(rgba(240, 194, 75, 0.55) 0px 0px 8px) drop-shadow(rgba(240, 194, 75, 0.28) 0px 0px 16px); }
   40% { filter: drop-shadow(rgb(255, 240, 180) 0px 0px 4px) drop-shadow(rgba(255, 210, 90, 0.8) 0px 0px 16px) drop-shadow(rgba(240, 194, 75, 0.5) 0px 0px 30px); }
 }
-#produkt .pv-dash body{background: rgb(10, 10, 10);}
+#produkt .pv-dash{background: rgb(10, 10, 10);}
 #produkt .pv-dash .demo-banner{background: rgb(45, 29, 0); border-bottom-color: rgb(217, 119, 6); color: rgb(253, 230, 138);}
 #produkt .pv-dash .sw-green input:checked + .sl{background: rgb(34, 197, 94);}
-#produkt .pv-dash html[data-theme="light"] .fs-auto .fs-dag{color: rgb(21, 138, 78);}
-#produkt .pv-dash html[data-theme="light"] .fs-auto .fs-t{color: rgb(15, 138, 72);}
-#produkt .pv-dash html[data-theme="light"] .fs-auto .fs-d{color: rgb(28, 148, 85);}
 #produkt .pv-dash .segs-val button[aria-selected="true"]{background: var(--line); color: var(--ink); border-color: var(--line-2);}
-
-
-
+@media (max-width: 560px){#produkt .pv-dash .chartbars{overflow-x: auto; gap: 3px;}#produkt .pv-dash .cbar-col{min-width: 28px;}}
+@media (max-width: 719px){#produkt .pv-dash .nav button{margin-right: 16px;}#produkt .pv-dash button.nav-mer{display: none;}#produkt .pv-dash .nav-mer-wrap{display: block; position: relative; align-self: center; flex-shrink: 0; margin-left: auto;}#produkt .pv-dash .nav-mer-toggle{appearance: none; border-width: 0px 0px 2px; border-style: none none solid; border-color: currentcolor currentcolor transparent; border-image: initial; background: 0px center; font-style: inherit; font-variant: inherit; font-stretch: inherit; line-height: inherit; font-family: inherit; font-optical-sizing: inherit; font-size-adjust: inherit; font-kerning: inherit; font-feature-settings: inherit; font-variation-settings: inherit; font-language-override: inherit; font-size: 13px; font-weight: 500; color: var(--mut); padding: 14px 2px; cursor: pointer; white-space: nowrap; margin-bottom: -1px; letter-spacing: -0.01em;}}
+@media (prefers-reduced-motion: reduce){#produkt .pv-dash .cbar-bar{transition: none;}}
 
 /* ===== Vindu som ÉN skalert enhet ==============================================
    Chrome ble tidligere tegnet i 1:1 mens innholdet var skalert 0,718 — kontroller og

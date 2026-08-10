@@ -151,6 +151,79 @@ sv/, da/, en/ følger ikke denne rekkefølgen ennå — gjøres i oversettelses-
   (verving). Fiks: `.keyboard` height 210→150px, padding `8px 4px 24px`→`6px 4px 14px`,
   `.msg-input` bottom 218→158px — i begge scopes. GJELDER KUN no/ — sv/da/en tas i
   oversettelsesfasen.
+- **⚠ Klonet CSS: `vw/vh/vmin/vmax` og `@media` er begge VIEWPORT-baserte og meningsløse i
+  en fastbreddet klon.** Produktvisningen i `site/no/index.html` kloner dashbordet og
+  bookingsida inn i containere med fast designbredde. Alt som løses mot viewporten løses da
+  mot LANDINGSSIDAS viewport, ikke mot containeren — og gir feil layout uten å feile.
+  Begge har brent oss:
+  - `@media`: kollapset dashbordets nav til tre faner på en 320px skjerm selv om containeren
+    var 780px bred. Løsning: strippes i scoping-steget.
+  - `vw`: `.cover h1{font-size:clamp(38px,11vw,54px)}` valgte TAKET (54px) fordi 11vw av
+    1280px = 141px, der produktet på 320px viewport velger GULVET (38px). Tittelen brakk til
+    to linjer der produktet holder én. Løsning: regnes om til px mot designbredden i
+    scoping-steget, med teller og en vakt som feiler hvis noe gjenstår.
+  **Nøytraliseringer skal kun rette LAYOUT, aldri legge til spacing.** Mine la på 20px
+  padding på `.cover` (kilden har `padding:56px 0 120px` — null horisontalt, innrykket
+  kommer fra `h1{margin:0 28px}`) og 20px i `.sheet-inner` der kilden har 24px. Til sammen
+  86px mindre plass til tittelen enn produktet gir.
+- **Produktfunn: `.cover h1` slutter å krympe under ~345px viewport.**
+  `clamp(38px,11vw,54px)` har 38px som absolutt gulv, og h1 får 264px (320 − 2×28 margin).
+  Målt ved 38px/−0.03em i Plus Jakarta Sans 600: «Grand Barber» (12 tegn) = 231px,
+  «Barber Studio» (13) = 236px — begge passer. «Oslo Barbershop» (15) = 291px brekker.
+  Grensen er tegnbredde, ikke antall: 8 tegn i bredeste bokstav (M), 11 i smaleste (n),
+  ~13–14 i typisk blandet tekst. **Barbernavn over ~14 tegn brekker til to linjer på 320px.**
+  Egen jobb: vurder maks-lengde på shop-navn i onboarding-skjemaet.
+- **⚠ Maskinell CSS-scoping: kildens ROTELEMENTER må mappes til klonens rot, og landingssidas
+  egne klassenavn må nøytraliseres.** To feil med samme symptom (nav/innhold grått bak en svart
+  header i dashbord-klonen), begge funnet 09.08 ved å måle `getComputedStyle` mot kilden — de var
+  usynlige på øyemål fordi resultatet bare så «litt annerledes» ut:
+  1. `:root`, `html` OG `body` er alle klonens rot. Ble `body` glemt, havnet kildens
+     `body{background:var(--bg)}` på `#produkt .pv-dash body` — en selektor som aldri kan treffe.
+     **Variablene kom inn, så `--bg` målte riktig; det var deklarasjonen som forsvant.** Klonen ble
+     gjennomsiktig og kortets eget `.brw{background:#141414}` lyste gjennom.
+  2. Klonen arver klassenavn fra kilden, og landingssida har egne uscopede regler for noen av dem
+     (`wrap`, `nav`, `logo`). `.nav{background:rgba(10,10,10,.72);backdrop-filter:blur(14px)}` la seg
+     oppå klonen — en stil som ikke finnes i `dashboard.html` i det hele tatt. `.bygg-dash2.mjs` har
+     nå en **kollisjonsvakt**: landingssidas CSS lastes mot klon-markupen, og for hver regel som
+     treffer tilbakestilles nøyaktig de egenskapene den deklarerer, med `revert`, plassert FØR de
+     klonede reglene. Lista regnes ut ved hver bygging — ikke hardkod den.
+- **⚠ Maskinell CSS-utvelgelse ser bare klasser som står i markupen ved BYGGETID.** Regler som
+  aktiveres av JS i produktet (`.rekord-gull`, `.wi-fill.rekord`) blir aldri valgt, og klonen viser
+  grønn der produktet viser gull — uten at noe feiler. Render-testen som sjekker at KLASSEN er satt
+  er ikke nok; den må måle fargen. Utestående for dashbord-klonen.
+- **⚠ Maskinelle splice/erstatninger på store filer: tell treff FØR skriving, aldri etter.**
+  Tre tap 09.08 hadde samme signatur — et søk traff mer eller mindre enn antatt, skrivingen
+  gikk gjennom, og feilen ble først synlig langt senere (eller aldri, fordi nettleseren
+  reparerte den). Mønsteret som virker: finn, tell, avbryt med `process.exit(1)` hvis
+  antallet avviker, og skriv fila til slutt i ett kall. Gjelder også `splice` på linjer:
+  en for bred slice tok med to naboregler uten at noe feilet.
+- **⚠ Blandede linjeskift i `site/no/index.html` bommer på ankere.** Fila hadde 911 CRLF og
+  606 rene LF om hverandre etter flere maskinelle bygg. Skript som detekterer EOL med
+  `s.includes('\r\n')` og oversetter søkestrenger med `\n` → CRLF traff da ingenting i
+  LF-partiene, uten annen feilmelding enn «0 treff». `cat -A` LYVER her — pipelinen
+  normaliserer, så linjeskiftene ser like ut. Normaliser fila til CRLF én gang før en serie
+  maskinelle endringer.
+- **Produktvisningens klon: fire rettelser som IKKE følger av byggeskriptene.** De gikk tapt
+  én gang fordi de bare fantes som løse redigeringer:
+  1. `data-to="10550"` på `.pv-rev` — uten den regner count-up-en mot `NaN` og KPI-en viser
+     «NaN» i stedet for å telle til 10 550.
+  2. `dashSpilt`-flagget + `tellOpp()` i IntersectionObserveren. Dashbordet er aktivt fra
+     markupen, så `tegn()` kalles aldri for det ved innlasting — uten dette fyrer animasjonen
+     aldri, stolpene blir stående på 0 og rekordtilstanden uteblir.
+  3. `.pv-dash` skal IKKE ha egen `transform:scale()`. Hele vinduet (`.pv-win`) skaleres som
+     én enhet; står begge, multipliseres de (0,718 × 0,718 = 0,516) og KPI-tallene faller fra
+     14 til 10 px uten at noe ser åpenbart galt ut.
+  4. Telefonens `#produkt .pv-phone .pv-scale{width:320px;transform:scale(var(--ph-s,.85))}`
+     ligger rett over `.pv-dash`-regelen og er lett å ta med i en for bred sletting.
+- **⚠ Maskinelle erstatninger må ALDRI ankres på generiske lukketagger** (`</section>`,
+  `</div>`) i filer som inneholder klonet markup. `site/no/index.html` har en klon av
+  backendens booking-modul, og den inneholder `<section class="sheet">`. Et søk etter
+  «neste `</section>`» traff da sheetens lukketagg i stedet for seksjonens: resultatet ble
+  en duplisert hale — to `#sceneCap`, to `#pvOk`, seks `.cap` — altså **doble id-er**.
+  Nettleseren reparerte det stille, sida så riktig ut, og hele render-testen var grønn.
+  Oppdaget først da en erstatning fikk «2 treff, ventet 1» og vakten stoppet.
+  Ankre på unike strenger (id, klassenavn, kommentar), og legg alltid inn en treff-teller
+  som avbryter FØR skriving.
 - **Rebooking- og verving-demoene deler to ting. Skal en av dem noen gang fjernes, er det
   disse to som ryker stille (kartlagt 09.08 — begge står, ingenting er fjernet).**
   1. **CSS-regelen med `.no-js`-fallbacken er DELT:**
