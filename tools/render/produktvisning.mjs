@@ -413,9 +413,13 @@ for(const bredde of [320,375,1280]){
     ventet:'uendret', ok:c1.kort===c2.kort?'✓':'✗'});
 
   // Sporet skal eie den vannrette scrollen — ikke dokumentet.
-  const sw=await page.evaluate(()=>document.documentElement.scrollWidth);
-  oppforsel.push({test:'page scrollWidth uendret (375)', resultat:sw+'px', ventet:'377px',
-    ok:sw===377?'✓':'✗'});
+  //
+  // Fasiten var 377px, altså 2px MER enn viewporten: testen hadde bakt inn hero-videoens
+  // overflyt som normaltilstand og ville dermed feilet den dagen noen fikset den. Kravet
+  // er nå det det alltid burde vært — sida er nøyaktig så bred som skjermen.
+  const sw=await page.evaluate(()=>({s:document.documentElement.scrollWidth,i:window.innerWidth}));
+  oppforsel.push({test:'page scrollWidth == viewport (375)', resultat:sw.s+'px av '+sw.i,
+    ventet:sw.i+'px', ok:sw.s===sw.i?'✓':'✗'});
   oppforsel.push({test:'mobil: jsfeil', resultat:errs.length?errs.join('; ').slice(0,40):'ingen',
     ventet:'ingen', ok:errs.length?'✗':'✓'});
   await ctx.close();
