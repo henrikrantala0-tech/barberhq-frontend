@@ -7,7 +7,7 @@
 <meta name="description" content="Din egen bookingside med automatisk rebooking, SMS-påminnelser og galleri. Vi setter opp alt for deg.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.1.0/dist/tabler-icons.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -99,33 +99,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .rb-pills{display:flex;gap:8px;justify-content:center;flex-wrap:wrap}
 .rb-pill{background:#161616;border:1px solid #262626;color:#bbb;font-size:12px;border-radius:99px;padding:8px 15px}
 
-/* ===== ALT PÅ ETT STED ===== */
-.tabs{display:flex;justify-content:center;gap:8px;margin:36px 0 44px;flex-wrap:wrap}
-.tab{appearance:none;border:1px solid #2a2a2a;background:transparent;color:#9a9a9a;font:inherit;font-size:14px;font-weight:500;padding:10px 20px;border-radius:99px;cursor:pointer;transition:all .2s}
-.tab.on{background:#fff;color:#000;border-color:#fff}
-.stage{position:relative;min-height:560px}
-.slide{display:none;grid-template-columns:1fr 1fr;gap:56px;align-items:center}
-.slide.on{display:grid;animation:fade .4s ease}
-@keyframes fade{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
-.slide.flip .txt{order:2}.slide.flip .vis{order:1}
-.slide .txt h3{font-size:clamp(28px,3.5vw,38px);font-weight:800;line-height:1.05;letter-spacing:-.03em;margin-bottom:18px}
-.slide .txt p{font-size:17px;line-height:1.6;color:#b4b4b4;max-width:420px}
-.vis{display:flex;justify-content:center;position:relative}
-.vis img{width:100%;height:auto}
-.vis.phone::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:95%;height:85%;background:radial-gradient(ellipse,rgba(70,140,255,.7),rgba(70,140,255,.25) 50%,transparent 72%);filter:blur(60px);z-index:0;pointer-events:none}
-.vis.phone img{position:relative;z-index:1;max-width:280px;filter:drop-shadow(0 30px 60px rgba(0,0,0,.6))}
-.vis.dashglow::before{content:"";position:absolute;left:50%;top:55%;transform:translate(-50%,-50%);width:80%;height:70%;background:radial-gradient(ellipse,rgba(255,255,255,.35),rgba(255,255,255,.08) 45%,transparent 70%);filter:blur(40px);z-index:0;pointer-events:none}
-.vis.dashglow img{position:relative;z-index:1;max-width:560px;width:100%;border-radius:14px;box-shadow:0 20px 70px -10px rgba(255,255,255,.25),0 30px 60px -20px rgba(0,0,0,.6)}
-.vis.duo{min-height:560px;align-items:center}
-.vis.duo::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:100%;height:88%;background:radial-gradient(ellipse,rgba(255,150,45,.7),rgba(255,150,45,.25) 50%,transparent 72%);filter:blur(60px);z-index:0;pointer-events:none}
-.vis.duo .front{position:relative;z-index:2;max-width:262px;margin-right:120px;transform:rotate(-4deg);filter:drop-shadow(0 26px 50px rgba(0,0,0,.6))}
-.vis.duo .back{position:absolute;z-index:1;max-width:240px;right:4%;top:50%;transform:translateY(-50%) rotate(8deg);filter:drop-shadow(0 26px 50px rgba(0,0,0,.7))}
-.apos-nav{display:flex;align-items:center;justify-content:center;gap:24px;margin-top:50px}
-.arrow{appearance:none;border:1px solid #2a2a2a;background:transparent;color:#fff;width:46px;height:46px;border-radius:50%;font-size:20px;cursor:pointer;display:flex;align-items:center;justify-content:center;transition:all .2s}
-.arrow:hover{background:#fff;color:#000;border-color:#fff}
-.dots{display:flex;gap:9px}
-.dot{width:9px;height:9px;border-radius:50%;background:#333;cursor:pointer;transition:all .2s;border:0;padding:0}
-.dot.on{background:#fff;width:26px;border-radius:5px}
+
 
 /* ===== PRIS ===== */
 .plans{display:grid;grid-template-columns:1fr 1fr;gap:20px;max-width:760px;margin:0 auto;align-items:start}
@@ -197,14 +171,6 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   .section{padding:64px 20px}
   .hero{padding:54px 20px 54px}
   .feat-grid{grid-template-columns:1fr;max-width:420px}
-  .slide{grid-template-columns:1fr;gap:28px;text-align:center}
-  .slide.flip .txt{order:1}.slide.flip .vis{order:2}
-  .slide .txt p{max-width:none;margin:0 auto}
-  .vis.phone img{max-width:230px}
-  .vis.duo{min-height:440px}
-  .vis.duo .front{max-width:210px;margin-right:50px}
-  .vis.duo .back{max-width:185px}
-  .stage{min-height:0}
   .plans{grid-template-columns:1fr;gap:28px;max-width:420px}
   .plan.pro{order:-1}
   .foot-top{grid-template-columns:1fr;gap:40px;padding-bottom:42px}
@@ -379,52 +345,558 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 @keyframes vvfade{to{opacity:1}}
 </style>
 <style>
-.pv-section{background:#0a0a0a;padding:45px 0 40px;display:flex;flex-direction:column;align-items:center}
-.pv-head{text-align:center;margin-bottom:40px}
-.pv-eyebrow{color:#8a8a8a;font-size:13px;letter-spacing:.22em;font-weight:600;margin-bottom:16px;
-  font-family:'Inter',-apple-system,system-ui,sans-serif}
-.pv-h2{color:#fff;font-size:clamp(30px,5vw,56px);font-weight:800;line-height:1;letter-spacing:-.04em;margin:0;
-  font-family:'Inter',-apple-system,system-ui,sans-serif}
-.pv-wrap{position:relative;width:100%;max-width:1500px}
+/* ===== PRODUKTVISNING — levende scene =========================================
+   Tre KLONER, ikke etterligninger. Booking-modulen og dashbordet er hentet ordrett
+   fra kilden og scopet maskinelt; kalenderen er bygget i designsystemet.
+   Fokus-logikk, autoplay, caption-flyt og mobil-stabel er uendret fra 09.08. ===== */
+.scene-sec{background:#0a0a0a;padding:64px 24px 72px;display:flex;flex-direction:column;align-items:center}
+.scene-head{text-align:center;margin-bottom:44px}
+.scene-eyebrow{color:#8a8a8a;font-size:13px;letter-spacing:.22em;font-weight:600;margin-bottom:16px;font-family:'Inter',system-ui,sans-serif}
+.scene-h2{color:#fff;font-size:clamp(30px,5vw,56px);font-weight:700;line-height:1;letter-spacing:-.03em;margin:0;font-family:'Fraunces',Georgia,serif}
+.scene-vp{width:100%;max-width:1200px;overflow:hidden}
+.scene{display:flex;align-items:center;justify-content:center;gap:28px;padding:34px 0}
+/* --dx er ringens plassering, --sk er fokus-skalaen. Begge i SAMME transform, ellers
+   overskriver den ene den andre. Rekkefølgen translateX→scale er ikke tilfeldig: med
+   transform-origin center holder scale sentrum i ro, så --dx flytter kortets sentrum
+   nøyaktig så mange piksler som er regnet ut. Motsatt rekkefølge ville skalert
+   forflytningen med .8 og gitt for kort vei. --dx settes kun av JS på desktop. */
+.mock{position:relative;flex:0 0 auto;cursor:pointer;background:none;border:0;padding:0;
+  transform-origin:center center;will-change:transform;
+  transform:translateX(var(--dx,0px)) scale(var(--sk,.75));opacity:.5;filter:brightness(.7);
+  transition:transform .7s cubic-bezier(.22,1,.36,1),opacity .7s cubic-bezier(.22,1,.36,1),filter .7s cubic-bezier(.22,1,.36,1)}
+.mock.on{--sk:1;opacity:1;filter:none}
+.mock:focus-visible{outline:2px solid #4d8bff;outline-offset:6px}
+.scene-cap{position:relative;display:grid;max-width:520px;margin-top:8px;text-align:center}
+.cap{grid-area:1/1;opacity:0;transition:opacity .5s ease;pointer-events:none}
+.cap.on{opacity:1}
+.cap h3{font-family:'Fraunces',Georgia,serif;font-size:clamp(20px,2.4vw,26px);font-weight:600;color:#fff;letter-spacing:-.02em;margin-bottom:10px;line-height:1.15}
+.cap p{font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.6;color:#b4b4b4;margin:0}
 
-/* Subtil hvit glod bak telefonene. Sitter bak bildet, sentrert paa hoyre 2/3
-   der de tre telefonene staar. Lyser gjennom de morke partiene rundt dem. */
-.pv-glow{
-  position:absolute;
-  top:42%; left:62%;
-  width:60%; height:62%;
-  transform:translate(-50%,-50%);
-  background:radial-gradient(ellipse 50% 45% at center,
-    rgba(255,255,255,.16) 0%,
-    rgba(255,255,255,.07) 38%,
-    rgba(255,255,255,0) 72%);
-  filter:blur(36px);
-  pointer-events:none;
-  z-index:0;
-}
+/* ===== Rammer og skalering ====================================================
+   Klonet innhold ligger i sin EKTE designbredde og skaleres med transform.
+   transform-origin:top left ⇒ utsnittet er toppen av sida; resten klippes av skjermen.
+     telefon  design 320 → skjerm 272 = 0,85
+     dashbord design 640 → ramme  560 = 0,875
+   640 er MÅLT (09.08) som smaleste bredde der klon-CSS-en holder layouten med basis-CSS
+   alene: under 520 brekker «10 550 kr» til to linjer, under 500 faller .stats fra tre til
+   to kolonner (minmax(150px,1fr)). Ingen @media i klonet CSS rører disse klassene, så
+   designbredden alene bestemmer layouten.
 
-/* Kant-fade: sterkere paa sidene + mykere hjorner enn for. */
-.pv-imgmask{
+   ⚠ AVSLUTNINGSTEGNET MANGLET HER. Uten det svelget kommentaren de to neste reglene, og
+   telefonens innhold ble ALDRI skalert: 320 designpiksler rått inn i en 216–236px skjerm.
+   Symptomet var ikke en feilmelding — alt så bare for stort ut, og halve arket lå
+   utenfor skjermen. Lærdom: en kommentar som avsluttes med et komma eller en «så» er
+   som regel avkortet. ============================================================= */
+#produkt .pv-scale{transform-origin:top left;will-change:transform}
+/* --ph-s settes av settTelefonSkala() ut fra MÅLT skjermbredde / 320. Verdien i
+   fallbacken er kun et nødanker hvis JS er av. */
+#produkt .pv-phone .pv-scale{width:320px;transform:scale(var(--ph-s,.675))}
+/* .pv-dash har INGEN egen skala — hele vinduet (.pv-win) skaleres som én enhet.
+   Sto begge, ble innholdet skalert to ganger (0,718 × 0,718 = 0,516) og dashbordet
+   fylte bare to tredjedeler av browservinduet. */
+#produkt .pv-phoneframe{width:290px}
+#produkt .pv-deskframe{width:560px}
+/* Høyden settes av JS: et skalert element bidrar ikke til foreldrens layouthøyde, så en
+   hardkodet verdi ble 403px mot 275px faktisk innhold — 128px tomrom under diagrammet. */
+#produkt .brw-body{overflow:hidden}
+
+#produkt .iph{background:#000;padding:9px;border-radius:44px;border:1px solid #2a2a2a;
+  box-shadow:0 30px 60px -30px rgba(0,0,0,.9)}
+#produkt .iph-screen{position:relative;border-radius:35px;overflow:hidden;aspect-ratio:9/19.5;background:#fff}
+#produkt .iph-island{position:absolute;top:8px;left:50%;transform:translateX(-50%);
+  width:90px;height:26px;background:#000;border-radius:13px;z-index:5;pointer-events:none}
+#produkt .mock.on .iph{border-color:#4d8bff}
+
+#produkt .brw{background:#141414;border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;
+  box-shadow:0 30px 60px -30px rgba(0,0,0,.9)}
+#produkt .mock.on .brw{border-color:#4d8bff}
+#produkt .brw-bar{display:flex;align-items:center;gap:10px;padding:0 0 0 12px;background:#101010;border-bottom:1px solid #222}
+#produkt .brw-url{flex:1;font:12px/1 'Inter',system-ui,sans-serif;color:#8a8a8a;background:#1a1a1a;
+  border-radius:7px;padding:7px 11px;margin:7px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Windows-rekkefølge: minimer (strek) · maksimer (kvadrat) · lukk (rødt kryss ytterst). */
+#produkt .brw-win{display:flex;align-items:stretch;flex:0 0 auto}
+#produkt .brw-win i{width:34px;display:grid;place-items:center;position:relative}
+#produkt .brw-win i::before{content:"";display:block;background:currentColor;color:#9a9a9a}
+#produkt .w-min::before{width:9px;height:1px}
+#produkt .w-max::before{width:8px;height:8px;background:none;border:1px solid currentColor}
+#produkt .w-close{color:#e0574a}
+#produkt .w-close::before{width:10px;height:10px;background:none;
+  background-image:linear-gradient(45deg,transparent 45%,currentColor 45%,currentColor 55%,transparent 55%),
+                   linear-gradient(-45deg,transparent 45%,currentColor 45%,currentColor 55%,transparent 55%)}
+
+/* Kalender — bygget i designsystemet, ikke klonet */
+#produkt .pv-cal{padding:44px 14px 14px;background:#141414;height:100%;position:relative;
+  overflow:hidden;font-family:'Inter',system-ui,sans-serif}
+#produkt .pv-cal-d{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em}
+#produkt .pv-cal-s{font-size:12px;color:#7a7a7a;margin-top:2px}
+#produkt .pv-cal-rows{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+#produkt .crow{display:flex;align-items:center;gap:10px;background:#101010;border:1px solid #232323;border-radius:9px;padding:10px 11px}
+#produkt .ct{font-size:11px;color:#8a8a8a;font-variant-numeric:tabular-nums;min-width:36px}
+#produkt .cn{font-size:12.5px;color:#fff;font-weight:600}
+#produkt .cs{font-size:11px;color:#7a7a7a;margin-left:auto}
+/* Fargekoding per TJENESTE, ikke per rad: samme tjeneste får samme tint, så mønsteret i
+   dagen er lesbart. Før hadde bare den ene «nye» raden farge, og de tre andre lå grå —
+   det så ut som en feil, ikke som et system. */
+#produkt .crow.k-a{border-color:#2b4a7a;background:#101a28}
+#produkt .crow.k-a .cn{color:#7fb0ff}
+#produkt .crow.k-b{border-color:#245c40;background:#0f1e17}
+#produkt .crow.k-b .cn{color:#5fd99a}
+#produkt .crow.k-c{border-color:#6b5620;background:#1c1710}
+#produkt .crow.k-c .cn{color:#e2bd5c}
+/* Raden legges inn USYNLIG først, så popup-kortet har et ekte mål å fly mot. Uten det
+   måtte målposisjonen gjettes, og den flytter seg for hver rad som kommer til. */
+#produkt .crow.rad{opacity:0;transform:translateY(-6px);
+  transition:opacity .3s ease,transform .3s cubic-bezier(.22,1,.36,1)}
+#produkt .crow.rad.inn{opacity:1;transform:none}
+
+/* Popup-kortet: spretter inn sentrert, krymper inn i raden sin. */
+#produkt .cal-pop{position:absolute;left:50%;top:46%;z-index:5;min-width:150px;
+  padding:11px 13px;border-radius:11px;background:#1b1b1b;border:1px solid #2f2f2f;
+  box-shadow:0 14px 34px -10px rgba(0,0,0,.75);pointer-events:none;
+  opacity:0;transform:translate(-50%,-50%) scale(.86);transform-origin:center}
+#produkt .cal-pop.inn{opacity:1;transform:translate(-50%,-50%) scale(1);
+  transition:opacity .18s ease,transform .34s cubic-bezier(.34,1.56,.64,1)}
+#produkt .cal-pop.fly{transition:opacity .34s ease,transform .38s cubic-bezier(.4,0,.2,1)}
+#produkt .cal-pop-n{font-size:13px;font-weight:700;color:#fff;letter-spacing:-.01em}
+#produkt .cal-pop-s{font-size:11px;color:#9a9a9a;margin-top:3px}
+#produkt .cal-pop-t{font-size:11px;color:#fff;font-weight:600;margin-top:5px;
+  font-variant-numeric:tabular-nums}
+#produkt .cal-pop.k-a{border-color:#2b4a7a} #produkt .cal-pop.k-a .cal-pop-t{color:#7fb0ff}
+#produkt .cal-pop.k-b{border-color:#245c40} #produkt .cal-pop.k-b .cal-pop-t{color:#5fd99a}
+#produkt .cal-pop.k-c{border-color:#6b5620} #produkt .cal-pop.k-c .cal-pop-t{color:#e2bd5c}
+
+/* ===== KLONET: bookingsida ====================================================
+   Kilde: den publiserte /henrik-fades, hentet 9. august 2026 — cover-seksjon +
+   booking-modul. CSS-en er valgt MASKINELT: hele sidas stilark lastes mot klon-markupen
+   i en ekte nettleser, og kun regler som treffer et element beholdes (2 039 kB → 18 kB).
+
+   TO PASS. Andre pass legger alle klasser modulen setter i drift på alle elementer.
+   Uten det forsvant 26 regler — .svc-card.sel, .slot-btn.sel, .acc-section.done .acc-*,
+   .sheet.open, .date-chip.sel — og klonen viste valgt tjeneste, valgt dato og valgt tid
+   HELT uten valgt-styling.
+   Klassene leses maskinelt ut av sidas JS på TRE måter, og alle tre er nødvendige:
+   classList-kall, className-tilordninger, OG hver enkelt strengliteral. Bare de to
+   første var med i første runde, og da manglet fortsatt .date-chip.month-start og
+   .date-chip.today: modulen skriver dem inn i markup-strengen som en løs ternær
+   (` ? ' month-start' : ''`), langt fra nærmeste «class=». Kandidatene snittes mot
+   klassenavnene stilarket faktisk styler, så støyen fra literal-utvinningen koster
+   ingenting. MERK: `.date-chip.today .dc-d` er DØD også på ekte side — klassenavnet
+   finnes ikke i sidas JS i det hele tatt. Regelen er med fordi den er kildens, men
+   klonen setter den ikke, for da ville den vist et signal produktet ikke har.
+
+   @media er droppet, og vw/vh er regnet om mot designbredden (320×693): begge er
+   viewport-baserte og ville ellers løst seg mot landingssidas viewport. Uten omregningen
+   valgte .cover h1 sitt clamp-tak (54px) i stedet for gulvet (38px) og brakk til to linjer.
+
+   ⚠ SYNKPUNKT — TO ANKERE:
+     1. Paletten under er hentet ORDRETT fra :root på den publiserte sida.
+        Bytter barbereren palett eller lys/mørk, må den hentes på nytt.
+     2. Samme verdier faller ut av buildPalette('oransje','mork') i site/no/palett.js
+        (som holdes i synk med backendens fyll.cjs). Avviker de to, er det palett.js
+        eller den publiserte sida som har flyttet seg — ikke klonen.
+   Ingen oppfunne variabler: --r/--r-sm/--success finnes ikke på sida heller, reglene
+   bærer sine egne fallbacks. Innholdet er VÅRT (Grand Barber, norsk adresse, lokale
+   bilder); kun struktur og stil er klonet.
+
+   ⚠ SYNKPUNKT — SMS-SAMTYKKE. Klonen viser samtykkeboksen BEVISST: markupen har
+   class="consent-slot shown", altså modulens shown-tilstand. Produktets standard er
+   display:none — boksen avsløres først når sms-consent-check svarer show_consent:true
+   på blur av telefonfeltet, og det er den tilstanden en NY kunde møter. En statisk klon
+   kan ikke gjøre det oppslaget, så tilstanden velges her i stedet for å oppstå.
+   Endres flyten — nytt endepunkt, ny betingelse, eller boksen fjernes — må klonen synkes.
+   Teksten inne i boksen bruker barberens navn (${esc(shopName)} i modulen); her står
+   «Grand Barber», klonens demobarber. ======================================== */
+#produkt .pv-book{--bg:#0a0a0a;--surface:#191919;--ink:#ffffff;--ink-soft:#989898; --accent:#e8590c;--accent-ink:#ffffff;--accent-text:#e8590c;--line:#313131; --fs-title:22px;--fs-section:16px;--fs-body:14px;--fs-small:13px;--fs-micro:11px;--fw-bold:700;--fw-medium:600;--fw-regular:400;--radius-card:13px;--radius-pill:99px;
   position:relative;
-  z-index:1;
+  background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;
+  line-height:1.5;height:100%;overflow:hidden}
+#produkt .pv-book{--bg: #0a0a0a; --surface: #191919; --ink: #ffffff; --ink-soft: #989898; --accent: #e8590c; --accent-ink: #ffffff; --accent-text: #e8590c; --line: #313131; --fs-title: 22px; --fs-section: 16px; --fs-body: 14px; --fs-small: 13px; --fs-micro: 11px; --fw-bold: 700; --fw-medium: 600; --fw-regular: 400; --radius-card: 13px; --radius-pill: 99px;}
+#produkt .pv-book *{margin: 0px; padding: 0px; box-sizing: border-box;}
+#produkt .pv-book{text-size-adjust: 100%;}
+#produkt .pv-book{background: var(--bg); color: var(--ink); font-family: Inter, -apple-system, system-ui, sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased; min-height: 693px; overflow-x: hidden;}
+#produkt .pv-book .cover{min-height: 693px; display: flex; flex-direction: column; text-align: center; padding: 56px 0px 120px; transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s, filter 0.55s;}
+#produkt .pv-book .cover.pushed{transform: scale(0.94); opacity: 0.5; filter: blur(2px);}
+#produkt .pv-book .cover > h1, #produkt .pv-book .cover > .sub, #produkt .pv-book .cover > .see, #produkt .pv-book .cover > .bio{margin-left: 28px; margin-right: 28px;}
+#produkt .pv-book .cover h1{font-family: "Plus Jakarta Sans", sans-serif; font-weight: 600; font-size: clamp(38px, 35.2px, 54px); letter-spacing: -0.03em; line-height: 1; color: var(--ink);}
+#produkt .pv-book .cover .sub{margin-top: 14px; font-size: var(--fs-small); letter-spacing: 0.1em; color: var(--ink-soft); text-transform: uppercase; font-weight: var(--fw-medium);}
+#produkt .pv-book .cover .bio{margin: 16px auto 0px; max-width: 340px; font-size: 15.5px; line-height: 1.55; color: var(--ink); opacity: 0.86; font-family: Inter, sans-serif;}
+#produkt .pv-book .cover-gallery{display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; width: 100%; margin: 34px 0px 0px; position: relative;}
+#produkt .pv-book .cover-gallery img{width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block;}
+#produkt .pv-book .cover-gallery::before{content: ""; position: absolute; top: 0px; left: 0px; right: 0px; height: 90px; z-index: 2; pointer-events: none; background: linear-gradient(to bottom,var(--bg),transparent);}
+#produkt .pv-book .cover-gallery::after{content: ""; position: absolute; bottom: 0px; left: 0px; right: 0px; height: 90px; z-index: 2; pointer-events: none; background: linear-gradient(to top,var(--bg),transparent);}
+#produkt .pv-book .addr{display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; font-size: var(--fs-body); color: var(--ink-soft); font-weight: 500; line-height: 1.4; text-decoration: none;}
+#produkt .pv-book .addr svg{opacity: 0.85;}
+#produkt .pv-book a.addr{color: var(--accent-text); transition: opacity 0.15s;}
+#produkt .pv-book a.addr:hover{opacity: 0.8;}
+#produkt .pv-book .cover > .addr{align-self: center;}
+#produkt .pv-book .sheet{position: fixed; inset: 0px; z-index: 20; background: var(--bg); transform: translateY(100%); transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto;}
+#produkt .pv-book .sheet.open{transform: translateY(0px);}
+#produkt .pv-book .sheet-inner{max-width: 480px; margin: 0px auto; padding: max(56px,env(safe-area-inset-top)) 24px 56px;}
+#produkt .pv-book .back-sheet{display: inline-flex; align-items: center; gap: 7px; background: none; border: 0px; cursor: pointer; color: var(--ink-soft); font-style: inherit; font-variant: inherit; font-stretch: inherit; line-height: inherit; font-family: inherit; font-optical-sizing: inherit; font-size-adjust: inherit; font-kerning: inherit; font-feature-settings: inherit; font-variation-settings: inherit; font-language-override: inherit; font-size: var(--fs-body); font-weight: var(--fw-medium); padding: 10px 0px; margin-bottom: 18px; transition: color 0.15s;}
+#produkt .pv-book .back-sheet:hover{color: var(--ink);}
+#produkt .pv-book .see-float{white-space: nowrap; position: fixed; left: 50%; transform: translateX(-50%); bottom: 52px; z-index: 15; display: inline-flex; align-items: center; justify-content: center; gap: 9px; background: color-mix(in srgb,var(--accent) 88%,transparent); backdrop-filter: blur(10px); color: var(--accent-ink); font-family: Inter, sans-serif; font-size: var(--fs-section); font-weight: var(--fw-medium); border: 0px; border-radius: var(--radius-pill); padding: 16px 40px; cursor: pointer; box-shadow: rgba(0, 0, 0, 0.55) 0px 12px 34px -10px; transition: opacity 0.15s, transform 0.15s;}
+#produkt .pv-book .see-float:hover{transform: translateX(-50%) translateY(-2px);}
+#produkt .pv-book .cover-manage-link{position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; z-index: 15; white-space: nowrap; font-size: var(--fs-small); color: var(--ink-soft); text-decoration: underline 1px; text-underline-offset: 3px; transition: opacity 0.15s;}
+#produkt .pv-book .cover-manage-link:hover{color: var(--ink);}
+#produkt .pv-book .acc-wrap{}
+#produkt .pv-book .acc-section{border-bottom: 1px solid var(--line);}
+#produkt .pv-book .acc-section:first-child{border-top: 1px solid var(--line);}
+#produkt .pv-book .acc-hd{display: flex; align-items: center; gap: 10px; padding: 15px 20px; min-height: 54px; user-select: none;}
+#produkt .pv-book .acc-section.locked .acc-hd{opacity: 0.38; pointer-events: none;}
+#produkt .pv-book .acc-n{width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--accent); color: var(--accent-ink);}
+#produkt .pv-book .acc-section.locked .acc-n{background: var(--line); color: var(--ink-soft);}
+#produkt .pv-book .acc-t{font-size: var(--fs-body); font-weight: var(--fw-bold); flex: 1 1 0%; color: var(--ink);}
+#produkt .pv-book .acc-sum{font-size: var(--fs-small); color: var(--ink-soft); flex: 1 1 0%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: none;}
+#produkt .pv-book .acc-chk{color: var(--accent); font-size: 16px; flex-shrink: 0; display: none;}
+#produkt .pv-book .acc-endre{font-size: var(--fs-small); color: var(--accent); font-weight: var(--fw-medium); background: none; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; font-family: Inter, sans-serif; flex-shrink: 0; padding: 4px 0px 4px 8px; display: none;}
+#produkt .pv-book .acc-section.done .acc-t{display: none;}
+#produkt .pv-book .acc-section.done .acc-sum{display: block;}
+#produkt .pv-book .acc-section.done .acc-chk{display: inline;}
+#produkt .pv-book .acc-section.done .acc-endre{display: inline;}
+#produkt .pv-book .acc-bd{display: grid; grid-template-rows: 0fr; transition: grid-template-rows 250ms;}
+#produkt .pv-book .acc-bd.open{grid-template-rows: 1fr;}
+#produkt .pv-book .acc-in{overflow: hidden; min-height: 0px;}
+#produkt .pv-book .acc-content{padding: 0px 20px 24px;}
+#produkt .pv-book .bk-svc-lbl{font-size: var(--fs-micro); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); font-weight: var(--fw-medium); margin: 0px 0px 10px;}
+#produkt .pv-book .svc-card{display: flex; align-items: center; width: 100%; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r,12px); padding: 12px 13px; cursor: pointer; transition: border-color 0.12s; text-align: left; margin-bottom: 8px; font-family: Inter, sans-serif;}
+#produkt .pv-book .svc-card.sel{border-color: var(--accent);}
+#produkt .pv-book .svc-lft{flex: 1 1 0%; display: flex; flex-direction: column; gap: 2px;}
+#produkt .pv-book .svc-nm{font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--ink);}
+#produkt .pv-book .svc-meta{font-size: var(--fs-micro); color: var(--ink-soft);}
+#produkt .pv-book .chk{font-size: var(--fs-section); color: var(--line); flex-shrink: 0; margin-left: 10px; transition: color 0.12s; font-style: normal;}
+#produkt .pv-book .svc-card.sel .chk{color: var(--accent);}
+#produkt .pv-book .addon-group{margin: 12px 0px 16px; padding-left: 12px; border-left: 2px solid var(--line); display: flex; flex-direction: column; gap: 11px;}
+#produkt .pv-book .addon-group[hidden]{display: none;}
+#produkt .pv-book .addon-lbl{font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin: 0px;}
+#produkt .pv-book .addon-row{display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; padding: 0px; cursor: pointer; font-family: Inter, sans-serif; -webkit-tap-highlight-color: transparent;}
+#produkt .pv-book .addon-box{width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--line); flex: 0 0 auto; display: flex; align-items: center; justify-content: center; transition: background 0.12s, border-color 0.12s;}
+#produkt .pv-book .addon-row.sel .addon-box{background: var(--accent); border-color: var(--accent);}
+#produkt .pv-book .addon-tick{display: none; font-size: 12px; line-height: 1; color: var(--accent-ink); font-weight: var(--fw-bold);}
+#produkt .pv-book .addon-row.sel .addon-tick{display: block;}
+#produkt .pv-book .addon-nm{flex: 1 1 0%; font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--ink);}
+#produkt .pv-book .addon-pr{font-size: var(--fs-small); color: var(--ink-soft);}
+#produkt .pv-book .acc-next, #produkt .pv-book .next2-btn{display: block; width: 100%; margin-top: 20px; background: var(--accent); color: var(--accent-ink); border-radius: var(--r,12px); padding: 13px; font-size: var(--fs-section); font-weight: var(--fw-bold); letter-spacing: 0.02em; transition: opacity 0.12s; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; font-family: Inter, sans-serif;}
+#produkt .pv-book .acc-next:disabled, #produkt .pv-book .next2-btn:disabled{background: color-mix(in srgb,var(--ink) 12%,var(--bg)); color: var(--ink); cursor: not-allowed;}
+#produkt .pv-book .acc-next:active:not(:disabled), #produkt .pv-book .next2-btn:active:not(:disabled){opacity: 0.82;}
+#produkt .pv-book .date-strip{display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; scrollbar-width: none; scroll-snap-type: x;}
+#produkt .pv-book .date-strip::-webkit-scrollbar{display: none;}
+#produkt .pv-book .date-chip{flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 7px 9px; border: 1.5px solid var(--line); border-radius: var(--r-sm,8px); cursor: pointer; min-width: 44px; transition: border-color 0.12s, background 0.12s; background: none; font-family: Inter, sans-serif; scroll-snap-align: start;}
+#produkt .pv-book .date-chip.sel{border-color: var(--accent); background: color-mix(in srgb,var(--accent) 12%,transparent);}
+#produkt .pv-book .date-chip.closed, #produkt .pv-book .date-chip:disabled{opacity: 0.3; cursor: not-allowed;}
+#produkt .pv-book .dc-wd{font-size: var(--fs-micro); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft);}
+#produkt .pv-book .dc-mo{font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); display: none;}
+#produkt .pv-book .date-chip.month-start .dc-wd{display: none;}
+#produkt .pv-book .date-chip.month-start .dc-mo{display: block;}
+#produkt .pv-book .date-chip.today .dc-d{color: var(--accent);}
+#produkt .pv-book .dc-d{font-size: var(--fs-section); font-weight: var(--fw-bold); line-height: 1.2; color: var(--ink);}
+#produkt .pv-book .dc-dot{width: 4px; height: 4px; border-radius: 50%; background: var(--accent); margin: 2px auto 0px; visibility: hidden;}
+#produkt .pv-book .date-chip.open .dc-dot{visibility: visible;}
+#produkt .pv-book .dc-full{font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-soft); margin: 1px auto 0px; display: none;}
+#produkt .pv-book .date-chip.full .dc-full{display: block;}
+#produkt .pv-book .date-chip.full{opacity: 0.5;}
+#produkt .pv-book .slots-hdr{font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 10px;}
+#produkt .pv-book .slots-grid{display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px;}
+#produkt .pv-book .slot-btn{background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r-sm,8px); padding: 10px 4px; font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--ink); transition: border-color 0.12s; font-family: Inter, sans-serif; cursor: pointer;}
+#produkt .pv-book .slot-btn.sel{border-color: var(--accent); color: var(--accent);}
+#produkt .pv-book .slot-skel{background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r-sm,8px); padding: 10px 4px; animation: 1.2s ease-in-out 0s infinite normal none running bk-pulse;}
+@keyframes bk-pulse { 
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.75; }
 }
+#produkt .pv-book .slot-msg{font-size: var(--fs-small); color: var(--ink-soft); padding: 12px 0px; text-align: center;}
+#produkt .pv-book .hidden{display: none;}
+#produkt .pv-book .full-card{background: var(--surface); border: 1px solid var(--line); border-radius: var(--r,12px); padding: 14px 16px; margin-bottom: 12px; display: none;}
+#produkt .pv-book .full-card.visible{display: block;}
+#produkt .pv-book .full-card-msg{font-size: var(--fs-small); color: var(--ink-soft); margin-bottom: 8px;}
+#produkt .pv-book .full-card-next{display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--accent); background: none; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; font-family: Inter, sans-serif; padding: 0px;}
+#produkt .pv-book .sum-box{background: var(--surface); border: 1px solid var(--line); border-radius: var(--r,12px); padding: 13px 14px; margin-bottom: 14px;}
+#produkt .pv-book .sum-row{display: flex; justify-content: space-between; font-size: var(--fs-small); color: var(--ink-soft); padding: 3px 0px;}
+#produkt .pv-book .sum-row strong{color: var(--ink); font-weight: var(--fw-medium);}
+#produkt .pv-book .sum-strike{text-decoration: line-through; color: var(--ink-soft); font-weight: var(--fw-regular); margin-right: 3px;}
+#produkt .pv-book .fld{display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;}
+#produkt .pv-book .fld label{font-size: var(--fs-small); font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft);}
+#produkt .pv-book .fld input{background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r,12px); padding: 12px 14px; font-size: var(--fs-section); font-family: Inter, sans-serif; color: var(--ink); outline: none; -webkit-text-fill-color: var(--ink);}
+#produkt .pv-book .fld input:focus{border-color: var(--accent);}
+#produkt .pv-book .fld input::placeholder{color: var(--ink-soft); opacity: 0.5; -webkit-text-fill-color: var(--ink-soft);}
+#produkt .pv-book .form-err{color: rgb(224, 92, 75); font-size: var(--fs-small); margin-bottom: 10px; display: none;}
+#produkt .pv-book .consent-slot{display: none; margin-bottom: 12px;}
+#produkt .pv-book .consent-slot.loading, #produkt .pv-book .consent-slot.shown{display: block;}
+#produkt .pv-book .consent-slot.loading .consent-box{visibility: hidden;}
+#produkt .pv-book .consent-box{display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r,12px); cursor: pointer;}
+#produkt .pv-book .consent-box input{margin-top: 1px; width: 18px; height: 18px; accent-color: var(--accent); flex: 0 0 auto;}
+#produkt .pv-book .consent-txt{font-size: var(--fs-small); color: var(--ink); line-height: 1.45;}
+#produkt .pv-book .ref-slot{display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;}
+#produkt .pv-book .ref-line{font-size: var(--fs-small); line-height: 1.45; padding: 10px 13px; border-radius: var(--r,12px); background: var(--surface); border: 1.5px solid var(--line); color: var(--ink);}
+#produkt .pv-book .ref-invite, #produkt .pv-book .ref-bonus{border-color: var(--accent);}
+#produkt .pv-book .ref-note{color: var(--ink-soft,var(--ink));}
+#produkt .pv-book .sub-btn{display: block; width: 100%; background: var(--accent); color: var(--accent-ink); border-radius: var(--r,12px); padding: 14px; font-size: var(--fs-section); font-weight: var(--fw-bold); letter-spacing: 0.02em; transition: opacity 0.12s; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; font-family: Inter, sans-serif;}
+#produkt .pv-book .sub-btn:active{opacity: 0.85;}
+#produkt .pv-book .sub-btn:disabled{opacity: 0.5; cursor: not-allowed;}
+#produkt .pv-book .pay-note{font-size: var(--fs-micro); color: var(--ink-soft); text-align: center; margin-top: 10px; line-height: 1.4;}
+#produkt .pv-book .success-wrap{text-align: center; padding: 40px 20px;}
+#produkt .pv-book .success-ico{width: 64px; height: 64px; border-radius: 50%; background: rgb(62, 207, 126); display: flex; align-items: center; justify-content: center; margin: 0px auto 18px;}
+#produkt .pv-book .success-h{font-family: "Plus Jakarta Sans", sans-serif; font-size: var(--fs-title); font-weight: var(--fw-bold); margin-bottom: 6px; color: var(--ink);}
+#produkt .pv-book .success-sub{font-size: var(--fs-small); color: var(--ink-soft); margin-bottom: 22px;}
+#produkt .pv-book .success-det{background: var(--surface); border: 1px solid var(--line); border-radius: var(--r,12px); padding: 14px 16px; text-align: left; margin-bottom: 18px;}
+#produkt .pv-book .det-row{display: flex; justify-content: space-between; align-items: flex-start; font-size: var(--fs-small); padding: 5px 0px; border-bottom: 1px solid var(--line);}
+#produkt .pv-book .det-row:last-child{border-bottom-width: medium; border-bottom-style: none; border-bottom-color: currentcolor; padding-bottom: 0px;}
+#produkt .pv-book .det-lbl{color: var(--ink-soft); flex-shrink: 0; margin-right: 10px;}
+#produkt .pv-book .det-val{font-weight: var(--fw-medium); text-align: right; color: var(--ink);}
+#produkt .pv-book .manage-link-btn{display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-small); color: var(--ink-soft); cursor: pointer; background: none; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; padding: 4px 0px; font-family: Inter, sans-serif;}
+#produkt .pv-book .manage-mode #bk-book, #produkt .pv-book .manage-mode .bk-footer{display: none !important;}
+#produkt .pv-book .bk-card{background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r,12px); padding: 16px; margin: 0px 0px 12px;}
+#produkt .pv-book .bk-svc{font-size: var(--fs-section); font-weight: var(--fw-bold); margin-bottom: 3px;}
+#produkt .pv-book .bk-when{font-size: var(--fs-small); color: var(--ink-soft); margin-bottom: 14px;}
+#produkt .pv-book .bk-actions{display: flex; gap: 8px;}
+#produkt .pv-book .bk-act{flex: 1 1 0%; padding: 10px 8px; border-radius: var(--r-sm,8px); font-size: var(--fs-small); font-weight: var(--fw-bold); font-family: Inter, sans-serif; border: 1.5px solid var(--line); background: none; color: var(--ink); cursor: pointer; transition: border-color 0.12s;}
+#produkt .pv-book .bk-act.primary{background: var(--accent); color: var(--accent-ink); border-color: var(--accent);}
+#produkt .pv-book .bk-act.danger{border-color: var(--danger,#e05c4b); color: var(--danger,#e05c4b);}
+#produkt .pv-book .bk-confirm{margin-top: 12px; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-sm,8px); display: none;}
+#produkt .pv-book .bk-confirm.open{display: block;}
+#produkt .pv-book .bk-confirm-btns{display: flex; gap: 8px;}
+#produkt .pv-book .bk-footer{text-align: center; margin-top: 28px; font-size: 12.5px; color: var(--ink-soft);}
+#produkt .pv-book .bk-footer a{color: var(--ink-soft); text-decoration: none; border-bottom: 1px solid var(--line);}
+@keyframes fi { 
+  0% { opacity: 0; transform: translateY(5px); }
+  100% { opacity: 1; transform: none; }
+}
+/* ↑ Klonet CSS slutter her. Under: NØYTRALISERING, ikke endring.
+   Reglene her retter bare det som er meningsløst i en fastbreddet klon. De legger
+   ALDRI på spacing: forrige runde ga .cover 20px padding (kilden har «56px 0 120px» —
+   null horisontalt, innrykket kommer fra h1{margin:0 28px}) og .sheet-inner 20px der
+   kilden har 24px. Til sammen 86px mindre plass til tittelen enn produktet gir. */
+/* position:fixed inne i et transformert element forankres til DET, ikke viewporten —
+   arket ble en grå flate på størrelse med hele sida. */
+#produkt .pv-book .sheet{position:static;transform:none;inset:auto;z-index:auto;transition:none;display:none}
+#produkt .pv-book .sheet-inner{max-width:none}
+/* Samme felle for CTA-en og «endre/avbestill»: begge er position:fixed. Å gi .pv-scale
+   riktig høyde er IKKE nok — fixed forankres til nærmeste transformerte forfar, og hvilken
+   det er, avhenger av hvor transform/will-change tilfeldigvis står. Målt havnet knappen
+   52px UNDER skjermen. Vi gjør forankringen eksplisitt i stedet for å gjette. */
+/* Skjermflatens origo pinnes. Kildens body er sentrerende, og siden body mappes til
+   klonens rot, ble det 320px brede innholdet SENTRERT i en 236px boks — 42px overflyt på
+   hver side, altså 57 designpiksler skjevt, og høyre kant klippet. Målt mot fasiten:
+   galleriet lå på 57..377 i stedet for 0..320. */
+#produkt .pv-book .pv-scale{position:absolute;top:0;left:0}
+#produkt .pv-book .see-float,
+#produkt .pv-book .cover-manage-link{position:absolute}
+/* .see-float er også fixed, og skal forankres til SKJERMEN. Da må skjermboksen finnes,
+   ellers er .pv-scale like høy som innholdet og knappen havner et vilkårlig sted nede i
+   cover-seksjonen. Høyden settes av settTelefonSkala() sammen med skalaen — de to hører
+   sammen og skal ikke kunne komme i utakt. */
+/* «Scroll» i en klon som ikke KAN scrolle. Ekte side har overflow-y:auto på det
+   fixed arket, og modulen scroller til trinn 3 når det åpnes. Her er arket statisk inne
+   i overflow:hidden, så trinn 3 ble klippet rett under samtykkeboksen: «Bekreft booking»
+   og betalingsnoten lå utenfor skjermen, og bildet så ut som om knappen manglet.
+   Arket flyttes i stedet, styrt av én variabel — da kan animasjonen «scrolle» til
+   skjemaet slik produktet gjør. Transformen ligger bak .vis-scroll, ikke på .sheet rett
+   fram: en transform lager en containing block for absolutt-posisjonerte etterkommere,
+   og den skal ikke oppstå i tilstander som ikke trenger den. */
+#produkt .pv-book.vis-scroll .sheet{transform:translateY(var(--pv-scroll,0px));
+  transition:transform .55s cubic-bezier(.4,0,.2,1)}
+@media (prefers-reduced-motion:reduce){#produkt .pv-book.vis-scroll .sheet{transition:none}}
 
+/* «Se tjenester» sentreres med translateX(-50%). Den generelle .pv-anim-btn.pv-press-
+   regelen setter transform:scale(.96) og ville SLETTET sentreringen — knappen hoppet til
+   venstre kant i det den ble trykket. Egen regel som beholder begge. */
+#produkt .pv-book .see-float.pv-press{transform:translateX(-50%) scale(.96)}
 
+/* Tilstandene styres av én klasse på .pv-book — samme klasser render-testen setter. */
+#produkt .pv-book.vis-sheet .cover,
+#produkt .pv-book.vis-sheet .see-float,
+#produkt .pv-book.vis-sheet .cover-manage-link{display:none}
+#produkt .pv-book.vis-sheet .sheet{display:block}
+#produkt .pv-book .success-wrap{display:none}
+#produkt .pv-book.vis-success .acc-wrap,
+#produkt .pv-book.vis-success .bk-footer{display:none}
+#produkt .pv-book.vis-success .success-wrap{display:block}
 
+/* ===== KLONET: dashbordets Oversikt-flate ====================================
+   Kilde: site/no/dashboard.html — hentet 9. august 2026. CSS-en er valgt MASKINELT:
+   hele stilarket lastes mot klon-markupen i en ekte nettleser, og kun regler som treffer
+   et element beholdes (56 kB → 11 kB scopet). Lys-tema-reglene er droppet — klonen er
+   alltid mørk, og de kunne aldri treffe.
+   Media-reglene er tatt med og er VIEWPORT-baserte — derfor kollapser navet til tre
+   faner + «Mer» på mobil helt av seg selv, uten at vi skriver egen mobil-CSS.
 
+   ROTELEMENTET: kildens :root/html/body mappes ALLE til «#produkt .pv-dash». Ble body
+   utelatt, havnet «body{background:var(--bg)}» på «#produkt .pv-dash body» — en selektor
+   som aldri kan treffe. Variablene kom inn, bakgrunnen forsvant, og kortets eget
+   .brw{background:#141414} lyste gjennom som en grå flate bak et svart topp-felt.
 
+   KJØRETIDSKLASSER: utvelgelsen kjøres TO ganger. Andre pass har alle klasser scenens
+   egen JS påfører i drift (lest maskinelt ut av scene-skriptet) på alle elementer, ellers
+   filtreres reglene deres bort — de finnes ikke i markupen ved byggetid. Det tok
+   .rekord-gull, .rekord-puls, .wi-fill.rekord og .wi-text.rekord, og klonen viste grønn
+   der produktet viser gull. Kilderekkefølgen bevares; pass 2 legger ikke reglene bakerst.
 
+   KOLLISJONSVAKTA øverst er maskinelt utledet: landingssida har egne, uscopede regler
+   for klassenavn klonen også bruker (wrap, nav, logo), og de la seg oppå kilden — .nav
+   fikk rgba(10,10,10,.72) + backdrop-filter som ikke finnes i dashboard.html. Vakta
+   tilbakestiller NØYAKTIG de egenskapene landingssida deklarerer, med `revert`, og står
+   FØR de klonede reglene så klonen fortsatt vinner der den selv deklarerer noe.
 
+   SYNKPUNKT: endres dashbordets Oversikt-flate, drifter denne kopien. ============= */
+/* Kollisjonsvakt — maskinelt utledet, se .bygg-dash2.mjs. FØR de klonede reglene. */
+#produkt .pv-dash .wrap{max-width:revert;margin-top:revert;margin-right:revert;margin-bottom:revert;margin-left:revert;padding-top:revert;padding-right:revert;padding-bottom:revert;padding-left:revert}
+#produkt .pv-dash .nav{position:revert;top:revert;z-index:revert;background-image:revert;background-position-x:revert;background-position-y:revert;background-size:revert;background-repeat:revert;background-attachment:revert;background-origin:revert;background-clip:revert;background-color:revert;backdrop-filter:revert;border-bottom-width:revert;border-bottom-style:revert;border-bottom-color:revert;transition-behavior:revert;transition-duration:revert;transition-timing-function:revert;transition-delay:revert;transition-property:revert}
+#produkt .pv-dash .logo{font-size:revert;font-weight:revert;letter-spacing:revert;color:revert;text-decoration-line:revert;text-decoration-thickness:revert;text-decoration-style:revert;text-decoration-color:revert}
+#produkt .pv-dash{--bg: #fafafa; --surface: #fff; --ink: #0a0a0a; --ink-2: #3a3a3a; --mut: #7a7a7a; --mut-2: #a8a8a8; --line: #e8e8e8; --line-2: #d8d8d8; --good: #1a7a44; --good-bg: #e8f3ec; --bad: #b3261e; --bad-bg: #fbeae9; --info: #1456a8; --info-bg: #e8f0fb;}
+#produkt .pv-dash *{margin: 0px; padding: 0px; box-sizing: border-box;}
+#produkt .pv-dash{font-family: Inter, system-ui, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.45; -webkit-font-smoothing: antialiased;}
+#produkt .pv-dash .wrap{max-width: 1120px; margin: 0px auto; padding: 0px 24px;}
+#produkt .pv-dash .top{display: flex; align-items: center; justify-content: space-between; padding: 22px 0px; border-bottom: 1px solid var(--line);}
+#produkt .pv-dash .who{display: flex; align-items: center; gap: 10px; font-size: 13px; color: var(--mut);}
+#produkt .pv-dash .who b{color: var(--ink); font-weight: 500;}
+#produkt .pv-dash .nav{display: flex; gap: 0px; border-bottom: 1px solid var(--line); margin-top: 2px;}
+#produkt .pv-dash .nav button{appearance: none; border-width: 0px 0px 2px; border-style: none none solid; border-color: currentcolor currentcolor transparent; border-image: initial; background: 0px center; font-style: inherit; font-variant: inherit; font-stretch: inherit; line-height: inherit; font-family: inherit; font-optical-sizing: inherit; font-size-adjust: inherit; font-kerning: inherit; font-feature-settings: inherit; font-variation-settings: inherit; font-language-override: inherit; font-size: 13px; font-weight: 500; color: var(--mut); padding: 14px 2px; margin-right: 26px; cursor: pointer; margin-bottom: -1px; letter-spacing: -0.01em;}
+#produkt .pv-dash .nav button[aria-selected="true"]{color: var(--ink); border-bottom-color: var(--ink);}
+#produkt .pv-dash .panel{display: none; padding: 26px 0px 50px;}
+#produkt .pv-dash .panel.active{display: block;}
+#produkt .pv-dash .periodbar{display: flex; flex-direction: column; align-items: flex-start; gap: 12px; margin-bottom: 24px;}
+#produkt .pv-dash .segs{display: inline-flex; flex-wrap: wrap; background: var(--surface); border: 1px solid var(--line-2); border-radius: 9px; padding: 3px;}
+#produkt .pv-dash .segs button{appearance: none; border: 0px; background: 0px center; font-style: inherit; font-variant: inherit; font-stretch: inherit; line-height: inherit; font-family: inherit; font-optical-sizing: inherit; font-size-adjust: inherit; font-kerning: inherit; font-feature-settings: inherit; font-variation-settings: inherit; font-language-override: inherit; font-size: 12.5px; font-weight: 500; color: var(--mut); padding: 6px 13px; border-radius: 6px; cursor: pointer; letter-spacing: -0.01em;}
+#produkt .pv-dash .segs button[aria-selected="true"]{background: var(--ink); color: rgb(255, 255, 255);}
+#produkt .pv-dash .monthpick{display: flex; align-items: center; gap: 8px; font-size: 13px; color: var(--ink-2); font-weight: 500;}
+#produkt .pv-dash .monthpick select{font-style: inherit; font-variant: inherit; font-weight: inherit; font-stretch: inherit; line-height: inherit; font-family: inherit; font-optical-sizing: inherit; font-size-adjust: inherit; font-kerning: inherit; font-feature-settings: inherit; font-variation-settings: inherit; font-language-override: inherit; font-size: 13px; padding: 7px 10px; border: 1px solid var(--line-2); border-radius: 7px; background: var(--surface); color: var(--ink);}
+#produkt .pv-dash .rangelabel{font-size: 13px; color: var(--mut); letter-spacing: -0.01em; font-weight: 500;}
+#produkt .pv-dash .stats{display: grid; grid-template-columns: repeat(auto-fit, minmax(150px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-bottom: 8px;}
+#produkt .pv-dash .stat{background: var(--surface); padding: 18px 20px;}
+#produkt .pv-dash .stat .l{font-size: 11.5px; color: var(--mut); font-weight: 500; letter-spacing: 0.02em; text-transform: uppercase; display: flex; align-items: center; gap: 5px;}
+#produkt .pv-dash .stat .v{font-size: 30px; font-weight: 800; letter-spacing: -0.04em; margin-top: 7px; line-height: 1; font-variant-numeric: tabular-nums;}
+#produkt .pv-dash .stat .v .u{font-size: 15px; font-weight: 300; color: var(--mut); margin-right: 3px; letter-spacing: 0px;}
+#produkt .pv-dash .stat .sub{font-size: 12px; margin-top: 6px; font-weight: 500;}
+#produkt .pv-dash .v.info{color: var(--info);}
+#produkt .pv-dash .sub.mut{color: var(--mut);}
+#produkt .pv-dash .block-h{font-size: 13px; font-weight: 700; letter-spacing: -0.01em; margin: 0px 0px 3px;}
+#produkt .pv-dash .block-s{font-size: 12.5px; color: var(--mut); margin-bottom: 14px; letter-spacing: -0.01em;}
+#produkt .pv-dash{--bg: #0a0a0a; --surface: #141414; --ink: #ffffff; --ink-2: #cfcfcf; --mut: #8a8a8a; --mut-2: #5f5f5f; --line: #242424; --line-2: #363636; --good: #3ecf7e; --good-bg: #10241a; --bad: #ff6b5e; --bad-bg: #2c1512; --info: #4d8bff; --info-bg: #11203b;}
+#produkt .pv-dash .btn{background: rgb(255, 255, 255); color: rgb(10, 10, 10);}
+#produkt .pv-dash .who .dot{background: rgb(255, 255, 255); color: rgb(10, 10, 10);}
+#produkt .pv-dash .segs button[aria-selected="true"]{background: var(--info); color: rgb(255, 255, 255);}
+#produkt .pv-dash .sw input:checked + .sl{background: rgb(77, 139, 255);}
+#produkt .pv-dash .nav{overflow-x: auto; scrollbar-width: none;}
+#produkt .pv-dash .nav button{white-space: nowrap;}
+#produkt .pv-dash .nav-mer-wrap{display: none;}
+#produkt .pv-dash .modebtn[aria-pressed="true"]{background: rgb(255, 255, 255); color: rgb(10, 10, 10);}
+#produkt .pv-dash .chart-wrap{background: var(--surface); border: 1px solid var(--line); border-radius: 12px; padding: 20px 22px; margin-bottom: 24px; position: relative;}
+#produkt .pv-dash .chart-header{display: flex; align-items: flex-start; justify-content: space-between; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; min-height: 52px;}
+#produkt .pv-dash .logo{font-size: 21px; font-weight: 800; letter-spacing: -0.03em;}
+#produkt .pv-dash .chartbars{display: flex; align-items: flex-end; gap: 5px; height: 160px; padding: 0px 2px;}
+#produkt .pv-dash .cbar-col{flex: 1 1 0%; display: flex; flex-direction: column; align-items: center; justify-content: flex-end; gap: 4px; min-width: 0px;}
+#produkt .pv-dash .cbar-bar{width: 100%; max-width: 52px; border-radius: 4px 4px 0px 0px; background: linear-gradient(180deg,var(--bar-top),var(--bar-bot)); min-height: 4px; transition: height 0.25s;}
+#produkt .pv-dash .cbar-lbl{font-size: 10px; color: var(--mut); text-transform: uppercase; letter-spacing: 0.02em; white-space: nowrap; text-align: center; line-height: 1.3;}
+#produkt .pv-dash .cbar-lbl-sub{font-size: 9px; display: block; opacity: 0.7; text-transform: none; letter-spacing: 0px;}
+@keyframes barlift { 
+  0% { transform: translateY(0px); }
+  100% { transform: translateY(-6px); }
+}
+#produkt .pv-dash .rekord-note{font-size: 11px; color: var(--mut-2); margin-top: 3px; font-weight: 500; letter-spacing: -0.01em;}
+#produkt .pv-dash .week-insight{display: flex; flex-direction: column; gap: 8px; margin: 2px 0px 20px;}
+#produkt .pv-dash .wi-track{height: 6px; border-radius: 99px; background: var(--line); overflow: hidden;}
+#produkt .pv-dash .wi-fill{height: 100%; border-radius: 99px; background: var(--good); transition: width 0.5s cubic-bezier(0.165, 0.84, 0.44, 1);}
+#produkt .pv-dash .wi-fill.rekord{background: linear-gradient(90deg, rgb(240, 194, 75), rgb(255, 224, 138));}
+#produkt .pv-dash .wi-text{font-size: 12px; color: var(--mut-2); font-weight: 500; letter-spacing: -0.01em; margin-top: 2px;}
+#produkt .pv-dash .wi-text.rekord{color: rgb(232, 184, 75); font-weight: 600;}
+#produkt .pv-dash .rekord-gull{background: linear-gradient(rgb(255, 244, 178) 0%, rgb(255, 224, 138) 38%, rgb(240, 194, 75) 72%, rgb(200, 150, 15) 100%) text; -webkit-text-fill-color: transparent; color: transparent; filter: drop-shadow(rgba(255, 224, 138, 0.9) 0px 0px 2px) drop-shadow(rgba(240, 194, 75, 0.55) 0px 0px 8px) drop-shadow(rgba(240, 194, 75, 0.28) 0px 0px 16px);}
+@keyframes rekordPuls { 
+  0%, 100% { filter: drop-shadow(rgba(255, 224, 138, 0.9) 0px 0px 2px) drop-shadow(rgba(240, 194, 75, 0.55) 0px 0px 8px) drop-shadow(rgba(240, 194, 75, 0.28) 0px 0px 16px); }
+  40% { filter: drop-shadow(rgb(255, 240, 180) 0px 0px 4px) drop-shadow(rgba(255, 210, 90, 0.8) 0px 0px 16px) drop-shadow(rgba(240, 194, 75, 0.5) 0px 0px 30px); }
+}
+#produkt .pv-dash .rekord-puls{animation: 0.7s ease-out 0s 1 normal none running rekordPuls;}
+#produkt .pv-dash{background: rgb(10, 10, 10);}
+#produkt .pv-dash .demo-banner{background: rgb(45, 29, 0); border-bottom-color: rgb(217, 119, 6); color: rgb(253, 230, 138);}
+#produkt .pv-dash .sw-green input:checked + .sl{background: rgb(34, 197, 94);}
+#produkt .pv-dash .segs-val button[aria-selected="true"]{background: var(--line); color: var(--ink); border-color: var(--line-2);}
+@media (max-width: 560px){#produkt .pv-dash .chartbars{overflow-x: auto; gap: 3px;}#produkt .pv-dash .cbar-col{min-width: 28px;}}
+@media (max-width: 719px){#produkt .pv-dash .nav button{margin-right: 16px;}#produkt .pv-dash button.nav-mer{display: none;}#produkt .pv-dash .nav-mer-wrap{display: block; position: relative; align-self: center; flex-shrink: 0; margin-left: auto;}#produkt .pv-dash .nav-mer-toggle{appearance: none; border-width: 0px 0px 2px; border-style: none none solid; border-color: currentcolor currentcolor transparent; border-image: initial; background: 0px center; font-style: inherit; font-variant: inherit; font-stretch: inherit; line-height: inherit; font-family: inherit; font-optical-sizing: inherit; font-size-adjust: inherit; font-kerning: inherit; font-feature-settings: inherit; font-variation-settings: inherit; font-language-override: inherit; font-size: 13px; font-weight: 500; color: var(--mut); padding: 14px 2px; cursor: pointer; white-space: nowrap; margin-bottom: -1px; letter-spacing: -0.01em;}}
+@media (prefers-reduced-motion: reduce){#produkt .pv-dash .cbar-bar{transition: none;}#produkt .pv-dash .rekord-puls{animation: auto ease 0s 1 normal none running none;}}
 
+/* ===== Vindu som ÉN skalert enhet ==============================================
+   Chrome ble tidligere tegnet i 1:1 mens innholdet var skalert 0,718 — kontroller og
+   URL-felt ble derfor for store i forhold til dashbordet. Nå ligger chrome INNE i
+   .pv-win, som er hele vinduet i designbredde og skaleres som én enhet. Ingen
+   px-verdi i chrome justeres isolert; alt er designpiksler. */
+#produkt .pv-winclip{overflow:hidden}
+#produkt .pv-win{transform-origin:top left;will-change:transform}
+/* Designbredden — ikke viewporten — bestemmer layouten. @media er strippet fra klonet
+   CSS, så navet står på fem faner uansett skjerm.
+     desktop: design 780 → kort 560 → skala 0,718
+     mobil  : design 560 → kort 264 → skala 0,471   (560 er MÅLT gulv: fem faner på én
+              rad, to KPI-kort på én rad, sju stolper, progressbar. To-linjers
+              «Estimert omsetning» på 560 er forventet og godtatt.)
+   264 er bredeste kort som holder peek ≥20px på 320: (320−264)/2 − 8 = 20. */
+#produkt .pv-desk .pv-win{width:var(--dw);transform:scale(var(--desk-s))}
+#produkt .pv-desk{--dw:780px;--desk-s:.718}
+/* (Mobil-telefonrammen for dashbordet er rullet tilbake 09.08 — dashbordet er alltid
+   browservindu i designbredde 780.) */
 
+#produkt .brw{background:#141414;border:1px solid #2a2a2a;border-radius:12px;overflow:hidden}
+#produkt .mock.on .brw{border-color:#4d8bff}
+#produkt .brw-bar{display:flex;align-items:center;gap:14px;padding:0 0 0 16px;
+  background:#101010;border-bottom:1px solid #222}
+#produkt .brw-url{flex:1;font:16px/1 'Inter',system-ui,sans-serif;color:#8a8a8a;background:#1a1a1a;
+  border-radius:9px;padding:10px 14px;margin:10px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Windows-rekkefølge: minimer · maksimer · lukk ytterst. Lik diameter, jevn avstand. */
+#produkt .brw-win{display:flex;align-items:center;gap:14px;padding-right:16px;flex:0 0 auto}
+#produkt .brw-win i{width:20px;height:20px;border-radius:50%;display:grid;place-items:center;
+  position:relative;color:#9a9a9a}
+#produkt .w-min::before{content:"";width:11px;height:1.6px;background:currentColor}
+#produkt .w-max::before{content:"";width:11px;height:11px;border:1.6px solid currentColor}
+#produkt .brw-win i.w-close{background:#e0574a;color:#fff}
+#produkt .w-close::before,#produkt .w-close::after{content:"";position:absolute;
+  width:10px;height:1.6px;background:currentColor;border-radius:1px}
+#produkt .w-close::before{transform:rotate(45deg)}
+#produkt .w-close::after{transform:rotate(-45deg)}
 
-.pv-img{width:100%;height:auto;display:block;-webkit-mask-image:linear-gradient(to right,transparent 0%,#000 6%,#000 94%,transparent 100%),linear-gradient(to bottom,transparent 0%,#000 5%,#000 90%,transparent 100%);-webkit-mask-composite:source-in;-webkit-mask-repeat:no-repeat;mask-image:linear-gradient(to right,transparent 0%,#000 6%,#000 94%,transparent 100%),linear-gradient(to bottom,transparent 0%,#000 5%,#000 90%,transparent 100%);mask-composite:intersect;mask-repeat:no-repeat}
-.pv-title{position:absolute;transform:translate(-50%,-50%);
-  color:#fff;font-weight:600;letter-spacing:-.01em;white-space:nowrap;
-  font-size:clamp(13px,1.25vw,17px);
-  font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Inter,system-ui,sans-serif;
-  text-shadow:0 1px 10px rgba(0,0,0,.7),0 0 2px rgba(0,0,0,.5);
-  pointer-events:none; z-index:2}
+/* ===== Animasjonsklasser — LEGGES OPPÅ klonet CSS, endrer den ikke ============ */
+/* Stolpene vokser med transform, ikke med height: layouthøyden må være konstant, ellers
+   måles klipphøyden fra en scrollHeight der stolpene ennå er 0px. */
+#produkt .pv-bar{transform-origin:bottom center;transform:scaleY(var(--g,1))}
+#produkt .pv-anim-slot.pv-on{border-color:var(--accent);color:var(--accent)}
+#produkt .pv-anim-btn{transform-origin:center;transition:transform .18s ease}
+#produkt .pv-anim-btn.pv-press{transform:scale(.96)}
+
+.scene-vp.paused #produkt .pv-anim-btn{transition:none}
+
+/* ===== MOBIL: scroll-snap-karusell, vannrett på alle bredder ===================
+   Den forrige peek-varianten feilet fordi scale() trakk naboens synlige kant innover
+   OPPÅ sentreringen, og kortbredden var i vw. Her er ingen scale på mobil, og bredden
+   er låst i px så peeken kan REGNES:
+     320 − 256 (kort) = 64 → 32px padding hver side; nabo starter 8px unna kanten
+     ⇒ 32 − 8 = 24px av HVER nabo synlig. Målt i testen, ikke antatt. */
+@media(max-width:760px){
+  .scene-sec{padding:52px 0 60px}
+  .scene-head{padding:0 20px}
+  .scene-vp{overflow:visible;padding:0}
+  .scene{gap:8px;padding:20px 32px;justify-content:flex-start;
+    overflow-x:auto;overflow-y:hidden;
+    scroll-snap-type:x mandatory;overscroll-behavior-x:contain;
+    scrollbar-width:none;-ms-overflow-style:none}
+  .scene::-webkit-scrollbar{display:none}
+  /* Ingen scale: kun opacity + brightness skiller aktivt fra inaktivt. */
+  .mock{scroll-snap-align:center;transform:none;opacity:.5;filter:brightness(.7);
+    transition:opacity .45s ease,filter .45s ease}
+  .mock.on{transform:none;opacity:1;filter:none}
+  #produkt .pv-phoneframe{width:256px}
+  #produkt .pv-phone{--ph-s:.7375}    /* skjerm 236 (256 − 2×9 padding − 2×1 border) / 320.
+                                         Sto .744 mot en skjerm på 238 — feil rammeregning.
+                                         Kun nød-fallback: JS regner samme tall fra layout. */
+  /* Dashbordet er ALLTID browservindu med desktop-layout. På mobil krympes
+     DESIGNBREDDEN til 560 (ikke produktets mobilvariant — fortsatt fem faner), og
+     kortet er 264px så vinduet faktisk får plass. Før dette var vinduet 560px inne i
+     et 256px kort, og fire stolper stakk utenfor. */
+  #produkt .pv-desk{--dw:560px;--desk-s:.471}
+  #produkt .pv-deskframe{width:264px}
+  .scene-cap{padding:0 20px;margin-top:14px}
+}
+@media(prefers-reduced-motion:reduce){
+  .mock,.cap,.scene,#produkt .pv-anim-btn,#produkt .crow.rad,#produkt .cal-pop{transition:none}
+  /* IKKE transform:none her. Kortene skal stå i ringposisjonene sine — det er
+     glidningen som skal bort, ikke plasseringen. Med transform:none kollapset ringen
+     til flex-rekkefølgen og det aktive kortet var ikke lenger sentrert. */
+  #produkt .crow.ny{transform:none;opacity:1}
+}
 </style>
 <style>
 .problem-section{background:#0a0a0a;display:flex;justify-content:center;padding:45px 24px 22px}
@@ -606,19 +1078,154 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 </section>
 
 
-<!-- ===== PRODUKTVISNING ===== -->
-<section class="pv-section" id="produkt">
-  <div class="pv-head">
-    <div class="pv-eyebrow">PRODUKTET</div>
-    <h2 class="pv-h2">Alt du trenger.</h2>
+<!-- ===== PRODUKTVISNING — levende scene =====
+     Tre KLONER: booking-modulen ordrett fra /henrik-fades, dashbordets KPI-kort og
+     månedsdiagram ordrett fra site/no/dashboard.html, kalenderen bygget i designsystemet.
+     Ingen dashboard-JS og ingen booking-JS er med — markupen er frosset med demodata.
+     [oversettelse: sv/da/en] -->
+<section class="scene-sec" id="produkt">
+  <div class="scene-head">
+    <div class="scene-eyebrow">PRODUKTET</div>
+    <h2 class="scene-h2">Alt du trenger.</h2>
   </div>
-  <div class="pv-wrap">
-    <div class="pv-imgmask">
-      <img class="pv-img" src="images/dashboard-produkt.png" alt="BarberHQ Dashboard">
+
+  <div class="scene-vp" id="sceneVp">
+    <div class="scene" id="scene">
+
+      <div class="mock pv-phone pv-phoneframe" data-i="0" role="button" tabindex="0" aria-label="Kalender">
+        <div class="iph"><div class="iph-screen"><div class="iph-island"></div>
+          <div class="pv-cal">
+            <div class="pv-cal-h"><div class="pv-cal-d">Torsdag 13.</div><div class="pv-cal-s"><b id="calCount">0</b> bookinger</div></div>
+            <!-- Tom fra start: dagen FYLLES mens man ser på. Sto det tre rader her og en
+                 fjerde poppet inn, var det ikke en dag som fylles — det var en liste med
+                 ett tillegg. -->
+            <div class="pv-cal-rows" id="calRows"></div>
+            <div class="cal-pop" id="calPop" aria-hidden="true"></div>
+          </div>
+        </div></div>
+      </div>
+
+      <div class="mock on pv-deskframe" data-i="1" role="button" tabindex="0" aria-label="Dashbord">
+        <!-- To rammer, samme klon. Markupen er duplisert med vilje: animasjonen treffer
+             begge via .pv-bar/.pv-rev, og bare én er synlig om gangen. Alternativet var
+             å bygge om rammen med JS ved hver resize. -->
+        <div class="pv-desk">
+          <div class="pv-winclip"><div class="pv-win">
+            <div class="brw">
+              <div class="brw-bar">
+                <span class="brw-url">trybarberhq.com/no/dashboard.html</span>
+                <span class="brw-win"><i class="w-min"></i><i class="w-max"></i><i class="w-close"></i></span>
+              </div>
+              <div class="brw-body"><div class="pv-dash">
+                <div class="wrap">
+                  <header class="top">
+                    <div class="logo">BarberHQ</div>
+                    <div class="who"><b>Grand Barber</b></div>
+                  </header>
+                  <nav class="nav" role="tablist">
+                    <button role="tab" aria-selected="true" data-panel="oversikt">Oversikt</button>
+                    <button role="tab" aria-selected="false" data-panel="vekst">Vekst</button>
+                    <button role="tab" aria-selected="false" data-panel="tjenester" class="nav-mer">Tjenester &amp; tider</button>
+                    <button role="tab" aria-selected="false" data-panel="design">Din side</button>
+                    <button role="tab" aria-selected="false" data-panel="abonnement" class="nav-mer">Konto</button>
+                    <div class="nav-mer-wrap">
+                      <button type="button" class="nav-mer-toggle" aria-expanded="false"><span>Mer</span> <span class="mer-caret">▾</span></button>
+                    </div>
+                  </nav>
+                </div>
+                <div class="wrap">
+                  <section class="panel active">
+                    <div class="periodbar">
+                      <div class="segs" role="tablist">
+                        <button role="tab" aria-selected="true" data-p="uke">Siste uke</button>
+                        <button role="tab" aria-selected="false" data-p="2uker">Siste 2 uker</button>
+                        <button role="tab" aria-selected="false" data-p="maaned">Denne måneden</button>
+                      </div>
+                      <div class="monthpick"><span>Tidligere:</span><select><option>—</option></select></div>
+                    </div>
+                    <p class="rangelabel">Siste 7 dager</p>
+                    <div class="stats">
+                      <div class="stat"><div class="l">Kunder</div>
+                        <div class="v info pv-count" data-to="30">30</div>
+                        <div class="sub mut">fullførte klipp</div></div>
+                      <div class="stat"><div class="l">Estimert omsetning</div>
+                        <div class="v pv-rev" data-to="10550" style="color:#35d07a"><span class="pv-rev-n">10 550</span><span class="u"> kr</span></div>
+                        <div class="sub mut">fra fullførte timer</div>
+                        <div class="rekord-note"></div></div>
+                    </div>
+                    <div class="week-insight">
+                      <div class="wi-record">
+                        <div class="wi-track"><div class="wi-fill pv-fill"></div></div>
+                        <div class="wi-text pv-witext"></div>
+                      </div>
+                    </div>
+                    <div class="chart-wrap">
+                      <div class="chart-header"><div class="chart-head-default">
+                        <p class="block-h">Omsetning · 10 550 kr</p>
+                        <p class="block-s">Estimert, siste 7 dager</p>
+                      </div></div>
+                      <div class="chartbars">
+                        <div class="cbar-col"><div class="cbar-bar pv-bar" data-h="98" style="height:98px;--bar-top:rgb(112,181,225);--bar-bot:rgb(58,128,173)"></div><div class="cbar-lbl"><span>Man</span><span class="cbar-lbl-sub">04.08</span></div></div>
+                        <div class="cbar-col"><div class="cbar-bar pv-bar" data-h="117" style="height:117px;--bar-top:rgb(110,194,198);--bar-bot:rgb(55,142,146)"></div><div class="cbar-lbl"><span>Tir</span><span class="cbar-lbl-sub">05.08</span></div></div>
+                        <div class="cbar-col"><div class="cbar-bar pv-bar" data-h="78" style="height:78px;--bar-top:rgb(115,167,250);--bar-bot:rgb(61,114,199)"></div><div class="cbar-lbl"><span>Ons</span><span class="cbar-lbl-sub">06.08</span></div></div>
+                        <div class="cbar-col"><div class="cbar-bar pv-bar" data-h="137" style="height:137px;--bar-top:rgb(107,208,172);--bar-bot:rgb(52,156,118)"></div><div class="cbar-lbl"><span>Tor</span><span class="cbar-lbl-sub">07.08</span></div></div>
+                        <div class="cbar-col"><div class="cbar-bar pv-bar" data-h="150" style="height:150px;--bar-top:rgb(104,218,154);--bar-bot:rgb(50,166,101)"></div><div class="cbar-lbl"><span>Fre</span><span class="cbar-lbl-sub">08.08</span></div></div>
+                        <div class="cbar-col"><div class="cbar-bar pv-bar" data-h="108" style="height:108px;--bar-top:rgb(111,188,211);--bar-bot:rgb(56,135,159)"></div><div class="cbar-lbl"><span>Lør</span><span class="cbar-lbl-sub">09.08</span></div></div>
+                        <div class="cbar-col"><div class="cbar-bar pv-bar" data-h="4" style="height:4px;--bar-top:rgb(101,110,131);--bar-bot:rgb(46,55,77)"></div><div class="cbar-lbl"><span>Søn</span><span class="cbar-lbl-sub">10.08</span></div></div>
+                      </div>
+                    </div>
+                  </section>
+                </div>
+              </div></div>
+            </div>
+          </div></div>
+        </div>
+      </div>
+
+      <div class="mock pv-phone pv-phoneframe" data-i="2" role="button" tabindex="0" aria-label="Bookingside">
+        <div class="iph"><div class="iph-screen"><div class="iph-island"></div>
+          <div class="pv-book vis-sheet" id="pvBook"><div class="pv-scale">
+            <div class="pv-stage">
+              <section class="cover">
+                <h1>Grand Barber</h1>
+                <p class="sub">Fades &amp; klassiske klipp</p>
+                <a class="addr" href="#" onclick="return false">
+                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
+                  <span>Storgata 12, 0155 Oslo</span>
+                </a>
+                <p class="bio">Presisjon i hvert klipp. Skarpe fades.</p>
+                <div class="cover-gallery">
+                  <img src="images/produkt/galleri-1.webp" alt="">
+                  <img src="images/produkt/galleri-2.webp" alt="">
+                  <img src="images/produkt/galleri-3.webp" alt="">
+                  <img src="images/produkt/galleri-4.webp" alt="">
+                </div>
+              </section>
+              <button class="see-float" type="button">Se tjenester <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
+              <a class="cover-manage-link" href="#" onclick="return false">Har du time? Endre eller avbestill</a>
+              <section class="sheet" aria-hidden="false"><div class="sheet-inner"><button class="back-sheet" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Tilbake</button><div class="acc-wrap"><div class="acc-section done"><div class="acc-hd"><span class="acc-n">1</span><span class="acc-t">Velg tjeneste</span><span class="acc-chk">&#10003;</span><span class="acc-sum">Klipp · 300 kr</span><button class="acc-endre" type="button">Endre</button></div><div class="acc-bd"><div class="acc-in"><div class="acc-content"><p class="bk-svc-lbl">Velg tjeneste</p><div><button class="svc-card" data-id="414103eb-eaa0-46c2-9d48-3d36cbdb231f" data-min="30" data-price="300" data-name="Klipp" type="button"><div class="svc-lft"><div class="svc-nm">Klipp</div><div class="svc-meta">30 min · 300 kr</div></div><span class="chk">◯</span></button><div class="addon-group" hidden><p class="addon-lbl">Legg til</p><button class="addon-row" data-id="8e8c8a48-1e9e-4606-ada3-d66eee920ed1" data-min="15" data-price="100" data-name="Skjeggtrim" type="button"><span class="addon-box"><span class="addon-tick" aria-hidden="true">✓</span></span><span class="addon-nm">Skjeggtrim</span><span class="addon-pr">+100 kr</span></button><button class="addon-row" data-id="b0e03131-5695-4adc-8a5c-f84c6da3b651" data-min="5" data-price="50" data-name="Vask" type="button"><span class="addon-box"><span class="addon-tick" aria-hidden="true">✓</span></span><span class="addon-nm">Vask</span><span class="addon-pr">+50 kr</span></button></div></div><button class="acc-next pv-anim-btn" type="button" disabled>Velg time</button><p class="slot-msg" style="text-align:left;padding:8px 0 0">Velg minst &eacute;n tjeneste for &aring; booke</p></div></div></div></div><div class="acc-section"><div class="acc-hd"><span class="acc-n">2</span><span class="acc-t">Dato og tid</span><span class="acc-chk">&#10003;</span><span class="acc-sum">tor 13. aug · 11:00</span><button class="acc-endre" type="button">Endre</button></div><div class="acc-bd open"><div class="acc-in"><div class="acc-content"><div class="full-card"><p class="full-card-msg"></p><button class="full-card-next" type="button" style="display:none"></button></div><div class="date-strip"></div><div class="date-strip"><button class="date-chip full" type="button"><span class="dc-wd">man</span><span class="dc-mo">aug</span><span class="dc-d">10</span><span class="dc-dot"></span><span class="dc-full">FULLT</span></button><button class="date-chip open" type="button"><span class="dc-wd">tir</span><span class="dc-mo">aug</span><span class="dc-d">11</span><span class="dc-dot"></span><span class="dc-full">FULLT</span></button><button class="date-chip open" type="button"><span class="dc-wd">ons</span><span class="dc-mo">aug</span><span class="dc-d">12</span><span class="dc-dot"></span><span class="dc-full">FULLT</span></button><button class="date-chip open pv-dag" type="button"><span class="dc-wd">tor</span><span class="dc-mo">aug</span><span class="dc-d">13</span><span class="dc-dot"></span><span class="dc-full">FULLT</span></button><button class="date-chip open" type="button"><span class="dc-wd">fre</span><span class="dc-mo">aug</span><span class="dc-d">14</span><span class="dc-dot"></span><span class="dc-full">FULLT</span></button><button class="date-chip open" type="button"><span class="dc-wd">lør</span><span class="dc-mo">aug</span><span class="dc-d">15</span><span class="dc-dot"></span><span class="dc-full">FULLT</span></button><button class="date-chip closed" type="button" disabled><span class="dc-wd">søn</span><span class="dc-mo">aug</span><span class="dc-d">16</span><span class="dc-dot"></span><span class="dc-full">FULLT</span></button></div><p class="slot-msg pv-slothint" style="display:none">Velg en dato for å se ledige tider</p><p class="slots-hdr pv-slotshdr">Ledige tider</p><div class="slots-grid"><button class="slot-btn" type="button">09:00</button><button class="slot-btn" type="button">09:30</button><button class="slot-btn" type="button">10:00</button><button class="slot-btn" type="button">10:30</button><button class="slot-btn pv-slot pv-anim-slot" type="button">11:00</button><button class="slot-btn" type="button">11:30</button><button class="slot-btn" type="button">12:00</button><button class="slot-btn" type="button">12:30</button><button class="slot-btn" type="button">13:00</button><button class="slot-btn" type="button">13:30</button><button class="slot-btn" type="button">14:00</button><button class="slot-btn" type="button">14:30</button><button class="slot-btn" type="button">15:00</button><button class="slot-btn" type="button">15:30</button><button class="slot-btn" type="button">16:00</button><button class="slot-btn" type="button">16:30</button></div><p class="slot-msg hidden"></p><button class="next2-btn pv-next2 pv-anim-btn" type="button">Til bekreftelse · 30 min · 300 kr</button></div></div></div></div><div class="acc-section locked"><div class="acc-hd"><span class="acc-n">3</span><span class="acc-t">Dine opplysninger</span><span class="acc-chk">&#10003;</span><span class="acc-sum"></span></div><div class="acc-bd"><div class="acc-in"><div class="acc-content"><div class="ref-slot"></div><div class="sum-box"><div class="sum-row"><span>Tjeneste</span><strong>Klipp</strong></div><div class="sum-row"><span>Tid</span><strong>torsdag 13. aug, 11:00</strong></div><div class="sum-row"><span>Total</span><strong>30 min · 300 kr</strong></div></div><div class="fld"><label for="cname">Navn</label><input type="text" placeholder="Fornavn Etternavn" autocomplete="name" enterkeyhint="next"></div><div class="fld"><label for="cphone">Telefon</label><input type="tel" placeholder="91 23 45 67" autocomplete="tel" inputmode="tel" enterkeyhint="done"></div><div class="consent-slot shown"><label class="consent-box"><input type="checkbox"><span class="consent-txt">Ja, send meg SMS fra Grand Barber om ny klipp og verve-bonuser. Meld av n&aring;r som helst.</span></label></div><p class="form-err"></p><button class="sub-btn pv-anim-btn" type="button">Bekreft booking</button><p class="pay-note">Ingen betaling n&aring; &mdash; du betaler hos barbereren.</p></div></div></div></div></div><div class="success-wrap"><div class="success-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><h2 class="success-h">Booking bekreftet!</h2><p class="success-sub">Vi gleder oss til å se deg.</p><div class="success-det"><div class="det-row"><span class="det-lbl">Navn</span><span class="det-val">Marcus</span></div><div class="det-row"><span class="det-lbl">Tjeneste</span><span class="det-val">Klipp</span></div><div class="det-row"><span class="det-lbl">Tid</span><span class="det-val">torsdag 13. aug, 11:00</span></div><div class="det-row"><span class="det-lbl">Total</span><span class="det-val">30 min · 300 kr</span></div></div><button class="manage-link-btn" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Endre/avbestill</button></div><p class="bk-footer" style="padding:0 0 4px">Bygget med <a href="https://trybarberhq.com">BarberHQ</a></p></div>
+              </section>
+            </div>
+          </div>
+          </div>
+        </div></div>
+      </div>
     </div>
-    <div class="pv-title" style="left:50.5%;top:40.3%;">Kalender</div>
-    <div class="pv-title" style="left:68.7%;top:39.9%;">Forside</div>
-    <div class="pv-title" style="left:88.1%;top:39.7%;">Tjenester</div>
+  </div>
+
+  <div class="scene-cap" id="sceneCap">
+    <div class="cap" data-i="0">
+      <h3>Synket med kalenderen du allerede bruker</h3>
+      <p>Hver booking dyttes automatisk til din egen Google Kalender. Du ser hele dagen der du allerede er — ingen ny app å sjekke.</p>
+    </div>
+    <div class="cap on" data-i="1">
+      <h3>Full oversikt i dashbordet</h3>
+      <p>Kunder, omsetning og ukerekord — samlet på ett sted. Du ser med én gang om uka er bedre enn den forrige.</p>
+    </div>
+    <div class="cap" data-i="2">
+      <h3>Din egen bookingside</h3>
+      <p>Kundene ser tjenestene dine, prisene og arbeidet ditt — og booker selv på sekunder. Din stil, dine farger, dine kunder.</p>
+    </div>
   </div>
 </section>
 
@@ -844,7 +1451,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
         <h5>Slik fungerer det</h5>
         <a href="funksjoner.html">Funksjoner</a>
         <a href="priser.html">Priser</a>
-        <a href="#alt-pa-ett-sted">Alt på ett sted</a>
+        <a href="#produkt">Alt på ett sted</a>
         <a href="kom-i-gang.html">Kom i gang</a>
       </div>
       <div class="foot-col">
@@ -912,19 +1519,646 @@ document.querySelectorAll('#nav-panel a').forEach(function(a){
 var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.12});
 document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
 
-// Alt på ett sted — slideshow
+// Produktvisning — levende scene.
+// Vannrett på ALLE bredder. Desktop: fokus roterer med transform. Mobil (<=760):
+// scroll-snap-karusell der scrollposisjonen bestemmer hvem som er aktiv.
 (function(){
-  var cur=0,total=3;
-  var slides=document.querySelectorAll('.slide'),tabs=document.querySelectorAll('.tab'),dots=document.querySelectorAll('.dot');
-  function show(i){cur=(i+total)%total;
-    slides.forEach(function(s){s.classList.toggle('on',+s.dataset.i===cur);});
-    tabs.forEach(function(t){t.classList.toggle('on',+t.dataset.i===cur);});
-    dots.forEach(function(d){d.classList.toggle('on',+d.dataset.i===cur);});}
-  var __n=document.getElementById('next'),__p=document.getElementById('prev');
-  if(__n)__n.onclick=function(){show(cur+1);};
-  if(__p)__p.onclick=function(){show(cur-1);};
-  tabs.forEach(function(t){t.onclick=function(){show(+t.dataset.i);};});
-  dots.forEach(function(d){d.onclick=function(){show(+d.dataset.i);};});
+  var vp=document.getElementById('sceneVp'); if(!vp)return;
+  var scene=document.getElementById('scene');
+  var kort=[].slice.call(scene.querySelectorAll('.mock'));
+  var caps=[].slice.call(document.querySelectorAll('#sceneCap .cap'));
+  var REDUSERT=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var erMobil=function(){ return window.innerWidth<=760; };
+
+  // DOM-rekkefølge er kalender|dashbord|booking. Fokusrekkefølgen er en ANNEN:
+  // dashbordet er inngangen, kalenderen konsekvensen, bookingsida der kunden er.
+  var ORDEN=[1,0,2], pos=0, aktiv=1;
+  var tAuto=null, tKal=null, tBook=[], synlig=false, hover=false;
+  var brukerHarTatt=false;   // settes ved første touch/manuelle scroll — permanent
+  var fokusStart=Date.now(); // når det aktive kortet SIST ble aktivt (dvelleklokkas nullpunkt)
+  var klikkStyrt=false;      // brukeren har klikket ⇒ hover skal ikke fryse rotasjonen
+
+  function tegn(i){
+    if(i===aktiv && document.querySelector('#scene .mock.on'))return;
+    aktiv=i;
+    kort.forEach(function(k){ k.classList.toggle('on', +k.dataset.i===i); });
+    caps.forEach(function(c){ c.classList.toggle('on', +c.dataset.i===i); });
+    // Sekvensen starter FORFRA når kortet får fokus, og bare den ene kjører.
+    // Før løp alle tre videre usynlig, hver med sin egen rundetid, mens fokus flyttet seg
+    // etter en annen takt — da landet blikket midt i sekvensen: bookingskjemaet sto ferdig
+    // utfylt med «Marcus» og «900 00 000» før man rakk å se at det ble skrevet, og selve
+    // poenget — at kunden fyller inn to felter — var over før kortet ble sett på.
+    // Dvelletiden utledes nå av sekvenslengden (se SEKV/HVILE), så de kan ikke drive fra
+    // hverandre igjen.
+    startSekvens(i);            // setter fokusStart
+    // Sto det allerede en timer, er den armet mot et gammelt nullpunkt. Arm på nytt fra
+    // det ferske. Kommer vi fra autoplay er tAuto null her, og da armer den kallende
+    // funksjonen selv rett etterpå — ingen dobbeltarmering.
+    if(tAuto){ stoppAuto(); startAuto(klikkStyrt); }
+    plasserRing(true);
+  }
+
+  // Skalert innhold bidrar ikke til foreldrens layouthøyde. Uten dette står
+  // browser-ramma med et tomrom under diagrammet.
+  // Et skalert element bidrar ikke til foreldrens layouthøyde. Klippene får derfor
+  // høyden satt eksplisitt = innholdets høyde × skala. Leser den DEKLARERTE variabelen;
+  // en udeklarert var() gir tom streng → NaN → feil fallback (ga 164px tomrom før).
+  // Telefonkortene: designbredden er 320, skjermen er hva rammen faktisk gir. Skalaen
+  // regnes derfor ut, ikke skrives ned — hardkodede .85/.744 pekte på rammebredder som
+  // ikke stemte lenger, og innholdet ble klippet uten at noe feilet.
+  // ⚠ MÅL LAYOUT, IKKE PIKSLER PÅ SKJERMEN.
+  // getBoundingClientRect() gir den TRANSFORMERTE bredden. Kortene skaleres av fokus-
+  // ringen (.75 på siden, 1 i midten), så et sidekort målte 202,5px der skjermflaten er
+  // 270px, og --ph-s ble 0,6328 i stedet for 0,84375: innholdet ble rendret for smalt med
+  // tomrom på begge sider. Verdien var altså avhengig av HVILKET kort som tilfeldigvis
+  // hadde fokus i måleøyeblikket — og «rettet seg selv» først når kortet sto i midten
+  // under en resize.
+  //
+  // Det var IKKE en timingfeil. Målt likt ved DOMContentLoaded, load, fonts.ready og
+  // +4s: 202,5 hver gang. document.fonts.ready endrer ingenting, og en ny timer eller et
+  // større tall ville ikke rørt årsaken.
+  //
+  // offsetWidth er layoutbredden — upåvirket av transform — og kommer fra CSS:
+  // .pv-phoneframe 290px − .iph padding 2×9 − border 2×1 = 270. Én kilde til sannhet,
+  // ingen dupliserte tall i JS.
+  function settTelefonSkala(){
+    [].forEach.call(document.querySelectorAll('#scene .pv-phone'),function(kort){
+      var skjerm=kort.querySelector('.iph-screen'), sc=kort.querySelector('.pv-scale');
+      // Kalenderkortet har ingen .pv-scale: .pv-cal er bygget i designsystemet og fyller
+      // skjermflaten i naturlig størrelse. Det skal ikke ha --ph-s, og hopper ut her.
+      if(!skjerm||!sc)return;
+      var b=skjerm.offsetWidth;
+      if(!(b>0))return;
+      kort.style.setProperty('--ph-s', (Math.round(b/320*10000)/10000));
+      sc.style.height=Math.round(320*19.5/9)+'px';   // 693 = skjermflaten i designpiksler
+    });
+  }
+
+  function settRammehoyde(){
+    [].forEach.call(document.querySelectorAll('#scene .pv-winclip'),function(klipp){
+      var win=klipp.querySelector('.pv-win'); if(!win)return;
+      var sk=parseFloat(getComputedStyle(win).transform.split(/[(,]/)[1]);
+      if(!(sk>0)) sk=1;
+      klipp.style.height=Math.round(win.scrollHeight*sk)+'px';
+    });
+  }
+
+  // Dashbord-animasjon: stolpene vokser og begge KPI-tall teller opp SYNKRONT over
+  // samme 4,5 s. Én gang per fokus.
+  //
+  // 4,5 s. Veien hit var 1,4 → 3,5 → 4,5: på 1,4 var tallene ferdige før øyet rakk å
+  // feste seg, og på 3,5 vokste de fortsatt for kjapt til å leses mens de steg.
+  // Kurven er ease-out (1-(1-p)³) hele veien; det er varigheten som er strukket.
+  //
+  // TO SKRUER hvis tempoet skal endres igjen, og de gjør IKKE det samme:
+  //   DASH_SEKV — hvor lang tid det tar totalt.
+  //   eksponenten i 1-(1-p)^n — hvor FRONTTUNG stigningen er. Med kubisk (n=3) er to
+  //   tredeler av beløpet på plass etter en tredel av tida; det er derfor starten kjennes
+  //   rask selv når totalen er lang. Lavere n gir jevnere fart, høyere n mer byks.
+  // Stolpene og begge KPI-tallene deler samme p, så de kan ikke komme i utakt.
+  //
+  // ⚠ GULL-TIMINGEN ER DEMO-KOREOGRAFI, IKKE PRODUKTATFERD. I ekte dashboard kjører
+  // applyRekord() én gang ved render og er ikke koblet til noe count-up — gullet er
+  // enten på eller av fra første frame. Her lar vi det slå inn idet omsetningstallet
+  // passerer forrige rekord (10 100), fordi det er selve poenget vi viser fram.
+  // Tilstandene som settes er derimot produktets EKTE: rekord-gull + rekord-puls på
+  // omsetnings-KPI-en alene, progressbaren i .rekord, og #rekordNote tømt av baren.
+  var FORRIGE_REKORD=10100, DASH_SEKV=4500;
+  function tellOpp(){
+    var rev=document.querySelector('#scene .pv-rev'), cnt=document.querySelector('#scene .pv-count'),
+        fill=document.querySelector('#scene .pv-fill'), txt=document.querySelector('#scene .pv-witext'),
+        note=document.querySelector('#scene .rekord-note'),
+        bars=[].slice.call(document.querySelectorAll('#scene .pv-bar'));
+    if(!rev||!cnt)return;
+    var revN=rev.querySelector('.pv-rev-n'), maalRev=+rev.dataset.to, maalCnt=+cnt.dataset.to;
+    function sett(v){ if(revN) revN.textContent=Math.round(v).toLocaleString('nb-NO').replace(/\u00A0/g,' '); }
+
+    if(REDUSERT){
+      sett(maalRev); cnt.textContent=maalCnt;
+      bars.forEach(function(b){ b.style.setProperty('--g','1'); });
+      rev.classList.add('rekord-gull');
+      if(fill){ fill.style.width='100%'; fill.classList.add('rekord'); }
+      if(txt){ txt.textContent='Ny rekord denne uka! 🔥'; txt.classList.add('rekord'); }
+      if(note) note.textContent='';
+      return;
+    }
+
+    rev.classList.remove('rekord-gull','rekord-puls');
+    if(fill){ fill.style.width='0%'; fill.classList.remove('rekord'); }
+    if(txt){ txt.textContent=''; txt.classList.remove('rekord'); }
+    if(note) note.textContent='';
+    var gullSatt=false, t0=null;
+    function steg(ts){
+      if(!t0)t0=ts;
+      var p=Math.min((ts-t0)/DASH_SEKV,1), e=1-Math.pow(1-p,3);
+      sett(maalRev*e);
+      cnt.textContent=Math.round(maalCnt*e);
+      bars.forEach(function(b){ b.style.setProperty('--g', e.toFixed(3)); });
+      if(fill) fill.style.width=Math.min(100,Math.round(maalRev*e/FORRIGE_REKORD*100))+'%';
+      if(!gullSatt && maalRev*e>=FORRIGE_REKORD){
+        gullSatt=true;
+        rev.classList.add('rekord-gull','rekord-puls');   // ekte tilstand, demo-timing
+      }
+      if(p<1) requestAnimationFrame(steg);
+      else {
+        if(fill){ fill.style.width='100%'; fill.classList.add('rekord'); }
+        if(txt){ txt.textContent='Ny rekord denne uka! 🔥'; txt.classList.add('rekord'); }
+        if(note) note.textContent='';                     // baren eier budskapet
+      }
+    }
+    sett(0); cnt.textContent='0';
+    bars.forEach(function(b){ b.style.setProperty('--g','0'); });
+    requestAnimationFrame(steg);
+  }
+
+
+  // Kalenderen: dagen fylles fra TOM. For hver booking spretter et popup-kort inn
+  // sentrert, krymper inn i raden sin, raden tennes fargekodet og telleren i headeren
+  // øker. Fem bookinger på ~5,4s.
+  //
+  // Marcus 11:00 Klipp er samme booking som bookingkortet nettopp gjennomførte — samme
+  // kunde, samme tjeneste, samme klokkeslett. De to kortene forteller én historie.
+  var KAL_BOOKINGER=[
+    {t:'09:00', n:'Jonas',  s:'Skinnfade',      k:'k-a'},
+    {t:'10:00', n:'Adam',   s:'Klipp + skjegg', k:'k-c'},
+    {t:'11:00', n:'Marcus', s:'Klipp',          k:'k-b'},
+    {t:'13:30', n:'Noah',   s:'Klipp',          k:'k-b'},
+    {t:'15:00', n:'Elias',  s:'Skinnfade',      k:'k-a'},
+  ];
+  // SEKVENSLENGDE = tid til kortet står stille i SLUTTILSTANDEN sin. Ikke rundetid:
+  // sekvensen løkker ikke lenger, den spilles én gang per fokus og blir stående.
+  var KAL_STEG=1100, KAL_SEKV=KAL_STEG*(KAL_BOOKINGER.length-1)+950;        // 5350ms
+  var tKalListe=[];
+  function kalenderLoop(){
+    if(REDUSERT) return;
+    var rows=document.getElementById('calRows'), pop=document.getElementById('calPop'),
+        teller=document.getElementById('calCount'), cal=rows&&rows.closest('.pv-cal');
+    if(!rows||!pop||!teller||!cal)return;
+    function T(fn,ms){ tKalListe.push(setTimeout(fn,ms)); }
+
+    function nullstill(){
+      rows.innerHTML=''; teller.textContent='0';
+      pop.className='cal-pop'; pop.style.transform=''; pop.innerHTML='';
+    }
+    // Skalaen mellom skjermpiksler og designpiksler. Transformen regnes i elementets EGET
+    // koordinatsystem, mens getBoundingClientRect gir skjermpiksler — uten delingen flyr
+    // kortet ~35% for langt.
+    function skala(){
+      var x=1,e=cal;
+      while(e&&e!==document.body){ var tr=getComputedStyle(e).transform;
+        if(tr&&tr!=='none') x*=parseFloat(tr.split(/[(,]/)[1])||1; e=e.parentElement; }
+      return x||1;
+    }
+    function leggTil(b,i){
+      // 1. Raden legges inn USYNLIG, så den har en ekte posisjon å fly mot.
+      var rad=document.createElement('div');
+      rad.className='crow rad '+b.k;
+      rad.innerHTML='<span class="ct">'+b.t+'</span><span class="cn">'+b.n+'</span>'+
+                    '<span class="cs">'+b.s+'</span>';
+      rows.appendChild(rad);
+      // 2. Popup-kortet spretter inn sentrert.
+      pop.className='cal-pop '+b.k;
+      pop.style.transform='';
+      pop.innerHTML='<div class="cal-pop-n">'+b.n+'</div>'+
+                    '<div class="cal-pop-s">'+b.s+'</div>'+
+                    '<div class="cal-pop-t">'+b.t+'</div>';
+      T(function(){ pop.classList.add('inn'); },20);
+      // 3. …og krymper inn i raden sin.
+      T(function(){
+        var sk=skala();
+        var rp=pop.getBoundingClientRect(), rr=rad.getBoundingClientRect();
+        var dx=((rr.left+rr.width/2)-(rp.left+rp.width/2))/sk;
+        var dy=((rr.top+rr.height/2)-(rp.top+rp.height/2))/sk;
+        pop.classList.add('fly');
+        pop.style.transform='translate(calc(-50% + '+Math.round(dx)+'px), calc(-50% + '+
+          Math.round(dy)+'px)) scale(.28)';
+        pop.style.opacity='0';
+      },560);
+      // 4. Raden tennes og telleren øker i det kortet lander.
+      T(function(){
+        rad.classList.add('inn');
+        teller.textContent=String(i+1);
+        pop.className='cal-pop'; pop.style.transform=''; pop.style.opacity='';
+      },900);
+    }
+
+    nullstill();
+    KAL_BOOKINGER.forEach(function(b,i){ T(function(){ leggTil(b,i); }, i*KAL_STEG); });
+  }
+
+  // Bookingdemoen spiller HELE reisen: velg tid → åpne «Dine opplysninger» → skriv navn
+  // → skriv telefon → bekreft → kvittering. Utfyllingen er et eget steg, ikke noe som
+  // bare er der: det er selve poenget at kunden fyller inn to felter og er ferdig.
+  //
+  // Tegn-for-tegn med vilje. Rolig tempo er premisset — en kunde som ser demoen skal
+  // rekke å lese hva som skjer, ikke gjette. Det koster sekunder, og de sekundene er
+  // grunnen til at kortet får lengre dvelding enn de to andre (se SEKV/HVILE).
+  //
+  // Klonen kan ikke scrolle (statisk ark inne i overflow:hidden), så «scrollingen» til
+  // skjemaet gjøres med --pv-scroll. Verdien MÅLES etter at trekkspillet har åpnet seg:
+  // .acc-bd bruker grid-template-rows 0fr→1fr over 250ms, og måler man før den er ferdig,
+  // er trinn 3 fortsatt null høyt og svaret blir «ingen overflyt».
+  // Til bekreftelsen står på skjermen. Der ENDER reisen; den nullstilles først når kortet
+  // får fokus igjen, ikke mens ingen ser på.
+  var BOOK_SEKV=11500;
+  function bookingLoop(){
+    if(REDUSERT) return;
+    var b=document.getElementById('pvBook');
+    var slot=b.querySelector('.pv-anim-slot'), btn=b.querySelector('.pv-next2');
+    var sek=b.querySelectorAll('.acc-section');
+    var navn=b.querySelector('input[autocomplete="name"]'),
+        tlf =b.querySelector('input[autocomplete="tel"]'),
+        send=b.querySelector('.sub-btn'),
+        seKnapp=b.querySelector('.see-float'),
+        neste1=b.querySelector('.acc-next'),
+        svc=b.querySelector('.svc-card'),
+        dag=b.querySelector('.pv-dag'),
+        hint=b.querySelector('.pv-slothint'),
+        hdr=b.querySelector('.pv-slotshdr'),
+        rutenett=b.querySelector('.slots-grid');
+    if(!slot||!btn||sek.length<3||!navn||!tlf||!send||!seKnapp||!neste1||!svc||!dag)return;
+    function T(fn,ms){ tBook.push(setTimeout(fn,ms)); }
+
+    // Tilbake til FORSIDEN, ikke til datosteget: reisen starter der en kunde starter.
+    function nullstill(){
+      b.classList.remove('vis-sheet','vis-success','vis-scroll');
+      b.style.setProperty('--pv-scroll','0px');
+      slot.classList.remove('pv-on','sel');
+      svc.classList.remove('sel'); neste1.disabled=true;
+      sek[0].classList.remove('done');
+      sek[0].querySelector('.acc-bd').classList.add('open');
+      sek[1].classList.add('locked');
+      sek[1].querySelector('.acc-bd').classList.remove('open');
+      sek[2].classList.add('locked');
+      sek[2].querySelector('.acc-bd').classList.remove('open');
+      velgDato(false);
+      navn.value=''; tlf.value='';
+      [seKnapp,neste1,btn,send].forEach(function(x){ if(x)x.classList.remove('pv-press'); });
+    }
+    // Skriver ett tegn av gangen. Hver timeout legges i tBook, så stoppMikro() rydder
+    // dem når kortet går ut av syne midt i en setning.
+    function skriv(felt, tekst, start, tegnMs){
+      for(var i=1;i<=tekst.length;i++)
+        (function(n){ T(function(){ felt.value=tekst.slice(0,n); }, start+n*tegnMs); })(i);
+      return start+tekst.length*tegnMs;
+    }
+    // Tjenestevalget: kortet hukes av, og «Velg time» blir klikkbar — akkurat som når
+    // en kunde velger. Knappen ligger disabled i markupen, som i modulen.
+    function velgTjeneste(på){
+      svc.classList.toggle('sel',på);
+      neste1.disabled=!på;
+    }
+    // Datosteget: ingen dato valgt ⇒ hjelpetekst framme, ingen tider, videre-knapp av.
+    function tilDatoSteg(){
+      sek[0].classList.add('done');
+      sek[0].querySelector('.acc-bd').classList.remove('open');
+      sek[1].classList.remove('locked');
+      sek[1].querySelector('.acc-bd').classList.add('open');
+      velgDato(false);
+    }
+    function velgDato(på){
+      dag.classList.toggle('sel',på);
+      if(hint) hint.style.display = på?'none':'';
+      if(hdr) hdr.style.display = på?'':'none';
+      if(rutenett) rutenett.style.display = på?'':'none';
+      btn.disabled=true;                    // tid må velges før «Til bekreftelse»
+    }
+    function tilSkjemaet(){
+      sek[1].classList.add('done');
+      sek[1].querySelector('.acc-bd').classList.remove('open');
+      sek[2].classList.remove('locked');
+      sek[2].querySelector('.acc-bd').classList.add('open');
+      b.classList.add('vis-scroll');
+    }
+    function settScroll(){
+      var skjerm=b.closest('.iph-screen'), notat=b.querySelector('.pay-note');
+      if(!skjerm||!notat)return;
+      var s0=skjerm.getBoundingClientRect(), bunn=notat.getBoundingClientRect().bottom;
+      var sk=1, e=b;
+      while(e&&e!==document.body){ var tr=getComputedStyle(e).transform;
+        if(tr&&tr!=='none') sk*=parseFloat(tr.split(/[(,]/)[1])||1; e=e.parentElement; }
+      var overflyt=(bunn-(s0.bottom-24))/sk;
+      b.style.setProperty('--pv-scroll', (overflyt>0?-Math.ceil(overflyt):0)+'px');
+    }
+
+    // ── Reisen, tilstand for tilstand ────────────────────────────────────────
+    // Sekvensen hoppet før rett inn på datosteget: forsiden og tjenestevalget ble
+    // aldri vist, selv om de er to av de seks godkjente tilstandene. Nå spilles alle
+    // seks — showcase → se tjenester → tjenestevalg → dato → tid → opplysninger →
+    // bekreftelse — og hvert trykk har en synlig knapperespons før tilstanden skifter,
+    // så det leses som at NOEN bruker sida, ikke som at skjermer byttes ut.
+    var trykk=function(el,ms){ if(!el)return;
+      T(function(){ el.classList.add('pv-press'); },ms);
+      T(function(){ el.classList.remove('pv-press'); },ms+250); };
+
+    nullstill();
+    //  0,0–2,0  forsiden (showcase) står
+    trykk(seKnapp,2000);
+    T(function(){ b.classList.add('vis-sheet'); },2400);          // → tjenestevalg
+    T(function(){ velgTjeneste(true); },3200);                    // kortet hukes av
+    trykk(neste1,4000);
+    T(function(){ tilDatoSteg(); },4400);                         // → dato, ingen valgt
+    T(function(){ velgDato(true); },5200);                        // → tider kommer fram
+    T(function(){ slot.classList.add('pv-on','sel'); btn.disabled=false; },6000);  // → tid valgt
+    T(function(){ slot.classList.remove('pv-on'); },6400);
+    trykk(btn,6800);
+    T(tilSkjemaet,7200);                                          // → dine opplysninger
+    T(settScroll,7600);                    // etter trekkspillets 250ms, ikke før
+    skriv(navn,'Marcus',8000,110);         // 8000 →  8660
+    skriv(tlf,'900 00 000',9200,110);      // 9200 → 10300
+    trykk(send,11000);
+    T(function(){ b.classList.add('vis-success'); },11500);       // → bekreftelse
+    // Ingen T(nullstill) og ingen ny runde her: kortet skal BLI stående på bekreftelsen.
+    // Nullstillingen skjer øverst i denne funksjonen, altså neste gang kortet får fokus.
+  }
+
+  // ── Ring-karusell (kun desktop) ────────────────────────────────────────────
+  // Det aktive kortet ROTERER inn i midten i stedet for å vokse der det står. Kortene
+  // ligger fast i DOM-en; det er transform som flytter dem. Reordering av flex-barn ble
+  // vurdert og forkastet: flex animerer ikke omrokering, så kortene ville hoppet, og en
+  // manuell FLIP måtte målt før/etter for hvert hakk — mer kode, flere kappløp, og det
+  // ville kollidert med mobil-ruta som eier scrollLeft.
+  //
+  // MOBIL RØRES IKKE. Der eier scroll-snap plasseringen, og --dx ignoreres av
+  // @media(max-width:760px), som setter transform:none. Ett eierskap per flate.
+  // TO timerlister, ikke én. tVikle hører til én plassering; tRot er køen av
+  // rotasjonshakk ved klikk. Delte de liste, ryddet hakk nr. 1 sin egen plassering bort
+  // hakk nr. 2 — klikk på det fjerneste kortet roterte da bare halvveis.
+  // RING_SIDE MÅ være samme tall som --sk-fallbacken i CSS. Avviker de, regner ringen mot
+  // en bredde kortet ikke har, og mellomrommene blir feil uten at noe feiler.
+  //
+  // .75, ikke .8: dashbordet er 560px mot telefonenes 290. Med .8 ble halve raden
+  // 145 + 28 + 448 = 621px når dashbordet lå på siden, mot 600px tilgjengelig i .scene —
+  // og 21px av det ble klippet bort av .scene-vp{overflow:hidden}. Målt, ikke antatt.
+  var RING_GAP=28, RING_SIDE=.75, tRot=[], tVikle=null, vikleKort=null, roterer=false;
+  function ringPa(){ return !erMobil(); }
+
+  // ⚠ ENDE-BYTTETS USYNLIGE FASE MÅ ALLTID AVSLUTTES.
+  // vikle() setter opacity:0 inline og planlegger en timer som setter den tilbake. Ble
+  // den timeren bare CLEARET — som en ny rotasjon gjorde — sto kortet igjen usynlig for
+  // godt. Fem raske klikk strandet alle tre: målt inline opacity 0 på hvert kort, også
+  // det aktive i midten, som da var sentrert og tomt. Derfor er avslutningen en egen,
+  // idempotent funksjon som ALLE avbruddsveier går gjennom, ikke en clearTimeout.
+  function avsluttVikle(){
+    if(tVikle){ clearTimeout(tVikle); tVikle=null; }
+    if(vikleKort){
+      vikleKort.style.removeProperty('opacity');
+      vikleKort.style.removeProperty('transition');
+      vikleKort=null;
+    }
+  }
+  // Alt inline som ringen kan ha satt. Brukes når ringen skrus av (mobil) — da skal
+  // ingenting av den henge igjen og styre et spor den ikke lenger eier.
+  function ryddKort(k){
+    k.style.removeProperty('--dx');
+    k.style.removeProperty('opacity');
+    k.style.removeProperty('transition');
+    k.__ringPlass=undefined;
+  }
+  function stoppRing(){
+    avsluttVikle();
+    tRot.forEach(clearTimeout); tRot=[];
+    roterer=false;
+  }
+
+  // Naturlige sentre = der flex ville lagt kortene (justify-content:center, fast gap).
+  // Regnes analytisk, ikke måles: getBoundingClientRect gir de TRANSFORMERTE posisjonene,
+  // altså der kortene allerede er flyttet til, og å måle dem ville vært å måle sitt eget
+  // forrige svar.
+  function ringGeo(){
+    var W=kort.map(function(k){ return k.offsetWidth; });
+    // Naturlige sentre bruker CSS-ens egen flex-gap; det er der kortene FAKTISK ligger.
+    var total=W[0]+W[1]+W[2]+2*RING_GAP;
+    var cx=scene.clientWidth/2, x=cx-total/2, nat=[];
+    for(var i=0;i<3;i++){ nat.push(x+W[i]/2); x+=W[i]+RING_GAP; }
+    // Målposisjonene bruker et mellomrom som KRYMPER hvis raden ellers ikke får plass.
+    // Sikkerhetsnett for smale desktop-bredder: .75 holder på 1280, men på 900px ville
+    // det bredeste sidekortet stukket ut igjen.
+    var bredest=Math.max(W[(aktiv+1)%3], W[(aktiv+2)%3]);
+    var rom=cx - W[aktiv]/2 - bredest*RING_SIDE;
+    var gap=Math.max(8, Math.min(RING_GAP, Math.floor(rom)));
+    return {W:W, cx:cx, nat:nat, gap:gap};
+  }
+  // Målsenter for en ringplass. Avstanden regnes av FAKTISKE bredder — på desktop er
+  // kortene 290/560/290 — og det sentrerte kortet er i full skala mens sidekortene står
+  // på RING_SIDE. Med én konstant ble mellomrommet rundt det brede dashbordet synlig
+  // smalere enn rundt de to andre.
+  function ringX(g, plass, i){
+    if(plass===0) return g.cx;
+    var d=g.W[aktiv]/2 + g.gap + g.W[i]*RING_SIDE/2;
+    return plass===1 ? g.cx+d : g.cx-d;
+  }
+  // plass: 0 = midten, 1 = høyre, 2 = venstre.
+  function ringPlass(i){ return (aktiv-i+3)%3; }
+
+  function plasserRing(animer){
+    // Mobil: ringen eier ingenting. Rydd bort ALT inline, ikke bare --dx — et strandet
+    // opacity:0 fra et avbrutt ende-bytte overlever ellers inn i mobilvisningen, og der
+    // slår ingen media query det ut: inline-stil vinner over @media.
+    if(!ringPa()){ avsluttVikle(); kort.forEach(ryddKort); return; }
+    avsluttVikle();
+    var g=ringGeo();
+    kort.forEach(function(k){
+      var i=+k.dataset.i, plass=ringPlass(i), forrige=k.__ringPlass;
+      k.__ringPlass=plass;
+      // Hver plassering skriver en FULLSTENDIG tilstand for hvert kort. Da kan ingen
+      // tidligere, avbrutt fase overleve inn i den neste.
+      k.style.removeProperty('opacity');
+      var dx=Math.round(ringX(g,plass,i)-g.nat[i]);
+      // Viklingen: kortet som går fra venstre (2) til høyre (1) er det ene som må bytte
+      // ende. Lot vi det gli dit, krysset det midten mot rotasjonsretningen hvert hakk.
+      // Det seiler i stedet videre ut til venstre mens det tones ut, flyttes usett, og
+      // glir inn fra høyre.
+      if(animer && forrige===2 && plass===1){ vikle(k,g,i,dx); return; }
+      if(!animer){
+        k.style.transition='none';
+        k.style.setProperty('--dx', dx+'px');
+        void k.offsetWidth;
+        k.style.transition='';
+      } else {
+        k.style.setProperty('--dx', dx+'px');
+      }
+    });
+  }
+  function vikle(k,g,i,dxMaal){
+    avsluttVikle();                       // ett ende-bytte om gangen
+    vikleKort=k;
+    var steg=g.W[i]+g.gap;
+    k.style.setProperty('--dx', Math.round(ringX(g,2,i)-g.nat[i]-steg)+'px');
+    k.style.opacity='0';
+    tVikle=setTimeout(function(){
+      k.style.transition='none';
+      k.style.setProperty('--dx', Math.round(ringX(g,1,i)-g.nat[i]+steg)+'px');
+      void k.offsetWidth;
+      k.style.removeProperty('transition');
+      k.style.setProperty('--dx', dxMaal+'px');
+      k.style.removeProperty('opacity');
+      vikleKort=null; tVikle=null;
+    },380);
+  }
+
+  // Roterer ALLTID mot venstre, også når man klikker et sidekort. ORDEN [1,0,2] ER den
+  // venstregående ringen, så ett hakk = neste i ORDEN. Å hoppe rett til et kort to hakk
+  // unna ville rotert motsatt vei det ene gangen, og retningen er det som gjør bevegelsen
+  // lesbar. Kortet to hakk unna får derfor to hakk, forskjøvet.
+  // Klikk UNDER pågående rotasjon IGNORERES. Valget mellom å ignorere og å avbryte-og-
+  // overta er et lesbarhetsvalg: ringen går alltid mot venstre, og det er retningen som
+  // gjør bevegelsen mulig å følge. Lar man et nytt klikk kaste seg inn midt i et
+  // ende-bytte, ser man kort som skifter retning og ende samtidig — og det var nettopp
+  // den veien som strandet kortene. Sperren varer bare til rotasjonen har landet
+  // (maks to hakk à 300ms + glidning), og AUTOPLAY er ikke berørt: nesteFokus() kaller
+  // tegn() direkte og skal aldri kunne blokkeres av en klikk-sperre.
+  function roterTil(i){
+    if(roterer) return;
+    var hakk=(aktiv-i+3)%3;                 // 0 = allerede i midten
+    if(!hakk) return;
+    roterer=true;
+    for(var n=1;n<=hakk;n++)
+      (function(m){
+        tRot.push(setTimeout(function(){
+          tegn((aktiv+2)%3);                // ett hakk mot venstre
+          // Sperren løftes så snart SISTE hakk er satt, ikke når glidningen er ferdig.
+          // Tilstanden er allerede riktig; å holde igjen i glidningens 700ms til gjorde
+          // klikk rett etter en landet rotasjon dødt — og et nytt klikk under glidningen
+          // er trygt nå, fordi avsluttVikle() alltid rydder den usynlige fasen.
+          if(m===hakk) roterer=false;
+        }, (m-1)*300));
+      })(n);
+  }
+
+  function senterKort(i, glatt){
+    var k=kort.filter(function(x){return +x.dataset.i===i;})[0]; if(!k)return;
+    if(k.scrollIntoView) k.scrollIntoView({inline:'center',block:'nearest',
+      behavior:(glatt&&!REDUSERT)?'smooth':'instant'});
+  }
+
+  function nesteFokus(){
+    pos=(pos+1)%ORDEN.length;
+    if(erMobil()) senterKort(ORDEN[pos], true);   // .on settes av observatøren
+    else tegn(ORDEN[pos]);
+  }
+  // Dvelding per kort, ikke én takt for alle. Bookingkortet spiller en 14s-sekvens med
+  // tegn-for-tegn-utfylling; med 5s rakk man ikke lenger enn til tidsvalget før fokus
+  // gikk videre, og demoen viste aldri det den er der for å vise. De to andre kortene
+  // har ingen sekvens å rekke og beholder 5s. Booking = sekvenslengde + 1s pust.
+  // «Sekvens + 1s» er et GULV for lange sekvenser, ikke en formel som også får lov til å
+  // gjøre kortene raskere: på dashbordet ga den 4,5s og kortet ble kjappere enn de 5s det
+  // hadde. 5s er minstetida for alle kort; sekvensen kan bare skyve den opp.
+  // Dvelletid = SEKVENSLENGDE + HVILE. Da flytter fokus seg rett etter at sekvensen er
+  // ferdig, ikke midt i neste runde — og kortet står i sluttilstanden sin når det glir
+  // ut, så byttet er lett å se. Tallene utledes; de skrives ikke ned to steder.
+  var HVILE=2500;
+  var SEKV={0:KAL_SEKV, 1:DASH_SEKV, 2:BOOK_SEKV};
+  function dvele(){ return Math.max((SEKV[ORDEN[pos]]||0)+HVILE, 5000); }
+  // Liten nåde etter en pause: uten den ville fokus hoppet videre i samme øyeblikk som
+  // pekeren krysset kanten, og det leses som et rykk.
+  var NAADE=500;
+  // tvungen=true kommer fra et KLIKK. Et klikk er brukeren som sier «videre», og skal
+  // overstyre hover-pausen: pekeren ligger jo per definisjon over kortet man nettopp
+  // klikket på, så uten dette frøs rotasjonen til musa ble flyttet. Målt: 34s på et kort
+  // med 14s dvelletid. Hover UTEN klikk pauser fortsatt — det er passiv lesing.
+  function startAuto(tvungen){
+    // Mobil: en bruker som har sveipet skal ALDRI kjempe mot timeren. Stoppen er permanent.
+    if(REDUSERT||!synlig||tAuto||(erMobil()&&brukerHarTatt))return;
+    if(hover&&!tvungen)return;
+    // Dvelleklokka teller fra FOKUSSKIFTET, ikke fra dette kallet. Ellers ga hver
+    // gjenopptakelse en hel ny dvelletid: kortet hadde stått ferdigspilt i 20 sekunder,
+    // og man ventet 14 til fordi klokka startet på nytt ved mouseleave.
+    var gaatt=Date.now()-fokusStart;
+    var rest=Math.max(dvele()-gaatt, NAADE);
+    // setTimeout, ikke setInterval: intervallet er ikke konstant lenger, og neste
+    // ventetid avhenger av hvilket kort vi nettopp gikk TIL.
+    tAuto=setTimeout(function(){ tAuto=null; nesteFokus(); startAuto(); }, rest);
+  }
+  function stoppAuto(){ if(tAuto){clearTimeout(tAuto);tAuto=null;} }
+
+  // ── Én sekvens om gangen, alltid fra begynnelsen ────────────────────────────
+  // Før løp alle tre videre usynlig, hver med sin egen rundetid, mens fokus flyttet seg
+  // etter en helt annen takt. Kalenderen kunne rekke tre runder under ett fokus og
+  // halvannen under det neste — samme kort så forskjellig ut hver gang, og det er det
+  // som leses som uro. Nå pauses alt ved fokus-tap og starter forfra ved fokus, så man
+  // ser nøyaktig én runde per fokus. Bakgrunns-CPU forsvinner på kjøpet.
+  function stoppSekvenser(){
+    clearTimeout(tKal); tKal=null;
+    tKalListe.forEach(clearTimeout); tKalListe=[];
+    tBook.forEach(clearTimeout); tBook=[];
+  }
+  function startSekvens(i){
+    stoppSekvenser();
+    fokusStart=Date.now();       // dvelleklokkas nullpunkt = der sekvensen starter
+    if(REDUSERT) return;
+    if(i===0) kalenderLoop();
+    else if(i===1) tellOpp();
+    else if(i===2) bookingLoop();
+  }
+
+  function startMikro(){ startSekvens(aktiv); }
+  function stoppMikro(){ stoppSekvenser(); }
+
+  kort.forEach(function(k){
+    function velg(){
+      var i=+k.dataset.i;
+      klikkStyrt=true;                 // et klikk er «videre», og overstyrer hover-pausen
+      pos=ORDEN.indexOf(i); if(pos<0)pos=0;
+      if(erMobil()) senterKort(i,true); else roterTil(i);
+      stoppAuto(); startAuto(true);
+    }
+    k.addEventListener('click',velg);
+    k.addEventListener('keydown',function(e){
+      if(e.key==='Enter'||e.key===' '){ e.preventDefault(); velg(); }
+    });
+  });
+
+  // Ny hover-periode ⇒ passiv lesing igjen, til brukeren eventuelt klikker på nytt.
+  vp.addEventListener('mouseenter',function(){ hover=true; klikkStyrt=false; stoppAuto(); });
+  vp.addEventListener('mouseleave',function(){ hover=false; startAuto(); });
+
+  // Mobil: scrollposisjonen eier hvem som er aktiv. threshold .6 → kortet som dekker
+  // mest av sporet vinner, uten at man må regne på scrollLeft.
+  if('IntersectionObserver' in window){
+    var io2=new IntersectionObserver(function(e){
+      if(!erMobil())return;
+      e.forEach(function(x){ if(x.intersectionRatio>=.6) tegn(+x.target.dataset.i); });
+    },{root:scene,threshold:[.6]});
+    kort.forEach(function(k){ io2.observe(k); });
+  }
+
+  ['touchstart','wheel','pointerdown'].forEach(function(ev){
+    scene.addEventListener(ev,function(){ if(erMobil()){ brukerHarTatt=true; stoppAuto(); } },{passive:true});
+  });
+
+  if('IntersectionObserver' in window){
+    new IntersectionObserver(function(e){
+      synlig=e[0].isIntersecting;
+      vp.classList.toggle('paused',!synlig);
+      // Dashbordet er aktivt fra markupen, så tegn() kalles ALDRI for det ved innlasting.
+      // Derfor startes sekvensen for det aktive kortet her, ikke via tegn(): uten dette
+      // fyrte dashbordanimasjonen aldri, stolpene sto på 0 og rekordtilstanden uteble.
+      if(synlig){ startSekvens(aktiv); startAuto(); } else { stoppAuto(); stoppSekvenser(); }
+    },{threshold:.2}).observe(vp);
+  } else { synlig=true; startMikro(); startAuto(); }
+
+  window.addEventListener('resize',function(){
+    settTelefonSkala(); settRammehoyde();
+    stoppRing();                    // pågående ende-bytte skal ikke skrive --dx etterpå
+    plasserRing(false);
+    // Etter bytte til mobil eier scroll-sporet plasseringen igjen, men scrollposisjonen
+    // ble stående der den var — det aktive kortet lå 241px ute av senter. Vi sentrerer på
+    // nytt, men ALDRI hvis brukeren har sveipet: da er stoppen permanent og vår.
+    if(erMobil() && !brukerHarTatt) senterKort(aktiv,false);
+    stoppAuto(); startAuto();
+  });
+  settTelefonSkala();
+  settRammehoyde();
+  // Start med dashbordet sentrert, uten glatt scroll — brukeren skal ikke se et hopp.
+  plasserRing(false);
+  requestAnimationFrame(function(){ settTelefonSkala(); settRammehoyde(); plasserRing(false); if(erMobil()) senterKort(1,false); });
+  // MERK: her sto en re-sentrering på window.load en kort stund, lagt inn på en antakelse
+  // om at galleribildene flyttet kortbreddene etter rAF. Den antakelsen ble MÅLT og var
+  // feil: sentreringen treffer 1px både ved rAF (1782ms) og ved load (3642ms) — sporet
+  // sto aldri skjevt. Den «skjeve» målingen kom av at render-testen leste sporet lenge
+  // etter at autoplay lovlig hadde rotert videre. Ikke legg den tilbake uten en måling
+  // som faktisk viser drift.
 })();
 
 // Nyhetsbrev

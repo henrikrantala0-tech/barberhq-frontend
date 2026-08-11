@@ -151,6 +151,105 @@ sv/, da/, en/ følger ikke denne rekkefølgen ennå — gjøres i oversettelses-
   (verving). Fiks: `.keyboard` height 210→150px, padding `8px 4px 24px`→`6px 4px 14px`,
   `.msg-input` bottom 218→158px — i begge scopes. GJELDER KUN no/ — sv/da/en tas i
   oversettelsesfasen.
+- **⚠ Klonet CSS: `vw/vh/vmin/vmax` og `@media` er begge VIEWPORT-baserte og meningsløse i
+  en fastbreddet klon.** Produktvisningen i `site/no/index.html` kloner dashbordet og
+  bookingsida inn i containere med fast designbredde. Alt som løses mot viewporten løses da
+  mot LANDINGSSIDAS viewport, ikke mot containeren — og gir feil layout uten å feile.
+  Begge har brent oss:
+  - `@media`: kollapset dashbordets nav til tre faner på en 320px skjerm selv om containeren
+    var 780px bred. Løsning: strippes i scoping-steget.
+  - `vw`: `.cover h1{font-size:clamp(38px,11vw,54px)}` valgte TAKET (54px) fordi 11vw av
+    1280px = 141px, der produktet på 320px viewport velger GULVET (38px). Tittelen brakk til
+    to linjer der produktet holder én. Løsning: regnes om til px mot designbredden i
+    scoping-steget, med teller og en vakt som feiler hvis noe gjenstår.
+  - `position:fixed` er den TREDJE, og den mest lumske: den forankres til viewporten —
+    MED MINDRE en forfar har `transform`/`filter`/`will-change`, som da blir containing
+    block. Klonen har begge deler, så hvilken det blir avhenger av hvor en transform
+    tilfeldigvis står. Bookingmodulen bruker fixed på `.sheet`, `.see-float` og
+    `.cover-manage-link`. Målt: arket ble en grå flate på størrelse med hele sida, og
+    CTA-en havnet 52px UNDER telefonskjermen. Løsning (`site/no/index.html`, under
+    «Klonet CSS slutter her»): `.sheet` nøytraliseres til `position:static`, og de to
+    andre til `absolute` mot en `.pv-scale` som er pinnet med `position:absolute;top:0;left:0`.
+    Forankringen gjøres EKSPLISITT i stedet for å gjettes.
+  **Nøytraliseringer skal kun rette LAYOUT, aldri legge til spacing.** Mine la på 20px
+  padding på `.cover` (kilden har `padding:56px 0 120px` — null horisontalt, innrykket
+  kommer fra `h1{margin:0 28px}`) og 20px i `.sheet-inner` der kilden har 24px. Til sammen
+  86px mindre plass til tittelen enn produktet gir.
+- **Produktfunn: `.cover h1` slutter å krympe under ~345px viewport.**
+  `clamp(38px,11vw,54px)` har 38px som absolutt gulv, og h1 får 264px (320 − 2×28 margin).
+  Målt ved 38px/−0.03em i Plus Jakarta Sans 600: «Grand Barber» (12 tegn) = 231px,
+  «Barber Studio» (13) = 236px — begge passer. «Oslo Barbershop» (15) = 291px brekker.
+  Grensen er tegnbredde, ikke antall: 8 tegn i bredeste bokstav (M), 11 i smaleste (n),
+  ~13–14 i typisk blandet tekst. **Barbernavn over ~14 tegn brekker til to linjer på 320px.**
+  Egen jobb: vurder maks-lengde på shop-navn i onboarding-skjemaet.
+- **⚠ Maskinell CSS-scoping: kildens ROTELEMENTER må mappes til klonens rot, og landingssidas
+  egne klassenavn må nøytraliseres.** To feil med samme symptom (nav/innhold grått bak en svart
+  header i dashbord-klonen), begge funnet 09.08 ved å måle `getComputedStyle` mot kilden — de var
+  usynlige på øyemål fordi resultatet bare så «litt annerledes» ut:
+  1. `:root`, `html` OG `body` er alle klonens rot. Ble `body` glemt, havnet kildens
+     `body{background:var(--bg)}` på `#produkt .pv-dash body` — en selektor som aldri kan treffe.
+     **Variablene kom inn, så `--bg` målte riktig; det var deklarasjonen som forsvant.** Klonen ble
+     gjennomsiktig og kortets eget `.brw{background:#141414}` lyste gjennom.
+  2. Klonen arver klassenavn fra kilden, og landingssida har egne uscopede regler for noen av dem
+     (`wrap`, `nav`, `logo`). `.nav{background:rgba(10,10,10,.72);backdrop-filter:blur(14px)}` la seg
+     oppå klonen — en stil som ikke finnes i `dashboard.html` i det hele tatt. `.bygg-dash2.mjs` har
+     nå en **kollisjonsvakt**: landingssidas CSS lastes mot klon-markupen, og for hver regel som
+     treffer tilbakestilles nøyaktig de egenskapene den deklarerer, med `revert`, plassert FØR de
+     klonede reglene. Lista regnes ut ved hver bygging — ikke hardkod den.
+- **⚠ Maskinell CSS-utvelgelse og PSEUDO-ELEMENTER: `querySelectorAll` KASTER på
+  `::before`/`::after`, og en try/catch som setter «treff=false» dropper dem stille.**
+  Utvelgelsen holder en regel hvis selektoren treffer et element. Men `.cover-gallery::before`
+  kan ikke slås opp — `querySelectorAll` kaster `SyntaxError`. Første versjon fanget det med
+  try/catch og konkluderte «treffer ingenting», så ALLE pseudo-element-regler forsvant: begge
+  90px-fadene over og under galleriet var borte, uten at noe feilet. Løsningen er å teste
+  BASIS-selektoren — pseudo-elementer og -klasser strippes bort før oppslaget — og beholde
+  regelen hvis basen treffer. Samme felle gjelder `:hover`, `:focus-visible`, `:disabled`
+  og `:not(...)`.
+- **⚠ Maskinell CSS-utvelgelse ser bare klasser som står i markupen ved BYGGETID.** Regler som
+  aktiveres av JS i produktet (`.rekord-gull`, `.wi-fill.rekord`) blir aldri valgt, og klonen viser
+  grønn der produktet viser gull — uten at noe feiler. Render-testen som sjekker at KLASSEN er satt
+  er ikke nok; den må måle fargen. Utestående for dashbord-klonen.
+- **⚠ Maskinelle splice/erstatninger på store filer: tell treff FØR skriving, aldri etter.**
+  Tre tap 09.08 hadde samme signatur — et søk traff mer eller mindre enn antatt, skrivingen
+  gikk gjennom, og feilen ble først synlig langt senere (eller aldri, fordi nettleseren
+  reparerte den). Mønsteret som virker: finn, tell, avbryt med `process.exit(1)` hvis
+  antallet avviker, og skriv fila til slutt i ett kall. Gjelder også `splice` på linjer:
+  en for bred slice tok med to naboregler uten at noe feilet.
+- **⚠ Blandede linjeskift i `site/no/index.html` bommer på ankere.** Fila hadde 911 CRLF og
+  606 rene LF om hverandre etter flere maskinelle bygg. Skript som detekterer EOL med
+  `s.includes('\r\n')` og oversetter søkestrenger med `\n` → CRLF traff da ingenting i
+  LF-partiene, uten annen feilmelding enn «0 treff». `cat -A` LYVER her — pipelinen
+  normaliserer, så linjeskiftene ser like ut. Normaliser fila til CRLF én gang før en serie
+  maskinelle endringer.
+- **Produktvisningens klon: fire rettelser som IKKE følger av byggeskriptene.** De gikk tapt
+  én gang fordi de bare fantes som løse redigeringer:
+  1. `data-to="10550"` på `.pv-rev` — uten den regner count-up-en mot `NaN` og KPI-en viser
+     «NaN» i stedet for å telle til 10 550.
+  2. Sekvensen for det AKTIVE kortet må startes fra synlighets-observatøren, ikke bare fra
+     `tegn()`. Dashbordet er aktivt fra markupen, så `tegn()` kalles aldri for det ved
+     innlasting — uten dette fyrer animasjonen aldri, stolpene blir stående på 0 og
+     rekordtilstanden uteblir. (Het `dashSpilt` før; er nå `startSekvens(aktiv)` i
+     observatøren, som dekker alle tre kortene.)
+  3. `.pv-dash` skal IKKE ha egen `transform:scale()`. Hele vinduet (`.pv-win`) skaleres som
+     én enhet; står begge, multipliseres de (0,718 × 0,718 = 0,516) og KPI-tallene faller fra
+     14 til 10 px uten at noe ser åpenbart galt ut.
+  4. `--ph-s` REGNES UT, den skrives ikke ned — og den må regnes av `offsetWidth`, ikke av
+     `getBoundingClientRect()`. Rect-en er den TRANSFORMERTE bredden, og ringkarusellen
+     skalerer kortene (.75 på siden, 1 i midten): et sidekort målte 202,5px der skjermflaten
+     er 270px, så `--ph-s` ble 0,6328 i stedet for 0,84375 og innholdet rendret for smalt med
+     tomrom på hver side. Verdien avhang altså av hvilket kort som hadde fokus i
+     måleøyeblikket. `offsetWidth` er layoutbredden og kommer fra CSS: `.pv-phoneframe` 290
+     − `.iph` padding 2×9 − border 2×1 = 270. Det var IKKE en timingfeil: målt likt ved
+     DOMContentLoaded, load, `fonts.ready` og +4s.
+- **⚠ Maskinelle erstatninger må ALDRI ankres på generiske lukketagger** (`</section>`,
+  `</div>`) i filer som inneholder klonet markup. `site/no/index.html` har en klon av
+  backendens booking-modul, og den inneholder `<section class="sheet">`. Et søk etter
+  «neste `</section>`» traff da sheetens lukketagg i stedet for seksjonens: resultatet ble
+  en duplisert hale — to `#sceneCap`, to `#pvOk`, seks `.cap` — altså **doble id-er**.
+  Nettleseren reparerte det stille, sida så riktig ut, og hele render-testen var grønn.
+  Oppdaget først da en erstatning fikk «2 treff, ventet 1» og vakten stoppet.
+  Ankre på unike strenger (id, klassenavn, kommentar), og legg alltid inn en treff-teller
+  som avbryter FØR skriving.
 - **Rebooking- og verving-demoene deler to ting. Skal en av dem noen gang fjernes, er det
   disse to som ryker stille (kartlagt 09.08 — begge står, ingenting er fjernet).**
   1. **CSS-regelen med `.no-js`-fallbacken er DELT:**
@@ -222,6 +321,12 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 - **Volum-farge (lag 1):** `colorForRatio(d.kr/max)` — glidende lineær RGB dempet blågrå → brand-blå → brand-grønn, relativt til beste stolpe i visningen. Per-stolpe gradient (mørk bunn→lys topp av stolpens EGEN farge), ingen glow.
 - **HUD + touch (lag 2, variant A):** magnetisk `pointerdown`/`pointermove` på `#chartBars`, snap via `getBoundingClientRect`. Valgt stolpe → **kort forankret til stolpen** (`#chartHud`, absolutt i `.chart-wrap`): dato liten/dempet, beløp stort + «· N klipp», pills nye (blå) / gjengangere (grønn). Løsrevet caret (`#chartCaret`) på stolpe-senter + peker-linje til stolpetopp; horisontal clamping innenfor kort-padding ved kant-stolper; skann-glid `transition:left .09s`. `pointer-events:none` på kort/caret → tap/skann/undo treffer stolpene under. Undo: tap valgt stolpe → `clearSel()`, tap-vs-dra <8px.
 - **Entré + tell-opp (lag 3):** stolper stiger staggered venstre→høyre (variant D: step 95ms / rise 350ms, clamp `ENTRY_MAX_TOTAL=3000` → 90-heatmap sprenger aldri), KPI teller 0→target, KUN første render (`chartEntered`-flagg); pill/tab = uniform vekst, ingen tell-opp. Respekterer `prefers-reduced-motion`.
+- **⚠ Klonens rekord-terskel er `>=`, produktets er `>`.** `dashboard.html:1866` bruker
+  `p.current_week_revenue > p.best_week_revenue`; scenens demo i `site/no/index.html` bruker
+  `maalRev*e >= FORRIGE_REKORD`. Ved NØYAKTIG likt beløp tenner klonen gull der produktet
+  ikke gjør det. I demoen er det uten betydning (10 550 passerer 10 100 med god margin), men
+  avviket er reelt og skal ikke «ryddes» ved å endre produktet — det er klonen som er
+  koreografi. Se også notatet om at gull-timingen i klonen er demo, ikke produktatferd.
 - **Uke-rekord (lag 4) — KUN pill-modus inneværende uke:** `current_week_revenue`/`best_week_revenue`/`best_week_start` fra `/stats` (backend-beregnet, on-read/Oslo, best = MAX ferdige uker). Gull-KPI (`#estRevValue` gull-gradient + drop-shadow-glow + puls) tenner kun ved `current > best` OG `curPeriod==="uke"`. Dempet «Beste uke: X kr · [mnd]»-fotnote ellers.
 - **Persentil + rekord-bar (batch 2) — KUN pill-modus inneværende uke:** fra `/stats.weekly_revenue` (`[{week_start,revenue}]`, all-time ferdige uker, on-read/Oslo, `max==best_week_revenue` per konstruksjon). Persentil «Bedre enn X% av dine egne uker» vist ved ≥6 uker OG pct≥50 (over median), undertrykt ved rekord. Rekord-bar `current/best`: <0.80 skjul · 0.80–1.0 «X kr unna» · ≥1.0 «Ny rekord denne uka! 🔥» 100% gull. Baren eier rekord-budskapet (tømmer `#rekordNote`) → ingen dobbelt. Skjult på 2uker/måned/historisk måned.
 - **Merk (aldri sett live):** mot volum-test er `current_week` (~10 550) « `best` (13 950 = 76%) → persentil + rekord-bar naturlig SKJULT. «unna»/«rekord»-tilstand kun Playwright/deterministisk verifisert. `gull-demo.cjs`-fixtur (backend-repo) kan heve `current` over tersklene for å se dem live.
@@ -309,6 +414,32 @@ leter etter både abonnement og dashbord-innstillinger:
   dashboard-velgeren. Ikke behandle den som dead UI.
 
 ## Kjent teknisk gjeld
+
+- **`.hero-video` gir ~5px vannrett overflyt på HELE sida (`site/no/index.html`).**
+  `width:112vw` × `transform:scale(0.9)` = 100,8vw, og `.hero` klipper ikke. Målt på 1280 er
+  videoen det ENESTE elementet utenfor viewporten (1290 av 1280); på 320/375 er den også
+  utenfor. `document.documentElement.scrollWidth` blir 377 på en 375px viewport, og
+  render-testens `overflow`-felt står derfor rødt i alle kjøringer. Pre-eksisterende og
+  urørt — men det betyr at overflow-flagget IKKE er et rent signal: fikses hero-videoen,
+  skal flagget bli grønt, og gjør det ikke det, er det noe nytt.
+
+### Funnet i frontend, men SKAL FIKSES I BACKEND (barberhq-backend)
+Begge er funnet ved å klone bookingmodulen inn i produktvisningen og måle klonen mot den
+publiserte sida. De er ikke frontend-feil, og de er ikke rørt herfra — ÉN Code-sesjon per
+repo, så backend-endringene tas i backend-repoet.
+- **`.date-chip.today .dc-d{color:var(--accent)}` er DØD kode i `booking-module.cjs`.**
+  Regelen finnes i BOOKING_CSS, men klassenavnet `today` står ikke ett eneste sted i
+  modulens JS — ingenting setter den. Dagens dato får altså aldri sitt aksentfargede
+  tall. Enten aktiveres den i `applyDaysToStrip()` (dagens dato fortjener et signal), eller
+  så ryddes regelen bort. Klonen setter den bevisst IKKE, for da ville den vist et signal
+  produktet ikke har. Til sammenligning er `month-start` levende — den settes som
+  `(… ? ' month-start' : '')`.
+- **Navnedrift: samtykke-oppslaget heter ulikt i deployet kode og lokal kilde.** Lokal
+  `booking-module.cjs` kaller `POST /api/barbers/:slug/sms-consent-check`; den publiserte
+  sida på trybarberhq.com kaller `POST /api/barbers/:slug/sms-consent` (observert som
+  blokkert kall under rendring av tilstandsbildene). Én av dem er utdatert. Sjekk hvilken
+  ruta faktisk heter, og få kilde og deploy i synk før noen feilsøker et 404 som ikke
+  finnes lokalt.
 
 - **Tidssone for åpningstider er hardkodet via `barbers.market`** (NO/SE/DK → Europe/Oslo, UK → Europe/London).
   Dette er en MVP-forenkling. Booking-validering mot `business_hours` bruker denne utledningen.
@@ -488,11 +619,13 @@ Fortsatt åpent:
     - `Se dashbordet` (`:522`, `:536`) er `href="#"` med vilje — styres av `DEMO_ENABLED = false`
       og skrus på ved launch. Ikke en bug.
     Samme gjennomgang må gjøres på `funksjoner.html`, `priser.html`, `support.html` og i en/.
-12. **Produktvisningen (`.pv-section`, `site/no/index.html:605`) skal se bedre ut.** Henriks
-    vurdering 29.07 — ikke spesifisert hva som er galt ennå. Krever egen runde: se på den,
-    bli enige om hva som feiler, så bygg. Seksjonen er én `dashboard-produkt.png` med tre
-    absolutt-posisjonerte `.pv-title`-etiketter (`left/top` i %) oppå — etikett-posisjonene er
-    hardkodet mot akkurat det bildet og brekker hvis bildet byttes.
+12. ~~**Produktvisningen skal se bedre ut.**~~ GJORT. Seksjonen er ikke lenger ett
+    stillbilde med etiketter oppå — `dashboard-produkt.png` er slettet. `#produkt` er nå en
+    levende scene med tre kort i en ringkarusell: kalender, klonet dashbord og klonet
+    bookingside. Hvert kort spiller én sekvens per fokus og står i sluttilstand når fokus
+    går videre; dvelletiden utledes av sekvenslengden. Se `tools/render/produktvisning.mjs`
+    for hva som er verifisert, og `tools/render/booking-tilstander.mjs` for de seks
+    bookingtilstandene målt mot den publiserte sida.
 13. **«Bygd for å fylle stolen»-seksjonen (`.sys-h2`, `site/no/index.html:673`) skal endres.**
     Henriks vurdering 29.07 — omfang ikke bestemt (tekst? layout? hele seksjonen?). Avklares før
     kode. Merk at CTA-en nederst (`:821` «Klar til å fylle stolen?») gjenbruker samme bilde —
