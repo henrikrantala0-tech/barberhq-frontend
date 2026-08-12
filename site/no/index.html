@@ -7,7 +7,7 @@
 <meta name="description" content="Din egen bookingside med automatisk rebooking, SMS-påminnelser og galleri. Vi setter opp alt for deg.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600;9..144,700&family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.1.0/dist/tabler-icons.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -367,7 +367,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .scene-sec{background:#0a0a0a;padding:64px 24px 72px;display:flex;flex-direction:column;align-items:center}
 .scene-head{text-align:center;margin-bottom:44px}
 .scene-eyebrow{color:#8a8a8a;font-size:13px;letter-spacing:.22em;font-weight:600;margin-bottom:16px;font-family:'Inter',system-ui,sans-serif}
-.scene-h2{color:#fff;font-size:clamp(30px,5vw,56px);font-weight:700;line-height:1;letter-spacing:-.03em;margin:0;font-family:'Fraunces',Georgia,serif}
+.scene-h2{color:#fff;font-size:clamp(30px,5vw,56px);font-weight:800;line-height:1;letter-spacing:-.04em;margin:0}
 .scene-vp{width:100%;max-width:1200px;overflow:hidden}
 .scene{display:flex;align-items:center;justify-content:center;gap:28px;padding:34px 0}
 /* --dx er ringens plassering, --sk er fokus-skalaen. Begge i SAMME transform, ellers
@@ -384,7 +384,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .scene-cap{position:relative;display:grid;max-width:520px;margin-top:8px;text-align:center}
 .cap{grid-area:1/1;opacity:0;transition:opacity .5s ease;pointer-events:none}
 .cap.on{opacity:1}
-.cap h3{font-family:'Fraunces',Georgia,serif;font-size:clamp(20px,2.4vw,26px);font-weight:600;color:#fff;letter-spacing:-.02em;margin-bottom:10px;line-height:1.15}
+.cap h3{font-size:clamp(20px,2.4vw,26px);font-weight:700;color:#fff;letter-spacing:-.01em;margin-bottom:10px;line-height:1.15}
 .cap p{font-family:'Inter',system-ui,sans-serif;font-size:15px;line-height:1.6;color:#b4b4b4;margin:0}
 
 /* ===== Rammer og skalering ====================================================
@@ -1232,7 +1232,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 
   <div class="scene-cap" id="sceneCap">
     <div class="cap" data-i="0">
-      <h3>Synket med kalenderen du allerede bruker</h3>
+      <h3>Synket med kalenderen din</h3>
       <p>Hver booking dyttes automatisk til din egen Google Kalender. Du ser hele dagen der du allerede er — ingen ny app å sjekke.</p>
     </div>
     <div class="cap on" data-i="1">
