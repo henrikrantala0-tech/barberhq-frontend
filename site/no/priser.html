@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BarberHQ — Priser</title>
-<meta name="description" content="Én pris, alt inkludert. 249 kr/mnd, ingen binding. Publiser siden og få 30 dager gratis — uten kort.">
+<meta name="description" content="Basis 249 kr/mnd, Vekst 399 kr/mnd. Ingen binding, ingen gebyr per booking. 30 dager gratis fra du publiserer — uten kort.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -35,7 +35,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .ph-hero{max-width:820px;margin:0 auto;padding:84px 32px 36px;text-align:center}
 .ph-hero .eyebrow{margin-bottom:18px;display:block}
 .ph-hero h1{font-size:clamp(38px,7vw,66px);font-weight:800;line-height:1.04;letter-spacing:-.04em}
-.ph-hero .hl-blue{color:#4d8bff}
+.ph-hero .hl-blue{color:#4d8bff;white-space:nowrap}
 .ph-hero p{color:#b4b4b4;font-size:clamp(16px,2.2vw,18px);line-height:1.6;max-width:520px;margin:22px auto 0}
 .section{max-width:1100px;margin:0 auto;padding:64px 32px}
 .sec-head{text-align:center}
@@ -49,24 +49,36 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .feat-card h3{font-size:18px;font-weight:700;letter-spacing:-.01em;margin-bottom:9px}
 .feat-card p{color:#9a9a9a;font-size:14.5px;line-height:1.55}
 .feat-badge{position:absolute;top:20px;right:20px;font-size:10px;font-weight:700;letter-spacing:.1em;color:#4d8bff;border:1px solid #243a5e;background:#0d1626;padding:4px 9px;border-radius:99px}
-.price-wrap{display:flex;justify-content:center;padding:0 32px;margin-top:8px;position:relative}
-.price-wrap::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:600px;height:520px;max-width:96vw;background:radial-gradient(ellipse,rgba(220,178,74,.74),rgba(220,178,74,.30) 44%,transparent 72%);filter:blur(56px);z-index:0;pointer-events:none}
-.price-card{position:relative;z-index:1}
-.price-card{width:100%;max-width:420px;background:linear-gradient(180deg,#101010,#0b0b0b);border:1px solid #2a2a2a;border-radius:22px;padding:40px 36px;text-align:center;box-shadow:0 30px 70px -40px rgba(0,0,0,.7)}
-.price-num{font-size:40px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
-.price-num span{font-size:18px;font-weight:500;color:#9a9a9a;letter-spacing:0}
-.price-card .pc-sub{color:#9a9a9a;font-size:14px;margin-top:12px;margin-bottom:26px}
-.price-list{text-align:left;display:flex;flex-direction:column;gap:12px;margin-bottom:28px}
-.price-list div{display:flex;align-items:flex-start;gap:11px;font-size:15px;color:#e0e0e0}
-.price-list svg{color:#3ecf7e;width:18px;height:18px;flex-shrink:0;margin-top:2px}
-.price-card .btn-fill{width:100%;justify-content:center;font-size:16px;padding:16px}
-.price-card .pc-note{color:#8c8c8c;font-size:13px;margin-top:14px}
-.pc-price{font-size:13px;color:#7a7a7a;margin-bottom:16px;text-align:center}
-.pc-badge-wrap{margin-top:16px;margin-bottom:28px}
-.pc-badge{display:inline-block;background:rgba(77,139,255,0.12);color:#4d8bff;font-size:13px;font-weight:600;padding:6px 16px;border-radius:99px;letter-spacing:0.02em}
-.price-extra{max-width:420px;margin:22px auto 0;display:flex;flex-direction:column;gap:10px}
-.price-extra div{background:#0e0e0e;border:1px solid #1a1a1a;border-radius:12px;padding:14px 18px;font-size:13.5px;color:#9a9a9a;line-height:1.5}
-.price-extra strong{color:#fff;font-weight:600}
+/* Prisnivåer — visspråk lånt fra .ds-col/.ds-col-us i index.html */
+.pr-wrap{max-width:1000px;margin:0 auto;padding:26px 32px 0}
+.pr-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
+.pr-card{position:relative;border-radius:20px;padding:32px 30px;text-align:left;display:flex;flex-direction:column}
+.pr-basis{background:#0c0c0c;border:1px solid #1a1a1a}
+.pr-vekst{background:#0e0f12;border:1px solid #24344f;box-shadow:0 0 0 1px rgba(77,139,255,.08),0 20px 60px -30px rgba(77,139,255,.35)}
+.pr-pill{position:absolute;top:-13px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#131c2c;border:1px solid #2b3f61;color:#7fa8ff;font-size:11px;font-weight:700;letter-spacing:.14em;padding:6px 15px;border-radius:99px}
+.pr-name{font-size:12px;font-weight:700;letter-spacing:.18em;color:#8a8a8a;margin-bottom:16px}
+.pr-vekst .pr-name{color:#7fa8ff}
+.pr-price{display:flex;align-items:baseline;flex-wrap:wrap;gap:4px 9px;font-size:42px;font-weight:800;letter-spacing:-.03em;line-height:1.05}
+.pr-price span{font-size:14.5px;font-weight:500;color:#8a8a8a;letter-spacing:0;white-space:nowrap}
+.pr-tag{color:#9a9a9a;font-size:14.5px;line-height:1.5;margin:15px 0 24px}
+.pr-vekst .pr-tag{color:#b4b4b4}
+.pr-inc{border-top:1px solid #1e1e1e;padding-top:20px;margin:0 0 18px;font-size:13.5px;font-weight:700;color:#fff}
+.pr-list{list-style:none;display:flex;flex-direction:column;gap:13px;margin-bottom:28px}
+.pr-list li{display:flex;align-items:flex-start;gap:11px;font-size:14.5px;line-height:1.45;color:#c4c4c4}
+.pr-vekst .pr-list li{color:#e8e8e8}
+.pr-check{flex-shrink:0;width:21px;height:21px;border-radius:99px;display:flex;align-items:center;justify-content:center;margin-top:1px;background:rgba(62,207,126,.14);color:#3ecf7e}
+.pr-check svg{width:12px;height:12px}
+.pr-cta{margin-top:auto}
+.pr-later{color:#9a9a9a;font-size:14px;line-height:1.5;padding:15px 0}
+.pr-card .btn{width:100%;justify-content:center;font-size:15.5px;padding:15px}
+.btn-blue{background:#4d8bff;color:#fff}
+.btn-blue:hover{opacity:.88}
+.pp-sec{max-width:1000px;margin:0 auto;padding:56px 32px 0;text-align:center}
+.pp-sec h2{font-size:clamp(24px,3.6vw,34px);font-weight:800;letter-spacing:-.03em;line-height:1.1}
+.pp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px;margin-top:26px}
+.pp-item{background:#0e0e0e;border:1px solid #1a1a1a;border-radius:14px;padding:18px 14px;display:flex;align-items:center;justify-content:center;gap:9px;font-size:14px;font-weight:600;color:#d6d6d6;line-height:1.35;text-align:center}
+.pp-item i{color:#3ecf7e;font-size:16px;flex-shrink:0}
+.pr-trial{max-width:520px;margin:24px auto 0;padding:0 32px;text-align:center;color:#8c8c8c;font-size:13.5px;line-height:1.6}
 .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:46px}
 .step{background:#0e0e0e;border:1px solid #1f1f1f;border-radius:16px;padding:26px 22px;text-align:left}
 .step .num{font-size:13px;font-weight:700;color:#4d8bff;letter-spacing:.1em;margin-bottom:14px}
@@ -121,8 +133,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .foot-social{display:flex;gap:9px}
 .foot-social a{width:36px;height:36px;border-radius:50%;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;transition:all .2s}
 .foot-social a:hover{background:#fff;color:#000;border-color:#fff}
-@media(max-width:760px){.nav-links a:not(.nav-cta){display:none}.feat-grid{grid-template-columns:1fr 1fr}.steps{grid-template-columns:1fr 1fr}.foot-top{grid-template-columns:1fr;gap:40px;padding-bottom:42px}.foot-cols{grid-template-columns:1fr 1fr;gap:32px 24px}.foot-wrap{padding:56px 24px 32px}}
-@media(max-width:560px){.feat-grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr}}
+@media(max-width:760px){.nav-links a:not(.nav-cta){display:none}.feat-grid{grid-template-columns:1fr 1fr}.steps{grid-template-columns:1fr 1fr}.pr-grid{grid-template-columns:1fr;max-width:440px;margin:0 auto}.pr-vekst{order:-1}.pp-grid{grid-template-columns:1fr 1fr}.foot-top{grid-template-columns:1fr;gap:40px;padding-bottom:42px}.foot-cols{grid-template-columns:1fr 1fr;gap:32px 24px}.foot-wrap{padding:56px 24px 32px}}
+@media(max-width:560px){.feat-grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.pr-wrap{padding:26px 22px 0}.pr-card{padding:28px 24px}.pr-price{font-size:36px}.pp-sec{padding:48px 22px 0}.pp-item{padding:15px 10px;font-size:13px;gap:7px}.pp-item i{font-size:15px}.pr-trial{padding:0 22px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}}
 </style>
 </head>
@@ -142,30 +154,53 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 </nav>
 <header class="ph-hero">
   <span class="eyebrow">PRISER</span>
-  <h1>Én pris. <span class="hl-blue">Alt</span> inkludert.</h1>
-  <p>Ingen binding. Ingen skjulte gebyrer. Publiser siden din og få 30 dager gratis — uten å legge inn kort.</p>
+  <h1>Mindre enn <span class="hl-blue">én klipp</span> i måneden.</h1>
+  <p>30 dager gratis fra du publiserer — uten kort. Ingen binding.</p>
 </header>
-<div class="price-wrap">
-  <div class="price-card reveal">
-    <div class="price-num">30 dager gratis</div>
-    <div class="pc-badge-wrap"><span class="pc-badge">Ingen binding</span></div>
-    <div class="price-list">
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Din egen bookingside</div>
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Selvbooking — kundene booker selv</div>
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Automatisk rebooking med SMS</div>
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Verving med egen link</div>
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Google Kalender-synk</div>
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>SMS-påminnelser</div>
-      <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>Galleri for arbeidet ditt</div>
+<div class="pr-wrap">
+  <div class="pr-grid">
+
+    <div class="pr-card pr-basis reveal">
+      <div class="pr-name">BASIS</div>
+      <div class="pr-price">249 kr <span>/mnd eks. mva</span></div>
+      <p class="pr-tag">Slutt på DM-kaoset. Aldri dobbeltbook, aldri glemt time.</p>
+      <ul class="pr-list">
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Egen bookingside — din side, dine kunder</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Ubegrensede bookinger</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Ubegrensede påminnelses-SMS</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Google Calendar-synk</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Dashbord med full oversikt</li>
+      </ul>
+      <div class="pr-cta"><p class="pr-later">Velges ved prøveslutt.</p></div>
     </div>
-    <p class="pc-price">Deretter 249 kr/mnd. Kort først når prøveperioden er over.</p>
-    <a href="kom-i-gang.html" class="btn btn-fill">Prøv gratis</a>
+
+    <div class="pr-card pr-vekst reveal">
+      <span class="pr-pill">ALLE STARTER HER</span>
+      <div class="pr-name">VEKST</div>
+      <div class="pr-price">399 kr <span>/mnd eks. mva</span></div>
+      <p class="pr-tag">Flere kunder, mer inntekt — motoren som fyller kalenderen.</p>
+      <div class="pr-inc">Alt i Basis, pluss:</div>
+      <ul class="pr-list">
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Automatisk rebooking — SMS inkludert</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Vinn-tilbake etter no-show</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Verving med sporing og automatisk rabatt</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Attribusjonspanel: se hvor kundene kommer fra</li>
+      </ul>
+      <div class="pr-cta"><a href="kom-i-gang.html" class="btn btn-blue">Prøv gratis i 30 dager</a></div>
+    </div>
+
   </div>
 </div>
-<div class="price-extra">
-  <div><strong>Eget domene?</strong> Legg til ditt eget domenenavn for +99 kr/mnd.</div>
-  <div><strong>Du beholder inntekten din.</strong> Kundene betaler deg direkte i salongen — BarberHQ tar aldri en andel.</div>
-</div>
+<section class="pp-sec reveal">
+  <h2>Prisen er prisen</h2>
+  <div class="pp-grid">
+    <div class="pp-item"><i class="ti ti-check"></i>Ingen SMS-regning</div>
+    <div class="pp-item"><i class="ti ti-check"></i>Ingen gebyr per ny kunde</div>
+    <div class="pp-item"><i class="ti ti-check"></i>Ingen gebyr per booking</div>
+    <div class="pp-item"><i class="ti ti-check"></i>Ingen binding</div>
+  </div>
+</section>
+<p class="pr-trial reveal">Prøven kjører på Vekst — du velger nivå ved prøveslutt.</p>
 <section class="section">
   <div class="sec-head reveal">
     <span class="eyebrow">SLIK KOMMER DU I GANG</span>
@@ -182,9 +217,9 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 <section class="section" style="padding-top:24px">
   <div class="sec-head reveal"><span class="eyebrow">SPØRSMÅL</span><h2>Vanlige spørsmål</h2></div>
   <div class="faq">
-    <div class="faq-item reveal"><h4>Er det binding?</h4><p>Nei. Du kan si opp når som helst, uten oppsigelsestid.</p></div>
+    <div class="faq-item reveal"><h4>Er det binding?</h4><p>Nei. Du kan si opp eller bytte nivå når som helst, uten oppsigelsestid.</p></div>
     <div class="faq-item reveal"><h4>Tar dere en andel av inntekten min?</h4><p>Nei. Kundene betaler deg direkte i salongen — vi tar kun det faste månedsbeløpet.</p></div>
-    <div class="faq-item reveal"><h4>Hva med no-show?</h4><p>Depositum-beskyttelse kommer som oppgradering. Si fra i skjemaet om du vil ha det når det er klart.</p></div>
+    <div class="faq-item reveal"><h4>Krever dere depositum?</h4><p>Nei. Vi holder aldri pengene dine, og kunden trenger ikke kort for å booke. Påminnelses-SMS kutter de fleste no-shows, og på Vekst får du vinn-tilbake-meldingen som henter inn igjen den som likevel ikke møtte.</p></div>
     <div class="faq-item reveal"><h4>Hva om jeg ikke har bilder klare?</h4><p>Du sender oss bildene du vil bruke når du fyller ut skjemaet — eller laster dem opp selv i dashbordet etter at siden er live.</p></div>
   </div>
 </section>
