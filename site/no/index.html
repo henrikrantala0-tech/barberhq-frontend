@@ -1550,9 +1550,14 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   // DOM-rekkefølge er kalender|dashbord|booking. Fokusrekkefølgen er en ANNEN:
   // dashbordet er inngangen, kalenderen konsekvensen, bookingsida der kunden er.
   var ORDEN=[1,0,2], pos=0, aktiv=1;
-  var tAuto=null, tKal=null, tBook=[], synlig=false, hover=false;
+  // tDash er dashbordets rAF-håndtak. Den lå før bare som en selvfornyende løkke uten
+  // håndtak, og var derfor den ENESTE av de tre sekvensene stoppSekvenser() ikke kunne
+  // avbryte: en restart innen DASH_SEKV lot to kjeder skrive til samme teller, og tallet
+  // falt bakover. skjultFra er nullpunktet for tida seksjonen har vært ute av viewporten.
+  var tAuto=null, tKal=null, tBook=[], tDash=null, skjultFra=null, synlig=false, hover=false;
   var brukerHarTatt=false;   // settes ved første touch/manuelle scroll — permanent
   var fokusStart=Date.now(); // når det aktive kortet SIST ble aktivt (dvelleklokkas nullpunkt)
+  var sekvStart=Date.now();  // når den pågående sekvensen sist ble startet forfra
   var klikkStyrt=false;      // brukeren har klikket ⇒ hover skal ikke fryse rotasjonen
 
   function tegn(i){
@@ -1567,7 +1572,8 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     // poenget — at kunden fyller inn to felter — var over før kortet ble sett på.
     // Dvelletiden utledes nå av sekvenslengden (se SEKV/HVILE), så de kan ikke drive fra
     // hverandre igjen.
-    startSekvens(i);            // setter fokusStart
+    fokusStart=Date.now();      // EKTE fokusskifte ⇒ dvelleklokka nullstilles her
+    startSekvens(i);
     // Sto det allerede en timer, er den armet mot et gammelt nullpunkt. Arm på nytt fra
     // det ferske. Kommer vi fra autoplay er tAuto null her, og da armer den kallende
     // funksjonen selv rett etterpå — ingen dobbeltarmering.
@@ -1676,8 +1682,9 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
         gullSatt=true;
         rev.classList.add('rekord-gull','rekord-puls');   // ekte tilstand, demo-timing
       }
-      if(p<1) requestAnimationFrame(steg);
+      if(p<1) tDash=requestAnimationFrame(steg);
       else {
+        tDash=null;                                       // kjeden er ferdig av seg selv
         if(fill){ fill.style.width='100%'; fill.classList.add('rekord'); }
         if(txt){ txt.textContent='Ny rekord denne uka! 🔥'; txt.classList.add('rekord'); }
         if(note) note.textContent='';                     // baren eier budskapet
@@ -1685,7 +1692,9 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     }
     sett(0); cnt.textContent='0';
     bars.forEach(function(b){ b.style.setProperty('--g','0'); });
-    requestAnimationFrame(steg);
+    // t0 er lokal og fødes null i hver nye lukning, så en avbrutt kjede tar sitt eget
+    // nullpunkt med seg i graven — neste start begynner alltid på null.
+    tDash=requestAnimationFrame(steg);
   }
 
 
@@ -2082,7 +2091,15 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     // gjenopptakelse en hel ny dvelletid: kortet hadde stått ferdigspilt i 20 sekunder,
     // og man ventet 14 til fordi klokka startet på nytt ved mouseleave.
     var gaatt=Date.now()-fokusStart;
-    var rest=Math.max(dvele()-gaatt, NAADE);
+    // Rotasjonen skal ALDRI kutte en sekvens som fortsatt spiller. Uten dette gulvet blir
+    // «gjenoppta»-regnestykket over selvmotsigende: sekvensen starter forfra fra null, men
+    // arver bare RESTEN av dvelletiden — er resten kortere enn sekvensen, roterer kortet
+    // videre midt i, og man må vente en hel runde (28,9s) på å se den ferdig. Målt: 4431ms
+    // rest mot 4500ms sekvens kuttet dashbordet 70ms før mål.
+    // Gulvet er inert i vanlig rotasjon: der er gaatt≈0, så dvele()-gaatt = SEKV+HVILE,
+    // som alltid er større enn SEKV. Det rører derfor ikke 7000/7850/14000.
+    var igjenAvSekv=(SEKV[ORDEN[pos]]||0)-(Date.now()-sekvStart);
+    var rest=Math.max(dvele()-gaatt, igjenAvSekv, NAADE);
     // setTimeout, ikke setInterval: intervallet er ikke konstant lenger, og neste
     // ventetid avhenger av hvilket kort vi nettopp gikk TIL.
     tAuto=setTimeout(function(){ tAuto=null; nesteFokus(); startAuto(); }, rest);
@@ -2099,10 +2116,15 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     clearTimeout(tKal); tKal=null;
     tKalListe.forEach(clearTimeout); tKalListe=[];
     tBook.forEach(clearTimeout); tBook=[];
+    if(tDash!==null){ cancelAnimationFrame(tDash); tDash=null; }
   }
+  // startSekvens spiller KUN av. Den nullstiller ikke dvelleklokka lenger — den gjorde to
+  // ting samtidig, og da kunne ikke synlighetsobservatøren starte animasjonen på nytt uten
+  // å gi kortet en hel ny dvelletid på kjøpet. Klokka nullstilles nå der et EKTE fokusskifte
+  // skjer, i tegn().
   function startSekvens(i){
     stoppSekvenser();
-    fokusStart=Date.now();       // dvelleklokkas nullpunkt = der sekvensen starter
+    sekvStart=Date.now();        // når den PÅGÅENDE sekvensen begynte — ikke dvelleklokka
     if(REDUSERT) return;
     if(i===0) kalenderLoop();
     else if(i===1) tellOpp();
@@ -2151,7 +2173,19 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
       // Dashbordet er aktivt fra markupen, så tegn() kalles ALDRI for det ved innlasting.
       // Derfor startes sekvensen for det aktive kortet her, ikke via tegn(): uten dette
       // fyrte dashbordanimasjonen aldri, stolpene sto på 0 og rekordtilstanden uteble.
-      if(synlig){ startSekvens(aktiv); startAuto(); } else { stoppAuto(); stoppSekvenser(); }
+      // GJENOPPTA, ikke restart. Sekvensen spilles av på nytt — det er riktig, man skal se
+      // den fra begynnelsen — men dvelleklokka skal ikke nullstilles. Tida seksjonen lå ute
+      // av viewporten er ikke tid brukeren har sett på kortet, så den skyves ut av regnskapet
+      // ved å flytte nullpunktet like langt fram. Uten dette ville `gaatt` vokst fritt mens
+      // seksjonen var borte, og `rest` falt til NAADE (500ms): kortet ville rotert videre et
+      // halvt sekund etter at animasjonen så vidt hadde startet på nytt.
+      if(synlig){
+        if(skjultFra!==null){ fokusStart+=Date.now()-skjultFra; skjultFra=null; }
+        startSekvens(aktiv); startAuto();
+      } else {
+        if(skjultFra===null) skjultFra=Date.now();
+        stoppAuto(); stoppSekvenser();
+      }
     },{threshold:.2}).observe(vp);
   } else { synlig=true; startMikro(); startAuto(); }
 
