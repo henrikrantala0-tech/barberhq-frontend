@@ -2671,10 +2671,25 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
       })(n);
   }
 
+  // Sporet scrolles DIREKTE. Her sto scrollIntoView({inline:'center',block:'nearest'}),
+  // og den virker på BEGGE akser: block-verdien styrer bare hvor mye den scroller loddrett,
+  // ikke OM den gjør det. Resultatet var at hele sida ble dratt ned til produktvisningen —
+  // først ved innlasting, og så på nytt ved hver rotasjon. Målt før fiksen: scrollY gikk
+  // 0 → 1090 → 1158 på 320 og 0 → 997 → 1065 på 375, uten at brukeren rørte noe.
+  // scene.scrollTo rører kun sporets egen vannrette scroll og lar sida stå der den står.
   function senterKort(i, glatt){
     var k=kort.filter(function(x){return +x.dataset.i===i;})[0]; if(!k)return;
-    if(k.scrollIntoView) k.scrollIntoView({inline:'center',block:'nearest',
-      behavior:(glatt&&!REDUSERT)?'smooth':'instant'});
+    // offsetLeft måles fra offsetParents PADDING-kant. .scene er ikke posisjonert, så
+    // offsetParent er en forfar lenger opp, og det origoet må trekkes fra for å komme over
+    // i sporets scroll-koordinater. Får .scene en gang position:relative, blir den selv
+    // offsetParent og kortets offsetLeft er ALLEREDE i sporets koordinater — da skal
+    // ingenting trekkes fra. Begge tilfeller dekkes, så en senere posisjonering ikke
+    // flytter hele ringen uten at noe feiler.
+    var origo=(k.offsetParent===scene)?0:(scene.offsetLeft+scene.clientLeft);
+    var maal=k.offsetLeft-origo-(scene.clientWidth-k.offsetWidth)/2;
+    // Ingen egen klemming: scrollTo klemmer selv til [0, scrollWidth − clientWidth].
+    // Det er nettopp den klemmingen som gjør at ytterkortene ikke NÅR midten — egen sak.
+    scene.scrollTo({left:maal, behavior:(glatt&&!REDUSERT)?'smooth':'instant'});
   }
 
   function nesteFokus(){
