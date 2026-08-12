@@ -415,10 +415,14 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    hardkodet verdi ble 403px mot 275px faktisk innhold — 128px tomrom under diagrammet. */
 #produkt .brw-body{overflow:hidden}
 
-#produkt .iph{background:#000;padding:9px;border-radius:44px;border:1px solid #2a2a2a;
+/* Telefonrammen er AVSCOPET fra #produkt — den er ren form og deles nå med
+   rebooking-demoen i «Bygd for å fylle stolen». Ingenting her er karusell-spesifikt.
+   Det som BLIR i #produkt er bredden (.pv-phoneframe), fokusrammen (.mock.on) og hele
+   --ph-s-skaleringen, som drives av settTelefonSkala() over #scene. */
+.iph{background:#000;padding:9px;border-radius:44px;border:1px solid #2a2a2a;
   box-shadow:0 30px 60px -30px rgba(0,0,0,.9)}
-#produkt .iph-screen{position:relative;border-radius:35px;overflow:hidden;aspect-ratio:9/19.5;background:#fff}
-#produkt .iph-island{position:absolute;top:8px;left:50%;transform:translateX(-50%);
+.iph-screen{position:relative;border-radius:35px;overflow:hidden;aspect-ratio:9/19.5;background:#fff}
+.iph-island{position:absolute;top:8px;left:50%;transform:translateX(-50%);
   width:90px;height:26px;background:#000;border-radius:13px;z-index:5;pointer-events:none}
 #produkt .mock.on .iph{border-color:#4d8bff}
 
@@ -439,30 +443,38 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   background-image:linear-gradient(45deg,transparent 45%,currentColor 45%,currentColor 55%,transparent 55%),
                    linear-gradient(-45deg,transparent 45%,currentColor 45%,currentColor 55%,transparent 55%)}
 
-/* Kalender — bygget i designsystemet, ikke klonet */
-#produkt .pv-cal{padding:44px 14px 14px;background:#141414;height:100%;position:relative;
+/* Kalender — bygget i designsystemet, ikke klonet.
+   AVSCOPET fra #produkt: den deles nå med verving-demoen i «Bygd for å fylle stolen».
+   Ren form, ingenting karusell-spesifikt. .cal-pop BLIR i #produkt — det flygende
+   popup-kortet er produktvisningens egen koreografi, ikke en del av kalenderen.
+
+   Radens tre barn het .ct/.cn/.cs. To-bokstavs klassenavn kan ikke slippes løs globalt på
+   denne sida: den inneholder en klonet bookingmodul og et klonet dashbord, og CLAUDE.md
+   dokumenterer at landingssidas uscopede regler har lagt seg oppå klonene før (wrap, nav,
+   logo). Derfor .crow-t/-n/-s — bundet til .crow, umulig å treffe ved et uhell. */
+.pv-cal{padding:44px 14px 14px;background:#141414;height:100%;position:relative;
   overflow:hidden;font-family:'Inter',system-ui,sans-serif}
-#produkt .pv-cal-d{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em}
-#produkt .pv-cal-s{font-size:12px;color:#7a7a7a;margin-top:2px}
-#produkt .pv-cal-rows{display:flex;flex-direction:column;gap:8px;margin-top:14px}
-#produkt .crow{display:flex;align-items:center;gap:10px;background:#101010;border:1px solid #232323;border-radius:9px;padding:10px 11px}
-#produkt .ct{font-size:11px;color:#8a8a8a;font-variant-numeric:tabular-nums;min-width:36px}
-#produkt .cn{font-size:12.5px;color:#fff;font-weight:600}
-#produkt .cs{font-size:11px;color:#7a7a7a;margin-left:auto}
+.pv-cal-d{font-size:15px;font-weight:700;color:#fff;letter-spacing:-.01em}
+.pv-cal-s{font-size:12px;color:#7a7a7a;margin-top:2px}
+.pv-cal-rows{display:flex;flex-direction:column;gap:8px;margin-top:14px}
+.crow{display:flex;align-items:center;gap:10px;background:#101010;border:1px solid #232323;border-radius:9px;padding:10px 11px}
+.crow-t{font-size:11px;color:#8a8a8a;font-variant-numeric:tabular-nums;min-width:36px}
+.crow-n{font-size:12.5px;color:#fff;font-weight:600}
+.crow-s{font-size:11px;color:#7a7a7a;margin-left:auto}
 /* Fargekoding per TJENESTE, ikke per rad: samme tjeneste får samme tint, så mønsteret i
    dagen er lesbart. Før hadde bare den ene «nye» raden farge, og de tre andre lå grå —
    det så ut som en feil, ikke som et system. */
-#produkt .crow.k-a{border-color:#2b4a7a;background:#101a28}
-#produkt .crow.k-a .cn{color:#7fb0ff}
-#produkt .crow.k-b{border-color:#245c40;background:#0f1e17}
-#produkt .crow.k-b .cn{color:#5fd99a}
-#produkt .crow.k-c{border-color:#6b5620;background:#1c1710}
-#produkt .crow.k-c .cn{color:#e2bd5c}
+.crow.k-a{border-color:#2b4a7a;background:#101a28}
+.crow.k-a .crow-n{color:#7fb0ff}
+.crow.k-b{border-color:#245c40;background:#0f1e17}
+.crow.k-b .crow-n{color:#5fd99a}
+.crow.k-c{border-color:#6b5620;background:#1c1710}
+.crow.k-c .crow-n{color:#e2bd5c}
 /* Raden legges inn USYNLIG først, så popup-kortet har et ekte mål å fly mot. Uten det
    måtte målposisjonen gjettes, og den flytter seg for hver rad som kommer til. */
-#produkt .crow.rad{opacity:0;transform:translateY(-6px);
+.crow.rad{opacity:0;transform:translateY(-6px);
   transition:opacity .3s ease,transform .3s cubic-bezier(.22,1,.36,1)}
-#produkt .crow.rad.inn{opacity:1;transform:none}
+.crow.rad.inn{opacity:1;transform:none}
 
 /* Popup-kortet: spretter inn sentrert, krymper inn i raden sin. */
 #produkt .cal-pop{position:absolute;left:50%;top:46%;z-index:5;min-width:150px;
@@ -1774,8 +1786,8 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
       // 1. Raden legges inn USYNLIG, så den har en ekte posisjon å fly mot.
       var rad=document.createElement('div');
       rad.className='crow rad '+b.k;
-      rad.innerHTML='<span class="ct">'+b.t+'</span><span class="cn">'+b.n+'</span>'+
-                    '<span class="cs">'+b.s+'</span>';
+      rad.innerHTML='<span class="crow-t">'+b.t+'</span><span class="crow-n">'+b.n+'</span>'+
+                    '<span class="crow-s">'+b.s+'</span>';
       rows.appendChild(rad);
       // 2. Popup-kortet spretter inn sentrert.
       pop.className='cal-pop '+b.k;
