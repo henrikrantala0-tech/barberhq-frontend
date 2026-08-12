@@ -195,169 +195,343 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 }
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}.hero h1 .h1-big{animation:none}}
 
-/* === rebooking-animasjon (scoped) === */
-.rbscope *{margin:0;padding:0;box-sizing:border-box}
-.rbscope body{background:#0a0a0a;font-family:'Inter',system-ui,sans-serif;color:#fff;line-height:1.6}
-.rbscope .section{max-width:1100px;margin:0 auto;padding:90px 32px;text-align:center}
-.rbscope .eyebrow{color:#7a7a7a;font-size:12px;letter-spacing:.2em;font-weight:600;margin-bottom:14px}
-.rbscope .section h2{font-size:clamp(34px,5.5vw,54px);font-weight:800;line-height:1.0;letter-spacing:-.04em;margin-bottom:18px}
-.rbscope .section .sub{color:#9a9a9a;font-size:16px;line-height:1.55;max-width:440px;margin:0 auto 50px}
-.rbscope .demo-wrap{position:relative;display:inline-block}
-.rbscope .demo-wrap::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:130%;height:80%;background:radial-gradient(ellipse,rgba(255,150,45,.26),rgba(255,150,45,.06) 55%,transparent 75%);filter:blur(55px);z-index:0;pointer-events:none}
-.rbscope .demo{position:relative;z-index:1;width:300px;height:600px;margin:0 auto;background:#000;border:10px solid #1a1a1a;border-radius:46px;overflow:hidden;box-shadow:0 40px 80px -30px rgba(0,0,0,.9)}
-.rbscope .demo::before{content:"";position:absolute;top:14px;left:50%;transform:translateX(-50%);width:90px;height:24px;background:#000;border-radius:14px;z-index:30}
-.rbscope .screen{position:absolute;inset:0;transition:transform .7s cubic-bezier(.7,0,.2,1)}
-.rbscope .screen.msg{transform:translateX(0)}
-.rbscope .screen.cal{transform:translateX(100%)}
-.rbscope .slid .msg{transform:translateX(-100%)}
-.rbscope .slid .cal{transform:translateX(0)}
-.rbscope /* ===== MELDINGS-SKJERM (hvit) ===== */
-.msg{background:#fff;color:#000}
-.rbscope .msg .statusbar{color:#000}
-.rbscope .msg-head{text-align:center;padding:6px 0 14px;border-bottom:1px solid #e6e6e6}
-.rbscope .gb-logo{width:48px;height:48px;border-radius:50%;background:linear-gradient(145deg,#1a1a1a,#000);display:flex;align-items:center;justify-content:center;margin:0 auto 6px;color:#fff;font-weight:800;font-size:18px;letter-spacing:.02em;border:1px solid #333;font-family:'Inter',sans-serif}
-.rbscope .msg-head .nm{font-size:13px;font-weight:600;color:#111}
-.rbscope .msg-head .sub2{font-size:10px;color:#999}
-.rbscope .msg-body{padding:18px 14px;display:flex;flex-direction:column;gap:8px}
-.rbscope .bubble{max-width:84%;background:#e9e9eb;color:#000;border-radius:18px;border-bottom-left-radius:5px;padding:11px 14px;font-size:13.5px;line-height:1.45;align-self:flex-start;opacity:0;transform:translateY(14px) scale(.96);transform-origin:left bottom}
-.rbscope .bubble.pop{animation:bubblePop .45s cubic-bezier(.34,1.4,.5,1) forwards}
-.rbscope .book-btn{align-self:flex-start;width:84%;background:#007aff;color:#fff;font-weight:600;font-size:13px;text-align:center;padding:13px;border-radius:14px;margin-top:2px;opacity:0;transform:translateY(14px) scale(.96)}
-.rbscope .book-btn.pop{animation:bubblePop .45s cubic-bezier(.34,1.4,.5,1) .25s forwards}
-.rbscope .book-btn.tapped{background:#0062cc;transform:scale(.94)!important;transition:transform .15s,background .15s}
-.rbscope .time-stamp{font-size:9px;color:#999;align-self:center;margin:4px 0;opacity:0}
-.rbscope .time-stamp.show{animation:fadeIn .3s forwards}
-.rbscope /* tekstfelt + tastatur nederst */
-.msg-input{position:absolute;bottom:158px;left:0;right:0;padding:8px 12px;display:flex;align-items:center;gap:8px;border-top:1px solid #ececec;background:#fff}
-.rbscope .msg-input .plus{color:#8e8e93;font-size:22px}
-.rbscope .msg-input .box{flex:1;border:1px solid #d1d1d6;border-radius:16px;height:32px;display:flex;align-items:center;padding:0 12px;color:#aeaeb2;font-size:13px}
-.rbscope .keyboard{position:absolute;bottom:0;left:0;right:0;height:150px;background:#d1d4db;padding:6px 4px 14px;display:flex;flex-direction:column;gap:7px}
-.rbscope .kb-row{display:flex;justify-content:center;gap:5px;padding:0 3px}
-.rbscope .key{background:#fff;border-radius:5px;min-width:28px;height:38px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#000;box-shadow:0 1px 0 rgba(0,0,0,.28);flex:1}
-.rbscope .key.wide{flex:1.6}
-.rbscope .key.space{flex:5}
-.rbscope .key.fn{background:#abb0bb;font-size:11px;color:#000;flex:1.4}
-.rbscope /* statuslinje (ekte SVG: dekning + wifi + batteri) */
-.statusbar{height:46px;display:flex;align-items:center;justify-content:space-between;padding:16px 22px 0;font-size:15px;font-weight:600}
-.rbscope .sb-right{display:flex;align-items:center;gap:7px}
-.rbscope .sb-right svg{display:block}
-.rbscope .sb-bars{height:11px;width:18px}
-.rbscope .sb-wifi{height:13px;width:17px}
-.rbscope .sb-batt{height:13px;width:25px}
-.rbscope /* ===== KALENDER-SKJERM (Google-stil) ===== */
-.cal{background:#1b1b1d;color:#e3e3e3}
-.rbscope .cal .statusbar{color:#fff}
-.rbscope .cal-top{display:flex;align-items:center;gap:14px;padding:8px 16px 12px}
-.rbscope .cal-top .ham{color:#cfcfcf;font-size:18px}
-.rbscope .cal-top .mon{font-size:18px;color:#fff;font-weight:400;display:flex;align-items:center;gap:5px}
-.rbscope .cal-top .mon i{font-size:13px;color:#cfcfcf}
-.rbscope .cal-top .icons{margin-left:auto;display:flex;align-items:center;gap:14px;color:#cfcfcf;font-size:17px}
-.rbscope .cal-top .ava{width:24px;height:24px;border-radius:50%;background:#000;border:1px solid #444}
-.rbscope .cal-daybar{display:flex;padding:6px 16px 12px;border-bottom:1px solid #2a2a2c}
-.rbscope .cal-daybar .d-lbl{font-size:11px;color:#9aa0a6;letter-spacing:.05em}
-.rbscope .cal-daybar .d-num{font-size:26px;color:#fff;font-weight:400;line-height:1;margin-top:2px}
-.rbscope .cal-daybar .d-none{margin-left:24px;color:#9aa0a6;font-size:14px;align-self:center}
-.rbscope .cal-grid{position:relative;padding:0 0 0 0;overflow:hidden}
-.rbscope .cal-row{display:flex;align-items:flex-start;height:46px;border-top:1px solid #232325}
-.rbscope .cal-row .hr{font-size:10px;color:#9aa0a6;width:52px;flex-shrink:0;text-align:right;padding:2px 10px 0 0;margin-top:-7px}
-.rbscope .cal-row:first-child{border-top:none}
-.rbscope .cal-area{position:absolute;left:52px;right:0;top:0;bottom:0;pointer-events:none}
-.rbscope /* booket time */
-.appt{position:absolute;left:8px;right:10px;background:#7b3ff2;color:#fff;border-radius:7px;padding:6px 10px;opacity:0;transform:scale(.85);transform-origin:left center;box-shadow:0 4px 14px rgba(123,63,242,.4)}
-.rbscope .appt.pop{animation:apptPop .55s cubic-bezier(.34,1.5,.5,1) forwards}
-.rbscope .appt .a-name{font-size:12px;font-weight:600;line-height:1.2}
-.rbscope .appt .a-serv{font-size:10px;opacity:.85;margin-top:1px}
-.rbscope .fab{position:absolute;right:16px;bottom:18px;width:52px;height:52px;border-radius:17px;background:#0b57d0;display:flex;align-items:center;justify-content:center;color:#fff;font-size:26px;box-shadow:0 6px 16px rgba(0,0,0,.5);z-index:5}
-.rbscope .flash{position:absolute;inset:0;background:radial-gradient(circle at 40% 55%,rgba(123,63,242,.45),transparent 60%);opacity:0;pointer-events:none;z-index:4}
-.rbscope .flash.go{animation:flash .6s ease forwards}
-.rbscope /* pills */
-.pills{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:46px}
-.rbscope .pill{background:#121212;border:1px solid #242424;color:#e0e0e0;font-size:15px;font-weight:500;border-radius:99px;padding:13px 22px;display:inline-flex;align-items:center;gap:10px}
-.rbscope .pill i{font-size:19px;color:#3ecf7e}
-.rbscope .pill svg{color:#3ecf7e}
-@keyframes bubblePop{to{opacity:1;transform:none}}
-/* fallback: vis bobler hvis JS ikke kjører */
-.no-js .rbscope .bubble,.no-js .rbscope .book-btn,.no-js .rbscope .time-stamp,.no-js .vvscope .bub,.no-js .vvscope .link-card,.no-js .vvscope .btn-blue{opacity:1!important;transform:none!important}
-@keyframes fadeIn{to{opacity:1}}
-@keyframes apptPop{to{opacity:1;transform:none}}
-@keyframes flash{0%{opacity:0}25%{opacity:1}100%{opacity:0}}
-/* === verving-animasjon (scoped) === */
-.vvscope *{margin:0;padding:0;box-sizing:border-box}
-.vvscope body{background:#0a0a0a;font-family:'Inter',system-ui,sans-serif;color:#fff;line-height:1.6}
-.vvscope .section{max-width:1100px;margin:0 auto;padding:80px 32px;text-align:center}
-.vvscope .eyebrow{color:#7a7a7a;font-size:12px;letter-spacing:.2em;font-weight:600;margin-bottom:14px}
-.vvscope .section h2{font-size:clamp(34px,5.5vw,54px);font-weight:800;line-height:1.0;letter-spacing:-.04em;margin-bottom:18px}
-.vvscope .section .sub{color:#9a9a9a;font-size:16px;line-height:1.55;max-width:440px;margin:0 auto 50px}
-.vvscope /* liten kontekst-linje som viser at dette er "del 2" */
-.bridge{color:#666;font-size:13px;margin:0 auto 46px;max-width:420px;border-top:1px solid #1c1c1c;padding-top:28px}
-.vvscope .bridge b{color:#bbb;font-weight:600}
-.vvscope .demo-wrap{position:relative;display:inline-block}
-.vvscope .demo-wrap::before{content:"";position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:130%;height:80%;background:radial-gradient(ellipse,rgba(62,207,126,.24),rgba(62,207,126,.06) 55%,transparent 75%);filter:blur(55px);z-index:0;pointer-events:none}
-.vvscope .demo{position:relative;z-index:1;width:300px;height:600px;margin:0 auto;background:#000;border:10px solid #1a1a1a;border-radius:46px;overflow:hidden;box-shadow:0 40px 80px -30px rgba(0,0,0,.9)}
-.vvscope .screen{position:absolute;inset:0;transition:transform .7s cubic-bezier(.7,0,.2,1)}
-.vvscope .screen.s1{transform:translateX(0)}
-.vvscope .screen.s2{transform:translateX(100%)}
-.vvscope .slid .s1{transform:translateX(-100%)}
-.vvscope .slid .s2{transform:translateX(0)}
-.vvscope .statusbar{height:46px;display:flex;align-items:center;justify-content:space-between;padding:16px 22px 0;font-size:15px;font-weight:600}
-.vvscope .sb-right{display:flex;align-items:center;gap:7px}
-.vvscope .sb-right svg{display:block}
-.vvscope .sb-bars{height:11px;width:18px}
-.vvscope .sb-wifi{height:13px;width:17px}
-.vvscope .sb-batt{height:13px;width:25px}
-.vvscope /* SKJERM 1 — del link (hvit imessage) */
-.s1{background:#fff;color:#000}
-.vvscope .s1 .statusbar{color:#000}
-.vvscope .mhead{text-align:center;padding:4px 0 12px;border-bottom:1px solid #ececec}
-.vvscope .logo-c{width:44px;height:44px;border-radius:50%;background:linear-gradient(145deg,#1a1a1a,#000);display:flex;align-items:center;justify-content:center;margin:0 auto 5px;color:#fff;font-weight:800;font-size:16px;border:1px solid #333}
-.vvscope .mhead .nm{font-size:12px;font-weight:600;color:#111}
-.vvscope .mhead .sub2{font-size:10px;color:#999}
-.vvscope .mbody{padding:16px 13px;display:flex;flex-direction:column;gap:8px}
-.vvscope .bub{max-width:86%;background:#e9e9eb;color:#000;border-radius:17px;border-bottom-left-radius:5px;padding:11px 14px;font-size:13px;line-height:1.45;align-self:flex-start;opacity:0;transform:translateY(12px) scale(.96);transform-origin:left bottom}
-.vvscope .bub.vvpop{animation:vvpop .45s cubic-bezier(.34,1.4,.5,1) forwards}
-.vvscope .link-card{align-self:flex-start;width:86%;background:#f2f2f7;border:1px solid #e0e0e5;border-radius:13px;padding:11px 13px;opacity:0;transform:translateY(12px) scale(.96)}
-.vvscope .link-card.vvpop{animation:vvpop .45s cubic-bezier(.34,1.4,.5,1) .25s forwards}
-.vvscope .link-card .lc-top{display:flex;align-items:center;gap:8px}
-.vvscope .link-card .lc-ic{width:28px;height:28px;border-radius:7px;background:#000;display:flex;align-items:center;justify-content:center;color:#fff;font-size:14px}
-.vvscope .link-card .lc-url{font-size:11px;color:#007aff;font-weight:600;word-break:break-all}
-.vvscope .btn-blue{align-self:flex-start;width:86%;background:#007aff;color:#fff;font-weight:600;font-size:12.5px;text-align:center;padding:12px;border-radius:13px;margin-top:2px;opacity:0;transform:translateY(12px) scale(.96)}
-.vvscope .btn-blue.vvpop{animation:vvpop .45s cubic-bezier(.34,1.4,.5,1) .5s forwards}
-.vvscope .btn-blue.tapped{background:#0062cc;transform:scale(.94)!important;transition:transform .15s,background .15s}
-.vvscope /* tekstfelt + tastatur nederst (skjerm 1) */
-.msg-input{position:absolute;bottom:158px;left:0;right:0;padding:8px 12px;display:flex;align-items:center;gap:8px;border-top:1px solid #ececec;background:#fff}
-.vvscope .msg-input .plus{color:#8e8e93;font-size:22px}
-.vvscope .msg-input .box{flex:1;border:1px solid #d1d1d6;border-radius:16px;height:32px;display:flex;align-items:center;padding:0 12px;color:#aeaeb2;font-size:13px}
-.vvscope .keyboard{position:absolute;bottom:0;left:0;right:0;height:150px;background:#d1d4db;padding:6px 4px 14px;display:flex;flex-direction:column;gap:7px}
-.vvscope .kb-row{display:flex;justify-content:center;gap:5px;padding:0 3px}
-.vvscope .key{background:#fff;border-radius:5px;min-width:24px;height:38px;display:flex;align-items:center;justify-content:center;font-size:15px;color:#000;box-shadow:0 1px 0 rgba(0,0,0,.28);flex:1}
-.vvscope .key.wide{flex:1.6}
-.vvscope .key.space{flex:5}
-.vvscope .key.fn{background:#abb0bb;font-size:11px;color:#000;flex:1.4}
-.vvscope /* SKJERM 2 — begge fikk rabatt (mørk, .vvscope app-bekreftelse) */
-.s2{background:#0e1411;color:#e8f0eb}
-.vvscope .s2 .statusbar{color:#fff}
-.vvscope .confirm{padding:50px 22px;display:flex;flex-direction:column;align-items:center;text-align:center;height:100%}
-.vvscope .confirm .check{width:72px;height:72px;border-radius:50%;background:#0d2417;border:1px solid #1f4a30;display:flex;align-items:center;justify-content:center;color:#3ecf7e;font-size:38px;margin-bottom:22px;opacity:0;transform:scale(.6)}
-.vvscope .confirm .check.vvpop{animation:vvpop .55s cubic-bezier(.34,1.5,.5,1) forwards}
-.vvscope .confirm h3{font-size:19px;font-weight:800;letter-spacing:-.02em;margin-bottom:8px;opacity:0}
-.vvscope .confirm h3.show{animation:vvfade .4s .25s forwards}
-.vvscope .confirm .who{color:#8fae9c;font-size:13px;margin-bottom:28px;opacity:0}
-.vvscope .confirm .who.show{animation:vvfade .4s .35s forwards}
-.vvscope .reward-row{display:flex;gap:10px;width:100%;opacity:0}
-.vvscope .reward-row.show{animation:vvfade .5s .55s forwards}
-.vvscope .rw{flex:1;background:#11231a;border:1px solid #1d4530;border-radius:14px;padding:14px 8px}
-.vvscope .rw .rw-lbl{font-size:10px;color:#7fae93;letter-spacing:.05em;margin-bottom:6px}
-.vvscope .rw .rw-pct{font-size:24px;font-weight:800;color:#3ecf7e;line-height:1}
-.vvscope .rw .rw-who{font-size:10px;color:#6b8f78;margin-top:4px}
-.vvscope .controls{margin-top:34px;display:flex;gap:10px;justify-content:center}
-.vvscope .ctrl-btn{background:#161616;border:1px solid #282828;color:#bbb;font:inherit;font-size:13px;padding:9px 16px;border-radius:99px;cursor:pointer;display:inline-flex;align-items:center;gap:7px}
-.vvscope .ctrl-btn:hover{border-color:#fff;color:#fff}
-.vvscope /* pills */
-.pills{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:46px}
-.vvscope .pill{background:#121212;border:1px solid #242424;color:#e0e0e0;font-size:15px;font-weight:500;border-radius:99px;padding:13px 22px;display:inline-flex;align-items:center;gap:10px}
-.vvscope .pill i{font-size:19px;color:#3ecf7e}
-.vvscope .pill svg{color:#3ecf7e}
-@keyframes vvpop{to{opacity:1;transform:none}}
-@keyframes vvfade{to{opacity:1}}
+/* === .smsb — DELT SMS-boble ==================================================
+   Brukes av rebooking-demoen og (kommer) påminnelse-demoen. Definert på toppnivå med
+   vilje: to kopier ville betydd to steder å vedlikeholde halen, inn-animasjonen og
+   GSM-7-regelen, og de ville drevet fra hverandre.
+
+   HALEN er to pseudoelementer: ::before er kroppen i boblefargen, ::after er en maske i
+   SCENENS bakgrunnsfarge. Masken er ikke transparent — den maler over. Derfor er begge
+   farger variabler: setter en scene sin egen bakgrunn, setter den --smsb-bg på samme
+   element, og masken følger med. Det er fella som ellers etterlater en hvit flekk.
+
+   .smsb-avmeld er VALGFRITT barn og rendres kun der malen faktisk har en avmeldingslinje.
+   Rebooking har den (markedsføring); påminnelsen har den ikke (transaksjonell). */
+.smsb{position:relative;max-width:86%;background:var(--smsb-fyll,#e9e9eb);
+  border-radius:18px;border-bottom-left-radius:9px;
+  padding:10px 13px;font-size:12.5px;line-height:1.45;align-self:flex-start;color:#000;
+  opacity:0;transform:translateY(18px) scale(.92);transform-origin:left bottom;
+  transition:opacity .3s ease-out,transform .52s cubic-bezier(.18,1.2,.4,1)}
+.smsb.inn{opacity:1;transform:none}
+.smsb::before{content:"";position:absolute;bottom:0;left:-6px;width:16px;height:16px;
+  background:var(--smsb-fyll,#e9e9eb);border-bottom-right-radius:14px}
+.smsb::after{content:"";position:absolute;bottom:0;left:-13px;width:13px;height:16px;
+  background:var(--smsb-bg,#fff);border-bottom-right-radius:9px}
+.smsb-lenke{color:#007aff}
+.smsb-avmeld{display:block;margin-top:9px;font-size:10.5px;color:#8a8a8e}
+
+/* === vinn-tilbake-demo (.wbdemo) ============================================
+   Bærer BEGGE klassene: class="rbdemo wbdemo". ÉN scene — lista ER funksjonen, det
+   finnes ingen sending og ingen handlinger i dashbordet heller.
+   Verdiene er dashbordets egne (dashboard.html:558–571, 701–707): gruppeoverskrift
+   11px/700 versaler, rad-padding 12/16, navn 14px/500 nowrap, meta 12px, telefon på egen
+   linje 11,5px, kontekstlinja 11,5px høyrestilt, «ny»-prikk 7px.
+   Lista er 467px høy og dashbordet 560px — til sammen 1027px mot 649px skjerm. Scenen MÅ
+   derfor rulle, og forskyvningen måles i JS på samme måte som i verving. */
+.wbdemo .wb-badge{display:inline-flex;align-items:center;justify-content:center;
+  min-width:19px;height:19px;padding:0 6px;border-radius:99px;margin-left:8px;
+  background:rgba(77,139,255,.14);color:#4d8bff;font-size:11px;font-weight:700}
+.wbdemo .wb-liste{opacity:0;transform:translateY(6px);
+  transition:opacity .6s ease,transform .6s cubic-bezier(.2,1,.3,1)}
+.wbdemo .wb-liste.inn{opacity:1;transform:none}
+.wbdemo .wb-gruppe{margin-bottom:26px}
+.wbdemo .wb-gruppe:last-child{margin-bottom:0}
+.wbdemo .wb-gh{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;
+  color:#8f8f8f;margin:0 0 10px}
+.wbdemo .wb-kort{background:#141416;border:1px solid #232326;border-radius:12px;overflow:hidden}
+.wbdemo .wb-rad{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;
+  border-bottom:1px solid #232326}
+.wbdemo .wb-rad:last-child{border-bottom:0}
+.wbdemo .wb-info{flex:1;min-width:0}
+.wbdemo .wb-navn{font-size:14px;font-weight:500;color:#fff;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.wbdemo .wb-ny{display:inline-block;width:7px;height:7px;border-radius:50%;
+  background:#4d8bff;margin-right:7px;vertical-align:middle}
+.wbdemo .wb-meta{font-size:12px;color:#8f8f8f;margin-top:3px;line-height:1.4}
+.wbdemo .wb-tlf{display:block;margin-top:2px;font-size:11.5px;color:#6f6f6f;
+  font-variant-numeric:tabular-nums}
+.wbdemo .wb-hoyre{text-align:right;flex-shrink:0;max-width:54%}
+.wbdemo .wb-ctx{font-size:11.5px;color:#8f8f8f;line-height:1.4}
+/* Rulling: samme mønster som verving. --wb-rull måles i JS mot innholdets faktiske
+   posisjon; den er ikke en fast piksel, og den ligger i SAMME transform som skalaen. */
+.wbdemo .rb-s1 .rb-scale{transition:transform .6s cubic-bezier(.3,.8,.3,1)}
+.wbdemo .rb-s1.rullet .rb-scale{transform:scale(var(--rb-s,1)) translateY(var(--wb-rull,0px))}
+.wbdemo .maaler,.wbdemo .maaler *{transition:none!important}
+@media(prefers-reduced-motion:reduce){
+  .wbdemo .wb-liste,.wbdemo .rb-s1 .rb-scale{transition:none}
+}
+
+/* === verving-demo (.vvdemo) =================================================
+   Bærer BEGGE klassene: class="rbdemo vvdemo" — samme grep som .paademo.
+   Erstattet .vvscope-demoen 11.08. Den viste en utgående SMS fra systemet; verving
+   sender ingen SMS. Barbereren deler lenka selv, og det er delingen som skal vises.
+   Scene 3 gjenbruker .pv-cal fra produktvisningen (avscopet), ikke en kopi. */
+/* Scene 1 ruller ned når Verving-boksen utvider seg. Uten det ligger %-feltet under
+   skjermkanten i det verdien endres — pillene er synlige, tallet ikke, og tallet er halve
+   poenget.
+   FORSKYVNINGEN LIGGER I SAMME transform SOM SKALAEN. Står de i hver sin regel,
+   overskriver den ene den andre — samme felle som --dx/--sk i produktvisningen.
+   Verdien er IKKE en fast piksel, og den er ikke CSS. To forsøk feilet, begge målt:
+   1) fast 72px ble SKALERT med — 72 ved skala 0,64 er 46px på skjermen, og feltet lå
+      fortsatt 5px utenfor på 320.
+   2) translateY(min(0px,calc(679px - 100%))) — prosent inne i min() i en transform
+      resolver ikke, hele deklarasjonen forkastes, og ingenting rullet i det hele tatt.
+   Derfor regnes --vv-rull ut i JS av innholdets MÅLTE høyde mot skjermens 693 designpiksler.
+   offsetHeight, ikke rect: rect-en er den transformerte høyden. */
+/* Brukes ett øyeblikk under målingen i settRull(): boksen åpnes, høyden leses, boksen
+   lukkes igjen — alt i samme frame. Uten denne ville vi målt midt i max-height-overgangen. */
+.vvdemo .maaler,.vvdemo .maaler *{transition:none!important}
+.vvdemo .rb-s1 .rb-scale{transition:transform .5s cubic-bezier(.3,.8,.3,1)}
+.vvdemo .rb-s1.rullet .rb-scale{transform:scale(var(--rb-s,1)) translateY(var(--vv-rull,0px))}
+.vvdemo .vv-lead{display:block;font-size:12px;color:#8f8f8f;margin-bottom:8px}
+.vvdemo .vv-seg{margin-top:13px;opacity:0;transform:translateY(6px);
+  transition:opacity .3s ease,transform .3s ease}
+.vvdemo .vv-seg.vis{opacity:1;transform:none}
+.vvdemo .vv-piller{display:flex;gap:6px}
+.vvdemo .vv-pill{flex:1;background:#1b1b1e;border:1px solid #2a2a2e;color:#b4b4b4;
+  border-radius:8px;padding:8px 4px;font-size:10px;line-height:1.25;text-align:center;
+  transition:background .25s,border-color .25s,color .25s}
+.vvdemo .vv-pill.valgt{background:#4d8bff;border-color:#4d8bff;color:#fff;font-weight:600}
+/* Tallfeltet skal LESE som et input, ikke som en etikett. En fast verdi kan ikke vise at
+   den er redigerbar; et felt med ramme, %-suffiks og en fokusring som tennes idet verdien
+   endres, kan. Ekte kontroll: dashboard.html #vervPct — type=number, min 5, max 50,
+   step 1, standard 20. Demoen går 20 → 25, som er tallet scene 3 viser. */
+.vvdemo .vv-num{display:inline-flex;align-items:center;gap:3px;margin-top:5px;
+  background:#0e0e10;border:1px solid #2a2a2e;border-radius:8px;padding:7px 11px;
+  font-size:13px;font-weight:600;color:#fff;transition:border-color .2s,box-shadow .2s}
+.vvdemo .vv-num.fokus{border-color:#4d8bff;box-shadow:0 0 0 3px rgba(77,139,255,.25)}
+.vvdemo .vv-num i{font-style:normal;color:#8f8f8f;font-weight:500}
+
+/* Scene 2 — barberens kundeliste og delingsarket.
+   SKALERES som scene 1: innholdet ligger i .rb-scale og tegnes i 320 designpiksler.
+   Uten det rendret scene 2 i naturlig størrelse i en 206px skjerm, og teksten ble
+   dobbelt så stor som i scene 1. Høyden 649px = skjermens 693 minus statuslinjas 44,
+   slik at bottom:0 inne i wrapperen er skjermens bunn — delingsarket trenger det.
+
+   Verdiene er dashbordets egne (dashboard.html:561–586, .wb-card/.wb-row/.wb-name/
+   .wb-meta/.verv-btn): rad-padding 12/16, navn 14px/500 med nowrap+ellipsis, meta 12px,
+   knapp 12px/500. Navn og meta er BLOKKER, ikke spans — det var derfor «Marcus Olsen»
+   og «Skinnfade» rant sammen til ett ord. */
+.vvdemo .vv-s2{background:#0e0e10;padding-top:0}
+.vvdemo .vv-s2 .rb-scale{height:649px}
+.vvdemo .vv-kund{padding:16px 16px 0}
+.vvdemo .vv-kh{font-size:12px;letter-spacing:.16em;color:#8a8a8a;font-weight:600;margin-bottom:12px}
+.vvdemo .vv-kort{background:#141416;border:1px solid #232326;border-radius:12px;overflow:hidden}
+.vvdemo .vv-krad{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;
+  border-bottom:1px solid #232326;transition:background .25s ease}
+.vvdemo .vv-krad:last-child{border-bottom:0}
+.vvdemo .vv-krad.trykk{background:#17202e}
+.vvdemo .vv-kinfo{flex:1;min-width:0}
+.vvdemo .vv-knavn{font-size:14px;font-weight:500;color:#fff;
+  overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.vvdemo .vv-kmeta{font-size:12px;color:#8f8f8f;margin-top:3px;line-height:1.4}
+.vvdemo .vv-khoyre{text-align:right;flex-shrink:0;max-width:54%}
+.vvdemo .vv-kbtn{display:inline-block;border:1px solid #2a2a2e;background:#1b1b1e;
+  font-size:12px;font-weight:500;color:#4d8bff;padding:5px 11px;border-radius:7px;
+  white-space:nowrap;letter-spacing:-.01em;transition:background .2s,border-color .2s,color .2s}
+.vvdemo .vv-kbtn.trykk{background:#4d8bff;border-color:#4d8bff;color:#fff}
+.vvdemo .vv-lenke{margin:14px 0 0;background:#141416;border:1px solid #232326;border-radius:12px;
+  padding:13px 16px;opacity:0;transform:translateY(8px);
+  transition:opacity .3s ease,transform .3s cubic-bezier(.2,1.1,.4,1)}
+.vvdemo .vv-lenke.inn{opacity:1;transform:none}
+.vvdemo .vv-lk{font-size:10px;letter-spacing:.14em;font-weight:700;color:#8f8f8f}
+.vvdemo .vv-lu{font-size:13px;color:#4d8bff;margin-top:5px;word-break:break-all}
+.vvdemo .vv-lsub{font-size:11px;color:#8f8f8f;margin-top:6px}
+.vvdemo .vv-dim{position:absolute;inset:-44px 0 0;z-index:6;background:rgba(0,0,0,.55);
+  opacity:0;transition:opacity .35s ease;pointer-events:none}
+.vvdemo .vv-dim.inn{opacity:1}
+.vvdemo .vv-ark{position:absolute;left:0;right:0;bottom:0;z-index:7;background:#1c1c1e;
+  border-radius:18px 18px 0 0;padding:11px 16px 26px;transform:translateY(105%);
+  transition:transform .42s cubic-bezier(.2,.9,.3,1)}
+.vvdemo .vv-ark.inn{transform:none}
+.vvdemo .vv-grip{width:38px;height:5px;border-radius:99px;background:#48484a;margin:0 auto 18px}
+.vvdemo .vv-mal{display:flex;justify-content:space-around;gap:10px}
+.vvdemo .vv-mal>span{display:flex;flex-direction:column;align-items:center;gap:8px;
+  font-size:11px;color:#b4b4b4;text-align:center;line-height:1.25}
+.vvdemo .vv-ikon{width:54px;height:54px;border-radius:15px;background:#2c2c2e;
+  display:flex;align-items:center;justify-content:center;color:#fff}
+
+/* Scene 3 — .pv-cal gjenbrukt. Scenen dropper .rb-scene sin padding-top, for .pv-cal
+   har sin egen 44px til statuslinja. */
+.vvdemo .vv-s3{padding-top:0}
+.vvdemo .crow.vervet{flex-wrap:wrap}
+.vvdemo .vv-merk{flex-basis:100%;margin-top:7px;display:inline-flex;align-items:center;gap:5px;
+  align-self:flex-start;background:#12241a;border:1px solid #245c40;color:#5fd99a;
+  border-radius:99px;padding:3px 9px;font-size:9.5px;font-weight:600}
+
+/* Egen regel for redusert bevegelse. #produkt sin er scopet dit og gjelder IKKE her —
+   uten denne ville radene og arket animert for en bruker som har bedt om å slippe. */
+@media(prefers-reduced-motion:reduce){
+  .vvdemo .crow.rad,.vvdemo .vv-lenke,.vvdemo .vv-ark,.vvdemo .vv-dim,
+  .vvdemo .vv-seg,.vvdemo .vv-num,.vvdemo .vv-pill,.vvdemo .vv-kbtn,
+  .vvdemo .vv-krad,.vvdemo .rb-s1 .rb-scale{transition:none}
+}
+
+/* === påminnelse-demo (.paademo) =============================================
+   Bærer BEGGE klassene: class="rbdemo paademo". Rammen, scenene, statuslinja, skalaen og
+   hele Vekst-fanens kontroller er identiske med rebooking, og en kopi av det stilarket
+   ville drevet fra hverandre ved første endring. Her står KUN det som skiller.
+   TO scener: barberen skrur på, og kunden får meldingen. Kalenderscenen er droppet —
+   påminnelsen har ingen ventetid å vise, den går kvelden før. */
+.paademo .paa-forh{margin-top:12px;background:#0e0e10;border:1px solid #232326;border-radius:9px;
+  padding:9px 10px;font-size:10.5px;line-height:1.45;color:#b4b4b4}
+.paademo .paa-forh-k{display:block;font-size:9px;letter-spacing:.14em;font-weight:700;
+  color:#8f8f8f;margin-bottom:5px}
+.paademo .paa-s3{--smsb-bg:#fff}
+
+/* === rebooking-demo (scoped .rbdemo) ========================================
+   Tre scener i ÉN telefonskjerm: barberen skrur på rebooking, tiden går, kunden får
+   meldingen og booker. Erstattet .rbscope-demoen 11.08 — den viste en oppdiktet SMS
+   med emoji og en «Klikk her»-knapp som ikke finnes i den ekte malen.
+
+   RAMMEN ER DELT. .iph/.iph-screen/.iph-island er avscopet fra #produkt lenger oppe og
+   brukes her som de er. Ingen duplisert frame.
+
+   INGEN SKALERING. Innholdet skrives i skjermflatens naturlige bredde. --ph-s og
+   .pv-scale drives av settTelefonSkala() over #scene og gjelder ikke her — samme valg
+   som .pv-cal allerede har tatt (se kommentaren ved settTelefonSkala). */
+/* 340px ramme ⇒ 340 − 2×9 padding − 2×1 border = 320px skjerm, som er nøyaktig
+   designbredden scene 1 er tegnet i. Over 900px viewport er scene 1 derfor 1:1 med
+   dashbordet, uten skalering. Under 900px krymper rammen og --rb-s tar over. */
+.rbdemo{display:flex;justify-content:center;width:100%}
+.rbdemo .rb-frame{width:340px}
+@media(max-width:900px){.rbdemo .rb-frame{width:256px}}
+.rbdemo .rb-stage{position:absolute;inset:0;background:#0e0e10;color:#fff;
+  font-family:'Inter',system-ui,sans-serif;font-size:13px;line-height:1.45}
+.rbdemo .rb-scene{position:absolute;inset:0;padding-top:44px;opacity:0;
+  transition:opacity .35s ease;display:flex;flex-direction:column}
+.rbdemo .rb-scene.on{opacity:1}
+/* Statuslinja ligger OVER scenene, ikke i hver av dem — ett element, ikke tre.
+   .lys settes når scene 3 er aktiv, fordi den skjermen er hvit. */
+.rbdemo .rb-status{position:absolute;top:0;left:0;right:0;z-index:10;height:44px;
+  display:flex;align-items:center;justify-content:space-between;padding:14px 20px 0;
+  font-size:12px;font-weight:600;color:#fff;transition:color .3s ease}
+.rbdemo .rb-stage.lys .rb-status{color:#000}
+.rbdemo .sb-right{display:flex;align-items:center;gap:7px}
+.rbdemo .sb-right svg{display:block}
+.rbdemo .sb-bars{height:10px;width:16px}
+.rbdemo .sb-wifi{height:12px;width:15px}
+.rbdemo .sb-batt{height:12px;width:23px}
+
+/* ── Scene 1: barberens Vekst-fane ───────────────────────────────────────────
+   Alle verdier er DASHBORDETS EGNE (dashboard.html:640–670, 915–1015): .acc-head
+   padding 15/17, .acc-title 14px/600, .acc-sub 12px/1.5, .acc-list gap 12, .sec-h 16px/800.
+   Tegnet i 320 DESIGNpiksler og skalert med --rb-s. Over 900px er skalaen 1 og scenen
+   er 1:1 med dashbordet; under krymper den proporsjonalt.
+   Statisk gjengivelse, IKKE maskinell kloning: fire bokser er ikke verdt kollisjonsvakten
+   dashbord-klonen i produktvisningen må ha. Endres Vekst-fanen, må dette oppdateres for hånd.
+   Kun scene 1 skaleres — scene 2 og 3 er flytende og fyller skjermen i naturlig størrelse. */
+.rbdemo .rb-scale{position:absolute;top:44px;left:0;width:320px;
+  transform-origin:top left;transform:scale(var(--rb-s,1))}
+.rbdemo .rb-dash{padding:14px}
+.rbdemo .rb-sec{font-size:16px;font-weight:800;letter-spacing:-.02em;color:#fff;margin:0 0 10px}
+.rbdemo .rb-sec2{margin-top:22px}
+.rbdemo .rb-list{display:flex;flex-direction:column;gap:12px}
+.rbdemo .rb-acc{background:#141416;border:1px solid #232326;border-radius:12px;overflow:hidden}
+.rbdemo .rb-acc-row{display:flex;align-items:flex-start;gap:12px;padding:15px 17px}
+.rbdemo .rb-acc-txt{flex:1;min-width:0}
+.rbdemo .rb-acc-t{display:block;font-size:14px;font-weight:600;letter-spacing:-.01em;color:#fff}
+.rbdemo .rb-acc-s{display:block;font-size:12px;color:#8f8f8f;margin-top:3px;line-height:1.5}
+.rbdemo .rb-chev{flex-shrink:0;font-size:16px;line-height:1;color:#777;margin-top:3px}
+.rbdemo .rb-sw{flex:0 0 auto;width:38px;height:22px;border-radius:99px;background:#2c2c30;
+  position:relative;transition:background .3s ease;margin-top:3px}
+.rbdemo .rb-sl{position:absolute;top:2px;left:2px;width:18px;height:18px;border-radius:50%;
+  background:#fff;transition:transform .3s cubic-bezier(.34,1.4,.5,1)}
+.rbdemo .rb-sw.on{background:#3ecf7e}
+.rbdemo .rb-sw.on .rb-sl{transform:translateX(16px)}
+/* Utvidelsen: max-height animeres, ikke height — innholdet har ingen fast høyde. */
+/* Utvidelsen animeres med grid-template-rows 0fr → 1fr, IKKE max-height.
+   Grunnen er ikke eleganse: max-height krever et tall større enn innholdet, og det tallet
+   må gjettes per panel. Rebooking hadde 130px, verving trengte 190 og klippet %-feltet i
+   stillhet til det ble oppdaget, og vinn-tilbake-lista ville trengt en tredje verdi rundt
+   520. Tre magiske tall som må holdes i synk med tre ulike innhold er en felle som allerede
+   har slått til én gang.
+   0fr → 1fr animerer til innholdets EGEN høyde. Ingen tall, ingenting å synkronisere, og
+   ingenting kan klippes bort uten at det er synlig med en gang.
+   .rb-body-in trenger min-height:0 + overflow:hidden — uten dem nekter grid-elementet å
+   krympe under sin egen innholdshøyde, og panelet står åpent i lukket tilstand. */
+.rbdemo .rb-body{display:grid;grid-template-rows:0fr;
+  transition:grid-template-rows .45s cubic-bezier(.4,0,.2,1)}
+.rbdemo .rb-acc.aapen .rb-body{grid-template-rows:1fr}
+.rbdemo .rb-body-in{min-height:0;overflow:hidden;padding:0 17px 15px}
+.rbdemo .rb-seg-lead{display:block;font-size:12px;color:#8f8f8f;margin-bottom:8px}
+.rbdemo .rb-pills{display:flex;gap:7px}
+.rbdemo .rb-pill{flex:1;background:#1b1b1e;border:1px solid #2a2a2e;color:#b4b4b4;
+  border-radius:8px;padding:9px 0;font-size:12px;text-align:center;
+  transition:background .25s,border-color .25s,color .25s}
+.rbdemo .rb-pill.valgt{background:#4d8bff;border-color:#4d8bff;color:#fff;font-weight:600}
+
+/* ── Scene 2: 35 dager ────────────────────────────────────────────────────── */
+.rbdemo .rb-cal{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center}
+.rbdemo .rb-blokk{position:relative;width:150px;height:168px;background:#fff;border-radius:14px;
+  box-shadow:0 18px 40px -18px rgba(0,0,0,.9);display:flex;flex-direction:column;
+  align-items:center;justify-content:center;color:#111}
+/* To hull øverst, som spiralen i en avriver. De gjør blokka umiskjennelig til en kalender
+   også i sluttbildet, der den står i ro og ellers ville lest som et tellerkort.
+   z-index 4 — OVER bladene (2) og tallet (3). Det er ikke pynt: arket rives av NEDENFOR
+   spiralen, så hullene skal bli stående mens bladet farer forbi. Lå de under, ville de
+   blinket bort på hvert eneste blad.
+   Fargen er scenens bakgrunn, ikke svart — det er hull i papiret, ikke prikker på det. */
+.rbdemo .rb-blokk::before,.rbdemo .rb-blokk::after{content:"";position:absolute;top:9px;
+  width:7px;height:7px;border-radius:50%;background:#0e0e10;z-index:4}
+.rbdemo .rb-blokk::before{left:34px}
+.rbdemo .rb-blokk::after{right:34px}
+/* Datoen ligger OVER bladene i z-rekkefølge. Det er rot-årsaksfiksen: bladet er inset:0,
+   altså nøyaktig like stort som blokka, og startet rett oppå tallet. Med 45ms intervall og
+   300ms flytid var datoen dekket 97 % av tida (målt per frame, maks 6 blad oppå den
+   samtidig). Kortere flytid og raskere fade kom bare til 74 % — de behandler symptomet.
+   Med z-index kan et blad ikke dekke tallet i det hele tatt. Bladene river seg løs og flyr
+   BAK tallet i stedet for foran det. Ikke fjern z-index her uten å måle på nytt. */
+/* Etiketten het .rb-mnd og sa «JUNI». Tallet under er en LØKKETELLER 1..35 (se riv/blaFra),
+   ikke en dato — og juni har 30 dager, så «JUNI 35» fantes ikke. Rot-årsaken var etiketten,
+   ikke telleren: den er nå «DAG», som er det tallet faktisk er, og som ekko-er «Send etter
+   35 dager» fra scene 1. Ikke gjør den om til en måned igjen uten å gjøre telleren til datoer. */
+.rbdemo .rb-lbl{position:relative;z-index:3;font-size:11px;letter-spacing:.18em;font-weight:700;color:#e0574f}
+.rbdemo .rb-dag{position:relative;z-index:3;font-size:70px;font-weight:800;line-height:1;letter-spacing:-.04em;margin-top:2px}
+/* Tidlig fade i tillegg: løser ikke kravet (det gjør z-index), men tar bort «hvit masse»-
+   inntrykket. Synlige blad samtidig faller fra maks 6 / snitt 3,1 til maks 3 / snitt 1,3. */
+.rbdemo .rb-blad{position:absolute;inset:0;background:#fff;border-radius:14px;z-index:2;
+  animation:rbRiv .22s cubic-bezier(.2,.7,.3,1) forwards;pointer-events:none}
+.rbdemo .rb-kap{margin-top:24px;font-size:11.5px;color:#8f8f8f;opacity:0;transition:opacity .3s ease}
+.rbdemo .rb-kap.inn{opacity:1}
+@keyframes rbRiv{
+  0%{transform:none;opacity:1}
+  30%{transform:translate(-30px,-84px) rotate(-15deg);opacity:.3}
+  100%{transform:translate(-58px,-150px) rotate(-26deg);opacity:0}}
+
+/* ── Scene 3: meldingen hos kunden ───────────────────────────────────────────
+   Teksten er ORDRETT fra buildRebookingBody (barberhq-backend smsRunner.js:217).
+   Ingen emoji, ingen em dash, ingen krøllete anførselstegn: alt utenfor GSM-7 tvinger
+   meldingen til UCS-2, der segmentgrensen er 67 tegn og ikke 153. Avmeldingslinja er
+   obligatorisk i markedsførings-SMS og skal ALLTID stå her. */
+.rbdemo .rb-s3{background:#fff;color:#000}
+.rbdemo .rb-s3 .rb-status{color:#000}
+.rbdemo .rb-sms-h{flex:0 0 auto;text-align:center;padding:2px 0 12px;border-bottom:1px solid #e6e6e6}
+.rbdemo .rb-avatar{width:42px;height:42px;border-radius:50%;background:linear-gradient(145deg,#1a1a1a,#000);
+  display:flex;align-items:center;justify-content:center;margin:0 auto 5px;color:#fff;
+  font-weight:800;font-size:15px;border:1px solid #333}
+.rbdemo .rb-sms-n{font-size:12px;font-weight:600;color:#111}
+.rbdemo .rb-sms-s{font-size:9.5px;color:#999}
+.rbdemo .rb-sms-body{flex:1;padding:16px 12px;display:flex;flex-direction:column;gap:7px}
+/* Boblen kommer fra den delte .smsb-komponenten over. Scenen setter kun maskefargen —
+   den MÅ følge .rb-s3 sin egen bakgrunn, ellers står det en flekk igjen ved halen. */
+.rbdemo .rb-s3{--smsb-bg:#fff}
+
+@media(prefers-reduced-motion:reduce){
+  .rbdemo .rb-blad{display:none}
+  .rbdemo .rb-sl,.smsb{transform:none!important}
+}
+@media(max-width:560px){
+  .rbdemo .rb-frame{width:256px}
+  .rbdemo .rb-blokk{width:130px;height:148px}
+  .rbdemo .rb-dag{font-size:60px}
+}
+/* Fallback hvis JS ikke kjører. Hver halvdel av denne linja er en annen demos livline, og
+   de byttes ut hver for seg: .rbscope → .rbdemo → .smsb (rebooking + påminnelse), og
+   .vvscope → .vvdemo (verving). Ved denne redigeringen sto .smsb-delen ORDRETT UENDRET.
+   Linja REDIGERES, den slettes aldri. Se CLAUDE.md. */
+.no-js .smsb,.no-js .vvdemo .vv-seg,.no-js .vvdemo .vv-lenke,.no-js .vvdemo .crow.rad{opacity:1!important;transform:none!important}
+
 </style>
 <style>
 /* ===== PRODUKTVISNING — levende scene =========================================
@@ -1367,74 +1541,123 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
         </button>
         <div class="sys-panel">
           <div class="sys-panel-in">
-            <div class="rbscope">
-<div class="demo-wrap">
-    <div class="demo" id="demo">
+            <div class="rbdemo">
+              <div class="rb-frame">
+                <div class="iph"><div class="iph-screen"><div class="iph-island"></div>
+                  <div class="rb-stage" id="rbStage">
+                    <!-- ÉN statuslinje over alle tre scenene. Fargen flippes av .lys når
+                         scene 3 (hvit SMS-skjerm) er aktiv. -->
+                    <div class="rb-status"><span>9:41</span><span class="sb-right"><svg class="sb-bars" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="1"/><rect x="5" y="5.5" width="3" height="5.5" rx="1"/><rect x="10" y="3" width="3" height="8" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg><svg class="sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg><svg class="sb-batt" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor"/></svg></span></div>
 
-      <!-- MELDINGS-SKJERM -->
-      <div class="screen msg" id="msgScreen">
-        <div class="statusbar"><span>9:41</span><span class="sb-right"><svg class="sb-bars" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="1"/><rect x="5" y="5.5" width="3" height="5.5" rx="1"/><rect x="10" y="3" width="3" height="8" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg><svg class="sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg><svg class="sb-batt" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor"/></svg></span></div>
-        <div class="msg-head">
-          <div class="gb-logo">GB</div>
-          <div class="nm">Grand Barber</div>
-          <div class="sub2">SMS</div>
-        </div>
-        <div class="msg-body">
-          <div class="bubble" id="bubble">Hei Marcus! 💈 Det er på tide med ny klipp. Book på 1 trykk 👇</div>
-          <div class="book-btn" id="bookBtn">Klikk her</div>
-          <div class="time-stamp" id="stamp">Levert</div>
-        </div>
-        <div class="msg-input"><span class="plus">+</span><span class="box">Tekstmelding</span></div>
-        <div class="keyboard">
-          <div class="kb-row"><span class="key">q</span><span class="key">w</span><span class="key">e</span><span class="key">r</span><span class="key">t</span><span class="key">y</span><span class="key">u</span><span class="key">i</span><span class="key">o</span><span class="key">p</span><span class="key">å</span></div>
-          <div class="kb-row"><span class="key">a</span><span class="key">s</span><span class="key">d</span><span class="key">f</span><span class="key">g</span><span class="key">h</span><span class="key">j</span><span class="key">k</span><span class="key">l</span><span class="key">ø</span><span class="key">æ</span></div>
-          <div class="kb-row"><span class="key fn">⇧</span><span class="key">z</span><span class="key">x</span><span class="key">c</span><span class="key">v</span><span class="key">b</span><span class="key">n</span><span class="key">m</span><span class="key fn">⌫</span></div>
-          <div class="kb-row"><span class="key fn">123</span><span class="key fn">😀</span><span class="key space">mellomrom</span><span class="key wide fn">retur</span></div>
-        </div>
-      </div>
+                    <!-- SCENE 1: barberens Vekst-fane, fire lukkede bokser.
+                         Titler og sub-tekster er ORDRETT fra dashboard.html (915–1015).
+                         Endres de der, må de endres her. -->
+                    <section class="rb-scene rb-s1 on" data-s="1">
+                      <div class="rb-scale" id="rbScale">
+                        <div class="rb-dash">
+                          <p class="rb-sec">Automatikk</p>
+                          <div class="rb-list">
+                            <div class="rb-acc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">SMS-påminnelse</span>
+                                  <span class="rb-acc-s">Alle kunder med time neste dag får én SMS kvelden før — færre glemte avtaler.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                                <span class="rb-sw"><span class="rb-sl"></span></span>
+                              </div>
+                            </div>
+                            <div class="rb-acc" id="rbAcc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">Rebooking</span>
+                                  <span class="rb-acc-s">Kunder som ikke har booket ny time får én SMS når intervallet er passert.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                                <span class="rb-sw" id="rbSw"><span class="rb-sl"></span></span>
+                              </div>
+                              <div class="rb-body">
+                                <div class="rb-body-in">
+                                  <span class="rb-seg-lead">Send etter</span>
+                                  <div class="rb-pills">
+                                    <span class="rb-pill valgt" data-d="28">28 dager</span>
+                                    <span class="rb-pill" data-d="35">35 dager</span>
+                                    <span class="rb-pill" data-d="45">45 dager</span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                          <p class="rb-sec rb-sec2">Personlig</p>
+                          <div class="rb-list">
+                            <div class="rb-acc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">Vinn tilbake</span>
+                                  <span class="rb-acc-s">Kunder som ikke møtte opp, eller har vært borte lenge. En personlig melding fra deg — ikke en maskin.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                              </div>
+                            </div>
+                            <div class="rb-acc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">Verving</span>
+                                  <span class="rb-acc-s">Kunder som verver en venn utløser rabatt når vennen har vært innom.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
 
-      <!-- KALENDER-SKJERM -->
-      <div class="screen cal" id="calScreen">
-        <div class="statusbar"><span>9:41</span><span class="sb-right"><svg class="sb-bars" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="1"/><rect x="5" y="5.5" width="3" height="5.5" rx="1"/><rect x="10" y="3" width="3" height="8" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg><svg class="sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg><svg class="sb-batt" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor"/></svg></span></div>
-        <div class="cal-top">
-          <i class="ti ti-menu-2 ham"></i>
-          <span class="mon">juni <i class="ti ti-caret-down-filled"></i></span>
-          <span class="icons"><i class="ti ti-search"></i><i class="ti ti-calendar"></i><span class="ava"></span></span>
-        </div>
-        <div class="cal-daybar">
-          <div><div class="d-lbl">TOR.</div><div class="d-num">26</div></div>
-          <div class="d-none">Én ny booking</div>
-        </div>
-        <div class="cal-grid" id="calGrid">
-          <div class="cal-row"><div class="hr">12:00</div></div>
-          <div class="cal-row"><div class="hr">13:00</div></div>
-          <div class="cal-row"><div class="hr">14:00</div></div>
-          <div class="cal-row"><div class="hr">15:00</div></div>
-          <div class="cal-row"><div class="hr">16:00</div></div>
-          <div class="cal-area">
-            <div class="appt" id="appt" style="top:96px;height:38px"><div class="a-name">Marcus Olsen</div><div class="a-serv">Skinnfade + skjegg · 14:00</div></div>
-          </div>
-        </div>
-        <div class="flash" id="flash"></div>
-      </div>
+                    <!-- SCENE 2: 35 dager går -->
+                    <section class="rb-scene rb-s2" data-s="2">
+                      <div class="rb-cal">
+                        <div class="rb-blokk" id="rbBlokk">
+                          <span class="rb-lbl">DAG</span>
+                          <span class="rb-dag" id="rbDag">1</span>
+                        </div>
+                        <div class="rb-kap" id="rbKap">35 dager senere</div>
+                      </div>
+                    </section>
 
-    </div>
-  </div>
+                    <!-- SCENE 3: kunden får meldingen.
+                         Teksten er ORDRETT fra buildRebookingBody. Ikke rediger den her
+                         uten å endre malen i backend først. -->
+                    <section class="rb-scene rb-s3" data-s="3">
+                      <div class="rb-sms-h">
+                        <div class="rb-avatar">GB</div>
+                        <div class="rb-sms-n">Grand Barber</div>
+                        <div class="rb-sms-s">SMS</div>
+                      </div>
+                      <div class="rb-sms-body">
+                        <!-- Avmeldingslinja ligger INNE i bobla: det er ÉN melding i
+                             virkeligheten, skilt med et linjeskift. Egen blokk under bobla
+                             leste som to meldinger. -->
+                        <div class="smsb" id="rbBoble">Hei Marcus! Det er en stund siden sist. Vil du booke ny time hos Grand Barber? <span class="smsb-lenke">trybarberhq.com/grand-barber</span><span class="smsb-avmeld">Avmeld: trybarberhq.com/avmeld/a1b2c3d4</span></div>
+                      </div>
+                    </section>
 
+                  </div>
+                </div></div>
+              </div>
             </div>
           </div>
         </div>
       </div>
 
-      <!-- Rad 2: Verving -->
-      <div class="sys-row" data-open="false" data-anim="verving">
+      <!-- Rad 2: Påminnelser -->
+      <div class="sys-row" data-open="false" data-anim="paaminnelse">
         <button class="sys-head" aria-expanded="false">
           <span class="sys-head-ico">
-            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
           </span>
           <span class="sys-head-txt">
-            <span class="sys-head-t">Verving</span>
-            <span class="sys-head-d">Kunden deler din link — ny kunde gir begge rabatt.</span>
+            <span class="sys-head-t">Påminnelser</span>
+            <span class="sys-head-d">SMS dagen før timen. Kunden husker, stolen står ikke tom.</span>
           </span>
           <span class="sys-chevron">
             <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
@@ -1442,40 +1665,389 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
         </button>
         <div class="sys-panel">
           <div class="sys-panel-in">
-            <div class="vvscope">
-  <div class="demo-wrap">
-    <div class="demo" id="vv_demo">
+            <div class="rbdemo paademo">
+              <div class="rb-frame">
+                <div class="iph"><div class="iph-screen"><div class="iph-island"></div>
+                  <div class="rb-stage" id="paaStage">
+                    <div class="rb-status"><span>19:00</span><span class="sb-right"><svg class="sb-bars" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="1"/><rect x="5" y="5.5" width="3" height="5.5" rx="1"/><rect x="10" y="3" width="3" height="8" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg><svg class="sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg><svg class="sb-batt" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor"/></svg></span></div>
 
-      <!-- SKJERM 1: del link -->
-      <div class="screen s1">
-        <div class="statusbar"><span>9:41</span><span class="sb-right"><svg class="sb-bars" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="1"/><rect x="5" y="5.5" width="3" height="5.5" rx="1"/><rect x="10" y="3" width="3" height="8" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg><svg class="sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg><svg class="sb-batt" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor"/></svg></span></div>
-        <div class="mhead"><div class="logo-c">GB</div><div class="nm">Grand Barber</div><div class="sub2">SMS</div></div>
-        <div class="mbody">
-          <div class="bub" id="vv_b1">Takk for klippen, Marcus! 💈 Lik resultatet? Del linken din med en kompis 👇</div>
-          <div class="link-card" id="vv_b2">
-            <div class="lc-top"><div class="lc-ic"><i class="ti ti-scissors"></i></div><div class="lc-url">grandbarber.no/marcus</div></div>
+                    <!-- SCENE 1: Vekst-fanen. Rebooking står allerede PÅ; det er
+                         SMS-påminnelse som skrus på her. Ingen intervallvalg — påminnelsen
+                         har ingen konfigurasjon. Titler og sub-tekster ordrett fra
+                         dashboard.html, som i rebooking-demoen. -->
+                    <section class="rb-scene rb-s1 on" data-s="1">
+                      <div class="rb-scale" id="paaScale">
+                        <div class="rb-dash">
+                          <p class="rb-sec">Automatikk</p>
+                          <div class="rb-list">
+                            <div class="rb-acc" id="paaAcc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">SMS-påminnelse</span>
+                                  <span class="rb-acc-s">Alle kunder med time neste dag får én SMS kvelden før — færre glemte avtaler.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                                <span class="rb-sw" id="paaSw"><span class="rb-sl"></span></span>
+                              </div>
+                              <div class="rb-body">
+                                <div class="rb-body-in">
+                                  <div class="paa-forh">
+                                    <span class="paa-forh-k">SLIK SER DEN UT</span>
+                                    Hei Marcus! Minner om timen din hos Grand Barber i morgen kl 13:00.
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="rb-acc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">Rebooking</span>
+                                  <span class="rb-acc-s">Kunder som ikke har booket ny time får én SMS når intervallet er passert.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                                <span class="rb-sw on"><span class="rb-sl"></span></span>
+                              </div>
+                            </div>
+                          </div>
+                          <p class="rb-sec rb-sec2">Personlig</p>
+                          <div class="rb-list">
+                            <div class="rb-acc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">Vinn tilbake</span>
+                                  <span class="rb-acc-s">Kunder som ikke møtte opp, eller har vært borte lenge. En personlig melding fra deg — ikke en maskin.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                              </div>
+                            </div>
+                            <div class="rb-acc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">Verving</span>
+                                  <span class="rb-acc-s">Kunder som verver en venn utløser rabatt når vennen har vært innom.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+
+                    <!-- SCENE 3: kunden får meldingen. Beholder data-s="3" selv om scene 2
+                         er droppet — nummereringen følger scenenavnene, og .lys-flippen for
+                         den hvite skjermen er allerede knyttet til 3.
+                         Teksten er ORDRETT fra
+                         buildPaaminnelseBody. INGEN avmeldingslinje: påminnelsen er
+                         transaksjonell, og malen har ingen. Ikke tegn en inn. -->
+                    <section class="rb-scene rb-s3 paa-s3" data-s="3">
+                      <div class="rb-sms-h">
+                        <div class="rb-avatar">GB</div>
+                        <div class="rb-sms-n">Grand Barber</div>
+                        <div class="rb-sms-s">SMS</div>
+                      </div>
+                      <div class="rb-sms-body">
+                        <div class="smsb" id="paaBoble">Hei Marcus! Minner om timen din hos Grand Barber i morgen kl 13:00.</div>
+                      </div>
+                    </section>
+
+                  </div>
+                </div></div>
+              </div>
+            </div>
           </div>
-          <div class="btn-blue" id="vv_b3">Del min link</div>
-        </div>
-        <div class="msg-input"><span class="plus">+</span><span class="box">Tekstmelding</span></div>
-        <div class="keyboard">
-          <div class="kb-row"><span class="key">q</span><span class="key">w</span><span class="key">e</span><span class="key">r</span><span class="key">t</span><span class="key">y</span><span class="key">u</span><span class="key">i</span><span class="key">o</span><span class="key">p</span><span class="key">å</span></div>
-          <div class="kb-row"><span class="key">a</span><span class="key">s</span><span class="key">d</span><span class="key">f</span><span class="key">g</span><span class="key">h</span><span class="key">j</span><span class="key">k</span><span class="key">l</span><span class="key">ø</span><span class="key">æ</span></div>
-          <div class="kb-row"><span class="key fn">⇧</span><span class="key">z</span><span class="key">x</span><span class="key">c</span><span class="key">v</span><span class="key">b</span><span class="key">n</span><span class="key">m</span><span class="key fn">⌫</span></div>
-          <div class="kb-row"><span class="key fn">123</span><span class="key fn">😀</span><span class="key space">mellomrom</span><span class="key wide fn">retur</span></div>
         </div>
       </div>
 
-      <!-- SKJERM 2: begge fikk rabatt -->
-      <div class="screen s2">
-        <div class="statusbar"><span>9:41</span><span class="sb-right"><svg class="sb-bars" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="1"/><rect x="5" y="5.5" width="3" height="5.5" rx="1"/><rect x="10" y="3" width="3" height="8" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg><svg class="sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg><svg class="sb-batt" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor"/></svg></span></div>
-        <div class="confirm">
-          <div class="check" id="vv_chk"><i class="ti ti-check"></i></div>
-          <h3 id="vv_ch3">Her er verving-rabatten 🎉</h3>
-          <div class="who" id="vv_cwho">for deg og kompisen din</div>
-          <div class="reward-row" id="vv_crow">
-            <div class="rw"><div class="rw-lbl">KOMPISEN FÅR</div><div class="rw-pct">25%</div><div class="rw-who">på første klipp</div></div>
-            <div class="rw"><div class="rw-lbl">DU FÅR</div><div class="rw-pct">15%</div><div class="rw-who">på neste klipp</div></div>
+      <!-- Rad 3: Verving -->
+      <div class="sys-row" data-open="false" data-anim="verving">
+        <button class="sys-head" aria-expanded="false">
+          <span class="sys-head-ico">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+          </span>
+          <span class="sys-head-txt">
+            <span class="sys-head-t">Verving</span>
+            <span class="sys-head-d">Kunden deler linken din. Du bestemmer hvem som får rabatt og hvor mye.</span>
+          </span>
+          <span class="sys-chevron">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </button>
+        <div class="sys-panel">
+          <div class="sys-panel-in">
+            <div class="rbdemo vvdemo">
+              <div class="rb-frame">
+                <div class="iph"><div class="iph-screen"><div class="iph-island"></div>
+                  <div class="rb-stage" id="vvStage">
+                    <div class="rb-status"><span>9:41</span><span class="sb-right"><svg class="sb-bars" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="1"/><rect x="5" y="5.5" width="3" height="5.5" rx="1"/><rect x="10" y="3" width="3" height="8" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg><svg class="sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg><svg class="sb-batt" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor"/></svg></span></div>
+
+                    <!-- SCENE 1: Vekst-fanen. Rebooking og SMS-påminnelse står PÅ fra
+                         start; Verving har INGEN bryter, kun chevron — som i dashbordet. -->
+                    <section class="rb-scene rb-s1 on" data-s="1">
+                      <div class="rb-scale" id="vvScale">
+                        <div class="rb-dash">
+                          <p class="rb-sec">Automatikk</p>
+                          <div class="rb-list">
+                            <div class="rb-acc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">SMS-påminnelse</span>
+                                  <span class="rb-acc-s">Alle kunder med time neste dag får én SMS kvelden før — færre glemte avtaler.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                                <span class="rb-sw on"><span class="rb-sl"></span></span>
+                              </div>
+                            </div>
+                            <div class="rb-acc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">Rebooking</span>
+                                  <span class="rb-acc-s">Kunder som ikke har booket ny time får én SMS når intervallet er passert.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                                <span class="rb-sw on"><span class="rb-sl"></span></span>
+                              </div>
+                            </div>
+                          </div>
+                          <p class="rb-sec rb-sec2">Personlig</p>
+                          <div class="rb-list">
+                            <div class="rb-acc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">Vinn tilbake</span>
+                                  <span class="rb-acc-s">Kunder som ikke møtte opp, eller har vært borte lenge. En personlig melding fra deg — ikke en maskin.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                              </div>
+                            </div>
+                            <div class="rb-acc" id="vvAcc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">Verving</span>
+                                  <span class="rb-acc-s">Kunder som verver en venn utløser rabatt når vennen har vært innom.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                              </div>
+                              <div class="rb-body">
+                                <div class="rb-body-in">
+                                  <div class="vv-seg" id="vvSeg">
+                                    <span class="vv-lead">Hvem får rabatt?</span>
+                                    <div class="vv-piller">
+                                      <span class="vv-pill" data-r="begge">Begge</span>
+                                      <span class="vv-pill" data-r="verver">Kun den som verver</span>
+                                      <span class="vv-pill" data-r="ny">Kun ny kunde</span>
+                                    </div>
+                                    <span class="vv-lead" style="margin-top:13px">Rabatt</span>
+                                    <span class="vv-num" id="vvNum"><b id="vvPct">20</b><i>%</i></span>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+
+                    <!-- SCENE 2: barberen deler lenka. Barberens EGEN telefon — ingen
+                         SMS-boble, ingen avsender-etikett. Verving sender ingen melding. -->
+                    <section class="rb-scene vv-s2" data-s="2">
+                      <div class="rb-scale">
+                      <div class="vv-kund">
+                        <div class="vv-kh">KUNDER</div>
+                        <div class="vv-kort">
+                          <div class="vv-krad" id="vvRad">
+                            <div class="vv-kinfo">
+                              <div class="vv-knavn">Marcus Olsen</div>
+                              <div class="vv-kmeta">Skinnfade · 21 dager siden</div>
+                            </div>
+                            <div class="vv-khoyre"><span class="vv-kbtn" id="vvBtn">Del vervelenke</span></div>
+                          </div>
+                          <div class="vv-krad">
+                            <div class="vv-kinfo">
+                              <div class="vv-knavn">Adam Nyborg</div>
+                              <div class="vv-kmeta">Klipp + skjegg · 35 dager siden</div>
+                            </div>
+                            <div class="vv-khoyre"><span class="vv-kbtn">Del vervelenke</span></div>
+                          </div>
+                          <div class="vv-krad">
+                            <div class="vv-kinfo">
+                              <div class="vv-knavn">Elias Rud</div>
+                              <div class="vv-kmeta">Klipp · 14 dager siden</div>
+                            </div>
+                            <div class="vv-khoyre"><span class="vv-kbtn">Del vervelenke</span></div>
+                          </div>
+                        </div>
+                        <div class="vv-lenke" id="vvLenke">
+                          <!-- «VERVELENKE · MARCUS» leste som «lenke TIL Marcus». Lenka er
+                               Marcus SIN, og den skal videre til en han kjenner. Eierskapet
+                               står i etiketten, videresendingen i underlinja. -->
+                          <div class="vv-lk">MARCUS SIN VERVELENKE</div>
+                          <div class="vv-lu">trybarberhq.com/grand-barber?verv=marcus</div>
+                          <div class="vv-lsub">Marcus deler den videre</div>
+                        </div>
+                      </div>
+                      <div class="vv-dim" id="vvDim"></div>
+                      <div class="vv-ark" id="vvArk">
+                        <div class="vv-grip"></div>
+                        <div class="vv-mal">
+                          <span>
+                            <span class="vv-ikon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg></span>
+                            Kopier lenke
+                          </span>
+                          <span>
+                            <span class="vv-ikon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"/></svg></span>
+                            Meldinger
+                          </span>
+                          <span>
+                            <span class="vv-ikon"><svg viewBox="0 0 24 24" width="24" height="24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="2" y="2" width="20" height="20" rx="5"/><circle cx="12" cy="12" r="4"/><path d="M17.5 6.5h.01"/></svg></span>
+                            Instagram
+                          </span>
+                        </div>
+                      </div>
+                      </div>
+                    </section>
+
+                    <!-- SCENE 3: den vervede booker. .pv-cal er GJENBRUKT fra
+                         produktvisningen — avscopet, ikke kopiert. Kalenderen starter tom. -->
+                    <section class="rb-scene vv-s3" data-s="3">
+                      <div class="pv-cal">
+                        <div class="pv-cal-h"><div class="pv-cal-d">Fredag 27.</div><div class="pv-cal-s"><b id="vvCount">0</b> bookinger</div></div>
+                        <div class="pv-cal-rows" id="vvRows"></div>
+                      </div>
+                    </section>
+
+                  </div>
+                </div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rad 4: Vinn tilbake -->
+      <div class="sys-row" data-open="false" data-anim="vinntilbake">
+        <button class="sys-head" aria-expanded="false">
+          <span class="sys-head-ico">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h11a4 4 0 0 1 0 8h-3M7 6l-4 4 4 4"/></svg>
+          </span>
+          <span class="sys-head-txt">
+            <span class="sys-head-t">Vinn tilbake</span>
+            <span class="sys-head-d">Du ser hvilke kunder som har blitt borte og burde hentes inn — rett i dashbordet.</span>
+          </span>
+          <span class="sys-chevron">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </button>
+        <div class="sys-panel">
+          <div class="sys-panel-in">
+            <div class="rbdemo wbdemo">
+              <div class="rb-frame">
+                <div class="iph"><div class="iph-screen"><div class="iph-island"></div>
+                  <div class="rb-stage" id="wbStage">
+                    <div class="rb-status"><span>9:41</span><span class="sb-right"><svg class="sb-bars" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="1"/><rect x="5" y="5.5" width="3" height="5.5" rx="1"/><rect x="10" y="3" width="3" height="8" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg><svg class="sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg><svg class="sb-batt" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor"/></svg></span></div>
+
+                    <!-- ÉN scene: barberen åpner Vinn tilbake og ser lista. Ingen sending,
+                         ingen handlinger — det finnes ikke i dashbordet heller.
+                         Badgen, gruppeoverskriftene og radformatet er dashbordets egne. -->
+                    <section class="rb-scene rb-s1 on" data-s="1">
+                      <div class="rb-scale" id="wbScale">
+                        <div class="rb-dash">
+                          <p class="rb-sec">Automatikk</p>
+                          <div class="rb-list">
+                            <div class="rb-acc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">SMS-påminnelse</span>
+                                  <span class="rb-acc-s">Alle kunder med time neste dag får én SMS kvelden før — færre glemte avtaler.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                                <span class="rb-sw on"><span class="rb-sl"></span></span>
+                              </div>
+                            </div>
+                            <div class="rb-acc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">Rebooking</span>
+                                  <span class="rb-acc-s">Kunder som ikke har booket ny time får én SMS når intervallet er passert.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                                <span class="rb-sw on"><span class="rb-sl"></span></span>
+                              </div>
+                            </div>
+                          </div>
+                          <p class="rb-sec rb-sec2">Personlig</p>
+                          <div class="rb-list">
+                            <div class="rb-acc" id="wbAcc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">Vinn tilbake <span class="wb-badge">4</span></span>
+                                  <span class="rb-acc-s">Kunder som ikke møtte opp, eller har vært borte lenge. En personlig melding fra deg — ikke en maskin.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                              </div>
+                              <div class="rb-body">
+                                <div class="rb-body-in">
+                                  <div class="wb-liste" id="wbListe">
+                                    <div class="wb-gruppe">
+                                      <p class="wb-gh">Møtte ikke opp</p>
+                                      <div class="wb-kort">
+                                        <div class="wb-rad">
+                                          <div class="wb-info">
+                                            <div class="wb-navn"><span class="wb-ny"></span>Kasper Lie</div>
+                                            <div class="wb-meta">5 klipp<span class="wb-tlf">912 34 567</span></div>
+                                          </div>
+                                          <div class="wb-hoyre"><div class="wb-ctx">no-show i går</div></div>
+                                        </div>
+                                        <div class="wb-rad">
+                                          <div class="wb-info">
+                                            <div class="wb-navn">Theo Nilsen</div>
+                                            <div class="wb-meta">3 klipp<span class="wb-tlf">934 11 208</span></div>
+                                          </div>
+                                          <div class="wb-hoyre"><div class="wb-ctx">no-show 14. juli</div></div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                    <div class="wb-gruppe">
+                                      <p class="wb-gh">Ikke vært her på en stund</p>
+                                      <div class="wb-kort">
+                                        <div class="wb-rad">
+                                          <div class="wb-info">
+                                            <div class="wb-navn">Vetle Aune</div>
+                                            <div class="wb-meta">9 klipp<span class="wb-tlf">901 55 340</span></div>
+                                          </div>
+                                          <div class="wb-hoyre"><div class="wb-ctx">sist her 4. mai — 74 dager siden</div></div>
+                                        </div>
+                                        <div class="wb-rad">
+                                          <div class="wb-info">
+                                            <div class="wb-navn">Iver Strand</div>
+                                            <div class="wb-meta">6 klipp<span class="wb-tlf">988 02 771</span></div>
+                                          </div>
+                                          <div class="wb-hoyre"><div class="wb-ctx">sist her 19. april — 89 dager siden</div></div>
+                                        </div>
+                                      </div>
+                                    </div>
+                                  </div>
+                                </div>
+                              </div>
+                            </div>
+                            <div class="rb-acc">
+                              <div class="rb-acc-row">
+                                <span class="rb-acc-txt">
+                                  <span class="rb-acc-t">Verving</span>
+                                  <span class="rb-acc-s">Kunder som verver en venn utløser rabatt når vennen har vært innom.</span>
+                                </span>
+                                <span class="rb-chev">▾</span>
+                              </div>
+                            </div>
+                          </div>
+                        </div>
+                      </div>
+                    </section>
+
+                  </div>
+                </div></div>
+              </div>
+            </div>
           </div>
         </div>
       </div>
@@ -2263,68 +2835,367 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
 
 
 /* Frigjør de animerte elementene fra .no-js-fallbacken (opacity:1!important; transform:none).
-   Gjelder BEGGE demoene — se den delte regelen som nevner både .rbscope og .vvscope.
+   Gjelder ALLE demoene — se den delte regelen som nevner både .smsb og .vvdemo.
    Den lå tidligere under overskriften for rebooking-animasjonen og LESTE som en del av den,
    selv om den aldri har vært det. Sletter noen rebooking-blokka som én enhet, forsvinner
    denne linja med — og da slutter VERVING-animasjonen å animere: alt vises på én gang, uten
    at noe feiler synlig. Står derfor over overskriften, ikke under. */
 document.documentElement.classList.remove('no-js');
 
-/* rebooking-anim */
+/* rebooking-demo — tre scener i én skjerm. Runde: 11220ms + 880ms pause = 12100ms, i loop.
+   Scene 1 (0–3600)      Vekst-fanen: bryteren på, boksen utvider, valget flytter 28→35
+   Scene 2 (3950–6550)    35 kalenderblad rives av
+   Scene 3 (6900–11220)   tom meldingsskjerm, så ankommer meldingen og blir lest. Ingen
+                          bekreftelse — demoen stopper der meldingen er sendt, ikke der en
+                          booking er gjort.
+   LOOPER så lenge raden er åpen. Stoppet før: sekvensen endte på siste frame i scene 3
+   og sto der til raden ble lukket og åpnet igjen. */
 (function(){
-var demo=document.getElementById('demo'),bubble=document.getElementById('bubble'),
-    bookBtn=document.getElementById('bookBtn'),stamp=document.getElementById('stamp'),
-    appt=document.getElementById('appt'),
-    flash=document.getElementById('flash');
+var stage=document.getElementById('rbStage'); if(!stage)return;
+var scener=[].slice.call(stage.querySelectorAll('.rb-scene')),
+    skala=document.getElementById('rbScale'), acc=document.getElementById('rbAcc'),
+    sw=document.getElementById('rbSw'),
+    piller=[].slice.call(stage.querySelectorAll('.rb-pill')),
+    blokk=document.getElementById('rbBlokk'), dag=document.getElementById('rbDag'),
+    kap=document.getElementById('rbKap'), boble=document.getElementById('rbBoble'),
+    rad=stage.closest('.sys-row');
+var REDUSERT=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var timers=[];
 function T(fn,ms){timers.push(setTimeout(fn,ms));}
-function clearTimers(){timers.forEach(clearTimeout);timers=[];}
+function vis(n){
+  scener.forEach(function(s){ s.classList.toggle('on', +s.dataset.s===n); });
+  stage.classList.toggle('lys', n===3);          // hvit skjerm ⇒ svart statuslinje
+}
+function velgPille(d){
+  piller.forEach(function(p){ p.classList.toggle('valgt', p.dataset.d===String(d)); });
+}
+// Scene 1 er tegnet i 320 designpiksler. Skalaen er skjermflatens MÅLTE bredde delt på 320.
+// offsetWidth, ikke getBoundingClientRect: rect-en er den TRANSFORMERTE bredden, og hadde
+// gitt en skala som avhang av forrige skala. Samme felle som --ph-s i produktvisningen.
+// Over 900px viewport er rammen 340 ⇒ skjerm 320 ⇒ skala nøyaktig 1, altså 1:1.
+function settSkala(){
+  var skjerm=stage.parentElement;                 // .iph-screen
+  var b=skjerm&&skjerm.offsetWidth;
+  if(b>0) stage.style.setProperty('--rb-s', Math.round(b/320*10000)/10000);
+}
+settSkala();
+window.addEventListener('resize',settSkala);
 function reset(){
-  clearTimers();demo.classList.remove('slid');
-  bubble.classList.remove('pop');bookBtn.classList.remove('pop','tapped');
-  stamp.classList.remove('show');
-  appt.classList.remove('pop');flash.classList.remove('go');
-  void demo.offsetWidth;
+  timers.forEach(clearTimeout); timers=[];
+  [].slice.call(blokk.querySelectorAll('.rb-blad')).forEach(function(b){ b.remove(); });
+  sw.classList.remove('on'); acc.classList.remove('aapen');
+  velgPille(28);                                  // 28 er forhåndsvalgt, som i dashbordet
+  dag.textContent='1'; kap.classList.remove('inn');
+  boble.classList.remove('inn');
+  vis(1);
+}
+// Scene 2. Intervallet er IKKE konstant: 35 blad i jevn takt er enten uleselig eller
+// altfor langt. 170ms i starten så tallet kan leses, 45ms i midten, 150ms mot slutten så
+// landingen på 35 registreres. Summen er 2600ms — endrer du tallene, endrer du totalen
+// i toppkommentaren også.
+function intervall(i){ return i<=4 ? 170 : (i<=30 ? 45 : 150); }
+function riv(i){
+  // Bladet som rives av er en kopi som flyr bakover mens tallet under allerede er neste dag.
+  var b=document.createElement('span');
+  b.className='rb-blad';
+  blokk.appendChild(b);
+  setTimeout(function(){ b.remove(); }, 320);
+  dag.textContent=String(i);
+}
+function blaFra(i, t){
+  if(i>35) return t;
+  T(function(){ riv(i); }, t);
+  return blaFra(i+1, t+intervall(i));
 }
 function play(){
   reset();
-  T(function(){bubble.classList.add('pop');},400);
-  T(function(){bookBtn.classList.add('pop');},650);
-  T(function(){stamp.classList.add('show');},1100);
-  T(function(){bookBtn.classList.add('tapped');},2400);
-  T(function(){bookBtn.classList.remove('tapped');},2650);
-  T(function(){demo.classList.add('slid');},3200);
-  T(function(){appt.classList.add('pop');flash.classList.add('go');},4050);
+  // Redusert bevegelse: hver scene vises fortsatt, i sin FERDIGE tilstand, med samme
+  // rekkefølge og samme holdetider. Det som fjernes er bevegelsen — bladene rives ikke,
+  // bryteren glir ikke, boblene spretter ikke (transform er nullet i CSS). Historien
+  // fortelles altså i sin helhet; den hopper ikke rett til slutten.
+  // Redusert bevegelse: samme rekkefølge, ingen bevegelse — og INGEN loop. En sekvens
+  // som gjentar seg selv i det uendelige er nettopp det innstillingen ber oss la være.
+  if(REDUSERT){
+    sw.classList.add('on'); acc.classList.add('aapen'); velgPille(35);
+    T(function(){ vis(2); dag.textContent='35'; kap.classList.add('inn'); }, 1800);
+    T(function(){ vis(3); boble.classList.add('inn'); }, 3600);
+    return;
+  }
+  // Scene 1 — hold på lukket liste før noe skjer, ellers rekker ikke øyet å se at det
+  // står fire bokser der, og utgangspunktet blir aldri etablert.
+  T(function(){ sw.classList.add('on'); }, 600);          // bryteren på, grønn
+  T(function(){ acc.classList.add('aapen'); }, 1500);     // boksen utvider, 28 forhåndsvalgt
+  T(function(){ velgPille(35); }, 2550);                  // valget flytter seg
+  // Scene 2
+  T(function(){ vis(2); }, 3950);
+  blaFra(1, 4000);
+  T(function(){ kap.classList.add('inn'); }, 6300);
+  // Scene 3 — skjermen står TOM først: avsenderhode, ingen boble. Meldingen skal ANKOMME
+  // mens man ser på, som følge av de 35 dagene. Kom den samtidig med kryssfaden, leste den
+  // som noe som alltid hadde ligget der. 1200ms fra scenebytte til boble, hvorav ~350 er
+  // selve kryssfaden — altså ~850ms synlig tom skjerm.
+  T(function(){ vis(3); }, 6900);
+  T(function(){ boble.classList.add('inn'); }, 8100);
+  // Inn-animasjonen er 520ms, så bobla har landet ved 8620. Lesetida på 2600ms telles fra
+  // DA, ikke fra 8100 — ellers spiser ankomsten av lesetida.
+  // Loop. Kjøres bare hvis raden fortsatt er åpen — lukkes den, har reset() alt tømt
+  // timerne, men sjekken gjør det umulig å starte en ny runde inn i en lukket rad.
+  T(function(){ if(!rad || rad.getAttribute('data-open')==='true') play(); }, 12100);
+}
+// Loopen skal ikke kjøre for et tomt rom. Uten dette går den rundt så lenge raden står
+// åpen, også når seksjonen er scrollet langt bort — samme sløsing som produktvisningen
+// hadde. Ved retur startes runden forfra; det er riktig her, for en halvspilt sekvens
+// forteller ingenting.
+if('IntersectionObserver' in window){
+  new IntersectionObserver(function(e){
+    if(e[0].isIntersecting){
+      if(rad && rad.getAttribute('data-open')==='true') play();
+    } else {
+      timers.forEach(clearTimeout); timers=[];
+    }
+  },{threshold:.25}).observe(stage);
 }
 window.playRebooking=play;window.resetRebooking=reset;
 })();
-/* verving-anim */
+/* påminnelse-demo — TO scener. Runde: 5720ms + 880ms pause = 6600ms, i loop.
+   Scene 1 (0–2400)     Vekst-fanen: SMS-påminnelse skrus på, boksen viser meldingen.
+                        Rebooking står allerede PÅ. Ingen intervallvalg.
+   Scene 3 (2750–5720)  tom meldingsskjerm 850ms, så ankommer meldingen og blir lest.
+   Ingen kalenderscene: påminnelsen har ingen ventetid å vise. Den går kvelden før, og
+   det eneste som skal fram er at kunden får den. Rebooking har 35 dager å gjøre rede for;
+   her ville en kalender bare vært fyll.
+   Samme mønster som rebooking: loop mens raden er åpen, synlighetsobservatør som
+   RESTARTER ved retur (ikke gjenopptar — se rebooking-kommentaren for hvorfor). */
 (function(){
-var demo=document.getElementById('vv_demo'),
-    b1=document.getElementById('vv_b1'),b2=document.getElementById('vv_b2'),b3=document.getElementById('vv_b3'),
-    chk=document.getElementById('vv_chk'),ch3=document.getElementById('vv_ch3'),cwho=document.getElementById('vv_cwho'),crow=document.getElementById('vv_crow');
+var stage=document.getElementById('paaStage'); if(!stage)return;
+var scener=[].slice.call(stage.querySelectorAll('.rb-scene')),
+    acc=document.getElementById('paaAcc'), sw=document.getElementById('paaSw'),
+    boble=document.getElementById('paaBoble'),
+    rad=stage.closest('.sys-row');
+var REDUSERT=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
 var timers=[];
 function T(fn,ms){timers.push(setTimeout(fn,ms));}
+function vis(n){
+  scener.forEach(function(s){ s.classList.toggle('on', +s.dataset.s===n); });
+  stage.classList.toggle('lys', n===3);
+}
+function settSkala(){
+  var skjerm=stage.parentElement, b=skjerm&&skjerm.offsetWidth;
+  if(b>0) stage.style.setProperty('--rb-s', Math.round(b/320*10000)/10000);
+}
+settSkala();
+window.addEventListener('resize',settSkala);
 function reset(){
-  timers.forEach(clearTimeout);timers=[];
-  demo.classList.remove('slid');
-  [b1,b2,b3].forEach(function(e){e.classList.remove('vvpop');});
-  b3.classList.remove('tapped');
-  chk.classList.remove('vvpop');ch3.classList.remove('show');cwho.classList.remove('show');crow.classList.remove('show');
-  void demo.offsetWidth;
+  timers.forEach(clearTimeout); timers=[];
+  sw.classList.remove('on'); acc.classList.remove('aapen');
+  boble.classList.remove('inn');
+  vis(1);
 }
 function play(){
   reset();
-  T(function(){b1.classList.add('vvpop');},400);
-  T(function(){b2.classList.add('vvpop');},650);
-  T(function(){b3.classList.add('vvpop');},900);
-  T(function(){b3.classList.add('tapped');},2300);
-  T(function(){b3.classList.remove('tapped');},2550);
-  T(function(){demo.classList.add('slid');},3100);
-  T(function(){chk.classList.add('vvpop');ch3.classList.add('show');cwho.classList.add('show');crow.classList.add('show');},4000);
+  if(REDUSERT){
+    sw.classList.add('on'); acc.classList.add('aapen');
+    T(function(){ vis(3); boble.classList.add('inn'); }, 1600);
+    return;
+  }
+  // Scene 1 — hold 500, bryter på 400, pause 500, boksen utvider 500, hold 500
+  T(function(){ sw.classList.add('on'); }, 500);
+  T(function(){ acc.classList.add('aapen'); }, 1400);
+  // Scene 3 — kryssfade 350 fra 2400, så 850ms tom skjerm før meldingen ankommer.
+  // Lesetida på 1600ms telles fra der bobla har landet (3600 + 520 anim), ikke fra 3600.
+  T(function(){ vis(3); }, 2750);
+  T(function(){ boble.classList.add('inn'); }, 3600);
+  T(function(){ if(!rad || rad.getAttribute('data-open')==='true') play(); }, 6600);
+}
+if('IntersectionObserver' in window){
+  new IntersectionObserver(function(e){
+    if(e[0].isIntersecting){
+      if(rad && rad.getAttribute('data-open')==='true') play();
+    } else {
+      timers.forEach(clearTimeout); timers=[];
+    }
+  },{threshold:.25}).observe(stage);
+}
+window.playPaaminnelse=play;window.resetPaaminnelse=reset;
+})();
+
+/* verving-demo — tre scener. Runde: 10000ms + 900ms pause = 10900ms, i loop.
+   Scene 1 (0–2800)     Vekst-fanen: Verving-boksen utvider, scenen ruller 72px ned så
+                        BÅDE pillene og %-feltet er synlige når rabatten settes 20 → 25.
+                        Verving har ingen bryter, kun chevron.
+   Scene 2 (3150–7150)  barberens kundeliste. «Del vervelenke» trykkes, lenkekortet
+                        kommer, delingsarket glir opp. Ingen SMS — barbereren deler selv.
+   Scene 3 (7500–10000) kalenderen (.pv-cal, gjenbrukt) starter TOM, så booker Sander.
+   Samme mønster som de to andre: loop mens raden er åpen, synlighetsobservatør som
+   RESTARTER ved retur. */
+(function(){
+var stage=document.getElementById('vvStage'); if(!stage)return;
+var scener=[].slice.call(stage.querySelectorAll('.rb-scene')),
+    s1=stage.querySelector('.rb-s1'),
+    acc=document.getElementById('vvAcc'), seg=document.getElementById('vvSeg'),
+    piller=[].slice.call(stage.querySelectorAll('.vv-pill')),
+    num=document.getElementById('vvNum'), pct=document.getElementById('vvPct'),
+    btn=document.getElementById('vvBtn'), krad=document.getElementById('vvRad'),
+    lenke=document.getElementById('vvLenke'),
+    dim=document.getElementById('vvDim'), ark=document.getElementById('vvArk'),
+    rows=document.getElementById('vvRows'), teller=document.getElementById('vvCount'),
+    rad=stage.closest('.sys-row');
+var REDUSERT=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var timers=[];
+function T(fn,ms){timers.push(setTimeout(fn,ms));}
+function vis(n){ scener.forEach(function(s){ s.classList.toggle('on', +s.dataset.s===n); }); }
+function velgPille(r){ piller.forEach(function(p){ p.classList.toggle('valgt', p.dataset.r===r); }); }
+function settSkala(){
+  var skjerm=stage.parentElement, b=skjerm&&skjerm.offsetWidth;
+  if(b>0) stage.style.setProperty('--rb-s', Math.round(b/320*10000)/10000);
+}
+// Hvor langt scene 1 må rulle for at %-feltet skal komme innenfor. Regnes i DESIGNpiksler:
+// innholdets høyde med Verving-boksen åpen, minus skjermens 693, pluss 14px klaring.
+// Forskyvningen MÅLES, den predikeres ikke. To regnestykker bommet før: først på at
+// .rb-body klipper på max-height, så på 12px fordi høyden ble stykket sammen av deler.
+// Her åpnes boksen for ett øyeblikk med overgangene av, %-feltets bunn leses, og boksen
+// settes tilbake. Skjermflaten er 693 designpiksler; wrapperen starter 44 ned, så det er
+// 649 tilgjengelig, minus 14px klaring = 635.
+function settRull(){
+  var sk=stage.querySelector('.rb-s1 .rb-scale'); if(!sk)return;
+  var vartAapen=acc.classList.contains('aapen');
+  stage.classList.add('maaler');
+  if(!vartAapen) acc.classList.add('aapen');
+  var s=parseFloat(getComputedStyle(stage).getPropertyValue('--rb-s'))||1;
+  var skR=sk.getBoundingClientRect(), nR=num.getBoundingClientRect();
+  var bunn=(nR.bottom-skR.top)/s;                 // designpiksler fra wrapperens topp
+  if(!vartAapen) acc.classList.remove('aapen');
+  void sk.offsetWidth;                            // tving fram layout før overgangene på igjen
+  stage.classList.remove('maaler');
+  // 619 = 649 tilgjengelig minus 30px klaring. Klaringen var 14 og ga 3px overskyting på
+  // 320 — designrommet er ikke helt identisk mellom breddene. Målt margin er billigere enn
+  // å jakte de siste pikslene.
+  s1.style.setProperty('--vv-rull','-'+Math.max(0, Math.round(bunn-619))+'px');
+}
+settSkala(); settRull();
+window.addEventListener('resize',function(){ settSkala(); settRull(); });
+// Bookingraden bygges med de DELTE kalenderklassene (.crow/.crow-t/-n/-s), samme som
+// produktvisningen. Markørpilla er verving-spesifikk og ligger i .vvdemo-scopet.
+function leggInn(){
+  rows.innerHTML='<div class="crow rad k-b vervet">'
+    +'<span class="crow-t">14:00</span><span class="crow-n">Sander</span>'
+    +'<span class="crow-s">Klipp</span>'
+    +'<span class="vv-merk">Vervet av Marcus · 25%</span></div>';
+  teller.textContent='1';
+  var r=rows.firstChild;
+  void r.offsetWidth;                 // tving fram en frame før .inn, ellers hopper den
+  r.classList.add('inn');
+}
+function reset(){
+  timers.forEach(clearTimeout); timers=[];
+  acc.classList.remove('aapen'); seg.classList.remove('vis'); s1.classList.remove('rullet');
+  velgPille(null); num.classList.remove('fokus'); pct.textContent='20';
+  btn.classList.remove('trykk'); krad.classList.remove('trykk');
+  lenke.classList.remove('inn'); dim.classList.remove('inn'); ark.classList.remove('inn');
+  rows.innerHTML=''; teller.textContent='0';
+  vis(1);
+}
+function play(){
+  reset();
+  if(REDUSERT){
+    acc.classList.add('aapen'); s1.classList.add('rullet');
+    seg.classList.add('vis'); velgPille('begge'); pct.textContent='25';
+    T(function(){ vis(2); lenke.classList.add('inn'); dim.classList.add('inn'); ark.classList.add('inn'); }, 1600);
+    T(function(){ vis(3); leggInn(); }, 3400);
+    return;
+  }
+  // Scene 1 — hold 500, boks utvider 500, innstillinger inn 500, valg 400, prosent 400, hold 500.
+  // Rullingen starter samtidig med utvidelsen, så den er ferdig lenge før verdien endres.
+  T(function(){ settRull(); acc.classList.add('aapen'); s1.classList.add('rullet'); }, 500);
+  T(function(){ seg.classList.add('vis'); }, 1000);
+  T(function(){ velgPille('begge'); }, 1500);
+  T(function(){ num.classList.add('fokus'); pct.textContent='25'; }, 1900);
+  T(function(){ num.classList.remove('fokus'); }, 2500);
+  // Scene 2 — 4000ms. Lista skal etableres FØR noe skjer: 900ms med tre kunder som hver
+  // har sin egen lenke. Så et tydelig trykk, så lenkekortet, så arket med hold nok til
+  // at de tre valgene faktisk leses.
+  T(function(){ vis(2); }, 3150);
+  T(function(){ btn.classList.add('trykk'); krad.classList.add('trykk'); }, 4050);
+  T(function(){ btn.classList.remove('trykk'); krad.classList.remove('trykk');
+                lenke.classList.add('inn'); }, 4500);
+  T(function(){ dim.classList.add('inn'); ark.classList.add('inn'); }, 5350);
+  // Scene 3 — kalenderen står tom i 700ms før bookingen dukker opp
+  T(function(){ vis(3); }, 7500);
+  T(function(){ leggInn(); }, 8200);
+  T(function(){ if(!rad || rad.getAttribute('data-open')==='true') play(); }, 10900);
+}
+if('IntersectionObserver' in window){
+  new IntersectionObserver(function(e){
+    if(e[0].isIntersecting){
+      if(rad && rad.getAttribute('data-open')==='true') play();
+    } else {
+      timers.forEach(clearTimeout); timers=[];
+    }
+  },{threshold:.25}).observe(stage);
 }
 window.playVerving=play;window.resetVerving=reset;
 })();
+
+/* vinn-tilbake-demo — ÉN scene. Runde: 3800ms + 900ms pause = 4700ms, i loop.
+   hold 600 → boksen utvider 500 → lista inn 600 → hold 2100.
+   Ingen sending og ingen handlinger: lista ER funksjonen, og dashbordet har heller ingen
+   knapper på radene. Scenen ruller fordi lista (467px) pluss dashbordet (560px) er 1027px
+   mot 649px skjerm — forskyvningen måles, den settes ikke fast. */
+(function(){
+var stage=document.getElementById('wbStage'); if(!stage)return;
+var s1=stage.querySelector('.rb-s1'), acc=document.getElementById('wbAcc'),
+    liste=document.getElementById('wbListe'), rad=stage.closest('.sys-row');
+var REDUSERT=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+var timers=[];
+function T(fn,ms){timers.push(setTimeout(fn,ms));}
+function settSkala(){
+  var skjerm=stage.parentElement, b=skjerm&&skjerm.offsetWidth;
+  if(b>0) stage.style.setProperty('--rb-s', Math.round(b/320*10000)/10000);
+}
+// Samme metode som verving: boksen åpnes ett øyeblikk med overgangene av, listas bunn
+// leses i designrom, boksen settes tilbake. 649 tilgjengelig minus 30px klaring = 619.
+function settRull(){
+  var sk=stage.querySelector('.rb-s1 .rb-scale'); if(!sk)return;
+  var vartAapen=acc.classList.contains('aapen');
+  stage.classList.add('maaler');
+  if(!vartAapen) acc.classList.add('aapen');
+  var s=parseFloat(getComputedStyle(stage).getPropertyValue('--rb-s'))||1;
+  var skR=sk.getBoundingClientRect(), lR=liste.getBoundingClientRect();
+  var bunn=(lR.bottom-skR.top)/s;
+  if(!vartAapen) acc.classList.remove('aapen');
+  void sk.offsetWidth;
+  stage.classList.remove('maaler');
+  s1.style.setProperty('--wb-rull','-'+Math.max(0, Math.round(bunn-619))+'px');
+}
+settSkala();
+window.addEventListener('resize',function(){ settSkala(); settRull(); });
+function reset(){
+  timers.forEach(clearTimeout); timers=[];
+  acc.classList.remove('aapen'); s1.classList.remove('rullet');
+  liste.classList.remove('inn');
+}
+function play(){
+  reset();
+  if(REDUSERT){
+    settRull(); acc.classList.add('aapen'); s1.classList.add('rullet'); liste.classList.add('inn');
+    return;
+  }
+  T(function(){ settRull(); acc.classList.add('aapen'); s1.classList.add('rullet'); }, 600);
+  T(function(){ liste.classList.add('inn'); }, 1100);
+  T(function(){ if(!rad || rad.getAttribute('data-open')==='true') play(); }, 4700);
+}
+if('IntersectionObserver' in window){
+  new IntersectionObserver(function(e){
+    if(e[0].isIntersecting){
+      if(rad && rad.getAttribute('data-open')==='true') play();
+    } else {
+      timers.forEach(clearTimeout); timers=[];
+    }
+  },{threshold:.25}).observe(stage);
+}
+window.playVinntilbake=play;window.resetVinntilbake=reset;
+})();
+
 /* accordion-trigger */
 (function(){
   document.querySelectorAll('.sys-row').forEach(function(row){
@@ -2336,11 +3207,15 @@ window.playVerving=play;window.resetVerving=reset;
       row.setAttribute('data-open',String(nowOpen));
       head.setAttribute('aria-expanded',String(nowOpen));
       if(nowOpen){
+        if(which==='paaminnelse'){window.resetPaaminnelse();window.playPaaminnelse();}
         if(which==='rebooking'){window.resetRebooking();window.playRebooking();}
         if(which==='verving'){window.resetVerving();window.playVerving();}
+        if(which==='vinntilbake'){window.resetVinntilbake();window.playVinntilbake();}
       }else{
+        if(which==='paaminnelse')window.resetPaaminnelse();
         if(which==='rebooking')window.resetRebooking();
         if(which==='verving')window.resetVerving();
+        if(which==='vinntilbake')window.resetVinntilbake();
       }
     });
   });
