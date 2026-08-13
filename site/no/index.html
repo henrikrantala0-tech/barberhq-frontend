@@ -1108,9 +1108,13 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .problem-head{max-width:620px;margin-bottom:22px}
 .problem-eyebrow{color:#8a8a8a;font-size:13px;letter-spacing:.22em;font-weight:600;margin-bottom:16px;
   font-family:'Inter',-apple-system,system-ui,sans-serif}
-/* Mindre enn sidas øvrige seksjonstitler (clamp(30px,5vw,56px)) med vilje: den står
-   over fem lave listerader, ikke over en full seksjon. 56px ble topptungt. */
-.problem-h2{color:#fff;font-size:clamp(22px,2.4vw,30px);font-weight:800;line-height:1.1;letter-spacing:-.03em;margin:0;
+/* Mellomlanding, og begge ytterpunktene er prøvd. Sidas øvrige seksjonstitler er
+   clamp(30px,5vw,56px); 56px ble forkastet fordi tittelen står over fem lave listerader
+   og ikke over en full seksjon — den ble topptung. Men 30px gikk for langt andre veien og
+   leste som en underseksjon, ikke som en av sidas hovedtitler. 40px er mellomlandingen.
+   letter-spacing beholdes på -.03em (de andre ligger på -.04em): mindre grad tåler
+   mindre knip. */
+.problem-h2{color:#fff;font-size:clamp(26px,3.6vw,40px);font-weight:800;line-height:1.1;letter-spacing:-.03em;margin:0;
   font-family:'Inter',-apple-system,system-ui,sans-serif}
 .problem-sub{color:#b4b4b4;font-size:17px;line-height:1.6;margin:20px 0 0;
   font-family:'Inter',-apple-system,system-ui,sans-serif}
