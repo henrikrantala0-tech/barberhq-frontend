@@ -1239,25 +1239,40 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .ds-h2{color:#fff;font-size:clamp(30px,5vw,56px);font-weight:800;line-height:1.02;letter-spacing:-.04em;margin:0}
 .ds-sub{color:#b4b4b4;font-size:16px;line-height:1.6;margin:18px 0 0;max-width:540px}
 
-.ds-compare{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:32px}
-.ds-col{border-radius:18px;padding:24px 22px;text-align:left}
-.ds-col-them{background:#0c0c0c;border:1px solid #1a1a1a}
-.ds-col-us{background:#0e0f12;border:1px solid #24344f;
-  box-shadow:0 0 0 1px rgba(77,139,255,.08),0 20px 60px -30px rgba(77,139,255,.35)}
-.ds-coltag{display:inline-block;font-size:12px;font-weight:700;letter-spacing:.04em;padding:6px 12px;border-radius:99px;margin-bottom:20px}
-.ds-coltag-them{background:#171717;color:#7a7a7a}
-.ds-coltag-us{background:rgba(77,139,255,.14);color:#7fa8ff}
-.ds-list{list-style:none;display:flex;flex-direction:column;gap:14px}
-.ds-list li{display:flex;align-items:flex-start;gap:11px;font-size:14px;line-height:1.4}
-.ds-col-them li{color:#8a8a8a}
-.ds-col-us li{color:#e8e8e8}
+/* Tabell, ikke to bokser: én rad per påstand med begge sider på samme linje.
+   Holder to kolonner helt ned til 320 (målt: 137px celler) — der bokse-varianten
+   stablet til to lister under 560px og krevde 583px høyde mot tabellens 287px.
+   Ikonbrikkene (.ds-x/.ds-check) koster 21px + 9px gap = 30px av 119px tekstplass
+   per celle på 320. Målt: de tar fem av tolv celler fra to til tre linjer og løfter
+   tabellen fra 394px til 478px. Det er innenfor grensa på maks tre linjer, men det
+   er hele marginen — kortere gap eller mindre brikke kjøper deg ikke en fjerde
+   linje tilbake. Forlenger du en radtekst, MÅL på nytt før du committer. */
+.ds-tab{margin-top:32px;border:1px solid #1c1c1c;border-radius:16px;overflow:hidden;background:#0c0c0c}
+.ds-tab-head,.ds-tr{display:grid;grid-template-columns:1fr 1fr}
+.ds-tab-head{background:#101010;border-bottom:1px solid #1c1c1c}
+.ds-th{font-size:11.5px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;padding:11px 12px}
+.ds-th-them{color:#6f6f6f}
+.ds-th-us{color:#7fa8ff;background:rgba(77,139,255,.07);box-shadow:inset 1px 0 0 #24344f}
+.ds-tr + .ds-tr{border-top:1px solid #161616}
+/* 12.5px, ikke 13: «Kundene ser konkurrentene dine» brekker til TRE linjer på 13px
+   i en 137px celle (320-bredde) — «konkurrentene» er for langt til å brytes. På 12.5
+   holder alle tolv cellene to linjer. Endrer du rad 1, mål på nytt før du hever. */
+.ds-td{padding:13px 12px;font-size:12.5px;line-height:1.35;display:flex;align-items:flex-start;gap:9px}
+.ds-td-them{color:#7a7a7a}
+.ds-td-us{color:#fff;font-weight:600;background:rgba(77,139,255,.05);box-shadow:inset 1px 0 0 #24344f}
+/* margin-top:1px setter brikka på tekstens første linje, ikke på cellas overkant —
+   uten den flyter den opp når cella har to eller tre linjer. */
 .ds-x,.ds-check{flex-shrink:0;width:21px;height:21px;border-radius:99px;display:flex;align-items:center;justify-content:center;margin-top:1px}
 .ds-x{background:rgba(224,87,79,.12);color:#e0574f}
 .ds-check{background:rgba(62,207,126,.14);color:#3ecf7e}
 
+@media(max-width:400px){
+  .ds-th{font-size:10.5px;padding:9px 9px;letter-spacing:.06em}
+  .ds-td{padding:11px 9px}
+}
+
 @media(max-width:560px){
   .ds-section{padding:64px 22px}
-  .ds-compare{grid-template-columns:1fr}
 }
 </style>
 <style>
@@ -1537,30 +1552,35 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       <h2 class="ds-h2">Fast pris.<br>Fordi siden er din.</h2>
       <p class="ds-sub">Samme regning hver måned, uansett hvor mye du booker. Vi er ikke en markedsplass, og tar ikke betalt per booking. Du får et verktøy: siden er din, kundelista er din.</p>
 
-      <div class="ds-compare">
-
-        <div class="ds-col ds-col-them">
-          <div class="ds-coltag ds-coltag-them">Andre Booking-Tjenester</div>
-          <ul class="ds-list">
-            <li><span class="ds-x"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>Kundene ser konkurrentene dine</li>
-            <li><span class="ds-x"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>Appens navn, ikke ditt</li>
-            <li><span class="ds-x"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>Betaler per SMS og per ny kunde</li>
-            <li><span class="ds-x"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>Kundene er appens, ikke dine</li>
-            <li><span class="ds-x"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>Fast mal — alle ser like ut</li>
-          </ul>
+      <div class="ds-tab">
+        <div class="ds-tab-head">
+          <div class="ds-th ds-th-them">Andre bookingtjenester</div>
+          <div class="ds-th ds-th-us">BarberHQ</div>
         </div>
-
-        <div class="ds-col ds-col-us">
-          <div class="ds-coltag ds-coltag-us">BarberHQ</div>
-          <ul class="ds-list">
-            <li><span class="ds-check"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Bare deg — ingen konkurrenter i syne</li>
-            <li><span class="ds-check"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Ditt navn, dine farger, din side</li>
-            <li><span class="ds-check"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Prisen er prisen</li>
-            <li><span class="ds-check"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Kundene er dine — for alltid</li>
-            <li><span class="ds-check"><svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Siden bygges etter dine ønsker</li>
-          </ul>
+        <div class="ds-tr">
+          <div class="ds-td ds-td-them"><span class="ds-x"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>Kundene ser konkurrentene dine</div>
+          <div class="ds-td ds-td-us"><span class="ds-check"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Bare du vises på siden</div>
         </div>
-
+        <div class="ds-tr">
+          <div class="ds-td ds-td-them"><span class="ds-x"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>Du setter opp alt selv</div>
+          <div class="ds-td ds-td-us"><span class="ds-check"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Vi bygger siden etter dine ønsker</div>
+        </div>
+        <div class="ds-tr">
+          <div class="ds-td ds-td-them"><span class="ds-x"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>Gebyr per booking og per ny kunde</div>
+          <div class="ds-td ds-td-us"><span class="ds-check"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Én fast månedspris</div>
+        </div>
+        <div class="ds-tr">
+          <div class="ds-td ds-td-them"><span class="ds-x"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>Påminnelser koster per SMS</div>
+          <div class="ds-td ds-td-us"><span class="ds-check"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Påminnelser før hver time</div>
+        </div>
+        <div class="ds-tr">
+          <div class="ds-td ds-td-them"><span class="ds-x"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>Rebooking er et betalt tillegg</div>
+          <div class="ds-td ds-td-us"><span class="ds-check"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Automatisk rebooking</div>
+        </div>
+        <div class="ds-tr">
+          <div class="ds-td ds-td-them"><span class="ds-x"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg></span>Ingen vervingssystem</div>
+          <div class="ds-td ds-td-us"><span class="ds-check"><svg viewBox="0 0 24 24" width="12" height="12" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Innebygd verving med sporing</div>
+        </div>
       </div>
     </div>
   </div>
