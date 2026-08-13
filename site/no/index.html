@@ -78,6 +78,9 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .hero h1 .h1-big{display:block;font-size:clamp(30px,7vw,82px);animation:heroIn 1.2s cubic-bezier(.22,.61,.36,1) both}
 @keyframes heroIn{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
 .hero-sub{color:#b4b4b4;font-size:clamp(16px,2.2vw,19px);line-height:1.6;max-width:560px;margin:36px auto 0}
+/* nowrap: «Flere kunder, mer inntekt.» er løftet, og et linjebrekk midt i det gjør det til
+   to halve påstander. Holder den samlet så lenge den får plass — måles på 320. */
+.hero-sub strong{color:#fff;font-weight:700;white-space:nowrap}
 .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:48px}
 .btn{display:inline-flex;align-items:center;gap:9px;font-size:15px;font-weight:600;padding:15px 30px;border-radius:99px;text-decoration:none;transition:all .2s;cursor:pointer;border:0}
 .btn-fill{background:#4d8bff;color:#fff}
@@ -1259,7 +1262,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   <div class="hero-inner">
     <span class="hero-eyebrow">Bookingsystem for barberere</span>
     <h1><span class="h1-big">«Når&nbsp;har&nbsp;du&nbsp;ledig?»</span></h1>
-    <p class="hero-sub">Ikke bare en bookingside — et helt system. Automatiske påminnelser, rebooking av kunder som ikke har vært hos deg på en stund, og full oversikt over driften. Færre tomme timer, høyere inntekt.</p>
+    <p class="hero-sub">Ikke bare en bookingside — et helt system. Automatiske påminnelser, rebooking og full oversikt. <strong>Flere kunder, mer inntekt.</strong></p>
     <div class="hero-btns">
       <a href="kom-i-gang.html" class="btn btn-fill">Prøv gratis</a>
     </div>
