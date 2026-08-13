@@ -2974,12 +2974,20 @@ function blaFra(i, t){
 }
 function play(){
   reset();
-  // Redusert bevegelse: hver scene vises fortsatt, i sin FERDIGE tilstand, med samme
-  // rekkefølge og samme holdetider. Det som fjernes er bevegelsen — bladene rives ikke,
-  // bryteren glir ikke, boblene spretter ikke (transform er nullet i CSS). Historien
-  // fortelles altså i sin helhet; den hopper ikke rett til slutten.
-  // Redusert bevegelse: samme rekkefølge, ingen bevegelse — og INGEN loop. En sekvens
-  // som gjentar seg selv i det uendelige er nettopp det innstillingen ber oss la være.
+  // Redusert bevegelse: alle TRE scenene vises, i samme rekkefølge, hver i sin ferdige
+  // tilstand. Men seks mellomtrinn faller bort, og holdetidene er IKKE de samme — så
+  // dette er en kortere fortelling, ikke den samme uten bevegelse:
+  //   Scene 1  Utgangspunktet (bryter av, boks lukket, 28 valgt) vises aldri: reset()
+  //            setter det, og linja under overskriver det i samme tick. Poenget «valget
+  //            flytter seg 28 → 35» blir dermed bare «35 er valgt».
+  //   Scene 2  De 35 bladene rives ikke — .rb-blad er display:none i CSS og blaFra()
+  //            kalles ikke i det hele tatt. Telleren settes rett til 35. Bildeteksten
+  //            kommer samtidig med scenebyttet, ikke 2350ms inn i scenen.
+  //   Scene 3  Den tomme skjermen før meldingen finnes ikke; scenen og bobla kommer i
+  //            samme øyeblikk. Bobla spretter ikke (.smsb har transform:none i CSS).
+  //   Holdetid full 3950 / 2950 / 5200ms  →  redusert 1800 / 1800 / blir stående.
+  // Ingen loop: en sekvens som gjentar seg selv i det uendelige er nettopp det
+  // innstillingen ber oss la være.
   if(REDUSERT){
     sw.classList.add('on'); acc.classList.add('aapen'); velgPille(35);
     T(function(){ vis(2); dag.textContent='35'; kap.classList.add('inn'); }, 1800);
