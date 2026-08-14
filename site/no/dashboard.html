@@ -141,6 +141,14 @@
   .sw .sl:before{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.18s}
   .sw input:checked + .sl{background:var(--ink)}
   .sw input:checked + .sl:before{transform:translateX(16px)}
+  /* UBESTEMT: /settings feilet, så vi vet ikke om bryteren er på eller av. Knotten står
+     MIDT imellom — verken venstre (av) eller høyre (på) — med dempet farge og cursor:default,
+     fordi klikk ikke skriver noe før et vellykket kall. Uten denne tilstanden rendres en
+     ukjent bryter som AV, og det er en påstand vi ikke har dekning for.
+     :indeterminate er checkboxens egen tilstand, ikke en klasse vi finner på — den nullstilles
+     automatisk av nettleseren når brukeren klikker, så handleren må sette den tilbake. */
+  .sw input:indeterminate + .sl{background:var(--line);cursor:default}
+  .sw input:indeterminate + .sl:before{transform:translateX(8px);background:var(--mut);width:14px;height:14px;top:4px}
 
   .btn{appearance:none;border:0;font:inherit;font-weight:600;font-size:13px;padding:10px 20px;border-radius:8px;cursor:pointer;background:var(--ink);color:#fff;letter-spacing:-.01em}
   .btn:active{transform:scale(.985)}
@@ -932,6 +940,15 @@
 
     <!-- ACCORDIONS: to lister, ikke én — maskin under «Automatikk», menneske under «Personlig».
          IDer på kontrollene er BEVART fra gammel struktur → loadSmsInnstillinger/loadVerving/loadWinback treffer som før. -->
+    <!-- Feilet GET /settings. Står OVER .acc-list fordi ett kall bærer BEGGE trekkspillene —
+         både SMS-påminnelse og Rebooking leser samme respons, så én melding dekker dem. Den
+         lå først inne i rebooking-kroppen; da gjaldt den synlig bare halve problemet, og var
+         dessuten skjult til trekkspillet ble åpnet.
+         Uten linja er tilstanden TAUS, og tausheten lyver: «bryter av + ingen pille tent» er
+         nøyaktig hvordan «avslått med intervall 28» også ser ut. Vises av s._hentFeilet — et
+         syntetisk felt fra api.settings(), aldri noe backend sender. -->
+    <p class="sett-err" id="settFeil" hidden>Kunne ikke hente innstillingene — last siden på nytt.</p>
+
     <div class="acc-list">
 
       <!-- SMS-påminnelse -->
@@ -977,12 +994,6 @@
           <label class="sw sw-green acc-sw"><input type="checkbox" id="tog-rebook"><span class="sl"></span></label>
         </div>
         <div class="acc-body" hidden>
-          <!-- Feilet GET /settings. Uten denne linja er tilstanden TAUS: bryteren står av og
-               ingen pille er tent, som er nøyaktig hvordan «rebooking er avslått med intervall
-               28» også ser ut. Barbereren kan ikke skille «vi vet ikke» fra «det er slik du
-               har satt det». Vises av s._hentFeilet — et syntetisk felt fra api.settings(),
-               ikke noe backend sender. -->
-          <p class="sett-err" id="rebookFeil" hidden>Kunne ikke hente innstillingene — last siden på nytt.</p>
           <!-- TOM MED VILJE. Her sto «SMS-utsending kobles på snart — valget ditt lagres» som
                fallback til renderSmsPreview hadde svart. Den er fra før utsendingen gikk live og
                er nå USANN — systemet sender. Feiler /sms-preview, står boksen heller tom enn å
@@ -2751,12 +2762,16 @@ $("#saveProfil").addEventListener("click",async function(){
 // Kontrollene bor i #vekst; navnet er byttet så det ikke forveksles med Konto.
 async function loadSmsInnstillinger(){
   const s=await api.settings();
-  $("#tog-paam").checked=!!s.sms_paaminnelse_enabled;
-  $("#tog-rebook").checked=!!s.sms_rebooking_enabled;
+  // Ukjent-tilstanden settes FØR bryterne, så både .checked og .indeterminate skrives i
+  // samme pass. Rekkefølgen betyr noe: .checked=true nullstiller ikke indeterminate, men
+  // en klikk gjør det — se guarden i change-handleren.
+  _settingsUkjent = !!s._hentFeilet;
+  settBryter($("#tog-paam"),   s.sms_paaminnelse_enabled);
+  settBryter($("#tog-rebook"), s.sms_rebooking_enabled);
   setRebookPills(s.rebooking_interval_days);
   // Feilmeldinga skrus av ved hvert vellykket kall, ikke bare på. Uten else-grenen ville
   // den blitt stående etter at et senere kall gikk gjennom.
-  var fe=$("#rebookFeil"); if(fe) fe.hidden = !s._hentFeilet;
+  var fe=$("#settFeil"); if(fe) fe.hidden = !_settingsUkjent;
   settRebookInfo();
   renderSmsPreview('paaminnelse','paamPreview');
   renderSmsPreview('rebooking','rebookPreview');
@@ -2825,10 +2840,31 @@ function setRebookPills(days){
     b.setAttribute('aria-selected', (match && +b.dataset.days===+days) ? 'true':'false');
   });
 }
-$("#tog-paam").addEventListener("change",function(){api.saveSettings({sms_paaminnelse_enabled:this.checked});});
-$("#tog-rebook").addEventListener("change",function(){api.saveSettings({sms_rebooking_enabled:this.checked});});
+// Vet vi ikke hva som ER lagret, kan vi heller ikke skrive. En PUT herfra ville sendt en
+// verdi barbereren aldri valgte — han trykket bare på en bryter som viste feil utgangspunkt.
+// Derfor: ingen kontroll i denne seksjonen skriver til /settings før et kall har gått
+// gjennom. Flagget settes i loadSmsInnstillinger og nullstilles av neste vellykkede kall.
+var _settingsUkjent = false;
+// Én bryter, tre tilstander. indeterminate MÅ settes etter checked: nettleseren rører ikke
+// indeterminate når vi setter checked programmatisk, men et brukerklikk nullstiller den.
+function settBryter(el, verdi){
+  if(!el)return;
+  el.checked = !_settingsUkjent && !!verdi;
+  el.indeterminate = _settingsUkjent;
+}
+function bryterSkriv(el, felt){
+  if(_settingsUkjent){          // klikket nullstilte indeterminate — sett den tilbake
+    el.checked=false; el.indeterminate=true;
+    return;
+  }
+  var p={}; p[felt]=el.checked;
+  api.saveSettings(p);
+}
+$("#tog-paam").addEventListener("change",function(){bryterSkriv(this,'sms_paaminnelse_enabled');});
+$("#tog-rebook").addEventListener("change",function(){bryterSkriv(this,'sms_rebooking_enabled');});
 document.querySelectorAll('#rebookPills button').forEach(function(b){
   b.addEventListener('click',function(){
+    if(_settingsUkjent) return;        // ingen skriving, og ingen pille tennes på gjetning
     var days=+b.dataset.days;
     setRebookPills(days);              // backend validerer 28/35/45; UI sender kun disse
     api.saveSettings({rebooking_interval_days:days});
