@@ -536,6 +536,9 @@
   .sett-pills-row{padding:14px 0;border-bottom:1px solid var(--line)}
   .sett-pills-row>label{display:block;font-size:13.5px;font-weight:500;letter-spacing:-.01em;margin-bottom:9px}
   .sett-hint{font-size:12px;color:var(--mut);margin-top:9px}
+  /* Rød, ikke dempet som .sett-hint: dette er en FEIL, ikke en veiledning. Samme farge som
+     .svc-err, så de to feiltypene i dashbordet ser like ut. */
+  .sett-err{font-size:12px;color:#c0392b;line-height:1.45;margin:0 0 12px}
   .sett-note{font-size:12px;color:var(--mut);padding:11px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;line-height:1.55}
   /* SMS-forhåndsvisning: les-bare boble som ligner en mottatt melding. Ett hjørne stramt
      (nederst venstre) er den vanlige «innkommende»-formen — den signaliserer at teksten er
@@ -686,6 +689,23 @@
   .seg-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
   .seg-line + .seg-line{margin-top:14px}
   .seg-lead{font-size:12.5px;color:var(--mut-2);flex-shrink:0}
+  /* Info-ikon ved «Send etter». title= er brukt ellers i dashbordet, men duger IKKE her:
+     den vises aldri på touch, og dashbordet er mobil-primært. Derfor en ekte boble som
+     åpnes på BÅDE trykk og hover. */
+  .info-wrap{position:relative;display:inline-flex;vertical-align:middle;margin-left:5px}
+  .info-i{width:15px;height:15px;flex-shrink:0;border-radius:99px;border:1px solid var(--line-2);
+    background:none;color:var(--mut);font:600 10px/1 Georgia,serif;font-style:italic;
+    display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
+  .info-i:hover,.info-i[aria-expanded="true"]{color:var(--ink);border-color:var(--mut)}
+  .info-i:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+  /* Boble over ikonet. left:0 + translateX(-30%) holder den innenfor panelet på 320 —
+     seg-line starter 17px fra kanten, og en sentrert boble hadde stukket ut til venstre. */
+  .info-tip{position:absolute;bottom:calc(100% + 7px);left:0;transform:translateX(-30%);
+    width:max-content;max-width:min(240px,72vw);z-index:20;
+    font-size:11.5px;line-height:1.45;color:var(--ink);text-align:left;white-space:normal;
+    background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:8px 10px;
+    box-shadow:0 6px 20px rgba(0,0,0,.35)}
+  .info-wrap:hover .info-tip{display:block!important}
   .seg-unit{font-size:12.5px;color:var(--mut-2)}
   /* Verdi-piller (rebooking-intervall + hvem-får-rabatt). En VERDI, ikke en av/på-tilstand.
      Derfor IKKE blå — blå betyr «på» ellers i dashbordet (.sw, og .segs på Oversikt der pillen
@@ -953,19 +973,33 @@
           <label class="sw sw-green acc-sw"><input type="checkbox" id="tog-rebook"><span class="sl"></span></label>
         </div>
         <div class="acc-body" hidden>
-          <!-- Samme fallback-mønster som i SMS-påminnelse: noten står til en ekte tekst
-               erstatter den. Forhåndsvisningen kommer FØR intervallet — den svarer på «hva
-               gjør denne bryteren», intervallet er finjusteringen etterpå. -->
-          <div id="rebookPreview"><p class="sett-note">SMS-utsending kobles på snart — valget ditt lagres.</p></div>
+          <!-- Feilet GET /settings. Uten denne linja er tilstanden TAUS: bryteren står av og
+               ingen pille er tent, som er nøyaktig hvordan «rebooking er avslått med intervall
+               28» også ser ut. Barbereren kan ikke skille «vi vet ikke» fra «det er slik du
+               har satt det». Vises av s._hentFeilet — et syntetisk felt fra api.settings(),
+               ikke noe backend sender. -->
+          <p class="sett-err" id="rebookFeil" hidden>Kunne ikke hente innstillingene — last siden på nytt.</p>
+          <!-- TOM MED VILJE. Her sto «SMS-utsending kobles på snart — valget ditt lagres» som
+               fallback til renderSmsPreview hadde svart. Den er fra før utsendingen gikk live og
+               er nå USANN — systemet sender. Feiler /sms-preview, står boksen heller tom enn å
+               love noe galt. Merk at boksen ALDRI var koblet til bryteren: #tog-rebook kaller
+               kun saveSettings, og dette er en ren preview-beholder.
+               Samme streng står fortsatt i #paamPreview (SMS-påminnelse) — ikke rørt her. -->
+          <div id="rebookPreview"></div>
           <div class="seg-line">
-            <span class="seg-lead">Send etter</span>
+            <span class="seg-lead">Send etter<!--
+              --><span class="info-wrap" id="rebookInfoWrap" hidden><!--
+                --><button type="button" class="info-i" id="rebookInfo" aria-expanded="false"
+                        aria-controls="rebookInfoTip" aria-label="Om rebooking i prøveperioden">i</button><!--
+                --><span class="info-tip" id="rebookInfoTip" role="tooltip" hidden>I prøveperioden sendes rebooking etter 28 dager. Valget ditt gjelder etter prøven.</span><!--
+              --></span><!--
+            --></span>
             <div class="segs segs-val" id="rebookPills" role="group" aria-label="Rebooking-intervall">
               <button type="button" data-days="28" aria-selected="false">28 dager</button>
               <button type="button" data-days="35" aria-selected="false">35 dager</button>
               <button type="button" data-days="45" aria-selected="false">45 dager</button>
             </div>
           </div>
-          <p class="sett-hint" id="rebookHint" hidden>Velg et intervall</p>
         </div>
       </div>
     </div>
@@ -1550,7 +1584,15 @@ const api={
   },
   async settings(){
     const r=await apiFetch('/api/dashboard/settings');
-    if(!r||!r.ok)return{sms_paaminnelse_enabled:false,sms_rebooking_enabled:false,rebooking_interval_days:28};
+    // rebooking_interval_days er null, IKKE 28, ved feilet kall. 28 er en gyldig lagret
+    // verdi, så en oppdiktet 28 tenner 28-pilla som om det var barberens eget valg — han
+    // ser en bekreftelse på noe vi ikke vet. null faller gjennom til setRebookPills, som
+    // lar alle tre stå av. Ukjent skal SE ukjent ut.
+    // Merk at det ikke lenger finnes noen hint-tekst under pillene som forklarer den tomme
+    // raden — den ble fjernet med vilje. Tom rad ER signalet, og _hentFeilet gir kalleren
+    // muligheten til å si det med ord. Feltet er SYNTETISK: backend sender det aldri, så en
+    // ekte 200-respons kan ikke tenne feilmeldingen ved et uhell.
+    if(!r||!r.ok)return{_hentFeilet:true,sms_paaminnelse_enabled:false,sms_rebooking_enabled:false,rebooking_interval_days:null};
     return r.json();
   },
   // GET /api/dashboard/sms-preview?kind=paaminnelse|rebooking → {kind,body,tegn,segmenter,
@@ -2708,9 +2750,48 @@ async function loadSmsInnstillinger(){
   $("#tog-paam").checked=!!s.sms_paaminnelse_enabled;
   $("#tog-rebook").checked=!!s.sms_rebooking_enabled;
   setRebookPills(s.rebooking_interval_days);
+  // Feilmeldinga skrus av ved hvert vellykket kall, ikke bare på. Uten else-grenen ville
+  // den blitt stående etter at et senere kall gikk gjennom.
+  var fe=$("#rebookFeil"); if(fe) fe.hidden = !s._hentFeilet;
+  settRebookInfo();
   renderSmsPreview('paaminnelse','paamPreview');
   renderSmsPreview('rebooking','rebookPreview');
 }
+// Info-ikonet ved «Send etter» vises KUN i prøveperioden. Leser _billing — samme kilde som
+// Konto-fanen, ikke en ny utledning. Datoregning hører ikke hjemme i frontend: backend eier
+// trial_days_left, og to steder som regner på trial_start_at ville drevet fra hverandre.
+// trial_days_left, ALDRI days_left (se advarselen over renderKonto): null = ikke startet,
+// 0 = utløpt, >0 = løper. Kun den siste skal vise ikonet.
+// Kalles fra BEGGE sider — her og fra loadBilling — fordi Vekst-fanen kan åpnes før
+// billing-kallet er tilbake. Rekkefølgen er ikke avgjort, og et ikon som mangler fordi to
+// kall løp om kapp er verre enn å sette samme hidden-flagg to ganger.
+function settRebookInfo(){
+  var w=$("#rebookInfoWrap"); if(!w)return;
+  var iProve = !!(_billing && _billing.trial_days_left > 0);
+  w.hidden = !iProve;
+  if(!iProve) lukkRebookTip();   // prøven tok slutt mens boblen sto åpen
+}
+function lukkRebookTip(){
+  var t=$("#rebookInfoTip"), b=$("#rebookInfo");
+  if(t) t.hidden=true;
+  if(b) b.setAttribute('aria-expanded','false');
+}
+(function(){
+  var b=$("#rebookInfo"); if(!b)return;              // ingen null-sjekk lenger ned: init kaster ellers
+  b.addEventListener('click',function(e){
+    e.stopPropagation();                              // ellers lukker dokument-lytteren den umiddelbart
+    var t=$("#rebookInfoTip"); if(!t)return;
+    var aapen=!t.hidden;
+    t.hidden=aapen;
+    b.setAttribute('aria-expanded', aapen?'false':'true');
+  });
+  // Trykk utenfor og Escape lukker. Uten dette blir boblen stående på mobil, der det
+  // ikke finnes en mouseleave å lukke den med.
+  document.addEventListener('click',function(e){
+    if(!e.target.closest('#rebookInfoWrap')) lukkRebookTip();
+  });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') lukkRebookTip(); });
+})();
 // Rendrer den EKTE meldingsteksten som en les-bare SMS-boble. Ingen redigering: teksten er
 // backendens (buildPaaminnelseBody/buildRebookingBody), og den skal barbereren kunne stole
 // på gjenkjenner det kunden faktisk får.
@@ -2730,13 +2811,15 @@ async function renderSmsPreview(kind, elId){
     '<div class="sms-bubble">'+esc(d.body).replace(/\n/g,'<br>')+'</div>'+
     '<p class="sms-prev-note">'+forklaring+'</p>';
 }
-// Intervall-pills: aktiv = lagret verdi hvis den er i settet {28,35,45}; ellers ingen aktiv + hint (gammel 30-verdi o.l.)
+// Intervall-pills: aktiv = lagret verdi hvis den er i settet {28,35,45}. Alt annet — ukjent
+// verdi, gammel 30-verdi, eller null fra en feilet /settings — gir INGEN aktiv pille.
+// Det er hele signalet nå: «Velg et intervall»-hintet under pillene er fjernet, så en tom
+// rad betyr «vi vet ikke hva som er lagret». Ingen pille tennes på gjetning.
 function setRebookPills(days){
   var match=[28,35,45].indexOf(+days)>=0;
   document.querySelectorAll('#rebookPills button').forEach(function(b){
     b.setAttribute('aria-selected', (match && +b.dataset.days===+days) ? 'true':'false');
   });
-  var h=$("#rebookHint"); if(h) h.hidden=match;
 }
 $("#tog-paam").addEventListener("change",function(){api.saveSettings({sms_paaminnelse_enabled:this.checked});});
 $("#tog-rebook").addEventListener("change",function(){api.saveSettings({sms_rebooking_enabled:this.checked});});
@@ -3229,6 +3312,7 @@ async function loadBilling(){
   if(!r||!r.ok)return; // 401 → apiFetch redirigerte; annen feil → behold «henter …»-tekst, ingen krasj
   _billing=await r.json();
   renderKonto(_billing);
+  settRebookInfo(); // Vekst-ikonet henger på _billing — se kommentaren over funksjonen
 }
 // Hovedhandlingen er ÉN knapp. `_kontoAksjon` sier hva et trykk skal gjøre i nåværende
 // tilstand — knappen har ingen egen lytter per tilstand, og vi speiler ingen tilstandsmaskin.
