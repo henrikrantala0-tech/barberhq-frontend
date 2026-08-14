@@ -567,17 +567,18 @@ Fortsatt åpent:
 > opphevet: prisene finnes i sandbox — verifisert 13.08, begge produkter, ti priser. Ikke les
 > det gamle notatet som en åpen oppgave.
 >
-> **To ting fulgte med live som ikke er ferdige, og de er nå synlige for publikum:**
-> 1. **`?ref=`-kjeden er brutt** (backend, diagnostisert 13.08, ikke fikset). Vervelenka peker på
->    `/{slug}?ref=CODE`, men `side.js:99` sender `bookHref: '/book/' + slug` uten parameteren, så
->    `fyll.cjs:136` bygger tjenestekort som `/book/{slug}?service=…` og `ref` faller bort.
->    `bookings.js:529-537` setter `referred_by` korrekt, men nås aldri. **Merk at feilen er
->    delvis:** bookes det i arket på forsida (`Se tjenester`) beholdes URL-en og attribusjonen
->    virker — den feiler kun ved klikk på et tjenestekort eller «Har du time?». Den ser derfor
->    riktig ut i en manuell stikkprøve.
-> 2. **Verving loves på landingssida** uten å virke ende-til-ende — se punkt 2b.
+> **`?ref=`-kjeden er FIKSET i backend (13.08, `e57535f` + `3e657f4`, pushet).** Verifisert med
+> 11 tester og Chromium mot tre stier. `side.js` leser nå `req.query.ref` og validerer via
+> `referralForVisning()` i `src/lib/referral.js` — samme funksjon som `book-v2.js` kaller, så
+> regelen bor ett sted i stedet for to. `3e657f4` var den andre halvparten: `history`-kallene
+> beholder query-en, så `?ref=` overlever refresh.
 >
-> Neste frontend-push krever ingen ny port, men begge punktene over bør lukkes før lansering.
+> **Her sto en diagnose med kodesteder som pekte på `fyll.cjs:136` og «tjenestekort-
+> navigasjonen». Den er STRØKET — den beskrev kode som ikke lenger ser slik ut, og den var
+> dessuten feil: den navigasjonen finnes ikke (rendret bevis). Den ekte taps-mekanismen var
+> `history`-kallene.** Ikke let etter `.svc`-hrefen som årsak.
+>
+> Frontend har ingen åpen fiks her. Verving-raden på landingssida er dekket.
 
 ### Høyt — lanseringsblokkere
 1. **Duplikat-e-post (backend):** `barbers.email` har INGEN unik-constraint; login tar `rows[0]`
@@ -588,17 +589,14 @@ Fortsatt åpent:
    `password_hash`) og under `send-magic-link` (henter `display_name`).
    De-dup allerede gjort via test-rydding.
 2. **«Gå live»-funksjon** mangler i dashboard — barber kan ikke publisere siden (`page_status`).
-2b. **⚠ LANDINGSSIDA LOVER VERVING SOM IKKE VIRKER ENDE-TIL-ENDE (13.08).** `.ds-tab` i
-   `site/no/index.html` har raden «Verving må du styre selv» ✕ / «Innebygd verving med sporing» ✓.
-   Henrik la den inn bevisst, med beskjed om at vervingen fikses rett etter, og fjernet samtidig
-   regelen «ingen features som ikke finnes» for denne seksjonen. **Til vervingen faktisk virker
-   ende-til-ende er dette en usann påstand på en produksjonsside.** Den ble tatt UT av samme
-   tabell to dager tidligere nettopp av denne grunnen, så den kan ikke leses som en forglemmelse
-   — men den må lukkes før lansering. Rekkefølge: enten leverer vervingen, eller så ryker raden.
-   **Raden er LIVE fra 13.08.** Her sto det at push uansett var blokkert, så den ikke var live —
-   det er ikke lenger sant. Den står på trybarberhq.com nå, og `?ref=`-kjeden som skulle båret
-   den er brutt (se push-notatet over). Påstanden er altså ikke bare uferdig, den er synlig.
-   **Det finnes NULL nivåmerking i tabellen (13.08).** En `.ds-note`-fotnote «Automatisk
+2b. **`.ds-tab` mangler nivåmerking (13.08).** Verving-raden i `site/no/index.html` («Verving må
+   du styre selv» ✕ / «Innebygd verving med sporing» ✓) er **DEKKET** — `?ref=`-kjeden ble fikset
+   i backend samme dag (`e57535f` + `3e657f4`, pushet), se push-notatet over. Her sto det at
+   raden var en usann påstand på en produksjonsside, at vervingen ikke virket ende-til-ende, og
+   at den måtte leveres eller ryke før lansering. **Alt det er utdatert — vervingen virker, og
+   raden krever ingen oppfølging.** Historikken er verdt å kjenne, siden raden ble tatt UT av
+   samme tabell 12.08 og inn igjen 13.08: det er en omgjort beslutning, ikke en regresjon.
+   **Det som FORTSATT står åpent er nivåmerkingen.** En `.ds-note`-fotnote «Automatisk
    rebooking og verving følger Vekst» ble bygget og deretter fjernet igjen på Henriks beskjed —
    klassen er borte fra både markup og CSS, ikke bare skjult. Konsekvensen er at rebooking- og
    verving-radene leser som BarberHQ-egenskaper for alle, mens begge er Vekst-eksklusive ifølge
