@@ -952,7 +952,11 @@
           <!-- Startinnholdet ER fallbacken. Svarer ikke /sms-preview — eller kjører JS-en
                aldri — blir noten stående, og trekkspillet åpner til noe i stedet for ingenting.
                renderSmsPreview() bytter den ut først når den har en ekte tekst å vise. -->
-          <div id="paamPreview"><p class="sett-note">SMS-utsending kobles på snart — valget ditt lagres.</p></div>
+          <!-- TOM MED VILJE, samme som #rebookPreview. Her sto «SMS-utsending kobles på snart
+               — valget ditt lagres» som fallback til renderSmsPreview hadde svart. Den er fra
+               før utsendingen gikk live og er usann — påminnelser sendes. Feiler
+               /sms-preview, står beholderen tom framfor å love noe galt. -->
+          <div id="paamPreview"></div>
         </div>
       </div>
 

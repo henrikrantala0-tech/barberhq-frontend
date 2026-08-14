@@ -109,6 +109,8 @@ for (const bredde of [320, 375, 1280]) {
         harIkon: !!ikon,
         // Plassholderen som lovte at utsending 'kobles på snart' skal være borte.
         preview: (document.getElementById('rebookPreview')||{}).textContent.trim(),
+        // Samme plassholder sto i påminnelse-trekkspillet — også den skal være borte.
+        previewPaam: (document.getElementById('paamPreview')||{}).textContent.trim(),
         // Hint-elementet skal ikke finnes i det hele tatt.
         hintFinnes: !!document.getElementById('rebookHint'),
         feilSynlig: synlig(document.getElementById('rebookFeil')),
@@ -163,6 +165,7 @@ for (const bredde of [320, 375, 1280]) {
       'feil ok': (m.feilSynlig === (c.settings === 'FEIL')
                   && (!m.feilSynlig || m.feilTekst.trim() === FEILTEKST)) ? 'ok ✓' : 'AVVIK ✗',
       'preview tom': m.preview === '' ? 'ok ✓' : ('«' + m.preview.slice(0, 22) + '»'),
+      'paam tom': m.previewPaam === '' ? 'ok ✓' : ('«' + m.previewPaam.slice(0, 18) + '»'),
       klikkbar,
       jsfeil: errs.length ? errs.join('; ').slice(0, 40) : 'ingen',
     });
@@ -173,14 +176,14 @@ for (const bredde of [320, 375, 1280]) {
 console.table(rapport);
 const ok = rapport.every(r => r.låst === 'nei ✓' && r['valgt ok'] === 'ok ✓'
   && r['ikon ok'] === 'ok ✓' && r['tip-tekst'] === 'ok ✓' && r['hint borte'] === 'ok ✓'
-  && r['preview tom'] === 'ok ✓' && r['feil ok'] === 'ok ✓' && r.jsfeil === 'ingen'
+  && r['preview tom'] === 'ok ✓' && r['paam tom'] === 'ok ✓' && r['feil ok'] === 'ok ✓' && r.jsfeil === 'ingen'
   && (r.klikkbar === '—' || r.klikkbar === 'ja ✓')
   && (r['tip trykk'] === '—' || r['tip trykk'] === 'åpner+lukker ✓'));
 console.log('\npiller aldri låst:  ', rapport.every(r => r.låst === 'nei ✓') ? 'ja ✓' : 'NEI ✗');
 console.log('ingen oppdiktet 28: ', rapport.filter(r => r.case === 'settings-feiler')
   .every(r => r.valgt === '—') ? 'ja ✓' : 'NEI ✗');
 console.log('hint fjernet:       ', rapport.every(r => r['hint borte'] === 'ok ✓') ? 'ja ✓' : 'NEI ✗');
-console.log('plassholder borte:  ', rapport.every(r => r['preview tom'] === 'ok ✓') ? 'ja ✓' : 'NEI ✗');
+console.log('plassholder borte:  ', rapport.every(r => r['preview tom'] === 'ok ✓' && r['paam tom'] === 'ok ✓') ? 'ja ✓ (begge)' : 'NEI ✗');
 console.log('ikon kun i prøve:   ', rapport.every(r => r['ikon ok'] === 'ok ✓') ? 'ja ✓' : 'NEI ✗');
 console.log('feil sier fra:     ', rapport.every(r => r['feil ok'] === 'ok ✓') ? 'ja ✓' : 'NEI ✗');
 console.log('SAMLET:', ok ? 'GRØNT ✓' : 'NOE FEILER ✗');
