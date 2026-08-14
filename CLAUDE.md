@@ -560,6 +560,25 @@ Fortsatt åpent:
 
 ## Må gjøres (prioritert)
 
+> **Push-status (13.08): KØEN ER PUSHET.** 23 commits gikk til `origin/main` i ett Netlify-bygg,
+> denne commiten inkludert. Netlify auto-deployer fra `main`, så det er nå live.
+>
+> Her sto det tidligere at push var BLOKKERT til Stripe-prisene fantes. Den blokkeringen er
+> opphevet: prisene finnes i sandbox — verifisert 13.08, begge produkter, ti priser. Ikke les
+> det gamle notatet som en åpen oppgave.
+>
+> **To ting fulgte med live som ikke er ferdige, og de er nå synlige for publikum:**
+> 1. **`?ref=`-kjeden er brutt** (backend, diagnostisert 13.08, ikke fikset). Vervelenka peker på
+>    `/{slug}?ref=CODE`, men `side.js:99` sender `bookHref: '/book/' + slug` uten parameteren, så
+>    `fyll.cjs:136` bygger tjenestekort som `/book/{slug}?service=…` og `ref` faller bort.
+>    `bookings.js:529-537` setter `referred_by` korrekt, men nås aldri. **Merk at feilen er
+>    delvis:** bookes det i arket på forsida (`Se tjenester`) beholdes URL-en og attribusjonen
+>    virker — den feiler kun ved klikk på et tjenestekort eller «Har du time?». Den ser derfor
+>    riktig ut i en manuell stikkprøve.
+> 2. **Verving loves på landingssida** uten å virke ende-til-ende — se punkt 2b.
+>
+> Neste frontend-push krever ingen ny port, men begge punktene over bør lukkes før lansering.
+
 ### Høyt — lanseringsblokkere
 1. **Duplikat-e-post (backend):** `barbers.email` har INGEN unik-constraint; login tar `rows[0]`
    uten `ORDER BY` = ikke-deterministisk lotteri ved duplikat. Fiks: (a) partial unik-indeks
@@ -569,6 +588,22 @@ Fortsatt åpent:
    `password_hash`) og under `send-magic-link` (henter `display_name`).
    De-dup allerede gjort via test-rydding.
 2. **«Gå live»-funksjon** mangler i dashboard — barber kan ikke publisere siden (`page_status`).
+2b. **⚠ LANDINGSSIDA LOVER VERVING SOM IKKE VIRKER ENDE-TIL-ENDE (13.08).** `.ds-tab` i
+   `site/no/index.html` har raden «Verving må du styre selv» ✕ / «Innebygd verving med sporing» ✓.
+   Henrik la den inn bevisst, med beskjed om at vervingen fikses rett etter, og fjernet samtidig
+   regelen «ingen features som ikke finnes» for denne seksjonen. **Til vervingen faktisk virker
+   ende-til-ende er dette en usann påstand på en produksjonsside.** Den ble tatt UT av samme
+   tabell to dager tidligere nettopp av denne grunnen, så den kan ikke leses som en forglemmelse
+   — men den må lukkes før lansering. Rekkefølge: enten leverer vervingen, eller så ryker raden.
+   **Raden er LIVE fra 13.08.** Her sto det at push uansett var blokkert, så den ikke var live —
+   det er ikke lenger sant. Den står på trybarberhq.com nå, og `?ref=`-kjeden som skulle båret
+   den er brutt (se push-notatet over). Påstanden er altså ikke bare uferdig, den er synlig.
+   **Det finnes NULL nivåmerking i tabellen (13.08).** En `.ds-note`-fotnote «Automatisk
+   rebooking og verving følger Vekst» ble bygget og deretter fjernet igjen på Henriks beskjed —
+   klassen er borte fra både markup og CSS, ikke bare skjult. Konsekvensen er at rebooking- og
+   verving-radene leser som BarberHQ-egenskaper for alle, mens begge er Vekst-eksklusive ifølge
+   `priser.html`. Det er samme problem som fikk radene fjernet 12.08 (`8c41945`). Ikke gjenoppdag
+   dette som en bug — det er et bevisst valg som må tas stilling til før lansering.
 3. **Billing (Stripe):** 1 mnd gratis + betaling etter. Rekkefølge billing vs. vekstfeatures IKKE
    avgjort — tas når vi kommer dit.
 4. **KUNDESIDEN ER HARDKODET NORSK — blokkerer hele en/-markedet (funnet 27.07).**
@@ -596,6 +631,33 @@ Fortsatt åpent:
    — «Siste uke / Siste 2 uker» på første linje, «Denne måneden» alene under. Skyldes
    `.segs{flex-wrap:wrap}`, som er DELT CSS mellom Oversiktens `#segs` og Vekstens `#attrPeriod`,
    så en fiks treffer begge flater samtidig. Derfor ikke tatt som del av Vekst-arbeidet.
+7. **Salgsflatene kjenner ikke to prisnivåer ennå (kartlagt 13.08).** `priser.html` skiller Basis
+   fra Vekst. `site/no/index.html` er ryddet (se under); dashbordet gjenstår og henger på
+   Stripe + gating — rekkefølgen er Stripe-priser → gating → dashboard-teksten.
+   - **Rebooking og verving: UT 12.08 (`8c41945`), INN IGJEN 13.08 (`9de6c17`).** De ble fjernet
+     fordi de er Vekst-eksklusive og seksjonen var nivå-nøytral — et løfte til Basis-kunder om
+     noe de ikke får. Henrik tok dem inn igjen dagen etter, med begrunnelsen at Vekst er ankeret
+     markedsføringen selger (prøven kjører på Vekst, kortet er merket «ALLE STARTER HER»).
+     **Ikke «rett» dette tilbake uten å spørre — det er en omgjort beslutning, ikke en regresjon.**
+     Se 2b for nivåmerkingen, som er den delen som fortsatt står åpen.
+   - **Radsettet er skrevet om to ganger.** Dagens seks rader (`9de6c17`) er ikke de fem fra
+     `8c41945`. «Prisen er prisen» finnes ikke lenger — rad 3 er nå «Gebyr per booking og per ny
+     kunde» ✕ / «Én fast månedspris» ✓, fordi «Prisen er prisen» gjentok «Fast pris» i tittelen
+     og ble hult. Les radene ut av fila, ikke ut av denne historikken.
+   - **Tittel/ingress lagt om 13.08 (`927add9`)** — leder nå med pris og forutsigbarhet
+     («Fast pris. / Fordi siden er din.») i stedet for merkevare («Din side. Ikke en katalog.»).
+     Anti-marketplace er BEHOLDT, men flyttet fra påstand til begrunnelse: den forklarer hvorfor
+     prisen kan stå fast. **Ikke skriv den tilbake til et merkevare-argument** — målgruppa booker
+     i DM og har ingen merkevare å beskytte ennå. Rammen som gjelder for denne seksjonen: ingen
+     navngitte konkurrenter, ingen tall, ingen prosentsatser, ingen «flere kunder»-språk.
+   - **`site/no/dashboard.html` har flat 249 hardkodet tre steder** (linjenr. per 13.08, ankere er
+     det som gjelder): `const PRIS='249 kr', PRIS_SUFF='/ mnd';` (3284),
+     `settMikro('249 kr/mnd etter prøveperioden. Ingen binding.')` (3328), og
+     `settMikro('Gratis i 30 dager, ingen kort. Deretter 249 kr/mnd — si opp når som helst.')`
+     (3342). 399 finnes ikke i fila i det hele tatt. `PRIS` er én konstant, ikke tilstandsavhengig
+     av nivå — **må bli nivå-avhengig når gating bygges.** Dashbordet er dessuten stedet barbereren
+     faktisk «velger nivå ved prøveslutt» (`priser.html` l.203), så det er den flata som først blir
+     selvmotsigende.
 
 ### Medium
 4. **Vekstfeatures (backend):** rebooking, verving, vinn-tilbake auto-SMS. Deretter landingsside-
@@ -682,6 +744,17 @@ Fortsatt åpent:
     **Merk:** «SMS-samtykke-linja i Rebooking-trekkspillet» sto her tidligere. Den strengen
     finnes ikke lenger — `acc-lead` ble slått sammen med noten, og noten ble deretter fjernet
     fra Rebooking helt. Ikke let etter den.
+    **⚠ `.ds-tab` rad 4 og 5 kan IKKE oversettes rett — de må revurderes for en/.** ✕-cellene
+    «Påminnelser koster per SMS» og «Rebooking er et betalt tillegg» er sanne som
+    generaliseringer i det NORDISKE feltet (Fresha priser markedsførings-SMS per stykk uten fri
+    kvote; Timma selger alt utover booking som betalte moduler; Squire legger markedsførings-SMS
+    på topplanen; Setmore forbyr den; Booksy caper). De holder ikke i USA: **theCut PRO
+    inkluderer både SMS og blasts i prisen**, så begge ✕-ene blir usanne. Dette er ikke en
+    språkjobb — det er en faktasjekk mot et annet konkurransefelt, og radene må enten byttes
+    eller tas ut i en/. Konkurranseanalysen ligger UTENFOR repoet; hent den før jobben startes.
+    **`.ds-tab`-radtekstene har NULL linjemargin på 320** — fem av tolv celler ligger allerede på
+    tre linjer (grensa), så sv/da-oversettelsene må måles celle for celle, ikke bare oversettes.
+    Forvent omformuleringer: norsk er kortere enn svensk og dansk på flere av disse frasene.
 16. **buildPalette duplisert** (fyll.cjs ↔ site/no/palett.js) — se «Kjent teknisk gjeld» over.
     (Tidssone-via-market sto her også; den er løst — `barbers.timezone` er sannhetskilde.)
 
