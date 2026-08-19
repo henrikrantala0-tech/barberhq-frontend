@@ -455,6 +455,12 @@ så `overflow`-feltet var rødt i hver eneste kjøring og kunne ikke brukes til 
 fikset — regelen står nå på `width:100%;height:100.8%`, og `scrollWidth − viewport` måler
 **0 på 320, 375 og 1280** (verifisert 12.08). Slår flagget ut nå, er det noe nytt.
 
+**`kom-i-gang.html` har ~8px horisontal overflow på 320 (steg 2).** Pre-eksisterende, bevist
+uavhengig av palett-jobben: `scrollWidth` er 328 også når sand-kortet fjernes live, og også
+når hele layout-karusellen (`#layGrid`) skjules. Ikke diagnostisert — kilden er hverken
+palett-gridet eller karusellen. Render-testens overflow-flagg slår derfor ut på onboarding@320
+uten at det er en regresjon.
+
 ### Funnet i frontend, men SKAL FIKSES I BACKEND (barberhq-backend)
 Funnet ved å klone bookingmodulen inn i produktvisningen og måle klonen mot den publiserte
 sida. Ikke frontend-feil, og ikke rørt herfra — ÉN Code-sesjon per repo, så backend-endringene
