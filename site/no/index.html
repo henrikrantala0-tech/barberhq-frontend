@@ -650,6 +650,9 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    fylte bare to tredjedeler av browservinduet. */
 #produkt .pv-phoneframe{width:290px}
 #produkt .pv-deskframe{width:560px}
+/* Mobil-loopens dekor-kloner: skjult på desktop (ring-karusellen :2591 eier de tre
+   originalene og skal ikke se seks ekstra kort); vises kun i mobil-media under. */
+#produkt .pv-klon{display:none}
 /* Høyden settes av JS: et skalert element bidrar ikke til foreldrens layouthøyde, så en
    hardkodet verdi ble 403px mot 275px faktisk innhold — 128px tomrom under diagrammet. */
 #produkt .brw-body{overflow:hidden}
@@ -1135,7 +1138,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   .scene-sec{padding:52px 0 60px}
   .scene-head{padding:0 20px}
   .scene-vp{overflow:visible;padding:0}
-  .scene{gap:8px;padding:20px 32px;justify-content:flex-start;
+  .scene{gap:8px;padding-block:20px;padding-inline:calc(50% - 128px);justify-content:flex-start;
     overflow-x:auto;overflow-y:hidden;
     scroll-snap-type:x mandatory;overscroll-behavior-x:contain;
     scrollbar-width:none;-ms-overflow-style:none}
@@ -1154,6 +1157,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
      et 256px kort, og fire stolper stakk utenfor. */
   #produkt .pv-desk{--dw:560px;--desk-s:.471}
   #produkt .pv-deskframe{width:264px}
+  #produkt .pv-klon{display:block}
   .scene-cap{padding:0 20px;margin-top:14px}
 }
 @media(prefers-reduced-motion:reduce){
@@ -2759,7 +2763,8 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     var origo=(k.offsetParent===scene)?0:(scene.offsetLeft+scene.clientLeft);
     var maal=k.offsetLeft-origo-(scene.clientWidth-k.offsetWidth)/2;
     // Ingen egen klemming: scrollTo klemmer selv til [0, scrollWidth − clientWidth].
-    // Det er nettopp den klemmingen som gjør at ytterkortene ikke NÅR midten — egen sak.
+    // Ytterkortene NÅR nå midten fordi padding-inline:calc(50% − 128px) gir dem runway
+    // på hver side (+ klone-settene) — klemmingen er dermed en no-op for sentreringen.
     scene.scrollTo({left:maal, behavior:(glatt&&!REDUSERT)?'smooth':'instant'});
   }
 
@@ -2904,6 +2909,122 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     if(erMobil() && !brukerHarTatt) senterKort(aktiv,false);
     stoppAuto(); startAuto();
   });
+
+  // ── Mobil-loop: tre sett kloner (dekor) + usynlig hopp ───────────────────────
+  // Klonene er FROSNE i originalens sluttilstand og inerte. De gir peek på ytter-
+  // kortene og runway for uendelig manuell scroll. Motoren treffer fortsatt origin-
+  // alene fordi klonenes id-er og hook-klasser er skrubbet — querySelector('#scene
+  // .pv-rev') og getElementById tar FØRSTE treff, så en uskrubbet klon foran orig-
+  // inalen ville kapret animasjonen (nøyaktig «doble id-er»-fella). Autoplay rører
+  // kun originalene (sett B) og trigger derfor aldri et hopp; når brukeren først har
+  // sveipet, er autoplay uansett død på mobil (brukerHarTatt), så manuelt hopp og
+  // autoplay er tidseksklusive — ingen delt-tilstand-kappløp.
+  var HOOK_KLASSER=['pv-rev','pv-count','pv-fill','pv-witext','pv-bar','rekord-note'];
+  function frysKalender(k){
+    var rows=k.querySelector('.pv-cal-rows');
+    if(rows) rows.innerHTML=KAL_BOOKINGER.map(function(b){
+      return '<div class="crow rad '+b.k+' inn"><span class="crow-t">'+b.t+
+        '</span><span class="crow-n">'+b.n+'</span><span class="crow-s">'+b.s+'</span></div>';
+    }).join('');
+    var teller=k.querySelector('.pv-cal-s b'); if(teller) teller.textContent=String(KAL_BOOKINGER.length);
+    var pop=k.querySelector('.cal-pop'); if(pop){ pop.className='cal-pop'; pop.innerHTML=''; }
+  }
+  function frysDashbord(k){
+    // Frys FØR skrubb: her er hook-klassene fortsatt på, så selektorene treffer.
+    var rev=k.querySelector('.pv-rev'); if(rev) rev.classList.add('rekord-gull');
+    var fill=k.querySelector('.pv-fill'); if(fill){ fill.style.width='100%'; fill.classList.add('rekord'); }
+    var txt=k.querySelector('.pv-witext'); if(txt){ txt.textContent='Ny rekord denne uka! 🔥'; txt.classList.add('rekord'); }
+    // Stolpene: sluttilstand er --g=1 (full). Etter skrubb faller .pv-bar-transformen
+    // (scaleY(var(--g,1))) bort, og stolpen står på sin fulle inline-høyde — samme
+    // resultat som --g=1. Tall (30 / 10 550) står allerede i markupen. Ingen handling.
+  }
+  function frysBooking(k){
+    var bok=k.querySelector('.pv-book');
+    if(bok){ bok.classList.remove('vis-sheet','vis-scroll'); bok.classList.add('vis-success'); }
+  }
+  // Sluttilstand for kort i. Virker på BÅDE klon (ved bygging) og original (ved hopp).
+  // På en original legger den bare sluttilstanden oppå — startSekvens() nullstiller og
+  // spiller av på nytt like etter (via io2), akkurat som ved et vanlig fokusskifte.
+  function settSlutt(node,i){
+    if(i===0) frysKalender(node); else if(i===1) frysDashbord(node); else if(i===2) frysBooking(node);
+  }
+  function skrubb(k){
+    k.removeAttribute('data-i'); k.removeAttribute('role');
+    k.removeAttribute('tabindex'); k.removeAttribute('aria-label');
+    k.classList.remove('on'); k.classList.add('pv-klon');
+    k.setAttribute('aria-hidden','true'); k.setAttribute('inert','');   // ute av tab-orden + ikke-interaktiv
+    if(k.id) k.removeAttribute('id');
+    [].forEach.call(k.querySelectorAll('[id]'),function(e){ e.removeAttribute('id'); });
+    HOOK_KLASSER.forEach(function(kl){
+      [].forEach.call(k.querySelectorAll('.'+kl),function(e){ e.classList.remove(kl); });
+    });
+  }
+  function lagKlone(orig, sett){
+    var k=orig.cloneNode(true);
+    settSlutt(k, +orig.dataset.i);      // frys FØR skrubb — selektorene trenger hook-klassene
+    skrubb(k); k.dataset.set=sett; return k;
+  }
+  var settA=[], settC=[];
+  function byggKloner(){
+    if(settA.length) return;                          // idempotent
+    kort.forEach(function(o){ settA.push(lagKlone(o,'A')); settC.push(lagKlone(o,'C')); });
+    // FORLENGS orden: hver insertBefore(kort[0]) legger seg rett før B-kal, så [kal,dash,book]
+    // gir DOM [A-kal, A-dash, A-book, B-kal, …] — sett A speiler sett B. En baklengs løkke
+    // reverserte det (settStride ble 264 = ett kort, ikke 800 = ett sett) og brøt loopen.
+    for(var a=0;a<settA.length;a++) scene.insertBefore(settA[a], kort[0]);
+    settC.forEach(function(c){ scene.appendChild(c); });                       // C bak, samme orden
+  }
+
+  // Senterkortet = den .mock (original ELLER klon) hvis midt ligger nærmest viewport-senter.
+  function senterKortNaa(){
+    var midt=scene.scrollLeft+scene.clientWidth/2, best=null, bestD=1e9;
+    [].forEach.call(scene.querySelectorAll('.mock'),function(m){
+      var c=m.offsetLeft+m.offsetWidth/2, d=Math.abs(c-midt);
+      if(d<bestD){ bestD=d; best=m; }
+    });
+    return best;
+  }
+  // Settbredde = avstand mellom en klon og tvillingen i sett B. Live-målt (resize-robust).
+  function settStride(){ return settA.length ? kort[0].offsetLeft - settA[0].offsetLeft : 0; }
+  var hopper=false;
+  // Usynlig hopp: har scrollen roet seg og senterkortet ligger i et ytter-sett, flytt
+  // scrollLeft én settbredde inn til tvillingen i B. Snap AV i selve hopp-frame-et, PÅ etter
+  // — ellers slåss snap mot flyttingen. Klon og tvilling er piksellike, så hoppet er usynlig.
+  // Teleporten er SCROLL-DREVET og rAF-throttlet — ÉN bane for alle iOS, ingen scrollend/
+  // debounce. (scrollend mangler på iOS ≤17.3, og 140ms-debouncen sultet ut ved rask,
+  // sammenhengende swiping: timeren nullstilles for hver scroll, så teleporten fyrte aldri
+  // og posisjonen marsjerte til veggen — «virker først, så tom».)
+  //
+  // Vi holder scrollLeft i ett vindu på nøyaktig én settbredde, [lo, lo+stride), der lo
+  // sentrerer B-kal. Krysser posisjonen ut i et ytter-sett, flyttes den én stride inn til den
+  // piksellike tvillingen i B — rå scrollLeft-tilordning (behavior:auto, ingen animasjon å
+  // slåss mot). Vinduet er én stride bredt og hoppet er én stride, så landingen er ALLTID
+  // inne i vinduet igjen (ingen ping-pong). Med bare tre sett er største oversving < 2·stride,
+  // så ett hopp holder alltid. Fyres hver frame under momentum → veggen nås aldri.
+  function sjekkOgHopp(){
+    if(!erMobil()||hopper||!settA.length) return;
+    var stride=settStride(); if(!(stride>0)) return;
+    var lo=kort[0].offsetLeft-(scene.clientWidth-kort[0].offsetWidth)/2;   // scrollLeft som sentrerer B-kal
+    var sl=scene.scrollLeft, ny;
+    if(sl < lo-0.5) ny=sl+stride;
+    else if(sl >= lo+stride-0.5) ny=sl-stride;
+    else return;                                                          // trygt inne i B-vinduet
+    hopper=true;
+    scene.scrollLeft=ny;
+    // Speil sluttilstand på en B-original som kanskje aldri har spilt sekvensen sin, så
+    // hopp-frame-et blir piksellikt klonen. io2 nullstiller og spiller av rett etter.
+    var m=senterKortNaa();
+    if(m && m.dataset.set===undefined){ var idx=+m.dataset.i; if(!isNaN(idx)) settSlutt(m,idx); }
+    hopper=false;
+  }
+  var rafPlanlagt=false;
+  scene.addEventListener('scroll',function(){
+    if(rafPlanlagt) return;                       // maks én sjekk per frame
+    rafPlanlagt=true;
+    requestAnimationFrame(function(){ rafPlanlagt=false; sjekkOgHopp(); });
+  },{passive:true});
+
+  byggKloner();
   settTelefonSkala();
   settRammehoyde();
   // Start med dashbordet sentrert, uten glatt scroll — brukeren skal ikke se et hopp.
