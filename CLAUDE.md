@@ -476,6 +476,21 @@ tas i backend-repoet.
 - **ÅPEN — `buildPalette` er duplisert i `fyll.cjs` og `site/no/palett.js`, og må holdes i synk
   manuelt.** Fortsatt to kopier (verifisert 12.08). Ingen delt kilde.
 
+- **ÅPEN — tredelt fane uten dekkende navn.** Fanen på `dashboard.html:774` inneholder tjenester
+  med priser, Arbeidstider (`:1205`) og Google Calendar (`:1173`). Etiketten «Tjenester & tider»
+  nevner ikke de to siste. Navnedriften mot panel-tittelen er rettet (`58e7e60`); selve
+  navngivningen står åpen.
+
+- **ÅPEN (delvis testet) — mobil-loopens teleport på eldre iOS.** Produktvisnings-karusellen på
+  mobil (`site/no/index.html`) er en uendelig loop: tre sett kloner + et scroll-drevet,
+  rAF-throttlet hopp som holder `scrollLeft` i ett vindu på én settbredde (`sjekkOgHopp`).
+  Det er ÉN bane for alle nettlesere — ingen feature-detection, ingen `scrollend`/debounce.
+  **Verifisert uendelig på nyere iOS Safari (ekte enhet).** Eldre iOS (≤17.3, som mangler
+  `scrollend`) kjører NØYAKTIG samme kode — det finnes ingen egen gren for dem — men
+  momentum-fysikken der (hva som skjer når `scrollLeft` settes midt i et sving) er
+  device-avhengig og **ikke testet på en faktisk gammel enhet**. Headless Chromium kan ikke
+  reprodusere iOS-momentum, så gapet må lukkes med en ekte ≤17.3-enhet om det skal bli grønt.
+
 ## Layout-galleri på engelsk — FERDIG 28.07 (pushet, `aa7ac98`)
 
 Galleriet er bygget, rammet inn og koblet i `site/en/kom-i-gang.html`. Hele kjeden ligger i
@@ -594,7 +609,11 @@ Fortsatt åpent:
    `SELECT … FROM barbers WHERE lower(email) = lower($1)`: under `router.post('/login'` (henter
    `password_hash`) og under `send-magic-link` (henter `display_name`).
    De-dup allerede gjort via test-rydding.
-2. **«Gå live»-funksjon** mangler i dashboard — barber kan ikke publisere siden (`page_status`).
+2. **«Gå live»-funksjon — DEKKET.** Flyten finnes ende-til-ende: barbereren publiserer selv fra
+   Konto-kortet (knapp «Publiser og start gratis prøveperiode» → `PUT /api/dashboard/page-status`,
+   `dashboard.html:3621`), som er ENESTE vei `forhandsvist → live` og skriver `trial_start_at`
+   atomisk med COALESCE ved publisering. Avpubliser er en dempet tekstlenke samme vei tilbake.
+   Her sto det at funksjonen manglet — utdatert. Ikke gjenoppdag som lanseringsblokker.
 2b. **`.ds-tab` mangler nivåmerking (13.08).** Verving-raden i `site/no/index.html` («Verving må
    du styre selv» ✕ / «Innebygd verving med sporing» ✓) er **DEKKET** — `?ref=`-kjeden ble fikset
    i backend samme dag (`e57535f` + `3e657f4`, pushet), se push-notatet over. Her sto det at
