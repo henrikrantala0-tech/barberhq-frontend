@@ -14,6 +14,11 @@
     --bg:#fafafa;--surface:#fff;--ink:#0a0a0a;--ink-2:#3a3a3a;--mut:#7a7a7a;--mut-2:#a8a8a8;
     --line:#e8e8e8;--line-2:#d8d8d8;
     --good:#1a7a44;--good-bg:#e8f3ec;--bad:#b3261e;--bad-bg:#fbeae9;--info:#1456a8;--info-bg:#e8f0fb;
+    /* Gul for påminnelse-prikk i SMS-loggen. Mørkere/mer mettet enn dark-temaet: ren gul
+       forsvinner på hvit --surface. Gulhet er kontrast-begrenset her — mer gul = lysere =
+       mindre kontrast. ~2,9:1 mot #fff (rett under 3:1-veiledningen; akseptert for en liten
+       prikk der teksten bærer meningen, i bytte mot en gulere tone). */
+    --warn:#bf9000;
   }
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased}
@@ -189,6 +194,7 @@
     --bg:#0a0a0a;--surface:#141414;--ink:#ffffff;--ink-2:#cfcfcf;--mut:#8a8a8a;--mut-2:#5f5f5f;
     --line:#242424;--line-2:#363636;
     --good:#3ecf7e;--good-bg:#10241a;--bad:#ff6b5e;--bad-bg:#2c1512;--info:#4d8bff;--info-bg:#11203b;
+    --warn:#f5d93a;   /* sitron-/løvetann-gul for påminnelse-prikk; ~14:1 på mørk --surface/#0a0a0a */
   }
   html[data-theme="dark"] .btn{background:#fff;color:#0a0a0a}
   html[data-theme="dark"] .who .dot{background:#fff;color:#0a0a0a}
@@ -296,6 +302,29 @@
   .sub-banner.info{background:var(--info-bg);color:var(--info);border:1px solid var(--info)}
   .sub-banner.mut{background:var(--surface);color:var(--mut);border:1px solid var(--line)}
   .sub-banner strong{font-weight:700}
+  /* Info-toggel i SMS-loggen: avdekker den ærlige noten om at loggen kun er sendte SMS. */
+  .sms-info-i{appearance:none;border:0;background:0;font:inherit;font-size:12px;font-weight:500;color:var(--info);cursor:pointer;padding:0 0 12px;display:inline-flex;align-items:center;gap:5px}
+  /* SMS-logg-rad: fargeprikk (.drv-dot, gjenbrukt fra «Drevet av») + type foran, navn, tid.
+     Flat markup + order/wrap gir TO layouter fra ett DOM:
+       Desktop (>560): horisontal — [tid 118px] [navn · nummer (flex)] ....... [● type].
+       Mobil (≤560): to-linjers stabel — navn på egen linje (brekker aldri midt i ord),
+                     [● type · tid] under, dempet; nummeret skjult. Mer luft (padding + gap). */
+  .sms-row{display:flex;align-items:center;gap:9px;padding:13px 18px;border-bottom:1px solid var(--line)}
+  #smsLoggList .card .sms-row:last-child{border-bottom:0}
+  .sms-row .sms-when{order:0;min-width:118px;font-size:13px;color:var(--ink-2);font-weight:500;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .sms-row .sms-name{order:1;flex:1;min-width:0;font-size:14px;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .sms-row .sms-num{color:var(--mut);font-weight:400;font-size:12px}
+  .sms-row .drv-dot{order:2}
+  .sms-row .sms-kind{order:3;font-size:13px;color:var(--ink-2);font-weight:500;white-space:nowrap}
+  @media(max-width:560px){
+    .sms-row{flex-wrap:wrap;gap:6px 8px;padding:15px 16px}
+    .sms-row .sms-name{order:0;flex-basis:100%;flex-grow:0;white-space:normal;overflow:visible;text-overflow:clip;word-break:normal;overflow-wrap:normal}
+    .sms-row .drv-dot{order:1}
+    .sms-row .sms-kind{order:2}
+    .sms-row .sms-when{order:3;min-width:auto;font-size:12.5px;color:var(--mut)}
+    .sms-row .sms-num{display:none}
+    .sms-row .sms-when::before{content:"\00b7";margin-right:6px;color:var(--mut-2)}
+  }
   /* margin-left var 2px — arvet fra da klassen satt under en knapp med egen innrykk. Nå står
      den alene under hovedhandlingen og skal flukte med resten av teksten i kortet. */
   .sub-micro{font-size:12px;color:var(--mut);margin:10px 0 0;line-height:1.45;max-width:520px}
@@ -1416,6 +1445,28 @@
         </div>
       </div>
 
+      <!-- ── SMS-LOGG ────────────────────────────────────────────────────────────────
+           Leveranselogg (GET /api/dashboard/sms-logg). Backend er eksplisitt: omfang er
+           'kun_leveranser' — KUN SMS som faktisk ble sendt. Stoppede meldinger (samtykke,
+           avmeldt, kvote, ugyldig nummer) etterlater INGEN rad, derfor info-noten: en tom
+           liste betyr ikke at ingen skulle fått SMS. Ingen leveringsstatus finnes (ingen
+           status-kolonne/-prikker — det ville vært en påstand uten grunnlag). Kvote-varselet
+           gjelder KUN markedsførings-SMS; påminnelser/bekreftelser belaster ikke taket.
+           [oversettelse: sv/da/en] -->
+      <div class="acc" id="accSmsLogg">
+        <button type="button" class="acc-head" aria-expanded="false">
+          <span class="acc-htext"><span class="acc-title">SMS-logg</span></span>
+          <span class="acc-chev">▾</span>
+        </button>
+        <div class="acc-body" hidden>
+          <!-- Kvote-varsel: gjenbruker .sub-banner.info. Vises kun nær taket (renderSmsKvote). -->
+          <div class="sub-banner info" id="smsKvote" role="status" style="display:none"></div>
+          <button type="button" class="sms-info-i" data-sms-info aria-expanded="false">Hva vises her? <span aria-hidden="true">&#8505;</span></button>
+          <p class="block-s sms-info-note" id="smsInfo" hidden>Loggen viser SMS som faktisk ble sendt. Meldinger som ble stoppet &mdash; manglende samtykke, avmeldt kunde, kvotegrense eller ugyldig nummer &mdash; vises ikke. En tom liste betyr ikke at ingen skulle f&aring;tt SMS.</p>
+          <div id="smsLoggList"></div>
+        </div>
+      </div>
+
       <!-- ── UTSEENDE ────────────────────────────────────────────────────────────────
            Lå i egen Innstillinger-fane (31.07) → Konto (06.08) → trekkspill (08.08).
            Undertittelen sier eksplisitt at dette gjelder DASHBORDET: lys/mørk for
@@ -1578,6 +1629,14 @@ const api={
     return r.json();
   },
   async bookings(){ const r=await apiFetch('/api/dashboard/bookings'); if(!r)return []; if(!r.ok)return []; return r.json(); },
+  // Cursor-paginert SMS-leveranselogg (Konto). null cursor = første side. Returnerer
+  // {omfang,forbruk,logg[],neste_cursor,har_mer} eller null ved feil (flate viser tomtilstand).
+  async smsLogg(cursor){
+    const q = cursor ? ('?cursor='+encodeURIComponent(cursor)) : '';
+    const r=await apiFetch('/api/dashboard/sms-logg'+q);
+    if(!r||!r.ok)return null; // 401→apiFetch redirigerte; annen feil→null
+    return r.json();
+  },
   // Ekte, session-basert status-endring. PATCH /api/dashboard/bookings/:id/status  { status: fullfort | ikke_mott | avlyst }
   async setBookingStatus(id,status){
     const r=await apiFetch('/api/dashboard/bookings/'+encodeURIComponent(id)+'/status',{method:'PATCH',body:JSON.stringify({status:status})});
@@ -2144,6 +2203,64 @@ function renderBookinger(){
   el.innerHTML='<div class="card">'+rows+'</div>'+more;
 }
 
+// ─── SMS-logg (Konto) ────────────────────────────────────────────────────────
+// Leveranselogg: KUN sendte SMS (backend omfang:'kun_leveranser'). Ingen leverings-
+// status finnes, så INGEN status-kolonne/-prikker — det ville vært en påstand uten
+// grunnlag. Cursor-paginert; «Vis flere» henter neste_cursor og LEGGER PÅ rader
+// (gjenbruker .see-all-btn, ikke en generell pagineringskomponent).
+var _smsRows=[]; var _smsCursor=null; var _smsLoaded=false;
+async function loadSmsLogg(){
+  if(_smsLoaded) return;                       // last kun første side, ved første Konto-åpning
+  var d=await api.smsLogg(null);
+  _smsLoaded=true;
+  if(!d){ var e0=$("#smsLoggList"); if(e0)e0.innerHTML=emptyHTML("Kunne ikke hente SMS-logg"); return; }
+  _smsRows=d.logg||[]; _smsCursor=d.neste_cursor||null;
+  renderSmsKvote(d.forbruk);
+  renderSmsLogg(!!d.har_mer);
+}
+// Kvote-varsel KUN nær taket (>=80% av månedstaket). Gjelder markedsførings-SMS; påminnelser
+// og bekreftelser belaster IKKE taket (backend teller dem ikke inn), og teksten sier det.
+function renderSmsKvote(f){
+  var el=$("#smsKvote"); if(!el) return;
+  if(f && f.monthly_cap>0 && f.barber_month>=Math.ceil(f.monthly_cap*0.8)){
+    el.innerHTML='<strong>'+f.barber_month+' av '+f.monthly_cap+'</strong> markedsførings-SMS brukt denne måneden. Påminnelser og bekreftelser teller ikke med i grensen.';
+    el.style.display='';
+  } else { el.style.display='none'; }
+}
+function smsTid(iso){ var d=new Date(iso); if(isNaN(d))return''; return d.getDate()+'. '+MONTHS[d.getMonth()].slice(0,3)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+// Prikk-farge per kind — samme mønster/prikk (.drv-dot) som «Drevet av». Kun paaminnelse +
+// rebooking kan sendes i dag (smsRunner.js:404-409 og :586-591 er eneste kallsteder); ukjent
+// kind faller tilbake på nøytral grå — ingen krasj, ingen oppfunnet farge. Oransje #e0844a er
+// reservert for verving i «Drevet av» og brukes IKKE her.
+var SMS_KIND_FARGE={rebooking:'var(--good)', paaminnelse:'var(--warn)'};
+function smsRowHTML(r){
+  var farge=SMS_KIND_FARGE[r.kind]||'var(--mut)';
+  return '<div class="sms-row">'
+    +'<span class="drv-dot" style="background:'+farge+'" aria-hidden="true"></span>'
+    +'<span class="sms-kind">'+esc(r.kind_label)+'</span>'
+    +'<span class="sms-name">'+esc(r.kunde)+'<span class="sms-num"> · '+esc(r.nummer)+'</span></span>'
+    +'<span class="sms-when">'+smsTid(r.sent_at)+'</span>'
+  +'</div>';
+}
+function renderSmsLogg(harMer){
+  var el=$("#smsLoggList"); if(!el) return;
+  if(!_smsRows.length){
+    el.innerHTML=emptyHTML("Ingen sendte SMS ennå");
+    var n=$("#smsInfo"), t=document.querySelector('[data-sms-info]');   // tom liste → vis den ærlige grunnen
+    if(n)n.hidden=false; if(t)t.setAttribute('aria-expanded','true');
+    return;
+  }
+  var more=harMer?'<button class="see-all-btn" data-sms-more>Vis flere</button>':'';
+  el.innerHTML='<div class="card">'+_smsRows.map(smsRowHTML).join("")+'</div>'+more;
+}
+async function smsMer(btn){
+  btn.disabled=true; btn.textContent='Henter …';
+  var d=await api.smsLogg(_smsCursor);
+  if(!d){ btn.disabled=false; btn.textContent='Vis flere'; return; }
+  _smsRows=_smsRows.concat(d.logg||[]); _smsCursor=d.neste_cursor||null;
+  renderSmsLogg(!!d.har_mer);
+}
+
 // No-show / Angre er en ren toggle på samme endepunkt. Ved 200: oppdater raden IN-PLACE
 // (bytt No-show↔Angre + status-tag) uten å re-hente booking-lista; refresh KUN penge-
 // aggregatene (loadOversikt) — backend ekskluderer ikke_mott fra stats/attribusjon.
@@ -2164,6 +2281,8 @@ document.body.addEventListener("click",e=>{
   const ub=e.target.closest(".undobtn");   if(ub){handleBookingStatus(ub,'fullfort');return;}
   if(e.target.closest("[data-up-toggle]")){upcomingExpanded=!upcomingExpanded;renderUpcoming();}
   if(e.target.closest("[data-bk-toggle]")){bookingerExpanded=!bookingerExpanded;renderBookinger();}
+  const sm=e.target.closest("[data-sms-more]"); if(sm){smsMer(sm);return;}
+  const si=e.target.closest("[data-sms-info]"); if(si){const n=$("#smsInfo");if(n){n.hidden=!n.hidden;si.setAttribute("aria-expanded",String(!n.hidden));}return;}
 });
 
 function monthLbl(ym){ return MONTHS[(+String(ym).slice(5,7))-1] || ""; } // "2026-07" → "juli"
@@ -2447,6 +2566,9 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   // «Din side» laster alle tre trekkspillene. loadProfil FØRST — den inneholder
   // hasPassword-redirecten, og den skal treffe før vi bruker tid på design + bilder.
   if(id==="design"){loadProfil();loadDesign().then(loadBilder);}
+  // Konto (id fortsatt "abonnement"): SMS-loggen lastes ved fane-åpning. Billing lastes
+  // separat ved init + Stripe-retur, ikke her — derfor egen, ny gren.
+  if(id==="abonnement"){loadSmsLogg();}
 }));
 document.querySelectorAll("#segs button").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll("#segs button").forEach(x=>x.setAttribute("aria-selected","false"));
