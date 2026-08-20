@@ -142,6 +142,36 @@
   input[type=time]{font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line-2);border-radius:7px;background:var(--bg);color:var(--ink)}
   input[type=time]:disabled{opacity:.35}
   .to{color:var(--mut);font-size:12px}
+  /* Pause: egen DEMPET linje UNDER dagraden, venstrejustert i linje med dagnavnet (samme
+     padding-left som .day). Ikke boks, ikke knapp. Kollapset = tekst «Pause HH:MM–HH:MM» + ×.
+     Trykk folder ut kompakte fra/til-felt (arver input[type=time]-bredden = samme som
+     åpningstidene), kun én dag om gangen. Ramme på .day-wrap; skjult på stengt dag. */
+  .day-wrap{border-bottom:1px solid var(--line)}
+  #hoursList .day{border-bottom:0;padding-bottom:5px}
+  /* Dempet pause-tekst under dagraden, sentrert under de to tidsboksene (JS-plassert via
+     centerPauseTexts — flukter på alle bredder). Dagnavn-kolonnen tom. Ikke klikkbar, ingen felt. */
+  .pause-under{position:relative;height:16px;margin-bottom:9px}
+  .pu-txt{position:absolute;top:0;transform:translateX(-50%);white-space:nowrap;font-size:12px;color:var(--mut)}
+  /* «Legg til pause» / «Endre pauser» — diskret knapp under dagslista. */
+  .pause-btn{appearance:none;display:block;margin-top:12px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 15px;font:inherit;font-size:13px;font-weight:500;color:var(--ink);cursor:pointer}
+  .pause-btn:hover{border-color:var(--line-2)}
+  /* Pause-modal: bunn-ark mobil / sentrert modal desktop (samme idiom som detaljflaten). */
+  .pause-modal-backdrop{position:fixed;inset:0;z-index:600;background:rgba(10,10,10,.5);display:flex;align-items:flex-end;justify-content:center}
+  .pause-modal-backdrop[hidden]{display:none}
+  .pause-modal{background:var(--surface);width:100%;max-width:440px;border-radius:16px 16px 0 0;padding:20px;position:relative;box-shadow:0 -6px 30px rgba(0,0,0,.2);max-height:88vh;overflow-y:auto}
+  @media(min-width:561px){.pause-modal-backdrop{align-items:center}.pause-modal{border-radius:14px}}
+  .pause-modal-close{position:absolute;top:14px;right:14px;appearance:none;border:0;background:var(--bg);width:32px;height:32px;border-radius:8px;cursor:pointer;color:var(--mut);font-size:16px;line-height:1}
+  .pause-modal-h{font-size:18px;font-weight:700;letter-spacing:-.02em;padding-right:36px}
+  .pause-modal-s{font-size:12.5px;color:var(--mut);margin:4px 0 12px}
+  .pause-modal-list{display:flex;flex-direction:column}
+  .pm-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:8px;padding:11px 0;border-top:1px solid var(--line)}
+  .pm-check{display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0}
+  .pm-check input{width:17px;height:17px;accent-color:var(--ink);cursor:pointer;flex-shrink:0}
+  .pm-day{font-size:13.5px;font-weight:600}
+  .pm-fields{display:flex;align-items:center;gap:7px;margin-left:auto}
+  .pm-closed .pm-day{color:var(--mut);font-weight:500}
+  .pm-stengt{margin-left:auto;font-size:12px;color:var(--mut)}
+  #pauseFerdig{width:100%;margin-top:16px}
   .sw{position:relative;width:38px;height:22px;flex-shrink:0}
   .sw input{opacity:0;width:0;height:0}
   .sw .sl{position:absolute;inset:0;background:var(--line-2);border-radius:99px;cursor:pointer;transition:.18s}
@@ -177,14 +207,17 @@
   @media(max-width:480px){
     .day{padding:10px 12px;gap:8px}
     .dn{min-width:68px;font-size:12.5px}
-    input[type=time]{padding:5px 5px;font-size:12px}
+    /* Kompakter tidsfeltene: cap bredde + skjul klokke-ikonet (native picker åpnes uansett
+       ved trykk på mobil) → dagsraden får plass på én linje. */
+    input[type=time]{padding:5px 5px;font-size:12px;width:76px}
+    input[type=time]::-webkit-calendar-picker-indicator{display:none}
     .to{font-size:11.5px}
     .gcal{flex-wrap:wrap;gap:10px}
   }
   @media(max-width:360px){
     .day{padding:9px 8px;gap:6px}
     .dn{min-width:56px;font-size:12px;letter-spacing:0}
-    input[type=time]{padding:4px 3px;font-size:11.5px}
+    input[type=time]{padding:4px 3px;font-size:11.5px;width:62px}
     .to{font-size:11px}
   }
   .see-all-btn{appearance:none;border:0;background:0;font:inherit;font-size:12.5px;font-weight:500;color:var(--info);padding:10px 0 0;cursor:pointer;letter-spacing:-.01em;display:block}
@@ -1239,10 +1272,14 @@
     <p class="block-h">Arbeidstider</p>
     <p class="block-s">Kunder kan bare booke i tidene du slår på. Endringer gjelder nye luker — eksisterende bookinger står.</p>
     <div class="card" id="hoursList"><div class="loading">Laster …</div></div>
+    <!-- Åpner pause-modalen. Teksten blir «Endre pauser» når minst én dag har pause. -->
+    <button class="pause-btn" id="pauseBtn" type="button">Legg til pause</button>
     <div class="savebar">
       <button class="btn" id="saveHours">Lagre arbeidstider</button>
       <span class="saved" id="hoursSaved">Lagret ✓</span>
     </div>
+    <!-- Ordrett feilmelding fra PUT /hours (409 booking-kollisjon / 400 validering). -->
+    <p class="pub-err" id="hoursErr"></p>
   </section>
 
   <!-- DESIGN -->
@@ -1628,6 +1665,17 @@
 </style>
 <div class="cal-overlay" id="calOverlay" role="dialog" aria-modal="true" aria-label="Kalender" hidden></div>
 <div class="bk-detail-backdrop" id="bkDetailBackdrop" hidden></div>
+<!-- Pause-modal: én pause pr. dag, avkryssing pr. dag. Redigerer kun hours-state (breaks);
+     persisteres av «Lagre arbeidstider» (PUT /hours {days,breaks}) — ingen egen auto-save. -->
+<div class="pause-modal-backdrop" id="pauseBackdrop" role="dialog" aria-modal="true" aria-label="Pauser" hidden>
+  <div class="pause-modal">
+    <button class="pause-modal-close" id="pauseClose" type="button" aria-label="Lukk">×</button>
+    <p class="pause-modal-h">Pauser</p>
+    <p class="pause-modal-s">Én pause per dag. Kunder kan ikke booke i pausen. Lagres med arbeidstidene.</p>
+    <div class="pause-modal-list" id="pauseModalList"></div>
+    <button class="btn" id="pauseFerdig" type="button">Ferdig</button>
+  </div>
+</div>
 
 <script src="palett.js"></script>
 <script src="lib/cropper.min.js"></script>
@@ -1733,15 +1781,23 @@ const api={
     const data=await r.json();
     // Backend weekday: 0=søn, 1=man … 6=lør. UI day: 0=man … 6=søn.
     return [1,2,3,4,5,6,0].map(wd=>{
-      const d=data.find(x=>x.weekday===wd)||{weekday:wd,is_closed:true,open_time:'09:00',close_time:'17:00'};
-      return{day:(wd+6)%7,on:!d.is_closed,start:(d.open_time||'09:00').slice(0,5),end:(d.close_time||'17:00').slice(0,5)};
+      const d=data.find(x=>x.weekday===wd)||{weekday:wd,is_closed:true,open_time:'09:00',close_time:'17:00',breaks:[]};
+      // UI støtter én pause pr. dag (spec). Ved flere fra backend brukes den første.
+      const bs=(d.breaks||[]).slice(0,1).map(b=>({start:(b.start_time||'').slice(0,5),end:(b.end_time||'').slice(0,5)}));
+      return{day:(wd+6)%7,on:!d.is_closed,start:(d.open_time||'09:00').slice(0,5),end:(d.close_time||'17:00').slice(0,5),breaks:bs};
     });
   },
   async saveHours(d){
-    const r=await apiFetch('/api/dashboard/hours',{method:'PUT',body:JSON.stringify(
-      d.map(h=>({weekday:(h.day+1)%7,is_closed:!h.on,open_time:h.start,close_time:h.end}))
-    )});
-    return r&&r.ok;
+    const days=d.map(h=>({weekday:(h.day+1)%7,is_closed:!h.on,open_time:h.start,close_time:h.end}));
+    // Pauser: kun for ÅPNE dager med komplett pause (både fra og til satt). Uferdige hoppes over
+    // — barbereren møter ingen feil på en halvutfylt pause. weekday pr. pause (UI day → backend).
+    const breaks=[];
+    d.forEach(h=>{ if(!h.on)return; const p=h.breaks&&h.breaks[0]; if(p&&p.start&&p.end) breaks.push({weekday:(h.day+1)%7,start_time:p.start,end_time:p.end}); });
+    const r=await apiFetch('/api/dashboard/hours',{method:'PUT',body:JSON.stringify({days,breaks})});
+    if(!r)return{ok:false};                       // 401 → apiFetch har redirigert
+    if(r.ok)return{ok:true};
+    const j=await r.json().catch(()=>({}));
+    return{ok:false,error:j&&j.error};            // 409/400 → melding vises ordrett
   },
   async googleStatus(){
     const r=await apiFetch('/api/dashboard/google/status');
@@ -2790,12 +2846,56 @@ async function handleUpload(f,slot){
 
 let hours=[];
 async function loadArbeidstider(){try{hours=await api.hours();}catch(e){hours=MOCK.hours;}
-  $("#hoursList").innerHTML=hours.map((h,i)=>`<div class="day"><span class="dn">${DAYS[h.day]}</span>
-    <label class="sw"><input type="checkbox" data-i="${i}" ${h.on?"checked":""}><span class="sl"></span></label>
-    <input type="time" value="${h.start}" data-i="${i}" data-f="start" ${h.on?"":"disabled"}>
-    <span class="to">til</span>
-    <input type="time" value="${h.end}" data-i="${i}" data-f="end" ${h.on?"":"disabled"}></div>`).join("");
+  renderHoursList();
   loadGoogleStatus();}
+function pauseTekst(p){return 'Pause '+(p.start||'')+'–'+(p.end||'');}
+function harPause(h){return !!(h.on&&h.breaks&&h.breaks[0]&&h.breaks[0].start&&h.breaks[0].end);}
+// Dempet pause-tekst under dagraden — kun for åpen dag med komplett pause. Ellers ingenting.
+function pauseUnderHTML(h){
+  if(!harPause(h))return '';
+  return `<div class="pause-under"><span class="pu-txt">${pauseTekst(h.breaks[0])}</span></div>`;
+}
+function renderHoursList(){
+  $("#hoursList").innerHTML=hours.map((h,i)=>`<div class="day-wrap"><div class="day"><span class="dn">${DAYS[h.day]}</span>`
+    +`<label class="sw"><input type="checkbox" data-i="${i}" ${h.on?"checked":""}><span class="sl"></span></label>`
+    +`<input type="time" value="${h.start}" data-i="${i}" data-f="start" ${h.on?"":"disabled"}>`
+    +`<span class="to">til</span>`
+    +`<input type="time" value="${h.end}" data-i="${i}" data-f="end" ${h.on?"":"disabled"}>`
+    +`</div>`+pauseUnderHTML(h)+`</div>`).join("");
+  centerPauseTexts();
+  const b=$("#pauseBtn"); if(b)b.textContent=hours.some(harPause)?'Endre pauser':'Legg til pause';
+}
+// Sentrer pause-teksten under de to tidsboksene (måler faktisk layout → flukter på alle bredder).
+function centerPauseTexts(){
+  $("#hoursList").querySelectorAll('.day-wrap').forEach(w=>{
+    const txt=w.querySelector('.pu-txt'); if(!txt)return;
+    const pu=w.querySelector('.pause-under'), o=w.querySelector('.day input[data-f="start"]'), c=w.querySelector('.day input[data-f="end"]');
+    if(!pu||!o||!c)return;
+    const pr=pu.getBoundingClientRect(), or=o.getBoundingClientRect(), cr=c.getBoundingClientRect();
+    txt.style.left=Math.round((or.left+cr.right)/2 - pr.left)+'px';
+  });
+}
+// ── Pause-modal: alle sju dager, avkryssing pr. dag; stengt dag dempet + «Stengt» (låst). ──
+function renderPauseModal(){
+  $("#pauseModalList").innerHTML=hours.map((h,i)=>{
+    if(!h.on)return `<div class="pm-row pm-closed"><span class="pm-day">${DAYS[h.day]}</span><span class="pm-stengt">Stengt</span></div>`;
+    const p=h.breaks&&h.breaks[0];
+    const felt=p?`<span class="pm-fields"><input type="time" data-pm="${i}" data-pmf="start" value="${p.start||''}">`
+      +`<span class="to">–</span><input type="time" data-pm="${i}" data-pmf="end" value="${p.end||''}"></span>`:'';
+    return `<div class="pm-row"><label class="pm-check"><input type="checkbox" data-pm="${i}" ${p?'checked':''}>`
+      +`<span class="pm-day">${DAYS[h.day]}</span></label>${felt}</div>`;
+  }).join("");
+}
+function openPauseModal(){renderPauseModal();$("#pauseBackdrop").hidden=false;document.body.style.overflow='hidden';}
+function closePauseModal(){$("#pauseBackdrop").hidden=true;document.body.style.overflow='';renderHoursList();}
+// Standard ny pause: 30 min klemt inn i dagens [open,close] — alltid gyldig, ingen valideringsfeil.
+function standardPause(open,close){
+  var o=hmMin(open), c=hmMin(close);
+  if(o==null||c==null||c-o<10)return{start:open||'',end:close||''};   // degenerert dag → bruk grensene
+  var start=Math.max(o,Math.min(720,c-30)), end=Math.min(start+30,c);  // 720 = 12:00
+  var m2=function(m){return String(Math.floor(m/60)).padStart(2,'0')+':'+String(m%60).padStart(2,'0');};
+  return{start:m2(start),end:m2(end)};
+}
 
 /* Hva knappen gjør — ikke det samme som "er tilkoblet". I den tredje tilstanden ER
    barbereren tilkoblet, men knappen skal koble til PÅ NYTT, ikke koble fra. */
@@ -2971,12 +3071,22 @@ $("#replaceInput").addEventListener('change',async e=>{
 });
 
 $("#fileInput").addEventListener("change",e=>{handleUpload(e.target.files[0],_activeSlot);e.target.value="";});
-$("#hoursList").addEventListener("change",e=>{const i=+e.target.dataset.i;
-  if(e.target.type==="checkbox"){hours[i].on=e.target.checked;e.target.closest(".day").querySelectorAll("input[type=time]").forEach(inp=>inp.disabled=!e.target.checked);}
-  else if(e.target.dataset.f){hours[i][e.target.dataset.f]=e.target.value;}});
-$("#saveHours").addEventListener("click",async()=>{const btn=$("#saveHours");btn.disabled=true;btn.textContent="Lagrer …";
-  const ok=await api.saveHours(hours);btn.disabled=false;btn.textContent="Lagre arbeidstider";
-  if(ok){const s=$("#hoursSaved");s.classList.add("show");setTimeout(()=>s.classList.remove("show"),1800);}});
+$("#hoursList").addEventListener("change",e=>{const i=+e.target.dataset.i; if(isNaN(i))return;
+  if(e.target.type==="checkbox"){hours[i].on=e.target.checked; renderHoursList();}
+  else if(e.target.dataset.f){hours[i][e.target.dataset.f]=e.target.value; renderHoursList();}});   // ny åpningstid → flytt ev. sentrert pause-tekst
+// Pause-modal: knapp åpner; avkryssing pr. dag legger til/fjerner pause; felt redigerer.
+// Ingen egen lagring — «Ferdig»/lukk re-rendrer hovedvisningen, «Lagre arbeidstider» persisterer.
+$("#pauseBtn").addEventListener("click",openPauseModal);
+$("#pauseClose").addEventListener("click",closePauseModal);
+$("#pauseFerdig").addEventListener("click",closePauseModal);
+$("#pauseBackdrop").addEventListener("click",e=>{if(e.target===e.currentTarget)closePauseModal();});
+$("#pauseModalList").addEventListener("change",e=>{const i=+e.target.dataset.pm; if(isNaN(i))return;
+  if(e.target.type==="checkbox"){hours[i].breaks=e.target.checked?[standardPause(hours[i].start,hours[i].end)]:[]; renderPauseModal();}
+  else if(e.target.dataset.pmf){hours[i].breaks=hours[i].breaks||[]; if(!hours[i].breaks[0])hours[i].breaks[0]={start:'',end:''}; hours[i].breaks[0][e.target.dataset.pmf]=e.target.value;}});
+$("#saveHours").addEventListener("click",async()=>{const btn=$("#saveHours");btn.disabled=true;btn.textContent="Lagrer …";$("#hoursErr").textContent="";
+  const res=await api.saveHours(hours);btn.disabled=false;btn.textContent="Lagre arbeidstider";
+  if(res.ok){const s=$("#hoursSaved");s.classList.add("show");setTimeout(()=>s.classList.remove("show"),1800);}
+  else if(res.error){$("#hoursErr").textContent=res.error;}});   // 409 booking-kollisjon / 400 validering — ordrett
 
 $("#gcalBtn").addEventListener("click",async()=>{
   if(gcalAction==="disconnect"){
