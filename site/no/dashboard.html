@@ -19,6 +19,8 @@
        mindre kontrast. ~2,9:1 mot #fff (rett under 3:1-veiledningen; akseptert for en liten
        prikk der teksten bærer meningen, i bytte mot en gulere tone). */
     --warn:#bf9000;
+    /* Tjeneste-posisjon 5 (lilla) og 6 (lyseblå) i kalenderblokkene. Mørkere på lys tema. */
+    --violet:#7c4dd6;--sky:#2b93c9;
   }
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased}
@@ -195,6 +197,7 @@
     --line:#242424;--line-2:#363636;
     --good:#3ecf7e;--good-bg:#10241a;--bad:#ff6b5e;--bad-bg:#2c1512;--info:#4d8bff;--info-bg:#11203b;
     --warn:#f5d93a;   /* sitron-/løvetann-gul for påminnelse-prikk; ~14:1 på mørk --surface/#0a0a0a */
+    --violet:#b18cf0;--sky:#5cc4f0;   /* tjeneste-posisjon 5/6, lysere på mørk tema */
   }
   html[data-theme="dark"] .btn{background:#fff;color:#0a0a0a}
   html[data-theme="dark"] .who .dot{background:#fff;color:#0a0a0a}
@@ -881,6 +884,7 @@
         <p class="block-h">Kommende bookinger</p>
         <p class="block-s">Neste i køen.</p>
         <div class="card" id="upcomingList"><div class="loading">Laster …</div></div>
+        <button class="see-all-btn" id="calOpenUpcoming">Utvid til kalender →</button>
       </div>
     </div>
 
@@ -888,6 +892,7 @@
     <div class="ovs-block">
       <p class="block-h">Siste bookinger</p>
       <div id="bookingList"><div class="loading">Laster …</div></div>
+      <button class="see-all-btn" id="calOpenSiste">Utvid til kalender →</button>
       <!-- Nudge: ferske no-shows å følge opp — lever nå i Vekst › Vinn tilbake. Skjult når 0. -->
       <button class="see-all-btn" id="ovsWbNudge" onclick="switchPanel('vekst')" hidden></button>
     </div>
@@ -1544,6 +1549,86 @@
   </section>
 </div>
 
+<!-- ═══ KALENDER-OVERLEGG + BOOKING-DETALJFLATE ═══════════════════════════════════
+     Fullskjerm-kalender (fra «Utvid» i Kommende/Siste) + delt detaljflate (bunn-ark
+     mobil / modal desktop). Begge bygges LAZY av JS ved første åpning — skallene her
+     er tomme. Detaljflaten deles med listene: rad-klikk i Kommende/Siste åpner samme. -->
+<style>
+  /* ── Overlegg ── */
+  .cal-overlay{position:fixed;inset:0;z-index:500;background:var(--bg);display:flex;flex-direction:column}
+  .cal-overlay[hidden]{display:none}
+  .cal-topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
+  .cal-datebtn{appearance:none;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:6px}
+  .cal-today{appearance:none;border:0;background:0;color:var(--info);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:8px 4px}
+  .cal-close{margin-left:auto;appearance:none;border:0;background:var(--surface);color:var(--mut);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
+  .cal-close:hover{color:var(--ink)}
+  /* ── Månedvelger (egenbygd) ── */
+  .cal-monthpick{position:absolute;top:56px;left:16px;z-index:20;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:12px;width:280px}
+  .cal-monthpick[hidden]{display:none}
+  .cal-mp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+  .cal-mp-head button{appearance:none;border:0;background:var(--bg);width:30px;height:30px;border-radius:7px;cursor:pointer;color:var(--ink);font-size:15px}
+  .cal-mp-title{font-size:13.5px;font-weight:700}
+  .cal-mp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+  .cal-mp-wd{font-size:10.5px;color:var(--mut);text-align:center;padding:4px 0;font-weight:600}
+  .cal-mp-day{appearance:none;border:0;background:0;font:inherit;font-size:12.5px;color:var(--ink);height:32px;border-radius:6px;cursor:pointer}
+  .cal-mp-day:hover:not(:disabled){background:var(--bg)}
+  .cal-mp-day.today{color:var(--info);font-weight:700}
+  .cal-mp-day.sel{background:var(--ink);color:var(--surface);font-weight:700}
+  .cal-mp-day:disabled{color:var(--line-2);cursor:default}
+  /* ── Dagstripe ── */
+  .cal-daystrip{display:flex;gap:7px;overflow-x:auto;padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0;scrollbar-width:none}
+  .cal-daystrip::-webkit-scrollbar{display:none}
+  .cal-chip{appearance:none;border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 11px;cursor:pointer;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:46px;position:relative}
+  .cal-chip .chip-wd{font-size:10.5px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+  .cal-chip .chip-d{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+  .cal-chip .chip-count{font-size:10px;color:var(--info);font-weight:600;line-height:1}
+  .cal-chip.is-today .chip-d{color:var(--info)}
+  .cal-chip.active{border-color:var(--ink);background:var(--ink)}
+  .cal-chip.active .chip-wd,.cal-chip.active .chip-d,.cal-chip.active .chip-count{color:var(--surface)}
+  /* ── Rutenett ── */
+  .cal-grid{flex:1;display:flex;overflow:hidden;min-height:0}
+  .cal-scroll{flex:1;display:flex;overflow-y:auto;overflow-x:hidden}
+  .cal-axis{flex-shrink:0;width:46px;position:relative;padding-top:34px}  /* 34px = dayhead-høyde */
+  .cal-hour{height:108px;position:relative}  /* 60min × 1.8px/min (PX_PER_MIN) — hold i synk */
+  .cal-hour>span{position:absolute;top:-7px;right:8px;font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
+  .cal-days{flex:1;display:flex;min-width:0}
+  .cal-day{flex:1;min-width:0;border-left:1px solid var(--line);display:flex;flex-direction:column}
+  .cal-dayhead{height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--ink-2);border-bottom:1px solid var(--line);gap:6px}
+  .cal-dayhead.is-today{color:var(--info)}
+  .cal-daybody{position:relative}   /* høyde settes inline = (yMax−yMin)×PX_PER_MIN; ingen flex-stretch */
+  .cal-hourline{position:absolute;left:0;right:0;border-top:1px solid var(--line);pointer-events:none}
+  /* Tjenestefarge via --blk (settes inline pr. blokk = tjenestens posisjon i sort-lista).
+     Lys tint av fargen som bakgrunn; fargen på ramme + venstrestripe. Fallback var(--info)
+     hvis --blk mangler; plain background-linje er fallback for nettlesere uten color-mix. */
+  .cal-block{position:absolute;border-radius:6px;background:var(--surface);background:color-mix(in srgb, var(--blk,var(--info)) 15%, var(--surface));border:1px solid var(--blk,var(--info));border-left:3px solid var(--blk,var(--info));padding:3px 6px;overflow:hidden;cursor:pointer;box-sizing:border-box}
+  .cal-block .blk-name{display:block;font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cal-block .blk-svc{display:block;font-size:10.5px;color:var(--mut);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cal-block.noshow{background:var(--bad-bg);border-color:var(--bad);border-left-color:var(--bad)}
+  .cal-block.noshow .blk-name{text-decoration:line-through;color:var(--mut)}
+  .cal-day.closed{background:repeating-linear-gradient(45deg,var(--bg),var(--bg) 6px,var(--surface) 6px,var(--surface) 12px)}
+  .cal-closed,.cal-empty{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;color:var(--mut-2);font-size:12.5px;font-weight:500}
+  /* Mobil: én dag full bredde. Desktop (>760): tre side om side. */
+  @media(min-width:761px){.cal-days .cal-day:nth-child(n+4){display:none}}
+  @media(max-width:760px){.cal-days .cal-day:nth-child(n+2){display:none}}
+  /* ── Detaljflate: bunn-ark mobil / modal desktop ── */
+  .bk-detail-backdrop{position:fixed;inset:0;z-index:600;background:rgba(10,10,10,.5);display:flex;align-items:flex-end;justify-content:center}
+  .bk-detail-backdrop[hidden]{display:none}
+  .bk-detail{background:var(--surface);width:100%;max-width:440px;border-radius:16px 16px 0 0;padding:20px;position:relative;box-shadow:0 -6px 30px rgba(0,0,0,.2)}
+  @media(min-width:561px){.bk-detail-backdrop{align-items:center}.bk-detail{border-radius:14px}}
+  .bk-detail-close{position:absolute;top:14px;right:14px;appearance:none;border:0;background:var(--bg);width:32px;height:32px;border-radius:8px;cursor:pointer;color:var(--mut);font-size:16px;line-height:1}
+  .bk-detail-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;padding-right:36px}
+  .bk-detail-name{font-size:18px;font-weight:700;letter-spacing:-.02em;min-width:0;overflow-wrap:break-word}
+  .bk-detail-phone{display:inline-block;font-size:14px;color:var(--info);font-weight:600;text-decoration:none;margin-bottom:14px}
+  .bk-detail-rows{display:flex;flex-direction:column;gap:0}
+  .bk-detail-rows>div{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-top:1px solid var(--line)}
+  .bk-detail-rows dt{color:var(--mut);font-size:13px}
+  .bk-detail-rows dd{font-size:13.5px;font-weight:600;text-align:right}
+  .bk-detail-actions{margin-top:16px}
+  .bk-detail-actions .noshowbtn,.bk-detail-actions .undobtn{width:100%;justify-content:center;padding:11px}
+</style>
+<div class="cal-overlay" id="calOverlay" role="dialog" aria-modal="true" aria-label="Kalender" hidden></div>
+<div class="bk-detail-backdrop" id="bkDetailBackdrop" hidden></div>
+
 <script src="palett.js"></script>
 <script src="lib/cropper.min.js"></script>
 <script>
@@ -2128,7 +2213,7 @@ function discountPill(b){
   var label=rd.rolle==='verver'?'Verve-bonus':'Vervet'; // vervet=ny kunde · verver=verve-bonus
   return ' <span class="rpill blue">'+label+' · '+(rd.pct||0)+'%</span>';
 }
-function upRow(b){return '<div class="up-row"><span class="up-time">'+timeOnly(b.start)+'</span>'
+function upRow(b){return '<div class="up-row" data-bk="'+b.id+'"><span class="up-time">'+timeOnly(b.start)+'</span>'
   +'<span class="up-name">'+esc(b.name)+discountPill(b)+'</span><span class="up-svc">'+esc(b.service||"")+'</span></div>';}
 function upSection(label,items){
   var body=items.length?'<div class="up-rows">'+items.map(upRow).join("")+'</div>'
@@ -2172,11 +2257,11 @@ function emptyHTML(t){return `<div class="empty"><i>○</i><p>${t}</p></div>`}
 // (f.eks. «TOR 17. JUL»). Gjelder både bakover og framover.
 function dayHead(d){var t=new Date();t.setHours(0,0,0,0);var dd=new Date(d);dd.setHours(0,0,0,0);var diff=Math.round((dd-t)/86400000);if(diff===0)return "I dag";if(diff===1)return "I morgen";if(diff===-1)return "I går";return DAYS[(dd.getDay()+6)%7].slice(0,3).toUpperCase()+" "+dd.getDate()+". "+MONTHS[dd.getMonth()].slice(0,3).toUpperCase();}
 function timeOnly(iso){var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
-function rowHTML2(b){if(b.status==='avlyst')return '<div class="row avlyst"><div class="row-left"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+' <span class="svc">· '+esc(b.service||"")+'</span></div></div><div class="row-right"><span class="tag avlyst">Avbestilt</span></div></div>';var st=effectiveStatus(b);var c=st==="noshow"?"n":st==="fullfort"?"f":st==="venter"?"v":"b";var t=st==="noshow"?"No-show":st==="fullfort"?"Fullført":st==="venter"?"Venter":"Booket";var action="";
+function rowHTML2(b){if(b.status==='avlyst')return '<div class="row avlyst" data-bk="'+b.id+'"><div class="row-left"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+' <span class="svc">· '+esc(b.service||"")+'</span></div></div><div class="row-right"><span class="tag avlyst">Avbestilt</span></div></div>';var st=effectiveStatus(b);var c=st==="noshow"?"n":st==="fullfort"?"f":st==="venter"?"v":"b";var t=st==="noshow"?"No-show":st==="fullfort"?"Fullført":st==="venter"?"Venter":"Booket";var action="";
   if(st==="noshow") action='<button class="undobtn" data-id="'+b.id+'" title="Angre no-show">\u21a9 Angre</button>'; // Angre kun etter no-show
   else if(st==="venter"||st==="fullfort") action='<button class="noshowbtn" data-id="'+b.id+'" title="Marker som no-show"><span class="x">&times;</span> No-show</button>';
   var rowClass=st==="noshow"?"row noshow":"row";
-  return '<div class="'+rowClass+'"><div class="row-left"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+discountPill(b)+' <span class="svc">\u00b7 '+esc(b.service||"")+'</span></div></div><div class="row-right">'+action+'<span class="tag '+c+'">'+t+'</span></div></div>';}
+  return '<div class="'+rowClass+'" data-bk="'+b.id+'"><div class="row-left"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+discountPill(b)+' <span class="svc">\u00b7 '+esc(b.service||"")+'</span></div></div><div class="row-right">'+action+'<span class="tag '+c+'">'+t+'</span></div></div>';}
 // Siste bookinger: bakoverskuende logg (t.o.m. i dag, ingen framtidige — de bor i
 // Kommende). Default 2 dager (i går + i dag); «Vis mer» åpner hele 30-dagers-vinduet
 // som allerede finnes i responsen. Radstruktur (rowHTML2) med no-show-knapp beholdt.
@@ -2269,21 +2354,208 @@ async function handleBookingStatus(btn,status){
   btn.disabled=true; // hindre dobbeltrykk mens kallet er i lufta
   var ok=await api.setBookingStatus(id,status);
   if(!ok){ btn.disabled=false; return; } // feil/401 → apiFetch håndterer redirect; ellers ingen endring
+  var nystatus=(status==='ikke_mott')?'ikke_mott':'fullfort';
+  // Oppdater status i ALLE delte kilder (Siste, Kommende, kalenderen), så åpne flater
+  // — inkludert detaljflaten og kalenderblokka — blir konsistente uten re-henting.
+  [_bookinger,_upcoming,CAL.alle].forEach(function(arr){var x=arr&&arr.find(function(y){return String(y.id)===String(id);});if(x)x.status=nystatus;});
   var b=_bookinger.find(function(x){return String(x.id)===String(id);});
-  if(b){ b.status = (status==='ikke_mott') ? 'ikke_mott' : 'fullfort';
-         if(rowEl) rowEl.outerHTML=rowHTML2(b); }   // rad byttes in-place, ny knapp arves av delegasjonen
-  else { loadBookinger(); }                          // fallback (bør ikke skje)
-  loadOversikt();                                    // penge-KPI/attribusjon reflekterer endringen; booking-lista røres ikke
+  if(b&&rowEl) rowEl.outerHTML=rowHTML2(b);          // Siste-rad in-place, ny knapp arves av delegasjonen (som før)
+  else if(!b&&rowEl) loadBookinger();                // rad utenfor _bookinger (bør ikke skje)
+  if(CAL.open) renderGrid();                         // kalenderblokka får .noshow
+  if(bkDetalj.openId===id) renderDetalj(id);         // detaljflatens tag + handlingsknapp bytter
+  loadOversikt();                                    // penge-KPI/attribusjon reflekterer endringen
   if(status==='ikke_mott'){ showToast('Lagt i Vinn tilbake'); loadWinback(); } // umiddelbar feedback + oppdater nudge/badge
 }
 document.body.addEventListener("click",e=>{
   const nb=e.target.closest(".noshowbtn"); if(nb){handleBookingStatus(nb,'ikke_mott');return;}
   const ub=e.target.closest(".undobtn");   if(ub){handleBookingStatus(ub,'fullfort');return;}
+  // Rad-klikk åpner detaljflaten. STÅR ETTER no-show/angre (som return-er først), så
+  // knappene inne i raden aldri fanges av rad-klikket — de virker som før.
+  const rowBk=e.target.closest("[data-bk]"); if(rowBk){openDetalj(rowBk.dataset.bk);return;}
   if(e.target.closest("[data-up-toggle]")){upcomingExpanded=!upcomingExpanded;renderUpcoming();}
   if(e.target.closest("[data-bk-toggle]")){bookingerExpanded=!bookingerExpanded;renderBookinger();}
   const sm=e.target.closest("[data-sms-more]"); if(sm){smsMer(sm);return;}
   const si=e.target.closest("[data-sms-info]"); if(si){const n=$("#smsInfo");if(n){n.hidden=!n.hidden;si.setAttribute("aria-expanded",String(!n.hidden));}return;}
 });
+
+// ═══ KALENDER-OVERLEGG + DELT BOOKING-DETALJFLATE ═════════════════════════════
+// Rad-klikk (lister, data-bk) OG blokk-klikk (kalender, .cal-block[data-id]) → openDetalj(id).
+// No-show/angre i BEGGE flater gjenbruker .noshowbtn/.undobtn → body-delegeringen over
+// (handleBookingStatus), som synker status til alle kilder + oppdaterer åpne flater.
+var CAL={open:false,built:false,dombuilt:false,active:0,alle:[],hours:[],svcIdx:{},minKey:0,maxKey:0};
+var bkDetalj={openId:null};
+var PX_PER_MIN=1.8, CAL_HFALL=[480,1200]; // 08–20-ramme for ubundet åpen dag (NULL-tider). 1.8 → 15-min ≈ 27px (leselig navn)
+// Tjenestefarge = tjenestens posisjon (0-basert) i lista sortert på sort. 6 faste, 7+/ukjent → grå.
+// Oransje #e0844a er samme verdi som «Drevet av» bruker for verving — her posisjon 3, bevisst.
+var SVC_FARGER=['var(--info)','var(--good)','#e0844a','var(--warn)','var(--violet)','var(--sky)'];
+function svcFarge(name){var i=CAL.svcIdx&&CAL.svcIdx[name];return (i==null||i>=SVC_FARGER.length)?'var(--mut)':SVC_FARGER[i];}
+
+function calDayKey(iso){var d=new Date(iso);d.setHours(0,0,0,0);return d.getTime();}
+function calMin(iso){var d=new Date(iso);return d.getHours()*60+d.getMinutes();}
+function hmMin(s){if(s==null)return null;var p=String(s).split(':');var m=(+p[0])*60+(+p[1]);return isNaN(m)?null:m;}
+function calNesteKey(k,n){var d=new Date(k);d.setDate(d.getDate()+n);d.setHours(0,0,0,0);return d.getTime();}
+function finnBooking(id){var f=function(a){return (a||[]).find(function(x){return String(x.id)===String(id);});};return f(CAL.alle)||f(_upcoming)||f(_bookinger);}
+
+async function calFetch(){
+  var bs=await api.bookings();                    // 30 bakover + alle framtidige
+  var hr=await apiFetch('/api/dashboard/hours');  // RÅ (ikke api.hours(), som tvinger NULL→09:00/17:00)
+  CAL.hours=(hr&&hr.ok)?await hr.json():[];        // {weekday(0=søn),is_closed,open_time,close_time}
+  var sv=await apiFetch('/api/dashboard/services'); // {hoved,tillegg}, sortert på sort
+  var svj=(sv&&sv.ok)?await sv.json():{};
+  // KUN hovedtjenester gir posisjon/farge. Tilleggstjenester utelates → en booking som
+  // matcher et tilleggsnavn finnes ikke i kartet → svcFarge faller til grå (som ukjent).
+  CAL.svcIdx={};(svj.hoved||[]).forEach(function(s,i){CAL.svcIdx[s.name]=i;});
+  var t0=new Date();t0.setHours(0,0,0,0);var today=t0.getTime();
+  CAL.minKey=calNesteKey(today,-14);
+  CAL.maxKey=calNesteKey(today,(CONFIG.BOOKING_HORIZON||28));
+  CAL.alle=(bs||[]).filter(function(b){return b.status!=='avlyst';})   // avlyste vises ikke (og telles ikke)
+                   .filter(function(b){var k=calDayKey(b.start);return k>=CAL.minKey&&k<=CAL.maxKey;});
+  CAL.built=true;
+}
+function dagBookinger(key){return CAL.alle.filter(function(b){return calDayKey(b.start)===key;}).sort(function(a,c){return new Date(a.start)-new Date(c.start);});}
+function dagTimer(key){   // → {closed} | {open,close} i minutter. getDay() 0=søn matcher /hours weekday.
+  var row=CAL.hours.find(function(h){return Number(h.weekday)===new Date(key).getDay();});
+  if(row&&row.is_closed)return{closed:true};
+  var o=row?hmMin(row.open_time):null, c=row?hmMin(row.close_time):null;
+  if(o==null||c==null||c<=o)return{closed:false,open:CAL_HFALL[0],close:CAL_HFALL[1]}; // ubundet → 08–20-ramme
+  return{closed:false,open:o,close:c};
+}
+function yAkse(keys){  // [tidligste åpning, seneste stenging] blant synlige ÅPNE dager, rundet til time
+  var mn=null,mx=null;
+  keys.forEach(function(k){var h=dagTimer(k);if(h.closed)return;mn=(mn==null)?h.open:Math.min(mn,h.open);mx=(mx==null)?h.close:Math.max(mx,h.close);});
+  if(mn==null){mn=CAL_HFALL[0];mx=CAL_HFALL[1];}
+  return{min:Math.floor(mn/60)*60,max:Math.ceil(mx/60)*60};
+}
+// Klipp mot dagkant (aldri negativ top, aldri utenfor .cal-daybody) + 2-deling ved overlapp.
+function blokkLayout(bs,yMin,yMax){
+  var out=bs.map(function(b){
+    var os=calMin(b.start), oe=calMin(b.end||b.start);
+    if(oe<=os)oe=os+15;                                  // 0/negativ varighet → 15-min for overlapp-logikken
+    var s=Math.max(os,yMin), e=Math.min(oe,yMax);        // KLIPPET spenn — KUN visning (top/høyde)
+    if(e<=s)e=Math.min(s+15,yMax);
+    return{b:b,os:os,oe:oe,top:(s-yMin)*PX_PER_MIN,h:Math.max((e-s)*PX_PER_MIN,16)};
+  });
+  // Overlapp + lane på ORIGINALE tider (os/oe), ikke klippede. Klipping mot arbeidstids-kanten
+  // er kun visning og skal ALDRI skape falsk 2-deling — en utenfor-tid-booking klippet til
+  // kanten deler ikke tid med en ekte booking som starter der.
+  out.forEach(function(o){o.ov=false;});
+  for(var i=0;i<out.length;i++)for(var j=i+1;j<out.length;j++){if(out[i].os<out[j].oe&&out[j].os<out[i].oe){out[i].ov=true;out[j].ov=true;}}
+  var l0=-1,l1=-1;
+  out.forEach(function(o){if(o.os>=l0){o.lane=0;l0=o.oe;}else if(o.os>=l1){o.lane=1;l1=o.oe;}else{o.lane=0;l0=o.oe;}}); // 3+ stables bevisst
+  out.forEach(function(o){o.w=o.ov?50:100;o.left=o.ov?o.lane*50:0;});
+  return out;
+}
+function calVisibleKeys(){var n=(window.innerWidth>760)?3:1,out=[];for(var i=0;i<n;i++){var k=calNesteKey(CAL.active,i);if(k<=CAL.maxKey)out.push(k);}return out.length?out:[CAL.active];}
+
+function byggCal(){
+  var ov=$("#calOverlay");
+  ov.innerHTML='<div class="cal-topbar"><button class="cal-datebtn" id="calDateBtn"></button><button class="cal-today" id="calToday">I dag</button><button class="cal-close" id="calClose" aria-label="Lukk">✕</button></div>'
+    +'<div class="cal-monthpick" id="calMonthpick" hidden></div>'
+    +'<div class="cal-daystrip" id="calDaystrip"></div>'
+    +'<div class="cal-grid"><div class="cal-scroll"><div class="cal-axis" id="calAxis"></div><div class="cal-days" id="calDays"></div></div></div>';
+  $("#calClose").onclick=lukkKalender;
+  $("#calToday").onclick=function(){calGoto(calDayKey(new Date()));};
+  $("#calDateBtn").onclick=function(){toggleMonthpick();};
+  $("#calDaystrip").addEventListener('click',function(e){var c=e.target.closest('.cal-chip');if(c)calGoto(Number(c.dataset.key));});
+  ov.addEventListener('click',function(e){var bl=e.target.closest('.cal-block');if(bl)openDetalj(bl.dataset.id);});
+  var x0=null;
+  $("#calDays").addEventListener('touchstart',function(e){x0=e.touches[0].clientX;},{passive:true});
+  $("#calDays").addEventListener('touchend',function(e){if(x0==null)return;var dx=e.changedTouches[0].clientX-x0;x0=null;if(Math.abs(dx)>50)(dx<0?calNext:calPrev)();},{passive:true});
+  ov.tabIndex=-1;
+  ov.addEventListener('keydown',function(e){if(e.key==='ArrowRight')calNext();else if(e.key==='ArrowLeft')calPrev();else if(e.key==='Escape')lukkKalender();});
+  CAL.dombuilt=true;
+}
+function renderDaystrip(){
+  var strip=$("#calDaystrip"),html='',todayKey=calDayKey(new Date());
+  for(var k=CAL.minKey;k<=CAL.maxKey;k=calNesteKey(k,1)){var d=new Date(k),n=dagBookinger(k).length;
+    html+='<button class="cal-chip'+(k===todayKey?' is-today':'')+(k===CAL.active?' active':'')+'" data-key="'+k+'"><span class="chip-wd">'+DAYS[(d.getDay()+6)%7].slice(0,3)+'</span><span class="chip-d">'+d.getDate()+'</span>'+(n?'<span class="chip-count">'+n+'</span>':'')+'</button>';}
+  strip.innerHTML=html;
+  var act=strip.querySelector('.cal-chip.active');if(act)act.scrollIntoView({inline:'center',block:'nearest'});
+}
+function renderGrid(){
+  var keys=calVisibleKeys(),y=yAkse(keys),dayH=(y.max-y.min)*PX_PER_MIN,todayKey=calDayKey(new Date());
+  var ax='';for(var m=y.min;m<y.max;m+=60)ax+='<div class="cal-hour"><span>'+String(Math.floor(m/60)).padStart(2,'0')+'</span></div>';
+  $("#calAxis").innerHTML=ax;
+  var cols='';
+  keys.forEach(function(k){
+    var head='<div class="cal-dayhead'+(k===todayKey?' is-today':'')+'">'+dayHead(new Date(k))+'</div>',h=dagTimer(k);
+    if(h.closed){cols+='<div class="cal-day closed" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px"><div class="cal-closed">Stengt</div></div></div>';return;}
+    var lines='';for(var mm=y.min;mm<y.max;mm+=60)lines+='<div class="cal-hourline" style="top:'+((mm-y.min)*PX_PER_MIN)+'px"></div>';
+    var bs=dagBookinger(k),blocks='';
+    if(!bs.length)blocks='<div class="cal-empty">Ingen bookinger</div>';
+    else blokkLayout(bs,y.min,y.max).forEach(function(o){
+      var ns=(effectiveStatus(o.b)==='noshow')?' noshow':'', svc=(o.h>=40)?'<span class="blk-svc">'+esc(o.b.service||'')+'</span>':'';
+      blocks+='<div class="cal-block'+ns+'" data-id="'+o.b.id+'" style="top:'+o.top+'px;height:'+o.h+'px;left:'+o.left+'%;width:calc('+o.w+'% - 3px);--blk:'+svcFarge(o.b.service)+'"><span class="blk-name">'+esc(o.b.name)+'</span>'+svc+'</div>';
+    });
+    cols+='<div class="cal-day" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px">'+lines+blocks+'</div></div>';
+  });
+  $("#calDays").innerHTML=cols;
+  var db=$("#calDateBtn");if(db)db.textContent=dayHead(new Date(CAL.active))+' ▾';
+}
+function renderCal(){renderDaystrip();renderGrid();}
+function calGoto(key){CAL.active=Math.max(CAL.minKey,Math.min(CAL.maxKey,key));renderCal();}
+function calNext(){calGoto(calNesteKey(CAL.active,1));}
+function calPrev(){calGoto(calNesteKey(CAL.active,-1));}
+
+// Egenbygd månedvelger for hopp
+var mpYm=null;
+function toggleMonthpick(forceClose){var mp=$("#calMonthpick");if(!mp)return;
+  if(forceClose){mp.hidden=true;return;}
+  if(mp.hidden){var d=new Date(CAL.active);mpYm={y:d.getFullYear(),m:d.getMonth()};renderMonthpick();mp.hidden=false;}else mp.hidden=true;}
+function renderMonthpick(){
+  var mp=$("#calMonthpick"),y=mpYm.y,m=mpYm.m,startWd=(new Date(y,m,1).getDay()+6)%7,dim=new Date(y,m+1,0).getDate();
+  var todayKey=calDayKey(new Date());
+  var html='<div class="cal-mp-head"><button data-mp="-1">‹</button><span class="cal-mp-title">'+MONTHS[m]+' '+y+'</span><button data-mp="1">›</button></div><div class="cal-mp-grid">';
+  ['M','T','O','T','F','L','S'].forEach(function(w){html+='<span class="cal-mp-wd">'+w+'</span>';});
+  for(var i=0;i<startWd;i++)html+='<span></span>';
+  for(var dd=1;dd<=dim;dd++){var k=new Date(y,m,dd);k.setHours(0,0,0,0);k=k.getTime();var dis=(k<CAL.minKey||k>CAL.maxKey);
+    html+='<button class="cal-mp-day'+(k===todayKey?' today':'')+(k===CAL.active?' sel':'')+'" data-mpk="'+k+'"'+(dis?' disabled':'')+'>'+dd+'</button>';}
+  mp.innerHTML=html+'</div>';
+  mp.querySelectorAll('[data-mp]').forEach(function(b){b.onclick=function(){mpYm.m+=Number(b.dataset.mp);if(mpYm.m<0){mpYm.m=11;mpYm.y--;}else if(mpYm.m>11){mpYm.m=0;mpYm.y++;}renderMonthpick();};});
+  mp.querySelectorAll('[data-mpk]').forEach(function(b){if(b.disabled)return;b.onclick=function(){calGoto(Number(b.dataset.mpk));toggleMonthpick(true);};});
+}
+
+async function openKalender(mode){
+  if(!CAL.built)await calFetch();
+  if(!CAL.dombuilt)byggCal();
+  var todayKey=calDayKey(new Date());
+  if(mode==='last-past'){var last=null;CAL.alle.forEach(function(b){var k=calDayKey(b.start);if(k<todayKey&&(last==null||k>last))last=k;});CAL.active=(last!=null)?last:calNesteKey(todayKey,-1);}
+  else if(typeof mode==='number')CAL.active=mode;
+  else CAL.active=todayKey; // 'today'/default
+  CAL.active=Math.max(CAL.minKey,Math.min(CAL.maxKey,CAL.active));
+  renderCal();
+  $("#calOverlay").hidden=false;CAL.open=true;document.body.style.overflow='hidden';$("#calOverlay").focus();
+}
+function lukkKalender(){$("#calOverlay").hidden=true;CAL.open=false;document.body.style.overflow='';toggleMonthpick(true);}
+
+// ── Delt detaljflate ──
+function openDetalj(id){renderDetalj(id);$("#bkDetailBackdrop").hidden=false;}
+function renderDetalj(id){
+  var b=finnBooking(id);if(!b){lukkDetalj();return;}
+  bkDetalj.openId=String(id);
+  var st=effectiveStatus(b),tagC='b',tagT='Booket';
+  if(b.status==='avlyst'){tagC='avlyst';tagT='Avbestilt';}
+  else if(st==='noshow'){tagC='n';tagT='No-show';}else if(st==='fullfort'){tagC='f';tagT='Fullført';}else if(st==='venter'){tagC='v';tagT='Venter';}
+  var tid=dayHead(new Date(b.start))+' · '+timeOnly(b.start)+(b.end?'–'+timeOnly(b.end):'');
+  var handling='';   // demo: no-show feiler stille (requireWrite) → ingen knapp som ikke virker
+  if(!IS_DEMO&&b.status!=='avlyst'){
+    if(st==='noshow')handling='<button class="undobtn" data-id="'+b.id+'">↩ Angre no-show</button>';
+    else if(st==='venter'||st==='fullfort')handling='<button class="noshowbtn" data-id="'+b.id+'"><span class="x">×</span> Marker no-show</button>';
+  }
+  var tel=b.phone?'<a class="bk-detail-phone" href="tel:'+esc(b.phone)+'">'+esc(b.phone)+'</a>':'';
+  $("#bkDetailBackdrop").innerHTML='<div class="bk-detail" role="dialog" aria-modal="true"><button class="bk-detail-close" aria-label="Lukk">✕</button>'
+    +'<div class="bk-detail-head"><span class="bk-detail-name">'+esc(b.name)+'</span><span class="tag '+tagC+'">'+tagT+'</span></div>'+tel
+    +'<dl class="bk-detail-rows"><div><dt>Tjeneste</dt><dd>'+esc(b.service||'—')+'</dd></div><div><dt>Pris</dt><dd>'+esc(b.price_label||'—')+'</dd></div><div><dt>Tid</dt><dd>'+tid+'</dd></div></dl>'
+    +(handling?'<div class="bk-detail-actions">'+handling+'</div>':'')+'</div>';
+  $("#bkDetailBackdrop .bk-detail-close").onclick=lukkDetalj;
+}
+function lukkDetalj(){$("#bkDetailBackdrop").hidden=true;bkDetalj.openId=null;}
+$("#bkDetailBackdrop").addEventListener('click',function(e){if(e.target===this)lukkDetalj();});
+
+// Innganger + resize-render
+(function(){var a=$("#calOpenUpcoming");if(a)a.onclick=function(){openKalender('today');};
+  var s=$("#calOpenSiste");if(s)s.onclick=function(){openKalender('last-past');};})();
+window.addEventListener('resize',function(){if(CAL.open)renderGrid();});
 
 function monthLbl(ym){ return MONTHS[(+String(ym).slice(5,7))-1] || ""; } // "2026-07" → "juli"
 
@@ -2753,6 +3025,8 @@ async function loadProfil(){
   // E-posten brukes to steder: visning i Innlogging, og support-payloaden (som backend
   // krever, men ikke beriker selv). Lagres på CONFIG så begge leser samme kilde.
   CONFIG.BARBER_EMAIL=p.email||null;
+  // Bookinghorisont (per-barber, /profile 85d7afe). Styrer kalenderens framover-rekkevidde.
+  CONFIG.BOOKING_HORIZON=(typeof p.booking_horizon_days==='number'&&p.booking_horizon_days>0)?p.booking_horizon_days:28;
   var ep=$("#kontoEpost");if(ep)ep.textContent=p.email||'—'; // Innlogging-seksjonen, ren visning
   // /profile og /billing/status lastes parallelt. Rakk billing å tegne publiseringsblokka
   // før sluggen var her, mangler den lenka til den publiserte sida — tegn på nytt nå.
