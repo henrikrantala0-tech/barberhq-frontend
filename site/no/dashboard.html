@@ -2537,6 +2537,10 @@ function renderDetalj(id){
   if(b.status==='avlyst'){tagC='avlyst';tagT='Avbestilt';}
   else if(st==='noshow'){tagC='n';tagT='No-show';}else if(st==='fullfort'){tagC='f';tagT='Fullført';}else if(st==='venter'){tagC='v';tagT='Venter';}
   var tid=dayHead(new Date(b.start))+' · '+timeOnly(b.start)+(b.end?'–'+timeOnly(b.end):'');
+  // Tillegg: egen rad (ikke slått inn i Tjeneste), så hovedtjenesten — som styrer blokkfargen —
+  // står ren. Robust mot både strenger og {name}-objekter. Raden vises kun når det finnes tillegg.
+  var tillegg=(b.addons||[]).map(function(a){return typeof a==='string'?a:(a&&a.name)||'';}).filter(Boolean);
+  var tilleggRad=tillegg.length?'<div><dt>Tillegg</dt><dd>'+esc(tillegg.join(' + '))+'</dd></div>':'';
   var handling='';   // demo: no-show feiler stille (requireWrite) → ingen knapp som ikke virker
   if(!IS_DEMO&&b.status!=='avlyst'){
     if(st==='noshow')handling='<button class="undobtn" data-id="'+b.id+'">↩ Angre no-show</button>';
@@ -2545,7 +2549,7 @@ function renderDetalj(id){
   var tel=b.phone?'<a class="bk-detail-phone" href="tel:'+esc(b.phone)+'">'+esc(b.phone)+'</a>':'';
   $("#bkDetailBackdrop").innerHTML='<div class="bk-detail" role="dialog" aria-modal="true"><button class="bk-detail-close" aria-label="Lukk">✕</button>'
     +'<div class="bk-detail-head"><span class="bk-detail-name">'+esc(b.name)+'</span><span class="tag '+tagC+'">'+tagT+'</span></div>'+tel
-    +'<dl class="bk-detail-rows"><div><dt>Tjeneste</dt><dd>'+esc(b.service||'—')+'</dd></div><div><dt>Pris</dt><dd>'+esc(b.price_label||'—')+'</dd></div><div><dt>Tid</dt><dd>'+tid+'</dd></div></dl>'
+    +'<dl class="bk-detail-rows"><div><dt>Tjeneste</dt><dd>'+esc(b.service||'—')+'</dd></div>'+tilleggRad+'<div><dt>Pris</dt><dd>'+esc(b.price_label||'—')+'</dd></div><div><dt>Tid</dt><dd>'+tid+'</dd></div></dl>'
     +(handling?'<div class="bk-detail-actions">'+handling+'</div>':'')+'</div>';
   $("#bkDetailBackdrop .bk-detail-close").onclick=lukkDetalj;
 }
