@@ -3927,6 +3927,11 @@ function renderKonto(b){
   };
   const settMikro=t=>{mikro.textContent=t;mikro.style.display='';};
   const PRIS='249 kr', PRIS_SUFF='/ mnd';
+  // Plan-navn + pris per plan. En aktiv abonnent skal se SIN plan og SIN pris, ikke hardkodet
+  // 249. b.plan er rå kolonne fra /billing/status (basis|vekst|null). NOK-priser fordi dette er
+  // /no/-fila — samme valuta-begrensning som PRIS alltid har hatt (backend bør på sikt sende
+  // pris-strengen i status så andre markeder/valutaer stemmer).
+  const PLAN_INFO={basis:{navn:'Basis',pris:'249 kr'},vekst:{navn:'Vekst',pris:'399 kr'}};
 
   // attention_grunn er serverens PRIORITERTE signal (past_due > nedtatt > myk > slutter).
   // Vi rangerer ikke på nytt — to implementasjoner av samme prioritet driver fra hverandre.
@@ -3954,11 +3959,15 @@ function renderKonto(b){
     // trialing er IKKE i spec-lista, men er en ekte tilstand: kortet ER lagt inn og Stripe
     // kjører sin egen trial. Uten denne grenen ville han falt ned på `igjen>0` og fått
     // «Legg inn kort» med kortet allerede inne.
-    status.innerHTML='&#9679; Abonnementet er aktivt';
-    settTall(PRIS,PRIS_SUFF);
+    const pinfo=PLAN_INFO[b.plan]||null;   // b.plan: basis|vekst|null
+    status.innerHTML='&#9679; '+(pinfo?pinfo.navn+'-abonnementet':'Abonnementet')+' er aktivt';
+    settTall(pinfo?pinfo.pris:PRIS,PRIS_SUFF);
     tekst.textContent=sub==='trialing'
       ? 'Kortet er lagt inn. Første trekk skjer når prøveperioden er over. Ingen binding.'
       : 'Alt inkludert. Ingen binding — du kan si opp når som helst.';
+    // Oppgrader-CTA KUN for aktiv Basis → portalen (subscription_update med prorata). Vekst har
+    // ingenting å oppgradere til; trialing holdes utenfor (spec: «aktive Basis-tilstanden»).
+    if(sub==='active'&&b.plan==='basis')settKnapp('Oppgrader til Vekst','portal');
     manage.style.display='';
   }else if(sub==='canceled'||sub==='unpaid'){                                // (utenfor spec)
     status.className='substatus bad';status.innerHTML='&#9679; Abonnementet er avsluttet';
