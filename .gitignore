@@ -7,3 +7,8 @@ node_modules/
 _nye-seksjoner/
 live_preview_handoff/
 .render-ut/
+
+# Lokale scratchpad-scripts og skjermbilder (kun repo-rot)
+/*.mjs
+!/*.config.mjs
+/pw-screenshots/
