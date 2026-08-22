@@ -51,6 +51,11 @@ a{text-decoration:none;color:inherit}
 .btn:hover:not(:disabled){opacity:.88}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
+/* «Hopp over» — vises kun i bytt-modus (?bytt=1) */
+.skip{display:none;text-align:center;margin-top:16px;color:#9a9a9a;font-size:13px}
+.skip.show{display:block}
+.skip:hover{color:#ccc}
+
 /* ── Footer ── */
 .foot{border-top:1px solid #1a1a1a;padding:22px 24px;text-align:center}
 .foot span{color:#555;font-size:12.5px}
@@ -103,6 +108,7 @@ a{text-decoration:none;color:inherit}
     </div>
 
     <button class="btn" id="submit">Lagre og fortsett</button>
+    <a class="skip" id="skip" href="/no/dashboard.html">Hopp over</a>
   </div>
 </main>
 
@@ -119,6 +125,17 @@ a{text-decoration:none;color:inherit}
   var formErr = document.getElementById('form-err');
   var pwErr   = document.getElementById('pw-err');
   var pw2Err  = document.getElementById('pw2-err');
+
+  // Bytt-modus: kom hit fra «Husker du ikke passordet?» i Konto. Han HAR et passord fra før,
+  // så teksten må si at dette er et NYTT passord (siden antar ellers førstegang), og han skal
+  // kunne hoppe over. Selve retten til å sette uten det gamle avgjøres server-side (fersk
+  // magisk lenke) — her signaliserer vi bare intensjonen; POST-en er identisk.
+  var BYTT = new URLSearchParams(location.search).get('bytt') === '1';
+  if (BYTT) {
+    document.querySelector('.card h1').textContent = 'Sett et nytt passord';
+    document.querySelector('.card-sub').textContent = 'Du er i ferd med å sette et NYTT passord — det gamle slutter å virke.';
+    document.getElementById('skip').classList.add('show');
+  }
 
   // Vis/skjul passord — samme komponent som logg-inn.html, ett par per felt.
   function bindToggle(toggleId, input, eyeOnId, eyeOffId) {
@@ -177,6 +194,15 @@ a{text-decoration:none;color:inherit}
       });
 
       if (res.status === 401) {
+        // I bytt-modus kreves en FERSK magisk lenke (≤30 min). Er sesjonen ikke det, skal
+        // siden si det TYDELIG i stedet for et taust hopp til innlogging — han må be om en ny
+        // lenke. (Backend svarer 401 code=mangler_naavaerende_passord her.)
+        if (BYTT) {
+          formErr.innerHTML = 'Lenken er ikke fersk nok til å bytte passord. ' +
+            '<a href="/no/logg-inn.html" style="color:#4d8bff;text-decoration:underline">Be om en ny innloggingslenke</a>.';
+          formErr.classList.add('show');
+          return;
+        }
         location.href = '/no/logg-inn.html';
         return;
       }

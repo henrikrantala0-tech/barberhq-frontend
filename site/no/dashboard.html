@@ -1576,6 +1576,9 @@
             <div class="fld"><label>Nytt passord</label><input id="pw-new" type="password" autocomplete="new-password" placeholder="Minst 8 tegn"></div>
             <div class="savebar"><button class="btn" id="savePw">Bytt passord</button><span class="saved" id="pwSaved">Endret &#10003;</span></div>
             <p class="pub-err" id="pwErr"></p>
+            <!-- Reset-vei for glemt passord: krever fersk magisk-lenke-sesjon (≤30 min). Er den
+                 ikke det, sier opprett-passord.html?bytt=1 tydelig at han må be om en ny lenke. -->
+            <a class="lnk-quiet" id="pwForgot" href="/no/opprett-passord.html?bytt=1" style="display:inline-block;margin-top:2px">Husker du ikke passordet?</a>
           </div>
           <button class="lnk-quiet" id="loggUt">Logg ut</button>
         </div>
