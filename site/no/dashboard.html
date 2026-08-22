@@ -1732,7 +1732,12 @@
      Lys tint av fargen som bakgrunn; fargen på ramme + venstrestripe. Fallback var(--info)
      hvis --blk mangler; plain background-linje er fallback for nettlesere uten color-mix. */
   .cal-block{position:absolute;border-radius:6px;background:var(--surface);background:color-mix(in srgb, var(--blk,var(--info)) 15%, var(--surface));border:1px solid var(--blk,var(--info));border-left:3px solid var(--blk,var(--info));padding:3px 6px;overflow:hidden;cursor:pointer;box-sizing:border-box}
-  .cal-block .blk-name{display:block;font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* Navnelinje: navn (krymper med ellipse) + klokkeslett (krymper aldri, står alltid synlig).
+     flex:0 0 auto på tiden gjør at et langt navn ellipses FØR tiden dyttes ut. */
+  .cal-block .blk-top{display:flex;align-items:baseline;gap:5px}
+  .cal-block .blk-name{flex:1;min-width:0;font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  /* Tynnere vekt + dempet + tabular-nums (tallene får lik bredde). Navnet forblir det øyet treffer. */
+  .cal-block .blk-time{flex:0 0 auto;font-size:10.5px;font-weight:400;color:var(--mut);line-height:1.2;font-variant-numeric:tabular-nums}
   .cal-block .blk-svc{display:block;font-size:10.5px;color:var(--mut);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .cal-block.noshow{background:var(--bad-bg);border-color:var(--bad);border-left-color:var(--bad)}
   .cal-block.noshow .blk-name{text-decoration:line-through;color:var(--mut)}
@@ -2535,10 +2540,15 @@ document.body.addEventListener("click",e=>{
 var CAL={open:false,built:false,dombuilt:false,active:0,alle:[],hours:[],svcIdx:{},minKey:0,maxKey:0};
 var bkDetalj={openId:null};
 var PX_PER_MIN=1.8, CAL_HFALL=[480,1200]; // 08–20-ramme for ubundet åpen dag (NULL-tider). 1.8 → 15-min ≈ 27px (leselig navn)
-// Tjenestefarge = tjenestens posisjon (0-basert) i lista sortert på sort. 6 faste, 7+/ukjent → grå.
+// Tjenestefarge = tjenestens posisjon (0-basert) i lista sortert på sort. Fargene RULLERER
+// (modulo) når det er flere tjenester enn paletten — tjeneste 9 gjenbruker farge 1 osv., aldri
+// grå av den grunn. Grå (--mut) beholdes KUN som fallback når navnet ikke matcher noen tjeneste
+// i det hele tatt (i==null: tilleggsnavn, slettet/endret tjeneste).
+// 8 distinkte hues. De to siste (rose/teal) er hex fordi det ikke finnes flere fargetokens
+// (--bad er reservert rødt for no-show); samme mønster som #e0844a lenger inn i arrayet.
 // Oransje #e0844a er samme verdi som «Drevet av» bruker for verving — her posisjon 3, bevisst.
-var SVC_FARGER=['var(--info)','var(--good)','#e0844a','var(--warn)','var(--violet)','var(--sky)'];
-function svcFarge(name){var i=CAL.svcIdx&&CAL.svcIdx[name];return (i==null||i>=SVC_FARGER.length)?'var(--mut)':SVC_FARGER[i];}
+var SVC_FARGER=['var(--info)','var(--good)','#e0844a','var(--warn)','var(--violet)','var(--sky)','#d9548b','#0ea5a5'];
+function svcFarge(name){var i=CAL.svcIdx&&CAL.svcIdx[name];return (i==null)?'var(--mut)':SVC_FARGER[i%SVC_FARGER.length];}
 
 function calDayKey(iso){var d=new Date(iso);d.setHours(0,0,0,0);return d.getTime();}
 function calMin(iso){var d=new Date(iso);return d.getHours()*60+d.getMinutes();}
@@ -2635,7 +2645,11 @@ function renderGrid(){
     if(!bs.length)blocks='<div class="cal-empty">Ingen bookinger</div>';
     else blokkLayout(bs,y.min,y.max).forEach(function(o){
       var ns=(effectiveStatus(o.b)==='noshow')?' noshow':'', svc=(o.h>=40)?'<span class="blk-svc">'+esc(o.b.service||'')+'</span>':'';
-      blocks+='<div class="cal-block'+ns+'" data-id="'+o.b.id+'" style="top:'+o.top+'px;height:'+o.h+'px;left:'+o.left+'%;width:calc('+o.w+'% - 3px);--blk:'+svcFarge(o.b.service)+'"><span class="blk-name">'+esc(o.b.name)+'</span>'+svc+'</div>';
+      // Start alltid; start–slutt kun når blokka er bred nok (ikke splittet av overlapp) — o.w er
+      // bredde i % av kolonnen. >60 = i praksis full bredde → plass til «14:00–14:30». Smale,
+      // overlappende blokker viser start alene (minstekravet), så tiden aldri brekker.
+      var tid=timeOnly(o.b.start)+((o.w>60&&o.b.end)?'–'+timeOnly(o.b.end):'');
+      blocks+='<div class="cal-block'+ns+'" data-id="'+o.b.id+'" style="top:'+o.top+'px;height:'+o.h+'px;left:'+o.left+'%;width:calc('+o.w+'% - 3px);--blk:'+svcFarge(o.b.service)+'"><div class="blk-top"><span class="blk-name">'+esc(o.b.name)+'</span><span class="blk-time">'+tid+'</span></div>'+svc+'</div>';
     });
     cols+='<div class="cal-day" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px">'+lines+blocks+'</div></div>';
   });
