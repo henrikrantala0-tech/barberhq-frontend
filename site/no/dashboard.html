@@ -364,21 +364,83 @@
   /* margin-left var 2px — arvet fra da klassen satt under en knapp med egen innrykk. Nå står
      den alene under hovedhandlingen og skal flukte med resten av teksten i kortet. */
   .sub-micro{font-size:12px;color:var(--mut);margin:10px 0 0;line-height:1.45;max-width:520px}
+  /* Plan-velger (checkout): Basis/Vekst. Vises KUN i checkout-tilstander (visPlanVelger).
+     px-verdier som resten av .subcard — dashboard.html bruker ikke --fs-skalaen. var(--info)
+     er #1456a8 lys / #4d8bff mørk → riktig merkeblå i begge tema uten hardkodet hex. */
+  .plan-velg{display:grid;gap:14px;margin:6px 0 18px;max-width:520px}
+  /* ⚠ Individuelle transform-egenskaper (scale + translate) med VILJE: skaleringen bor på
+     `scale` og glir via transition, mens svevingen animerer `translate` uavhengig. Delte de
+     samme `transform`, ville @keyframes overkjørt transisjonen og valget HOPPET inn/ut i
+     stedet for å gli. `scale`/`translate` som separate props komponeres og kolliderer ikke. */
+  .plan-opt{position:relative;display:flex;flex-direction:column;gap:8px;text-align:left;width:100%;
+    appearance:none;font-family:inherit;color:var(--ink);background:var(--surface);
+    border:1px solid var(--line-2);border-radius:14px;padding:16px 18px;cursor:pointer;
+    scale:1;translate:0 0;
+    transition:border-color .3s ease,box-shadow .3s ease,scale .3s ease,translate .3s ease}
+  .plan-opt:hover{border-color:var(--mut-2)}
+  /* Valgt: hev ~3,5 % + sving ±3px (knapt merkbart, ~3,5 s). Glød per plan under. */
+  .plan-opt[aria-checked="true"]{scale:1.035;animation:planFloat 3.5s ease-in-out infinite}
+  @keyframes planFloat{0%,100%{translate:0 3px}50%{translate:0 -3px}}
+  @media(prefers-reduced-motion:reduce){
+    .plan-opt[aria-checked="true"]{animation:none;translate:0 0}   /* behold skalering, drop sveving */
+  }
+  /* ── Glød (mørk modus, default) — to lag box-shadow: ett tett, ett vidt+svakt, blør ut ── */
+  /* Vekst: merkeblå fra var(--info), gjort gjennomsiktig med color-mix (ingen ny hardkodet hex). */
+  .plan-opt.plan-vekst[aria-checked="true"]{border-color:var(--info);
+    box-shadow:0 0 16px color-mix(in srgb,var(--info) 50%,transparent),
+               0 0 46px color-mix(in srgb,var(--info) 30%,transparent)}
+  /* Basis: hvit diffus glød. */
+  .plan-opt[data-plan="basis"][aria-checked="true"]{border-color:rgba(255,255,255,.55);
+    box-shadow:0 0 16px rgba(255,255,255,.20),
+               0 0 46px rgba(255,255,255,.10)}
+  /* ── Lys modus: dempet myk DROP-skygge i stedet for glød (glød er laget for mørk flate og
+     forsvinner/leser stygt på hvit). To lag som mørk-gløden — ett tett, ett vidt — men mørk
+     rgba, ikke lys, så den leses som løft mot hvit bakgrunn. ── */
+  html[data-theme="light"] .plan-opt[data-plan="basis"][aria-checked="true"],
+  html[data-theme="light"] .plan-opt.plan-vekst[aria-checked="true"]{
+    border-color:var(--info);
+    box-shadow:0 10px 28px rgba(0,0,0,.16),0 3px 10px rgba(0,0,0,.10)}
+  .plan-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
+  .plan-navn{font-size:16px;font-weight:800;letter-spacing:-.02em}
+  /* Uvalgt pris på --ink-2, ikke --mut: --mut (#7a7a7a) er ~4,4:1 på hvit — borderline for
+     tall man skal lese fort. --ink-2 (#3a3a3a lys / #cfcfcf mørk) er lesbart i begge moduser. */
+  .plan-pris{font-size:14px;font-weight:600;color:var(--ink-2);white-space:nowrap}
+  .plan-opt[aria-checked="true"] .plan-pris{color:var(--ink)}
+  .plan-under{font-size:13px;font-weight:600;color:var(--ink-2);letter-spacing:-.01em}
+  .plan-liste{list-style:none;margin:2px 0 0;padding:0;display:grid;gap:5px}
+  /* Punktene på --ink-2 (ikke --mut): --mut var nesten uleselig på hvit i lys modus. --ink-2
+     gir ~10:1 lys og høy kontrast mørk — lesbart i BEGGE, ikke bare mørkt. */
+  .plan-liste li{position:relative;padding-left:18px;font-size:12.5px;color:var(--ink-2);line-height:1.45}
+  .plan-liste li::before{content:"";position:absolute;left:2px;top:6px;width:6px;height:6px;border-radius:50%;background:var(--mut)}
+  .plan-vekst[aria-checked="true"] .plan-liste li::before{background:var(--info)}
+  /* Bevisst dempet, men ikke usynlig: --mut (ikke --mut-2 som var ~2,3:1 på hvit). */
+  .plan-mer{font-size:11.5px;color:var(--mut);margin-top:2px}
+  .plan-pill{position:absolute;top:-9px;left:14px;background:var(--info);color:#fff;white-space:nowrap;
+    font-size:10px;font-weight:700;letter-spacing:.02em;padding:2px 9px;border-radius:99px}
   /* Publisering — egen blokk under abonnementskortet. Gjenbruker .subcard/.substatus. */
   .pubcard{margin-top:22px}
-  /* word-break:break-all sto her fra da blokka VAR bare URL-en. Den arves, og da blokka
-     fikk en setning under lenka brøt den norsk brødtekst midt i ord: «tar ikke i / mot»,
-     «publiser / er». Bryting hører til URL-en, ikke til containeren — se .pub-url-row>a. */
+  /* Container for lenkeblokka. Live-tilstand fyller den med .pub-field (URL-felt + kopi-ikon);
+     forhandsvist med en «Se forhåndsvisning»-lenke + .pub-note. .pub-link a dekker sistnevnte. */
   .pub-link{font-size:13px;color:var(--ink-2);margin-top:12px}
   .pub-link a{color:var(--info);text-decoration:none}
   .pub-link a:hover{text-decoration:underline}
-  /* URL og kopier-knapp på samme rad, brekker til to linjer når det er trangt.
-     min-width:0 er ikke pynt: uten den nekter flex-elementet å krympe under sin egen
-     innholdsbredde, og en lang URL dytter hele kortet ut i horisontal overflow på 320.
-     overflow-wrap:anywhere, ikke word-break:break-all: den bryter ved «/» og «-» når den
-     kan, og hvor som helst kun når den må — break-all delte «grand-barber» som «gran|d-». */
-  .pub-url-row{display:flex;flex-wrap:wrap;align-items:center;gap:10px}
-  .pub-url-row>a{min-width:0;overflow-wrap:anywhere}
+  /* Bookinglenke som ETT dempet felt: bakgrunn ett hakk fra kortflata (--bg mot --surface),
+     hårfin kant (--line), samme radius som .subcard (12px). Kopi som ikonknapp helt til høyre.
+     min-width:0 på lenka er ikke pynt: uten den nekter flex-barnet å krympe under egen
+     innholdsbredde, og en lang slug dytter hele kortet ut i horisontal overflow på 320. */
+  .pub-field{display:flex;align-items:center;gap:6px;background:var(--bg);
+    border:1px solid var(--line);border-radius:12px;padding:8px 6px 8px 12px}
+  /* Én linje. JS (midtForkort + ResizeObserver) gjør midt-ellipse på lange slugger så begge
+     ender vises; CSS-ellipsen her er SIKKERHETSNETT — garanterer én linje + null overflow
+     også om JS ikke rekker å måle (skjult fane). nowrap+overflow kreves av text-overflow. */
+  .pub-url{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+    font-size:12px;color:var(--info);text-decoration:none}
+  .pub-url:hover{text-decoration:underline}
+  .pub-copy{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+    width:28px;height:28px;border-radius:8px;border:0;background:0;color:var(--mut);
+    cursor:pointer;transition:color .15s,background .15s}
+  .pub-copy:hover{color:var(--ink);background:var(--surface)}
+  .pub-copy.ok{color:var(--good)}   /* hake ved kopiert — grønn fra token */
   .pub-note{font-size:12px;color:var(--mut);margin:8px 0 0;line-height:1.45}
   /* Avpubliser er med vilje dempet til en tekstlenke, ikke en knapp: den er sjelden og
      destruktiv-ish (tar sida ned), og skal ikke konkurrere visuelt med «Publiser siden». */
@@ -393,7 +455,8 @@
   .pw-felt .fld{max-width:340px}
   .hjelp-p{font-size:13px;color:var(--ink-2);line-height:1.5;margin-bottom:14px}
   .hjelp-lenke{display:inline-block;text-decoration:none}
-  .konto-lenker{display:flex;flex-wrap:wrap;gap:18px;margin-top:14px}
+  /* Tydelig luft over: avpubliser er destruktiv og skal ikke ligge inntil lenkefeltet/kopi. */
+  .konto-lenker{display:flex;flex-wrap:wrap;gap:18px;margin-top:22px}
   .konto-lenker .lnk-quiet{margin-top:0}
   /* Prikk på Konto-fanen ved needs_attention. Ingen tall — den sier «se her», ikke «hvor mye».
      Ligger inni nav-knappen, så den overlever flyttingen til «Mer»-menyen på mobil. */
@@ -1237,7 +1300,10 @@
       </div>
       <button class="btn-outline" id="gcalBtn">Koble til</button>
     </div>
-    <p class="ctx" style="margin-top:10px">Når Google Calendar er tilkoblet sperres opptatte tider automatisk i bookingsiden — kunder kan ikke booke mens du er opptatt. Dashbordet er fortsatt master for arbeidstider.</p>
+    <!-- Vises KUN når kalenderen IKKE er tilkoblet (loadGoogleStatus toggler display). Er den
+         tilkoblet — også i scope-varsel-tilstanden — skjules teksten helt. Default skjult så den
+         ikke blinker før statusen er hentet. [oversettelse: sv/da/en] -->
+    <p class="ctx" id="gcalCtx" style="margin-top:10px;display:none">Sperrer også avtalene dine utenfor BarberHQ.</p>
 
     <div class="svc-divider"></div>
 
@@ -1442,6 +1508,34 @@
       <div class="pln" id="kontoTall" style="display:none"><b id="kontoTallStor"></b><span id="kontoTallSuff"></span></div>
       <p class="pln-sub" id="kontoTallSub" style="display:none"></p>
       <p id="kontoTekst"></p>
+      <!-- Plan-valg: KUN i checkout-tilstander (renderKonto → visPlanVelger). Barbereren velger
+           nivået han skal BETALE for. Priser fylles fra PLAN_INFO i JS — ingen tredje priskilde
+           i markup. Alt innhold er synlig hele tiden (ingen utvidelse). Pillen på Vekst er
+           statisk og lik i alle tilstander. Vekst forhåndsvalgt — prøven kjører på Vekst.
+           [oversettelse: sv/da/en] -->
+      <div class="plan-velg" id="planVelger" role="radiogroup" aria-label="Velg abonnement" style="display:none">
+        <button type="button" class="plan-opt" data-plan="basis" role="radio" aria-checked="false">
+          <span class="plan-top"><span class="plan-navn">Basis</span><span class="plan-pris" data-plan-pris="basis"></span></span>
+          <span class="plan-under">Oppfølgingen tar du selv.</span>
+          <ul class="plan-liste">
+            <li>Egen bookingside med din lenke</li>
+            <li>Kalender og påminnelses-SMS</li>
+            <li>Google Calendar-synk</li>
+          </ul>
+        </button>
+        <button type="button" class="plan-opt plan-vekst" data-plan="vekst" role="radio" aria-checked="true">
+          <span class="plan-pill">Én kunde dekker måneden</span>
+          <span class="plan-top"><span class="plan-navn">Vekst</span><span class="plan-pris" data-plan-pris="vekst"></span></span>
+          <span class="plan-under">Henter kunden tilbake av seg selv.</span>
+          <ul class="plan-liste">
+            <li>Alt i Basis</li>
+            <li>Automatisk rebooking når det er på tide</li>
+            <li>Oppfølging etter no-show</li>
+            <li>Bygg klientell med vervesystemet</li>
+          </ul>
+          <span class="plan-mer">150 kr mer enn Basis. En klipp koster mer.</span>
+        </button>
+      </div>
       <!-- ÉN node for hovedhandlingen. «Vekten» er en klasse-bytte (.btn ↔ .lnk-quiet), ikke
            to elementer — samme tekst, samme handler, samme id. To noder ville betydd to
            steder å holde etiketten og aksjonen i synk. -->
@@ -2901,10 +2995,12 @@ function standardPause(open,close){
    barbereren tilkoblet, men knappen skal koble til PÅ NYTT, ikke koble fra. */
 let gcalAction="connect";
 async function loadGoogleStatus(){
-  const st=$("#gcalStatus"), btn=$("#gcalBtn"), box=$("#gcal");
+  const st=$("#gcalStatus"), btn=$("#gcalBtn"), box=$("#gcal"), ctx=$("#gcalCtx");
   try{
     const s=await api.googleStatus();
     box.classList.remove("gcal-warn");
+    // Forklaringsteksten er en verdi-pitch for å KOBLE TIL — vises kun når hen ikke er
+    // tilkoblet. Både scope-varsel og full tilkobling regnes som «tilkoblet» → skjult.
     if(s.connected&&s.scope_ok===false){
       /* Tilkoblet, men skriving når ikke fram. Teksten sier konsekvensen, ikke
          mekanismen — «mangler calendar.events» betyr ingenting for en barberer.
@@ -2913,14 +3009,17 @@ async function loadGoogleStatus(){
       st.textContent="Bookinger havner ikke i kalenderen din. Koble til på nytt.";
       box.classList.add("gcal-warn");
       btn.textContent="Koble til på nytt"; btn.classList.remove("connected");
+      if(ctx)ctx.style.display="none";
     }else if(s.connected){
       gcalAction="disconnect";
       st.textContent=s.google_email?"Tilkoblet: "+s.google_email:"Tilkoblet.";
       btn.textContent="Koble fra"; btn.classList.add("connected");
+      if(ctx)ctx.style.display="none";
     }else{
       gcalAction="connect";
       st.textContent="Ikke tilkoblet ennå.";
       btn.textContent="Koble til Google Calendar"; btn.classList.remove("connected");
+      if(ctx)ctx.style.display="";
     }
   }catch(e){ st.textContent="Kunne ikke sjekke status."; }
 }
@@ -3868,6 +3967,10 @@ $("#saveDesign").addEventListener("click",async function(){
 // ⚠ null !== 0. `typeof x === 'number'` slår sammen «ikke startet» og «utløpt» til samme
 // gren — to helt ulike tilstander (A mot C/D). Sjekk === null og === 0 hver for seg.
 var _billing=null;
+// Plan-navn + pris, ÉN kilde — delt av renderKonto (viser aktiv plan) og plan-velgeren
+// (visPlanVelger). NOK fordi /no/-fila; backend bør på sikt sende pris-strengen i status så
+// andre markeder/valutaer stemmer. Løftet fra lokal i renderKonto da velgeren også trengte den.
+const PLAN_INFO={basis:{navn:'Basis',pris:'249 kr'},vekst:{navn:'Vekst',pris:'399 kr'}};
 async function loadBilling(){
   const r=await apiFetch('/api/dashboard/billing/status');
   if(!r||!r.ok)return; // 401 → apiFetch redirigerte; annen feil → behold «henter …»-tekst, ingen krasj
@@ -3905,6 +4008,7 @@ function renderKonto(b){
   knapp.style.display='none';lenke.style.display='none';
   manage.style.display='none';av.style.display='none';
   tall.style.display='none';tallSub.style.display='none';mikro.style.display='none';
+  var pv=$("#planVelger"); if(pv)pv.style.display='none';   // vises kun av checkout-grenene
   _kontoAksjon=null;
 
   const sub   = String(b.subscription_status||'').toLowerCase();
@@ -3927,11 +4031,8 @@ function renderKonto(b){
   };
   const settMikro=t=>{mikro.textContent=t;mikro.style.display='';};
   const PRIS='249 kr', PRIS_SUFF='/ mnd';
-  // Plan-navn + pris per plan. En aktiv abonnent skal se SIN plan og SIN pris, ikke hardkodet
-  // 249. b.plan er rå kolonne fra /billing/status (basis|vekst|null). NOK-priser fordi dette er
-  // /no/-fila — samme valuta-begrensning som PRIS alltid har hatt (backend bør på sikt sende
-  // pris-strengen i status så andre markeder/valutaer stemmer).
-  const PLAN_INFO={basis:{navn:'Basis',pris:'249 kr'},vekst:{navn:'Vekst',pris:'399 kr'}};
+  // PLAN_INFO er løftet til modul-scope (over loadBilling) — plan-velgeren bruker den også.
+  // En aktiv abonnent skal se SIN plan og SIN pris (b.plan: basis|vekst|null), ikke hardkodet 249.
 
   // attention_grunn er serverens PRIORITERTE signal (past_due > nedtatt > myk > slutter).
   // Vi rangerer ikke på nytt — to implementasjoner av samme prioritet driver fra hverandre.
@@ -3942,19 +4043,19 @@ function renderKonto(b){
     settKnapp('Oppdater kort','portal');
   }else if(grunn==='trial_utlopt_nedtatt'){                                  // D
     status.className='substatus bad';status.innerHTML='&#9679; Siden din er ikke synlig';
-    settTall(PRIS,PRIS_SUFF);
     tekst.textContent='Legg inn kort for å publisere igjen.';
-    settKnapp('Legg inn kort','checkout');   // haster → hvit knapp
+    visPlanVelger();    // velgeren eier prisen — ingen settTall her
+    settKnapp('Fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout');   // haster → hvit knapp
   }else if(grunn==='trial_utlopt'||b.myk_periode){                           // C
     // != null, ikke truthy: se null-konvensjonen over. Mangler feltet (eldre backend) eller
     // er fristen passert, faller vi til «snart» — aldri til «om 0 dager».
     const n=b.nedtaking_dager_igjen;
     status.className='substatus bad';status.innerHTML='&#9679; Prøveperioden er over';
-    settTall(PRIS,PRIS_SUFF);
     tekst.textContent=n!=null
       ? 'Siden din tas ned om '+_dager(n)+' hvis du ikke legger inn kort.'
       : 'Siden din tas ned snart hvis du ikke legger inn kort.';
-    settKnapp('Legg inn kort','checkout');   // haster → hvit knapp
+    visPlanVelger();    // velgeren eier prisen — ingen settTall her
+    settKnapp('Fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout');   // haster → hvit knapp
   }else if(sub==='active'||sub==='trialing'){                                // F
     // trialing er IKKE i spec-lista, men er en ekte tilstand: kortet ER lagt inn og Stripe
     // kjører sin egen trial. Uten denne grenen ville han falt ned på `igjen>0` og fått
@@ -3971,19 +4072,24 @@ function renderKonto(b){
     manage.style.display='';
   }else if(sub==='canceled'||sub==='unpaid'){                                // (utenfor spec)
     status.className='substatus bad';status.innerHTML='&#9679; Abonnementet er avsluttet';
-    settTall(PRIS,PRIS_SUFF);
-    tekst.textContent='Legg inn kort for å ta siden i bruk igjen.';
-    settKnapp('Legg inn kort','checkout');
+    // Siden tas ned (webhooken setter forhandsvist ved canceled/unpaid). Adresse + «Kopier
+    // lenke» + «Avpubliser» skjules under — de gir ingen mening når sida er på vei ned; veien
+    // tilbake er plan-velgeren + «Legg inn kort».
+    tekst.textContent='Siden din tas ned. Legg inn kort for å ta den i bruk igjen.';
+    visPlanVelger();    // velgeren eier prisen — ingen settTall her
+    settKnapp('Fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout');
   }else if(typeof igjen==='number'&&igjen>0){                                // B
-    // Hovedtallet er DAGENE, ikke prisen. Prisen flytter til mikroteksten.
+    // Hovedtallet er DAGENE (prøven løper ennå). Prisen bor nå i plan-velgeren, ikke i
+    // mikroteksten — mikroen sier hva velgeren er til for, uten å gjenta et enkelt-tall.
     status.className='substatus mut';status.innerHTML='&#9679; Prøveperiode';
     settTall(_dager(igjen),'igjen','av prøveperioden');
     tekst.textContent='Legg inn kort før prøveperioden er slutt for å fortsette.';
-    settMikro('249 kr/mnd etter prøveperioden. Ingen binding.');
+    visPlanVelger();
+    settMikro('Ingen binding.');
     // Vekten følger hastverket: over en uke igjen er dette en påminnelse, ikke et krav.
     // VARSEL_DAGER=7 i backend (trial.js) er samme grense som utløser attention_grunn
     // 'trial_slutter' — den kommer vi aldri hit med, men tallet skal være det samme.
-    settKnapp('Legg inn kort','checkout', igjen<=7);
+    settKnapp('Fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout', igjen<=7);
   }else if(igjen===null&&b.page_status==='forhandsvist'){                     // A
     // INGEN hovedtall. 249 kr er ikke det barbereren lurer på før han har publisert —
     // han har ikke tatt noe i bruk ennå. Prisen står i mikroteksten under knappen.
@@ -4002,7 +4108,9 @@ function renderKonto(b){
   }
 
   // Avpubliser: tekstlenke i ALLE tilstander der siden faktisk står live. Aldri en knapp.
-  if(live)av.style.display='';
+  // Unntak: oppsagt/ubetalt — sida er på vei ned, og «Avpubliser» ville tilbudt å ta ned noe
+  // som allerede tas ned. Kortet sier nedtaking; veien tilbake er «Legg inn kort».
+  if(live&&sub!=='canceled'&&sub!=='unpaid')av.style.display='';
   // Adressen: egen funksjon, kalt UTENFOR if/else-kjeden over. Se settLenkeblokk.
   settLenkeblokk(b);
   // Prikkene følger needs_attention fra serveren — ALDRI «har besøkt fanen». Blir feltet
@@ -4033,6 +4141,11 @@ function renderKonto(b){
 function settLenkeblokk(b){
   const boks=$("#pubLink"); if(!boks)return;
   boks.textContent=''; boks.style.display='none';   // full nullstilling: ingen rester fra forrige tilstand
+  // Oppsagt/ubetalt: sida tas ned, så adresse + «Kopier lenke» skjules helt — å dele en lenke
+  // som snart slutter å ta imot bookinger er verre enn ingen lenke. Sjekkes FØR page_status,
+  // fordi status ofte fortsatt er 'live' i det vinduet før webhooken/sweepen tar den ned.
+  const oppsagt=/^(canceled|unpaid)$/.test(String(b.subscription_status||'').toLowerCase());
+  if(oppsagt)return;
   const slug=CONFIG.BARBER_SLUG;
   // Uten slug fra /profile gjetter vi ALDRI en adresse. Lander den etter dette kallet,
   // tegner loadProfil blokka på nytt (den re-renderen er ikke betinget av live).
@@ -4043,30 +4156,34 @@ function settLenkeblokk(b){
   const forhandsvist=(st==='forhandsvist'&&!nedtatt);
   if(st!=='live'&&!forhandsvist)return;             // draft / avslag / nedtatt / ukjent
 
-  // HELE https://…, ikke bare sluggen: lenka limes inn i Instagram-bio og SMS, og de
-  // autolinker ikke uten protokoll. Samme streng vises og kopieres — én kilde.
+  // url = HELE https://… — det som KOPIERES og det <a href> peker på. visUrl = uten protokoll,
+  // KUN visningstekst («trybarberhq.com/grand-barber»). To ulike verdier, ikke én kilde lenger:
+  // vises kort og pent, men limes inn komplett (Instagram-bio/SMS autolinker ikke uten https).
   const url=CONFIG.SITE_BASE+'/'+slug;
-
-  const rad=document.createElement('div');
-  rad.className='pub-url-row';
-  const a=document.createElement('a');
-  a.href=url; a.target='_blank'; a.rel='noopener';
-  a.textContent = st==='live' ? url : 'Se forhåndsvisning';
-  rad.appendChild(a);
+  const visUrl=CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+slug;
 
   if(st==='live'){
-    // .btn-outline, ikke .btn: i tilstand B står «Legg inn kort» som hovedknapp rett over,
-    // og to fylte knapper i samme kort konkurrerer om det samme trykket.
+    // Ett dempet felt: lenketekst (klikkbar, ny fane) + kopi-ikonknapp helt til høyre.
+    const felt=document.createElement('div');
+    felt.className='pub-field';
+    const a=document.createElement('a');
+    a.href=url; a.target='_blank'; a.rel='noopener';
+    a.className='pub-url';
+    a.dataset.full=visUrl;       // full visningsstreng — midtForkort leser den ved hver måling
+    a.title=url;                 // hele https-URL-en i tooltip når teksten er forkortet
+    settLenketekst(a);           // midt-ellipse + ResizeObserver (virker skjult→synlig + resize)
     const knapp=document.createElement('button');
-    knapp.type='button';
-    knapp.className='btn-outline';
-    knapp.textContent='Kopier lenke';
-    knapp.addEventListener('click',function(){kopierLenke(knapp,url,a);});
-    rad.appendChild(knapp);
-  }
-  boks.appendChild(rad);
-
-  if(forhandsvist){
+    knapp.type='button'; knapp.className='pub-copy';
+    knapp.setAttribute('aria-label','Kopier lenke');
+    knapp.innerHTML=IKON_KOPI;
+    knapp.addEventListener('click',function(){kopierLenke(knapp,url);});
+    felt.appendChild(a); felt.appendChild(knapp);
+    boks.appendChild(felt);
+  }else{ // forhandsvist: forhåndsvisnings-lenke + note, ingen kopi (sida er ikke live ennå)
+    const a=document.createElement('a');
+    a.href=url; a.target='_blank'; a.rel='noopener';
+    a.textContent='Se forhåndsvisning';
+    boks.appendChild(a);
     const note=document.createElement('p');
     note.className='pub-note';
     note.textContent='Siden kan ses, men tar ikke imot bookinger før du publiserer.';
@@ -4075,29 +4192,56 @@ function settLenkeblokk(b){
   boks.style.display='';
 }
 
-// Kvittering i knappen selv, ikke alert(): en modal for en vellykket kopiering krever et
-// klikk til for noe som allerede gikk bra.
-// navigator.clipboard finnes ikke i usikker kontekst og kan avvises av brukeren — da er
-// stille feil det verste utfallet, for han tror lenka ligger på utklippstavla. Vi markerer
-// URL-teksten i stedet, så et vanlig Ctrl+C / «Kopier» tar den, og sier at han må gjøre det.
-function kopierLenke(knapp,url,urlEl){
-  const tilbake=function(){
+// Midt-ellipse som holder DOMENET intakt og korter bare SLUGGEN fra midten:
+// «trybarberhq.com/oslo-…studio». Domenet er likt for alle og skal ikke kuttes stygt
+// («trybarberh…»); sluggen er identifikatoren, så begge ender av DEN skal vises. Måler i
+// piksler mot feltets faktiske bredde. href/dataset.full røres ALDRI — kun visningsteksten.
+// CSS-ellipsen er sikkerhetsnett om selv domenet + minste slug er for bredt (veldig smal skjerm).
+function midtForkort(a){
+  var full=a.dataset.full||''; a.textContent=full;
+  if(!a.clientWidth) return;                 // skjult (fane ikke åpen) → RO måler på nytt når synlig
+  if(a.scrollWidth<=a.clientWidth) return;   // får plass — ingen forkorting
+  var i=full.indexOf('/');
+  var pre = i>=0 ? full.slice(0,i+1) : '';   // «trybarberhq.com/» — beholdes alltid
+  var slug= i>=0 ? full.slice(i+1) : full;
+  for(var keep=slug.length-2; keep>=6; keep--){
+    var head=Math.ceil(keep/2), tail=keep-head;
+    a.textContent=pre+slug.slice(0,head)+'…'+slug.slice(slug.length-tail);
+    if(a.scrollWidth<=a.clientWidth) return;
+  }
+}
+// ResizeObserver, ikke ett engangs-kall: feltet kan være i en SKJULT fane når loadBilling
+// kjører (clientWidth=0), og bredden endres ved viewport-resize. RO fyrer i begge tilfeller.
+// Vår tekstendring rører scrollWidth, ikke clientWidth/border-box som RO ser → ingen løkke.
+function settLenketekst(a){
+  if(typeof ResizeObserver==='function'){ new ResizeObserver(function(){midtForkort(a);}).observe(a); }
+  midtForkort(a);
+}
+// Kopi-ikoner (feather-stil, som resten av dashbordet). Bytter kun innhold i knappen —
+// aria-label står fast, så skjermlesere sier «Kopier lenke» hele veien.
+var IKON_KOPI='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"/></svg>';
+var IKON_HAKE='<svg viewBox="0 0 24 24" width="16" height="16" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+// Fallback når clipboard-API mangler (usikker kontekst / avvist): skjult textarea + execCommand.
+// KOPIERER SAMME `text` (full https-URL) — aldri den forkortede visningsteksten.
+function kopierFallback(text){
+  try{
+    var ta=document.createElement('textarea');
+    ta.value=text; ta.style.position='fixed'; ta.style.top='-1000px'; ta.style.opacity='0';
+    document.body.appendChild(ta); ta.focus(); ta.select();
+    var ok=document.execCommand('copy'); document.body.removeChild(ta); return ok;
+  }catch(e){return false;}
+}
+// Kvittering i knappen selv, ikke alert()/toast: bytt ikonet til en hake i ~1,5 s, så tilbake.
+// url er ALLTID den fulle https-URL-en (fra settLenkeblokk), både i clipboard og fallback.
+function kopierLenke(knapp,url){
+  const kvittering=function(){
+    knapp.classList.add('ok'); knapp.innerHTML=IKON_HAKE;
     clearTimeout(knapp._kopiT);
-    knapp._kopiT=setTimeout(function(){knapp.textContent='Kopier lenke';},2000);
+    knapp._kopiT=setTimeout(function(){knapp.innerHTML=IKON_KOPI;knapp.classList.remove('ok');},1500);
   };
-  const merk=function(){
-    knapp.textContent='Merket — kopier selv';
-    try{
-      const r=document.createRange(); r.selectNodeContents(urlEl);
-      const s=window.getSelection(); s.removeAllRanges(); s.addRange(r);
-    }catch(e){}
-    tilbake();
-  };
-  if(!navigator.clipboard||!navigator.clipboard.writeText){merk();return;}
-  navigator.clipboard.writeText(url).then(function(){
-    knapp.textContent='Kopiert';
-    tilbake();
-  },merk);
+  if(navigator.clipboard&&navigator.clipboard.writeText){
+    navigator.clipboard.writeText(url).then(kvittering,function(){ if(kopierFallback(url))kvittering(); });
+  }else{ if(kopierFallback(url))kvittering(); }
 }
 
 /* ---- Publisering (page_status) ---- */
@@ -4180,18 +4324,56 @@ $("#pubErr").addEventListener("click",function(e){
   else if(b.dataset.pubAct==='kort'){startCheckout(b);}
 });
 
-// POST /billing/checkout → {url}. Setter IKKE siden live — publisering er en egen handling,
-// og etter omleggingen er det publisering som STARTER prøveperioden, ikke denne.
-// Backend velger selv trial-parametrene (checkoutTrialParams): har barbereren allerede en
-// løpende lokal trial, sendes trial_end = hans EGEN sluttdato, så han beholder dagene sine.
-// Derfor sender vi ingenting — knappen betyr «legg inn kort», ikke «start prøveperiode».
+// ── Plan-velger (checkout): Basis/Vekst-valg som mater startCheckout ──
+// _valgtPlan er modultilstand som _kontoAksjon: knappen (og pubErr-stien) leser den, ingen arg
+// threades gjennom. Forhåndsvalgt 'vekst' — prøven kjører på Vekst, nivået barbereren har hatt
+// gratis. Verdiene er ALLTID små bokstaver; backend (PLANER = {basis,vekst}) avviser 'Vekst'
+// med 400 uten å normalisere.
+var _valgtPlan='vekst';
+function velgPlan(plan){
+  _valgtPlan=(plan==='basis')?'basis':'vekst';   // alt annet faller til vekst; aldri stor forbokstav
+  document.querySelectorAll('#planVelger .plan-opt').forEach(function(b){
+    b.setAttribute('aria-checked', b.dataset.plan===_valgtPlan ? 'true':'false');
+  });
+  // CTA-en speiler valget: «Fortsett med Vekst/Basis». Kun i checkout-tilstand — ellers
+  // eier den gjeldende grenen (publiser/portal) knappeteksten, og vi skal ikke røre den.
+  if(_kontoAksjon==='checkout'){
+    var k=$("#kontoAksjon"); if(k)k.textContent='Fortsett med '+PLAN_INFO[_valgtPlan].navn;
+  }
+}
+// Priser fylles fra PLAN_INFO — aldri hardkodet i markup, så 249/399 har ÉN kilde. Pillen på
+// Vekst er statisk i markup (lik i alle tilstander), så visning tar ingen parametre lenger.
+function visPlanVelger(){
+  var v=$("#planVelger"); if(!v)return;
+  v.querySelector('[data-plan-pris="basis"]').textContent=PLAN_INFO.basis.pris+' / mnd';
+  v.querySelector('[data-plan-pris="vekst"]').textContent=PLAN_INFO.vekst.pris+' / mnd';
+  velgPlan(_valgtPlan);   // gjenopprett aria-checked etter forrige valg
+  v.style.display='';
+}
+// Hover (desktop) OG tap/klikk (mobil) velger kortet. mouseenter er mus-only, så tap på
+// touch går kun via click — ingen dobbelt-fyring. Valget REVERTERER ikke på mouseleave:
+// ett kort er alltid valgt.
+document.querySelectorAll('#planVelger .plan-opt').forEach(function(b){
+  var velg=function(){ if(IS_DEMO)return; velgPlan(b.dataset.plan); };
+  b.addEventListener('click',velg);
+  b.addEventListener('mouseenter',velg);
+});
+
+// POST /billing/checkout {plan:'basis'|'vekst'} → {url}. plan er ALLTID små bokstaver —
+// backend (dashboard.js: PLANER.has(plan)) avviser 'Vekst' med 400. Verdien er barberens valg
+// i plan-velgeren (_valgtPlan), forhåndsvalgt Vekst. Setter IKKE siden live — publisering er en
+// egen handling som STARTER prøveperioden. Backend velger selv trial-parametrene
+// (checkoutTrialParams): løper en lokal trial, sendes trial_end = hans EGEN sluttdato, så han
+// beholder dagene sine uansett hvilket nivå han velger her.
 async function startCheckout(btn){
   if(btn)btn.disabled=true;
   const frigi=()=>{if(btn)btn.disabled=false;};
   try{
-    const r=await apiFetch('/api/dashboard/billing/checkout',{method:'POST',body:'{}'});
+    const r=await apiFetch('/api/dashboard/billing/checkout',
+      {method:'POST',body:JSON.stringify({plan:String(_valgtPlan).toLowerCase()})});
     if(!r)return; // 401 redirigert
     const d=await r.json().catch(()=>({}));
+    // 400 (ugyldig plan e.l.): backendens feiltekst vises slik den er, uten omskriving.
     if(!r.ok){alert(d.error||'Kunne ikke starte betaling. Prøv igjen.');frigi();return;}
     if(d&&d.url){window.location.href=d.url;} // Stripe Checkout
     else{alert('Kunne ikke starte betaling. Prøv igjen.');frigi();}
