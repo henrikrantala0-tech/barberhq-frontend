@@ -654,9 +654,12 @@ Fortsatt åpent:
    — «Siste uke / Siste 2 uker» på første linje, «Denne måneden» alene under. Skyldes
    `.segs{flex-wrap:wrap}`, som er DELT CSS mellom Oversiktens `#segs` og Vekstens `#attrPeriod`,
    så en fiks treffer begge flater samtidig. Derfor ikke tatt som del av Vekst-arbeidet.
-7. **Salgsflatene kjenner ikke to prisnivåer ennå (kartlagt 13.08).** `priser.html` skiller Basis
-   fra Vekst. `site/no/index.html` er ryddet (se under); dashbordet gjenstår og henger på
-   Stripe + gating — rekkefølgen er Stripe-priser → gating → dashboard-teksten.
+7. **Salgsflatene kjenner to prisnivåer (oppdatert 25.08).** `priser.html` er FERDIG: to kort
+   (Basis/Vekst), 249/399, «Prisen er prisen»-blokk (l.199), anker-linja «Mindre enn én klipp i
+   måneden.» (l.161), «ALLE STARTER HER»-pill på Vekst (l.182). `site/no/index.html` er ryddet (se
+   under). **Dashbordets konverteringsflyt er nå bygget** (se sub-punktet under) — verken priser.html
+   eller dashbordet står lenger som gjenstående. Rekkefølgen var Stripe-priser → gating →
+   dashboard-teksten; alle tre er på plass.
    - **Rebooking og verving: UT 12.08 (`8c41945`), INN IGJEN 13.08 (`9de6c17`).** De ble fjernet
      fordi de er Vekst-eksklusive og seksjonen var nivå-nøytral — et løfte til Basis-kunder om
      noe de ikke får. Henrik tok dem inn igjen dagen etter, med begrunnelsen at Vekst er ankeret
@@ -673,14 +676,18 @@ Fortsatt åpent:
      prisen kan stå fast. **Ikke skriv den tilbake til et merkevare-argument** — målgruppa booker
      i DM og har ingen merkevare å beskytte ennå. Rammen som gjelder for denne seksjonen: ingen
      navngitte konkurrenter, ingen tall, ingen prosentsatser, ingen «flere kunder»-språk.
-   - **`site/no/dashboard.html` har flat 249 hardkodet tre steder** (linjenr. per 13.08, ankere er
-     det som gjelder): `const PRIS='249 kr', PRIS_SUFF='/ mnd';` (3284),
-     `settMikro('249 kr/mnd etter prøveperioden. Ingen binding.')` (3328), og
-     `settMikro('Gratis i 30 dager, ingen kort. Deretter 249 kr/mnd — si opp når som helst.')`
-     (3342). 399 finnes ikke i fila i det hele tatt. `PRIS` er én konstant, ikke tilstandsavhengig
-     av nivå — **må bli nivå-avhengig når gating bygges.** Dashbordet er dessuten stedet barbereren
-     faktisk «velger nivå ved prøveslutt» (`priser.html` l.203), så det er den flata som først blir
-     selvmotsigende.
+   - **`site/no/dashboard.html`: konverteringsflyten er BYGGET (25.08).** Ikke lenger flat 249
+     hardkodet — pris utledes fra `PLAN_INFO[b.plan]` (249/399, fail-closed: ukjent/null plan → INGEN
+     pris, aldri gjettet 249). Konto har en **plan-velger** (`.plan-velg`/`#planVelger`, `data-plan`
+     basis/vekst, vises kun i checkout-tilstander), med pill-teksten **«Én kunde dekker måneden»** på
+     Vekst-kortet (l.1527) — IKKE «Anbefalt». `startCheckout` sender nå `{plan}` (ALLTID lowercase;
+     backend `PLANER.has(plan)` avviser 'Vekst'/tom body med 400 — test-verifisert ende-til-ende i
+     barberhq-backend 25.08). Committet og pushet til origin/main (`364e2c5`), deployet via Netlify,
+     verifisert mot prod.
+   - **KJENT GJELD: `effective_plan` / `effective_plan_grunn` leses INGEN steder i frontend.** Backend
+     sender begge i `GET /api/dashboard/billing/status` («i prøveperiode» vs «Vekst-abonnement» er to
+     UI-tilstander med samme plan-verdi), men Konto utleder ikke forskjellen ennå. Feltene ligger klare
+     den dagen tilstands-teksten skal skille dem.
 
 ### Medium
 4. **Vekstfeatures (backend):** rebooking, verving, vinn-tilbake auto-SMS. Deretter landingsside-
