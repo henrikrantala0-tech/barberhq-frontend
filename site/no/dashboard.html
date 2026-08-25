@@ -4047,15 +4047,17 @@ function renderKonto(b){
     if(under){tallSub.textContent=under;tallSub.style.display='';}
   };
   const settMikro=t=>{mikro.textContent=t;mikro.style.display='';};
-  const PRIS='249 kr', PRIS_SUFF='/ mnd';
-  // PLAN_INFO er løftet til modul-scope (over loadBilling) — plan-velgeren bruker den også.
-  // En aktiv abonnent skal se SIN plan og SIN pris (b.plan: basis|vekst|null), ikke hardkodet 249.
+  const PRIS_SUFF='/ mnd';
+  // Pris utledes ALLTID fra planen som gjelder (b.plan via PLAN_INFO) — ingen prisstreng utenfor
+  // PLAN_INFO. Ukjent plan i en gren (b.plan null/uventet) → vis INGEN pris (fail-closed), aldri
+  // en gjettet 249. PLAN_INFO er modul-scope (over loadBilling); plan-velgeren bruker den også.
+  const pinfo=PLAN_INFO[b.plan]||null;   // b.plan: basis|vekst|null → {navn,pris} | null
 
   // attention_grunn er serverens PRIORITERTE signal (past_due > nedtatt > myk > slutter).
   // Vi rangerer ikke på nytt — to implementasjoner av samme prioritet driver fra hverandre.
   if(grunn==='past_due'){                                                    // E
     status.className='substatus bad';status.innerHTML='&#9679; Betalingen gikk ikke gjennom';
-    settTall(PRIS,PRIS_SUFF);
+    if(pinfo)settTall(pinfo.pris,PRIS_SUFF);   // ukjent plan → ingen pris; teksten under bærer beskjeden
     tekst.textContent='Vi fikk ikke trukket kortet ditt. Oppdater det for å beholde siden.';
     settKnapp('Oppdater kort','portal');
   }else if(grunn==='trial_utlopt_nedtatt'){                                  // D
@@ -4077,9 +4079,8 @@ function renderKonto(b){
     // trialing er IKKE i spec-lista, men er en ekte tilstand: kortet ER lagt inn og Stripe
     // kjører sin egen trial. Uten denne grenen ville han falt ned på `igjen>0` og fått
     // «Legg inn kort» med kortet allerede inne.
-    const pinfo=PLAN_INFO[b.plan]||null;   // b.plan: basis|vekst|null
     status.innerHTML='&#9679; '+(pinfo?pinfo.navn+'-abonnementet':'Abonnementet')+' er aktivt';
-    settTall(pinfo?pinfo.pris:PRIS,PRIS_SUFF);
+    if(pinfo)settTall(pinfo.pris,PRIS_SUFF);   // ukjent plan → ingen pris (fail-closed)
     tekst.textContent=sub==='trialing'
       ? 'Kortet er lagt inn. Første trekk skjer når prøveperioden er over. Ingen binding.'
       : 'Alt inkludert. Ingen binding — du kan si opp når som helst.';
@@ -4108,15 +4109,15 @@ function renderKonto(b){
     // 'trial_slutter' — den kommer vi aldri hit med, men tallet skal være det samme.
     settKnapp('Fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout', igjen<=7);
   }else if(igjen===null&&b.page_status==='forhandsvist'){                     // A
-    // INGEN hovedtall. 249 kr er ikke det barbereren lurer på før han har publisert —
-    // han har ikke tatt noe i bruk ennå. Prisen står i mikroteksten under knappen.
+    // INGEN hovedtall. Prisen er ikke det barbereren lurer på før han har publisert — han har
+    // ikke tatt noe i bruk ennå. Vekst-prisen (prøven kjører på Vekst) står i mikroteksten under.
     status.className='substatus mut';status.innerHTML='&#9679; Ikke publisert';
     // Teksten over knappen sier KONSEKVENSEN (ingen kan booke), ikke vilkårene. Vilkårene
     // står i mikroteksten under. Sto tidligere «… Du får 30 dager gratis — ingen kort
     // nødvendig» begge steder; da leste kortet som om det var to ulike tilbud.
     tekst.textContent='Bookingsiden din er klar, men ingen kan booke ennå.';
     settKnapp('Publiser og start gratis prøveperiode','publiser');
-    settMikro('Gratis i 30 dager, ingen kort. Deretter 249 kr/mnd — si opp når som helst.');
+    settMikro('Gratis i 30 dager på Vekst, ingen kort. Ved prøveslutt velger du nivå — Vekst er '+PLAN_INFO.vekst.pris+'/mnd. Si opp når som helst.');
   }else{
     // draft / avslag / live-uten-trial_start_at (rader publisert før migrasjon 041).
     // Ingen handling vi kan tilby med sikkerhet — si det heller enn å gjette en knapp.
