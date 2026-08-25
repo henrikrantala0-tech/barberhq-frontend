@@ -4032,12 +4032,13 @@ function renderKonto(b){
   const grunn = b.attention_grunn||null;
   const igjen = b.trial_days_left;            // null | 0 | >0 — tre tilstander
   const live  = b.page_status==='live';
-  // tung=true → hvit knapp (.btn). tung=false → tekstlenke (.lnk-quiet). Samme tekst, samme
-  // handling — kun visuell vekt. Brukes til å la hastverket i tilstanden styre hvor mye
-  // plass handlingen tar: en barberer med 18 dager igjen skal ikke møte en rød-alarm-knapp.
-  const settKnapp=(etikett,aksjon,tung)=>{
+  // Hovedhandlingen er ALLTID designsystemets primærknapp (.btn) — samme visuelle vekt i alle
+  // tilstander. Checkout i tilstand B ble tidligere degradert til .lnk-quiet ved >7 dager igjen;
+  // det er fjernet: «Legg inn kort» skal være en tydelig primærhandling uansett hvor mye tid
+  // barbereren har igjen. Sekundærhandlinger (#manageSub/#unpublish) er egne .lnk-quiet-noder.
+  const settKnapp=(etikett,aksjon)=>{
     knapp.textContent=etikett;
-    knapp.className=(tung===false)?'lnk-quiet':'btn';
+    knapp.className='btn';
     knapp.style.display='';
     _kontoAksjon=aksjon;
   };
@@ -4104,10 +4105,10 @@ function renderKonto(b){
     tekst.textContent='Legg inn kort før prøveperioden er slutt for å fortsette.';
     visPlanVelger();
     settMikro('Ingen binding.');
-    // Vekten følger hastverket: over en uke igjen er dette en påminnelse, ikke et krav.
-    // VARSEL_DAGER=7 i backend (trial.js) er samme grense som utløser attention_grunn
-    // 'trial_slutter' — den kommer vi aldri hit med, men tallet skal være det samme.
-    settKnapp('Fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout', igjen<=7);
+    // Primærknapp i alle checkout-tilstander (ikke lenger degradert til tekstlenke ved >7 dager).
+    // Teksten leder med selve handlingen — «Legg inn kort» — og speiler valgt nivå fra
+    // plan-velgeren (PLAN_INFO[_valgtPlan].navn). Canceled/unpaid beholder «Fortsett med X».
+    settKnapp('Legg inn kort — fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout');
   }else if(igjen===null&&b.page_status==='forhandsvist'){                     // A
     // INGEN hovedtall. Prisen er ikke det barbereren lurer på før han har publisert — han har
     // ikke tatt noe i bruk ennå. Vekst-prisen (prøven kjører på Vekst) står i mikroteksten under.
