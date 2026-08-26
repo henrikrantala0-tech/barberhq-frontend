@@ -314,6 +314,15 @@
   .preset[aria-pressed=true]{border-color:var(--info)}
   .preset .pt{font-size:13px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
   .preset .pd{font-size:11.5px;color:var(--mut);margin-top:2px}
+  /* Publiser-CTA på «Din side» — vises kun i forhandsvist. */
+  .dinside-cta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;background:var(--surface);border:1px solid var(--info);border-radius:12px;padding:15px 17px;margin:0 0 22px}
+  .dinside-cta-tekst{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 220px}
+  .dinside-cta-tekst strong{font-size:14px;font-weight:700;color:var(--ink)}
+  .dinside-cta-tekst span{font-size:12.5px;color:var(--mut);line-height:1.45}
+  .dinside-cta-handling{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:0 0 auto}
+  .dinside-cta-handling .btn{white-space:nowrap}
+  .dinside-cta-note{font-size:11.5px;color:var(--mut);line-height:1.4;text-align:right}
+  @media(max-width:520px){.dinside-cta-handling{align-items:stretch;flex:1 1 100%}.dinside-cta-handling .btn{justify-content:center}.dinside-cta-note{text-align:center}}
   /* Miniatyr inne i et .preset-kort: temaets bakgrunn med «Aa» i temaets tekstfarge.
      Intern i .preset, som .swatches — ikke en ny komponent. */
   .theme-mini{display:flex;align-items:center;justify-content:center;height:62px;border-radius:7px;
@@ -1357,6 +1366,20 @@
   <section class="panel" id="design">
     <p class="panel-h">Din side</p>
     <p class="block-s">Alt som former bookingsiden din. Endringer vises i forhåndsvisningen.</p>
+    <!-- Publiser-CTA: KUN i forhandsvist (styres av renderDinsideCta via _billing.page_status).
+         Gjenbruker settSideStatus('live') — samme dispatch som Konto-knappens _kontoAksjon==='publiser'.
+         Konto-knappen er urørt. -->
+    <div class="dinside-cta" id="dinsideCta" hidden>
+      <div class="dinside-cta-tekst">
+        <strong>Siden din er ikke publisert ennå</strong>
+      </div>
+      <!-- «Publiser siden» (ikke Konto-kortets «… start gratis prøveperiode») — på «Din side»
+           ser han siden sin, ikke abonnementet. Trial-vilkåret står som dempet note under. -->
+      <div class="dinside-cta-handling">
+        <button class="btn" id="dinsidePubliser">Publiser siden</button>
+        <span class="dinside-cta-note">Prøveperioden på 30 dager starter når du publiserer.</span>
+      </div>
+    </div>
     <div class="side-wrap">
       <!-- data-single: ETT trekkspill åpent om gangen. Markøren er på lista, ikke global —
            Vekst-fanens .acc-list er umerket og beholder flere åpne samtidig. -->
@@ -4167,6 +4190,15 @@ function renderKonto(b){
   if(dot)dot.hidden=!b.needs_attention;
   const accDot=$("#kontoAccDot"); if(accDot)accDot.hidden=!b.needs_attention;
   oppdaterMerPrikk(); // Konto ligger bak «Mer» på mobil — toggelen må speile prikken
+  renderDinsideCta(b); // publiser-CTA på «Din side» følger page_status — forsvinner ved publisering
+}
+// Publiser-CTA på «Din side»: synlig KUN i forhandsvist. Kalles fra renderKonto (hver
+// billing-lasting), så et vellykket publiser → loadBilling → page_status='live' skjuler den
+// uten reload. Egen node fra Konto-knappen; deler bare settSideStatus-dispatchen.
+function renderDinsideCta(b){
+  b=b||_billing||{};
+  var cta=$("#dinsideCta"); if(!cta)return;
+  cta.hidden = b.page_status!=='forhandsvist';
 }
 
 // Lenke-blokka styres av page_status ALENE, og ligger derfor utenfor if/else-kjeden i
@@ -4358,6 +4390,12 @@ $("#kontoAksjon").addEventListener("click",function(){
   else if(_kontoAksjon==='checkout') startCheckout(this);
   else if(_kontoAksjon==='portal')   aapnePortal();
 });
+// «Din side»-CTA-en: samme publiser-dispatch som Konto-knappen over (_kontoAksjon==='publiser').
+// Ingen egen state-maskin; settSideStatus håndterer knappe-disabling og re-synk selv.
+$("#dinsidePubliser").addEventListener("click",function(){
+  if(IS_DEMO)return;
+  settSideStatus('live',this);
+});
 $("#manageSub").addEventListener("click",function(){ if(IS_DEMO)return; aapnePortal(); });
 $("#unpublish").addEventListener("click",function(){
   if(IS_DEMO)return;
@@ -4454,7 +4492,7 @@ function applyDemoMode(){
    'slotPopupFjern','slotPopupEndre','gcalBtn',
    'fbSend-side','fbSend-konto-ide','fbSend-konto-support',  // tre bokser, én handler
    // Konto: én hovedknapp + tekstlenker (startSub/goLive er slått sammen til kontoAksjon)
-   'kontoAksjon','manageSub','unpublish','savePw','loggUt'].forEach(function(id){
+   'kontoAksjon','dinsidePubliser','manageSub','unpublish','savePw','loggUt'].forEach(function(id){
     var el=document.getElementById(id);
     if(el){el.disabled=true;el.title='Ikke tilgjengelig i forhåndsvisning';}
   });
