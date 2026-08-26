@@ -316,6 +316,9 @@
   .preset .pd{font-size:11.5px;color:var(--mut);margin-top:2px}
   /* Publiser-CTA på «Din side» — vises kun i forhandsvist. */
   .dinside-cta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;background:var(--surface);border:1px solid var(--info);border-radius:12px;padding:15px 17px;margin:0 0 22px}
+  /* ⚠ display:flex over slår UA-ens [hidden]{display:none} — uten denne skjuler cta.hidden=true
+     ALDRI CTA-en visuelt (den ble stående i live-tilstand). Gjelder også .dinside-live for symmetri. */
+  .dinside-cta[hidden],.dinside-live[hidden]{display:none}
   .dinside-cta-tekst{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 220px}
   .dinside-cta-tekst strong{font-size:14px;font-weight:700;color:var(--ink)}
   .dinside-cta-tekst span{font-size:12.5px;color:var(--mut);line-height:1.45}
@@ -323,6 +326,11 @@
   .dinside-cta-handling .btn{white-space:nowrap}
   .dinside-cta-note{font-size:11.5px;color:var(--mut);line-height:1.4;text-align:right}
   @media(max-width:520px){.dinside-cta-handling{align-items:stretch;flex:1 1 100%}.dinside-cta-handling .btn{justify-content:center}.dinside-cta-note{text-align:center}}
+  /* Live-tilstand på «Din side» (page_status==='live'): grønn statuslinje + kopierbar lenke
+     (feltet bygges av JS via byggKopierbartLenkefelt — .pub-field/.pub-copy fra lenkeblokka). */
+  .dinside-live{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px 17px;margin:0 0 22px}
+  .dinside-live-status{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px}
+  .dinside-live-status .live-dot{width:9px;height:9px;border-radius:50%;background:var(--good);flex:0 0 auto}
   /* Miniatyr inne i et .preset-kort: temaets bakgrunn med «Aa» i temaets tekstfarge.
      Intern i .preset, som .swatches — ikke en ny komponent. */
   .theme-mini{display:flex;align-items:center;justify-content:center;height:62px;border-radius:7px;
@@ -1391,6 +1399,12 @@
         <button class="btn" id="dinsidePubliser">Publiser siden</button>
         <span class="dinside-cta-note">Prøveperioden på 30 dager starter når du publiserer.</span>
       </div>
+    </div>
+    <!-- Live-tilstand: erstatter CTA-en når page_status==='live'. Grønn statuslinje + kopierbar
+         lenke — gjenbruker .pub-field/.pub-copy/kopierLenke fra Konto-lenkeblokka (settLenkeblokk). -->
+    <div class="dinside-live" id="dinsideLive" hidden>
+      <div class="dinside-live-status"><span class="live-dot"></span>Siden din er live</div>
+      <div id="dinsideLiveLenke"></div>
     </div>
     <div class="side-wrap">
       <!-- data-single: ETT trekkspill åpent om gangen. Markøren er på lista, ikke global —
@@ -4117,7 +4131,8 @@ var _billing=null;
 const PLAN_INFO={basis:{navn:'Basis',pris:'249 kr'},vekst:{navn:'Vekst',pris:'399 kr'}};
 async function loadBilling(){
   const r=await apiFetch('/api/dashboard/billing/status');
-  if(!r||!r.ok)return; // 401 → apiFetch redirigerte; annen feil → behold «henter …»-tekst, ingen krasj
+  if(!r)return; // 401 → apiFetch redirigerte (forventet, ikke logg)
+  if(!r.ok){ console.error('loadBilling: /billing/status svarte '+r.status); return; } // logg, ikke svelg
   _billing=await r.json();
   renderKonto(_billing);
   settRebookInfo(); // Vekst-ikonet henger på _billing — se kommentaren over funksjonen
@@ -4274,8 +4289,26 @@ function renderKonto(b){
 // uten reload. Egen node fra Konto-knappen; deler bare settSideStatus-dispatchen.
 function renderDinsideCta(b){
   b=b||_billing||{};
-  var cta=$("#dinsideCta"); if(!cta)return;
-  cta.hidden = b.page_status!=='forhandsvist';
+  var cta=$("#dinsideCta"), live=$("#dinsideLive");
+  if(!cta||!live)return;
+  var st=b.page_status;
+  if(st==='forhandsvist'){
+    cta.hidden=false; live.hidden=true;
+  }else if(st==='live'){
+    cta.hidden=true;
+    // Grønn statuslinje + kopierbar lenke. Uten slug ennå (CONFIG.BARBER_SLUG ikke landet):
+    // vis statuslinja, tøm feltet — loadProfil re-renderer renderKonto når sluggen kommer.
+    var boks=$("#dinsideLiveLenke");
+    if(boks){
+      if(CONFIG.BARBER_SLUG){
+        var slug=CONFIG.BARBER_SLUG;
+        byggKopierbartLenkefelt(boks, CONFIG.SITE_BASE+'/'+slug, CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+slug);
+      }else{ boks.textContent=''; }
+    }
+    live.hidden=false;
+  }else{ // draft / avslag / nedtatt / ukjent — ingen av dem
+    cta.hidden=true; live.hidden=true;
+  }
 }
 
 // Lenke-blokka styres av page_status ALENE, og ligger derfor utenfor if/else-kjeden i
@@ -4319,22 +4352,7 @@ function settLenkeblokk(b){
   const visUrl=CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+slug;
 
   if(st==='live'){
-    // Ett dempet felt: lenketekst (klikkbar, ny fane) + kopi-ikonknapp helt til høyre.
-    const felt=document.createElement('div');
-    felt.className='pub-field';
-    const a=document.createElement('a');
-    a.href=url; a.target='_blank'; a.rel='noopener';
-    a.className='pub-url';
-    a.dataset.full=visUrl;       // full visningsstreng — midtForkort leser den ved hver måling
-    a.title=url;                 // hele https-URL-en i tooltip når teksten er forkortet
-    settLenketekst(a);           // midt-ellipse + ResizeObserver (virker skjult→synlig + resize)
-    const knapp=document.createElement('button');
-    knapp.type='button'; knapp.className='pub-copy';
-    knapp.setAttribute('aria-label','Kopier lenke');
-    knapp.innerHTML=IKON_KOPI;
-    knapp.addEventListener('click',function(){kopierLenke(knapp,url);});
-    felt.appendChild(a); felt.appendChild(knapp);
-    boks.appendChild(felt);
+    byggKopierbartLenkefelt(boks,url,visUrl); // DELT med «Din side» live-tilstand (renderDinsideCta)
   }else{ // forhandsvist: forhåndsvisnings-lenke + note, ingen kopi (sida er ikke live ennå)
     const a=document.createElement('a');
     a.href=url; a.target='_blank'; a.rel='noopener';
@@ -4346,6 +4364,25 @@ function settLenkeblokk(b){
     boks.appendChild(note);
   }
   boks.style.display='';
+}
+
+// Bygger et kopierbart lenkefelt (URL-tekst + kopi-ikonknapp) i container — DELT mellom Konto-
+// lenkeblokka (settLenkeblokk) og «Din side» live-tilstand (renderDinsideCta). Gjenbruker
+// .pub-field/.pub-url/.pub-copy, settLenketekst (midt-ellipse) og kopierLenke.
+function byggKopierbartLenkefelt(container,url,visUrl){
+  container.textContent='';
+  var felt=document.createElement('div'); felt.className='pub-field';
+  var a=document.createElement('a');
+  a.href=url; a.target='_blank'; a.rel='noopener'; a.className='pub-url';
+  a.dataset.full=visUrl; a.title=url;
+  settLenketekst(a);
+  var knapp=document.createElement('button');
+  knapp.type='button'; knapp.className='pub-copy';
+  knapp.setAttribute('aria-label','Kopier lenke');
+  knapp.innerHTML=IKON_KOPI;
+  knapp.addEventListener('click',function(){kopierLenke(knapp,url);});
+  felt.appendChild(a); felt.appendChild(knapp);
+  container.appendChild(felt);
 }
 
 // Midt-ellipse som holder DOMENET intakt og korter bare SLUGGEN fra midten:
@@ -4447,10 +4484,18 @@ async function settSideStatus(nyStatus,btn){
   if(!r)return; // 401 → apiFetch har allerede sendt til login
   const d=await r.json().catch(function(){return{};});
   if(r.ok){
-    // PUT /page-status skriver også trial_start_at ved publisering (COALESCE — settes én
-    // gang, aldri restartet) og returnerer den. Vi tar imot begge feltene i stedet for å
-    // hente hele statusen på nytt: da vet kortet umiddelbart at prøveperioden har startet.
-    await loadBilling();
+    // ROT-ÅRSAK-FIKS: oppdater tilstanden DIREKTE fra skrive-responsen (autoritativ) —
+    // page_status + trial_start_at kommer i PUT-svaret (COALESCE — trial_start_at settes én gang,
+    // aldri restartet). Vi RE-FETCHER IKKE /billing/status her: i read-after-write-vinduet kan det
+    // svare utdatert 'forhandsvist' og REVERTERE CTA-en vi nettopp satte til live (det var nettopp
+    // det som brøt). PUT-svaret er fasit for de to feltene handlingen endrer; øvrige billing-felt
+    // er uendret av publisering, så ingen refresh trengs. (loadBilling logger nå på feil — for de
+    // andre kallstedene: init, Stripe-retur, feil-resynk under.)
+    if(_billing){
+      if(d&&d.page_status)_billing.page_status=d.page_status;
+      if(d&&('trial_start_at' in d))_billing.trial_start_at=d.trial_start_at;
+      renderKonto(_billing);
+    }
     showToast(nyStatus==='live'?'Siden er publisert':'Bookingsiden er avpublisert');
     return;
   }
