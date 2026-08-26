@@ -11,7 +11,7 @@ const VARSEL={subscription_status:null,page_status:'live',days_left:null,trial_e
   trial_start_at:new Date(Date.now()-33*864e5).toISOString(),trial_days_left:0,
   myk_periode:true,needs_attention:true,attention_grunn:'trial_utlopt'};
 const browser=await chromium.launch(); const rad=[];
-for(const bredde of [320,402,1200]){
+for(const bredde of [320,402,1280]){
   const page=await browser.newPage({viewport:{width:bredde,height:800},deviceScaleFactor:2});
   const errs=[]; page.on('pageerror',e=>errs.push(e.message));
   await page.route('**/api/**',route=>{const u=new URL(route.request().url());

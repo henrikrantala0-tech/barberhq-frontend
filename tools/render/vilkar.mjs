@@ -26,9 +26,7 @@ const H2=['Hvem du handler med','Hva BarberHQ er','Pris','Prøveperiode','Betali
 const browser=await chromium.launch();
 const rapport=[];
 
-// 1200 er med fordi footerens .foot-top er ETT-kolonners grid under 760px uansett — feil i
-// kolonneoppsettet kan derfor kun oppstå på desktop, og var usynlig på 320/402 (funn 09.08).
-for(const bredde of [320,402,1200]){
+for(const bredde of [320,402,1280]){
   const page=await browser.newPage({viewport:{width:bredde,height:900},deviceScaleFactor:2});
   const errs=[]; page.on('pageerror',e=>errs.push(e.message));
   await page.goto(`http://localhost:${PORT}/no/vilkar.html`,{waitUntil:'networkidle'});
