@@ -3045,6 +3045,30 @@ function buildMonthSelect(){
   const sel=$("#monthSel"); if(sel) sel.innerHTML='<option value="">— velg måned —</option>'; // placeholder; fillMonths() fyller ekte måneder etter /stats
 }
 
+/* ── Hash-router ──────────────────────────────────────────────────────────────
+   Lesbare hash-navn (#oversikt/#vekst/#tjenester/#dinside/#konto) frikoblet fra de
+   interne panel-id-ene (design/abonnement er bevart av andre grunner). #dinside er
+   den backend-topplinja peker på. */
+var HASH_TO_PANEL={oversikt:'oversikt',vekst:'vekst',tjenester:'tjenester',dinside:'design',konto:'abonnement'};
+var PANEL_TO_HASH={oversikt:'oversikt',vekst:'vekst',tjenester:'tjenester',design:'dinside',abonnement:'konto'};
+var DEFAULT_PANEL='oversikt';
+function panelFromHash(){
+  var h=(location.hash||'').replace(/^#/,'').toLowerCase();
+  return HASH_TO_PANEL[h]||DEFAULT_PANEL;   // tom/ukjent → standardpanel
+}
+function aktivtPanel(){
+  var b=document.querySelector('.nav button[data-panel][aria-selected="true"]');
+  return b?b.dataset.panel:null;
+}
+// Bytt panel FRA hash — kun hvis det ikke alt er aktivt. Guarden hindrer dobbel
+// switchPanel (og dobbel lazy-load): et hash-sett vi selv gjorde etter et fane-klikk
+// finner panelet allerede aktivt og gjør ingenting. hashchange dekker tilbake/fram.
+function anvendHash(){
+  var p=panelFromHash();
+  if(p!==aktivtPanel())switchPanel(p);
+}
+window.addEventListener('hashchange',anvendHash);
+
 /* events */
 document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",()=>{
   const id=t.dataset.panel;if(!id)return; // «Mer»-toggle er også .nav button, men har ingen panel
@@ -3061,6 +3085,9 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   // Konto (id fortsatt "abonnement"): SMS-loggen lastes ved fane-åpning. Billing lastes
   // separat ved init + Stripe-retur, ikke her — derfor egen, ny gren.
   if(id==="abonnement"){loadSmsLogg();}
+  // Hold URL i synk med valgt fane (tilbake/fram virker). Samme verdi → ingen hashchange;
+  // ny verdi → hashchange, men anvendHash finner panelet alt aktivt og gjør ingenting.
+  if(PANEL_TO_HASH[id])location.hash=PANEL_TO_HASH[id];
 }));
 document.querySelectorAll("#segs button").forEach(b=>b.addEventListener("click",()=>{
   document.querySelectorAll("#segs button").forEach(x=>x.setAttribute("aria-selected","false"));
@@ -4443,6 +4470,8 @@ loadOversikt();loadBookinger();
 loadWinback(); // vinn-tilbake bor nå i Vekst; init-kallet fyller Oversikt-nudgen (ferske no-shows) + badge ved sideload
 loadPayment(); // betalingsmetoder (Tjenester-fanen) fra innstillings-loaderen
 loadBilling().then(applyBillingReturn); // abonnementsstatus (ekte) → deretter ev. retur-flagg fra Stripe
+anvendHash(); // åpne panelet fra location.hash (ukjent/tom → standardpanel). Stripe-retur over
+              // kjører async etterpå og kan overstyre til Konto — det er tilsiktet.
 
 /* ---- Varselprikk på «Mer»-toggelen ---- */
 // GENERELL REGEL, ikke hardkodet mot Konto: har EN AV knappene som havner bak «Mer» en
