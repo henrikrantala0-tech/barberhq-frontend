@@ -458,8 +458,10 @@
   .lnk-quiet:hover{color:var(--ink-2)}
   /* E-post som REN VISNING — ingen input, fordi det ikke finnes en endre-rute. */
   /* Samme skille som .pw-felt (før passorddelen): E-post-gruppa får topp-border, så Navn-gruppa
-     (felt + «Lagre navn») ikke leser sammen med E-post-etiketten. */
-  .fld-vis{margin-bottom:16px;padding-top:16px;border-top:1px solid var(--line)}
+     (felt + «Lagre navn») ikke leser sammen med E-post-etiketten. Spacingen KOPIERES fra
+     .pw-felt-skillet: 16px over linja (savebar-en har ingen bunn-margin, så margin-top:16px her)
+     + 16px under (padding-top:16px) = balansert, ikke en understrek på knappen. */
+  .fld-vis{margin:16px 0;padding-top:16px;border-top:1px solid var(--line)}
   .fld-vis-l{font-size:12px;color:var(--mut);font-weight:500;margin-bottom:4px;letter-spacing:-.01em}
   .fld-vis-v{font-size:14px;color:var(--ink);word-break:break-all}
   .pw-felt{padding-top:16px;border-top:1px solid var(--line)}
