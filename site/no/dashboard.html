@@ -462,6 +462,14 @@
   .fld-vis-v{font-size:14px;color:var(--ink);word-break:break-all}
   .pw-felt{padding-top:16px;border-top:1px solid var(--line)}
   .pw-felt .fld{max-width:340px}
+  .pw-tittel{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 12px;letter-spacing:-.01em}
+  /* Vis/skjul-øye — samme mønster som logg-inn/opprett-passord, tema-tokens for dashbordet.
+     .pw-felt .pw-wrap input hever spesifisiteten så padding-right slår .fld input-shorthanden. */
+  .pw-wrap{position:relative}
+  .pw-felt .pw-wrap input{padding-right:42px}
+  .pw-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);background:none;border:none;cursor:pointer;color:var(--mut);padding:4px;display:flex;align-items:center;transition:color .15s;line-height:0}
+  .pw-toggle:hover{color:var(--ink-2)}
+  .pw-toggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .hjelp-p{font-size:13px;color:var(--ink-2);line-height:1.5;margin-bottom:14px}
   .hjelp-lenke{display:inline-block;text-decoration:none}
   /* Tydelig luft over: avpubliser er destruktiv og skal ikke ligge inntil lenkefeltet/kopi. */
@@ -1595,8 +1603,27 @@
             <div class="fld-vis-v" id="kontoEpost">—</div>
           </div>
           <div class="pw-felt">
-            <div class="fld"><label>Nåværende passord</label><input id="pw-current" type="password" autocomplete="current-password"></div>
-            <div class="fld"><label>Nytt passord</label><input id="pw-new" type="password" autocomplete="new-password" placeholder="Minst 8 tegn"></div>
+            <!-- «Sett et passord» vises KUN i false-tilstand (settInnloggingTilstand). Default-markupen
+                 er true-tilstanden («Bytt passord»), som er dagens visning uendret. -->
+            <p class="pw-tittel" id="pwTittel" hidden>Sett et passord</p>
+            <div class="fld" id="pw-current-fld"><label>Nåværende passord</label>
+              <div class="pw-wrap">
+                <input id="pw-current" type="password" autocomplete="current-password">
+                <button class="pw-toggle" id="toggle-pwc" type="button" aria-label="Vis passord">
+                  <svg id="eye-on-c" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg id="eye-off-c" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="fld"><label>Nytt passord</label>
+              <div class="pw-wrap">
+                <input id="pw-new" type="password" autocomplete="new-password" placeholder="Minst 8 tegn">
+                <button class="pw-toggle" id="toggle-pwn" type="button" aria-label="Vis passord">
+                  <svg id="eye-on-n" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg id="eye-off-n" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+              </div>
+            </div>
             <div class="savebar"><button class="btn" id="savePw">Bytt passord</button><span class="saved" id="pwSaved">Endret &#10003;</span></div>
             <p class="pub-err" id="pwErr"></p>
             <!-- Reset-vei for glemt passord: krever fersk magisk-lenke-sesjon (≤30 min). Er den
@@ -3102,8 +3129,8 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   if(id==="oversikt"){loadOversikt();loadBookinger();}
   if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();}
   if(id==="tjenester"){loadTjenester();loadArbeidstider();}
-  // «Din side» laster alle tre trekkspillene. loadProfil FØRST — den inneholder
-  // hasPassword-redirecten, og den skal treffe før vi bruker tid på design + bilder.
+  // «Din side» laster alle tre trekkspillene. loadProfil FØRST — den fyller Profil-feltene
+  // (navn/adresse/bio/tagline) som bor i dette panelet, før vi bruker tid på design + bilder.
   if(id==="design"){loadProfil();loadDesign().then(loadBilder);}
   // Konto (id fortsatt "abonnement"): SMS-loggen lastes ved fane-åpning. Billing lastes
   // separat ved init + Stripe-retur, ikke her — derfor egen, ny gren.
@@ -3300,7 +3327,9 @@ async function loadProfil(){
   if(!r)return;
   if(!r.ok)return;
   const p=await r.json();
-  if(!p.hasPassword){location.href='/no/opprett-passord.html';return;}
+  // Redirect FJERNET (alt a): hasPassword:false blir værende på dashbordet og setter passord
+  // inline i Konto → Innlogging (settInnloggingTilstand under). opprett-passord.html er
+  // fortsatt landingssida for magisk lenke + reset — urørt.
   if(p.slug)CONFIG.BARBER_SLUG=p.slug; // brukes i verve-lenke-preview (spec 2d) + publiserings-lenka
   // E-posten brukes to steder: visning i Innlogging, og support-payloaden (som backend
   // krever, men ikke beriker selv). Lagres på CONFIG så begge leser samme kilde.
@@ -3308,6 +3337,7 @@ async function loadProfil(){
   // Bookinghorisont (per-barber, /profile 85d7afe). Styrer kalenderens framover-rekkevidde.
   CONFIG.BOOKING_HORIZON=(typeof p.booking_horizon_days==='number'&&p.booking_horizon_days>0)?p.booking_horizon_days:28;
   var ep=$("#kontoEpost");if(ep)ep.textContent=p.email||'—'; // Innlogging-seksjonen, ren visning
+  settInnloggingTilstand(!!p.hasPassword); // false → «Sett et passord», true → «Bytt passord»
   // /profile og /billing/status lastes parallelt. Rakk billing å tegne publiseringsblokka
   // før sluggen var her, mangler den lenka til den publiserte sida — tegn på nytt nå.
   if(_billing&&typeof renderKonto==='function')renderKonto(_billing);
@@ -3383,6 +3413,35 @@ bindFeedbackBoks('side','idea');
 bindFeedbackBoks('konto-ide','idea');
 bindFeedbackBoks('konto-support','support');
 
+/* ---- Innlogging: Sett/Bytt passord-tilstand (styres av profile.hasPassword) ---- */
+// false → «Sett et passord» (kun nytt-felt, ingen nåværende, ingen glemt-lenke).
+// true  → dagens visning: «Bytt passord», nåværende + nytt, glemt-lenke.
+var _harPassord=true; // default = true-tilstanden (markupen); loadProfil setter ekte verdi
+function settInnloggingTilstand(harPassord){
+  _harPassord=harPassord;
+  var tittel=$("#pwTittel"), curFld=$("#pw-current-fld"), forgot=$("#pwForgot"), btn=$("#savePw");
+  if(tittel)tittel.hidden=harPassord;                              // «Sett et passord» kun ved false
+  if(curFld)curFld.hidden=!harPassord;                             // nåværende-felt kun ved true
+  if(forgot)forgot.style.display=harPassord?'inline-block':'none'; // glemt-lenke kun ved true
+  if(btn)btn.textContent=harPassord?'Bytt passord':'Sett passord';
+}
+
+// Vis/skjul-øye — samme mønster som opprett-passord.html (bindToggle). Ikke et nytt.
+function bindPwToggle(toggleId,inputId,eyeOnId,eyeOffId){
+  var toggle=document.getElementById(toggleId),input=document.getElementById(inputId),
+      eyeOn=document.getElementById(eyeOnId),eyeOff=document.getElementById(eyeOffId);
+  if(!toggle||!input)return;
+  toggle.addEventListener('click',function(){
+    var show=input.type==='password';
+    input.type=show?'text':'password';
+    eyeOn.style.display=show?'none':'';
+    eyeOff.style.display=show?'':'none';
+    toggle.setAttribute('aria-label',show?'Skjul passord':'Vis passord');
+  });
+}
+bindPwToggle('toggle-pwc','pw-current','eye-on-c','eye-off-c');
+bindPwToggle('toggle-pwn','pw-new','eye-on-n','eye-off-n');
+
 /* ---- Innlogging: e-post (visning), bytt passord, logg ut ---- */
 $("#savePw").addEventListener("click",async function(){
   if(IS_DEMO)return;
@@ -3396,8 +3455,10 @@ $("#savePw").addEventListener("click",async function(){
     // raw401: se apiFetch. Denne ruta svarer 401 BÅDE ved utløpt sesjon og ved feil
     // nåværende passord — vi må lese kroppen for å vite hvilken, og det kan ikke
     // apiFetch gjøre for oss uten å kjenne backend-koden.
+    // Uten passord fra før: send KUN {password} (ruta aksepterer det — samme som
+    // opprett-passord.html). Med passord: begge, så backend verifiserer nåværende.
     r=await apiFetch('/api/dashboard/set-password',{method:'POST',raw401:true,
-      body:JSON.stringify({current_password:naa,password:ny})});
+      body:JSON.stringify(_harPassord?{current_password:naa,password:ny}:{password:ny})});
   }catch(e){
     btn.disabled=false;btn.textContent=orig;
     err.textContent='Nettverksfeil. Prøv igjen.';err.style.display='block';return;
@@ -3408,6 +3469,7 @@ $("#savePw").addEventListener("click",async function(){
   if(r.ok){
     $("#pw-current").value='';$("#pw-new").value='';
     savedFlash("#pwSaved");
+    if(!_harPassord)settInnloggingTilstand(true); // nå har han passord → bytt til «Bytt passord» uten reload
     return;
   }
   // FEIL GAMMELT PASSORD — bli i dashbordet. Uten denne grenen (og raw401 over) ville
