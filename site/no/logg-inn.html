@@ -55,16 +55,16 @@ a{text-decoration:none;color:inherit}
 .btn-login:hover:not(:disabled){opacity:.88}
 .btn-login:disabled{opacity:.5;cursor:not-allowed}
 
-/* ── Glemt passord ── */
-.forgot{display:flex;flex-direction:column;align-items:center;gap:3px;margin-top:12px;text-align:center}
-.forgot-label{font-size:13px;color:#6b6b6b}
-.forgot-action{font:inherit;font-size:13px;color:#4d8bff;background:none;border:none;cursor:pointer;padding:0;text-decoration:none}
-.forgot-action:hover{text-decoration:underline}
-.magic-panel{display:none;margin-top:18px;padding-top:18px;border-top:1px solid #1a1a1a}
-.magic-panel.show{display:block}
-.magic-info{font-size:13px;color:#9a9a9a;margin-bottom:10px}
-.magic-ok{color:#5cb85c;font-size:13.5px;margin-top:10px;display:none}
+/* ── Magisk lenke (primær) ── */
+.magic-info{font-size:13px;color:#9a9a9a;margin-top:10px;text-align:center;line-height:1.5}
+.magic-ok{color:#5cb85c;font-size:13.5px;margin-top:10px;display:none;text-align:center;line-height:1.5}
 .magic-ok.show{display:block}
+/* ── Passord (sekundær, nedtonet + sammenlagt) ── */
+.pw-alt{text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid #1a1a1a}
+.pw-alt-link{font:inherit;font-size:13px;color:#8c8c8c;background:none;border:none;cursor:pointer;padding:0}
+.pw-alt-link:hover{color:#bbb;text-decoration:underline}
+.pw-panel{display:none;margin-top:14px}
+.pw-panel.show{display:block}
 
 /* ── Bunn-lenker ── */
 .card-foot{margin-top:22px;padding-top:18px;border-top:1px solid #1a1a1a;text-align:center;color:#8c8c8c;font-size:13.5px}
@@ -102,40 +102,33 @@ a{text-decoration:none;color:inherit}
              autocomplete="username" inputmode="email">
     </div>
 
-    <div class="field">
-      <label for="pw">Passord</label>
-      <div class="pw-wrap">
-        <input type="password" id="pw" placeholder="••••••••"
-               autocomplete="current-password">
-        <button class="pw-toggle" id="toggle-pw" type="button" aria-label="Vis passord">
-          <!-- Øye åpent (vises når passord er skjult) -->
-          <svg id="eye-on" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
-          <!-- Øye lukket (vises når passord er synlig) -->
-          <svg id="eye-off" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
-        </button>
-      </div>
+    <!-- PRIMÆR: magisk lenke — ingen passord nødvendig, synlig uten å klikke noe. -->
+    <button class="btn-login" id="magic-submit" type="button">Send meg innloggingslenke</button>
+    <p class="magic-info">Vi sender en lenke til e-posten din. Lenken virker i 24 timer.</p>
+    <p class="magic-ok" id="magic-ok">
+      Sjekk e-posten din. Hvis adressen er registrert, har vi sendt en lenke.
+    </p>
+
+    <!-- SEKUNDÆR: passord, nedtonet lenke som folder ut feltet + «Logg inn». -->
+    <div class="pw-alt">
+      <button class="pw-alt-link" id="pw-alt-btn" type="button">Logg inn med passord</button>
     </div>
-
-    <p class="error" id="error"></p>
-
-    <button class="btn-login" id="submit">Logg inn</button>
-
-    <div class="forgot">
-      <span class="forgot-label">Glemt passord?</span>
-      <button class="forgot-action" id="forgot-btn" type="button">Send meg en innloggingslenke</button>
-    </div>
-
-    <div class="magic-panel" id="magic-panel">
-      <p class="magic-info">Vi sender en lenke til e-posten din. Lenken virker i 24 timer.</p>
+    <div class="pw-panel" id="pw-panel">
       <div class="field">
-        <label for="magic-email">E-post</label>
-        <input type="email" id="magic-email" placeholder="din@epost.no"
-               autocomplete="email" inputmode="email">
+        <label for="pw">Passord</label>
+        <div class="pw-wrap">
+          <input type="password" id="pw" placeholder="••••••••"
+                 autocomplete="current-password">
+          <button class="pw-toggle" id="toggle-pw" type="button" aria-label="Vis passord">
+            <!-- Øye åpent (vises når passord er skjult) -->
+            <svg id="eye-on" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+            <!-- Øye lukket (vises når passord er synlig) -->
+            <svg id="eye-off" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+          </button>
+        </div>
       </div>
-      <button class="btn-login" id="magic-submit" type="button">Send lenke</button>
-      <p class="magic-ok" id="magic-ok">
-        Sjekk e-posten din. Hvis adressen er registrert, har vi sendt en lenke.
-      </p>
+      <p class="error" id="error"></p>
+      <button class="btn-login" id="submit">Logg inn</button>
     </div>
 
     <div class="card-foot">
@@ -159,13 +152,47 @@ a{text-decoration:none;color:inherit}
   var submit = document.getElementById('submit');
   var error  = document.getElementById('error');
 
-  // Vis utløpt-lenke-feil fra ?error=expired
+  var magicSubmit = document.getElementById('magic-submit');
+  var magicOk     = document.getElementById('magic-ok');
+  var pwAltBtn    = document.getElementById('pw-alt-btn');
+  var pwPanel     = document.getElementById('pw-panel');
+
+  // Vis utløpt-lenke-feil fra ?error=expired (uendret)
   var params = new URLSearchParams(location.search);
   if (params.get('error') === 'expired') {
     var expEl = document.getElementById('expired-msg');
     expEl.textContent = 'Logg inn med e-post og passord, eller be om en ny lenke.';
     expEl.classList.add('show');
   }
+
+  // ── PRIMÆR: magisk lenke (deler e-postfeltet med passord-innlogging) ──
+  async function sendMagicLink() {
+    magicOk.classList.remove('show');
+    magicSubmit.disabled    = true;
+    magicSubmit.textContent = 'Sender …';
+
+    try {
+      await fetch(API + '/api/send-magic-link', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email: email.value.trim() }),
+      });
+    } catch (_) {}
+
+    // Alltid samme melding — avslører ikke om adressen finnes (uendret)
+    magicOk.classList.add('show');
+    magicSubmit.disabled    = false;
+    magicSubmit.textContent = 'Send meg innloggingslenke';
+  }
+  magicSubmit.addEventListener('click', sendMagicLink);
+  // Enter i e-postfeltet utløser primærhandlingen (send lenke)
+  email.addEventListener('keydown', function (e) { if (e.key === 'Enter') sendMagicLink(); });
+
+  // ── SEKUNDÆR: fold ut passord-innlogging ──
+  pwAltBtn.addEventListener('click', function () {
+    pwPanel.classList.toggle('show');
+    if (pwPanel.classList.contains('show')) pw.focus();
+  });
 
   // Vis/skjul passord
   toggle.addEventListener('click', function () {
@@ -176,12 +203,8 @@ a{text-decoration:none;color:inherit}
     toggle.setAttribute('aria-label', show ? 'Skjul passord' : 'Vis passord');
   });
 
-  // Enter i felt utløser login (ingen <form>, ingen reload)
-  [email, pw].forEach(function (el) {
-    el.addEventListener('keydown', function (e) { if (e.key === 'Enter') login(); });
-  });
-
   submit.addEventListener('click', login);
+  pw.addEventListener('keydown', function (e) { if (e.key === 'Enter') login(); });
 
   function showError(msg) {
     error.textContent = msg;
@@ -222,42 +245,6 @@ a{text-decoration:none;color:inherit}
       submit.disabled    = false;
       submit.textContent = 'Logg inn';
     }
-  }
-
-  // ── Glemt passord / magic link ──
-  var forgotBtn    = document.getElementById('forgot-btn');
-  var magicPanel   = document.getElementById('magic-panel');
-  var magicEmail   = document.getElementById('magic-email');
-  var magicSubmit  = document.getElementById('magic-submit');
-  var magicOk      = document.getElementById('magic-ok');
-
-  forgotBtn.addEventListener('click', function () {
-    magicPanel.classList.toggle('show');
-    if (magicPanel.classList.contains('show')) magicEmail.focus();
-  });
-
-  magicEmail.addEventListener('keydown', function (e) {
-    if (e.key === 'Enter') sendMagicLink();
-  });
-  magicSubmit.addEventListener('click', sendMagicLink);
-
-  async function sendMagicLink() {
-    magicOk.classList.remove('show');
-    magicSubmit.disabled    = true;
-    magicSubmit.textContent = 'Sender …';
-
-    try {
-      await fetch(API + '/api/send-magic-link', {
-        method:  'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email: magicEmail.value.trim() }),
-      });
-    } catch (_) {}
-
-    // Alltid samme melding — avslører ikke om adressen finnes
-    magicOk.classList.add('show');
-    magicSubmit.disabled    = false;
-    magicSubmit.textContent = 'Send lenke';
   }
 }());
 </script>
