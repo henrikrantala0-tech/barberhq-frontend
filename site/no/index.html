@@ -45,6 +45,13 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .nav-cta:hover{opacity:.85}
 .nav-demo{color:#a0c4ff;font-size:13px;font-weight:500;text-decoration:none;border:1px solid rgba(160,196,255,.32);padding:6px 14px;border-radius:99px;white-space:nowrap;transition:color .2s,border-color .2s}
 .nav-demo:hover{color:#fff;border-color:rgba(160,196,255,.7)}
+/* «Mitt dashbord» — SKJULT som default (:not(.vis)); JS legger .vis kun ved loggedIn:true.
+   Ingen flash: skjult før JS kjører, aldri vist for uinnloggede. */
+/* «Mitt dashbord» bor i nav-hjørnet (.nav-right) og tar «Prøv gratis»-plassen ved innlogging.
+   color:#000 eksplisitt — beholder kontrast-fiksen (hvit pill, svart tekst). */
+.nav-dash{display:inline-flex;align-items:center;background:#fff;color:#000;font-size:14px;font-weight:600;padding:9px 18px;border-radius:99px;text-decoration:none;white-space:nowrap;transition:opacity .2s}
+.nav-dash:not(.vis){display:none}
+.nav-dash:hover{color:#000;opacity:.85}
 .nav-burger{display:none;flex-direction:column;justify-content:center;gap:4px;width:32px;height:32px;background:none;border:none;cursor:pointer;padding:6px 4px}
 .nav-burger span{display:block;width:20px;height:2px;background:#fff;border-radius:2px;transition:transform .2s,opacity .2s}
 .nav.open .nav-burger span:nth-child(1){transform:translateY(6px) rotate(45deg)}
@@ -246,7 +253,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   .logo{font-size:18px}
   .nav-links{display:none}
   .nav-burger{display:flex}
-  .nav-cta{padding:8px 14px;font-size:13px}
+  .nav-cta,.nav-dash{padding:8px 14px;font-size:13px}
   .section{padding:64px 20px}
   .hero{padding:54px 0}
   .hero-inner{padding:0 20px}
@@ -1315,7 +1322,10 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       <a href="#" id="demoNavBtn" class="nav-demo">Se dashbordet</a>
     </div>
     <div class="nav-right">
-      <a href="kom-i-gang.html" class="nav-cta">Prøv gratis</a>
+      <a href="kom-i-gang.html" class="nav-cta" id="navProvGratis">Prøv gratis</a>
+      <!-- Ved loggedIn:true skjules «Prøv gratis» og denne tar dens plass i hjørnet — desktop
+           og mobil (utenfor burgeren). Skjult som default via .nav-dash:not(.vis). -->
+      <a href="dashboard.html" id="mittDashNav" class="nav-dash">Mitt dashbord</a>
       <button class="nav-burger" id="nav-burger" aria-label="Meny">
         <span></span><span></span><span></span>
       </button>
@@ -2217,6 +2227,22 @@ window.addEventListener('scroll',function(){nav.classList.toggle('scrolled',wind
   }
   if(btn1)btn1.addEventListener('click',function(e){e.preventDefault();demoLogin(this,'Se dashbordet');});
   if(btn2)btn2.addEventListener('click',function(e){e.preventDefault();demoLogin(this,'Se dashbordet');});
+})();
+
+// «Mitt dashbord» — vises kun for innloggede, og bytter ut «Prøv gratis» i nav-hjørnet.
+// Skjult i CSS (:not(.vis)) som default; avsløres HER kun når /api/dashboard/session svarer
+// loggedIn:true. Ved feil/timeout/utlogget gjøres ingenting → «Prøv gratis» står som i dag.
+// credentials:'include' sender session-cookien, satt av /api/login på api.trybarberhq.com.
+(function(){
+  fetch('https://api.trybarberhq.com/api/dashboard/session',{credentials:'include'})
+    .then(function(r){return r.ok?r.json():null;})
+    .then(function(d){
+      if(d&&d.loggedIn===true){
+        var dash=document.getElementById('mittDashNav'); if(dash)dash.classList.add('vis');
+        var prov=document.getElementById('navProvGratis'); if(prov)prov.style.display='none';
+      }
+    })
+    .catch(function(){}); // stille — aldri en endring ved feil
 })();
 
 // Hamburger-meny
