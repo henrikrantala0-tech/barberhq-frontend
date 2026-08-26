@@ -1403,7 +1403,6 @@
             <span class="acc-chev">▾</span>
           </button>
           <div class="acc-body">
-            <div class="fld"><label>Navn</label><input id="pf-name" type="text"></div>
             <div class="fld"><label>Navn på shoppen</label><input id="pf-shop" type="text"></div>
             <div class="fld"><label>Adresse <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><input id="pf-address" type="text"><p class="fld-hint">Skriv full adresse (gate, nummer, postnr, by) så kunder finner frem i kart. Vil du ikke dele nøyaktig sted, skriv bare byen.</p></div>
             <div class="fld"><label>Tagline <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><input id="pf-tagline" type="text" maxlength="60"></div>
@@ -1598,6 +1597,10 @@
           <span class="acc-chev">▾</span>
         </button>
         <div class="acc-body" hidden>
+          <!-- Navn: identitets-/kontofelt (display_name — rendres ALDRI på kundeflaten; brukt i
+               e-post/Telegram/Stripe). Flyttet hit fra Profil 26.08. Samme PUT /profile-kall. -->
+          <div class="fld"><label>Navn</label><input id="pf-name" type="text"></div>
+          <div class="savebar"><button class="btn" id="saveNavn">Lagre navn</button><span class="saved" id="navnSaved">Lagret &#10003;</span></div>
           <div class="fld-vis">
             <div class="fld-vis-l">E-post</div>
             <div class="fld-vis-v" id="kontoEpost">—</div>
@@ -3488,8 +3491,11 @@ $("#loggUt").addEventListener("click",async function(){
   try{ await apiFetch('/api/logout',{method:'POST',body:'{}',raw401:true}); }catch(e){}
   location.href='/no/logg-inn.html';
 });
-$("#saveProfil").addEventListener("click",async function(){
-  const btn=$("#saveProfil");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
+// Profil («Din side») og Navn (Konto → Innlogging) deler PUT /api/dashboard/profile. Navn er
+// flyttet til Konto, resten står i Profil. Begge sender HELE profilen — trygt uansett om ruta er
+// partial eller full-replace, og feltene er alt fylt av loadProfil ved init. Flash-en skiller dem.
+async function lagreProfil(knappSel, flashSel){
+  const btn=$(knappSel);const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
   const r=await apiFetch('/api/dashboard/profile',{method:'PUT',body:JSON.stringify({
     name:    $("#pf-name").value,
     shop:    $("#pf-shop").value,
@@ -3499,12 +3505,14 @@ $("#saveProfil").addEventListener("click",async function(){
   })});
   btn.disabled=false;btn.textContent=orig;
   if(!r)return;
-  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre profil. Prøv igjen.');return;}
+  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre. Prøv igjen.');return;}
   const displayName=$("#pf-shop").value.trim()||$("#pf-name").value.trim()||"";
   CONFIG.BARBER_NAME=displayName;var el=$("#barberName");if(el)el.textContent=displayName;
-  savedFlash("#profilSaved");
-  invaliderPreview(); // navn/tagline/bio/adresse står i preview-HTML-en, men ikke i cache-nøkkelen
-});
+  savedFlash(flashSel);
+  invaliderPreview(); // tagline/bio/adresse står i preview-HTML-en (navn gjør IKKE — identitetsfelt)
+}
+$("#saveProfil").addEventListener("click",function(){lagreProfil("#saveProfil","#profilSaved");});
+$("#saveNavn").addEventListener("click",function(){lagreProfil("#saveNavn","#navnSaved");});
 
 /* ---- SMS-knotter (Vekst-fanen) ---- */
 // Het loadInnstillinger() da SMS-knottene bodde i en egen Innstillinger-fane.
@@ -4552,7 +4560,7 @@ function applyBillingReturn(){
 
 function applyDemoMode(){
   document.getElementById('demoBanner').classList.add('show');
-  ['saveProfil','saveSvc','savePay','saveDesign','saveHours','cropSave',
+  ['saveProfil','saveNavn','saveSvc','savePay','saveDesign','saveHours','cropSave',
    'slotPopupFjern','slotPopupEndre','gcalBtn',
    'fbSend-side','fbSend-konto-ide','fbSend-konto-support',  // tre bokser, én handler
    // Konto: én hovedknapp + tekstlenker (startSub/goLive er slått sammen til kontoAksjon)
