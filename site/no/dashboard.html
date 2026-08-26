@@ -3966,7 +3966,8 @@ $("#savePay").addEventListener('click',async function(){
 const FONTS=[
   {key:"fraunces",vibe:"Klassisk og elegant",name:"Fraunces",css:"'Fraunces', serif",w:600},
   {key:"grotesk",vibe:"Moderne og markant",name:"Space Grotesk",css:"'Space Grotesk', sans-serif",w:600},
-  {key:"jakarta",vibe:"Ren og proff",name:"Plus Jakarta Sans",css:"'Plus Jakarta Sans', sans-serif",w:600}
+  {key:"jakarta",vibe:"Ren og proff",name:"Plus Jakarta Sans",css:"'Plus Jakarta Sans', sans-serif",w:600},
+  {key:"bebas",vibe:"Kompakt og rå",name:"Bebas Neue",css:"'Bebas Neue',sans-serif",w:400}
 ];
 const LAYOUTS=[
   {key:"profil",t:"Profil",d:"Portrett + info"},
@@ -4024,7 +4025,8 @@ function renderPreview(){oppdaterPreview();}
 function invaliderPreview(){previewCache={};oppdaterPreview();}
 function renderDesign(){
   $("#paletteGrid").innerHTML=window.PALETTES_DISPLAY.map(function(p){return '<button class="preset" data-grid="palette" data-key="'+p.key+'" aria-pressed="'+(design.palette===p.key)+'"><div class="pt">'+p.t+'</div><div class="pd">'+p.d+'</div><div class="swatches">'+p.sw.map(function(c){return '<span style="background:'+c+'"></span>';}).join("")+'</div></button>';}).join("");
-  $("#fontGrid").innerHTML=FONTS.map(function(f){return '<button class="preset" data-grid="font" data-key="'+f.key+'" aria-pressed="'+(design.font===f.key)+'"><div class="pt">'+f.vibe+'</div><div class="pd">'+f.name+'</div></button>';}).join("");
+  // Kun beskrivelsen (.pt) — fontnavn-linja (.pd) fjernet fra font-kortene (name-feltet beholdt som metadata).
+  $("#fontGrid").innerHTML=FONTS.map(function(f){return '<button class="preset" data-grid="font" data-key="'+f.key+'" aria-pressed="'+(design.font===f.key)+'"><div class="pt">'+f.vibe+'</div></button>';}).join("");
   $("#layoutGrid").innerHTML=LAYOUTS.map(function(l){return '<button class="preset" data-grid="layout" data-key="'+l.key+'" aria-pressed="'+(design.layout===l.key)+'"><div class="pt">'+l.t+'</div><div class="pd">'+l.d+'</div></button>';}).join("");
   document.querySelectorAll("#modePick .modebtn").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.mode===design.mode);});
   renderPreview();
