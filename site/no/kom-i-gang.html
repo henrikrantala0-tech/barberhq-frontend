@@ -296,7 +296,12 @@ async function submitFinal(){
     files.forEach(function(f){fd.append('images',f);});
     var res=await fetch(API_BASE+'/api/onboarding',{method:'POST',body:fd,credentials:'include'});
     if(!res.ok)throw new Error('server svarte '+res.status);
-    var data={}; try{ data=await res.json(); }catch(e){}
+    // MIDLERTIDIG SYNLIGHET (ingen atferdsendring): les rå body først så vi ser HELE svaret
+    // uansett om det parser som JSON. data-utfallet er identisk med res.json().
+    var raw=''; var data={};
+    try{ raw=await res.text(); data=JSON.parse(raw); }
+    catch(e){ console.error('onboarding: kunne ikke parse svaret som JSON:', e, '| rå body:', raw); }
+    console.log('onboarding-svar:', {status:res.status, ok:res.ok, contentType:res.headers.get('content-type'), body:raw, parsed:data, slug:(data&&data.slug)});
     if(data && data.slug){ window.location.href='/'+data.slug; return; }
     document.getElementById('obStep2').style.display='none';
     document.getElementById('obDoneName').textContent='Takk, '+step1.navn+'!';
