@@ -136,14 +136,14 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     <p class="s2-h">Bilder, tjenester og tider</p>
     <p class="s2-note">Alt du fyller inn her kan du endre senere i dashbordet.</p>
 
-    <div class="dgrp" id="bildeDgrp"><span class="lab">Bilder <span class="opt">(minst 3, maks 10)</span></span>
+    <div class="dgrp" id="bildeDgrp"><span class="lab">Bilder <span class="opt">(minst 2, maks 10)</span></span>
       <div class="uploader" id="dropZone">
         <div class="ui">&#8682;</div>
         <div class="ut">Trykk for &aring; laste opp bilder</div>
-        <div class="us">JPG eller PNG &middot; minst 3, maks 10</div>
+        <div class="us">JPG eller PNG &middot; minst 2, maks 10</div>
       </div>
       <input type="file" id="fileInput" accept="image/*" multiple hidden>
-      <div class="img-count" id="imgCount">0 av minst 3 lastet opp</div>
+      <div class="img-count" id="imgCount">0 av minst 2 lastet opp</div>
       <div class="thumbs" id="thumbs"></div>
     </div>
 
@@ -170,7 +170,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 <script>
 function v(id){return document.getElementById(id).value.trim();}
 var API_BASE='https://api.trybarberhq.com';
-var MIN_IMG=3, MAX_IMG=10;
+var MIN_IMG=2, MAX_IMG=10;
 var step1={};
 
 function submitOb(){
