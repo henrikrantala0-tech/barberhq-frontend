@@ -457,7 +457,9 @@
              text-decoration:underline;cursor:pointer;padding:0;margin-top:14px;display:block}
   .lnk-quiet:hover{color:var(--ink-2)}
   /* E-post som REN VISNING — ingen input, fordi det ikke finnes en endre-rute. */
-  .fld-vis{margin-bottom:16px}
+  /* Samme skille som .pw-felt (før passorddelen): E-post-gruppa får topp-border, så Navn-gruppa
+     (felt + «Lagre navn») ikke leser sammen med E-post-etiketten. */
+  .fld-vis{margin-bottom:16px;padding-top:16px;border-top:1px solid var(--line)}
   .fld-vis-l{font-size:12px;color:var(--mut);font-weight:500;margin-bottom:4px;letter-spacing:-.01em}
   .fld-vis-v{font-size:14px;color:var(--ink);word-break:break-all}
   .pw-felt{padding-top:16px;border-top:1px solid var(--line)}
