@@ -140,8 +140,12 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
   skanse — primærforsvaret er asyncRoute + try/catch per rute.
 - **Screenshot-godkjenning:** Code viser Playwright-bildene og STOPPER for Henriks
   godkjenning før commit — self-rapportering ("ser bra ut") er ikke godkjenning.
-- **Typografiskala:** alle font-størrelser via CSS-variablene `--fs-title/section/body/small/micro`
-  og `--fw-bold/medium/regular` — ingen løse `px`-verdier for font-size eller font-weight.
+- **Typografiskala (ASPIRASJONELL — en retning, ikke en gjeldende regel):** skalaen
+  `--fs-title/section/body/small/micro` + `--fw-bold/medium/regular` finnes, men er IKKE innført i
+  frontendens egne sider — de bruker løse `px`. De eneste `--fs-`-treffene i frontend ligger i
+  produktvisnings-klonen (`site/no/index.html` `#produkt .pv-book`) og er backend-arv fra
+  booking-modulens CSS, ikke frontendens eget system (`dashboard.html` sier eksplisitt at den ikke
+  bruker skalaen). Ønsket retning ved nye flater, men ikke håndhevet i dag.
 - Når Henrik sier "ferdig med saken" er beslutningen låst — gå videre.
 - Push tilbake ærlig på dårlige idéer, men respekter låste beslutninger.
 - **Batch pushes (Netlify-credits):** auto-deploy koster ~15 credits/deploy, tak 1000/mnd.
@@ -319,8 +323,8 @@ chatten — 1/l og 0/O er uleselige i chatfonten og har forårsaket feil (05.07)
 Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historikk.
 
 ### Innlogging + passord (frontend)
-- **`logg-inn.html`:** passord-innlogging (`POST /api/login`) + «Glemt passord?»-flyt som ber om magisk lenke (`POST /api/send-magic-link` — alltid samme kvittering, avslører ikke om e-post finnes). Håndterer `?error=expired` (utløpt/brukt magisk lenke) over skjemaet.
-- **`opprett-passord.html`:** førstegangs passord-setting etter magisk-lenke-innlogging (`POST /api/dashboard/set-password`, min 8 tegn, felt-validering). Vis/skjul-øye på begge felt (gjenbrukt fra logg-inn). Dashboard redirecter hit når `profile.hasPassword` er false.
+- **`logg-inn.html` (snudd 26.08):** magisk lenke er PRIMÆR innlogging — e-postfelt + «Send meg innloggingslenke» synlig uten klikk (`POST /api/send-magic-link`, alltid samme kvittering, avslører ikke om e-post finnes). Passord er sekundært: «Logg inn med passord» folder ut passordfeltet (`POST /api/login`). Delt e-postfelt. Håndterer `?error=expired` over skjemaet. «Glemt passord?»-innrammingen er borte — magisk lenke er ikke lenger en avstikker.
+- **`opprett-passord.html`:** førstegangs passord-setting etter magisk-lenke-innlogging (`POST /api/dashboard/set-password`, min 8 tegn, felt-validering). Vis/skjul-øye på begge felt (gjenbrukt fra logg-inn). Fortsatt landingssida for magisk lenke + reset. **Dashboard redirecter IKKE lenger hit ved `hasPassword:false`** — redirecten i `loadProfil` er fjernet (26.08); en barber uten passord blir på dashbordet og setter det inline i Konto → Innlogging.
 
 ### Dashboard + kundeside
 - **Design-fane:** live forhåndsvisning via `GET /api/dashboard/preview?layout&palette&font&mode` — full **server-render** av barberens EKTE side (`byggSideFraBarber → fill → booking-module.cjs`; `preview:true` hopper over /days+/slots og åpner sheet). Samme kilde som publisert side = ingen drift. `dashboard.html` setter kun `srcdoc` (cache per param-kombo, synlig `previewError` ved feil); ingen klient-fyll. Endepunktet `console.warn`-er på ufylt `{{PLACEHOLDER}}` — erstattet den gamle stille slutt-wipen (`replace(/{{[A-Z_]+}}/g,'')`) som skjulte at booking-modulen (all aksentfarge) aldri ble injisert → helt svart/hvit preview i ~4 mnd (rot-årsak: FASE B `6d06a8d` flyttet booking-UI inn i `{{BOOKING_MODULE}}` som wipen slettet). Layout-kort som ren tekst.
@@ -429,11 +433,13 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   bookingsida velges under Design, og de to ble blandet sammen så lenge knappen sto løs i headeren.
   **`$("#themeBtn").addEventListener` har ingen null-sjekk** — flytter du knappen igjen, må den
   finnes i DOM-en ved sideload, ellers kaster init.
-- **«Bytt passord» hører hjemme i Konto, men er BEVISST IKKE bygget** — det ligger kun en
-  HTML-kommentar der. Årsak: `POST /api/dashboard/set-password` tar kun `{password}` og verifiserer
-  ikke nåværende passord. Den ruta er laget for førstegangs-setting etter magisk lenke; brukt som
-  «bytt passord» i et innlogget dashbord ville den latt hvem som helst med en kapret sesjon bytte
-  passordet uten å kunne det gamle. Venter på backend-rute som krever nåværende passord (dag 2).
+- **«Bytt passord» i Konto → Innlogging er BYGGET (GJORT 26.08).** Trekkspillet har to tilstander
+  styrt av `profile.hasPassword` (`settInnloggingTilstand`): `false` → «Sett et passord» (kun nytt-felt,
+  sender `{password}`); `true` → «Bytt passord» (nåværende + nytt, sender `{current_password,password}`).
+  `POST /api/dashboard/set-password` VERIFISERER nåværende passord — frontend håndterer
+  `code='mangler_naavaerende_passord'` (blir i dashbordet ved feil gammelt passord). Vis/skjul-øye på
+  begge felt (bindToggle-mønsteret fra opprett-passord). Etter setting bytter seksjonen til «Bytt
+  passord» uten reload.
 - **Mobil-nav:** Oversikt + Vekst alltid synlig; Profil/Tjenester & tider/Design/Konto bak «Mer»
   (fanen har `class="nav-mer"` og plukkes opp av «Mer»-menyen automatisk). Verifisert 320/375
   etter sammenslåingen: fire faner i menyen, toggle-etiketten blir «Konto ▾» når fanen er valgt.
@@ -455,11 +461,10 @@ så `overflow`-feltet var rødt i hver eneste kjøring og kunne ikke brukes til 
 fikset — regelen står nå på `width:100%;height:100.8%`, og `scrollWidth − viewport` måler
 **0 på 320, 375 og 1280** (verifisert 12.08). Slår flagget ut nå, er det noe nytt.
 
-**`kom-i-gang.html` har ~8px horisontal overflow på 320 (steg 2).** Pre-eksisterende, bevist
-uavhengig av palett-jobben: `scrollWidth` er 328 også når sand-kortet fjernes live, og også
-når hele layout-karusellen (`#layGrid`) skjules. Ikke diagnostisert — kilden er hverken
-palett-gridet eller karusellen. Render-testens overflow-flagg slår derfor ut på onboarding@320
-uten at det er en regresjon.
+**`kom-i-gang.html` 320px-overflow — PENSJONERT (26.08).** Steget som bar overflowen (design-steget:
+palett-grid + layout-karusell `#layGrid` + preview-iframe) ble fjernet i skjemaombyggingen — 0 treff
+på `layGrid/palGrid/preview-tjenester` nå. Render-testene måler `scrollWidth − viewport = 0` på
+320/402/1280. Ikke lenger en kjent overflow.
 
 ### Funnet i frontend, men SKAL FIKSES I BACKEND (barberhq-backend)
 Funnet ved å klone bookingmodulen inn i produktvisningen og måle klonen mot den publiserte
@@ -524,6 +529,12 @@ Målt og verifisert, gjenbrukbart neste gang:
   Dynamic Island (svart) og glyfene (hvite) følger med mens bakgrunnen blir gjennomsiktig.
 
 ### en/ ↔ no/ kom-i-gang: hva som faktisk skiller (kartlagt 27.07)
+> **⚠ UTDATERT etter no/-ombyggingen (26.08).** no/ steg 2 har IKKE lenger design-steget
+> (layout-karusell `#layGrid`, palett-preview, `preview-tjenester.html`, `design={…}`) — det er
+> erstattet av bilder (min 2) + tjenester + åpningstider, og skjemaet sender `services`/`hours`
+> og redirecter til `/<slug>`. Hele delta-beskrivelsen under gjelder den GAMLE no/-versjonen og
+> må re-kartlegges mot dagens no/ når en/ faktisk tas. Ikke bruk den som fasit.
+
 **Steg 1 er strukturelt identisk** — kun språk skiller. Hele deltaet ligger i steg 2:
 no/ har layout FØRST (med hjelpetekst), ekte `images/layout-*.webp` i
 stedet for inline base64, «Anbefalt»-badge på showcase, live tjeneste-preview i iframe
@@ -692,11 +703,11 @@ Fortsatt åpent:
 ### Medium
 4. **Vekstfeatures (backend):** rebooking, verving, vinn-tilbake auto-SMS. Deretter landingsside-
    avsnitt under «fyll stolen» som forklarer dem.
-5. **Bytt passord i Konto — BLOKKERT PÅ BACKEND (dag 2).** UI-en er ikke bygget med vilje:
-   `POST /api/dashboard/set-password` verifiserer ikke nåværende passord (laget for førstegangs-
-   setting etter magisk lenke). Trenger en backend-rute som krever `currentPassword` før frontend
-   kan bygges. Plassen er klar — HTML-kommentar i `#abonnement`. (Nav-omdøpingen «Abonnement» →
-   «Konto» er GJORT 06.08, sammen med sammenslåingen av Innstillinger.)
+5. **Bytt passord i Konto — GJORT (26.08).** Bygget i Konto → Innlogging: to tilstander fra
+   `profile.hasPassword` (Sett et passord / Bytt passord), vis/skjul-øye, og `POST /api/dashboard/
+   set-password` som VERIFISERER nåværende passord (`current_password`). Se «Bytt passord i Konto →
+   Innlogging» i Dashboard-fanestruktur-seksjonen over. (Nav-omdøpingen «Abonnement» → «Konto» ble
+   gjort 06.08, sammen med sammenslåingen av Innstillinger.)
 6. **Koble ekte data i Vekst** — Oversikt (diagram/KPI/rekord/månedsvelger) er nå EKTE mot
    `/stats` + `/stats/month`. Gjenstår: Vekst-fanen (stats/trend) + attribusjon «Drevet av»
    (backend `/api/dashboard/attribution` bygges først). Bookinger-liste ekte; no-show-knapp mock.
