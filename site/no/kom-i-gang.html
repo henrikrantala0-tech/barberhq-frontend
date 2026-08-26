@@ -45,6 +45,9 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .ob-done .chk{width:64px;height:64px;border-radius:50%;background:#0d1f14;border:1px solid #1f4a30;display:flex;align-items:center;justify-content:center;color:#3ecf7e;margin:0 auto 20px}
 .ob-done h2{font-size:24px;font-weight:800;margin-bottom:10px}
 .ob-done p{color:#9a9a9a;font-size:15px;line-height:1.6;max-width:400px;margin:0 auto}
+.ob-done .chk.err{background:#241d10;border-color:#4a3c1c;color:#d9a441}
+.ob-err-msg{color:#e6e6e6;font-size:16px;line-height:1.6;max-width:400px;margin:0 auto 18px}
+#obError .btn{font-size:15px;padding:14px 32px;margin-top:14px}
 .ob-hero{text-align:center;max-width:560px;margin:0 auto;padding:74px 24px 6px}
 .ob-hero .eyebrow{display:block;margin-bottom:16px}
 .ob-hero h1{font-size:clamp(34px,6vw,52px);font-weight:800;line-height:1.05;letter-spacing:-.035em}
@@ -164,6 +167,11 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     <div class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="30" height="30"><path d="M20 6 9 17l-5-5"/></svg></div>
     <h2 id="obDoneName">Takk!</h2>
     <p>Bookingsiden din er opprettet. Du får 30 dager gratis.</p>
+  </div>
+  <div class="ob-card ob-done" id="obError">
+    <div class="chk err"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="30" height="30"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12.5"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
+    <p class="ob-err-msg" id="obErrorMsg"></p>
+    <a class="btn btn-fill" href="/no/logg-inn.html" id="obErrorLink" style="display:none">Logg inn</a>
   </div>
 </div>
 
@@ -296,13 +304,22 @@ async function submitFinal(){
     files.forEach(function(f){fd.append('images',f);});
     var res=await fetch(API_BASE+'/api/onboarding',{method:'POST',body:fd,credentials:'include'});
     if(!res.ok)throw new Error('server svarte '+res.status);
-    // MIDLERTIDIG SYNLIGHET (ingen atferdsendring): les rå body først så vi ser HELE svaret
-    // uansett om det parser som JSON. data-utfallet er identisk med res.json().
+    // Les rå body først så en parse-feil kan logges med innhold. data-utfallet er som res.json().
     var raw=''; var data={};
     try{ raw=await res.text(); data=JSON.parse(raw); }
     catch(e){ console.error('onboarding: kunne ikke parse svaret som JSON:', e, '| rå body:', raw); }
-    console.log('onboarding-svar:', {status:res.status, ok:res.ok, contentType:res.headers.get('content-type'), body:raw, parsed:data, slug:(data&&data.slug)});
     if(data && data.slug){ window.location.href='/'+data.slug; return; }
+    // 2xx MED feilmelding (f.eks. status:'email_taken') → vis meldinga, ALDRI kvitteringen (som ville
+    // løyet). Logg-inn-lenka vises kun ved email_taken. timezone_required kan ikke treffe fra no/
+    // (market er alltid 'NO'), men dekkes generisk her om det skulle skje.
+    if(data && data.melding){
+      document.getElementById('obStep2').style.display='none';
+      document.getElementById('obErrorMsg').textContent=data.melding;
+      document.getElementById('obErrorLink').style.display=(data.status==='email_taken')?'':'none';
+      document.getElementById('obError').style.display='block';
+      window.scrollTo({top:0,behavior:'smooth'});
+      return;
+    }
     document.getElementById('obStep2').style.display='none';
     document.getElementById('obDoneName').textContent='Takk, '+step1.navn+'!';
     document.getElementById('obDone').style.display='block';
