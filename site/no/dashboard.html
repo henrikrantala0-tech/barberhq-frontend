@@ -4025,6 +4025,7 @@ function renderKonto(b){
   knapp.style.display='none';lenke.style.display='none';
   manage.style.display='none';av.style.display='none';
   tall.style.display='none';tallSub.style.display='none';mikro.style.display='none';
+  tekst.style.display='';   // forhandsvist-grenen skjuler den; nullstill så andre tilstander viser den
   var pv=$("#planVelger"); if(pv)pv.style.display='none';   // vises kun av checkout-grenene
   _kontoAksjon=null;
 
@@ -4113,10 +4114,10 @@ function renderKonto(b){
     // INGEN hovedtall. Prisen er ikke det barbereren lurer på før han har publisert — han har
     // ikke tatt noe i bruk ennå. Vekst-prisen (prøven kjører på Vekst) står i mikroteksten under.
     status.className='substatus mut';status.innerHTML='&#9679; Ikke publisert';
-    // Teksten over knappen sier KONSEKVENSEN (ingen kan booke), ikke vilkårene. Vilkårene
-    // står i mikroteksten under. Sto tidligere «… Du får 30 dager gratis — ingen kort
-    // nødvendig» begge steder; da leste kortet som om det var to ulike tilbud.
-    tekst.textContent='Bookingsiden din er klar, men ingen kan booke ennå.';
+    // Ingen forklaringssetning over knappen: status-pillen («Ikke publisert») + knappen
+    // («Publiser …») + mikroteksten under bærer allerede status, handling og vilkår.
+    // «Bookingsiden din er klar, men ingen kan booke ennå» ble fjernet 26.08 — for mye tekst.
+    tekst.style.display='none';tekst.textContent='';
     settKnapp('Publiser og start gratis prøveperiode','publiser');
     settMikro('Gratis i 30 dager på Vekst, ingen kort. Ved prøveslutt velger du nivå — Vekst er '+PLAN_INFO.vekst.pris+'/mnd. Si opp når som helst.');
   }else{
