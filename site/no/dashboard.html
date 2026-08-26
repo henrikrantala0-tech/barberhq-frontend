@@ -1398,11 +1398,11 @@
             <div class="fld"><label>Navn</label><input id="pf-name" type="text"></div>
             <div class="fld"><label>Navn på shoppen</label><input id="pf-shop" type="text"></div>
             <div class="fld"><label>Adresse</label><input id="pf-address" type="text"><p class="fld-hint">Skriv full adresse (gate, nummer, postnr, by) så kunder finner frem i kart. Vil du ikke dele nøyaktig sted, skriv bare byen.</p></div>
-            <div class="fld"><label>Tagline <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><input id="pf-tagline" type="text" placeholder="Kort tagline under barbernavnet" maxlength="60"></div>
+            <div class="fld"><label>Tagline <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><input id="pf-tagline" type="text" maxlength="60"></div>
             <!-- bioHint: se refreshSlots(). Direkte-malen har ingen {{BIO_BLOCK}}, så
                  beskrivelsen lagres men er usynlig i preview — uten denne linja leser det
                  som at lagringen ikke virket. [oversettelse: sv/da/en] -->
-            <div class="fld"><label>Beskrivelse <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><textarea id="pf-bio" placeholder="Noen ord om deg og stilen din"></textarea><p class="fld-hint" id="bioHint" hidden>Direkte-layouten viser ikke beskrivelsen. Den lagres, og dukker opp hvis du bytter layout.</p></div>
+            <div class="fld"><label>Beskrivelse <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><textarea id="pf-bio"></textarea><p class="fld-hint" id="bioHint" hidden>Direkte-layouten viser ikke beskrivelsen. Den lagres, og dukker opp hvis du bytter layout.</p></div>
             <div class="savebar"><button class="btn" id="saveProfil">Lagre profil</button><span class="saved" id="profilSaved">Lagret &#10003;</span></div>
           </div>
         </div>
