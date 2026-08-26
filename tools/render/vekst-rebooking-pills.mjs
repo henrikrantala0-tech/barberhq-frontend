@@ -62,7 +62,7 @@ const CASE = [
 const browser = await chromium.launch();
 const rapport = [];
 
-for (const bredde of [320, 375, 1280]) {
+for (const bredde of [320, 402, 1280]) {
   for (const c of CASE) {
     const page = await browser.newPage({ viewport:{ width:bredde, height:1000 }, deviceScaleFactor:2 });
     const errs = []; page.on('pageerror', e => errs.push(e.message));
@@ -122,14 +122,14 @@ for (const bredde of [320, 375, 1280]) {
       };
     }, { NOTE });
 
-    if (bredde === 375) {
+    if (bredde === 402) {
       const box = await page.$('#accRebook');
-      if (box) await box.screenshot({ path:`${OUT}/375-rebook-${c.navn}.png` });
+      if (box) await box.screenshot({ path:`${OUT}/402-rebook-${c.navn}.png` });
       // Feilmeldinga står OVER .acc-list, altså utenfor #accRebook. Eget bilde av hele
       // blokka, ellers viser skjermbildet bryterne uten meldinga som forklarer dem.
       if (c.settings === 'FEIL') {
         const hel = await page.evaluateHandle(() => document.querySelector('.acc-list').parentElement);
-        await hel.asElement().screenshot({ path:`${OUT}/375-rebook-feil-hel.png` });
+        await hel.asElement().screenshot({ path:`${OUT}/402-rebook-feil-hel.png` });
       }
     }
 
@@ -149,9 +149,9 @@ for (const bredde of [320, 375, 1280]) {
       await page.click('#rebookInfo');
       await page.waitForTimeout(200);
       const aapen = await page.$eval('#rebookInfoTip', t => !t.hidden);
-      if (bredde === 375) {
+      if (bredde === 402) {
         const box = await page.$('#accRebook');
-        if (box) await box.screenshot({ path:`${OUT}/375-rebook-${c.navn}-tip.png` });
+        if (box) await box.screenshot({ path:`${OUT}/402-rebook-${c.navn}-tip.png` });
       }
       // Trykk utenfor skal lukke igjen (ingen mouseleave på touch).
       await page.click('#rebookPills');

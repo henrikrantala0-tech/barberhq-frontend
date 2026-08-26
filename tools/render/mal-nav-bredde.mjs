@@ -23,7 +23,7 @@ const res=await page.evaluate(()=>{
   // Prioritert rekkefølge: det som IKKE får plass går i «Mer»
   const PRI=['oversikt','abonnement','design','vekst','tjenester'];
   const NAVN={oversikt:'Oversikt',abonnement:'Konto',design:'Din side',vekst:'Vekst',tjenester:'Tjenester & tider'};
-  const A320=272, A375=327;
+  const A320=272, A402=354;
   const ut=[];
   for(let k=2;k<=5;k++){
     const synlige=PRI.slice(0,k);
@@ -34,7 +34,7 @@ const res=await page.evaluate(()=>{
       const sum=sumB+marg*synlige.length+(iMer.length?toggleB:0);
       ut.push({ 'synlige':synlige.map(p=>NAVN[p]).join(' · '),
                 'i Mer':iMer.length?iMer.map(p=>NAVN[p]).join(' · '):'(ingen)',
-                marg, 'sum px':sum, 'klaring 320':A320-sum, 'klaring 375':A375-sum,
+                marg, 'sum px':sum, 'klaring 320':A320-sum, 'klaring 402':A402-sum,
                 'krav ≥12 @320':(A320-sum)>=12?'OK ✓':'nei' });
     }
   }
@@ -42,6 +42,6 @@ const res=await page.evaluate(()=>{
 });
 console.log('knappebredder:',JSON.stringify(res.bredder));
 console.log('«Mer»-toggelen:',res.toggleB,'px');
-console.log('tilgjengelig — 320: 272 px | 375: 327 px\n');
+console.log('tilgjengelig — 320: 272 px | 402: 354 px\n');
 console.table(res.ut);
 await browser.close(); server.close();

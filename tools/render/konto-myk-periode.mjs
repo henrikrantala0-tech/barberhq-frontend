@@ -36,7 +36,7 @@ const CASE=[
 
 const browser=await chromium.launch();
 const rapport=[];
-for(const bredde of [320,375]){
+for(const bredde of [320,402]){
   for(const c of CASE){
     const page=await browser.newPage({viewport:{width:bredde,height:900},deviceScaleFactor:2});
     const errs=[]; page.on('pageerror',e=>errs.push(e.message));

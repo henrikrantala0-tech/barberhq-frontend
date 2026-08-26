@@ -1,5 +1,5 @@
 // Pris utledes ALLTID fra PLAN_INFO — ingen hardkodet 249 utenfor den konstanten.
-// Rendrer Konto-fanen i tilstand A (ikke publisert) og B (prøveperiode) på 320 + 375.
+// Rendrer Konto-fanen i tilstand A (ikke publisert) og B (prøveperiode) på 320 + 402.
 //   A: den nye mikroteksten skal referere Vekst-prisen (PLAN_INFO.vekst.pris = 399 kr),
 //      og INGEN «249» skal finnes i panelet.
 //   B: plan-velger + dager — regresjonssjekk (min endring rører ikke B, men skal ikke knekke den).
@@ -37,7 +37,7 @@ const CASE=[
 
 const browser=await chromium.launch();
 const rapport=[];
-for(const bredde of [320,375]){
+for(const bredde of [320,402]){
   for(const c of CASE){
     const page=await browser.newPage({viewport:{width:bredde,height:900},deviceScaleFactor:2});
     const errs=[]; page.on('pageerror',e=>errs.push(e.message));

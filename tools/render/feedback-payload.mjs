@@ -18,7 +18,7 @@ const PORT=server.address().port;
 async function kjor(profil){
   const fanget=[];
   const browser=await chromium.launch();
-  const page=await browser.newPage({viewport:{width:375,height:900},deviceScaleFactor:2});
+  const page=await browser.newPage({viewport:{width:402,height:900},deviceScaleFactor:2});
   const errs=[]; page.on('pageerror',e=>errs.push(e.message));
   await page.route('**/api/**',route=>{
     const u=new URL(route.request().url());

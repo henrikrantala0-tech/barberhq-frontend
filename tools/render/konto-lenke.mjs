@@ -99,7 +99,7 @@ function ruter(page,billing,slug){
 const browser=await chromium.launch();
 const rapport=[];
 
-for(const bredde of [320,375]){
+for(const bredde of [320,402]){
   for(const [navn,billing,vent] of TILSTANDER){
     // Eget context per tilstand: clipboard-tillatelsene må stå FØR sida laster, og en frisk
     // context hindrer at utklippstavla fra forrige tilstand leses som denne tilstandens svar.

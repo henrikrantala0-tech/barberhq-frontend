@@ -5,7 +5,7 @@
 //
 // ⚠ 1200 ER MED MED VILJE. .foot-top var et to-kolonners grid (1.3fr 1fr), og media-spørringen
 // setter det til 1fr under 760px. Hullet etter den fjernede kolonnen kunne derfor BARE oppstå
-// på desktop — måler vi kun 320/375, ser en tom halv footer helt riktig ut.
+// på desktop — måler vi kun 320/402, ser en tom halv footer helt riktig ut.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -27,7 +27,7 @@ const SIDER=['index','priser','funksjoner','support','vilkar'];
 const browser=await chromium.launch();
 const rapport=[];
 
-for(const bredde of [320,375,1200]){
+for(const bredde of [320,402,1200]){
   for(const side of SIDER){
     const page=await browser.newPage({viewport:{width:bredde,height:900},deviceScaleFactor:2});
     const errs=[]; page.on('pageerror',e=>errs.push(e.message));
@@ -64,7 +64,7 @@ for(const bredde of [320,375,1200]){
       };
     });
 
-    if(bredde!==375) { /* skudd kun på 320 og 1200 — 375 måles, men gir ikke nytt bilde */ }
+    if(bredde!==402) { /* skudd kun på 320 og 1200 — 402 måles, men gir ikke nytt bilde */ }
     await page.locator('.foot').screenshot({path:`${OUT}/${bredde}-foot-${side}.png`});
 
     rapport.push({bredde,side,

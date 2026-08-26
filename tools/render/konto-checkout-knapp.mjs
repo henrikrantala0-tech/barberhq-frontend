@@ -1,6 +1,6 @@
 // #kontoAksjon skal være designsystemets primærknapp (.btn) i ALLE checkout-tilstander,
 // aldri den dempede .lnk-quiet. Rendrer tilstand B (trial løper, >7 dager) + canceled på
-// 320 + 375, og verifiserer klassen + teksten.
+// 320 + 402, og verifiserer klassen + teksten.
 //   B:        «Legg inn kort — fortsett med Vekst», class .btn
 //   canceled: «Fortsett med Vekst»,                 class .btn
 // Sjekker også at primærknappen (ink/hvit) ikke smelter sammen med plan-velgerens blå
@@ -39,7 +39,7 @@ const CASE=[
 
 const browser=await chromium.launch();
 const rapport=[];
-for(const bredde of [320,375]){
+for(const bredde of [320,402]){
   for(const c of CASE){
     const page=await browser.newPage({viewport:{width:bredde,height:1000},deviceScaleFactor:2});
     const errs=[]; page.on('pageerror',e=>errs.push(e.message));

@@ -1,5 +1,5 @@
 // Trial-copy på salgssidene etter omleggingen (publiser → 30 dager gratis, ingen kort).
-// Rendrer priser.html og kom-i-gang.html på 320 + 375 og verifiserer at ingen side
+// Rendrer priser.html og kom-i-gang.html på 320 + 402 og verifiserer at ingen side
 // fortsatt påstår at man betaler når siden er klar.
 import http from 'node:http';
 import fs from 'node:fs';
@@ -27,7 +27,7 @@ const SIDER=['priser.html','kom-i-gang.html','index.html','funksjoner.html','sup
 const browser=await chromium.launch();
 const rapport=[];
 
-for(const bredde of [320,375]){
+for(const bredde of [320,402]){
   for(const side of SIDER){
     const page=await browser.newPage({viewport:{width:bredde,height:900},deviceScaleFactor:2});
     const errs=[]; page.on('pageerror',e=>errs.push(e.message));

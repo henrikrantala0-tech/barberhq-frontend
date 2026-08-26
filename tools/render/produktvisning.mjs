@@ -41,7 +41,10 @@ const fokuser=async(page,i)=>{
 };
 const rapport=[]; const oppforsel=[];
 
-for(const bredde of [320,375,1280]){
+// Mobil render-bredde. Var 375; flyttet til 402 (moderne iPhone) — se 01-beslutninger «Arbeidsregler».
+// Ett magisk tall brukt i løkka, viewportene og labels under — én kilde.
+const MOBIL=402;
+for(const bredde of [320,MOBIL,1280]){
   const ctx=await browser.newContext({viewport:{width:bredde,height:900},deviceScaleFactor:2});
   const page=await ctx.newPage();
   const errs=[]; page.on('pageerror',e=>errs.push(e.message));
@@ -52,7 +55,7 @@ for(const bredde of [320,375,1280]){
   // etter 900ms, leser vi et tall midt i opptellingen (9967 av 10550) og «gull ikke satt» —
   // begge deler ville sett ut som feil i klonen, ikke som feil i målingen.
   //
-  // Et fast tall løser det ikke. 2300ms holdt for 375 og 1280, men 320 er FØRSTE kontekst
+  // Et fast tall løser det ikke. 2300ms holdt for 402 og 1280, men 320 er FØRSTE kontekst
   // i løkken og betaler kaldstarten: opptellingen sto på 10 544 og rekordtilstanden var
   // ikke tent, så tre gull-felt og bar-teksten meldte rødt på en klon som er riktig.
   // Et større tall ville bare flyttet grensa. Vi venter på TILSTANDEN i stedet: gradienten
@@ -374,7 +377,7 @@ for(const bredde of [320,375,1280]){
 
 // ── Mobil: stabelen skal IKKE rotere ─────────────────────────────────────────────
 {
-  const ctx=await browser.newContext({viewport:{width:375,height:900},deviceScaleFactor:2});
+  const ctx=await browser.newContext({viewport:{width:MOBIL,height:900},deviceScaleFactor:2});
   const page=await ctx.newPage();
   const errs=[]; page.on('pageerror',e=>errs.push(e.message));
   await page.goto(`http://localhost:${PORT}/no/index.html`,{waitUntil:'networkidle'});
@@ -418,7 +421,7 @@ for(const bredde of [320,375,1280]){
   // overflyt som normaltilstand og ville dermed feilet den dagen noen fikset den. Kravet
   // er nå det det alltid burde vært — sida er nøyaktig så bred som skjermen.
   const sw=await page.evaluate(()=>({s:document.documentElement.scrollWidth,i:window.innerWidth}));
-  oppforsel.push({test:'page scrollWidth == viewport (375)', resultat:sw.s+'px av '+sw.i,
+  oppforsel.push({test:`page scrollWidth == viewport (${MOBIL})`, resultat:sw.s+'px av '+sw.i,
     ventet:sw.i+'px', ok:sw.s===sw.i?'✓':'✗'});
   oppforsel.push({test:'mobil: jsfeil', resultat:errs.length?errs.join('; ').slice(0,40):'ingen',
     ventet:'ingen', ok:errs.length?'✗':'✓'});
@@ -461,7 +464,7 @@ for(const bredde of [320,375,1280]){
 // på REDUSERT. senterKort(1,false) er IKKE guardet av REDUSERT og kjører som ellers, så
 // det vi måler er samme kodevei som med bevegelse på — bare uten kappløpet.
 {
-  const ctx=await browser.newContext({viewport:{width:375,height:900},deviceScaleFactor:2,
+  const ctx=await browser.newContext({viewport:{width:MOBIL,height:900},deviceScaleFactor:2,
     reducedMotion:'reduce'});
   const page=await ctx.newPage();
   const errs=[]; page.on('pageerror',e=>errs.push(e.message));
@@ -808,7 +811,7 @@ for(const bredde of [320,375,1280]){
     resultat:'utenfor: '+kaos.utenfor, ventet:'ingen', ok:kaos.utenfor==='ingen'?'✓':'✗'});
 
   // Mobil skal IKKE ha ringen — der eier scroll-snap plasseringen.
-  const mctx=await browser.newContext({viewport:{width:375,height:900},deviceScaleFactor:1});
+  const mctx=await browser.newContext({viewport:{width:MOBIL,height:900},deviceScaleFactor:1});
   const mpage=await mctx.newPage();
   await mpage.goto(`http://localhost:${PORT}/no/index.html`,{waitUntil:'networkidle'});
   await mpage.locator('#produkt').scrollIntoViewIfNeeded();
@@ -829,7 +832,7 @@ for(const bredde of [320,375,1280]){
   await rpage.waitForTimeout(1200);
   await rpage.locator('#scene .mock[data-i="0"]').click({force:true});
   await rpage.waitForTimeout(200);                       // midt i ende-byttet
-  await rpage.setViewportSize({width:375,height:900});
+  await rpage.setViewportSize({width:MOBIL,height:900});
   await rpage.waitForTimeout(900);
   const etterResize=await rpage.evaluate(()=>{
     const sc=document.getElementById('scene');
@@ -844,12 +847,12 @@ for(const bredde of [320,375,1280]){
         .map(k=>k.dataset.i).join(',')||'ingen',
     };
   });
-  oppforsel.push({test:'resize 1280→375: ingen transform',
+  oppforsel.push({test:`resize 1280→${MOBIL}: ingen transform`,
     resultat:etterResize.transform, ventet:'none|none|none',
     ok:etterResize.transform==='none|none|none'?'✓':'✗'});
-  oppforsel.push({test:'resize 1280→375: --dx ryddet',
+  oppforsel.push({test:`resize 1280→${MOBIL}: --dx ryddet`,
     resultat:etterResize.dx, ventet:'-|-|-', ok:etterResize.dx==='-|-|-'?'✓':'✗'});
-  oppforsel.push({test:'resize 1280→375: alle tre synlige i sporet',
+  oppforsel.push({test:`resize 1280→${MOBIL}: alle tre synlige i sporet`,
     resultat:`usynlige: ${etterResize.usynlige}, utenfor: ${etterResize.utenforSporet}`,
     ventet:'ingen / ingen',
     ok:(etterResize.usynlige==='ingen'&&etterResize.utenforSporet==='ingen')?'✓':'✗'});

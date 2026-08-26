@@ -48,7 +48,7 @@ const rullGjennom=async page=>{
 const browser=await chromium.launch();
 const rapport=[];
 
-for(const bredde of [320,375,1280]){
+for(const bredde of [320,402,1280]){
   const page=await browser.newPage({viewport:{width:bredde,height:900},deviceScaleFactor:2});
   const errs=[]; page.on('pageerror',e=>errs.push(e.message));
   await page.goto(URL_PRISER,{waitUntil:'networkidle'});
@@ -149,7 +149,7 @@ for(const bredde of [320,375,1280]){
 
 // Klikk-test: begge knappene, ekte klikk, på både mobil- og desktopoppsett.
 const klikk=[];
-for(const bredde of [375,1280]){
+for(const bredde of [402,1280]){
   // Basis har ingen knapp lenger — Vekst er sidas eneste CTA, så den MÅ treffe.
   for(const [navn,sel] of [['Prøv gratis i 30 dager','.pr-vekst .btn']]){
     const page=await browser.newPage({viewport:{width:bredde,height:900},deviceScaleFactor:2});

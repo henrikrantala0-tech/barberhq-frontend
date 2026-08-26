@@ -27,8 +27,8 @@ const browser=await chromium.launch();
 const rapport=[];
 
 // 1200 er med fordi footerens .foot-top er ETT-kolonners grid under 760px uansett — feil i
-// kolonneoppsettet kan derfor kun oppstå på desktop, og var usynlig på 320/375 (funn 09.08).
-for(const bredde of [320,375,1200]){
+// kolonneoppsettet kan derfor kun oppstå på desktop, og var usynlig på 320/402 (funn 09.08).
+for(const bredde of [320,402,1200]){
   const page=await browser.newPage({viewport:{width:bredde,height:900},deviceScaleFactor:2});
   const errs=[]; page.on('pageerror',e=>errs.push(e.message));
   await page.goto(`http://localhost:${PORT}/no/vilkar.html`,{waitUntil:'networkidle'});
@@ -66,7 +66,7 @@ for(const bredde of [320,375,1200]){
 // Fotlenka fra de andre sidene — en juridisk side ingen finner er ikke publisert.
 const lenker=[];
 for(const side of ['index','priser','funksjoner','support','kom-i-gang']){
-  const page=await browser.newPage({viewport:{width:375,height:900},deviceScaleFactor:2});
+  const page=await browser.newPage({viewport:{width:402,height:900},deviceScaleFactor:2});
   const errs=[]; page.on('pageerror',e=>errs.push(e.message));
   await page.goto(`http://localhost:${PORT}/no/${side}.html`,{waitUntil:'networkidle'});
   const r=await page.evaluate(()=>{
@@ -80,7 +80,7 @@ for(const side of ['index','priser','funksjoner','support','kom-i-gang']){
 }
 
 console.table(rapport);
-console.log('\nFOTLENKER (375):'); console.table(lenker);
+console.log('\nFOTLENKER (402):'); console.table(lenker);
 console.log('\njsfeil:   ', rapport.concat(lenker).some(r=>r.jsfeil!=='ingen')?'JA ✗':'ingen');
 console.log('overflow: ', rapport.some(r=>r.overflow!=='nei')?'JA ✗':'nei');
 console.log('JS-fri:   ', rapport.every(r=>r['script-tagger']===0)?'ja ✓':'NEI ✗');

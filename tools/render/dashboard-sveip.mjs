@@ -1,4 +1,4 @@
-// Sveip over ALLE fem faner på 320 + 375 med realistiske mocks. Måler, konkluderer ikke.
+// Sveip over ALLE fem faner på 320 + 402 med realistiske mocks. Måler, konkluderer ikke.
 //
 // Dette er kartleggingen som «Full mobil-gjennomgang av dashbordet» i CLAUDE.md ber om:
 // den skal produsere en liste å bli enig om, ikke fikse noe.
@@ -207,7 +207,7 @@ async function mal(page,panelId,lister){
 const browser=await chromium.launch();
 const rapport=[]; const detaljer=[];
 
-for(const bredde of [320,375]){
+for(const bredde of [320,402]){
   // ── De fire første fanene, ett sideoppslag ──
   const ctx=await browser.newContext({viewport:{width:bredde,height:800},deviceScaleFactor:2});
   const page=await ctx.newPage();

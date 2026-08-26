@@ -49,7 +49,7 @@ const ACCS=[['1-abonnement','#accAbonnement'],['2-innlogging','#accInnlogging'],
 const browser=await chromium.launch();
 const rapport=[]; let struktur=null;
 
-for(const bredde of [320,375]){
+for(const bredde of [320,402]){
   const page=await browser.newPage({viewport:{width:bredde,height:900},deviceScaleFactor:2});
   const errs=[]; page.on('pageerror',e=>errs.push(e.message));
   await ruter(page);

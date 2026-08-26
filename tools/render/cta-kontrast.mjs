@@ -55,7 +55,7 @@ const browser=await chromium.launch();
 const rapport=[], padRapport=[];
 const DSF=2;
 
-for(const bredde of [320,375]){
+for(const bredde of [320,402]){
   const page=await browser.newPage({viewport:{width:bredde,height:900},deviceScaleFactor:DSF});
   const errs=[]; page.on('pageerror',e=>errs.push(e.message));
   await page.goto(`http://localhost:${PORT}/no/index.html`,{waitUntil:'networkidle'});
