@@ -4909,7 +4909,11 @@ function applyBillingReturn(){
   if(el){
     if(live){
       el.className='sub-banner info';
-      el.innerHTML='<strong>Betaling registrert ✓</strong> Siden er ikke live ennå — den publiseres ikke automatisk. Trykk «Gå live» når du er klar.';
+      // Gate på page_status: en allerede-live barber som la til kort ETTER publisering skal ikke
+      // få «Trykk Gå live» — siden er jo live. _billing er lastet (loadBilling().then(...)).
+      el.innerHTML = (_billing&&_billing.page_status==='live')
+        ? '<strong>Betaling registrert ✓</strong> Siden din er allerede live.'
+        : '<strong>Betaling registrert ✓</strong> Siden er ikke live ennå — den publiseres ikke automatisk. Trykk «Gå live» når du er klar.';
     }else{
       el.className='sub-banner mut';
       el.innerHTML='Betalingen ble avbrutt. Du kan starte når som helst.';
