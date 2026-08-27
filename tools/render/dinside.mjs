@@ -50,6 +50,11 @@ const IMAGES = [
   { id: 2, slot: 'galleri', url: '/no/images/layout-profil.webp',   sort_order: 1 },
   { id: 3, slot: 'galleri', url: '/no/images/layout-hero.webp',     sort_order: 2 },
 ];
+// Sjekkliste-data: bilder(3)✓ · tjenester(pris)✓ · åpningstider✓ · profil(bio/spes/adr tomme)✗ ·
+// publiser(forhandsvist)✗ → 3/5. Viser både fullførte (hake+gjennomstreking) og åpne rader.
+const SERVICES = { hoved: [ { name: 'Herreklipp', price: 350, min: 30 }, { name: 'Skjeggtrim', price: 200, min: 20 } ], tillegg: [] };
+const HOURS = [1,2,3,4,5].map(wd => ({ weekday: wd, is_closed: false, open_time: '10:00', close_time: '18:00', breaks: [] }))
+  .concat([6,0].map(wd => ({ weekday: wd, is_closed: true, open_time: '10:00', close_time: '18:00', breaks: [] })));
 function billing(variant) {
   if (variant === 'live') return {
     subscription_status: 'trialing', page_status: 'live',
@@ -94,6 +99,8 @@ function makeRouter(variant) {
     if (p === '/api/dashboard/profile')        return json(PROFILE);
     if (p === '/api/dashboard/design')          return json(DESIGN);
     if (p === '/api/dashboard/images')          return json(IMAGES);
+    if (p === '/api/dashboard/services')        return json(SERVICES);
+    if (p === '/api/dashboard/hours')           return json(HOURS);
     if (p === '/api/dashboard/billing/status')  return json(billing(variant));
     if (p === '/api/dashboard/preview')         return route.fulfill({ status: 200, contentType: 'text/html', body: PREVIEW_HTML });
     // Alt annet init rører (stats/bookings/winback/attribution/settings/google/…):
@@ -136,45 +143,81 @@ function maal(page) {
   });
 }
 
-// Begge moduser, forhandsvist billing. Fokus = ?velkommen=1; vanlig = uten param.
+// Måler pill/popover-tilstand + fokus-flater.
+function maalPill(page) {
+  return page.evaluate(() => {
+    const vis = el => { if (!el) return false; const r = el.getBoundingClientRect();
+      return getComputedStyle(el).display !== 'none' && r.width > 0 && r.height > 0; };
+    return {
+      pillSynlig:     vis(document.querySelector('#sjekkPillBtn')),
+      ring:           (document.querySelector('#sjekkRingNum') || {}).textContent || '',
+      popoverSkjult:  (document.querySelector('#sjekkPopover') || {}).hidden,
+      inlineBorte:    document.querySelector('#dinsideSjekkliste') === null,
+      fokus:          document.body.classList.contains('fokus'),
+      navSynlig:      vis(document.querySelector('nav.nav')),
+      ctaSynlig:      vis(document.querySelector('#dinsideCta')),
+      fokusBar:       vis(document.querySelector('#fokusBar')),
+    };
+  });
+}
+
+// Tre tilstander per bredde: fokus (UTEN pill, fokus-bar) · vanlig m/pill · popover åpen (vanlig).
+// Pill KUN i vanlig. forhandsvist mock-barber (3/5: bilder+tjenester+tider ✓, profil+publiser ✗).
 const rad = [];
-for (const modus of ['fokus', 'vanlig']) {
-  for (const bredde of [320, 402, 1280]) {
+for (const bredde of [320, 402, 1280]) {
+  // ── Tilstand 1: FOKUS uten pill — fokus-baren fra C eier CTA-en ──────────────────
+  {
     const page = await browser.newPage({ viewport: { width: bredde, height: 900 }, deviceScaleFactor: 2 });
     const errs = []; page.on('pageerror', e => errs.push(e.message));
     await page.route('**/api/**', makeRouter('forhandsvist'));
-    const q = modus === 'fokus' ? '?velkommen=1' : '';
-    await page.goto(`http://localhost:${PORT}/no/dashboard.html${q}#dinside`, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(1600);
-    const m = await maal(page);
-    await page.screenshot({ path: `${OUT}/dinside-${modus}-${bredde}.png`, fullPage: true });
-
-    // Rekkefølge (kun fokus): mobil → accs < preview < bar; desktop → bar under begge kolonner
-    let ordreOK = 'n/a';
-    if (modus === 'fokus') ordreOK = bredde < 720
-      ? (m.accsTop < m.previewTop && m.previewTop < m.barTop)
-      : (m.barTop > m.accsTop && m.barTop > m.previewTop);
-
-    // X → avslutt fokus → fullt dashbord (kun fokus)
-    let xOK = 'n/a';
-    if (modus === 'fokus') { await page.click('#fokusX'); await page.waitForTimeout(300);
-      const e2 = await maal(page);
-      xOK = e2.fokus === false && e2.navSynlig === true && e2.barSynlig === false && e2.ctaSynlig === true; }
-
-    rad.push({ modus, bredde, fokus: m.fokus, nav: m.navSynlig, bar: m.barSynlig, barStat: m.barStatisk,
-      cta: m.ctaSynlig, idea: m.ideaSynlig, ordreOK, 'X→av': xOK, url: m.url,
-      knapper: modus === 'fokus' ? `${m.publiser} / ${m.utforsk}` : 'n/a',
-      preview: m.previewTegn, jsfeil: errs.length ? errs.join('; ') : 'ingen' });
+    await page.goto(`http://localhost:${PORT}/no/dashboard.html?velkommen=1#dinside`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1800);
+    const m = await maalPill(page);
+    await page.evaluate(() => window.scrollTo(0, document.body.scrollHeight));
+    await page.waitForTimeout(300);
+    await page.screenshot({ path: `${OUT}/sjekk-fokus-${bredde}.png`, fullPage: false });
+    rad.push({ tilstand: 'fokus', bredde, fokus: m.fokus, navSkjult: !m.navSynlig,
+      pillSkjult: !m.pillSynlig, fokusBar: m.fokusBar, inlineBorte: m.inlineBorte,
+      jsfeil: errs.length ? errs.join('; ') : 'ingen' });
+    await page.close();
+  }
+  // ── Tilstand 2+3: VANLIG med pill → klikk → popover åpen ──────────────────────────
+  {
+    const page = await browser.newPage({ viewport: { width: bredde, height: 900 }, deviceScaleFactor: 2 });
+    const errs = []; page.on('pageerror', e => errs.push(e.message));
+    await page.route('**/api/**', makeRouter('forhandsvist'));
+    await page.goto(`http://localhost:${PORT}/no/dashboard.html#dinside`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1800);
+    const m = await maalPill(page);
+    await page.screenshot({ path: `${OUT}/sjekk-vanlig-${bredde}.png`, fullPage: false });
+    await page.click('#sjekkPillBtn'); await page.waitForTimeout(350);
+    const panel = await page.evaluate(() => {
+      const vis = el => { if (!el) return false; const r = el.getBoundingClientRect();
+        return getComputedStyle(el).display !== 'none' && r.width > 0 && r.height > 0; };
+      const rows = document.querySelectorAll('#sjekkPopover .sjekk-rad');
+      return { popoverSynlig: vis(document.querySelector('#sjekkPopover')), pRader: rows.length,
+        pDone: [...rows].filter(r => r.classList.contains('done')).length,
+        pTeller: (document.querySelector('#sjekkPopover .sjekk-panel-teller') || {}).textContent || '' };
+    });
+    await page.screenshot({ path: `${OUT}/sjekk-popover-${bredde}.png`, fullPage: false });
+    // Radklikk lukker popover FØR navigasjon (rad 4 = profil)
+    await page.click('#sjekkPopover .sjekk-rad[data-act="profil"]'); await page.waitForTimeout(300);
+    const etterRad = await page.evaluate(() => (document.querySelector('#sjekkPopover') || {}).hidden);
+    rad.push({ tilstand: 'vanlig', bredde, fokus: m.fokus, nav: m.navSynlig, cta: m.ctaSynlig,
+      pill: m.pillSynlig, ring: m.ring, popFør: m.popoverSkjult, popEtter: panel.popoverSynlig,
+      pRader: panel.pRader, pDone: panel.pDone, pTeller: panel.pTeller, radLukker: etterRad === true,
+      jsfeil: errs.length ? errs.join('; ') : 'ingen' });
     await page.close();
   }
 }
 console.table(rad);
-const fokusRad = rad.filter(r => r.modus === 'fokus');
-const vanligRad = rad.filter(r => r.modus === 'vanlig');
-const okFokus = fokusRad.every(r => r.fokus && !r.nav && r.bar && r.barStat && !r.cta && !r.idea
-  && r.ordreOK === true && r['X→av'] === true && r.url === '#dinside'
-  && r.knapper === 'Publiser siden / Utforsk dashbordet' && r.preview > 0 && r.jsfeil === 'ingen');
-const okVanlig = vanligRad.every(r => !r.fokus && r.nav && !r.bar && r.cta && r.idea && r.jsfeil === 'ingen');
-console.log('\nFokus OK (?velkommen→fokus, param strippet, bar statisk nederst, CTA+Ideer skjult, X→fullt):', okFokus ? 'JA' : 'NEI');
-console.log('Vanlig OK (ingen param → fokus av, nav+CTA+Ideer synlig):', okVanlig ? 'JA' : 'NEI');
+const fk = rad.filter(r => r.tilstand === 'fokus');
+const vn = rad.filter(r => r.tilstand === 'vanlig');
+const okFokus = fk.every(r => r.fokus && r.navSkjult && r.pillSkjult && r.fokusBar
+  && r.inlineBorte && r.jsfeil === 'ingen');
+const okVanlig = vn.every(r => !r.fokus && r.nav && r.cta && r.pill && r.ring === '3/5'
+  && r.popFør === true && r.popEtter === true && r.pRader === 5 && r.pDone === 3 && r.pTeller === '3 av 5'
+  && r.radLukker === true && r.jsfeil === 'ingen');
+console.log('\nFokus OK (INGEN pill, fokus-bar synlig, nav skjult, inline-container borte):', okFokus ? 'JA' : 'NEI');
+console.log('Vanlig OK (pill 3/5 + nav+CTA synlig, klikk → popover 3/5, radklikk lukker):', okVanlig ? 'JA' : 'NEI');
 await browser.close(); server.close();

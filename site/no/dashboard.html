@@ -926,6 +926,36 @@
   body.fokus .fokus-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
   .fokus-bar .btn,.fokus-bar .btn-outline{padding:12px 22px;font-size:14px}
   @media(max-width:520px){ .fokus-bar .btn,.fokus-bar .btn-outline{flex:1;justify-content:center;text-align:center} }
+
+  /* ── «Fullfør siden»-guide (COMMIT D) — én komponent, to visninger ──────────────
+     Flytende pill nede til høyre på ALLE faner i VANLIG modus → folder ut popover med
+     panelet. IKKE i fokusmodus (der eier fokus-baren onboarding-CTA-en). Synlig KUN ved
+     page_status='forhandsvist' (styres av renderSjekkliste). */
+  .sjekk-panel{background:var(--surface);border:1px solid var(--line-2);border-radius:14px;padding:16px 16px 8px}
+  .sjekk-panel-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:11px}
+  .sjekk-panel-t{font-size:15px;font-weight:700;letter-spacing:-.01em}
+  .sjekk-panel-teller{font-size:12px;color:var(--mut);font-weight:600;flex:0 0 auto}
+  .sjekk-bar{height:6px;border-radius:99px;background:var(--line-2);overflow:hidden;margin-bottom:6px}
+  .sjekk-bar>span{display:block;height:100%;background:var(--info);border-radius:99px;transition:width .3s}
+  .sjekk-rader{display:flex;flex-direction:column}
+  .sjekk-rad{display:flex;align-items:flex-start;gap:11px;width:100%;text-align:left;appearance:none;border:0;border-top:1px solid var(--line);background:0;font:inherit;color:var(--ink);padding:11px 4px;cursor:pointer}
+  .sjekk-rad:first-child{border-top:0}
+  .sjekk-rad:hover{background:rgba(127,127,127,.06)}
+  .sjekk-ikon{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line-2);flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;color:var(--good)}
+  .sjekk-ikon.done{background:var(--good-bg);border-color:var(--good-bg)}
+  .sjekk-rad-tekst{display:flex;flex-direction:column;gap:2px;min-width:0}
+  .sjekk-rad-t{font-size:13.5px;font-weight:600}
+  .sjekk-rad-s{font-size:12px;color:var(--mut)}
+  .sjekk-rad.done .sjekk-rad-t{text-decoration:line-through;color:var(--mut);font-weight:500}
+  .sjekk-pill-wrap{position:fixed;right:18px;bottom:18px;z-index:130}
+  .sjekk-pill{display:inline-flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line-2);border-radius:99px;padding:8px 16px 8px 8px;box-shadow:0 6px 22px rgba(0,0,0,.22);cursor:pointer;font:inherit;color:var(--ink)}
+  .sjekk-pill:hover{border-color:var(--ink)}
+  .sjekk-pill-tekst{font-size:13.5px;font-weight:600;letter-spacing:-.01em}
+  .sjekk-ring{position:relative;width:30px;height:30px;border-radius:50%;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;background:conic-gradient(var(--info) calc(var(--p,0)*1%),var(--line-2) 0)}
+  .sjekk-ring::before{content:'';position:absolute;inset:3px;border-radius:50%;background:var(--surface)}
+  .sjekk-ring-num{position:relative;font-size:9.5px;font-weight:700;color:var(--ink)}
+  .sjekk-popover{position:absolute;right:0;bottom:calc(100% + 10px);width:min(300px,calc(100vw - 32px));box-shadow:0 12px 34px rgba(0,0,0,.28);border-radius:14px}
+  @media(max-width:520px){ .sjekk-pill-wrap{right:12px;bottom:12px} .sjekk-pill-tekst{font-size:13px} }
 </style>
 </head>
 <body>
@@ -972,6 +1002,15 @@
     </div>
   </nav>
 </div>
+</div>
+<!-- «Fullfør siden»-pill (vanlig modus, alle faner). Fokusmodus bruker inline-panelet i
+     #dinsideSjekkliste i stedet. Synlig kun ved forhandsvist (renderSjekkliste). -->
+<div class="sjekk-pill-wrap" id="sjekkPill" hidden>
+  <div class="sjekk-popover" id="sjekkPopover" hidden></div>
+  <button class="sjekk-pill" id="sjekkPillBtn" type="button" aria-expanded="false" aria-label="Fullfør siden din">
+    <span class="sjekk-ring" id="sjekkRing"><span class="sjekk-ring-num" id="sjekkRingNum">0/5</span></span>
+    <span class="sjekk-pill-tekst">Fullfør siden din</span>
+  </button>
 </div>
 <div class="wrap">
 
@@ -1429,9 +1468,6 @@
       <div class="dinside-live-status"><span class="live-dot"></span>Siden din er live</div>
       <div id="dinsideLiveLenke"></div>
     </div>
-    <!-- Sjekkliste-plassholder — fylles av COMMIT D (renderSjekkliste). Står FØR .side-wrap
-         så den er øverst i «Din side»; på mobil i fokus kommer preview rett under den. -->
-    <div class="dinside-sjekkliste" id="dinsideSjekkliste" hidden></div>
     <div class="side-wrap">
       <!-- data-single: ETT trekkspill åpent om gangen. Markøren er på lista, ikke global —
            Vekst-fanens .acc-list er umerket og beholder flere åpne samtidig. -->
@@ -2967,6 +3003,7 @@ async function loadBilder(){
 async function bilderEndret(){
   await loadBilder();
   invaliderPreview();
+  oppdaterSjekkliste(); // galleri-haken (≥3 bilder) kan ha endret seg
 }
 
 // Rendrer slots for VALGT layout (design.layout), ikke lagret. Slik ser barberen
@@ -3333,7 +3370,7 @@ $("#pauseModalList").addEventListener("change",e=>{const i=+e.target.dataset.pm;
   else if(e.target.dataset.pmf){hours[i].breaks=hours[i].breaks||[]; if(!hours[i].breaks[0])hours[i].breaks[0]={start:'',end:''}; hours[i].breaks[0][e.target.dataset.pmf]=e.target.value;}});
 $("#saveHours").addEventListener("click",async()=>{const btn=$("#saveHours");btn.disabled=true;btn.textContent="Lagrer …";$("#hoursErr").textContent="";
   const res=await api.saveHours(hours);btn.disabled=false;btn.textContent="Lagre arbeidstider";
-  if(res.ok){const s=$("#hoursSaved");s.classList.add("show");setTimeout(()=>s.classList.remove("show"),1800);}
+  if(res.ok){const s=$("#hoursSaved");s.classList.add("show");setTimeout(()=>s.classList.remove("show"),1800);oppdaterSjekkliste();/* åpen-dag-haken kan ha endret seg */}
   else if(res.error){$("#hoursErr").textContent=res.error;}});   // 409 booking-kollisjon / 400 validering — ordrett
 
 $("#gcalBtn").addEventListener("click",async()=>{
@@ -3562,6 +3599,7 @@ async function lagreProfil(knappSel, flashSel){
   CONFIG.BARBER_NAME=displayName;var el=$("#barberName");if(el)el.textContent=displayName;
   savedFlash(flashSel);
   invaliderPreview(); // tagline/bio/adresse står i preview-HTML-en (navn gjør IKKE — identitetsfelt)
+  oppdaterSjekkliste(); // profil-haken (bio/spesialitet/adresse) kan ha endret seg
 }
 $("#saveProfil").addEventListener("click",function(){lagreProfil("#saveProfil","#profilSaved");});
 $("#saveNavn").addEventListener("click",function(){lagreProfil("#saveNavn","#navnSaved");});
@@ -3993,6 +4031,7 @@ $("#saveSvc").addEventListener("click",async function(){
   if(!r)return;
   if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre tjenester. Prøv igjen.');return;}
   savedFlash("#svcSaved");
+  oppdaterSjekkliste(); // tjeneste-haken (≥1 med pris) kan ha endret seg
 });
 
 /* ---- Betaling (valgfri): rader = betalingsmetoder. Lastes fra innstillings-loaderen ved init. ---- */
@@ -4343,6 +4382,7 @@ function renderDinsideCta(b){
     cta.hidden=true; live.hidden=true;
   }
   applyFokusModus(); // fokus følger samme page_status — publisering (→live) slår den av selv
+  renderSjekkliste(); // synlighet + hake for «Publiser siden» følger page_status (dør ved live)
 }
 
 /* ── Fokusmodus ─────────────────────────────────────────────────────────────────
@@ -4369,12 +4409,118 @@ function applyFokusModus(b){
     document.body.classList.remove('fokus'); // publisert/annet → fokus skal aldri stå på
   }
 }
-function avsluttFokus(){ document.body.classList.remove('fokus'); }
+function avsluttFokus(){ document.body.classList.remove('fokus'); renderSjekkliste(); }
 (function(){
   var x=document.getElementById('fokusX');        if(x)x.addEventListener('click',avsluttFokus);
   var u=document.getElementById('fokusUtforsk');   if(u)u.addEventListener('click',avsluttFokus);
   var p=document.getElementById('fokusPubliser');
   if(p)p.addEventListener('click',function(){ if(IS_DEMO)return; settSideStatus('live',this); });
+})();
+
+/* ── «Fullfør siden»-guide (COMMIT D) ──────────────────────────────────────────────
+   ÉN komponent, TO visninger, SAMME data. Fokus → inline-panel i #dinsideSjekkliste;
+   vanlig → flytende pill (alle faner) som folder ut popover. Haker KUN fra ekte data
+   (images/services/hours/profile/billing). Synlig kun ved forhandsvist; dør ved
+   publisering (page_status→live via renderDinsideCta → renderSjekkliste). */
+var _sjekkData={bilderGalleri:0,tjenesterMedPris:0,apneDager:0,profilUtfylt:0};
+var _sjekkPopoverAapen=false;
+var SJEKK_CHECK='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
+// Bildekrav i sjekklista = 2 (bekreftet: backend BILDER_MIN=2, samme som onboarding MIN_IMG=2).
+// Egen konstant så tallet bor ETT sted, ikke hardkodet i regelen + underteksten under.
+var SJEKK_BILDER_MIN=2;
+function sjekklisteItems(){
+  var b=_billing||{};
+  return [
+    {action:'bilder',    label:'Last opp bilder',     sub:'Minst '+SJEKK_BILDER_MIN+' i galleriet',done:_sjekkData.bilderGalleri>=SJEKK_BILDER_MIN},
+    {action:'tjenester', label:'Legg til tjenester',  sub:'Minst én med pris',                     done:_sjekkData.tjenesterMedPris>=1},
+    {action:'tider',     label:'Sett åpningstider',   sub:'Minst én åpen dag',                     done:_sjekkData.apneDager>=1},
+    {action:'profil',    label:'Fortell om deg selv', sub:'Minst 2 av: bio, spesialitet, adresse', done:_sjekkData.profilUtfylt>=2},
+    {action:'publiser',  label:'Publiser siden',      sub:'Gjør siden synlig for kunder',          done:b.page_status==='live'},
+  ];
+}
+function byggSjekkPanel(items,ferdig){
+  var pct=Math.round(ferdig/items.length*100);
+  var rader=items.map(function(it){
+    return '<button type="button" class="sjekk-rad'+(it.done?' done':'')+'" data-act="'+it.action+'">'
+      +'<span class="sjekk-ikon'+(it.done?' done':'')+'">'+(it.done?SJEKK_CHECK:'')+'</span>'
+      +'<span class="sjekk-rad-tekst"><span class="sjekk-rad-t">'+it.label+'</span><span class="sjekk-rad-s">'+it.sub+'</span></span></button>';
+  }).join('');
+  return '<div class="sjekk-panel"><div class="sjekk-panel-hd"><span class="sjekk-panel-t">Fullfør siden din</span>'
+    +'<span class="sjekk-panel-teller">'+ferdig+' av '+items.length+'</span></div>'
+    +'<div class="sjekk-bar"><span style="width:'+pct+'%"></span></div>'
+    +'<div class="sjekk-rader">'+rader+'</div></div>';
+}
+function renderSjekkliste(){
+  var b=_billing||{};
+  var forhV=b.page_status==='forhandsvist';
+  var iFokus=document.body.classList.contains('fokus');
+  var items=sjekklisteItems();
+  var ferdig=items.filter(function(i){return i.done;}).length;
+  // Pill KUN i vanlig modus (ikke fokus — der eier fokus-baren onboarding-CTA-en, og pillen
+  // ville kollidert med den). Synlig kun ved forhandsvist.
+  var pill=$('#sjekkPill');
+  if(pill){
+    if(forhV&&!iFokus){
+      pill.hidden=false;
+      var pct=Math.round(ferdig/items.length*100);
+      var ring=$('#sjekkRing'); if(ring)ring.style.setProperty('--p',pct);
+      var num=$('#sjekkRingNum'); if(num)num.textContent=ferdig+'/'+items.length;
+      var pop=$('#sjekkPopover'); if(pop)pop.innerHTML=byggSjekkPanel(items,ferdig);
+    } else { pill.hidden=true; _sjekkPopoverLukk(); }
+  }
+}
+async function hentSjekklisteData(){
+  try{
+    var res=await Promise.all([
+      apiFetch('/api/dashboard/images'),
+      apiFetch('/api/dashboard/services'),
+      apiFetch('/api/dashboard/hours'),
+      apiFetch('/api/dashboard/profile'),
+    ]);
+    var imgs=res[0]&&res[0].ok?await res[0].json():[];
+    var svc =res[1]&&res[1].ok?await res[1].json():{};
+    var hrs =res[2]&&res[2].ok?await res[2].json():[];
+    var prof=res[3]&&res[3].ok?await res[3].json():{};
+    _sjekkData.bilderGalleri   =(imgs||[]).filter(function(i){return i.slot==='galleri';}).length;
+    _sjekkData.tjenesterMedPris=(((svc&&svc.hoved)||[])).filter(function(s){return Number(s.price)>0;}).length;
+    _sjekkData.apneDager       =(Array.isArray(hrs)?hrs:[]).filter(function(d){return !d.is_closed;}).length;
+    _sjekkData.profilUtfylt    =[prof.bio,prof.tagline,prof.address].filter(function(v){return (v||'').trim();}).length;
+  }catch(e){ console.error('sjekkliste-data feilet:',e); }
+  renderSjekkliste();
+}
+function oppdaterSjekkliste(){ hentSjekklisteData(); }
+function _sjekkAapneAkk(id){var h=document.querySelector('#'+id+' .acc-head');if(h&&h.getAttribute('aria-expanded')!=='true')h.click();}
+function _sjekkScroll(sel){var el=document.querySelector(sel);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}
+function _sjekkPopoverLukk(){ _sjekkPopoverAapen=false; var p=$('#sjekkPopover'); if(p)p.hidden=true; var b=$('#sjekkPillBtn'); if(b)b.setAttribute('aria-expanded','false'); }
+function sjekkGaaTil(action){
+  _sjekkPopoverLukk();
+  if(action==='publiser'){ if(!IS_DEMO) settSideStatus('live',document.createElement('button')); return; }
+  if(action==='bilder'||action==='profil'){
+    // Begge bor i «Din side» (#design) — synlig i fokus, så vi BLIR i fokus, åpner bare trekkspillet.
+    if(typeof aktivtPanel==='function'&&aktivtPanel()!=='design') switchPanel('design');
+    setTimeout(function(){
+      if(action==='bilder'){ _sjekkAapneAkk('accBilder'); _sjekkScroll('#accBilder'); }
+      else { _sjekkAapneAkk('accProfil'); _sjekkScroll('#pf-bio'); var f=$('#pf-bio'); if(f)f.focus(); }
+    },60);
+  } else {
+    // tjenester / tider bor på en ANNEN fane — i fokus må vi ut først (fokus viser kun Din side).
+    if(document.body.classList.contains('fokus')) avsluttFokus();
+    switchPanel('tjenester');
+    setTimeout(function(){ _sjekkScroll(action==='tjenester'?'#hovedList':'#hoursList'); },60);
+  }
+}
+(function(){
+  var btn=$('#sjekkPillBtn');
+  if(btn)btn.addEventListener('click',function(e){
+    e.stopPropagation();
+    _sjekkPopoverAapen=!_sjekkPopoverAapen;
+    var p=$('#sjekkPopover'); if(p)p.hidden=!_sjekkPopoverAapen;
+    btn.setAttribute('aria-expanded',_sjekkPopoverAapen?'true':'false');
+  });
+  document.addEventListener('click',function(e){
+    var rad=e.target.closest('.sjekk-rad'); if(rad){ sjekkGaaTil(rad.dataset.act); return; }
+    if(_sjekkPopoverAapen && !e.target.closest('#sjekkPill')) _sjekkPopoverLukk();
+  });
 })();
 
 // Lenke-blokka styres av page_status ALENE, og ligger derfor utenfor if/else-kjeden i
@@ -4696,6 +4842,7 @@ loadOversikt();loadBookinger();
 loadWinback(); // vinn-tilbake bor nå i Vekst; init-kallet fyller Oversikt-nudgen (ferske no-shows) + badge ved sideload
 loadPayment(); // betalingsmetoder (Tjenester-fanen) fra innstillings-loaderen
 loadBilling().then(applyBillingReturn); // abonnementsstatus (ekte) → deretter ev. retur-flagg fra Stripe
+hentSjekklisteData(); // «Fullfør siden»-guide: hent haker (images/services/hours/profile) ved sideload
 anvendHash(); // åpne panelet fra location.hash (ukjent/tom → standardpanel). Stripe-retur over
               // kjører async etterpå og kan overstyre til Konto — det er tilsiktet.
 
