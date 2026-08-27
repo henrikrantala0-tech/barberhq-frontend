@@ -3039,13 +3039,15 @@ async function loadBilder(){
 async function bilderEndret(){
   await loadBilder();
   invaliderPreview();
-  oppdaterSjekkliste(); // galleri-haken (≥3 bilder) kan ha endret seg
+  oppdaterSjekkliste(); // galleri-haken (≥2 bilder) kan ha endret seg
 }
 
 // Rendrer slots for VALGT layout (design.layout), ikke lagret. Slik ser barberen
 // slot-oppsettet skifte live når hen bytter layout. Opplasting/crop/slett er derimot
-// låst til LAGRET layout (savedLayout) — slots hard-slettes kun ved faktisk layout-bytte,
-// så å laste opp til en ulagret layouts slot ville skape DB-inkonsistens.
+// låst til LAGRET layout (savedLayout). Backend rører ALDRI bilder ved layout-bytte
+// (dashboard.js:379, svarer bilderSlettet:false), så låsen er IKKE lenger et vern mot
+// sletting — den hindrer at bilder lastes opp til en PREVIEWET, ulagret layout og havner
+// på en slot den live siden ikke leser (usynlig opplasting). Lagre layouten → slots låses opp.
 // Ukjent layout ⇒ LÅST. `null!==null` er false, så uten den første testen ville en feilet
 // /design-henting låst OPP opplasting i stedet for ned — bilder kunne lastes til en slot vi
 // ikke vet finnes. Fail-closed er eneste forsvarlige retning her.
@@ -4204,9 +4206,9 @@ $("#saveDesign").addEventListener("click",async function(){
   if(!r)return;
   if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre design. Prøv igjen.');return;}
   savedLayout=design.layout;savedFlash("#designSaved");
-  // bilderEndret, ikke loadBilder: et layout-bytte HARD-SLETTER slots (DB+R2). Cache-entryene
-  // for de ANDRE layout/palett/font-kombinasjonene viser da bilder som ikke finnes lenger.
-  // Den nåværende kombinasjonen ville rendret riktig uansett — det er de gamle som råtner.
+  // bilderEndret (ikke loadBilder): savedLayout ble nettopp oppdatert, så slot-låsen skal
+  // åpnes (slotsLaast leser savedLayout) OG preview-cachen tømmes. Backend sletter IKKE bilder
+  // ved layout-bytte (dashboard.js:379) — re-hentingen holder bare slot-visning + cache i synk.
   await bilderEndret(); // re-hent bilder + lås opp slots + tøm preview-cache
 });
 
