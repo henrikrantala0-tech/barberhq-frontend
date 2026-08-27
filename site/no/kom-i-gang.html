@@ -76,8 +76,11 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:9px;margin-top:14px}
 .thumb{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid #222}
 .thumb img{width:100%;height:100%;object-fit:cover;display:block}
-.thumb .lead-badge{position:absolute;top:4px;left:4px;width:20px;height:20px;border-radius:50%;background:rgba(77,139,255,.92);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;line-height:1}
+.thumb{cursor:pointer}
+.thumb.fav{border-color:#4d8bff;box-shadow:0 0 0 1px #4d8bff}
+.thumb .fav-tag{position:absolute;left:0;right:0;bottom:0;background:rgba(77,139,255,.94);color:#fff;font-size:10px;font-weight:600;text-align:center;padding:3px 2px;line-height:1.2}
 .thumb .rm{position:absolute;top:4px;right:4px;width:22px;height:22px;border-radius:50%;border:0;background:rgba(0,0,0,.72);color:#fff;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1}
+.fav-hint{font-size:12px;color:#777;margin-top:10px}
 
 /* Tjenester */
 .svc-row{background:#0a0a0a;border:1px solid #1f1f1f;border-radius:12px;padding:12px;margin-bottom:10px}
@@ -122,16 +125,14 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 </nav>
 <header class="ob-hero">
   <h1>Kom i <span class="hl-blue">gang</span></h1>
-  <p>Fyll inn det viktigste, så står bookingsiden din klar med det samme.</p>
+  <p>Komplett bookingside, klar på noen få minutter.</p>
 </header>
 <div class="ob">
   <div class="ob-card" id="obForm">
     <div class="stepind"><span class="d on"></span><span class="d"></span></div>
     <div class="field"><label for="o-name">Navn</label><input type="text" id="o-name" placeholder="Ditt navn"></div>
-    <div class="field"><label for="o-shop">Navn på shoppen</label><input type="text" id="o-shop" placeholder="Blir navnet på siden din"></div>
-    <div class="field"><label for="o-city">By</label><input type="text" id="o-city" placeholder="F.eks. Oslo"></div>
+    <div class="field"><label for="o-shop">Navn på salongen</label><input type="text" id="o-shop" placeholder="Blir navnet på siden din"></div>
     <div class="field"><label for="o-email">E-post</label><input type="email" id="o-email" placeholder="E-posten du logger inn med"></div>
-    <div class="ob-note-box"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M20 6 9 17l-5-5"/></svg><div><strong>To raske steg.</strong> Først det viktigste — så bilder, tjenester og åpningstider. Alt kan endres i dashbordet etterpå.</div></div>
     <button type="button" class="btn btn-fill ob-submit" onclick="submitOb()">Neste &rarr;</button>
   </div>
   <div class="ob-card ob-step2" id="obStep2">
@@ -148,6 +149,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       <input type="file" id="fileInput" accept="image/*" multiple hidden>
       <div class="img-count" id="imgCount">0 av minst 2 lastet opp</div>
       <div class="thumbs" id="thumbs"></div>
+      <p class="fav-hint" id="favHint" style="display:none">Trykk på et bilde for å velge hva som vises først på siden.</p>
     </div>
 
     <div class="dgrp"><span class="lab">Tjenester</span>
@@ -166,7 +168,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   <div class="ob-card ob-done" id="obDone">
     <div class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="30" height="30"><path d="M20 6 9 17l-5-5"/></svg></div>
     <h2 id="obDoneName">Takk!</h2>
-    <p>Bookingsiden din er opprettet. Du får 30 dager gratis.</p>
+    <p>Vi bygger siden din — du får en e-post når den er klar.</p>
   </div>
   <div class="ob-card ob-done" id="obError">
     <div class="chk err"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="30" height="30"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12.5"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
@@ -183,11 +185,11 @@ var step1={};
 
 function submitOb(){
   var bad=false;
-  ['o-name','o-shop','o-city','o-email'].forEach(function(id){var el=document.getElementById(id);if(!el.value.trim()){el.style.borderColor='#c0594a';bad=true;}else{el.style.borderColor='#2a2a2a';}});
+  ['o-name','o-shop','o-email'].forEach(function(id){var el=document.getElementById(id);if(!el.value.trim()){el.style.borderColor='#c0594a';bad=true;}else{el.style.borderColor='#2a2a2a';}});
   var em=document.getElementById('o-email');
   if(em.value.trim() && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(em.value.trim())){em.style.borderColor='#c0594a';bad=true;}
   if(bad)return;
-  step1={navn:v('o-name'),shop:v('o-shop'),adresse:v('o-city'),epost:v('o-email')};
+  step1={navn:v('o-name'),shop:v('o-shop'),epost:v('o-email')};
   document.getElementById('obForm').style.display='none';
   document.getElementById('obStep2').style.display='block';
   window.scrollTo({top:0,behavior:'smooth'});
@@ -195,6 +197,10 @@ function submitOb(){
 
 /* ---- Bilder ---- */
 var files=[];
+// Favorittbilde: rå indeks i files[] som skal «vises først» på siden. -1 = ingen valgt
+// (valgfritt). Sendes som POST-felt favoritt. Følger files[]-rekkefølgen — nøyaktig den
+// rekkefølgen bildene appendes til FormData, så backendens «filindeks» matcher.
+var favIndex=-1;
 var fileInput=document.getElementById('fileInput');
 document.getElementById('dropZone').addEventListener('click',function(){fileInput.click();});
 fileInput.addEventListener('change',function(){
@@ -202,10 +208,30 @@ fileInput.addEventListener('change',function(){
   fileInput.value='';
   refreshImages();
 });
-document.getElementById('thumbs').addEventListener('click',function(e){var b=e.target.closest('.rm');if(!b)return;files.splice(+b.dataset.i,1);refreshImages();});
+document.getElementById('thumbs').addEventListener('click',function(e){
+  var rm=e.target.closest('.rm');
+  if(rm){
+    var ri=+rm.dataset.i;
+    files.splice(ri,1);
+    // Hold favIndex i takt med den forskjøvne lista: fjernet favoritt → ingen; fjernet
+    // FØR favoritt → skyv ned én.
+    if(favIndex===ri) favIndex=-1;
+    else if(favIndex>ri) favIndex--;
+    refreshImages();
+    return;
+  }
+  var th=e.target.closest('.thumb');
+  if(!th)return;
+  var ti=+th.dataset.i;
+  favIndex=(favIndex===ti)?-1:ti; // klikk favoritt igjen = fjern (valgfritt, én om gangen)
+  renderThumbs();
+});
 function renderThumbs(){
   document.getElementById('thumbs').innerHTML=files.map(function(f,i){
-    return '<div class="thumb"><img src="'+URL.createObjectURL(f)+'">'+(i===0?'<span class="lead-badge">1</span>':'')+'<button type="button" class="rm" data-i="'+i+'">&times;</button></div>';
+    var fav=(i===favIndex);
+    return '<div class="thumb'+(fav?' fav':'')+'" data-i="'+i+'"><img src="'+URL.createObjectURL(f)+'">'+
+      (fav?'<span class="fav-tag">Vises først</span>':'')+
+      '<button type="button" class="rm" data-i="'+i+'">&times;</button></div>';
   }).join("");
 }
 function refreshImages(){
@@ -213,6 +239,7 @@ function refreshImages(){
   var n=files.length, c=document.getElementById('imgCount');
   if(n<MIN_IMG){ c.textContent=n+' av minst '+MIN_IMG+' lastet opp'; c.classList.add('warn'); }
   else { c.textContent=n+' av '+MAX_IMG+' lastet opp'; c.classList.remove('warn'); }
+  document.getElementById('favHint').style.display = n?'block':'none';
   document.getElementById('finalBtn').disabled = n<MIN_IMG;
 }
 
@@ -296,19 +323,22 @@ async function submitFinal(){
   var old=btn.innerHTML; btn.disabled=true; btn.textContent='Sender...';
   try{
     var fd=new FormData();
-    fd.append('navn',step1.navn);fd.append('shop',step1.shop);fd.append('adresse',step1.adresse);fd.append('epost',step1.epost);
+    fd.append('navn',step1.navn);fd.append('shop',step1.shop);fd.append('adresse',step1.adresse||'');fd.append('epost',step1.epost);
     var PAGE_LANG=(document.documentElement.lang||'no').toLowerCase();var L2M={no:'NO',sv:'SE',da:'DK',en:'UK'};
     fd.append('lang',PAGE_LANG);fd.append('market',L2M[PAGE_LANG]||'NO');
     fd.append('services',JSON.stringify(svc.list));
     fd.append('hours',JSON.stringify(hrs.list));
     files.forEach(function(f){fd.append('images',f);});
+    if(favIndex>=0) fd.append('favoritt',favIndex); // rå filindeks i files[] (= append-rekkefølgen)
     var res=await fetch(API_BASE+'/api/onboarding',{method:'POST',body:fd,credentials:'include'});
     if(!res.ok)throw new Error('server svarte '+res.status);
     // Les rå body først så en parse-feil kan logges med innhold. data-utfallet er som res.json().
     var raw=''; var data={};
     try{ raw=await res.text(); data=JSON.parse(raw); }
     catch(e){ console.error('onboarding: kunne ikke parse svaret som JSON:', e, '| rå body:', raw); }
-    if(data && data.slug){ window.location.href='/'+data.slug; return; }
+    // Bygget OK → sesjon er satt av backend (onboarding.js logger barbereren rett inn).
+    // Send til dashbordet, «Din side»-fanen, der onboarding-flyten fortsetter.
+    if(data && data.slug){ window.location.href='/no/dashboard.html#dinside'; return; }
     // 2xx MED feilmelding (f.eks. status:'email_taken') → vis meldinga, ALDRI kvitteringen (som ville
     // løyet). Logg-inn-lenka vises kun ved email_taken. timezone_required kan ikke treffe fra no/
     // (market er alltid 'NO'), men dekkes generisk her om det skulle skje.
