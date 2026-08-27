@@ -97,8 +97,13 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .hrs-row{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;padding:11px 0;border-bottom:1px solid #171717}
 .hrs-row:last-child{border-bottom:0}
 .hrs-day{flex:1;font-size:14px;color:#e0e0e0;font-weight:500;min-width:64px}
-.hrs-times{display:flex;align-items:center;gap:7px;margin-left:auto}
-.hrs-times input[type=time]{width:auto;background:#0e0e0e;border:1px solid #2a2a2a;border-radius:9px;padding:9px 10px;color:#fff;font:inherit;font-size:14px;outline:none}
+/* flex-basis:100% på .hrs-times: native input[type=time] er ~208px bred i Safari/WebKit
+   (mot ~98px i Chromium), så to av dem uten shrink sprengte raden og ga sidelengs drag på
+   iOS. Nå legger .hrs-times seg på egen full-bredde linje under dagen. Inputene får NATURLIG
+   innholdsbredde med tak (flex:0 1 auto + max-width:120px), men beholder shrink-evnen
+   (min-width:0) så de aldri sprenger 320 med Safaris 208px-inputs. */
+.hrs-times{display:flex;align-items:center;gap:7px;flex:1 1 100%;min-width:0}
+.hrs-times input[type=time]{width:auto;min-width:0;flex:0 1 auto;max-width:120px;background:#0e0e0e;border:1px solid #2a2a2a;border-radius:9px;padding:9px 10px;color:#fff;font:inherit;font-size:14px;outline:none}
 .hrs-times input[type=time]:focus{border-color:#4d8bff}
 .hrs-sep{color:#777}
 .hrs-closed{color:#777;font-size:13px;margin-left:auto}
