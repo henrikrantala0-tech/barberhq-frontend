@@ -905,6 +905,27 @@
      handlingsknappene — Vinn tilbake er ren oversikt. */
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);background:#1a1a1a;color:#fff;font-size:13px;font-weight:500;padding:11px 18px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:500;letter-spacing:-.01em}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ── Fokusmodus (onboarding-ankomst) ─────────────────────────────────────────
+     Trigger: URL ?velkommen=1 + page_status='forhandsvist' (JS fjerner parameteren
+     ved visning, ingen sessionStorage). Viser KUN «Din side», til barbereren
+     publiserer eller trykker «Utforsk dashbordet» / X. Ingenting flyttes —
+     #design-panelet vises komplett; kun nav + øvrige paneler skjules. #dinsideCta
+     (topp-banner) og «Ideer & ønsker» skjules så flaten er ren.
+     Rekkefølge følger vanlig DOM: sjekkliste → Profil/Design/Bilder → preview →
+     bunnknapper (STATISKE nederst, ikke sticky). Mobil-rekkefølgen på preview er
+     uendret fra standard (preview under trekkspillene). Desktop: to-kolonne som ellers. */
+  body.fokus nav.nav{display:none}
+  body.fokus .who{display:none}
+  body.fokus #dinsideCta{display:none}
+  body.fokus .ideacard{display:none}
+  .fokus-x{display:none}
+  body.fokus .fokus-x{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);font-size:16px;line-height:1;cursor:pointer}
+  body.fokus .fokus-x:hover{border-color:var(--ink)}
+  .fokus-bar{display:none}
+  body.fokus .fokus-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+  .fokus-bar .btn,.fokus-bar .btn-outline{padding:12px 22px;font-size:14px}
+  @media(max-width:520px){ .fokus-bar .btn,.fokus-bar .btn-outline{flex:1;justify-content:center;text-align:center} }
 </style>
 </head>
 <body>
@@ -919,6 +940,8 @@
     <div class="who">
       <b id="barberName">Grand Barber</b>
     </div>
+    <!-- Kun synlig i fokusmodus (body.fokus) — «X øverst til høyre» = avslutt fokus. -->
+    <button class="fokus-x" id="fokusX" type="button" aria-label="Lukk fokusmodus og vis hele dashbordet">&times;</button>
   </header>
 
   <nav class="nav" role="tablist">
@@ -1406,6 +1429,9 @@
       <div class="dinside-live-status"><span class="live-dot"></span>Siden din er live</div>
       <div id="dinsideLiveLenke"></div>
     </div>
+    <!-- Sjekkliste-plassholder — fylles av COMMIT D (renderSjekkliste). Står FØR .side-wrap
+         så den er øverst i «Din side»; på mobil i fokus kommer preview rett under den. -->
+    <div class="dinside-sjekkliste" id="dinsideSjekkliste" hidden></div>
     <div class="side-wrap">
       <!-- data-single: ETT trekkspill åpent om gangen. Markøren er på lista, ikke global —
            Vekst-fanens .acc-list er umerket og beholder flere åpne samtidig. -->
@@ -1421,7 +1447,7 @@
             <span class="acc-chev">▾</span>
           </button>
           <div class="acc-body">
-            <div class="fld"><label>Navn på shoppen</label><input id="pf-shop" type="text"></div>
+            <div class="fld"><label>Navn på salongen</label><input id="pf-shop" type="text"></div>
             <div class="fld"><label>Adresse <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><input id="pf-address" type="text"><p class="fld-hint">Skriv full adresse (gate, nummer, postnr, by) så kunder finner frem i kart. Vil du ikke dele nøyaktig sted, skriv bare byen.</p></div>
             <div class="fld"><label>Spesialitet <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><input id="pf-tagline" type="text" maxlength="60"></div>
             <!-- bioHint: se refreshSlots(). Direkte-malen har ingen {{BIO_BLOCK}}, så
@@ -1485,6 +1511,13 @@
         <div class="pv-frame"><iframe class="pv-screen" id="pvScreen" scrolling="no" tabindex="-1"></iframe></div>
         <p class="ctx" style="margin-top:8px;text-align:center">Slik ser bookingsiden din ut.</p>
       </div>
+    </div>
+    <!-- Bunnknapper — STATISKE nederst i «Din side», kun synlige i fokusmodus (body.fokus).
+         «Publiser siden» gjenbruker settSideStatus('live') (samme dispatch som #dinsidePubliser);
+         «Utforsk dashbordet» = X = avslutt fokus. -->
+    <div class="fokus-bar" id="fokusBar">
+      <button class="btn" id="fokusPubliser" type="button">Publiser siden</button>
+      <button class="btn-outline" id="fokusUtforsk" type="button">Utforsk dashbordet</button>
     </div>
     <!-- #slotPopup står på PANEL-nivå, ikke inne i Bilder-trekkspillet: den er position:fixed
          og plasseres av JS mot knappens rect. Lå den i .acc-body, ville [hidden] på body-en
@@ -4309,7 +4342,40 @@ function renderDinsideCta(b){
   }else{ // draft / avslag / nedtatt / ukjent — ingen av dem
     cta.hidden=true; live.hidden=true;
   }
+  applyFokusModus(); // fokus følger samme page_status — publisering (→live) slår den av selv
 }
+
+/* ── Fokusmodus ─────────────────────────────────────────────────────────────────
+   Trigger: URL ?velkommen=1 OG page_status='forhandsvist'. Kun da vises fokus.
+   Ved visning fjernes parameteren (replaceState) så refresh IKKE re-trigger — ingen
+   sessionStorage. Å strippe parameteren betyr at applyFokusModus ikke kan RE-utlede
+   fokus etterpå: derfor er inngangen én-skudds (legg på klassen når param+status
+   stemmer), mens exit skjer eksplisitt (X/«Utforsk dashbordet») ELLER automatisk når
+   status ikke lenger er 'forhandsvist' (publisering → live). Mellom de to rører vi
+   ikke klassen — fokus står til noe faktisk avslutter den. */
+function applyFokusModus(b){
+  b=b||_billing||{};
+  var params=new URLSearchParams(location.search);
+  if(b.page_status==='forhandsvist' && params.get('velkommen')==='1'){
+    document.body.classList.add('fokus');
+    // I fokus skal KUN «Din side» stå åpen (redirecten lander oss der; backstopp her).
+    if(typeof aktivtPanel==='function' && aktivtPanel()!=='design') switchPanel('design');
+    // Fjern ?velkommen (behold ev. andre params + hash). switchPanel over har alt satt
+    // #dinside, så location.hash er riktig når vi skriver URL-en på nytt.
+    params.delete('velkommen');
+    var qs=params.toString();
+    history.replaceState(null,'',location.pathname+(qs?('?'+qs):'')+location.hash);
+  }else if(b.page_status!=='forhandsvist'){
+    document.body.classList.remove('fokus'); // publisert/annet → fokus skal aldri stå på
+  }
+}
+function avsluttFokus(){ document.body.classList.remove('fokus'); }
+(function(){
+  var x=document.getElementById('fokusX');        if(x)x.addEventListener('click',avsluttFokus);
+  var u=document.getElementById('fokusUtforsk');   if(u)u.addEventListener('click',avsluttFokus);
+  var p=document.getElementById('fokusPubliser');
+  if(p)p.addEventListener('click',function(){ if(IS_DEMO)return; settSideStatus('live',this); });
+})();
 
 // Lenke-blokka styres av page_status ALENE, og ligger derfor utenfor if/else-kjeden i
 // renderKonto. Billing-grenen svarer på «hva må jeg gjøre nå?»; adressen svarer på «hvor bor

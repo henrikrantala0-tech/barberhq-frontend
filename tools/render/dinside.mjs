@@ -104,48 +104,77 @@ function makeRouter(variant) {
 }
 
 const browser = await chromium.launch();
+
+function maal(page) {
+  return page.evaluate(() => {
+    // position:fixed/display:none → offsetParent===null (se README). Mål computed display
+    // + geometri i stedet, ellers rapporteres skjulte/faste elementer falskt.
+    const vis = el => { if (!el) return false; const r = el.getBoundingClientRect();
+      return getComputedStyle(el).display !== 'none' && r.width > 0 && r.height > 0; };
+    const top = el => el ? Math.round(el.getBoundingClientRect().top) : null;
+    const fr = document.querySelector('#pvScreen');
+    let previewLen = 0;
+    try { previewLen = (fr && fr.contentDocument && fr.contentDocument.body) ? fr.contentDocument.body.innerText.length : 0; } catch(e){}
+    const bar = document.querySelector('#fokusBar');
+    const pos = bar ? getComputedStyle(bar).position : null;
+    return {
+      fokus:       document.body.classList.contains('fokus'),
+      navSynlig:   vis(document.querySelector('nav.nav')),
+      barSynlig:   vis(bar),
+      barStatisk:  pos ? (pos !== 'fixed' && pos !== 'sticky') : null,
+      xSynlig:     vis(document.querySelector('#fokusX')),
+      ctaSynlig:   vis(document.querySelector('#dinsideCta')),
+      ideaSynlig:  vis(document.querySelector('.ideacard')),
+      publiser:    (document.querySelector('#fokusPubliser') || {}).textContent || '',
+      utforsk:     (document.querySelector('#fokusUtforsk') || {}).textContent || '',
+      previewTegn: previewLen,
+      accsTop:     top(document.querySelector('.side-accs')),
+      previewTop:  top(document.querySelector('.design-preview')),
+      barTop:      top(bar),
+      url:         location.search + location.hash,
+    };
+  });
+}
+
+// Begge moduser, forhandsvist billing. Fokus = ?velkommen=1; vanlig = uten param.
 const rad = [];
-for (const variant of ['forhandsvist', 'live']) {
+for (const modus of ['fokus', 'vanlig']) {
   for (const bredde of [320, 402, 1280]) {
     const page = await browser.newPage({ viewport: { width: bredde, height: 900 }, deviceScaleFactor: 2 });
     const errs = []; page.on('pageerror', e => errs.push(e.message));
-    await page.route('**/api/**', makeRouter(variant));
-    await page.goto(`http://localhost:${PORT}/no/dashboard.html#dinside`, { waitUntil: 'networkidle' });
+    await page.route('**/api/**', makeRouter('forhandsvist'));
+    const q = modus === 'fokus' ? '?velkommen=1' : '';
+    await page.goto(`http://localhost:${PORT}/no/dashboard.html${q}#dinside`, { waitUntil: 'networkidle' });
     await page.waitForTimeout(1600);
+    const m = await maal(page);
+    await page.screenshot({ path: `${OUT}/dinside-${modus}-${bredde}.png`, fullPage: true });
 
-    const m = await page.evaluate(() => {
-      const vis = el => !!el && el.offsetParent !== null;
-      const cta  = document.querySelector('#dinsideCta');
-      const live = document.querySelector('#dinsideLive');
-      const fr   = document.querySelector('#pvScreen');
-      let previewLen = 0;
-      try { previewLen = (fr && fr.contentDocument && fr.contentDocument.body) ? fr.contentDocument.body.innerText.length : 0; } catch(e){}
-      return {
-        panelAktiv: (document.querySelector('#design') || {}).classList?.contains('active') || false,
-        ctaSynlig: vis(cta), liveSynlig: vis(live),
-        previewTegn: previewLen,
-      };
-    });
+    // Rekkefølge (kun fokus): mobil → accs < preview < bar; desktop → bar under begge kolonner
+    let ordreOK = 'n/a';
+    if (modus === 'fokus') ordreOK = bredde < 720
+      ? (m.accsTop < m.previewTop && m.previewTop < m.barTop)
+      : (m.barTop > m.accsTop && m.barTop > m.previewTop);
 
-    // Bilder-trekkspill: åpne og tell slot-bokser (bekreft 3 galleribilder rendres)
-    await page.evaluate(() => {
-      const b = document.querySelector('#accBilder .acc-head');
-      if (b && b.getAttribute('aria-expanded') !== 'true') b.click();
-    });
-    await page.waitForTimeout(500);
-    const slots = await page.evaluate(() =>
-      document.querySelectorAll('#bilderMount .slot-thumb, #bilderMount .slot, #bilderMount img').length);
+    // X → avslutt fokus → fullt dashbord (kun fokus)
+    let xOK = 'n/a';
+    if (modus === 'fokus') { await page.click('#fokusX'); await page.waitForTimeout(300);
+      const e2 = await maal(page);
+      xOK = e2.fokus === false && e2.navSynlig === true && e2.barSynlig === false && e2.ctaSynlig === true; }
 
-    rad.push({ variant, bredde, ...m, slots, jsfeil: errs.length ? errs.join('; ') : 'ingen' });
-
-    // Skjermbilde av hele #design-panelet (Bilder nå åpen → slots synlige)
-    await page.locator('#design').screenshot({ path: `${OUT}/dinside-${variant}-${bredde}.png` });
+    rad.push({ modus, bredde, fokus: m.fokus, nav: m.navSynlig, bar: m.barSynlig, barStat: m.barStatisk,
+      cta: m.ctaSynlig, idea: m.ideaSynlig, ordreOK, 'X→av': xOK, url: m.url,
+      knapper: modus === 'fokus' ? `${m.publiser} / ${m.utforsk}` : 'n/a',
+      preview: m.previewTegn, jsfeil: errs.length ? errs.join('; ') : 'ingen' });
     await page.close();
   }
 }
 console.table(rad);
-const ok = rad.every(r =>
-  r.panelAktiv && r.previewTegn > 0 && r.jsfeil === 'ingen' &&
-  (r.variant === 'forhandsvist' ? (r.ctaSynlig && !r.liveSynlig) : (r.liveSynlig && !r.ctaSynlig)));
-console.log('\nHarness OK (panel aktiv · preview fylt · CTA/live riktig · ingen JS-feil):', ok ? 'JA' : 'NEI');
+const fokusRad = rad.filter(r => r.modus === 'fokus');
+const vanligRad = rad.filter(r => r.modus === 'vanlig');
+const okFokus = fokusRad.every(r => r.fokus && !r.nav && r.bar && r.barStat && !r.cta && !r.idea
+  && r.ordreOK === true && r['X→av'] === true && r.url === '#dinside'
+  && r.knapper === 'Publiser siden / Utforsk dashbordet' && r.preview > 0 && r.jsfeil === 'ingen');
+const okVanlig = vanligRad.every(r => !r.fokus && r.nav && !r.bar && r.cta && r.idea && r.jsfeil === 'ingen');
+console.log('\nFokus OK (?velkommen→fokus, param strippet, bar statisk nederst, CTA+Ideer skjult, X→fullt):', okFokus ? 'JA' : 'NEI');
+console.log('Vanlig OK (ingen param → fokus av, nav+CTA+Ideer synlig):', okVanlig ? 'JA' : 'NEI');
 await browser.close(); server.close();

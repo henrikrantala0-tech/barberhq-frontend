@@ -338,7 +338,7 @@ async function submitFinal(){
     catch(e){ console.error('onboarding: kunne ikke parse svaret som JSON:', e, '| rå body:', raw); }
     // Bygget OK → sesjon er satt av backend (onboarding.js logger barbereren rett inn).
     // Send til dashbordet, «Din side»-fanen, der onboarding-flyten fortsetter.
-    if(data && data.slug){ window.location.href='/no/dashboard.html#dinside'; return; }
+    if(data && data.slug){ window.location.href='/no/dashboard.html?velkommen=1#dinside'; return; }
     // 2xx MED feilmelding (f.eks. status:'email_taken') → vis meldinga, ALDRI kvitteringen (som ville
     // løyet). Logg-inn-lenka vises kun ved email_taken. timezone_required kan ikke treffe fra no/
     // (market er alltid 'NO'), men dekkes generisk her om det skulle skje.
