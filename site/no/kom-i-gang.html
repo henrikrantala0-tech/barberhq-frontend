@@ -146,7 +146,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     <p class="s2-note">Alt du fyller inn her kan du endre senere i dashbordet.</p>
 
     <div class="dgrp" id="bildeDgrp"><span class="lab">Bilder <span class="opt">(minst 2, maks 10)</span></span>
-      <div class="uploader" id="dropZone">
+      <div class="uploader" id="dropZone" tabindex="0">
         <div class="ui">&#8682;</div>
         <div class="ut">Trykk for &aring; laste opp bilder</div>
         <div class="us">JPG eller PNG &middot; minst 2, maks 10</div>
@@ -155,6 +155,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       <div class="img-count" id="imgCount">0 av minst 2 lastet opp</div>
       <div class="thumbs" id="thumbs"></div>
       <p class="fav-hint" id="favHint" style="display:none">Trykk på et bilde for å velge hva som vises først på siden.</p>
+      <p class="ob-err" id="bildeErr"></p>
     </div>
 
     <div class="dgrp"><span class="lab">Tjenester</span>
@@ -168,7 +169,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       <p class="ob-err" id="hrsErr"></p>
     </div>
 
-    <button type="button" class="btn btn-fill ob-submit" id="finalBtn" onclick="submitFinal()" disabled>Fullf&oslash;r &#10003;</button>
+    <button type="button" class="btn btn-fill ob-submit" id="finalBtn" onclick="submitFinal()">Fullf&oslash;r &#10003;</button>
   </div>
   <div class="ob-card ob-done" id="obDone">
     <div class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="30" height="30"><path d="M20 6 9 17l-5-5"/></svg></div>
@@ -245,7 +246,7 @@ function refreshImages(){
   if(n<MIN_IMG){ c.textContent=n+' av minst '+MIN_IMG+' lastet opp'; c.classList.add('warn'); }
   else { c.textContent=n+' av '+MAX_IMG+' lastet opp'; c.classList.remove('warn'); }
   document.getElementById('favHint').style.display = n?'block':'none';
-  document.getElementById('finalBtn').disabled = n<MIN_IMG;
+  if(n>=MIN_IMG){ var be=document.getElementById('bildeErr'); if(be)be.textContent=''; } // rydd feil når kravet er møtt
 }
 
 /* ---- Tjenester ---- */
@@ -313,16 +314,34 @@ function collectHours(){
 
 /* ---- Innsending ---- */
 async function submitFinal(){
-  if(files.length<MIN_IMG) return; // knapp er disabled, men vakt likevel
-  var svcErr=document.getElementById('svcErr');
+  // Knappen er ALLTID aktiv. Klientvalidering speiler backend-kravene eksakt (min 2 bilder,
+  // ≥1 tjeneste med pris>0, ≥1 åpen dag). Ved mangler: ikke submit — vis feil ved FØRSTE
+  // manglende felt, scroll dit + sett fokus.
+  var bildeErr=document.getElementById('bildeErr'), svcErr=document.getElementById('svcErr'), hrsErr=document.getElementById('hrsErr');
+  bildeErr.textContent=''; svcErr.textContent=''; hrsErr.textContent='';
+  // 1) Bilder
+  if(files.length<MIN_IMG){
+    bildeErr.textContent='Last opp minst '+MIN_IMG+' bilder.';
+    document.getElementById('bildeDgrp').scrollIntoView({behavior:'smooth',block:'center'});
+    document.getElementById('dropZone').focus();
+    return;
+  }
+  // 2) Tjenester — minst én med pris>0 (tomme/prislause rader hoppes over av collectServices)
   var svc=collectServices();
-  if(svc.err){ svcErr.textContent='Sett en pris på hver tjeneste.'; svc.err.el.scrollIntoView({behavior:'smooth',block:'center'}); return; }
-  if(svc.list.length===0){ svcErr.textContent='Legg til minst én tjeneste.'; return; }
-  svcErr.textContent='';
-  var hrsErr=document.getElementById('hrsErr');
+  if(svc.list.length===0){
+    svcErr.textContent='Legg inn minst én tjeneste med pris.';
+    var t=svc.err?svc.err.el:svcList.querySelector('.svc-price');
+    if(t){ t.scrollIntoView({behavior:'smooth',block:'center'}); t.focus(); }
+    return;
+  }
+  // 3) Åpningstider — minst én åpen dag
   var hrs=collectHours();
-  if(!hrs.anyOpen){ hrsErr.textContent='Velg minst én åpen dag.'; hrsErr.scrollIntoView({behavior:'smooth',block:'center'}); return; }
-  hrsErr.textContent='';
+  if(!hrs.anyOpen){
+    hrsErr.textContent='Velg minst én åpen dag.';
+    hrsErr.scrollIntoView({behavior:'smooth',block:'center'});
+    var ft=hrsList.querySelector('.hrs-on'); if(ft)ft.focus();
+    return;
+  }
 
   var btn=document.getElementById('finalBtn');
   var old=btn.innerHTML; btn.disabled=true; btn.textContent='Sender...';
