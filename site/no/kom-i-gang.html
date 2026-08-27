@@ -41,6 +41,10 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .ob-note-box strong{color:#fff;font-weight:600}
 .ob-submit{width:100%;justify-content:center;font-size:16px;padding:16px;cursor:pointer;margin-top:14px}
 .ob-submit:disabled{opacity:.45;cursor:not-allowed}
+/* Submit-tilstand: låst, men full opasitet (ikke «greyet ut») med spinner — den bygger, venter ikke. */
+.ob-submit.building{opacity:1;cursor:progress}
+.btn-spinner{display:inline-block;width:16px;height:16px;border:2px solid rgba(0,0,0,.25);border-top-color:#000;border-radius:50%;animation:btnspin .7s linear infinite;margin-right:9px;vertical-align:-3px}
+@keyframes btnspin{to{transform:rotate(360deg)}}
 .ob-done{display:none;text-align:center;padding:14px 6px}
 .ob-done .chk{width:64px;height:64px;border-radius:50%;background:#0d1f14;border:1px solid #1f4a30;display:flex;align-items:center;justify-content:center;color:#3ecf7e;margin:0 auto 20px}
 .ob-done h2{font-size:24px;font-weight:800;margin-bottom:10px}
@@ -344,7 +348,9 @@ async function submitFinal(){
   }
 
   var btn=document.getElementById('finalBtn');
-  var old=btn.innerHTML; btn.disabled=true; btn.textContent='Sender...';
+  var old=btn.innerHTML; btn.disabled=true; btn.classList.add('building');
+  btn.innerHTML='<span class="btn-spinner" aria-hidden="true"></span>Bygger siden din…';
+  var _tSubmit=performance.now(); // timing: POST-en inkluderer bildeopplasting (multipart) + backend-bygg
   try{
     var fd=new FormData();
     fd.append('navn',step1.navn);fd.append('shop',step1.shop);fd.append('adresse',step1.adresse||'');fd.append('epost',step1.epost);
@@ -355,6 +361,8 @@ async function submitFinal(){
     files.forEach(function(f){fd.append('images',f);});
     if(favIndex>=0) fd.append('favoritt',favIndex); // rå filindeks i files[] (= append-rekkefølgen)
     var res=await fetch(API_BASE+'/api/onboarding',{method:'POST',body:fd,credentials:'include'});
+    // Timing: hele bildeopplastingen skjer INNI denne POST-en (multipart), ikke som eget steg.
+    console.log('[onboarding-timing] POST /api/onboarding (upload+bygg): '+Math.round(performance.now()-_tSubmit)+' ms · '+files.length+' bilder');
     if(!res.ok)throw new Error('server svarte '+res.status);
     // Les rå body først så en parse-feil kan logges med innhold. data-utfallet er som res.json().
     var raw=''; var data={};
@@ -379,7 +387,7 @@ async function submitFinal(){
     document.getElementById('obDone').style.display='block';
     window.scrollTo({top:0,behavior:'smooth'});
   }catch(e){
-    btn.disabled=false;btn.innerHTML=old;
+    btn.disabled=false;btn.classList.remove('building');btn.innerHTML=old;
     alert('Noe gikk galt. Prøv igjen eller send oss en e-post på info@trybarberhq.com');
     console.error(e);
   }
