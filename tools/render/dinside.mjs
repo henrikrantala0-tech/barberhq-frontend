@@ -55,6 +55,7 @@ const IMAGES = [
 const SERVICES = { hoved: [ { name: 'Herreklipp', price: 350, min: 30 }, { name: 'Skjeggtrim', price: 200, min: 20 } ], tillegg: [] };
 const HOURS = [1,2,3,4,5].map(wd => ({ weekday: wd, is_closed: false, open_time: '10:00', close_time: '18:00', breaks: [] }))
   .concat([6,0].map(wd => ({ weekday: wd, is_closed: true, open_time: '10:00', close_time: '18:00', breaks: [] })));
+const NOW = new Date().toISOString();
 function billing(variant) {
   if (variant === 'live') return {
     subscription_status: 'trialing', page_status: 'live',
@@ -102,6 +103,7 @@ function makeRouter(variant) {
     if (p === '/api/dashboard/services')        return json(SERVICES);
     if (p === '/api/dashboard/hours')           return json(HOURS);
     if (p === '/api/dashboard/billing/status')  return json(billing(variant));
+    if (p === '/api/dashboard/page-status')      return json({ page_status: 'live', trial_start_at: NOW }); // PUT (publiser)
     if (p === '/api/dashboard/preview')         return route.fulfill({ status: 200, contentType: 'text/html', body: PREVIEW_HTML });
     // Alt annet init rører (stats/bookings/winback/attribution/settings/google/…):
     // liste-formede endepunkt → [], resten → {}. Init må ikke krasje.
@@ -220,4 +222,60 @@ const okVanlig = vn.every(r => !r.fokus && r.nav && r.cta && r.pill && r.ring ==
   && r.radLukker === true && r.jsfeil === 'ingen');
 console.log('\nFokus OK (INGEN pill, fokus-bar synlig, nav skjult, inline-container borte):', okFokus ? 'JA' : 'NEI');
 console.log('Vanlig OK (pill 3/5 + nav+CTA synlig, klikk → popover 3/5, radklikk lukker):', okVanlig ? 'JA' : 'NEI');
+
+// ── COMMIT F: suksesskort etter publisering · live-tilstand med header-lenke ─────────
+const radF = [];
+for (const bredde of [320, 402, 1280]) {
+  // Tilstand 1: publiser (forhandsvist → klikk #dinsidePubliser → PUT → suksesskort)
+  {
+    const page = await browser.newPage({ viewport: { width: bredde, height: 900 }, deviceScaleFactor: 2 });
+    const errs = []; page.on('pageerror', e => errs.push(e.message));
+    await page.route('**/api/**', makeRouter('forhandsvist'));
+    await page.goto(`http://localhost:${PORT}/no/dashboard.html#dinside`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1600);
+    await page.click('#dinsidePubliser'); await page.waitForTimeout(600);
+    const m = await page.evaluate(() => {
+      const vis = el => { if (!el) return false; const r = el.getBoundingClientRect();
+        return getComputedStyle(el).display !== 'none' && r.width > 0 && r.height > 0; };
+      const ov = document.querySelector('#suksessOverlay');
+      return { kort: vis(ov) && !ov.hidden, tittel: (document.querySelector('#suksessTittel') || {}).textContent || '',
+        lenke: !!document.querySelector('#suksessLenke .pub-url'),
+        linjer: [...document.querySelectorAll('.suksess-linje')].map(e => e.textContent).join(' | ') };
+    });
+    await page.screenshot({ path: `${OUT}/f-suksess-${bredde}.png`, fullPage: false });
+    radF.push({ tilstand: 'suksesskort', bredde, kort: m.kort, tittel: m.tittel, lenke: m.lenke,
+      linjer: m.linjer, jsfeil: errs.length ? errs.join('; ') : 'ingen' });
+    await page.close();
+  }
+  // Tilstand 2: live-tilstand med header-lenke (kort lukket) + kollisjonssjekk i headeren
+  {
+    const page = await browser.newPage({ viewport: { width: bredde, height: 900 }, deviceScaleFactor: 2 });
+    const errs = []; page.on('pageerror', e => errs.push(e.message));
+    await page.route('**/api/**', makeRouter('live'));
+    await page.goto(`http://localhost:${PORT}/no/dashboard.html#dinside`, { waitUntil: 'networkidle' });
+    await page.waitForTimeout(1600);
+    const m = await page.evaluate(() => {
+      const vis = el => { if (!el) return false; const r = el.getBoundingClientRect();
+        return getComputedStyle(el).display !== 'none' && r.width > 0 && r.height > 0; };
+      const logo = document.querySelector('.topband .logo'), who = document.querySelector('.who');
+      const klaring = (logo && who) ? Math.round(who.getBoundingClientRect().left - logo.getBoundingClientRect().right) : null;
+      return { headerLenke: vis(document.querySelector('#headerLenke .pub-url')),
+        kortSkjult: (document.querySelector('#suksessOverlay') || {}).hidden,
+        headerKlaring: klaring, bodyOverflow: document.documentElement.scrollWidth - window.innerWidth };
+    });
+    await page.screenshot({ path: `${OUT}/f-live-${bredde}.png`, fullPage: false, clip: { x: 0, y: 0, width: bredde, height: 220 } });
+    radF.push({ tilstand: 'live-header', bredde, headerLenke: m.headerLenke, kortSkjult: m.kortSkjult,
+      headerKlaring: m.headerKlaring, bodyOverflow: m.bodyOverflow, jsfeil: errs.length ? errs.join('; ') : 'ingen' });
+    await page.close();
+  }
+}
+console.table(radF);
+const s1 = radF.filter(r => r.tilstand === 'suksesskort');
+const s2 = radF.filter(r => r.tilstand === 'live-header');
+const okKort = s1.every(r => r.kort && r.tittel === 'Siden din er live!' && r.lenke
+  && /Instagram/.test(r.linjer) && /30 dager gratis/.test(r.linjer) && r.jsfeil === 'ingen');
+const okLive = s2.every(r => r.headerLenke && r.kortSkjult === true && r.headerKlaring > 4
+  && r.bodyOverflow <= 0 && r.jsfeil === 'ingen');
+console.log('\nSuksesskort OK (synlig, «Siden din er live!», lenke, Instagram+30 dager):', okKort ? 'JA' : 'NEI');
+console.log('Live-header OK (lenke synlig, kort skjult, ingen kollisjon/overflow):', okLive ? 'JA' : 'NEI');
 await browser.close(); server.close();

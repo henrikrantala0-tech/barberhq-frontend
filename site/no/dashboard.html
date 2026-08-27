@@ -29,7 +29,7 @@
   .top{display:flex;align-items:center;justify-content:space-between;padding:22px 0;border-bottom:1px solid var(--line)}
   .brand{font-weight:800;font-size:19px;letter-spacing:-.03em}
   .brand .hq{font-weight:300}
-  .who{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--mut)}
+  .who{display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:13px;color:var(--mut)}
   .who b{color:var(--ink);font-weight:500}
   .who .dot{width:32px;height:32px;border-radius:7px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;letter-spacing:-.02em}
 
@@ -956,6 +956,27 @@
   .sjekk-ring-num{position:relative;font-size:9.5px;font-weight:700;color:var(--ink)}
   .sjekk-popover{position:absolute;right:0;bottom:calc(100% + 10px);width:min(300px,calc(100vw - 32px));box-shadow:0 12px 34px rgba(0,0,0,.28);border-radius:14px}
   @media(max-width:520px){ .sjekk-pill-wrap{right:12px;bottom:12px} .sjekk-pill-tekst{font-size:13px} }
+
+  /* ── Live (COMMIT F): kompakt kopierbar lenke i headeren + suksesskort ────────────
+     Begge gjenbruker byggKopierbartLenkefelt (.pub-field + midtForkort + kopierLenke).
+     Headerlenka står under sjappenavnet i live-tilstand; suksesskortet vises ÉN gang
+     rett etter publisering (hendelses-drevet, ikke ved innlasting). */
+  .header-lenke{max-width:210px;margin-top:2px}
+  .header-lenke .pub-field{background:0;border:0;padding:0;gap:4px}
+  .header-lenke .pub-url{font-size:11.5px}
+  .header-lenke .pub-copy{width:22px;height:22px}
+  @media(max-width:400px){ .header-lenke{max-width:150px} }
+  .suksess-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px}
+  .suksess-overlay[hidden]{display:none}   /* author-display slår UA [hidden]{display:none} — må gjenopprettes eksplisitt */
+  .suksess-kort{position:relative;background:var(--surface);border:1px solid var(--line-2);border-radius:18px;padding:30px 26px 26px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
+  .suksess-x{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:8px;border:0;background:0;color:var(--mut);font-size:20px;line-height:1;cursor:pointer}
+  .suksess-x:hover{color:var(--ink);background:var(--bg)}
+  .suksess-emoji{font-size:38px;line-height:1;margin-bottom:8px}
+  .suksess-kort h3{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:16px}
+  .suksess-lenke{margin-bottom:16px}
+  .suksess-lenke .pub-field{background:var(--bg)}
+  .suksess-linje{font-size:14px;color:var(--ink);margin-top:6px;font-weight:600}
+  .suksess-linje.sub{color:var(--mut);font-size:13px;font-weight:400}
 </style>
 </head>
 <body>
@@ -969,6 +990,9 @@
     <div class="logo">BarberHQ</div>
     <div class="who">
       <b id="barberName">Grand Barber</b>
+      <!-- Permanent kopierbar lenke i live-tilstand (settHeaderLenke). Under sjappenavnet,
+           øverst til høyre. Kompakt via .header-lenke-override av .pub-field. -->
+      <div class="header-lenke" id="headerLenke" hidden></div>
     </div>
     <!-- Kun synlig i fokusmodus (body.fokus) — «X øverst til høyre» = avslutt fokus. -->
     <button class="fokus-x" id="fokusX" type="button" aria-label="Lukk fokusmodus og vis hele dashbordet">&times;</button>
@@ -1011,6 +1035,18 @@
     <span class="sjekk-ring" id="sjekkRing"><span class="sjekk-ring-num" id="sjekkRingNum">0/5</span></span>
     <span class="sjekk-pill-tekst">Fullfør siden din</span>
   </button>
+</div>
+<!-- Suksesskort — vises ÉN gang rett etter vellykket publisering (visSuksesskort fra
+     settSideStatus('live')-responsen, IKKE ved innlasting). Lukkes med X / klikk utenfor. -->
+<div class="suksess-overlay" id="suksessOverlay" hidden>
+  <div class="suksess-kort" role="dialog" aria-modal="true" aria-labelledby="suksessTittel">
+    <button class="suksess-x" id="suksessX" type="button" aria-label="Lukk">&times;</button>
+    <div class="suksess-emoji">🎉</div>
+    <h3 id="suksessTittel">Siden din er live!</h3>
+    <div class="suksess-lenke" id="suksessLenke"></div>
+    <p class="suksess-linje">Legg lenka i Instagram-bioen din nå</p>
+    <p class="suksess-linje sub">30 dager gratis starter nå</p>
+  </div>
 </div>
 <div class="wrap">
 
@@ -4383,7 +4419,37 @@ function renderDinsideCta(b){
   }
   applyFokusModus(); // fokus følger samme page_status — publisering (→live) slår den av selv
   renderSjekkliste(); // synlighet + hake for «Publiser siden» følger page_status (dør ved live)
+  settHeaderLenke(b); // permanent kopierbar lenke i headeren (kun live)
 }
+
+/* ── Live-lenke i header + suksesskort (COMMIT F) ────────────────────────────────── */
+// Permanent kopierbar lenke under sjappenavnet, KUN i live. Gjenbruker byggKopierbartLenkefelt
+// (midtForkort krymper sluggen til den kompakte header-bredden av seg selv).
+function settHeaderLenke(b){
+  b=b||_billing||{};
+  var boks=$('#headerLenke'); if(!boks)return;
+  if(b.page_status==='live' && CONFIG.BARBER_SLUG){
+    byggKopierbartLenkefelt(boks, CONFIG.SITE_BASE+'/'+CONFIG.BARBER_SLUG, CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+CONFIG.BARBER_SLUG);
+    boks.hidden=false;
+  } else { boks.textContent=''; boks.hidden=true; }
+}
+// Suksesskort — HENDELSES-drevet: kalles kun fra settSideStatus('live')-suksess, ALDRI ved
+// innlasting. Derfor viser refresh i live-tilstand det ikke igjen (headerlenka dekker varig visning).
+function visSuksesskort(){
+  var ov=$('#suksessOverlay'); if(!ov)return;
+  var boks=$('#suksessLenke');
+  if(boks){
+    if(CONFIG.BARBER_SLUG) byggKopierbartLenkefelt(boks, CONFIG.SITE_BASE+'/'+CONFIG.BARBER_SLUG, CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+CONFIG.BARBER_SLUG);
+    else boks.textContent='';
+  }
+  ov.hidden=false;
+}
+function lukkSuksess(){ var ov=$('#suksessOverlay'); if(ov)ov.hidden=true; }
+(function(){
+  var ov=$('#suksessOverlay'), x=$('#suksessX');
+  if(x)x.addEventListener('click',lukkSuksess);
+  if(ov)ov.addEventListener('click',function(e){ if(e.target===ov) lukkSuksess(); }); // klikk utenfor kortet
+})();
 
 /* ── Fokusmodus ─────────────────────────────────────────────────────────────────
    Trigger: URL ?velkommen=1 OG page_status='forhandsvist'. Kun da vises fokus.
@@ -4708,7 +4774,9 @@ async function settSideStatus(nyStatus,btn){
       if(d&&('trial_start_at' in d))_billing.trial_start_at=d.trial_start_at;
       renderKonto(_billing);
     }
-    showToast(nyStatus==='live'?'Siden er publisert':'Bookingsiden er avpublisert');
+    // Publisering → suksesskort (hendelses-drevet, én gang). Avpublisering → toast som før.
+    if(nyStatus==='live') visSuksesskort();
+    else showToast('Bookingsiden er avpublisert');
     return;
   }
   // RE-SYNK FØR MELDING. Var UI-en utdatert (400 «Ugyldig overgang»), retter den seg her.
