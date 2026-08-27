@@ -526,6 +526,8 @@
   .modebtn{appearance:none;border:0;background:0;font:inherit;font-size:13px;font-weight:500;color:var(--mut);padding:7px 20px;border-radius:6px;cursor:pointer}
   .modebtn[aria-pressed=true]{background:var(--ink);color:var(--bg)}
   html[data-theme="dark"] .modebtn[aria-pressed=true]{background:#fff;color:#0a0a0a}
+  .modebtn:disabled{opacity:.4;cursor:not-allowed}
+  .mode-hint{font-size:12px;color:var(--mut);margin-top:6px}
   .pv-frame{border:1px solid var(--line-2);border-radius:24px;background:var(--surface);position:relative;overflow:hidden;width:281px;height:562px;margin:0 auto}
   .pv-screen{border-radius:17px;overflow:hidden;min-height:430px;padding:20px 16px;transition:background .15s,color .15s}
   .pv-screen .pv-name{font-weight:700;font-size:20px;letter-spacing:-.02em}
@@ -1551,6 +1553,8 @@
                 <button class="modebtn" data-mode="lys" aria-pressed="false">Lys</button>
                 <button class="modebtn" data-mode="mork" aria-pressed="false">Mørk</button>
               </div>
+              <!-- Vises når valgt palett ikke støtter mørk (sand). Toggles av renderDesign. -->
+              <p class="mode-hint" id="modeHint" hidden>Kun lys for denne paletten</p>
               <p class="dlbl">Skrift</p>
               <div class="preset-grid" id="fontGrid"></div>
               <p class="dlbl">Layout</p>
@@ -4166,6 +4170,11 @@ function renderDesign(){
   $("#fontGrid").innerHTML=FONTS.map(function(f){return '<button class="preset" data-grid="font" data-key="'+f.key+'" aria-pressed="'+(design.font===f.key)+'"><div class="pt">'+f.vibe+'</div></button>';}).join("");
   $("#layoutGrid").innerHTML=LAYOUTS.map(function(l){return '<button class="preset" data-grid="layout" data-key="'+l.key+'" aria-pressed="'+(design.layout===l.key)+'"><div class="pt">'+l.t+'</div><div class="pd">'+l.d+'</div></button>';}).join("");
   document.querySelectorAll("#modePick .modebtn").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.mode===design.mode);});
+  // Modus-vakt (speiler PALETTE_MODES): sand er lys-only → deaktiver Mørk + vis hint.
+  var moduser=(window.modeneFor?window.modeneFor(design.palette):['lys','mork']);
+  var morkBtn=document.querySelector('#modePick .modebtn[data-mode="mork"]');
+  if(morkBtn)morkBtn.disabled=(moduser.indexOf('mork')===-1);
+  var hint=$("#modeHint"); if(hint)hint.hidden=(moduser.indexOf('mork')!==-1);
   renderPreview();
 }
 async function loadDesign(){
@@ -4190,8 +4199,11 @@ async function loadDesign(){
   }catch(e){}
   renderDesign();
 }
-$("#design").addEventListener("click",function(e){var b=e.target.closest(".preset");if(!b)return;design[b.dataset.grid]=b.dataset.key;renderDesign();if(b.dataset.grid==="layout")refreshSlots();});
-$("#modePick").addEventListener("click",function(e){var b=e.target.closest(".modebtn");if(!b)return;design.mode=b.dataset.mode;renderDesign();});
+$("#design").addEventListener("click",function(e){var b=e.target.closest(".preset");if(!b)return;design[b.dataset.grid]=b.dataset.key;
+  // Bytte til en lys-only palett (sand) mens Mørk er aktiv → snap til lys; preview følger via renderDesign.
+  if(b.dataset.grid==="palette"){var m=(window.modeneFor?window.modeneFor(design.palette):['lys','mork']);if(m.indexOf(design.mode)===-1)design.mode=m[0];}
+  renderDesign();if(b.dataset.grid==="layout")refreshSlots();});
+$("#modePick").addEventListener("click",function(e){var b=e.target.closest(".modebtn");if(!b||b.disabled)return;var m=(window.modeneFor?window.modeneFor(design.palette):['lys','mork']);if(m.indexOf(b.dataset.mode)===-1)return;design.mode=b.dataset.mode;renderDesign();});
 $("#saveDesign").addEventListener("click",async function(){
   // Uten alle fire ville PUT-en skrevet null over det barbereren faktisk har lagret fra før.
   if(!designKjent()){alert('Fikk ikke hentet designinnstillingene dine. Last siden på nytt før du lagrer.');return;}
