@@ -917,6 +917,7 @@
      Rekkefølge følger vanlig DOM: sjekkliste → Profil/Design/Bilder → preview →
      bunnknapper (STATISKE nederst, ikke sticky). Mobil-rekkefølgen på preview er
      uendret fra standard (preview under trekkspillene). Desktop: to-kolonne som ellers. */
+  body.fokus{overscroll-behavior-y:contain} /* demper pull-to-refresh i Chrome mens man er i fokus */
   body.fokus nav.nav{display:none}
   body.fokus .who{display:none}
   body.fokus #dinsideCta{display:none}
@@ -4473,23 +4474,39 @@ function lukkSuksess(){ var ov=$('#suksessOverlay'); if(ov)ov.hidden=true; }
    stemmer), mens exit skjer eksplisitt (X/«Utforsk dashbordet») ELLER automatisk når
    status ikke lenger er 'forhandsvist' (publisering → live). Mellom de to rører vi
    ikke klassen — fokus står til noe faktisk avslutter den. */
+// Persisterings-flagg så fokus overlever reload: URL-param strippes ved visning, så uten et
+// flagg ville reload (uten param) falt ut av fokus. Flagget settes ved aktivering, leses ved
+// innlasting, slettes ved X/«Utforsk»/publisering.
+var FOKUS_FLAG='fokusAktiv';
+function fokusFlaggSatt(){ try{ return sessionStorage.getItem(FOKUS_FLAG)==='1'; }catch(e){ return false; } }
+function settFokusFlagg(på){ try{ på?sessionStorage.setItem(FOKUS_FLAG,'1'):sessionStorage.removeItem(FOKUS_FLAG); }catch(e){} }
 function applyFokusModus(b){
   b=b||_billing||{};
   var params=new URLSearchParams(location.search);
-  if(b.page_status==='forhandsvist' && params.get('velkommen')==='1'){
+  var viaParam=params.get('velkommen')==='1';
+  var forhV=b.page_status==='forhandsvist';
+  // Vis fokus hvis forhandsvist OG (førstegangs-param ELLER flagget står fra før). Begge veier
+  // KREVER forhandsvist — publisert side får aldri fokus.
+  if(forhV && (viaParam || fokusFlaggSatt())){
     document.body.classList.add('fokus');
-    // I fokus skal KUN «Din side» stå åpen (redirecten lander oss der; backstopp her).
+    settFokusFlagg(true); // persister → reload beholder fokus selv når param er strippet
     if(typeof aktivtPanel==='function' && aktivtPanel()!=='design') switchPanel('design');
-    // Fjern ?velkommen (behold ev. andre params + hash). switchPanel over har alt satt
-    // #dinside, så location.hash er riktig når vi skriver URL-en på nytt.
-    params.delete('velkommen');
-    var qs=params.toString();
-    history.replaceState(null,'',location.pathname+(qs?('?'+qs):'')+location.hash);
-  }else if(b.page_status!=='forhandsvist'){
-    document.body.classList.remove('fokus'); // publisert/annet → fokus skal aldri stå på
+    if(viaParam){
+      // Fjern ?velkommen (behold ev. andre params + hash). switchPanel over har alt satt #dinside.
+      params.delete('velkommen');
+      var qs=params.toString();
+      history.replaceState(null,'',location.pathname+(qs?('?'+qs):'')+location.hash);
+    }
+  }else if(b.page_status && b.page_status!=='forhandsvist'){
+    // KJENT ikke-forhandsvist (publisert/avslag/…) → fokus av + rydd flagget. Vilkåret krever
+    // en TRUTHY status: ved reload kalles denne først når _billing er lastet, men er page_status
+    // undefined (race før /billing/status) rører vi VERKEN klasse eller flagg — ellers ville
+    // flagget blitt slettet før forhandsvist-svaret rakk inn, og reload falt ut av fokus.
+    document.body.classList.remove('fokus');
+    settFokusFlagg(false);
   }
 }
-function avsluttFokus(){ document.body.classList.remove('fokus'); renderSjekkliste(); }
+function avsluttFokus(){ document.body.classList.remove('fokus'); settFokusFlagg(false); renderSjekkliste(); }
 (function(){
   var x=document.getElementById('fokusX');        if(x)x.addEventListener('click',avsluttFokus);
   var u=document.getElementById('fokusUtforsk');   if(u)u.addEventListener('click',avsluttFokus);
