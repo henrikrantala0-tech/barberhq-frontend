@@ -98,28 +98,61 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .svc-add:hover{border-color:#4d8bff;color:#fff}
 
 /* Åpningstider */
-.hrs-row{display:flex;align-items:center;gap:10px 12px;flex-wrap:wrap;padding:11px 0;border-bottom:1px solid #171717}
+/* Én rad: [toggle] [dagnavn] [åpne]–[lukke]. Tidsvelgerne er <select> med 15-min-steg
+   (05:00–23:45) — smalt felt (~64px mot native input[type=time] sine ~98px i Chromium /
+   ~208px i iOS Safari), lukket verdisett, native picker på mobil, ingen input-maske.
+   Under 360px byttes fullt dagnavn (.d-full) til 3-bokstavs (.d-short) — det er ~15px for
+   lite til fullt navn + to selects på 320px (målt), og fonten skal ikke krympes. */
+/* Åpningstider er ETT kort rundt hele #hrsList — samme rammeverdier som .svc-row (Tjenester):
+   background/border/border-radius/padding. Radene inni er NAKNE, skilt av border-bottom kant til
+   kant inni kortets padding; siste rad uten linje. Rad-innholdsbredden er den samme som da
+   paddingen lå per rad (226 − 24 padding − 2 border = 200px på 320), så ≤359-innstrammingen
+   under trengs fortsatt (målt). */
+#hrsList{background:#0a0a0a;border:1px solid #1f1f1f;border-radius:12px;padding:12px}
+/* Mobil-låst fixed-offset-layout (≤402 godkjent, selStart 176px/≈45% på 375, slakk +5). Fast
+   dagkolonne (px), IKKE prosent — forankret til det som får plass på 375. Desktop (≥560) er en
+   separat, uløst sak; ≥560-regelen under er en midlertidig plassholder til variant er valgt. */
+.hrs-row{display:flex;align-items:center;gap:6px;flex-wrap:nowrap;height:56px;border-bottom:1px solid #171717}
 .hrs-row:last-child{border-bottom:0}
-.hrs-day{flex:1;font-size:14px;color:#e0e0e0;font-weight:500;min-width:64px}
-/* flex-basis:100% på .hrs-times: native input[type=time] er ~208px bred i Safari/WebKit
-   (mot ~98px i Chromium), så to av dem uten shrink sprengte raden og ga sidelengs drag på
-   iOS. Nå legger .hrs-times seg på egen full-bredde linje under dagen. Inputene får NATURLIG
-   innholdsbredde med tak (flex:0 1 auto + max-width:120px), men beholder shrink-evnen
-   (min-width:0) så de aldri sprenger 320 med Safaris 208px-inputs. */
-.hrs-times{display:flex;align-items:center;gap:7px;flex:1 1 100%;min-width:0}
-.hrs-times input[type=time]{width:auto;min-width:0;flex:0 1 auto;max-width:120px;background:#0e0e0e;border:1px solid #2a2a2a;border-radius:9px;padding:9px 10px;color:#fff;font:inherit;font-size:14px;outline:none}
-.hrs-times input[type=time]:focus{border-color:#4d8bff}
-.hrs-sep{color:#777}
-.hrs-closed{color:#777;font-size:13px;margin-left:auto}
+.hrs-day{flex:0 0 60px;min-width:0;font-size:14px;color:#e0e0e0;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hrs-day .d-short{display:none}
+.hrs-times{display:flex;align-items:center;gap:3px;flex:0 0 auto}
+.hrs-times select{-webkit-appearance:none;appearance:none;box-sizing:border-box;height:44px;flex:0 0 auto;
+  background:#0e0e0e url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='9' height='6' viewBox='0 0 9 6' fill='none' stroke='%238a8a8a' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M1 1.25 4.5 4.75 8 1.25'/%3E%3C/svg%3E") no-repeat right 4px center;
+  border:1px solid #363636;border-radius:9px;padding:0 12px 0 6px;color:#fff;font:inherit;font-size:14px;line-height:42px;cursor:pointer}
+.hrs-times select:focus{border-color:#4d8bff;outline:none}
+.hrs-sep{color:#777;flex:0 0 auto}
+.hrs-closed{color:#777;font-size:13px;flex:0 0 auto}
 .hrs-row.off .hrs-times{display:none}
 .hrs-row:not(.off) .hrs-closed{display:none}
-/* Av/på-bryter per dag */
-.sw-toggle{position:relative;display:inline-block;width:40px;height:23px;flex:0 0 auto;cursor:pointer}
+/* ≤359px: kompakt — dagkolonne 31px (bredest kortnavn «Man»=29,2px), 3-bokstavs dagnavn, tettere select. */
+@media(max-width:359px){
+  .hrs-row{gap:3px}
+  .hrs-day{flex-basis:31px}
+  .hrs-day .d-full{display:none}.hrs-day .d-short{display:inline}
+  .hrs-times{gap:2px}
+  .hrs-times select{padding:0 9px 0 4px;background-position:right 3px center}
+}
+/* Mobil fixed-offset: bredere dagkolonne per bredde (selStart 176px/≈45% på 375, slakk +5). */
+@media(min-width:375px){.hrs-day{flex-basis:64px}}
+@media(min-width:400px){.hrs-day{flex-basis:68px}}
+/* ≥560px desktop: VARIANT D — tidsgruppa høyrejustert med 32px margin til kortkanten
+   (selStart ≈42% av innerbredden), select 90px, romslig gap (10px). Grid: [toggle 44] [dag 1fr]
+   [tider 208px fast] [32px margin]. Fast 208px-kolonne (= gruppebredden) gjør at «Stengt» på
+   av-rader starter på SAMME x som selectene. Mobil ≤402 er flex/fixed-offset og urørt. */
+@media(min-width:560px){
+  .hrs-row{display:grid;grid-template-columns:44px 1fr 208px 32px;align-items:center;column-gap:0}
+  .hrs-times{grid-column:3;grid-row:1;gap:10px}
+  .hrs-times select{width:90px;padding:0 16px 0 12px;background-position:right 10px center}
+  .hrs-closed{grid-column:3;grid-row:1}
+}
+/* Av/på-bryter per dag — visuelt 40×23, men trykkflate 44px høy (label fyller radhøyden) */
+.sw-toggle{position:relative;display:inline-block;width:40px;height:44px;flex:0 0 auto;cursor:pointer}
 .sw-toggle input{position:absolute;inset:0;opacity:0;margin:0;cursor:pointer;z-index:2}
-.sw-track{position:absolute;inset:0;background:#2a2a2a;border-radius:99px;transition:background .15s}
-.sw-knob{position:absolute;top:2px;left:2px;width:19px;height:19px;border-radius:50%;background:#fff;transition:transform .15s}
+.sw-track{position:absolute;top:50%;left:0;transform:translateY(-50%);width:40px;height:23px;background:#2a2a2a;border-radius:99px;transition:background .15s}
+.sw-knob{position:absolute;top:50%;left:2px;width:19px;height:19px;border-radius:50%;background:#fff;transition:transform .15s;transform:translateY(-50%)}
 .sw-toggle input:checked~.sw-track{background:#4d8bff}
-.sw-toggle input:checked~.sw-knob{transform:translateX(17px)}
+.sw-toggle input:checked~.sw-knob{transform:translate(17px,-50%)}
 
 .ob-err{color:#c0594a;font-size:13px;margin-top:8px}
 </style>
@@ -291,13 +324,27 @@ var HRS_DAYS=[
   {wd:6,label:'Lørdag',open:false},{wd:0,label:'Søndag',open:false}
 ];
 var hrsList=document.getElementById('hrsList');
+// Verdisett: 05:00–23:45 i 15-min-steg. Verdiene er ren HH:MM (uendret backend-kontrakt).
+var HRS_SLOTS=(function(){var a=[];for(var h=5;h<=23;h++){for(var mi=0;mi<60;mi+=15){a.push((h<10?'0'+h:''+h)+':'+(mi<10?'0'+mi:''+mi));}}return a;})();
+function hrsOptions(min){ // min: kun tider strengt større enn min (utelates ved undefined)
+  var o='';for(var i=0;i<HRS_SLOTS.length;i++){var t=HRS_SLOTS[i];if(min!==undefined&&t<=min)continue;o+='<option value="'+t+'">'+t+'</option>';}return o;
+}
+// Lukketid-select filtreres til kun tider ETTER valgt åpningstid; bevar gyldig valg, ellers første.
+function filterClose(openSel,closeSel){
+  var prev=closeSel.value; closeSel.innerHTML=hrsOptions(openSel.value);
+  if(prev&&prev>openSel.value){closeSel.value=prev;} else {closeSel.selectedIndex=0;}
+}
 HRS_DAYS.forEach(function(d){
   var row=document.createElement('div'); row.className='hrs-row'+(d.open?'':' off'); row.dataset.weekday=d.wd;
+  // [oversettelse: sv/da/en] fullt + 3-bokstavs dagnavn — se _utkast/03-oversettelsesfase.md
   row.innerHTML=
     '<label class="sw-toggle"><input type="checkbox" class="hrs-on"'+(d.open?' checked':'')+'><span class="sw-track"></span><span class="sw-knob"></span></label>'+
-    '<span class="hrs-day">'+d.label+'</span>'+
-    '<div class="hrs-times"><input type="time" class="hrs-open" value="10:00"><span class="hrs-sep">–</span><input type="time" class="hrs-close" value="18:00"></div>'+
+    '<span class="hrs-day"><span class="d-full">'+d.label+'</span><span class="d-short">'+d.label.slice(0,3)+'</span></span>'+
+    '<div class="hrs-times"><select class="hrs-open">'+hrsOptions()+'</select><span class="hrs-sep">–</span><select class="hrs-close"></select></div>'+
     '<span class="hrs-closed">Stengt</span>';
+  var openSel=row.querySelector('.hrs-open'), closeSel=row.querySelector('.hrs-close');
+  openSel.value='10:00'; filterClose(openSel,closeSel); closeSel.value='18:00';
+  openSel.addEventListener('change',function(){filterClose(openSel,closeSel);});
   hrsList.appendChild(row);
 });
 hrsList.addEventListener('change',function(e){ var c=e.target.closest('.hrs-on'); if(!c)return; c.closest('.hrs-row').classList.toggle('off',!c.checked); });
