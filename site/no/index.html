@@ -33,6 +33,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    nederst i headeren der navets eget innhold ikke ligger: sd 8.12 på .9, sd 1.41
    her. backdrop-filter alene løser det IKKE — uten den er sd 9.11, altså står
    blurren for ~1 av 8 poeng. Det er alfaen som bærer. */
+:root{--nav-h:68px}   /* nav-høyde, én kilde: desktop 68 / mobil 59 (settes i @media 760). .hero trekker fra denne. */
 .nav{position:sticky;top:0;z-index:50;background:rgba(10,10,10,.97);backdrop-filter:blur(20px);border-bottom:1px solid transparent;transition:border-color .25s,background .25s}
 .nav.scrolled{border-bottom-color:#1f1f1f;background:rgba(10,10,10,.97)}
 .nav-wrap{max-width:1100px;margin:0 auto;padding:0 32px;height:68px;display:flex;align-items:center;justify-content:space-between}
@@ -74,8 +75,13 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    med vw — som inkluderer scrollbaren og derfor overflyter med scrollbarens bredde i en
    ekte nettleser. Med full bredde her kan begge bruke width:100% og treffe klientbredden
    eksakt, med eller uten scrollbar. */
-.hero{margin:0 auto;padding:90px 0 35px;text-align:center;position:relative}
-.hero-inner{max-width:900px;margin:0 auto;padding:0 32px;position:relative;z-index:2}
+/* Hero fyller viewporten under nav-en så «Før BarberHQ» ikke stikker opp på telefon. min-height
+   (ikke height) så innhold kan vokse forbi; 100vh-fallback for eldre Safari, 100dvh over. Trekker
+   fra --nav-h fordi sticky nav opptar toppen. Innholdet SPRIKES (ikke sentreres): .hero-inner er
+   flex-kolonne som fyller høyden, og .hero-btns{margin-top:auto} skyver CTA-gruppa (knapp +
+   disclaimer, uendret innbyrdes avstand) til bunnen. Tekstblokka blir da liggende høyt. */
+.hero{margin:0 auto;padding:90px 0 35px;text-align:center;position:relative;display:flex;flex-direction:column;min-height:calc(100vh - var(--nav-h));min-height:calc(100dvh - var(--nav-h))}
+.hero-inner{max-width:900px;margin:0 auto;padding:0 32px;position:relative;z-index:2;display:flex;flex-direction:column;flex:1 1 auto}
 .hero-video{position:absolute;top:50%;left:50%;width:100%;height:100.8%;transform:translate(-50%,-50%);object-fit:cover;object-position:center;z-index:0;pointer-events:none}
 .hero::before{content:"";position:absolute;top:0;left:0;width:100%;height:calc(100% + 20px);background:linear-gradient(to bottom,rgba(10,10,10,.65) 0%,rgba(10,10,10,.45) 35%,rgba(10,10,10,.72) 65%,#0a0a0a 85%);z-index:1;pointer-events:none}
 /* Stablingen bor nå på .hero-inner (over), som er det eneste innholds-barnet. */
@@ -93,7 +99,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 /* nowrap: «Flere kunder, mer inntekt.» er løftet, og et linjebrekk midt i det gjør det til
    to halve påstander. Holder den samlet så lenge den får plass — måles på 320. */
 .hero-sub strong{color:#fff;font-weight:700;white-space:nowrap}
-.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:48px}
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:auto}
 .btn{display:inline-flex;align-items:center;gap:9px;font-size:15px;font-weight:600;padding:15px 30px;border-radius:99px;text-decoration:none;transition:all .2s;cursor:pointer;border:0}
 .btn-fill{background:#4d8bff;color:#fff}
 .btn-fill:hover{opacity:.85}
@@ -104,7 +110,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    for lavt, og feilen økte med hver ekstra linje — altså også ved lengre sv/da/en-tekst.
    line-height:inherit gir ikonet samme boks-høyde som ÉN tekstlinje, så glyfen sentreres
    i første linje uten en hardkodet offset som må rettes hvis linjehøyden endres. */
-.hero-note{color:#8c8c8c;font-size:13.5px;margin-top:20px;display:inline-flex;align-items:flex-start;gap:7px}
+.hero-note{color:#8c8c8c;font-size:13.5px;margin-top:20px;display:inline-flex;align-items:flex-start;gap:7px;align-self:center}
 .hero-note i{font-size:16px;color:#fff;line-height:inherit}
 
 /* ===== FUNKSJONER ===== */
@@ -249,6 +255,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 
 /* ===== RESPONSIV ===== */
 @media(max-width:760px){
+  :root{--nav-h:59px}
   .nav-wrap{padding:0 16px;height:58px}
   .logo{font-size:18px}
   .nav-links{display:none}
