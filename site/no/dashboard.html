@@ -1423,7 +1423,7 @@
     <div class="verv-modal-inner">
       <div class="verv-modal-h">Kopier verve-lenke</div>
       <p class="verv-modal-sub">Til <b id="vervModalName">kunden</b></p>
-      <textarea id="vervMsg" rows="6"></textarea>
+      <textarea id="vervMsg" rows="10"></textarea>
       <p class="verv-modal-note">Rediger gjerne teksten før du kopierer. BarberHQ sender ingenting — du sender selv.</p>
       <div class="verv-modal-actions">
         <button class="crop-btn-cancel" id="vervCancel" type="button">Lukk</button>
@@ -3914,18 +3914,35 @@ function vervLenke(code){ return 'trybarberhq.com/'+(CONFIG.BARBER_SLUG||'din-si
 // et løfte systemet motsier i neste steg. Den ene kombinasjonen der vi selv laget bruddet.
 //
 // «du» = kunden som får meldingen (ververen). «vennen» = den nye. Kjønnsnøytralt med vilje.
+// Meldingen går i TO ledd: barber → kunde (hele teksten), kunde → venn (kun videresend-linja).
+// Derfor er forklaringen (til kunden) skilt fra videresend-linja (den kunden sender vennen):
+// forklaringen sier hvem som får hva, videresend-linja er det vennen faktisk skal motta.
 var VERV_TEKST={
-  ny:     function(p){ return 'Del gjerne denne med en venn — vennen får '+p+'% på første klipp og booker enkelt her:'; },
-  verver: function(p){ return 'Del gjerne denne med en venn — du får '+p+'% neste gang, når vennen har vært innom. Vennen booker her:'; },
-  begge:  function(p){ return 'Del gjerne denne med en venn — dere får begge '+p+'%: vennen på første klipp, du neste gang. Vennen booker her:'; }
+  ny:     function(p){ return 'Del gjerne denne med en venn — vennen får '+p+'% på første klipp.'; },
+  verver: function(p){ return 'Del gjerne denne med en venn — du får '+p+'% neste gang, når vennen har vært innom.'; },
+  begge:  function(p){ return 'Del gjerne denne med en venn — dere får begge '+p+'%: vennen på første klipp, du neste gang.'; }
+};
+// Videresend-linja (det kunden sender vennen). «få pct%» stemmer KUN når vennen faktisk får
+// rabatt (ny/begge). Ved 'verver' får vennen INGENTING → egen linje uten rabattløfte, ellers
+// lover kunden vennen noe systemet motsier. shop = CONFIG.BARBER_NAME (p.shop||p.name).
+var VERV_VIDERE={
+  ny:     function(p,shop,lenke){ return 'Bruk denne lenken og få '+p+'% hos '+shop+': '+lenke; },
+  begge:  function(p,shop,lenke){ return 'Bruk denne lenken og få '+p+'% hos '+shop+': '+lenke; },
+  // FORSLAG (avventer godkjenning) — vennen får ingen rabatt her, så ingen prosent loves:
+  verver: function(p,shop,lenke){ return 'Book time hos '+shop+' her: '+lenke; }
 };
 function openVervModal(name,code){
   if(!code)return;                                   // uten kode: ingen lenke å kopiere (knappen er alt disabled)
   $("#vervModalName").textContent=name||'kunden';
   // Fra _vervLagret, ikke fra feltene: se kommentaren ved erklæringen. Ukjent recipient faller
   // til 'begge' — samme verdi som DB-defaulten, så gjetningen bommer bare hvis /settings feilet.
-  var pct=_vervLagret.pct, lag=VERV_TEKST[_vervLagret.recipient]||VERV_TEKST.begge;
-  $("#vervMsg").value='Hei '+(name||'')+'! Takk for sist 💈\n\n'+lag(pct)+'\n'+vervLenke(code);
+  var pct=_vervLagret.pct, rec=_vervLagret.recipient;
+  var shop=(CONFIG.BARBER_NAME||'salongen'), lenke=vervLenke(code);
+  var forklaring=(VERV_TEKST[rec]||VERV_TEKST.begge)(pct);
+  var videre=(VERV_VIDERE[rec]||VERV_VIDERE.begge)(pct,shop,lenke);
+  // \n\n mellom forklaring og «Kopier dette og send videre:» → visuelt skilt i tekstboksen, så
+  // kunden ser hvilken del hun skal videresende (ikke hele teksten inkl. «takk for sist»).
+  $("#vervMsg").value='Hei '+(name||'')+'! Takk for sist 💈\n\n'+forklaring+'\n\nKopier dette og send videre:\n'+videre;
   var b=$("#vervCopy"); if(b){ b.textContent='Kopier melding'; b.disabled=false; }
   $("#vervModal").classList.add('open');
 }
