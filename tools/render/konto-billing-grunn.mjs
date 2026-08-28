@@ -125,7 +125,34 @@ for(const c of CASE){
   await page.close();
 }
 
-// FIX 2-flyten (publiser → full trial_vindu-PUT → «Prøveperiode» uten reload) legges til i egen commit.
+// ── FIX 2: publiser-flyten — A → klikk → full trial_vindu-PUT → «Prøveperiode» uten reload ──
+{
+  const page=await browser.newPage({viewport:{width:390,height:900},deviceScaleFactor:2});
+  const errs=[]; page.on('pageerror',e=>errs.push(e.message));
+  // Start i A. billing/status leses ved init; PUT svarer full shape (som ekte backend nå gjør).
+  const startA={...base(), page_status:'forhandsvist', effective_plan_grunn:'laast',
+    trial_days_left:null, trial_start_at:null};
+  const putSvar={...base(), page_status:'live', effective_plan_grunn:'trial_vindu',
+    trial_days_left:30, trial_start_at:new Date().toISOString(), needs_attention:false, attention_grunn:null};
+  await stubApi(page,()=>startA,()=>putSvar);
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`,{waitUntil:'networkidle'});
+  await page.$eval('button[data-panel="abonnement"]',b=>b.click());
+  await page.waitForTimeout(800);
+  const foer = await T(page.$eval('#kontoStatus',e=>e.textContent));
+  await page.$eval('#kontoAksjon',b=>b.click());   // publiser → settSideStatus('live')
+  await page.waitForTimeout(700);                   // ingen reload — kun renderKonto fra PUT-svaret
+  const etter = await T(page.$eval('#kontoStatus',e=>e.textContent));
+  const dager = await T(page.$eval('#kontoTallStor',e=>e.offsetParent!==null?e.textContent:'(skjult)'));
+  const feil=[];
+  if(!/Ikke publisert/.test(foer)) feil.push(`start var ikke A: «${foer}»`);
+  if(!/Prøveperiode/.test(etter))  feil.push(`etter publisering: «${etter}» (ventet Prøveperiode)`);
+  if(!/30 dager/.test(dager))      feil.push(`dager-tall: «${dager}» (ventet 30 dager)`);
+  await page.locator('#abonnement').screenshot({path:`${OUT}/konto-FIX2-etter-publisering.png`});
+  rapport.push({scenario:'FIX2-publiser-flyt', status:`${foer.replace(/^●\s*/,'')} → ${etter.replace(/^●\s*/,'')}`,
+    knapp:dager, dinsideCTA:'—', resultat: feil.length?('✗ '+feil.join(' | ')):'OK ✓',
+    jsfeil: errs.length?errs.join('; '):'ingen'});
+  await page.close();
+}
 
 console.table(rapport);
 const feilet=rapport.filter(r=>r.resultat!=='OK ✓');

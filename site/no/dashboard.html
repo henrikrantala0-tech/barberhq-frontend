@@ -4813,16 +4813,17 @@ async function settSideStatus(nyStatus,btn){
   if(!r)return; // 401 → apiFetch har allerede sendt til login
   const d=await r.json().catch(function(){return{};});
   if(r.ok){
-    // ROT-ÅRSAK-FIKS: oppdater tilstanden DIREKTE fra skrive-responsen (autoritativ) —
-    // page_status + trial_start_at kommer i PUT-svaret (COALESCE — trial_start_at settes én gang,
-    // aldri restartet). Vi RE-FETCHER IKKE /billing/status her: i read-after-write-vinduet kan det
-    // svare utdatert 'forhandsvist' og REVERTERE CTA-en vi nettopp satte til live (det var nettopp
-    // det som brøt). PUT-svaret er fasit for de to feltene handlingen endrer; øvrige billing-felt
-    // er uendret av publisering, så ingen refresh trengs. (loadBilling logger nå på feil — for de
-    // andre kallstedene: init, Stripe-retur, feil-resynk under.)
-    if(_billing){
-      if(d&&d.page_status)_billing.page_status=d.page_status;
-      if(d&&('trial_start_at' in d))_billing.trial_start_at=d.trial_start_at;
+    // ROT-ÅRSAK-FIKS: oppdater tilstanden DIREKTE fra skrive-responsen (autoritativ). PUT-svaret
+    // er nå den FULLE billing-shapen, ikke bare de to feltene handlingen endret — så vi ERSTATTER
+    // _billing i sin helhet i stedet for å patche page_status + trial_start_at. Publisering flytter
+    // effective_plan_grunn (laast → trial_vindu) og starter trial_days_left; patchet vi bare de to
+    // feltene, ville renderKonto lest de GAMLE grunn-feltene og vist «Ikke publisert» helt til neste
+    // refresh — det motsatte av «prøveperiode umiddelbart». Vi RE-FETCHER IKKE /billing/status her:
+    // i read-after-write-vinduet kan det svare utdatert 'forhandsvist' og REVERTERE det vi nettopp
+    // satte. Guard på page_status: en tom/parse-feilet body ({} fra catch over) skal ikke wipe
+    // state — da beholder vi forrige _billing. (loadBilling logger på feil — init/Stripe-retur/resynk.)
+    if(d&&d.page_status){
+      _billing=d;
       renderKonto(_billing);
     }
     // Publisering → suksesskort (hendelses-drevet, én gang). Avpublisering → toast som før.
