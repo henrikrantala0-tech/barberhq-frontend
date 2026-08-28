@@ -85,17 +85,15 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .hero-video{position:absolute;top:50%;left:50%;width:100%;height:100.8%;transform:translate(-50%,-50%);object-fit:cover;object-position:center;z-index:0;pointer-events:none}
 .hero::before{content:"";position:absolute;top:0;left:0;width:100%;height:calc(100% + 20px);background:linear-gradient(to bottom,rgba(10,10,10,.65) 0%,rgba(10,10,10,.45) 35%,rgba(10,10,10,.72) 65%,#0a0a0a 85%);z-index:1;pointer-events:none}
 /* Stablingen bor nå på .hero-inner (over), som er det eneste innholds-barnet. */
-.hero-eyebrow{display:block;font-size:13px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9a9a9a;margin-bottom:30px}
+.hero-eyebrow{display:block;font-size:16px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9a9a9a;margin-bottom:30px}
 .hero h1{font-weight:800;line-height:1.1;letter-spacing:-.045em}
-/* Gulvet er 30px, ikke 44: tittelen er én ubrytelig enhet (nbsp mellom alle ord), og
-   ved 44px trengte den 392px der 320-skjermen gir 280. Da ville den flytt ut av
-   containeren i stedet for å brekke. Målt: 30px gir én linje på alle tre bredder.
-   .h1-small er FJERNET — tittelen er én setning og skal ikke deles i to størrelser.
-   Den forsinkede .28s-animasjonen fulgte med den og er borte; det er ingenting igjen
-   å forsinke når det bare er ett span. */
-.hero h1 .h1-big{display:block;font-size:clamp(30px,7vw,82px);animation:heroIn 1.2s cubic-bezier(.22,.61,.36,1) both}
+/* Gulvet var 30px med nbsp (én ubrytelig linje) fordi >30px sprengte 320-skjermens 280px.
+   For å skalere tittelen opp på mobil er nbsp fjernet (regulære mellomrom) → den kan nå brekke
+   til TO linjer på 320 i stedet for å flyte ut. Gulv 36px: 1 linje på ≥402, 2 linjer på 320
+   (verifisert ≤2 + ingen overflyt). Brekker den til tre, skal det rapporteres — ikke skaleres ned. */
+.hero h1 .h1-big{display:block;font-size:clamp(40px,7vw,82px);animation:heroIn 1.2s cubic-bezier(.22,.61,.36,1) both}
 @keyframes heroIn{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
-.hero-sub{color:#b4b4b4;font-size:clamp(16px,2.2vw,19px);line-height:1.6;max-width:560px;margin:36px auto 0}
+.hero-sub{color:#b4b4b4;font-size:19px;line-height:1.6;max-width:560px;margin:36px auto 0}
 /* nowrap: «Flere kunder, mer inntekt.» er løftet, og et linjebrekk midt i det gjør det til
    to halve påstander. Holder den samlet så lenge den får plass — måles på 320. */
 .hero-sub strong{color:#fff;font-weight:700;white-space:nowrap}
@@ -1362,7 +1360,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   </video>
   <div class="hero-inner">
     <span class="hero-eyebrow">Bookingsystem for barberere</span>
-    <h1><span class="h1-big">«Når&nbsp;har&nbsp;du&nbsp;ledig?»</span></h1>
+    <h1><span class="h1-big">“Når har du ledig?”</span></h1>
     <p class="hero-sub">Ikke bare en bookingside — et helt system. Automatiske påminnelser, rebooking og full oversikt. <strong>Flere kunder, mer inntekt.</strong></p>
     <div class="hero-btns">
       <a href="kom-i-gang.html" class="btn btn-fill">Prøv gratis</a>
