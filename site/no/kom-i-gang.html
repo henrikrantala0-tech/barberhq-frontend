@@ -207,6 +207,9 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     </div>
 
     <button type="button" class="btn btn-fill ob-submit" id="finalBtn" onclick="submitFinal()">Fullf&oslash;r &#10003;</button>
+    <!-- Innsendingsfeil (timeout / nettverk): inline .ob-err, knappen resettes → prøv på nytt
+         i samme skjema. Erstatter alert(). -->
+    <p class="ob-err" id="submitErr" role="alert" style="text-align:center;margin-top:12px"></p>
   </div>
   <div class="ob-card ob-done" id="obDone">
     <div class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="30" height="30"><path d="M20 6 9 17l-5-5"/></svg></div>
@@ -224,6 +227,14 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 function v(id){return document.getElementById(id).value.trim();}
 var API_BASE='https://api.trybarberhq.com';
 var MIN_IMG=2, MAX_IMG=10;
+// Submit-timeout: uten AbortController spinner knappen i det uendelige hvis serveren eller
+// opplastingen henger. 120s dekker treg mobilopplasting av inntil 10 bilder (ukomprimert fra
+// telefon, ~10–40 MB) + backend-bygg, med margin — «for kort er verre enn for lang».
+var SUBMIT_TIMEOUT_MS=120000;
+var SUBMIT_ERR={
+  timeout: 'Det tok for lang tid å laste opp. Sjekk nettforbindelsen og prøv igjen.',
+  nett:    'Noe gikk galt. Prøv igjen — eller send oss en e-post på info@trybarberhq.com.'
+};
 var step1={};
 
 function submitOb(){
@@ -397,7 +408,12 @@ async function submitFinal(){
   var btn=document.getElementById('finalBtn');
   var old=btn.innerHTML; btn.disabled=true; btn.classList.add('building');
   btn.innerHTML='<span class="btn-spinner" aria-hidden="true"></span>Bygger siden din…';
+  document.getElementById('submitErr').textContent=''; // rydd forrige innsendingsfeil
   var _tSubmit=performance.now(); // timing: POST-en inkluderer bildeopplasting (multipart) + backend-bygg
+  // AbortController: bryter en hengende request så knappen ikke spinner i det uendelige. Ved
+  // abort går vi i catch → knappen resettes + inline feil (aldri en død «Bygger …»-spinner).
+  var ctrl=new AbortController();
+  var timer=setTimeout(function(){ ctrl.abort(); }, SUBMIT_TIMEOUT_MS);
   try{
     var fd=new FormData();
     fd.append('navn',step1.navn);fd.append('shop',step1.shop);fd.append('adresse',step1.adresse||'');fd.append('epost',step1.epost);
@@ -407,7 +423,8 @@ async function submitFinal(){
     fd.append('hours',JSON.stringify(hrs.list));
     files.forEach(function(f){fd.append('images',f);});
     if(favIndex>=0) fd.append('favoritt',favIndex); // rå filindeks i files[] (= append-rekkefølgen)
-    var res=await fetch(API_BASE+'/api/onboarding',{method:'POST',body:fd,credentials:'include'});
+    var res=await fetch(API_BASE+'/api/onboarding',{method:'POST',body:fd,credentials:'include',signal:ctrl.signal});
+    clearTimeout(timer); // svar mottatt — la ikke timeren fyre på et allerede-lest svar
     // Timing: hele bildeopplastingen skjer INNI denne POST-en (multipart), ikke som eget steg.
     console.log('[onboarding-timing] POST /api/onboarding (upload+bygg): '+Math.round(performance.now()-_tSubmit)+' ms · '+files.length+' bilder');
     if(!res.ok)throw new Error('server svarte '+res.status);
@@ -434,10 +451,17 @@ async function submitFinal(){
     document.getElementById('obDone').style.display='block';
     window.scrollTo({top:0,behavior:'smooth'});
   }catch(e){
+    clearTimeout(timer);
     btn.disabled=false;btn.classList.remove('building');btn.innerHTML=old;
-    alert('Noe gikk galt. Prøv igjen eller send oss en e-post på info@trybarberhq.com');
+    // Timeout (AbortError) og nettverks-/serverfeil deler nå ÉN feilform (inline .ob-err), ikke
+    // alert() — samme situasjon (nådde aldri fram / transient), samme visning, prøv på nytt her.
+    visSubmitFeil(e && e.name==='AbortError' ? SUBMIT_ERR.timeout : SUBMIT_ERR.nett);
     console.error(e);
   }
+}
+function visSubmitFeil(msg){
+  var el=document.getElementById('submitErr'); if(!el)return;
+  el.textContent=msg; el.scrollIntoView({behavior:'smooth',block:'center'});
 }
 
 refreshImages();
