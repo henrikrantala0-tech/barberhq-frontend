@@ -211,11 +211,9 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
          i samme skjema. Erstatter alert(). -->
     <p class="ob-err" id="submitErr" role="alert" style="text-align:center;margin-top:12px"></p>
   </div>
-  <div class="ob-card ob-done" id="obDone">
-    <div class="chk"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="30" height="30"><path d="M20 6 9 17l-5-5"/></svg></div>
-    <h2 id="obDoneName">Takk!</h2>
-    <p>Vi bygger siden din — du får en e-post når den er klar.</p>
-  </div>
+  <!-- #obDone («Vi bygger siden din — e-post kommer») er FJERNET: bygget er synkront, det finnes
+       ingen async byggekø. Suksess = ok:true && slug → redirect til dashbordet. Alt annet er feil
+       (#obError), aldri en kvittering vi ikke kan stå inne for. -->
   <div class="ob-card ob-done" id="obError">
     <div class="chk err"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" width="30" height="30"><circle cx="12" cy="12" r="10"/><line x1="12" y1="8" x2="12" y2="12.5"/><line x1="12" y1="16" x2="12.01" y2="16"/></svg></div>
     <p class="ob-err-msg" id="obErrorMsg"></p>
@@ -233,7 +231,11 @@ var MIN_IMG=2, MAX_IMG=10;
 var SUBMIT_TIMEOUT_MS=120000;
 var SUBMIT_ERR={
   timeout: 'Det tok for lang tid å laste opp. Sjekk nettforbindelsen og prøv igjen.',
-  nett:    'Noe gikk galt. Prøv igjen — eller send oss en e-post på info@trybarberhq.com.'
+  nett:    'Noe gikk galt. Prøv igjen — eller send oss en e-post på info@trybarberhq.com.',
+  // FORSLAG (avventer copy-godkjenning) — 200 uten slug/status (bygget kastet) + parse-feil:
+  byggfeil:  'Noe gikk galt da siden din skulle opprettes. Kontakt oss på info@trybarberhq.com, så ordner vi det.',
+  // 409-fallback: backend sender egen melding («Denne e-posten har …»), dette brukes kun om den mangler:
+  duplikat:  'Denne e-posten har allerede en forespørsel hos oss. Vi tar kontakt hvis vi trenger mer.'
 };
 var step1={};
 
@@ -427,29 +429,31 @@ async function submitFinal(){
     clearTimeout(timer); // svar mottatt — la ikke timeren fyre på et allerede-lest svar
     // Timing: hele bildeopplastingen skjer INNI denne POST-en (multipart), ikke som eget steg.
     console.log('[onboarding-timing] POST /api/onboarding (upload+bygg): '+Math.round(performance.now()-_tSubmit)+' ms · '+files.length+' bilder');
-    if(!res.ok)throw new Error('server svarte '+res.status);
-    // Les rå body først så en parse-feil kan logges med innhold. data-utfallet er som res.json().
-    var raw=''; var data={};
-    try{ raw=await res.text(); data=JSON.parse(raw); }
-    catch(e){ console.error('onboarding: kunne ikke parse svaret som JSON:', e, '| rå body:', raw); }
-    // Bygget OK → sesjon er satt av backend (onboarding.js logger barbereren rett inn).
-    // Send til dashbordet, «Din side»-fanen, der onboarding-flyten fortsetter.
-    if(data && data.slug){ window.location.href='/no/dashboard.html?velkommen=1#dinside'; return; }
-    // 2xx MED feilmelding (f.eks. status:'email_taken') → vis meldinga, ALDRI kvitteringen (som ville
-    // løyet). Logg-inn-lenka vises kun ved email_taken. timezone_required kan ikke treffe fra no/
-    // (market er alltid 'NO'), men dekkes generisk her om det skulle skje.
-    if(data && data.melding){
-      document.getElementById('obStep2').style.display='none';
-      document.getElementById('obErrorMsg').textContent=data.melding;
-      document.getElementById('obErrorLink').style.display=(data.status==='email_taken')?'':'none';
-      document.getElementById('obError').style.display='block';
-      window.scrollTo({top:0,behavior:'smooth'});
+    // 409: onboarding er IKKE idempotent — dedup-indeksen (orders.contact_email) svarer 409, og
+    // det finnes ingen id/slug/sesjon å gjenopprette med. En retry gir bare nytt 409, så vi tilbyr
+    // IKKE «prøv igjen». Vis backend-meldingen som den er, i #obError, uten Logg inn-lenke.
+    if(res.status===409){
+      var d409=null; try{ d409=JSON.parse(await res.text()); }catch(e){}
+      visObError((d409 && d409.melding) || SUBMIT_ERR.duplikat, false);
       return;
     }
-    document.getElementById('obStep2').style.display='none';
-    document.getElementById('obDoneName').textContent='Takk, '+step1.navn+'!';
-    document.getElementById('obDone').style.display='block';
-    window.scrollTo({top:0,behavior:'smooth'});
+    // Andre non-2xx (5xx o.l.) er transiente → catch → inline .ob-err, «prøv igjen» i skjemaet.
+    if(!res.ok)throw new Error('server svarte '+res.status);
+    // 200: ok:true kommer ALLTID (også når bygget kastet). slug er ENESTE pålitelige suksess-
+    // signal, og bygget er SYNKRONT — manglende slug betyr feil NÅ, ikke «kommer snart».
+    var raw='', data=null, parseOk=true;
+    try{ raw=await res.text(); data=JSON.parse(raw); }
+    catch(e){ parseOk=false; console.error('onboarding: kunne ikke parse svaret som JSON:', e, '| rå body:', raw); }
+    // Suksess: KUN ok:true && slug. Aldri ok:true alene. → dashbordet, «Din side», der flyten fortsetter.
+    if(parseOk && data && data.ok===true && data.slug){ window.location.href='/no/dashboard.html?velkommen=1#dinside'; return; }
+    // slug:null — skill de tre tilstandene på status-feltet:
+    if(parseOk && data && data.status==='email_taken'){ visObError(data.melding, true); return; }        // konto finnes → Logg inn
+    // Merk: 'timezone_required' håndteres IKKE her — den kan ikke oppstå fra no/. market utledes
+    // til 'NO' (L2M[lang='no']), og US-onboarding går via en/kom-i-gang.html (egen land-velger +
+    // #o-tz, market fra valget). En uventet slik status faller trygt til fail-closed under.
+    // FAIL-CLOSED: parse-feil ELLER 2xx uten slug og uten kjent status (bygget kastet). Vi kan IKKE
+    // bekrefte at siden ble bygd → det er en FEIL, aldri #obDone. (#obDone er nå unådd — se rapport.)
+    visObError(SUBMIT_ERR.byggfeil, false);
   }catch(e){
     clearTimeout(timer);
     btn.disabled=false;btn.classList.remove('building');btn.innerHTML=old;
@@ -462,6 +466,15 @@ async function submitFinal(){
 function visSubmitFeil(msg){
   var el=document.getElementById('submitErr'); if(!el)return;
   el.textContent=msg; el.scrollIntoView({behavior:'smooth',block:'center'});
+}
+// #obError-skjermen (full swap): definitive tilstander uten retry-vei. visLogin=true kun ved
+// email_taken (konto finnes). Ingen automatisk re-POST herfra — knappen/skjemaet er byttet bort.
+function visObError(msg, visLogin){
+  document.getElementById('obStep2').style.display='none';
+  document.getElementById('obErrorMsg').textContent=msg;
+  document.getElementById('obErrorLink').style.display=visLogin?'':'none';
+  document.getElementById('obError').style.display='block';
+  window.scrollTo({top:0,behavior:'smooth'});
 }
 
 refreshImages();
