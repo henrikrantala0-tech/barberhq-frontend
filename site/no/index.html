@@ -112,6 +112,14 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    i første linje uten en hardkodet offset som må rettes hvis linjehøyden endres. */
 .hero-note{color:#8c8c8c;font-size:13.5px;margin-top:20px;display:inline-flex;align-items:flex-start;gap:7px;align-self:center}
 .hero-note i{font-size:16px;color:#fff;line-height:inherit}
+/* Sekundær scroll-lenke — tekstlenke (ingen ramme/bakgrunn), dempet, chevron ned. Skal ikke
+   konkurrere med den blå knappen. Trykkflate ≥44px via min-height selv om teksten er 14px.
+   align-self:center fordi .hero-inner er flex-kolonne (ellers strekkes/venstrejusteres den). */
+.hero-see{align-self:center;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 8px;margin-top:14px;color:#c8c8c8;font-size:14px;font-weight:500;text-decoration:none;transition:color .2s}
+.hero-see:hover{color:#fff}
+.hero-see svg{width:13px;height:13px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+/* Anker-mål lander under sticky nav, ikke bak den */
+#produkt{scroll-margin-top:var(--nav-h)}
 
 /* ===== FUNKSJONER ===== */
 .feat-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;max-width:840px;margin:0 auto}
@@ -1360,6 +1368,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       <a href="kom-i-gang.html" class="btn btn-fill">Prøv gratis</a>
     </div>
     <div class="hero-note"><i class="ti ti-eye"></i>Du trenger ikke legge inn betalingskort for å prøve.</div>
+    <a href="#produkt" class="hero-see">Se hvordan det virker<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></a>
   </div>
 </header>
 
