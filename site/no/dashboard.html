@@ -4296,6 +4296,7 @@ function renderKonto(b){
 
   const sub   = String(b.subscription_status||'').toLowerCase();
   const grunn = b.attention_grunn||null;
+  const epg   = String(b.effective_plan_grunn||'').toLowerCase(); // subscription|trial_vindu|laast|anomali_status_uten_plan|''
   const igjen = b.trial_days_left;            // null | 0 | >0 — tre tilstander
   const live  = b.page_status==='live';
   // Hovedhandlingen er ALLTID designsystemets primærknapp (.btn) — samme visuelle vekt i alle
@@ -4320,9 +4321,22 @@ function renderKonto(b){
   // en gjettet 249. PLAN_INFO er modul-scope (over loadBilling); plan-velgeren bruker den også.
   const pinfo=PLAN_INFO[b.plan]||null;   // b.plan: basis|vekst|null → {navn,pris} | null
 
-  // attention_grunn er serverens PRIORITERTE signal (past_due > nedtatt > myk > slutter).
-  // Vi rangerer ikke på nytt — to implementasjoner av samme prioritet driver fra hverandre.
-  if(grunn==='past_due'){                                                    // E
+  // Dispatchet er TRE LAG i fallende hastverk. Vi rangerer ikke attention_grunn på nytt — den ER
+  // serverens prioriterte signal — og vi nøkler ALDRI steady state på subscription_status/
+  // trial_days_left lenger: effective_plan_grunn er den autoritative «hva gjelder nå».
+  //
+  // LAG 1 — attention-overlay + oppsagt («gjør noe nå»-tilstandene), sjekket FØR steady state:
+  //   canceled/unpaid → past_due → trial_utlopt_nedtatt → trial_utlopt/myk → trial_slutter
+  // Oppsagt ligger ØVERST, over past_due: det er en tyngre tilstand enn «prøven slutter snart»,
+  // og en oppsagt konto skal aldri få et mildere varsel enn den skal. Den nøkles på
+  // subscription_status (ikke attention_grunn) — settLenkeblokk og renderDinsideCta gater på det
+  // SAMME oppsagt-flagget, så ingen publiser-knapp/lenke lekker til en konto på vei ned.
+  if(sub==='canceled'||sub==='unpaid'){                                       // oppsagt (topp)
+    status.className='substatus bad';status.innerHTML='&#9679; Abonnementet er avsluttet';
+    tekst.textContent='Siden din tas ned. Legg inn kort for å ta den i bruk igjen.';
+    visPlanVelger();    // velgeren eier prisen — ingen settTall her
+    settKnapp('Fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout');
+  }else if(grunn==='past_due'){                                              // E
     status.className='substatus bad';status.innerHTML='&#9679; Betalingen gikk ikke gjennom';
     if(pinfo)settTall(pinfo.pris,PRIS_SUFF);   // ukjent plan → ingen pris; teksten under bærer beskjeden
     tekst.textContent='Vi fikk ikke trukket kortet ditt. Oppdater det for å beholde siden.';
@@ -4342,10 +4356,21 @@ function renderKonto(b){
       : 'Siden din tas ned snart hvis du ikke legger inn kort.';
     visPlanVelger();    // velgeren eier prisen — ingen settTall her
     settKnapp('Fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout');   // haster → hvit knapp
-  }else if(sub==='active'||sub==='trialing'){                                // F
-    // trialing er IKKE i spec-lista, men er en ekte tilstand: kortet ER lagt inn og Stripe
-    // kjører sin egen trial. Uten denne grenen ville han falt ned på `igjen>0` og fått
-    // «Legg inn kort» med kortet allerede inne.
+  }else if(grunn==='trial_slutter'){                                         // slutter snart
+    // Attention-varsel MENS prøven fortsatt løper (fyrer ved en terskel i backend — grep verdien
+    // der; den er ikke synlig herfra). N kommer fra trial_days_left (== igjen), ALDRI hardkodet.
+    // IKKE «beholde siden»: sida tas IKKE ned ved dag 30 — den har 7 dagers myk periode etterpå.
+    // Derfor «fortsette uten avbrudd», ikke «beholde siden», som ville vært en faktafeil.
+    status.className='substatus mut';status.innerHTML='&#9679; Prøveperioden slutter snart';
+    tekst.textContent=(typeof igjen==='number'&&igjen>0)
+      ? _dager(igjen)+' igjen. Legg inn kort for å fortsette uten avbrudd.'
+      : 'Legg inn kort for å fortsette uten avbrudd.';
+    visPlanVelger();    // velgeren eier prisen — ingen settTall her
+    settKnapp('Legg inn kort — fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout');
+  // LAG 2 — effective_plan_grunn (steady state, ingen attention-grunn satt):
+  }else if(epg==='subscription'){                                            // F — aktiv
+    // Kortet ER lagt inn. subscription_status skiller fortsatt trialing (Stripe kjører egen trial,
+    // første trekk senere) fra active — to undertekster, samme «aktiv»-gren.
     status.innerHTML='&#9679; '+(pinfo?pinfo.navn+'-abonnementet':'Abonnementet')+' er aktivt';
     if(pinfo)settTall(pinfo.pris,PRIS_SUFF);   // ukjent plan → ingen pris (fail-closed)
     tekst.textContent=sub==='trialing'
@@ -4355,41 +4380,27 @@ function renderKonto(b){
     // ingenting å oppgradere til; trialing holdes utenfor (spec: «aktive Basis-tilstanden»).
     if(sub==='active'&&b.plan==='basis')settKnapp('Oppgrader til Vekst','portal');
     manage.style.display='';
-  }else if(sub==='canceled'||sub==='unpaid'){                                // (utenfor spec)
-    status.className='substatus bad';status.innerHTML='&#9679; Abonnementet er avsluttet';
-    // Siden tas ned (webhooken setter forhandsvist ved canceled/unpaid). Adresse + «Kopier
-    // lenke» + «Avpubliser» skjules under — de gir ingen mening når sida er på vei ned; veien
-    // tilbake er plan-velgeren + «Legg inn kort».
-    tekst.textContent='Siden din tas ned. Legg inn kort for å ta den i bruk igjen.';
-    visPlanVelger();    // velgeren eier prisen — ingen settTall her
-    settKnapp('Fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout');
-  }else if(typeof igjen==='number'&&igjen>0){                                // B
-    // Hovedtallet er DAGENE (prøven løper ennå). Prisen bor nå i plan-velgeren, ikke i
-    // mikroteksten — mikroen sier hva velgeren er til for, uten å gjenta et enkelt-tall.
+  }else if(epg==='trial_vindu'){                                             // B — prøve aktiv
+    // Hovedtallet er DAGENE (prøven løper ennå). Prisen bor i plan-velgeren, ikke i mikroteksten.
     status.className='substatus mut';status.innerHTML='&#9679; Prøveperiode';
-    settTall(_dager(igjen),'igjen','av prøveperioden');
+    if(typeof igjen==='number'&&igjen>0)settTall(_dager(igjen),'igjen','av prøveperioden');
     tekst.textContent='Legg inn kort før prøveperioden er slutt for å fortsette.';
     visPlanVelger();
     settMikro('Ingen binding.');
-    // Primærknapp i alle checkout-tilstander (ikke lenger degradert til tekstlenke ved >7 dager).
-    // Teksten leder med selve handlingen — «Legg inn kort» — og speiler valgt nivå fra
-    // plan-velgeren (PLAN_INFO[_valgtPlan].navn). Canceled/unpaid beholder «Fortsett med X».
     settKnapp('Legg inn kort — fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout');
-  }else if(igjen===null&&b.page_status==='forhandsvist'){                     // A
+  }else if(epg==='laast'&&b.page_status==='forhandsvist'){                    // A — ikke publisert
     // INGEN hovedtall. Prisen er ikke det barbereren lurer på før han har publisert — han har
     // ikke tatt noe i bruk ennå. Vekst-prisen (prøven kjører på Vekst) står i mikroteksten under.
     status.className='substatus mut';status.innerHTML='&#9679; Ikke publisert';
-    // Ingen forklaringssetning over knappen: status-pillen («Ikke publisert») + knappen
-    // («Publiser …») + mikroteksten under bærer allerede status, handling og vilkår.
-    // «Bookingsiden din er klar, men ingen kan booke ennå» ble fjernet 26.08 — for mye tekst.
     tekst.style.display='none';tekst.textContent='';
     settKnapp('Publiser og start gratis prøveperiode','publiser');
     settMikro('Gratis i 30 dager på Vekst, ingen kort. Ved prøveslutt velger du nivå — Vekst er '+PLAN_INFO.vekst.pris+'/mnd. Si opp når som helst.');
   }else{
-    // draft / avslag / live-uten-trial_start_at (rader publisert før migrasjon 041).
-    // Ingen handling vi kan tilby med sikkerhet — si det heller enn å gjette en knapp.
-    status.className='substatus mut';status.innerHTML='&#9679; Ingen aktivt abonnement';
-    tekst.textContent='Ta kontakt hvis du vil publisere siden din.';
+    // LAG 3 — fail-closed nøytral: anomali_status_uten_plan, laast+live-uten-attention, og enhver
+    // ukjent effective_plan_grunn. ALDRI «ingen aktivt abonnement» på en live side — det ville
+    // skremt en betalende barberer. Ingen handling gjettes; tilgangen er upåvirket, så vi sier det.
+    status.className='substatus mut';status.innerHTML='&#9679; Abonnementsstatus utilgjengelig';
+    tekst.textContent='Vi får ikke vist abonnementet ditt akkurat nå. Tilgangen din er upåvirket.';
   }
 
   // Avpubliser: tekstlenke i ALLE tilstander der siden faktisk står live. Aldri en knapp.
@@ -4415,7 +4426,16 @@ function renderDinsideCta(b){
   var cta=$("#dinsideCta"), live=$("#dinsideLive");
   if(!cta||!live)return;
   var st=b.page_status;
-  if(st==='forhandsvist'){
+  // Publiser-CTA gates på det SAMME oppsagt/nedtatt-flagget som Konto-grenen og settLenkeblokk:
+  // en canceled/unpaid- eller nedtatt-konto står i 'forhandsvist' fordi sida BLE tatt ned, ikke
+  // fordi den «ennå ikke er publisert» — de trenger kort, ikke en publiser-knapp. Nøkler vi bare
+  // på page_status (som før), viser vi «Publiser siden» til en oppsagt konto. Vi gater IKKE på
+  // _kontoAksjon==='publiser': det ville også drept den gyldige re-publiser-CTA-en for en barber
+  // som avpubliserte midt i en løpende prøveperiode (trial_vindu → checkout-knapp, men publisering
+  // er fortsatt lov).
+  var _sub=String(b.subscription_status||'').toLowerCase();
+  var kanPublisere=(_sub!=='canceled'&&_sub!=='unpaid'&&b.attention_grunn!=='trial_utlopt_nedtatt');
+  if(st==='forhandsvist'&&kanPublisere){
     cta.hidden=false; live.hidden=true;
   }else if(st==='live'){
     cta.hidden=true;
