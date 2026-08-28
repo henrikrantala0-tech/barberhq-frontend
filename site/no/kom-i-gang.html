@@ -234,8 +234,9 @@ var SUBMIT_ERR={
   nett:    'Noe gikk galt. Prøv igjen — eller send oss en e-post på info@trybarberhq.com.',
   // FORSLAG (avventer copy-godkjenning) — 200 uten slug/status (bygget kastet) + parse-feil:
   byggfeil:  'Noe gikk galt da siden din skulle opprettes. Kontakt oss på info@trybarberhq.com, så ordner vi det.',
-  // 409-fallback: backend sender egen melding («Denne e-posten har …»), dette brukes kun om den mangler:
-  duplikat:  'Denne e-posten har allerede en forespørsel hos oss. Vi tar kontakt hvis vi trenger mer.'
+  // 409-fallback: backend sender egen melding, brukes kun om den mangler. Matcher backendens nye
+  // tekst som peker mot innlogging (409-grenen viser Logg inn-lenka, magisk lenke om passord mangler):
+  duplikat:  'Denne e-posten er allerede registrert. Prøv å logge inn — har du ikke passord, be om magisk lenke.'
 };
 var step1={};
 
@@ -430,11 +431,12 @@ async function submitFinal(){
     // Timing: hele bildeopplastingen skjer INNI denne POST-en (multipart), ikke som eget steg.
     console.log('[onboarding-timing] POST /api/onboarding (upload+bygg): '+Math.round(performance.now()-_tSubmit)+' ms · '+files.length+' bilder');
     // 409: onboarding er IKKE idempotent — dedup-indeksen (orders.contact_email) svarer 409, og
-    // det finnes ingen id/slug/sesjon å gjenopprette med. En retry gir bare nytt 409, så vi tilbyr
-    // IKKE «prøv igjen». Vis backend-meldingen som den er, i #obError, uten Logg inn-lenke.
+    // det finnes ingen id/slug/sesjon å gjenopprette med. En retry gir bare nytt 409, så INGEN
+    // «prøv igjen». Veien videre er innlogging: e-posten er allerede registrert. Derfor samme
+    // Logg inn-lenke som email_taken (visObError(..., true)). Vis backend-meldingen som den er.
     if(res.status===409){
       var d409=null; try{ d409=JSON.parse(await res.text()); }catch(e){}
-      visObError((d409 && d409.melding) || SUBMIT_ERR.duplikat, false);
+      visObError((d409 && d409.melding) || SUBMIT_ERR.duplikat, true);
       return;
     }
     // Andre non-2xx (5xx o.l.) er transiente → catch → inline .ob-err, «prøv igjen» i skjemaet.
