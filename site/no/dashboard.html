@@ -2685,16 +2685,22 @@ function renderSmsKvote(f){
   } else { el.style.display='none'; }
 }
 function smsTid(iso){ var d=new Date(iso); if(isNaN(d))return''; return d.getDate()+'. '+MONTHS[d.getMonth()].slice(0,3)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
-// Prikk-farge per kind — samme mønster/prikk (.drv-dot) som «Drevet av». Kun paaminnelse +
-// rebooking kan sendes i dag (smsRunner.js:404-409 og :586-591 er eneste kallsteder); ukjent
-// kind faller tilbake på nøytral grå — ingen krasj, ingen oppfunnet farge. Oransje #e0844a er
-// reservert for verving i «Drevet av» og brukes IKKE her.
-var SMS_KIND_FARGE={rebooking:'var(--good)', paaminnelse:'var(--warn)'};
+// Prikk-farge per kind — samme mønster/prikk (.drv-dot) som «Drevet av». Ukjent kind faller
+// tilbake på nøytral grå — ingen krasj, ingen oppfunnet farge. Verving-familien (verving +
+// verve_klar) får samme oransje #e0844a som «Drevet av» gir verving — samme verdi, ikke en ny
+// hardkodet farge (jf. SVC_FARGER-noten ved :2766). Begge fordi begge etiketteres «Verving»:
+// ulik prikk på samme etikett ville sett ut som en feil.
+var SMS_KIND_FARGE={rebooking:'var(--good)', paaminnelse:'var(--warn)', verving:'#e0844a', verve_klar:'#e0844a'};
+// Backend SMS_KIND_LABEL (dashboard.js) mangler ennå 'verve_klar' → kind_label kommer som rått
+// enum. Overstyr til «Verving» her; alle ANDRE kinds har ekte etikett fra backend (verifisert:
+// bekreftelse/paaminnelse/rebooking/winback/verving er dekket, kun verve_klar falt gjennom).
+var SMS_KIND_LABEL_FE={verve_klar:'Verving'};
 function smsRowHTML(r){
   var farge=SMS_KIND_FARGE[r.kind]||'var(--mut)';
+  var label=SMS_KIND_LABEL_FE[r.kind]||r.kind_label;
   return '<div class="sms-row">'
     +'<span class="drv-dot" style="background:'+farge+'" aria-hidden="true"></span>'
-    +'<span class="sms-kind">'+esc(r.kind_label)+'</span>'
+    +'<span class="sms-kind">'+esc(label)+'</span>'
     +'<span class="sms-name">'+esc(r.kunde)+'<span class="sms-num"> · '+esc(r.nummer)+'</span></span>'
     +'<span class="sms-when">'+smsTid(r.sent_at)+'</span>'
   +'</div>';
