@@ -66,6 +66,9 @@
   .block-h{font-size:13px;font-weight:700;letter-spacing:-.01em;margin:0 0 3px}
   .block-s{font-size:12.5px;color:var(--mut);margin-bottom:14px;letter-spacing:-.01em}
   .attrib{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin-bottom:30px}
+  /* Under 430px: KPI-/attribusjonskort får full bredde. 2-kolonne ble ~170px og trangt på
+     375/390; 320 kollapser allerede til 1 via minmax. Dekker 375/390/402. */
+  @media(max-width:430px){.stats,.attrib{grid-template-columns:1fr}}
   .src{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:15px 17px}
   .src .sn{font-size:12px;color:var(--mut);font-weight:500;letter-spacing:-.01em}
   .src .sv{font-size:26px;font-weight:800;letter-spacing:-.04em;margin:5px 0 9px;font-variant-numeric:tabular-nums}
