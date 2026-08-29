@@ -42,8 +42,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .nav-links a{color:#c8c8c8;font-size:14px;font-weight:500;text-decoration:none;transition:color .2s}
 .nav-links a:hover{color:#fff}
 .nav-right{display:flex;align-items:center;gap:14px}
-.nav-cta{background:#4d8bff;color:#fff;font-size:14px;font-weight:600;padding:9px 18px;border-radius:99px;text-decoration:none;white-space:nowrap;transition:opacity .2s}
-.nav-cta:hover{opacity:.85}
+.nav-cta{background:#2563eb;color:#fff;font-size:14px;font-weight:600;padding:9px 18px;border-radius:99px;text-decoration:none;white-space:nowrap;transition:opacity .2s}
+.nav-cta:hover{background:#1d4ed8!important}
 .nav-demo{color:#a0c4ff;font-size:13px;font-weight:500;text-decoration:none;border:1px solid rgba(160,196,255,.32);padding:6px 14px;border-radius:99px;white-space:nowrap;transition:color .2s,border-color .2s}
 .nav-demo:hover{color:#fff;border-color:rgba(160,196,255,.7)}
 /* «Mitt dashbord» — SKJULT som default (:not(.vis)); JS legger .vis kun ved loggedIn:true.
@@ -99,8 +99,11 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .hero-sub strong{color:#fff;font-weight:700;white-space:nowrap}
 .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:auto}
 .btn{display:inline-flex;align-items:center;gap:9px;font-size:15px;font-weight:600;padding:15px 30px;border-radius:99px;text-decoration:none;transition:all .2s;cursor:pointer;border:0}
-.btn-fill{background:#4d8bff;color:#fff}
-.btn-fill:hover{opacity:.85}
+.btn-fill{background:#2563eb;color:#fff}
+.btn-fill:hover{background:#1d4ed8}
+.nav-cta:active{background:#1e40af!important}
+.btn-fill:active{background:#1e40af}
+.nav-cta:focus-visible,.btn-fill:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
 .btn-line{background:transparent;color:#fff;border:1px solid #2e2e2e}
 .btn-line:hover{border-color:#fff}
 /* align-items:flex-start, IKKE center: center sentrerer ikonet mot hele flex-boksen, og
