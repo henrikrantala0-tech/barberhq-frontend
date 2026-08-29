@@ -786,6 +786,8 @@
   .rpill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;letter-spacing:.01em;white-space:nowrap}
   .rpill.blue{background:rgba(77,139,255,.12);color:#4d8bff}
   .rpill.muted{background:var(--line);color:var(--mut)}
+  .rpill.ok{background:rgba(62,207,126,.13);color:#3ecf7e}     /* fase 2: bonus klar ved neste klipp */
+  .rpill.wait{background:rgba(224,132,74,.13);color:#e0844a}   /* pending: verving registrert, venter på oppgjør */
   /* .more-btn er FJERNET — den var byte-identisk med .see-all-btn. Verving-knappene som
      brukte den er intern utvidelse og bruker nå .up-more (rammet boks). (.verv-note er
      fjernet — forklaringen bor nå i undertittelen, der den ikke dubler seg selv.) */
@@ -3839,10 +3841,30 @@ function renderReferrals(list){
   }
   var vis=_vervRefsAlle?_vervRefs:_vervRefs.slice(0,VERV_FORST);
   el.innerHTML='<div class="wb-card">'+vis.map(function(r){
-    var pill=r.status==='brukt' ? '<span class="rpill muted">Brukt</span>' : '<span class="rpill blue">Utløst</span>';
+    // Fire tilstander + pending. Kort pill til høyre (scanning), full status i meta (wrapper).
+    var pill, status;
+    if(r.status==='pending'){
+      // Pending verving: booking gjort, IKKE oppgjort ennå (ingen reward-rad). Backend sender
+      // bonus_klar_dato = den vervedes booking ends_at + grace (Oslo-beregnet server-side).
+      // Bygget nå, tåler at feltet mangler (viser da uten dato). Kontrakt backend må matche:
+      // {status:'pending', referrer_name, referred_name, discount_pct, bonus_klar_dato}.
+      pill='<span class="rpill wait">Venter</span>';
+      status='Verving registrert'+(r.bonus_klar_dato?(' · bonus klar '+vervDate(r.bonus_klar_dato)):'');
+    }else if(r.status==='brukt'){
+      pill='<span class="rpill muted">Brukt</span>';
+      status=vervDate(r.created_at);
+    }else if((r.recipient==='begge'||r.recipient==='verver') && !r.brukt_verver_at){
+      // Fase 2: reward utløst, men ververens bonus venter på HENS neste klipp (recipient dekker verver).
+      // Skilles fra «Brukt» — dette er tilgjengelig, ikke oppbrukt.
+      pill='<span class="rpill ok">Klar</span>';
+      status='Bonus klar ved ditt neste klipp';
+    }else{
+      pill='<span class="rpill blue">Utløst</span>';
+      status=vervDate(r.created_at);
+    }
     return '<div class="wb-row"><div class="wb-info">'
       +'<div class="wb-name">'+esc(r.referrer_name||'–')+' vervet '+esc(r.referred_name||'–')+'</div>'
-      +'<div class="wb-meta">'+(r.discount_pct||0)+'% · '+vervDate(r.created_at)+'</div></div>'
+      +'<div class="wb-meta">'+(r.discount_pct||0)+'% · '+status+'</div></div>'
       +'<div class="wb-right">'+pill+'</div></div>';
   }).join('')+'</div>';
   if(mer){
