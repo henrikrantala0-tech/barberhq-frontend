@@ -3133,26 +3133,27 @@ function renderSlotView(layout,imgs){
   mount.innerHTML=html;
 }
 
-const _cropSvg=`<svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M6 2v14a2 2 0 002 2h14"/><path d="M18 22V8a2 2 0 00-2-2H2"/></svg>`;
-function _slotActions(id){return`<div class="slot-actions"><button class="slot-act-btn slot-crop-btn" data-id="${id}" aria-label="Beskjær">${_cropSvg}</button><button class="slot-act-btn slot-menu-btn" data-id="${id}" aria-label="Alternativer">×</button></div>`;}
+// Crop-knappen er fjernet — beskjæring skjer nå ved trykk på selve bildet (se #bilderMount-klikk).
+// × åpner Fjern/Endre-popupen og eier hjørnet alene (full 44px trykkflate uten nabo-overlapp).
+function _slotActions(id){return`<div class="slot-actions"><button class="slot-act-btn slot-menu-btn" data-id="${id}" aria-label="Alternativer">×</button></div>`;}
 
 function slotPortrett(bilde){
   const box=bilde
-    ?`<div class="slot-wrap"><div class="slot-box slot-portrett filled" data-slot="portrett"><img src="${CONFIG.API_BASE+bilde.url}" alt="Portrett"></div>${_slotActions(bilde.id)}</div>`
+    ?`<div class="slot-wrap"><div class="slot-box slot-portrett filled" data-slot="portrett" tabindex="0" role="button" aria-label="Beskjær portrett"><img src="${CONFIG.API_BASE+bilde.url}" alt="Portrett"></div>${_slotActions(bilde.id)}</div>`
     :`<div class="slot-box slot-portrett" data-slot="portrett" tabindex="0" role="button" aria-label="Last opp portrett"><span class="slot-plus">+</span></div>`;
   return`<div class="slot-section"><div class="slot-label">Portrett</div><div class="slot-portrett-wrap">${box}</div></div>`;
 }
 
 function slotHero(bilde){
   const box=bilde
-    ?`<div class="slot-wrap"><div class="slot-box slot-hero filled" data-slot="hero"><img src="${CONFIG.API_BASE+bilde.url}" alt="Forsidebilde"></div>${_slotActions(bilde.id)}</div>`
+    ?`<div class="slot-wrap"><div class="slot-box slot-hero filled" data-slot="hero" tabindex="0" role="button" aria-label="Beskjær forsidebilde"><img src="${CONFIG.API_BASE+bilde.url}" alt="Forsidebilde"></div>${_slotActions(bilde.id)}</div>`
     :`<div class="slot-box slot-hero" data-slot="hero" tabindex="0" role="button" aria-label="Last opp forsidebilde"><span class="slot-plus">+</span></div>`;
   return`<div class="slot-section"><div class="slot-label">Forsidebilde</div>${box}</div>`;
 }
 
 function slotGalleri(g){
   const MAX=10;
-  const items=g.map(im=>`<div class="slot-wrap"><div class="slot-box slot-galleri-item filled" data-slot="galleri"><img src="${CONFIG.API_BASE+im.url}" alt="Klippebilde"></div>${_slotActions(im.id)}</div>`).join("");
+  const items=g.map(im=>`<div class="slot-wrap"><div class="slot-box slot-galleri-item filled" data-slot="galleri" tabindex="0" role="button" aria-label="Beskjær bilde"><img src="${CONFIG.API_BASE+im.url}" alt="Klippebilde"></div>${_slotActions(im.id)}</div>`).join("");
   const add=g.length<MAX?`<div class="slot-box slot-galleri-item" data-slot="galleri" tabindex="0" role="button" aria-label="Legg til bilde"><span class="slot-plus">+</span></div>`:"";
   const teller=g.length>0?` (${g.length}/10)`:"";
   return`<div class="slot-section"><div class="slot-label">Galleri${teller}</div><div class="slot-galleri-grid">${items}${add}</div></div>`;
@@ -3373,15 +3374,6 @@ document.getElementById('cropSave').addEventListener('click',async()=>{
 $("#bilderMount").addEventListener("click",async e=>{
   if(IS_DEMO)return;
   if(slotsLaast())return; // opplasting/crop/slett låst til lagret layout
-  if(e.target.closest('.slot-crop-btn')){
-    e.stopPropagation();
-    const btn=e.target.closest('.slot-crop-btn');
-    const wrap=btn.closest('.slot-wrap');
-    const slot=wrap?.querySelector('.slot-box')?.dataset.slot||'galleri';
-    const imgEl=wrap?.querySelector('img');
-    if(imgEl?.src)_openCropModal(imgEl.src,btn.dataset.id,slot);
-    return;
-  }
   const menuBtn=e.target.closest('.slot-menu-btn');
   if(menuBtn){
     e.stopPropagation();
@@ -3393,8 +3385,23 @@ $("#bilderMount").addEventListener("click",async e=>{
     return;
   }
   const box=e.target.closest(".slot-box");if(!box)return;
+  // Fylt slot → trykk bildet for å beskjære (image-id fra ×-knappen i samme wrap).
+  // Tom slot → trykk for å laste opp.
+  if(box.classList.contains('filled')){
+    const wrap=box.closest('.slot-wrap');
+    const imgEl=box.querySelector('img');
+    const id=wrap?.querySelector('.slot-menu-btn')?.dataset.id;
+    if(imgEl?.src&&id)_openCropModal(imgEl.src,id,box.dataset.slot||'galleri');
+    return;
+  }
   _activeSlot=box.dataset.slot;
   $("#fileInput").click();
+});
+// Tastatur: Enter/Mellomrom på en slot-boks (role=button) aktiverer den — fylt → beskjær, tom → last opp.
+$("#bilderMount").addEventListener("keydown",e=>{
+  if(e.key!=='Enter'&&e.key!==' ')return;
+  const box=e.target.closest?.('.slot-box');if(!box)return;
+  e.preventDefault();box.click();
 });
 
 document.getElementById('slotPopupFjern').addEventListener('click',async()=>{
