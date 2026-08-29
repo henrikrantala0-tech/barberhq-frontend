@@ -88,7 +88,7 @@
   .row.avlyst{opacity:.55} .row.avlyst .name{text-decoration:line-through}
   /* No-show: tydelig annerledes enn Fullført (dempet tekst + gjennomstreket navn), men Angre-knappen holdes skarp */
   .row.noshow .name{text-decoration:line-through;color:var(--mut)} .row.noshow .when{color:var(--mut)}
-  .noshowbtn,.undobtn{appearance:none;border:1px solid var(--line-2);background:var(--surface);font:inherit;font-size:12px;font-weight:500;color:var(--mut);padding:4px 9px;border-radius:6px;cursor:pointer;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:5px;transition:color .12s,border-color .12s,background .12s}
+  .noshowbtn,.undobtn{appearance:none;border:1px solid var(--line-2);background:var(--surface);font:inherit;font-size:12px;font-weight:500;color:var(--mut);padding:4px 9px;border-radius:6px;cursor:pointer;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:5px;transition:color .12s,border-color .12s,background .12s;position:relative}
   .noshowbtn .x{font-size:13px;line-height:1;font-weight:600}
   .noshowbtn:hover{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
   .undobtn:hover{background:var(--info-bg);border-color:var(--info);color:var(--info)}
@@ -119,8 +119,12 @@
   .slot-wrap{position:relative;display:block;width:100%}
   .slot-portrett-wrap .slot-wrap{display:inline-block;width:auto}
   .slot-actions{position:absolute;top:6px;right:6px;display:flex;gap:4px;z-index:2}
-  .slot-act-btn{width:26px;height:26px;border-radius:6px;border:0;background:rgba(10,10,10,.72);color:#fff;cursor:pointer;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .12s}
+  .slot-act-btn{width:26px;height:26px;border-radius:6px;border:0;background:rgba(10,10,10,.72);color:#fff;cursor:pointer;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .12s;position:relative}
   .slot-act-btn:hover{background:rgba(60,60,60,.9)}
+  /* 44px trykkflate uten å endre visuell størrelse: usynlig ::after sentreres på knappen
+     og tvinges til minst 44x44 (min-width/height) mens knappen beholder sin egen størrelse.
+     Klikk på ::after bobler til knappen. Gjelder små ikon-/tekstknapper. WCAG 2.5.5. */
+  .slot-act-btn::after,.noshowbtn::after,.undobtn::after,.verv-btn::after,.suksess-x::after,.pause-modal-close::after,body.fokus .fokus-x::after,.svc-rm::after{content:"";position:absolute;top:50%;left:50%;width:100%;height:100%;min-width:44px;min-height:44px;transform:translate(-50%,-50%)}
   .slot-menu-btn:hover{background:var(--bad)}
   .slot-popup{position:fixed;z-index:300;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.55);min-width:136px;overflow:hidden;display:none}
   .slot-popup.open{display:block}
@@ -308,7 +312,7 @@
   .svc-divider{height:1px;background:var(--line);margin:26px 0 0}
   .svc-err{font-size:12px;color:#c0392b;margin-top:8px;min-height:15px}
   .btn:disabled{opacity:.4;cursor:default}
-  .svc-rm{appearance:none;border:1px solid var(--line-2);background:var(--surface);color:var(--mut);height:36px;border-radius:7px;cursor:pointer;font-size:16px}
+  .svc-rm{appearance:none;border:1px solid var(--line-2);background:var(--surface);color:var(--mut);height:36px;border-radius:7px;cursor:pointer;font-size:16px;position:relative}
   .svc-rm:hover{color:var(--bad);border-color:var(--bad)}
   .addbtn{appearance:none;border:1px dashed var(--line-2);background:0;color:var(--mut);border-radius:8px;padding:10px;width:100%;max-width:440px;cursor:pointer;font:inherit;font-size:13px;margin-top:10px}
   .addbtn:hover{border-color:var(--info);color:var(--ink)}
@@ -782,7 +786,7 @@
   /* .more-btn er FJERNET — den var byte-identisk med .see-all-btn. Verving-knappene som
      brukte den er intern utvidelse og bruker nå .up-more (rammet boks). (.verv-note er
      fjernet — forklaringen bor nå i undertittelen, der den ikke dubler seg selv.) */
-  .verv-btn{appearance:none;border:1px solid var(--line-2);background:var(--surface);font:inherit;font-size:12px;font-weight:500;color:var(--info);padding:5px 11px;border-radius:7px;cursor:pointer;letter-spacing:-.01em;white-space:nowrap}
+  .verv-btn{appearance:none;border:1px solid var(--line-2);background:var(--surface);font:inherit;font-size:12px;font-weight:500;color:var(--info);padding:5px 11px;border-radius:7px;cursor:pointer;letter-spacing:-.01em;white-space:nowrap;position:relative}
   .verv-btn:hover{background:var(--info-bg);border-color:var(--info)}
   .verv-modal{position:fixed;inset:0;z-index:400;background:rgba(10,10,10,.6);display:none;align-items:center;justify-content:center;padding:20px}
   .verv-modal.open{display:flex}
@@ -941,7 +945,7 @@
   body.fokus #dinsideCta{display:none}
   body.fokus .ideacard{display:none}
   .fokus-x{display:none}
-  body.fokus .fokus-x{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);font-size:16px;line-height:1;cursor:pointer}
+  body.fokus .fokus-x{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);font-size:16px;line-height:1;cursor:pointer;position:relative}
   body.fokus .fokus-x:hover{border-color:var(--ink)}
   .fokus-bar{display:none}
   body.fokus .fokus-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
