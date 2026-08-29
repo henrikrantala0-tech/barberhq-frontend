@@ -14,6 +14,22 @@ node tools/render/salgssider-trial.mjs    # salgssidene: ingen gammel trial-copy
 
 Skjermbilder havner i `.render-ut/` i repo-rota (gitignorert).
 
+## Se screenshots (åpne i Bilder-appen)
+
+Render-scriptene SKRIVER PNG til `.render-ut/` men ÅPNER dem aldri. `SendUserFile` laster kun
+opp i chatten, og `Read` dekoder inn i Code sin egen kontekst — ingen av delene får bildet opp på
+skrivebordet. For å faktisk se dem i Bilder-appen (Windows default `.png`-handler):
+
+```
+powershell -File tools/render/vis.ps1               # alle PNG i .render-ut
+powershell -File tools/render/vis.ps1 konto-*       # kun de som matcher
+powershell -File tools/render/vis.ps1 -Nyeste 6     # de 6 nyeste (typisk én runde)
+```
+
+Mekanismen er `Invoke-Item` (starter default-handleren). Native Windows, ikke WSL — ingen
+sti-oversettelse. **`vis.ps1` er ASCII-only med vilje:** PowerShell 5.1 leser en BOM-løs `.ps1`
+som ANSI, så æøå/tankestrek i fila knekker parsingen. Ikke legg inn norske spesialtegn der.
+
 ## ⚠ `page.on('pageerror')` er obligatorisk
 
 Hvert script MÅ fange `pageerror` og rapportere den sammen med resultatet:
