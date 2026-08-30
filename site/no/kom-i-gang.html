@@ -175,9 +175,9 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 <div class="ob">
   <div class="ob-card" id="obForm">
     <div class="stepind"><span class="d on"></span><span class="d"></span></div>
-    <div class="field"><label for="o-name">Navn</label><input type="text" id="o-name" placeholder="Ditt navn"></div>
-    <div class="field"><label for="o-shop">Navn på salongen</label><input type="text" id="o-shop" placeholder="Blir navnet på siden din"></div>
-    <div class="field"><label for="o-email">E-post</label><input type="email" id="o-email" placeholder="E-posten du logger inn med"></div>
+    <div class="field"><label for="o-name">Navn</label><input type="text" id="o-name" autocomplete="name" placeholder="Ditt navn"></div>
+    <div class="field"><label for="o-shop">Navn på salongen</label><input type="text" id="o-shop" autocomplete="organization" placeholder="Blir navnet på siden din"></div>
+    <div class="field"><label for="o-email">E-post</label><input type="email" id="o-email" autocomplete="email" inputmode="email" placeholder="E-posten du logger inn med"></div>
     <button type="button" class="btn btn-fill ob-submit" onclick="submitOb()">Neste &rarr;</button>
   </div>
   <div class="ob-card ob-step2" id="obStep2">
