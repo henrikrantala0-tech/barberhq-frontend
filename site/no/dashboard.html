@@ -253,7 +253,10 @@
   }
   html[data-theme="dark"] .btn{background:#fff;color:#0a0a0a}
   html[data-theme="dark"] .who .dot{background:#fff;color:#0a0a0a}
-  html[data-theme="dark"] .segs button[aria-selected=true]{background:var(--info);color:#fff}
+  /* Valgt periode-pille: merke-default-blå #2563eb (landing-CTA-en «Prøv gratis»), bevisst
+     dypere enn --info (#4d8bff) som resten av dashbord-aksenten bruker — Henrik 30.08. Gjelder
+     kun periode-pillene (#segs/#attrPeriod); .segs-val-verdipillene har egen regel under. */
+  html[data-theme="dark"] .segs button[aria-selected=true]{background:#2563eb;color:#fff}
   html[data-theme="dark"] .sw input:checked + .sl{background:#4d8bff}
   /* .themebtn er FJERNET 08.08 — tema velges nå med to .preset-kort, ikke en toggle-knapp. */
   .nav{overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
