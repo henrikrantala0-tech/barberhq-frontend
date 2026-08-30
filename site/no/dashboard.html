@@ -603,20 +603,20 @@
   .wb-nudge[hidden]{display:none}
   .wb-nudge:hover{color:var(--ink-2)}
   .wb-nudge .wb-dot{width:9px;height:9px;border-radius:50%;background:var(--info);flex:0 0 auto}
-  /* width:fit-content + max-width:100% — stolpene står tett fra venstre uansett antall,
-     og akse-linja (border-bottom) slutter der stolpene slutter. Med flex:1 på .mcol ble
-     overskytende bredde til luft rundt hver stolpe, så fire måneder så spredt ut mens
-     akse-linja fortsatte tomt mot høyre. På smal skjerm tar max-width over: kolonnene
-     krymper under 46px i stedet for å flyte utenfor. */
-  .trend{display:flex;align-items:flex-end;gap:10px;padding:8px 0 0;border-bottom:1px solid var(--line);min-height:150px;width:fit-content;max-width:100%;margin-inline:auto}
+  /* Fyller bredden opp til et stolpetak. Var tidligere width:fit-content + margin-inline:auto,
+     som ga en fast 46px-per-stolpe-klynge sentrert med 746px dødrom på desktop (326px i 1072px).
+     Nå width:100% + .mcol flex:1 (tak 96px) + justify-content:center → stolpene skalerer med
+     containeren opp til 96px, resten blir luft og gruppa står sentrert. Mobil uendret: der
+     fyller kolonnene allerede bredden (37/46px < taket), så flex:1 gir samme fordeling og
+     justify-center er en no-op uten slakk. */
+  .trend{display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:8px 0 0;border-bottom:1px solid var(--line);min-height:150px;width:100%}
   /* Vekst måneds-diagram: Oversikts gradient-stolpe-mekanikk, men TRE diskrete tilstander (blå/grønn/gull) */
-  /* flex:0 1 46px — vokser ALDRI forbi 46px (det var det som spredte stolpene), men
-     krymper når .trend treffer max-width:100% på smal skjerm.
-     `width:46px` i tillegg: flex-basis alene gir ingen intrinsisk breddekontribusjon,
-     så width:fit-content på .trend krympet kolonnene til månedsetikettens bredde (23px). */
-  .mcol{flex:0 1 46px;width:46px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
+  /* flex:1 → kolonnene deler containerbredden likt, men max-width:96px kapper dem på desktop
+     (170px-stolper ble for fete) — resten blir luft via .trend justify-center. .mbar under har
+     ingen max-width: den fyller kolonnen (uten det ble det luft rundt en kappet stolpe). */
+  .mcol{flex:1 1 0;max-width:96px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
   .mval{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink-2);letter-spacing:-.01em}
-  .mbar{width:100%;max-width:46px;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--bar-top),var(--bar-bot));min-height:5px;transition:height .25s ease}
+  .mbar{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--bar-top),var(--bar-bot));min-height:5px;transition:height .25s ease}
   .mlbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
   .mbar.gull{filter:drop-shadow(0 0 2px rgba(255,224,138,.9)) drop-shadow(0 0 8px rgba(240,194,75,.55)) drop-shadow(0 0 16px rgba(240,194,75,.28))} /* identisk glød som Oversikts .rekord-gull */
   /* Gull-tallet gjenbruker .rekord-gull (samme gradient + glød som Oversikts rekord-KPI) — se renderMonthChart */
@@ -2996,7 +2996,11 @@ function renderMonthChart(stats){
   if(!months.length){ el.innerHTML='<div class="empty" style="border:0"><p>Ingen måneder med data ennå</p></div>'; return; }
   var rec=stats&&stats.record_customers_month;
   var max=Math.max.apply(null,months.map(function(m){return m.customers||0;}))||1;
-  var MAXH=120;
+  // Diagramhøyde dobles på brede viewports (≥900px): 120px-taket var for lavt på desktop, så
+  // stolpene ble brede og flate og høydeforskjellen forsvant. Skalaen er NULLBASERT
+  // (h = c/max * MAXH), så doblingen forstørrer den absolutte forskjellen proporsjonalt uten
+  // å overdrive den. Mobil beholder 120 + samme avrunding → pixel-uendret.
+  var MAXH=(window.innerWidth>=900)?240:120;
   // gull = Oversikts EKTE rekord-gull (.wi-fill.rekord-paret #F0C24B/#FFE08A), ikke amber #d4af37.
   // Eneste gjenværende diskrete tilstand — resten kommer fra colorForRatio.
   var GULL={top:'#FFE08A',bot:'#F0C24B'};
