@@ -71,6 +71,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .dgrp{margin-bottom:26px}
 .dgrp>.lab{font-size:13px;color:#bdbdbd;font-weight:600;margin-bottom:10px;display:block}
 .dgrp .opt{color:#666;font-weight:400}
+.lab-sub{font-size:12.5px;color:#777;font-weight:400;line-height:1.5;margin:-4px 0 12px}
 
 /* Bilder */
 .uploader{border:1.5px dashed #2e2e2e;border-radius:13px;padding:26px 18px;text-align:center;cursor:pointer;transition:border-color .15s,background .15s}
@@ -79,7 +80,6 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .uploader .ut{font-size:14px;color:#cfcfcf;font-weight:500;margin-top:8px}
 .uploader .us{font-size:12px;color:#777;margin-top:3px}
 .img-count{font-size:13px;color:#9a9a9a;margin-top:12px;font-weight:500}
-.img-count.warn{color:#c98a4a}
 .thumbs{display:grid;grid-template-columns:repeat(auto-fill,minmax(78px,1fr));gap:9px;margin-top:14px}
 .thumb{position:relative;aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid #222}
 .thumb img{width:100%;height:100%;object-fit:cover;display:block}
@@ -185,17 +185,17 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     <p class="s2-h">Bilder, tjenester og tider</p>
     <p class="s2-note">Alt du fyller inn her kan du endre senere i dashbordet.</p>
 
-    <div class="dgrp" id="bildeDgrp"><span class="lab">Bilder <span class="opt">(minst 2, maks 10)</span></span>
+    <div class="dgrp" id="bildeDgrp"><span class="lab">Bilder av jobben din <span class="opt">(maks 10)</span></span>
+      <p class="lab-sub">Hopp over hvis du vil — du kan legge dem til senere.</p>
       <div class="uploader" id="dropZone" tabindex="0">
         <div class="ui">&#8682;</div>
         <div class="ut">Trykk for &aring; laste opp bilder</div>
-        <div class="us">JPG eller PNG &middot; minst 2, maks 10</div>
+        <div class="us">JPG eller PNG &middot; maks 10</div>
       </div>
       <input type="file" id="fileInput" accept="image/*" multiple hidden>
-      <div class="img-count" id="imgCount">0 av minst 2 lastet opp</div>
+      <div class="img-count" id="imgCount">0 av 10 lastet opp</div>
       <div class="thumbs" id="thumbs"></div>
       <p class="fav-hint" id="favHint" style="display:none">Trykk på et bilde for å velge hva som vises først på siden.</p>
-      <p class="ob-err" id="bildeErr"></p>
     </div>
 
     <div class="dgrp"><span class="lab">Tjenester</span>
@@ -227,7 +227,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 <script>
 function v(id){return document.getElementById(id).value.trim();}
 var API_BASE='https://api.trybarberhq.com';
-var MIN_IMG=2, MAX_IMG=10;
+var MAX_IMG=10;
 // Submit-timeout: uten AbortController spinner knappen i det uendelige hvis serveren eller
 // opplastingen henger. 120s dekker treg mobilopplasting av inntil 10 bilder (ukomprimert fra
 // telefon, ~10–40 MB) + backend-bygg, med margin — «for kort er verre enn for lang».
@@ -296,11 +296,9 @@ function renderThumbs(){
 }
 function refreshImages(){
   renderThumbs();
-  var n=files.length, c=document.getElementById('imgCount');
-  if(n<MIN_IMG){ c.textContent=n+' av minst '+MIN_IMG+' lastet opp'; c.classList.add('warn'); }
-  else { c.textContent=n+' av '+MAX_IMG+' lastet opp'; c.classList.remove('warn'); }
+  var n=files.length;
+  document.getElementById('imgCount').textContent=n+' av '+MAX_IMG+' lastet opp';
   document.getElementById('favHint').style.display = n?'block':'none';
-  if(n>=MIN_IMG){ var be=document.getElementById('bildeErr'); if(be)be.textContent=''; } // rydd feil når kravet er møtt
 }
 
 /* ---- Tjenester ---- */
@@ -382,19 +380,12 @@ function collectHours(){
 
 /* ---- Innsending ---- */
 async function submitFinal(){
-  // Knappen er ALLTID aktiv. Klientvalidering speiler backend-kravene eksakt (min 2 bilder,
-  // ≥1 tjeneste med pris>0, ≥1 åpen dag). Ved mangler: ikke submit — vis feil ved FØRSTE
-  // manglende felt, scroll dit + sett fokus.
-  var bildeErr=document.getElementById('bildeErr'), svcErr=document.getElementById('svcErr'), hrsErr=document.getElementById('hrsErr');
-  bildeErr.textContent=''; svcErr.textContent=''; hrsErr.textContent='';
-  // 1) Bilder
-  if(files.length<MIN_IMG){
-    bildeErr.textContent='Last opp minst '+MIN_IMG+' bilder.';
-    document.getElementById('bildeDgrp').scrollIntoView({behavior:'smooth',block:'center'});
-    document.getElementById('dropZone').focus();
-    return;
-  }
-  // 2) Tjenester — minst én med pris>0 (tomme/prislause rader hoppes over av collectServices)
+  // Knappen er ALLTID aktiv. Bilder er valgfrie (backend tar imot ordre uten bilder).
+  // Klientvalidering speiler resten av backend-kravene: ≥1 tjeneste med pris>0, ≥1 åpen dag.
+  // Ved mangler: ikke submit — vis feil ved FØRSTE manglende felt, scroll dit + sett fokus.
+  var svcErr=document.getElementById('svcErr'), hrsErr=document.getElementById('hrsErr');
+  svcErr.textContent=''; hrsErr.textContent='';
+  // 1) Tjenester — minst én med pris>0 (tomme/prislause rader hoppes over av collectServices)
   var svc=collectServices();
   if(svc.list.length===0){
     svcErr.textContent='Legg inn minst én tjeneste med pris.';
@@ -402,7 +393,7 @@ async function submitFinal(){
     if(t){ t.scrollIntoView({behavior:'smooth',block:'center'}); t.focus(); }
     return;
   }
-  // 3) Åpningstider — minst én åpen dag
+  // 2) Åpningstider — minst én åpen dag
   var hrs=collectHours();
   if(!hrs.anyOpen){
     hrsErr.textContent='Velg minst én åpen dag.';
