@@ -7,7 +7,6 @@ De serverer `site/` fra en lokal engangs-server, stubber `/api/**`, og måler.
 node tools/render/konto-trekkspill.mjs    # Konto: fire trekkspill, alle tilstander
 node tools/render/konto-lenke.mjs         # Konto: adresse-blokka per page_status
 node tools/render/nav-prikk.mjs           # varselprikk i nav + «Mer»-toggel
-node tools/render/mal-nav-bredde.mjs      # måler om fanene får plass på 320
 node tools/render/feedback-payload.mjs    # /api/feedback: riktig payload per boks
 node tools/render/salgssider-trial.mjs    # salgssidene: ingen gammel trial-copy
 ```
