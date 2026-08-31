@@ -263,21 +263,16 @@
   .nav button{white-space:nowrap}
   /* Desktop: alle fem knapper i raden, Mer-knapp skjult */
   .nav-mer-wrap{display:none}
-  /* Mobil: Tjenester & tider + Konto i dropdown; Oversikt, Vekst og Din side blir stående.
-     Konto bærer varselprikken, og toggelen speiler den (oppdaterMerPrikk).
-     Målt på 320 (272px tilgjengelig, toggelen er 54 MED prikk — 42 uten):
-       3 synlige + toggel @ marg 26 → 278px,  −6px   passer ikke
-       3 synlige + toggel @ marg 20 → 260px,  12px   akkurat på kravet
-       3 synlige + toggel @ marg 16 → 248px,  24px  ← valgt, tåler lengre sv/da/en-etiketter
-       4 synlige + toggel @ marg  6 → 263px,   9px   fire får ALDRI 12px, uansett marg
-     ⚠ Mål med geometri (siste knapps høyrekant mot toggelens venstrekant), IKKE med
-     scrollWidth: .nav-mer-wrap har margin-left:auto, som spiser slakken og klemmer
-     clientWidth−scrollWidth til 0 uansett hvor god plass det er.
-     Margen senkes KUN her — desktop beholder 26. */
+  /* Mobil (≤719): ALLE fem faner ligger i dropdownen. Nav-raden viser bare toggelen, til
+     venstre (der Oversikt sto). Toggelen bærer aktiv fanes navn (updateToggle) og står alltid
+     .aktiv. Konto bærer varselprikken; ligger den skjult i menyen speiler toggelen den
+     (oppdaterMerPrikk → #merDot). Hver fane har class="nav-mer" → JS flytter dem inn i menyen på
+     mobil og tilbake i raden på desktop.
+     Historikk: her lå en 3-synlige+toggel-bredde-kabal (marg 16 osv). Utgått — ingen faner står
+     lenger i raden, så det finnes ingen plass å måle. Toggelen ankrer fra venstre, ikke høyre. */
   @media(max-width:719px){
-    .nav button{margin-right:16px}
     button.nav-mer{display:none}
-    .nav-mer-wrap{display:block;position:relative;align-self:center;flex-shrink:0;margin-left:auto}
+    .nav-mer-wrap{display:block;position:relative;align-self:center;flex-shrink:0}
     .nav-mer-toggle{appearance:none;border:0;background:0;font:inherit;font-size:13px;font-weight:500;color:var(--mut);padding:14px 2px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px;letter-spacing:-.01em}
     .nav-mer-toggle:hover{color:var(--ink-2)}
     .nav-mer-toggle.aktiv{color:var(--ink);border-bottom-color:var(--ink)}
@@ -1041,17 +1036,15 @@
   </header>
 
   <nav class="nav" role="tablist">
-    <button role="tab" aria-selected="true" data-panel="oversikt">Oversikt</button>
-    <!-- TRE faner får plass i raden på mobil, ikke fire. Målt på 320: 272px tilgjengelig,
-         «Mer»-toggelen spiser 54 av dem (42 + 12 for prikken). Fire synlige + toggel er
-         263px selv med 6px marg = 9px klaring, altså under kravet uansett hva margen settes
-         til. Tre er taket, ikke et valg. Se marg-tabellen i CSS-en over. -->
-    <button role="tab" aria-selected="false" data-panel="vekst">Vekst</button>
+    <!-- ALLE fem faner har class="nav-mer": på mobil flytter JS dem inn i dropdownen, på
+         desktop står de i raden som før. Rekkefølgen i DOM = rekkefølgen i menyen. -->
+    <button role="tab" aria-selected="true" data-panel="oversikt" class="nav-mer">Oversikt</button>
+    <button role="tab" aria-selected="false" data-panel="vekst" class="nav-mer">Vekst</button>
     <button role="tab" aria-selected="false" data-panel="tjenester" class="nav-mer">Tjenester &amp; tider</button>
     <!-- data-panel="design" er BEVART selv om fanen heter «Din side» — Profil-fanen ble slått
          INN her 08.08, og id-en #design henger sammen med loadDesign(), oppdaterPreview() og
          hele design-koden. Samme resonnement som «Konto»/#abonnement under. Ikke døp om id-en. -->
-    <button role="tab" aria-selected="false" data-panel="design">Din side</button>
+    <button role="tab" aria-selected="false" data-panel="design" class="nav-mer">Din side</button>
     <!-- data-panel="abonnement" er BEVART med vilje selv om fanen heter «Konto» —
          id-en henger sammen med #abonnement, switchPanel('abonnement') (:2376) og
          billing-koden. Bare etiketten er byttet. -->
@@ -5121,10 +5114,13 @@ function oppdaterMerPrikk(){
 
   // Åpne/lukke meny — position:fixed beregnet fra toggle-knappens viewport-posisjon
   // (unngår klipping av nav overflow-x:auto)
+  // Toggelen står nå til VENSTRE i raden, så menyen ankres fra venstre (box.left). Ankret man
+  // fortsatt fra høyre ville 190px-menyen strukket seg forbi venstre skjermkant på 320.
   function positionerMeny(){
     var box=toggleEl.getBoundingClientRect();
     menyEl.style.top=(box.bottom+1)+'px';
-    menyEl.style.right=(window.innerWidth-box.right)+'px';
+    menyEl.style.left=box.left+'px';
+    menyEl.style.right='auto';
   }
   toggleEl.addEventListener('click',function(e){
     e.stopPropagation();
