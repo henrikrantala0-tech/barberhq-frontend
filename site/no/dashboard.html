@@ -2768,15 +2768,18 @@ document.body.addEventListener("click",e=>{
 var CAL={open:false,built:false,dombuilt:false,active:0,alle:[],hours:[],svcIdx:{},minKey:0,maxKey:0};
 var bkDetalj={openId:null};
 var PX_PER_MIN=1.8, CAL_HFALL=[480,1200]; // 08–20-ramme for ubundet åpen dag (NULL-tider). 1.8 → 15-min ≈ 27px (leselig navn)
-// Tjenestefarge = tjenestens posisjon (0-basert) i lista sortert på sort. Fargene RULLERER
-// (modulo) når det er flere tjenester enn paletten — tjeneste 9 gjenbruker farge 1 osv., aldri
-// grå av den grunn. Grå (--mut) beholdes KUN som fallback når navnet ikke matcher noen tjeneste
-// i det hele tatt (i==null: tilleggsnavn, slettet/endret tjeneste).
-// 8 distinkte hues. De to siste (rose/teal) er hex fordi det ikke finnes flere fargetokens
-// (--bad er reservert rødt for no-show); samme mønster som #e0844a lenger inn i arrayet.
-// Oransje #e0844a er samme verdi som «Drevet av» bruker for verving — her posisjon 3, bevisst.
-var SVC_FARGER=['var(--info)','var(--good)','#e0844a','var(--warn)','var(--violet)','var(--sky)','#d9548b','#0ea5a5'];
-function svcFarge(name){var i=CAL.svcIdx&&CAL.svcIdx[name];return (i==null)?'var(--mut)':SVC_FARGER[i%SVC_FARGER.length];}
+// Tjenestefarge = tjenestens POSISJON (0-basert) i hovedtjeneste-lista sortert på sort, slått opp
+// på bookingens service_id (IKKE navn — navnematchen er fjernet; service_id er den strukturerte
+// koblingen fra booking til services, jf. bookings.service_id / migrasjon 044+052). Én fargekilde.
+// 6 posisjoner har farge; posisjon 7+ (i>=6), service_id NULL, eller service_id utenfor lista → grå.
+// 1 blå var(--info), 2 grønn --good, 3 oransje #e0844a (= «Drevet av»/verving, bevisst),
+// 4 gul --warn, 5 lilla --violet, 6 lyseblå --sky. Tema-tilpassede tokens (unntatt #e0844a).
+var SVC_FARGER=['var(--info)','var(--good)','#e0844a','var(--warn)','var(--violet)','var(--sky)'];
+function svcFarge(serviceId){
+  if(serviceId==null)return 'var(--mut)';
+  var i=CAL.svcIdx&&CAL.svcIdx[serviceId];
+  return (i==null||i>=SVC_FARGER.length)?'var(--mut)':SVC_FARGER[i];
+}
 
 function calDayKey(iso){var d=new Date(iso);d.setHours(0,0,0,0);return d.getTime();}
 function calMin(iso){var d=new Date(iso);return d.getHours()*60+d.getMinutes();}
@@ -2790,9 +2793,14 @@ async function calFetch(){
   CAL.hours=(hr&&hr.ok)?await hr.json():[];        // {weekday(0=søn),is_closed,open_time,close_time}
   var sv=await apiFetch('/api/dashboard/services'); // {hoved,tillegg}, sortert på sort
   var svj=(sv&&sv.ok)?await sv.json():{};
-  // KUN hovedtjenester gir posisjon/farge. Tilleggstjenester utelates → en booking som
-  // matcher et tilleggsnavn finnes ikke i kartet → svcFarge faller til grå (som ukjent).
-  CAL.svcIdx={};(svj.hoved||[]).forEach(function(s,i){CAL.svcIdx[s.name]=i;});
+  // KUN hovedtjenester gir posisjon/farge. Nøkkel = service_id (ikke navn); posisjon = indeks i
+  // lista sortert på sort. sort-fallback 0: dagens deployede backend leverer allerede hoved i sort-
+  // rekkefølge, og dette blir robust når GET /services tar med `sort` eksplisitt. En booking hvis
+  // service_id er en tilleggstjeneste eller mangler → ikke i kartet → svcFarge faller til grå.
+  CAL.svcIdx={};
+  (svj.hoved||[]).slice()
+    .sort(function(a,b){return (a.sort==null?0:a.sort)-(b.sort==null?0:b.sort);})
+    .forEach(function(s,i){CAL.svcIdx[s.id]=i;});
   var t0=new Date();t0.setHours(0,0,0,0);var today=t0.getTime();
   CAL.minKey=calNesteKey(today,-14);
   CAL.maxKey=calNesteKey(today,(CONFIG.BOOKING_HORIZON||28));
@@ -2877,7 +2885,7 @@ function renderGrid(){
       // bredde i % av kolonnen. >60 = i praksis full bredde → plass til «14:00–14:30». Smale,
       // overlappende blokker viser start alene (minstekravet), så tiden aldri brekker.
       var tid=timeOnly(o.b.start)+((o.w>60&&o.b.end)?'–'+timeOnly(o.b.end):'');
-      blocks+='<div class="cal-block'+ns+'" data-id="'+o.b.id+'" style="top:'+o.top+'px;height:'+o.h+'px;left:'+o.left+'%;width:calc('+o.w+'% - 3px);--blk:'+svcFarge(o.b.service)+'"><div class="blk-top"><span class="blk-name">'+esc(o.b.name)+'</span><span class="blk-time">'+tid+'</span></div>'+svc+'</div>';
+      blocks+='<div class="cal-block'+ns+'" data-id="'+o.b.id+'" style="top:'+o.top+'px;height:'+o.h+'px;left:'+o.left+'%;width:calc('+o.w+'% - 3px);--blk:'+svcFarge(o.b.service_id)+'"><div class="blk-top"><span class="blk-name">'+esc(o.b.name)+'</span><span class="blk-time">'+tid+'</span></div>'+svc+'</div>';
     });
     cols+='<div class="cal-day" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px">'+lines+blocks+'</div></div>';
   });
