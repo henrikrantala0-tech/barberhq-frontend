@@ -1888,7 +1888,7 @@
           </div>
           <!-- iOS, men IKKE Safari (Chrome/Firefox/Edge på iPhone) — MÅ si at det kun virker i Safari -->
           <div class="hs-variant" data-hs="ios-annet" hidden>
-            <p class="block-s" data-copy="hs-ios-annet">Dette virker bare i Safari. Åpne denne siden i Safari først.</p>
+            <p class="block-s" data-copy="hs-ios-annet">Dette virker bare i Safari. Åpne trybarberhq.com i Safari.</p>
           </div>
           <!-- Android / Chrome -->
           <div class="hs-variant" data-hs="android" hidden>
@@ -5232,12 +5232,18 @@ function oppdaterMerPrikk(){
   var ua=navigator.userAgent||'';
   // iPadOS 13+ melder seg som «MacIntel» med touch — fang det som iOS.
   var iOS = /iP(hone|od|ad)/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
-  // Chrome/Firefox/Edge/Opera på iOS bærer egne tokens; alt annet på iOS ER Safari.
-  var iOSannet = iOS && /CriOS|FxiOS|EdgiOS|OPiOS|mercury/i.test(ua);
+  // POSITIV Safari-identifikasjon (IKKE svarteliste): ekte iOS-Safari har BÅDE «Version/» og
+  // «Safari/» i UA-en og bærer INGEN app-token. Alt annet på iOS → ios-annet. In-app-nettlesere
+  // faller ut: Chrome (CriOS), Firefox (FxiOS), Edge (EdgiOS), Opera (OPiOS), Google-appen (GSA),
+  // DuckDuckGo, Instagram, Facebook (FBAN/FBAV/FB_IAB), Line/WeChat/WhatsApp — samt token-løse
+  // WKWebViews, som mangler «Version/». En ren svarteliste bommet på GSA og nye in-app-browsere;
+  // kun ekte Safari skal få Del→«Legg til på Hjem-skjerm»-instruksjonen (de andre har ingen slik knapp).
+  var APP_TOKENS = /(CriOS|FxiOS|EdgiOS|OPiOS|GSA|DuckDuckGo|Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger|WhatsApp|WebView)/i;
+  var erSafari = iOS && /\bVersion\//.test(ua) && /\bSafari\//.test(ua) && !APP_TOKENS.test(ua);
   var android = /Android/.test(ua);
 
   var vis;
-  if(iOS)          vis = [ iOSannet ? 'ios-annet' : 'ios-safari' ];
+  if(iOS)          vis = [ erSafari ? 'ios-safari' : 'ios-annet' ];
   else if(android) vis = [ 'android' ];
   else             vis = [ 'desktop' ];
   vis.forEach(function(k){ var el=acc.querySelector('.hs-variant[data-hs="'+k+'"]'); if(el) el.hidden=false; });
