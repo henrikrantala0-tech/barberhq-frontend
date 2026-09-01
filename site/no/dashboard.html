@@ -749,6 +749,22 @@
   .demo-banner a{color:inherit;font-weight:700;text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
   html[data-theme="dark"] .demo-banner{background:#2d1d00;border-bottom-color:#d97706;color:#fde68a}
 
+  /* Hjemskjerm-nudge (topplinje). Nøytral grå — informasjonsbanner, ikke handling: blå er
+     aksentfargen for handling ellers, og publiseringsflyten skal eie oppmerksomheten. Samme
+     topplinje-flate som .demo-banner. Hele stripa er klikkbar (→ Konto), X skjuler i 14 dager.
+     Vises/skjules via .show (oppdaterHjemskjermNudge). */
+  .hs-nudge{display:none;align-items:center;justify-content:center;gap:8px;position:relative;
+    padding:10px 46px;background:var(--surface);border-bottom:1px solid var(--line);
+    font-size:13.5px;font-weight:500;color:var(--ink-2);line-height:1.4;text-align:center;cursor:pointer}
+  .hs-nudge.show{display:flex}
+  /* Alltid-synlig pil = handlings-affordans ved hvile (ikke bare på hover), så stripa ikke
+     leser som ren informasjon. Liten slide på hover. */
+  .hs-nudge-pil{display:inline-block;white-space:nowrap;transition:transform .18s}
+  .hs-nudge:hover .hs-nudge-pil{transform:translateX(3px)}
+  .hs-nudge-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);appearance:none;border:0;
+    background:0;color:var(--mut);font-size:20px;line-height:1;cursor:pointer;padding:6px 9px;border-radius:7px}
+  .hs-nudge-x:hover{color:var(--ink);background:rgba(127,127,127,.14)}
+
   /* ---- Grønn toggle-variant ---- */
   .sw-green input:checked + .sl{background:#22c55e}
   html[data-theme="dark"] .sw-green input:checked + .sl{background:#22c55e}
@@ -1032,6 +1048,13 @@
 <div class="demo-banner" id="demoBanner" role="alert">
   <strong>Forhåndsvisning.</strong> Tallene og innholdet her er eksempeldata — de viser <strong>ikke</strong> ekte aktivitet.
   &nbsp;<a href="/no/kom-i-gang.html">Opprett din egen side →</a>
+</div>
+<!-- Hjemskjerm-nudge (topplinje). Vises kun når page_status='live' + ikke standalone + ikke
+     X-et siste 14 dager (oppdaterHjemskjermNudge, kalt fra renderKonto). Klikk → Konto +
+     åpne «Legg til på hjemskjerm»-trekkspillet. Ingen how-to her — den bor i trekkspillet. -->
+<div class="hs-nudge" id="hsNudge" role="button" tabindex="0" aria-label="Legg dashbordet til på hjemskjermen">
+  <span class="hs-nudge-tekst" data-copy="hs-nudge">Få dashbordet som app — legg til på hjemskjermen<span class="hs-nudge-pil" aria-hidden="true"> →</span></span>
+  <button class="hs-nudge-x" id="hsNudgeX" type="button" aria-label="Skjul">&times;</button>
 </div>
 <div class="topband">
 <div class="wrap">
@@ -4431,6 +4454,9 @@ function renderKonto(b){
         tall=$("#kontoTall"),tallStor=$("#kontoTallStor"),tallSuff=$("#kontoTallSuff"),
         tallSub=$("#kontoTallSub"),mikro=$("#kontoMikro");
   if(!status)return;
+  // Hjemskjerm-nudgen (topplinje) re-evalueres ved hver billing-render — så den dukker opp i
+  // samme øyeblikk page_status blir 'live' (publisering) og forsvinner ved avpublisering.
+  if(typeof oppdaterHjemskjermNudge==='function') oppdaterHjemskjermNudge();
   // nullstill (pubErr ryddes IKKE her — settPubFeil skriver den etter en re-synk)
   status.className='substatus';
   knapp.style.display='none';lenke.style.display='none';
@@ -5225,9 +5251,8 @@ function oppdaterMerPrikk(){
 (function(){
   var acc=document.getElementById('accHjemskjerm'); if(!acc)return;
   // Alt installert/standalone? Da er veiledningen støy — la seksjonen bli stående hidden.
-  var staaende = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
-                 || window.navigator.standalone===true;
-  if(staaende) return;
+  // Delt sjekk med hjemskjerm-nudgen (erStandalone).
+  if(erStandalone()) return;
 
   var ua=navigator.userAgent||'';
   // iPadOS 13+ melder seg som «MacIntel» med touch — fang det som iOS.
@@ -5257,6 +5282,50 @@ function oppdaterMerPrikk(){
   var installBtn=document.getElementById('hsInstall');
   if(installBtn) installBtn.addEventListener('click', function(){
     var p=window.__bhqInstallEvt; if(p && p.prompt) p.prompt();
+  });
+})();
+
+/* ---- Standalone-sjekk: delt kilde for initHjemskjerm + hjemskjerm-nudgen ----
+   Funksjonsdeklarasjon (hoistet) så begge IIFE-ene ser den uansett rekkefølge. */
+function erStandalone(){
+  return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+         || window.navigator.standalone===true;
+}
+
+/* ---- Hjemskjerm-nudge (topplinje) ----
+   Vises når ALLE tre er sanne: page_status='live' (fra _billing), ikke standalone, og ikke
+   X-et de siste 14 dagene (localStorage-timestamp, ikke permanent flagg). Re-evalueres fra
+   renderKonto() — så den dukker opp i det øyeblikket hun publiserer. Klikk på stripa →
+   Konto-fanen + åpne «Legg til på hjemskjerm»-trekkspillet (riktig variant er alt avslørt av
+   initHjemskjerm). Publiserings-CTA-en krever 'forhandsvist' og nudgen 'live' → gjensidig
+   utelukkende, aldri to topplinjer; i tillegg vakt mot samtidig demo-banner. */
+(function(){
+  var el=document.getElementById('hsNudge'); if(!el) return;
+  var KEY='bhq-hjemskjerm-nudge-skjult', VINDU=14*24*60*60*1000;
+  function nyligSkjult(){
+    var t=parseInt(localStorage.getItem(KEY)||'0',10);
+    return t>0 && (Date.now()-t) < VINDU;
+  }
+  function demoSynlig(){
+    var d=document.getElementById('demoBanner');
+    return !!(d && d.classList.contains('show'));
+  }
+  window.oppdaterHjemskjermNudge=function(){
+    var live = !!(typeof _billing!=='undefined' && _billing && _billing.page_status==='live');
+    el.classList.toggle('show', live && !erStandalone() && !nyligSkjult() && !demoSynlig());
+  };
+  function tilKonto(){
+    switchPanel('abonnement');           // → Konto-fanen (+ location.hash='konto')
+    _sjekkAapneAkk('accHjemskjerm');      // eksisterende helper: åpner kun hvis lukket
+    var acc=document.getElementById('accHjemskjerm');
+    if(acc) acc.scrollIntoView({block:'center'});
+  }
+  el.addEventListener('click', tilKonto);
+  el.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); tilKonto(); } });
+  document.getElementById('hsNudgeX').addEventListener('click', function(e){
+    e.stopPropagation();                  // X skal ikke trigge navigasjonen
+    try{ localStorage.setItem(KEY, String(Date.now())); }catch(_){}
+    el.classList.remove('show');
   });
 })();
 </script>
