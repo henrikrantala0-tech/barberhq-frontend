@@ -4,6 +4,18 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>BarberHQ — Dashbord</title>
+<!-- PWA / «Legg til på hjemskjerm». Manifestet ligger på samme origin som siden
+     (trybarberhq.com/no/) — API-et bor på api.trybarberhq.com, men det er fetch, ikke
+     manifest-scope. iOS ignorerer manifestet delvis, så apple-*-taggene settes eksplisitt.
+     Statuslinje: 'black' (ikke 'black-translucent') — sistnevnte ville krevd viewport-fit=cover
+     + safe-area-padding i layouten. Ingen service worker (bevisst: unngår cache-gammel-HTML). -->
+<link rel="manifest" href="manifest.json">
+<meta name="theme-color" content="#0a0a0a">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black">
+<meta name="apple-mobile-web-app-title" content="BarberHQ">
+<link rel="apple-touch-icon" href="icons/barberhq-180.png">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800&display=swap" rel="stylesheet">
@@ -1852,6 +1864,41 @@
          Logikken er uendret: applyTheme() + localStorage['bhq-theme']. -->
           <div class="preset-grid theme-grid" id="themeGrid"></div>
           <p class="sub-micro" style="display:block;margin-top:0">Huskes i denne nettleseren.</p>
+        </div>
+      </div>
+
+      <!-- ── LEGG TIL PÅ HJEMSKJERM (PWA) ─────────────────────────────────────────────
+           STRUKTUR — Henrik skriver copy i data-copy-nodene. Hele seksjonen er hidden i
+           markup og vises av initHjemskjerm() KUN når appen ikke alt kjører standalone
+           (display-mode:standalone / navigator.standalone). JS avslører NØYAKTIG én
+           .hs-variant etter plattform; ved usikker deteksjon vises iOS-Safari + Android.
+           Android: beforeinstallprompt fanges → #hsInstall vises og kan trigge prompt().
+           Ingen service worker. [oversettelse: sv/da/en når copy finnes] -->
+      <div class="acc" id="accHjemskjerm" hidden>
+        <button type="button" class="acc-head" aria-expanded="false">
+          <span class="acc-htext">
+            <span class="acc-title" data-copy="hs-title">Legg til på hjemskjerm</span>
+          </span>
+          <span class="acc-chev">▾</span>
+        </button>
+        <div class="acc-body" hidden>
+          <!-- iOS + Safari -->
+          <div class="hs-variant" data-hs="ios-safari" hidden>
+            <p class="block-s" data-copy="hs-ios-safari">Trykk Del-knappen nederst, velg «Legg til på Hjem-skjerm».</p>
+          </div>
+          <!-- iOS, men IKKE Safari (Chrome/Firefox/Edge på iPhone) — MÅ si at det kun virker i Safari -->
+          <div class="hs-variant" data-hs="ios-annet" hidden>
+            <p class="block-s" data-copy="hs-ios-annet">Dette virker bare i Safari. Åpne denne siden i Safari først.</p>
+          </div>
+          <!-- Android / Chrome -->
+          <div class="hs-variant" data-hs="android" hidden>
+            <p class="block-s" data-copy="hs-android">Trykk menyen øverst til høyre, velg «Legg til på startskjerm».</p>
+            <button class="btn" id="hsInstall" style="display:none" data-copy="hs-install">Legg til</button>
+          </div>
+          <!-- Desktop / ukjent plattform -->
+          <div class="hs-variant" data-hs="desktop" hidden>
+            <p class="block-s" data-copy="hs-desktop">Åpne dashbordet på telefonen for å legge det til på hjemskjermen.</p>
+          </div>
         </div>
       </div>
 
@@ -5170,6 +5217,41 @@ function oppdaterMerPrikk(){
   });
 
   updateToggle();
+})();
+
+/* ---- Legg til på hjemskjerm (PWA-veiledning i Konto) ----
+   Viser seksjonen KUN når appen ikke alt kjører standalone, og avslører den plattform-
+   varianten som gjelder. Copy skrives av Henrik i data-copy-nodene; her er bare mekanikken. */
+(function(){
+  var acc=document.getElementById('accHjemskjerm'); if(!acc)return;
+  // Alt installert/standalone? Da er veiledningen støy — la seksjonen bli stående hidden.
+  var staaende = (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
+                 || window.navigator.standalone===true;
+  if(staaende) return;
+
+  var ua=navigator.userAgent||'';
+  // iPadOS 13+ melder seg som «MacIntel» med touch — fang det som iOS.
+  var iOS = /iP(hone|od|ad)/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  // Chrome/Firefox/Edge/Opera på iOS bærer egne tokens; alt annet på iOS ER Safari.
+  var iOSannet = iOS && /CriOS|FxiOS|EdgiOS|OPiOS|mercury/i.test(ua);
+  var android = /Android/.test(ua);
+
+  var vis;
+  if(iOS)          vis = [ iOSannet ? 'ios-annet' : 'ios-safari' ];
+  else if(android) vis = [ 'android' ];
+  else             vis = [ 'desktop' ];
+  vis.forEach(function(k){ var el=acc.querySelector('.hs-variant[data-hs="'+k+'"]'); if(el) el.hidden=false; });
+  acc.hidden=false; // seksjonen dukker opp i Konto-lista
+
+  // Android/Chrome tilbyr install selv: fang prompten og vis knappen.
+  window.addEventListener('beforeinstallprompt', function(e){
+    e.preventDefault(); window.__bhqInstallEvt=e;
+    var b=document.getElementById('hsInstall'); if(b) b.style.display='';
+  });
+  var installBtn=document.getElementById('hsInstall');
+  if(installBtn) installBtn.addEventListener('click', function(){
+    var p=window.__bhqInstallEvt; if(p && p.prompt) p.prompt();
+  });
 })();
 </script>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>

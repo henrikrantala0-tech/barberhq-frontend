@@ -1,0 +1,23 @@
+{
+  "name": "BarberHQ",
+  "short_name": "BarberHQ",
+  "start_url": "/no/dashboard.html#oversikt",
+  "scope": "/no/",
+  "display": "standalone",
+  "theme_color": "#0a0a0a",
+  "background_color": "#0a0a0a",
+  "icons": [
+    {
+      "src": "icons/barberhq-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any"
+    },
+    {
+      "src": "icons/barberhq-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
