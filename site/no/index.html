@@ -82,7 +82,11 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    disclaimer, uendret innbyrdes avstand) til bunnen. Tekstblokka blir da liggende høyt. */
 .hero{margin:0 auto;padding:90px 0 35px;text-align:center;position:relative;display:flex;flex-direction:column;min-height:calc(100vh - var(--nav-h));min-height:calc(100dvh - var(--nav-h))}
 .hero-inner{max-width:900px;margin:0 auto;padding:0 32px;position:relative;z-index:2;display:flex;flex-direction:column;flex:1 1 auto}
-.hero-video{position:absolute;top:50%;left:50%;width:100%;height:100.8%;transform:translate(-50%,-50%);object-fit:cover;object-position:center;z-index:0;pointer-events:none}
+.hero-video{position:absolute;top:50%;left:50%;width:100%;height:100.8%;transform:translate(-50%,-50%);object-fit:cover;object-position:center;z-index:0}
+/* iOS in-app-nettlesere (Google-appen, TikTok) blokkerer autoplay og tegner en native
+   play-knapp oppå videoen. Skjul den — JS-fallbacken under starter videoen på første tap. */
+.hero-video::-webkit-media-controls-start-playback-button{display:none!important;-webkit-appearance:none}
+.hero-video::-webkit-media-controls{display:none!important}
 .hero::before{content:"";position:absolute;top:0;left:0;width:100%;height:calc(100% + 20px);background:linear-gradient(to bottom,rgba(10,10,10,.65) 0%,rgba(10,10,10,.45) 35%,rgba(10,10,10,.72) 65%,#0a0a0a 85%);z-index:1;pointer-events:none}
 /* Stablingen bor nå på .hero-inner (over), som er det eneste innholds-barnet. */
 .hero-eyebrow{display:block;font-size:16px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9a9a9a;margin-bottom:30px}
@@ -1358,7 +1362,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 
 <!-- ===== HERO ===== -->
 <header class="hero" id="top">
-  <video class="hero-video" autoplay muted loop playsinline>
+  <video class="hero-video" autoplay muted loop playsinline webkit-playsinline preload="auto" poster="images/hero-poster.jpg">
     <source src="images/hero.mp4" type="video/mp4">
   </video>
   <div class="hero-inner">
@@ -3477,6 +3481,40 @@ window.playVinntilbake=play;window.resetVinntilbake=reset;
       }
     });
   });
+})();
+</script>
+
+<!-- Hero-video: tvungen autoplay-fallback for in-app-nettlesere (Google-appen, TikTok, iOS).
+     autoplay-attributtet alene er ikke nok der; disse browserne avviser play() til første
+     brukergest. Vi setter muted eksplisitt, prøver play(), og faller tilbake på ett engangs-tap
+     + visibilitychange når fanen kommer tilbake. -->
+<script>
+(function(){
+  var v=document.querySelector('.hero-video');
+  if(!v)return;
+  v.muted=true;                 // må stå FØR play() — ellers avvises den som «ikke muted»
+  v.setAttribute('muted','');   // enkelte WebKit-versjoner leser attributtet, ikke propertyen
+  var startet=false;
+  function start(){
+    if(!v)return;
+    var p=v.play();
+    if(p&&typeof p.then==='function'){
+      p.then(function(){startet=true;}).catch(function(){/* venter på gest/visibilitychange */});
+    }else{startet=true;}
+  }
+  function paaGest(){
+    start();
+    if(startet){
+      document.removeEventListener('touchstart',paaGest);
+      document.removeEventListener('click',paaGest);
+    }
+  }
+  document.addEventListener('touchstart',paaGest,{passive:true});
+  document.addEventListener('click',paaGest);
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState==='visible'&&v.paused)start();
+  });
+  start();
 })();
 </script>
 
