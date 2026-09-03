@@ -98,7 +98,7 @@
 
   /* Lists */
   .card{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
-  .row{display:flex;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid var(--line)}
+  .row{display:flex;flex-wrap:wrap;align-items:center;gap:14px;padding:13px 18px;border-bottom:1px solid var(--line)}
   .row:last-child{border-bottom:0}
   .row .when{font-variant-numeric:tabular-nums;font-weight:500;min-width:118px;font-size:13px;color:var(--ink-2);letter-spacing:-.01em}
   /* Venstre-blokk (tid+navn+tjeneste) kan wrappe fritt; høyre-blokk (knapp+tag) ligger ALLTID til høyre, aldri ut av raden */
@@ -106,16 +106,27 @@
   .row-right{flex-shrink:0;display:flex;align-items:center;gap:14px}
   .row .name{flex:1;min-width:0;overflow-wrap:break-word;font-size:14px;font-weight:500}
   .row .svc{font-size:12px;color:var(--mut);font-weight:400}
+  /* Feilmelding bor INNE i raden (siste barn, egen full-bredde-linje under knapp+pill via
+     flex-wrap + order:99), ikke som søsken mellom radene. Samme i modalens .bk-detail-actions. */
+  .row-err{flex-basis:100%;order:99;font-size:12px;font-weight:500;color:var(--bad);letter-spacing:-.01em}
   .tag{font-size:11px;font-weight:600;padding:3px 9px;border-radius:5px;letter-spacing:.01em}
-  .tag.b{background:var(--info-bg);color:var(--info)} .tag.f{background:var(--good-bg);color:var(--good)} .tag.n{background:var(--bad-bg);color:var(--bad)}
+  /* .tag.n (no-show) er GRÅ, ikke rød: «Ikke fullført» er en dempet tilstand, ikke en feil.
+     Det røde eier no-show-KNAPPEN (aktiv), ikke pillen. */
+  .tag.b{background:var(--info-bg);color:var(--info)} .tag.f{background:var(--good-bg);color:var(--good)} .tag.n{background:var(--line-2);color:var(--ink-2)}
   .tag.v{background:#f1f0ec;color:var(--mut)} .tag.avlyst{background:var(--bad-bg);color:var(--bad)}
   .row.avlyst{opacity:.55} .row.avlyst .name{text-decoration:line-through}
   /* No-show: tydelig annerledes enn Fullført (dempet tekst + gjennomstreket navn), men Angre-knappen holdes skarp */
   .row.noshow .name{text-decoration:line-through;color:var(--mut)} .row.noshow .when{color:var(--mut)}
-  .noshowbtn,.undobtn{appearance:none;border:1px solid var(--line-2);background:var(--surface);font:inherit;font-size:12px;font-weight:500;color:var(--mut);padding:4px 9px;border-radius:6px;cursor:pointer;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:5px;transition:color .12s,border-color .12s,background .12s;position:relative}
+  .noshowbtn{appearance:none;border:1px solid var(--line-2);background:var(--surface);font:inherit;font-size:12px;font-weight:500;color:var(--mut);padding:4px 9px;border-radius:6px;cursor:pointer;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:5px;transition:color .12s,border-color .12s,background .12s;position:relative}
   .noshowbtn .x{font-size:13px;line-height:1;font-weight:600}
+  /* AKTIV = booking er markert no-show. Knappen forblir (undobtn er borte); trykk angrer.
+     Samme uttrykk som :hover, men som KLASSE (utenfor @media hover) så den vises på touch. */
+  .noshowbtn.aktiv{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
+  /* Hover KUN på enheter med ekte peker: på touch «henger» :hover igjen etter trykk og
+     gir en falsk «markert»-tilstand på sist-trykkede knapp (bare én om gangen). */
+  @media (hover:hover){
   .noshowbtn:hover{background:var(--bad-bg);border-color:var(--bad);color:var(--bad)}
-  .undobtn:hover{background:var(--info-bg);border-color:var(--info);color:var(--info)}
+  }
   .empty{padding:38px 24px;text-align:center;color:var(--mut)}
   .empty i{font-size:26px;opacity:.5}.empty p{margin-top:8px;font-size:13px}
 
@@ -148,7 +159,7 @@
   /* 44px trykkflate uten å endre visuell størrelse: usynlig ::after sentreres på knappen
      og tvinges til minst 44x44 (min-width/height) mens knappen beholder sin egen størrelse.
      Klikk på ::after bobler til knappen. Gjelder små ikon-/tekstknapper. WCAG 2.5.5. */
-  .slot-act-btn::after,.noshowbtn::after,.undobtn::after,.verv-btn::after,.suksess-x::after,.pause-modal-close::after,body.fokus .fokus-x::after,.svc-rm::after{content:"";position:absolute;top:50%;left:50%;width:100%;height:100%;min-width:44px;min-height:44px;transform:translate(-50%,-50%)}
+  .slot-act-btn::after,.noshowbtn::after,.verv-btn::after,.suksess-x::after,.pause-modal-close::after,body.fokus .fokus-x::after,.svc-rm::after{content:"";position:absolute;top:50%;left:50%;width:100%;height:100%;min-width:44px;min-height:44px;transform:translate(-50%,-50%)}
   .slot-menu-btn:hover{background:var(--bad)}
   .slot-popup{position:fixed;z-index:300;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.55);min-width:136px;overflow:hidden;display:none}
   .slot-popup.open{display:block}
@@ -2051,8 +2062,9 @@
   .bk-detail-rows>div{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-top:1px solid var(--line)}
   .bk-detail-rows dt{color:var(--mut);font-size:13px}
   .bk-detail-rows dd{font-size:13.5px;font-weight:600;text-align:right}
-  .bk-detail-actions{margin-top:16px}
-  .bk-detail-actions .noshowbtn,.bk-detail-actions .undobtn{width:100%;justify-content:center;padding:11px}
+  .bk-detail-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
+  .bk-detail-actions .noshowbtn{width:100%;justify-content:center;padding:11px}
+  .bk-detail-actions .row-err{text-align:center}
 </style>
 <div class="cal-overlay" id="calOverlay" role="dialog" aria-modal="true" aria-label="Kalender" hidden></div>
 <div class="bk-detail-backdrop" id="bkDetailBackdrop" hidden></div>
@@ -2704,9 +2716,10 @@ function emptyHTML(t){return `<div class="empty"><i>○</i><p>${t}</p></div>`}
 // (f.eks. «TOR 17. JUL»). Gjelder både bakover og framover.
 function dayHead(d){var t=new Date();t.setHours(0,0,0,0);var dd=new Date(d);dd.setHours(0,0,0,0);var diff=Math.round((dd-t)/86400000);if(diff===0)return "I dag";if(diff===1)return "I morgen";if(diff===-1)return "I går";return DAYS[(dd.getDay()+6)%7].slice(0,3).toUpperCase()+" "+dd.getDate()+". "+MONTHS[dd.getMonth()].slice(0,3).toUpperCase();}
 function timeOnly(iso){var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
-function rowHTML2(b){if(b.status==='avlyst')return '<div class="row avlyst" data-bk="'+b.id+'"><div class="row-left"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+' <span class="svc">· '+esc(b.service||"")+'</span></div></div><div class="row-right"><span class="tag avlyst">Avbestilt</span></div></div>';var st=effectiveStatus(b);var c=st==="noshow"?"n":st==="fullfort"?"f":st==="venter"?"v":"b";var t=st==="noshow"?"No-show":st==="fullfort"?"Fullført":st==="venter"?"Venter":"Booket";var action="";
-  if(st==="noshow") action='<button class="undobtn" data-id="'+b.id+'" title="Angre no-show">\u21a9 Angre</button>'; // Angre kun etter no-show
-  else if(st==="venter"||st==="fullfort") action='<button class="noshowbtn" data-id="'+b.id+'" title="Marker som no-show"><span class="x">&times;</span> No-show</button>';
+function rowHTML2(b){if(b.status==='avlyst')return '<div class="row avlyst" data-bk="'+b.id+'"><div class="row-left"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+' <span class="svc">· '+esc(b.service||"")+'</span></div></div><div class="row-right"><span class="tag avlyst">Avbestilt</span></div></div>';var st=effectiveStatus(b);var c=st==="noshow"?"n":st==="fullfort"?"f":st==="venter"?"v":"b";var t=st==="noshow"?"Ikke fullført":st==="fullfort"?"Fullført":st==="venter"?"Venter":"Booket";var action="";
+  // No-show-knappen forblir i alle handlingsbare tilstander. .aktiv = allerede no-show \u2192 trykk
+  // angrer (delegasjonen toggler p\u00e5 .aktiv). Ingen egen undobtn lenger.
+  if(st==="noshow"||st==="venter"||st==="fullfort") action='<button class="noshowbtn'+(st==="noshow"?" aktiv":"")+'" data-id="'+b.id+'" title="'+(st==="noshow"?"Angre \u2013 marker som fullf\u00f8rt igjen":"Marker som no-show")+'"><span class="x">&times;</span> No-show</button>';
   var rowClass=st==="noshow"?"row noshow":"row";
   return '<div class="'+rowClass+'" data-bk="'+b.id+'"><div class="row-left"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+discountPill(b)+' <span class="svc">\u00b7 '+esc(b.service||"")+'</span></div></div><div class="row-right">'+action+'<span class="tag '+c+'">'+t+'</span></div></div>';}
 // Siste bookinger: bakoverskuende logg (t.o.m. i dag, ingen framtidige — de bor i
@@ -2799,14 +2812,27 @@ async function smsMer(btn){
   renderSmsLogg(!!d.har_mer);
 }
 
+// Fail-closed feedback: et mislykket lagre-kall skal ALDRI være stille (jf. «catch uten
+// logg er en løgn»). Viser kort rød tekst INNE i containeren, auto-fjernes etter 3 s.
+// Container = selve raden (.row) eller modalens .bk-detail-actions. Begge er flex-wrap, så
+// .row-err (flex-basis:100%;order:99) legger seg på egen full-bredde-linje UNDER knapp+pill —
+// ikke i .row-right, som ville klemt navnekolonnen og brutt navnet bokstav-for-bokstav på 320.
+function visRadFeil(container){
+  if(!container)return;
+  var gammel=container.querySelector(':scope > .row-err'); if(gammel)gammel.remove();
+  var e=document.createElement('div'); e.className='row-err'; e.textContent='Kunne ikke lagre. Prøv igjen.';
+  container.appendChild(e);
+  setTimeout(function(){ e.remove(); },3000);
+}
 // No-show / Angre er en ren toggle på samme endepunkt. Ved 200: oppdater raden IN-PLACE
 // (bytt No-show↔Angre + status-tag) uten å re-hente booking-lista; refresh KUN penge-
 // aggregatene (loadOversikt) — backend ekskluderer ikke_mott fra stats/attribusjon.
 async function handleBookingStatus(btn,status){
   var id=btn.dataset.id, rowEl=btn.closest(".row");
+  var feilBoks=rowEl||btn.closest(".bk-detail-actions"); // modal har ingen .row → vis feil i handlingsraden
   btn.disabled=true; // hindre dobbeltrykk mens kallet er i lufta
   var ok=await api.setBookingStatus(id,status);
-  if(!ok){ btn.disabled=false; return; } // feil/401 → apiFetch håndterer redirect; ellers ingen endring
+  if(!ok){ btn.disabled=false; visRadFeil(feilBoks); return; } // feil/401 → apiFetch redirigerer; ellers vis feil i containeren (ikke stille)
   var nystatus=(status==='ikke_mott')?'ikke_mott':'fullfort';
   // Oppdater status i ALLE delte kilder (Siste, Kommende, kalenderen), så åpne flater
   // — inkludert detaljflaten og kalenderblokka — blir konsistente uten re-henting.
@@ -2820,8 +2846,7 @@ async function handleBookingStatus(btn,status){
   if(status==='ikke_mott'){ showToast('Lagt i Vinn tilbake'); loadWinback(); } // umiddelbar feedback + oppdater nudge/badge
 }
 document.body.addEventListener("click",e=>{
-  const nb=e.target.closest(".noshowbtn"); if(nb){handleBookingStatus(nb,'ikke_mott');return;}
-  const ub=e.target.closest(".undobtn");   if(ub){handleBookingStatus(ub,'fullfort');return;}
+  const nb=e.target.closest(".noshowbtn"); if(nb){handleBookingStatus(nb, nb.classList.contains('aktiv')?'fullfort':'ikke_mott');return;} // aktiv = allerede no-show → angre
   // Rad-klikk åpner detaljflaten. STÅR ETTER no-show/angre (som return-er først), så
   // knappene inne i raden aldri fanges av rad-klikket — de virker som før.
   const rowBk=e.target.closest("[data-bk]"); if(rowBk){openDetalj(rowBk.dataset.bk);return;}
@@ -2833,7 +2858,7 @@ document.body.addEventListener("click",e=>{
 
 // ═══ KALENDER-OVERLEGG + DELT BOOKING-DETALJFLATE ═════════════════════════════
 // Rad-klikk (lister, data-bk) OG blokk-klikk (kalender, .cal-block[data-id]) → openDetalj(id).
-// No-show/angre i BEGGE flater gjenbruker .noshowbtn/.undobtn → body-delegeringen over
+// No-show/angre i BEGGE flater gjenbruker .noshowbtn (toggler på .aktiv) → body-delegeringen over
 // (handleBookingStatus), som synker status til alle kilder + oppdaterer åpne flater.
 var CAL={open:false,built:false,dombuilt:false,active:0,alle:[],hours:[],svcIdx:{},minKey:0,maxKey:0};
 var bkDetalj={openId:null};
@@ -3005,7 +3030,7 @@ function renderDetalj(id){
   bkDetalj.openId=String(id);
   var st=effectiveStatus(b),tagC='b',tagT='Booket';
   if(b.status==='avlyst'){tagC='avlyst';tagT='Avbestilt';}
-  else if(st==='noshow'){tagC='n';tagT='No-show';}else if(st==='fullfort'){tagC='f';tagT='Fullført';}else if(st==='venter'){tagC='v';tagT='Venter';}
+  else if(st==='noshow'){tagC='n';tagT='Ikke fullført';}else if(st==='fullfort'){tagC='f';tagT='Fullført';}else if(st==='venter'){tagC='v';tagT='Venter';}
   var tid=dayHead(new Date(b.start))+' · '+timeOnly(b.start)+(b.end?'–'+timeOnly(b.end):'');
   // Tillegg: egen rad (ikke slått inn i Tjeneste), så hovedtjenesten — som styrer blokkfargen —
   // står ren. Robust mot både strenger og {name}-objekter. Raden vises kun når det finnes tillegg.
@@ -3013,8 +3038,9 @@ function renderDetalj(id){
   var tilleggRad=tillegg.length?'<div><dt>Tillegg</dt><dd>'+esc(tillegg.join(' + '))+'</dd></div>':'';
   var handling='';   // demo: no-show feiler stille (requireWrite) → ingen knapp som ikke virker
   if(!IS_DEMO&&b.status!=='avlyst'){
-    if(st==='noshow')handling='<button class="undobtn" data-id="'+b.id+'">↩ Angre no-show</button>';
-    else if(st==='venter'||st==='fullfort')handling='<button class="noshowbtn" data-id="'+b.id+'"><span class="x">×</span> Marker no-show</button>';
+    // Samme toggle-knapp som i lista: .aktiv når allerede no-show → trykk angrer.
+    if(st==='noshow'||st==='venter'||st==='fullfort')
+      handling='<button class="noshowbtn'+(st==='noshow'?' aktiv':'')+'" data-id="'+b.id+'"><span class="x">×</span> Marker no-show</button>';
   }
   var tel=b.phone?'<a class="bk-detail-phone" href="tel:'+esc(b.phone)+'">'+esc(b.phone)+'</a>':'';
   $("#bkDetailBackdrop").innerHTML='<div class="bk-detail" role="dialog" aria-modal="true"><button class="bk-detail-close" aria-label="Lukk">✕</button>'
