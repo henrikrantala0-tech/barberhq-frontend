@@ -4,6 +4,8 @@ node_modules/
 *.log
 *.mov
 *.mp4
+# Hero-videoene skal committes (Netlify serverer dem); resten av *.mp4 er lokale
+!site/no/images/hero*.mp4
 _nye-seksjoner/
 live_preview_handoff/
 .render-ut/
