@@ -2161,9 +2161,9 @@ const api={
     if(!r||!r.ok)return null; // 401→apiFetch redirigerte; annen feil→null
     return r.json();
   },
-  // Ekte, session-basert status-endring. PATCH /api/dashboard/bookings/:id/status  { status: fullfort | ikke_mott | avlyst }
+  // Ekte, session-basert status-endring. PATCH /api/dashboard/bookings/:id  { status: fullfort | ikke_mott | avlyst }
   async setBookingStatus(id,status){
-    const r=await apiFetch('/api/dashboard/bookings/'+encodeURIComponent(id)+'/status',{method:'PATCH',body:JSON.stringify({status:status})});
+    const r=await apiFetch('/api/dashboard/bookings/'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({status:status})});
     return !!(r&&r.ok); },
   async images(){ const r=await apiFetch('/api/dashboard/images'); if(!r)return []; if(!r.ok)return []; return r.json(); },
   async hours(){
