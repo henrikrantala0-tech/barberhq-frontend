@@ -2,7 +2,7 @@
 <html lang="no" data-theme="dark">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
 <title>BarberHQ — Dashbord</title>
 <!-- PWA / «Legg til på hjemskjerm». Manifestet ligger på samme origin som siden
      (trybarberhq.com/no/) — API-et bor på api.trybarberhq.com, men det er fetch, ikke
@@ -286,8 +286,29 @@
   /* .themebtn er FJERNET 08.08 — tema velges nå med to .preset-kort, ikke en toggle-knapp. */
   .nav{overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
   .nav button{white-space:nowrap}
-  /* Bunn-nav ikon. Aktiv fyll via --ac (settes på fanen i commit 2). Baren selv kommer i commit 2. */
+  /* Bunn-nav ikon. Aktiv fyll via --ac (settes på fanen ved aria-current). */
   .nav-ico{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
+  /* ══ Bunn-nav (mobil ≤719px — SAMME breakpoint som dropdown byttet på). Full-bredde bar, sticky i
+     bunn; faneraden capper på 480px sentrert (ellers 143px/fane på 719). Flate/kant = kort-tokens
+     (--surface/--line), hairline topplinje, ingen shadow. Aktiv = --info-blekk #4d8bff. ══════════ */
+  .bunn-nav{display:none}
+  @media(max-width:719px){
+    .nav{display:none}                     /* topp-nav + dropdown erstattes; knappene blir i DOM
+                                              (skjult), så switchPanel treffer dem fortsatt */
+    body{min-height:100dvh;display:flex;flex-direction:column}   /* baren nederst også på korte faner */
+    .wrap{min-width:0;width:100%}   /* margin:0 auto skrur av stretch i flex-kolonne → .wrap innholds-
+                                       sizes til bredeste barn (design-panelet ble 329 på 320). width:100%
+                                       tvinger viewport-bredde tilbake, som i blokk-layout. */
+    .bunn-nav{display:block;position:sticky;bottom:0;z-index:120;margin-top:auto;
+      background:var(--surface);border-top:1px solid var(--line);
+      padding-bottom:env(safe-area-inset-bottom)}   /* hjemindikator-plass (krever viewport-fit=cover) */
+    .bunn-nav-rad{display:flex;width:100%;max-width:480px;margin:0 auto}
+    .tab{flex:1;min-height:48px;height:56px;display:flex;flex-direction:column;align-items:center;
+      justify-content:center;gap:3px;appearance:none;border:0;background:0;color:var(--mut);cursor:pointer;padding:0}
+    .tab[aria-current="page"]{color:#4d8bff;--ac:currentColor}
+    .tab-lbl{max-width:100%;font-size:10.5px;font-weight:600;line-height:1.15;letter-spacing:-.01em;
+      white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  }
   /* Desktop: alle fem knapper i raden, Mer-knapp skjult */
   .nav-mer-wrap{display:none}
   /* Mobil (≤719): ALLE fem faner ligger i dropdownen. Nav-raden viser bare toggelen, til
@@ -3501,6 +3522,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   t.setAttribute("aria-selected","true");
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
   $("#"+id).classList.add("active");
+  if(window.__syncBunnNav)window.__syncBunnNav();   // speil aktiv fane i bunn-nav (mobil)
   if(id==="oversikt"){loadOversikt();loadBookinger();}
   if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();}
   if(id==="tjenester"){loadTjenester();loadArbeidstider();}
@@ -5422,6 +5444,27 @@ function oppdaterMerPrikk(){
   updateToggle();
 })();
 
+/* ---- Bunn-nav (mobil) — erstatter dropdown. Faner kaller switchPanel (klikker den skjulte
+   topp-nav-knappen), og aria-current synkes fra aktivt panel via nav.nav-klikk (bubbler også
+   fra programmatisk switchPanel). ---- */
+(function(){
+  // Baren står i markup ETTER dette scriptet, så vent på DOM før binding (ellers finnes ikke .bunn-nav).
+  function init(){
+    var bar=document.querySelector('.bunn-nav'); if(!bar)return;
+    var tabs=Array.from(bar.querySelectorAll('.tab[data-panel]'));
+    function syncActive(){
+      var id=(typeof aktivtPanel==='function')?aktivtPanel():null;
+      tabs.forEach(function(t){ if(t.dataset.panel===id)t.setAttribute('aria-current','page'); else t.removeAttribute('aria-current'); });
+    }
+    // Kalles fra det SENTRALE panel-bytte-punktet (nav-knapp-handleren). Kan ikke bruke bubbling:
+    // dropdown-menyen stopPropagation()-er klikk på de flyttede knappene, så nav.nav-lytting bommer.
+    window.__syncBunnNav=syncActive;
+    tabs.forEach(function(t){ t.addEventListener('click',function(){ switchPanel(t.dataset.panel); }); });
+    syncActive();
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
+})();
+
 /* ---- Legg til på hjemskjerm (PWA-veiledning i Konto) ----
    Viser seksjonen KUN når appen ikke alt kjører standalone, og avslører den plattform-
    varianten som gjelder. Copy skrives av Henrik i data-copy-nodene; her er bare mekanikken. */
@@ -5507,5 +5550,16 @@ function erStandalone(){
 })();
 </script>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<!-- Bunn-nav (mobil ≤719px). Erstatter dropdown-nav. Faner kaller switchPanel; aria-current synkes
+     fra aktivt panel. «Tjenester & tider» kortes til «Tjenester» KUN her, ikke i selve fanen. -->
+<nav class="bunn-nav" aria-label="Hovednavigasjon">
+  <div class="bunn-nav-rad" role="tablist">
+    <button class="tab" type="button" role="tab" data-panel="oversikt" aria-current="page"><svg class="nav-ico" aria-hidden="true"><use href="#ic-oversikt"></use></svg><span class="tab-lbl">Oversikt</span></button>
+    <button class="tab" type="button" role="tab" data-panel="vekst"><svg class="nav-ico" aria-hidden="true"><use href="#ic-vekst"></use></svg><span class="tab-lbl">Vekst</span></button>
+    <button class="tab" type="button" role="tab" data-panel="tjenester"><svg class="nav-ico" aria-hidden="true"><use href="#ic-tjenester"></use></svg><span class="tab-lbl">Tjenester</span></button>
+    <button class="tab" type="button" role="tab" data-panel="design"><svg class="nav-ico" aria-hidden="true"><use href="#ic-dinside"></use></svg><span class="tab-lbl">Din side</span></button>
+    <button class="tab" type="button" role="tab" data-panel="abonnement"><svg class="nav-ico" aria-hidden="true"><use href="#ic-konto"></use></svg><span class="tab-lbl">Konto</span></button>
+  </div>
+</nav>
 </body>
 </html>
