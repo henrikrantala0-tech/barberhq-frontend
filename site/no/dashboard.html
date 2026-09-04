@@ -58,6 +58,8 @@
   .segs{display:inline-flex;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:3px}
   .segs button{appearance:none;border:0;background:0;font:inherit;font-size:12.5px;font-weight:500;color:var(--mut);padding:6px 13px;border-radius:6px;cursor:pointer;letter-spacing:-.01em}
   .segs button[aria-selected=true]{background:var(--ink);color:#fff}
+  /* 44px trykkhøyde på periode-pillene — KUN #segs/#attrPeriod, ikke verdi-pillene (.segs-val). */
+  #segs button,#attrPeriod button{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
   .monthpick{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);font-weight:500}
   .monthpick select{font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink)}
   .rangelabel{font-size:13px;color:var(--mut);letter-spacing:-.01em;font-weight:500}
@@ -178,7 +180,7 @@
   .day{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line)}
   .day:last-child{border-bottom:0}
   .dn{min-width:92px;font-weight:500;font-size:13px;letter-spacing:-.01em}
-  input[type=time]{font:inherit;font-size:13px;padding:6px 8px;border:1px solid var(--line-2);border-radius:7px;background:var(--bg);color:var(--ink)}
+  input[type=time]{font:inherit;font-size:13px;min-height:44px;padding:6px 8px;border:1px solid var(--line-2);border-radius:7px;background:var(--bg);color:var(--ink)}
   input[type=time]:disabled{opacity:.35}
   .to{color:var(--mut);font-size:12px}
   /* Pause: egen DEMPET linje UNDER dagraden, venstrejustert i linje med dagnavnet (samme
@@ -329,7 +331,7 @@
   .svc-head-h,.svc-head-t{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;padding:0 2px 5px}
   .svc-row-h,.svc-row-t{padding:8px 0;border-bottom:1px solid var(--line)}
   .svc-row-h:last-of-type,.svc-row-t:last-of-type{border-bottom:0}
-  .svc-row-h input,.svc-row-t input{font:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink)}
+  .svc-row-h input,.svc-row-t input{font:inherit;font-size:13.5px;min-height:44px;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink)}
   .svc-row-h input:focus,.svc-row-t input:focus{outline:none;border-color:var(--info)}
   /* Navnefeltet: basis fra size-attributtet, vokser for å fylle linja, kan krympe til gulvet.
      min-width 140 tvinger brekking på 320 (140 + tall-gruppa > rada) og holder feltet lesbart; på
@@ -503,16 +505,19 @@
   .pub-url{flex:1;min-width:0;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
     font-size:12px;color:var(--info);text-decoration:none}
   .pub-url:hover{text-decoration:underline}
-  .pub-copy{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;
+  .pub-copy{flex:0 0 auto;position:relative;display:inline-flex;align-items:center;justify-content:center;
     width:28px;height:28px;border-radius:8px;border:0;background:0;color:var(--mut);
     cursor:pointer;transition:color .15s,background .15s}
+  /* Ikonet forblir 28/22px visuelt, men trykkflaten utvides til 44px via et usynlig ::before —
+     ser likt ut, treffer bedre. */
+  .pub-copy::before{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px}
   .pub-copy:hover{color:var(--ink);background:var(--surface)}
   .pub-copy.ok{color:var(--good)}   /* hake ved kopiert — grønn fra token */
   .pub-note{font-size:12px;color:var(--mut);margin:8px 0 0;line-height:1.45}
   /* Avpubliser er med vilje dempet til en tekstlenke, ikke en knapp: den er sjelden og
      destruktiv-ish (tar sida ned), og skal ikke konkurrere visuelt med «Publiser siden». */
   .lnk-quiet{appearance:none;border:0;background:0;font:inherit;font-size:12px;color:var(--mut);
-             text-decoration:underline;cursor:pointer;padding:0;margin-top:14px;display:block}
+             text-decoration:underline;cursor:pointer;padding:0;margin-top:14px;display:flex;align-items:center;min-height:44px}
   .lnk-quiet:hover{color:var(--ink-2)}
   /* E-post som REN VISNING — ingen input, fordi det ikke finnes en endre-rute. */
   /* Samme skille som .pw-felt (før passorddelen): E-post-gruppa får topp-border, så Navn-gruppa
