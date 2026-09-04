@@ -3,12 +3,14 @@
 Frontend for BarberHQ (statisk side, deployes til Netlify).
 Søsterrepo: barberhq-backend (Railway).
 
-**Backend-repoet er NØSTET på disk.** Git-rota er `C:\dev\barberhq-backend\`, men all
-kildekode ligger ett nivå ned i `C:\dev\barberhq-backend\barberhq-backend\` — `src/`,
+**Backend-repoet er NØSTET på disk.** Git-rota er `C:\Users\henri\Desktop\barberhq-backend\`, men all
+kildekode ligger ett nivå ned i `C:\Users\henri\Desktop\barberhq-backend\barberhq-backend\` — `src/`,
 `booking-module.cjs`, `fyll.cjs`, malene og backendens egen CLAUDE.md er alle der.
 Undermappa er ikke selv en git-rot. **Alle backend-filreferanser i dette dokumentet er
 relative til det nøstede nivået**, ikke til git-rota: `src/lib/trial.js` betyr
-`C:\dev\barberhq-backend\barberhq-backend\src\lib\trial.js`.
+`C:\Users\henri\Desktop\barberhq-backend\barberhq-backend\src\lib\trial.js`.
+(⚠ En UTDATERT kopi uten git ligger på `C:\barberhq-backend\` — snapshot fra 16.06, mangler
+hele dashboard/winback-koden. Ikke rediger den; bør slettes/omdøpes. Se «flagg» i chat 04.09.)
 
 ## ⚠️ Språk-status (viktig)
 - **Norsk (no/) er ALLTID kilden.** sv/, da/, en/ oversettes FRA norsk.
