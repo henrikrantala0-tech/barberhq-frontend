@@ -822,6 +822,12 @@
   .wb-group{margin-bottom:26px}
   .wb-group-h{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mut);margin-bottom:10px}
   .wb-empty{font-size:13px;color:var(--mut);padding:14px 0}
+  /* «Vis flere» / «Vis eldre» — dempede fullbredde-knapper under lista. min-height 44 = trygg
+     trykkflate. «Vis eldre» er heltrukket (fast handling), «Vis flere» stiplet (utvid mer av samme). */
+  .wb-mer{appearance:none;width:100%;min-height:44px;margin-top:10px;padding:11px;border:1px dashed var(--line-2);background:0;color:var(--mut);border-radius:9px;font:inherit;font-size:13px;cursor:pointer;letter-spacing:-.01em}
+  .wb-mer:hover{border-color:var(--info);color:var(--ink)}
+  .wb-eldre-btn{border-style:solid}
+  #wbEldre{margin-top:10px}
   .wb-card{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
   .wb-row{display:flex;align-items:flex-start;gap:12px;padding:12px 16px;border-bottom:1px solid var(--line)}
   .wb-row:last-child{border-bottom:0}
@@ -4201,40 +4207,93 @@ function wbLapsedCtx(c){                     // «sist her 4. mai — 74 dager s
   var since=(c.days_since!=null)?(' — '+c.days_since+' dager siden'):'';
   return 'sist her '+wbMonthDay(c.last_booking_at)+since;
 }
-function wbGroupHtml(list,kind){
-  return '<div class="wb-card">'+list.map(function(c){
-    var ny=(kind==='no_show'&&c.days_since!=null&&c.days_since<=3)?'<span class="wb-newdot" title="Ny"></span>':''; // 1–3-dagers-nudge
-    var ctx=(kind==='no_show')?wbNoShowCtx(c):wbLapsedCtx(c);
+// Rad-HTML UTEN kort-wrapper, så «Vis flere» kan appende rader inn i et eksisterende kort uten
+// å duplisere gruppeoverskriften. ctx + «ny»-prikk velges av radens EGEN reason (ikke gruppa),
+// så eldre no-show-rader (reason 'no_show') viser no-show-kontekst også når de rendres i eldre-lista.
+function wbRowsHtml(list){
+  return list.map(function(c){
+    var erNs=c.reason==='no_show';
+    var ny=(erNs&&c.days_since!=null&&c.days_since<=3)?'<span class="wb-newdot" title="Ny"></span>':''; // 1–3-dagers-nudge
+    var ctx=erNs?wbNoShowCtx(c):wbLapsedCtx(c);
     return '<div class="wb-row">'+
       '<div class="wb-info">'+
         '<div class="wb-name">'+ny+esc(c.name||"–")+'</div>'+
         // Nummeret vises, men er IKKE en handling — den som vil ringe kan lese det.
-        // Bevisst ikke tel:-lenke: på desktop åpner den ingenting nyttig, og et trykk
-        // ville konkurrert med primærhandlingen om hva raden egentlig ber deg gjøre.
         '<div class="wb-meta">'+(c.completed_count||0)+' klipp'+
           (c.phone?'<span class="wb-tel">'+esc(c.phone)+'</span>':'')+'</div>'+
       '</div>'+
-      // REN OVERSIKT — ingen handlinger på raden. «Fulgt opp»/«Skjul» og hele den utsatte
-      // POST-en med angre-vindu er fjernet. Konsekvens å være klar over: barbereren kan ikke
-      // lenger snooze en kunde, så ingen forsvinner fra lista før hen booker på nytt (alle tre
-      // gruppene har NOT has_upcoming) eller faller ut av vinduet. winback_contacts skrives
-      // ikke lenger fra dashbordet i det hele tatt — 45-dagers-snoozen i /winback-spørringen
-      // står, men får aldri rader å filtrere på.
-      '<div class="wb-right">'+
-        '<div class="wb-ctx">'+ctx+'</div>'+
-      '</div>'+
+      '<div class="wb-right"><div class="wb-ctx">'+ctx+'</div></div>'+
     '</div>';
-  }).join('')+'</div>';
+  }).join('');
 }
-function wbRender(ns,lap){   // no-show: ferskest øverst (backend DESC). lapsed: flest klipp øverst.
-  const el=$("#wbList"); if(!el)return;
-  ns=ns||[];
-  lap=(lap||[]).slice().sort(function(a,b){return (b.completed_count||0)-(a.completed_count||0);});
-  if(!ns.length && !lap.length){ el.innerHTML='<p class="wb-empty">Ingen å følge opp nå — bra jobba.</p>'; return; }
-  var html='';
-  if(ns.length)  html+='<div class="wb-group"><p class="wb-group-h">Møtte ikke opp</p>'+wbGroupHtml(ns,'no_show')+'</div>';
-  if(lap.length) html+='<div class="wb-group"><p class="wb-group-h">Ikke vært her på en stund</p>'+wbGroupHtml(lap,'lapsed')+'</div>';
-  el.innerHTML=html;
+// Lojalitetssortering: flest klipp først (fast kunde øverst), fersk aktivitet (last_booking_at)
+// som sekundær tiebreak. Dette gjør completed_count-FILTERET unødvendig — engangskunder synker
+// til bunns i stedet for å filtreres bort. (Parkert filter: backend docs/03-gjenstar.md.)
+function wbSort(list){
+  return (list||[]).slice().sort(function(a,b){
+    return (b.completed_count||0)-(a.completed_count||0)
+        || (new Date(b.last_booking_at||0)-new Date(a.last_booking_at||0));
+  });
+}
+var WB_TAK=50;                          // maks rader i DOM per liste ved første render
+var _wbMainRest=null, _wbEldre=null, _wbEldreRest=null;
+// Renderer grupper opp til et SAMLET tak; returnerer gjenværende rader per gruppe for «Vis flere».
+// Kort-id-en (wb-card-<kind>) lar «Vis flere» appende rett inn i eksisterende kort → ingen dobbel
+// overskrift.
+function wbByggGrupper(grupper, tak){
+  var html='', brukt=0, rest=[];
+  grupper.forEach(function(g){
+    if(!g.rows.length) return;
+    var plass=Math.max(0, tak-brukt), vis=g.rows.slice(0,plass), igjen=g.rows.slice(plass);
+    if(vis.length){
+      html+=(g.title?'<p class="wb-group-h">'+g.title+'</p>':'')
+           +'<div class="wb-card" id="wb-card-'+g.kind+'">'+wbRowsHtml(vis)+'</div>';
+      brukt+=vis.length;
+    }
+    if(igjen.length) rest.push({kind:g.kind, rows:igjen});
+  });
+  return {html:html, rest:rest};
+}
+function wbAppendRest(rest){
+  (rest||[]).forEach(function(g){
+    var card=document.getElementById('wb-card-'+g.kind);
+    if(card) card.insertAdjacentHTML('beforeend', wbRowsHtml(g.rows));
+  });
+}
+function wbRender(ns,lap){
+  var el=$("#wbList"); if(!el)return;
+  ns=wbSort(ns); lap=wbSort(lap);
+  var ikkeEldre=function(r){return !r.eldre;}, erEldre=function(r){return r.eldre;};
+  var mainGr=[
+    {title:'Møtte ikke opp',            kind:'no_show', rows:ns.filter(ikkeEldre)},
+    {title:'Ikke vært her på en stund', kind:'lapsed',  rows:lap.filter(ikkeEldre)}
+  ];
+  _wbEldre=ns.filter(erEldre).concat(lap.filter(erEldre));   // eldre kan i praksis kun komme fra no_show
+  if(!mainGr.some(function(g){return g.rows.length;}) && !_wbEldre.length){
+    el.innerHTML='<p class="wb-empty">Ingen å følge opp nå — bra jobba.</p>'; return;
+  }
+  var b=wbByggGrupper(mainGr, WB_TAK);   // rendertak: maks 50 rader i DOM, resten bak «Vis flere»
+  var html=b.html;
+  if(b.rest.length) html+='<button class="wb-mer" id="wbMer" type="button">Vis flere</button>';
+  if(_wbEldre.length) html+='<button class="wb-mer wb-eldre-btn" id="wbEldreBtn" type="button" aria-expanded="false">Vis eldre ('+_wbEldre.length+')</button><div id="wbEldre" hidden></div>';
+  el.innerHTML=html; _wbMainRest=b.rest;
+  var mer=$("#wbMer"); if(mer) mer.addEventListener('click',function(){ wbAppendRest(_wbMainRest); _wbMainRest=null; mer.remove(); });
+  var eb=$("#wbEldreBtn"); if(eb) eb.addEventListener('click',wbToggleEldre);
+}
+// «Vis eldre» — kollapset som standard; bygges lat ved første åpning, samme 50-tak + egen «Vis flere».
+function wbToggleEldre(){
+  var box=$("#wbEldre"), eb=$("#wbEldreBtn"); if(!box||!eb)return;
+  if(box.hidden){
+    if(!box.dataset.bygd){
+      var b=wbByggGrupper([{title:'', kind:'eldre', rows:_wbEldre}], WB_TAK);
+      box.innerHTML=b.html+(b.rest.length?'<button class="wb-mer" id="wbEldreMer" type="button">Vis flere</button>':'');
+      box.dataset.bygd='1'; _wbEldreRest=b.rest;
+      var m=$("#wbEldreMer"); if(m) m.addEventListener('click',function(){ wbAppendRest(_wbEldreRest); _wbEldreRest=null; m.remove(); });
+    }
+    box.hidden=false; eb.setAttribute('aria-expanded','true'); eb.textContent='Skjul eldre';
+  }else{
+    box.hidden=true; eb.setAttribute('aria-expanded','false'); eb.textContent='Vis eldre ('+_wbEldre.length+')';
+  }
 }
 // INGEN handlinger i Vinn tilbake lenger. Hele blokka som lå her er fjernet:
 // wbMarker/wbAngre/wbFullfor, _wbVenter + WB_ANGRE_MS (angre-vinduet), wbFlush med
