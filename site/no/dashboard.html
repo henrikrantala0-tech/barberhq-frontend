@@ -300,6 +300,10 @@
     .wrap{min-width:0;width:100%}   /* margin:0 auto skrur av stretch i flex-kolonne → .wrap innholds-
                                        sizes til bredeste barn (design-panelet ble 329 på 320). width:100%
                                        tvinger viewport-bredde tilbake, som i blokk-layout. */
+    /* Innholdet klarer baren: 56px (barhøyde) + safe-area under siste rad, så ingen liste skjules
+       bak baren når man scroller til bunns. Erstatter panelets 50px bunn-padding på mobil. Baren er
+       sticky IN-FLOW, så klaringen hører på INNHOLDET (.panel) — body-padding havner under baren. */
+    .panel{padding-bottom:calc(56px + env(safe-area-inset-bottom))}
     .bunn-nav{display:block;position:sticky;bottom:0;z-index:120;margin-top:auto;
       background:var(--surface);border-top:1px solid var(--line);
       padding-bottom:env(safe-area-inset-bottom)}   /* hjemindikator-plass (krever viewport-fit=cover) */
