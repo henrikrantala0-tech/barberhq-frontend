@@ -59,9 +59,12 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 /* Prisnivåer — visspråk lånt fra .ds-col/.ds-col-us i index.html */
 .pr-wrap{max-width:1000px;margin:0 auto;padding:26px 32px 0}
 .pr-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
-.pr-card{position:relative;border-radius:20px;padding:32px 30px;text-align:left;display:flex;flex-direction:column}
+.pr-card{position:relative;border-radius:20px;padding:32px 30px;text-align:left;display:flex;flex-direction:column;scale:1;translate:0 0;transition:border-color .3s ease,box-shadow .3s ease,scale .3s ease,translate .3s ease}
 .pr-basis{background:#0c0c0c;border:1px solid #1a1a1a}
-.pr-vekst{background:#0e0f12;border:1px solid #24344f;box-shadow:0 0 0 1px rgba(77,139,255,.08),0 20px 60px -30px rgba(77,139,255,.35)}
+/* Løft = verbatim fra dashboardets .plan-opt[aria-checked="true"]: scale 1.035 + ±3px sving (planFloat) + tolags --info-glød. #4d8bff ER --info. Kun Vekst, permanent — «anbefalt valg». Ingen hover (matcher valgt beslutning). */
+.pr-vekst{background:#0e0f12;border:1px solid #4d8bff;box-shadow:0 0 16px color-mix(in srgb,#4d8bff 50%,transparent),0 0 46px color-mix(in srgb,#4d8bff 30%,transparent);scale:1.035;translate:0 0;animation:planFloat 3.5s ease-in-out infinite}
+@keyframes planFloat{0%,100%{translate:0 3px}50%{translate:0 -3px}}
+@media(prefers-reduced-motion:reduce){.pr-vekst{animation:none;translate:0 0}}
 .pr-pill{position:absolute;top:-13px;left:50%;transform:translateX(-50%);white-space:nowrap;background:#131c2c;border:1px solid #2b3f61;color:#7fa8ff;font-size:11px;font-weight:700;letter-spacing:.14em;padding:6px 15px;border-radius:99px}
 .pr-name{font-size:12px;font-weight:700;letter-spacing:.18em;color:#8a8a8a;margin-bottom:16px}
 .pr-vekst .pr-name{color:#7fa8ff}
