@@ -2798,7 +2798,7 @@ function renderSmsKvote(f){
     el.style.display='';
   } else { el.style.display='none'; }
 }
-function smsTid(iso){ var d=new Date(iso); if(isNaN(d))return''; return d.getDate()+'. '+MONTHS[d.getMonth()].slice(0,3)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
+function smsTid(iso){ var d=new Date(iso); if(isNaN(d))return''; return d.getDate()+'.&nbsp;'+MONTHS[d.getMonth()].slice(0,3)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
 // Prikk-farge per kind — samme mønster/prikk (.drv-dot) som «Drevet av». Ukjent kind faller
 // tilbake på nøytral grå — ingen krasj, ingen oppfunnet farge. Verving-familien (verving +
 // verve_klar) får samme oransje #e0844a som «Drevet av» gir verving — samme verdi, ikke en ny
@@ -4207,14 +4207,16 @@ function updateWbSignals(n){
   var badge=$("#wbBadge"); if(badge){ badge.textContent=n; badge.hidden=!(n>0); }
   var nudge=$("#ovsWbNudge"); if(nudge){ nudge.innerHTML='<span class="wb-dot" aria-hidden="true"></span><span>'+n+' å følge opp i Vinn tilbake</span>'; nudge.hidden=!(n>0); }
 }
-function wbMonthDay(iso){ if(!iso)return'–'; var d=new Date(iso); return d.getDate()+'. '+MONTHS[d.getMonth()]; } // «14. juli»
+function wbMonthDay(iso){ if(!iso)return'–'; var d=new Date(iso); return d.getDate()+'.&nbsp;'+MONTHS[d.getMonth()]; } // «14. juli»
 function wbNoShowCtx(c){                     // «no-show i dag» / «no-show i går» / «no-show 14. juli»
   if(c.days_since===0)return'no-show i dag';
   if(c.days_since===1)return'no-show i går';
   return 'no-show '+wbMonthDay(c.last_booking_at);
 }
 function wbLapsedCtx(c){                     // «sist her 4. mai — 74 dager siden»
-  var since=(c.days_since!=null)?(' — '+c.days_since+' dager siden'):'';
+  // «N dager siden» bindes som ÉN enhet med &nbsp; → aldri «siden» alene på linje 2
+  // i vinn-tilbake. Entitet (ikke literal nbsp) fordi ctx settes via innerHTML; greppbart. sisteBesok urørt.
+  var since=(c.days_since!=null)?(' — '+c.days_since+'&nbsp;dager&nbsp;siden'):'';
   return 'sist her '+wbMonthDay(c.last_booking_at)+since;
 }
 // Rad-HTML UTEN kort-wrapper, så «Vis flere» kan appende rader inn i et eksisterende kort uten
