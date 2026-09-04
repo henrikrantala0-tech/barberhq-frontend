@@ -849,6 +849,21 @@
   .wb-phone:hover{text-decoration:underline}
   .wb-days{font-size:11.5px;color:var(--mut);margin-top:3px}
   .wb-newdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4d8bff;margin-right:7px;vertical-align:middle} /* «Ny» no-show <3d */
+  /* ── CONCERN 4 — KUN ≤380px (320-fiks). 390/402 bit-for-bit uendret; alt her ligger med vilje
+     i denne media query-en. Plassert ETTER .wb-row/.wb-right/.hs-nudge så den overstyrer dem. ── */
+  @media(max-width:380px){
+    /* (a) Vinn-tilbake: navnet klippes fordi høyrekolonnen (.wb-right, «sist her …») er fast bredde.
+       Stables til én kolonne: navn+meta full bredde, «sist her …» på egen linje under, venstrejustert.
+       width:100% på .wb-info kreves fordi .wb-row har align-items:flex-start → uten den blir kolonnen
+       innholdsbredde (kort navn = smal boks, veldig langt navn kan overflyte). */
+    .wb-row{flex-direction:column;gap:4px}
+    .wb-info{width:100%}
+    .wb-right{max-width:none;text-align:left}
+    /* (b) Hjemskjerm-nudgen tar to linjer på 320. Kortes ned (ikke krympet font): den midterste
+       frasen skjules ≤380 → «Få dashbordet som app →» på én linje ved vanlig størrelse.
+       Full tekst på 402 (uendret). */
+    .hs-nudge-lang{display:none}
+  }
   /* Verving-seksjon (spec 2) + delt blå/dempet pill (også booking-rad-rabatt spec 4) */
   .sett-num-row{display:flex;align-items:center;gap:12px;padding:14px 0}
   .sett-num-row>label{font-size:13.5px;font-weight:500;letter-spacing:-.01em;flex:1}
@@ -1090,7 +1105,7 @@
      X-et siste 14 dager (oppdaterHjemskjermNudge, kalt fra renderKonto). Klikk → Konto +
      åpne «Legg til på hjemskjerm»-trekkspillet. Ingen how-to her — den bor i trekkspillet. -->
 <div class="hs-nudge" id="hsNudge" role="button" tabindex="0" aria-label="Legg dashbordet til på hjemskjermen">
-  <span class="hs-nudge-tekst" data-copy="hs-nudge">Få dashbordet som app — legg til på hjemskjermen<span class="hs-nudge-pil" aria-hidden="true"> →</span></span>
+  <span class="hs-nudge-tekst" data-copy="hs-nudge">Få dashbordet som app<span class="hs-nudge-lang"> — legg til på hjemskjermen</span><span class="hs-nudge-pil" aria-hidden="true"> →</span></span>
   <button class="hs-nudge-x" id="hsNudgeX" type="button" aria-label="Skjul">&times;</button>
 </div>
 <div class="topband">
