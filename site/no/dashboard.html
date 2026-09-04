@@ -2172,6 +2172,10 @@
   .bk-detail-rows>div{display:flex;justify-content:space-between;gap:14px;padding:10px 0;border-top:1px solid var(--line)}
   .bk-detail-rows dt{color:var(--mut);font-size:13px}
   .bk-detail-rows dd{font-size:13.5px;font-weight:600;text-align:right}
+  /* Rabattert pris: original gjennomstreket foran, rabattert som hovedtall (dd er alt bold). */
+  .bk-detail-rows dd .pris-fra{text-decoration:line-through;color:var(--mut);font-weight:400;margin-right:6px}
+  /* Rabatt-pill på egen linje under navnet — i head-en klemte den navnekolonnen på 320. */
+  .bk-detail-badge{margin:2px 0 12px}
   .bk-detail-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
   .bk-detail-actions .noshowbtn{width:100%;justify-content:center;padding:11px}
   .bk-detail-actions .row-err{text-align:center}
@@ -2779,7 +2783,7 @@ async function loadUpcoming(){
 // Rabatt-flagg (spec 4): blå pill ved navnet når bookingen har referral_discount. Ingen pill uten feltet.
 function discountPill(b){
   var rd=b&&b.referral_discount; if(!rd)return'';
-  var label=rd.rolle==='verver'?'Verve-bonus':'Vervet'; // vervet=ny kunde · verver=verve-bonus
+  var label=rd.rolle==='verver'?'Verve-bonus':'Velkomstrabatt'; // ny kunde = velkomstrabatt (matcher løftet på bookingsida) · verver = verve-bonus
   return ' <span class="rpill blue">'+label+' · '+(rd.pct||0)+'%</span>';
 }
 function upRow(b){return '<div class="up-row" data-bk="'+b.id+'"><span class="up-time">'+timeOnly(b.start)+'</span>'
@@ -3153,9 +3157,16 @@ function renderDetalj(id){
       handling='<button class="noshowbtn'+(st==='noshow'?' aktiv':'')+'" data-id="'+b.id+'"><span class="x">×</span> Marker no-show</button>';
   }
   var tel=b.phone?'<a class="bk-detail-phone" href="tel:'+esc(b.phone)+'">'+esc(b.phone)+'</a>':'';
+  // Pris: har bookingen verve-rabatt (backend sender price_after_nok, ferdig rundet), vis original
+  // gjennomstreket + rabattert som hovedtall. Ingen prosentregning her. Fallback = listepris.
+  var rd=b.referral_discount;
+  var prisHtml=(rd&&rd.price_after_nok!=null)
+    ? '<span class="pris-fra">'+esc(b.price_label||'')+'</span>'+rd.price_after_nok+' kr'
+    : esc(b.price_label||'—');
   $("#bkDetailBackdrop").innerHTML='<div class="bk-detail" role="dialog" aria-modal="true"><button class="bk-detail-close" aria-label="Lukk">✕</button>'
-    +'<div class="bk-detail-head"><span class="bk-detail-name">'+esc(b.name)+'</span><span class="tag '+tagC+'">'+tagT+'</span></div>'+tel
-    +'<dl class="bk-detail-rows"><div><dt>Tjeneste</dt><dd>'+esc(b.service||'—')+'</dd></div>'+tilleggRad+'<div><dt>Pris</dt><dd>'+esc(b.price_label||'—')+'</dd></div><div><dt>Tid</dt><dd>'+tid+'</dd></div></dl>'
+    +'<div class="bk-detail-head"><span class="bk-detail-name">'+esc(b.name)+'</span><span class="tag '+tagC+'">'+tagT+'</span></div>'
+    +(rd?'<div class="bk-detail-badge">'+discountPill(b)+'</div>':'')+tel
+    +'<dl class="bk-detail-rows"><div><dt>Tjeneste</dt><dd>'+esc(b.service||'—')+'</dd></div>'+tilleggRad+'<div><dt>Pris</dt><dd>'+prisHtml+'</dd></div><div><dt>Tid</dt><dd>'+tid+'</dd></div></dl>'
     +(handling?'<div class="bk-detail-actions">'+handling+'</div>':'')+'</div>';
   $("#bkDetailBackdrop .bk-detail-close").onclick=lukkDetalj;
 }
