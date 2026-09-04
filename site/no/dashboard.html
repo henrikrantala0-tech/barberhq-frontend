@@ -38,12 +38,14 @@
   body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased}
   .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
 
-  .top{display:flex;align-items:center;justify-content:space-between;padding:22px 0;border-bottom:1px solid var(--line)}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid var(--line)}
+  /* Butikknavn i headeren (der ordmerket sto) — 14px halvfet, brødtekst-/etikett-nivå (ned fra
+     ordmerkets 21px). flex-shrink:0 så NAVNET beholdes og bookinglenka trunkerer i stedet.
+     white-space:nowrap: aldri to linjer. */
+  .shopnavn{font-size:14px;font-weight:700;letter-spacing:-.01em;line-height:1.15;color:var(--ink);white-space:nowrap;flex-shrink:0}
   .brand{font-weight:800;font-size:19px;letter-spacing:-.03em}
   .brand .hq{font-weight:300}
-  .who{display:flex;flex-direction:column;align-items:flex-end;gap:2px;font-size:13px;color:var(--mut)}
-  .who b{color:var(--ink);font-weight:500}
-  .who .dot{width:32px;height:32px;border-radius:7px;background:var(--ink);color:#fff;display:flex;align-items:center;justify-content:center;font-weight:700;font-size:13px;letter-spacing:-.02em}
+  /* .who (stablet navn+lenke) er fjernet — headeren er nå én rad: .shopnavn + .header-lenke. */
 
   .nav{display:flex;gap:0;border-bottom:1px solid var(--line);margin-top:2px}
   .nav button{appearance:none;border:0;background:0;font:inherit;font-size:13px;font-weight:500;color:var(--mut);padding:14px 2px;margin-right:26px;cursor:pointer;border-bottom:2px solid transparent;margin-bottom:-1px;letter-spacing:-.01em}
@@ -277,7 +279,6 @@
     --violet:#b18cf0;--sky:#5cc4f0;   /* tjeneste-posisjon 5/6, lysere på mørk tema */
   }
   html[data-theme="dark"] .btn{background:#fff;color:#0a0a0a}
-  html[data-theme="dark"] .who .dot{background:#fff;color:#0a0a0a}
   /* Valgt periode-pille: merke-default-blå #2563eb (landing-CTA-en «Prøv gratis»), bevisst
      dypere enn --info (#4d8bff) som resten av dashbord-aksenten bruker — Henrik 30.08. Gjelder
      kun periode-pillene (#segs/#attrPeriod); .segs-val-verdipillene har egen regel under. */
@@ -679,7 +680,6 @@
   /* ----- Stolpediagram (omsetning) ----- */
   .chart-wrap{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:24px;position:relative}
   .chart-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;min-height:52px}
-  .logo{font-size:21px;font-weight:800;letter-spacing:-.03em}
   .chartbars{display:flex;align-items:flex-end;gap:5px;height:160px;padding:0 2px}
   .cbar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;min-width:0}
   .cbar-bar{width:100%;max-width:52px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--bar-top),var(--bar-bot));min-height:4px;transition:height .25s ease}
@@ -809,6 +809,9 @@
   /* Alltid-synlig pil = handlings-affordans ved hvile (ikke bare på hover), så stripa ikke
      leser som ren informasjon. Liten slide på hover. */
   .hs-nudge-pil{display:inline-block;white-space:nowrap;transition:transform .18s}
+  /* Nudgen er ÉN linje på ALLE bredder: den midterste frasen skjules alltid → «Få dashbordet som
+     app →». (Var før kun ≤380px, som ga 59px på 402 mot 40px på 320 — den brede fikk høyest nudge.) */
+  .hs-nudge-lang{display:none}
   .hs-nudge:hover .hs-nudge-pil{transform:translateX(3px)}
   .hs-nudge-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);appearance:none;border:0;
     background:0;color:var(--mut);font-size:20px;line-height:1;cursor:pointer;padding:6px 9px;border-radius:7px}
@@ -882,10 +885,8 @@
     .wb-row{flex-direction:column;gap:4px}
     .wb-info{width:100%}
     .wb-right{max-width:none;text-align:left}
-    /* (b) Hjemskjerm-nudgen tar to linjer på 320. Kortes ned (ikke krympet font): den midterste
-       frasen skjules ≤380 → «Få dashbordet som app →» på én linje ved vanlig størrelse.
-       Full tekst på 402 (uendret). */
-    .hs-nudge-lang{display:none}
+    /* (b) Hjemskjerm-nudgen kortes ned — flyttet til global regel (.hs-nudge-lang) så den er én
+       linje på ALLE bredder, ikke bare ≤380. */
   }
   /* Verving-seksjon (spec 2) + delt blå/dempet pill (også booking-rad-rabatt spec 4) */
   .sett-num-row{display:flex;align-items:center;gap:12px;padding:14px 0}
@@ -1056,7 +1057,7 @@
      uendret fra standard (preview under trekkspillene). Desktop: to-kolonne som ellers. */
   body.fokus{overscroll-behavior-y:contain} /* demper pull-to-refresh i Chrome mens man er i fokus */
   body.fokus nav.nav{display:none}
-  body.fokus .who{display:none}
+  body.fokus .header-lenke{display:none}   /* fokusmodus: skjul bookinglenka, behold butikknavnet + × */
   body.fokus #dinsideCta{display:none}
   body.fokus .ideacard{display:none}
   .fokus-x{display:none}
@@ -1101,7 +1102,9 @@
      Begge gjenbruker byggKopierbartLenkefelt (.pub-field + midtForkort + kopierLenke).
      Headerlenka står under sjappenavnet i live-tilstand; suksesskortet vises ÉN gang
      rett etter publisering (hendelses-drevet, ikke ved innlasting). */
-  .header-lenke{max-width:210px;margin-top:2px}
+  .header-lenke{max-width:210px;min-width:0}   /* min-width:0 (ikke auto) så lenka KAN krympe forbi
+     sin innholdsbredde når navnet tar plassen → url-en trunkerer (midt-ellipse), aldri linje to.
+     margin-top fjernet: den var for den gamle stablede .who-kolonnen, nå er dette én rad. */
   .header-lenke .pub-field{background:0;border:0;padding:0;gap:4px}
   .header-lenke .pub-url{font-size:11.5px}
   .header-lenke .pub-copy{width:22px;height:22px}
@@ -1179,13 +1182,11 @@
 <div class="topband">
 <div class="wrap">
   <header class="top">
-    <div class="logo">BarberHQ</div>
-    <div class="who">
-      <b id="barberName">Grand Barber</b>
-      <!-- Permanent kopierbar lenke i live-tilstand (settHeaderLenke). Under sjappenavnet,
-           øverst til høyre. Kompakt via .header-lenke-override av .pub-field. -->
-      <div class="header-lenke" id="headerLenke" hidden></div>
-    </div>
+    <!-- BarberHQ-ordmerket er fjernet (ren dekor, ingen lenke). Butikknavnet står nå der, i samme
+         størrelse — én RAD: navn til venstre, kopierbar bookinglenke (settHeaderLenke) til høyre.
+         Lenka trunkerer (midt-ellipse) før navnet; den skal aldri brekke til linje to. -->
+    <b class="shopnavn" id="barberName">Grand Barber</b>
+    <div class="header-lenke" id="headerLenke" hidden></div>
     <!-- Kun synlig i fokusmodus (body.fokus) — «X øverst til høyre» = avslutt fokus. -->
     <button class="fokus-x" id="fokusX" type="button" aria-label="Lukk fokusmodus og vis hele dashbordet">&times;</button>
   </header>
