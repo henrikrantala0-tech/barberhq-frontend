@@ -1856,7 +1856,7 @@
          [oversettelse: sv/da/en] -->
     <div class="subcard">
       <div class="substatus" id="kontoStatus">&#9679; Henter status …</div>
-      <!-- Hovedtallet er TILSTANDSAVHENGIG, ikke alltid prisen. Før publisering er 249 kr
+      <!-- Hovedtallet er TILSTANDSAVHENGIG, ikke alltid prisen. Før publisering er 89 kr
            ikke det barbereren lurer på — han har ikke begynt å bruke noe ennå. I
            prøveperioden er det dagene som teller ned som er tallet. Prisen flytter da til
            mikroteksten, der den fortsatt er ærlig uten å være det første øyet lander på. -->
@@ -4635,7 +4635,7 @@ var _billing=null;
 // Plan-navn + pris, ÉN kilde — delt av renderKonto (viser aktiv plan) og plan-velgeren
 // (visPlanVelger). NOK fordi /no/-fila; backend bør på sikt sende pris-strengen i status så
 // andre markeder/valutaer stemmer. Løftet fra lokal i renderKonto da velgeren også trengte den.
-const PLAN_INFO={basis:{navn:'Basis',pris:'249 kr'},vekst:{navn:'Vekst',pris:'399 kr'}};
+const PLAN_INFO={basis:{navn:'Basis',pris:'89 kr'},vekst:{navn:'Vekst',pris:'179 kr'}};
 async function loadBilling(){
   const r=await apiFetch('/api/dashboard/billing/status');
   if(!r)return; // 401 → apiFetch redirigerte (forventet, ikke logg)
@@ -4705,7 +4705,7 @@ function renderKonto(b){
   const PRIS_SUFF='/ mnd';
   // Pris utledes ALLTID fra planen som gjelder (b.plan via PLAN_INFO) — ingen prisstreng utenfor
   // PLAN_INFO. Ukjent plan i en gren (b.plan null/uventet) → vis INGEN pris (fail-closed), aldri
-  // en gjettet 249. PLAN_INFO er modul-scope (over loadBilling); plan-velgeren bruker den også.
+  // en gjettet fallback-pris. PLAN_INFO er modul-scope (over loadBilling); plan-velgeren bruker den også.
   const pinfo=PLAN_INFO[b.plan]||null;   // b.plan: basis|vekst|null → {navn,pris} | null
 
   // Dispatchet er TRE LAG i fallende hastverk. Vi rangerer ikke attention_grunn på nytt — den ER
@@ -5267,7 +5267,7 @@ function velgPlan(plan){
     var k=$("#kontoAksjon"); if(k)k.textContent='Fortsett med '+PLAN_INFO[_valgtPlan].navn;
   }
 }
-// Priser fylles fra PLAN_INFO — aldri hardkodet i markup, så 249/399 har ÉN kilde. Pillen på
+// Priser fylles fra PLAN_INFO — aldri hardkodet i markup, så 89/179 har ÉN kilde. Pillen på
 // Vekst er statisk i markup (lik i alle tilstander), så visning tar ingen parametre lenger.
 function visPlanVelger(){
   var v=$("#planVelger"); if(!v)return;
