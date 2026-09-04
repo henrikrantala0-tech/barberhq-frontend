@@ -319,24 +319,34 @@
   .svc-row2 input:focus{outline:none;border-color:var(--info)}
   .svc-group-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);margin:22px 0 4px}
   .svc-group-s{font-size:11.5px;color:var(--mut);margin-bottom:10px}
-  .svc-head-h,.svc-row-h{display:grid;grid-template-columns:1fr 96px 66px 34px;gap:8px;align-items:center}
-  .svc-head-t,.svc-row-t{display:grid;grid-template-columns:1fr 96px 66px 34px;gap:8px;align-items:center}
+  /* Tjeneste-rad: INNHOLDSSTYRT brekking, ikke breakpoint. Navnefeltet får bredden fra sitt eget
+     innhold (size-attributt = navnelengde, oppdatert live i svcInput) med et min-width-gulv, og
+     pris/min/slett er gruppert i .svc-tall. Når navnet trenger mer enn ledig plass, brekker HELE
+     tall-gruppa til linje 2 — men bare på de radene der navnet faktisk krever det. Korte navn står
+     på én linje (kolonner, som før). Én regel dekker 320 OG 402 → det gamle
+     @media(max-width:379px)-oppsettet er borte. text-overflow = siste utvei. */
+  .svc-head-h,.svc-row-h,.svc-head-t,.svc-row-t{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
   .svc-head-h,.svc-head-t{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;padding:0 2px 5px}
   .svc-row-h,.svc-row-t{padding:8px 0;border-bottom:1px solid var(--line)}
   .svc-row-h:last-of-type,.svc-row-t:last-of-type{border-bottom:0}
-  .svc-row-h input,.svc-row-t input{font:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink);width:100%}
+  .svc-row-h input,.svc-row-t input{font:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink)}
   .svc-row-h input:focus,.svc-row-t input:focus{outline:none;border-color:var(--info)}
-  /* Number-spinneren spiser ~15px på høyre side og klipper 2-sifret varighet til ett siffer i
-     44px-kolonnen. Ingen nytte for pris/varighet — skjules så feltet får hele bredden til tekst. */
+  /* Navnefeltet: basis fra size-attributtet, vokser for å fylle linja, kan krympe til gulvet.
+     min-width 140 tvinger brekking på 320 (140 + tall-gruppa > rada) og holder feltet lesbart; på
+     402 er gulvet lavt nok til at korte navn blir på én linje. */
+  .svc-navn{flex:1 1 auto;min-width:140px;text-overflow:ellipsis}
+  /* Tall-gruppa brekker som ÉN enhet til linje 2 (flex:0 0 auto = holder innholdsbredden). */
+  .svc-tall{display:flex;gap:8px;align-items:center;flex:0 0 auto}
+  /* Faste, men strammet ~24px fra 96/66: pris rommer 4-sifret (1500), min. 3-sifret (120) uten klem.
+     min-width:0 er PÅKREVD: number-inputs har stor min-content, og flex-defaulten min-width:auto
+     gulver dem der (målt 201px) → tall-gruppa blåser opp og alt brekker. */
+  .svc-pris{flex:0 0 72px;min-width:0}
+  .svc-min{flex:0 0 50px;min-width:0}
+  .svc-rm-h{flex:0 0 34px}   /* usynlig header-avstandsholder over slett-knappen */
+  /* Number-spinneren spiser ~15px til høyre og klipper varigheten — skjules. */
   .svc-row-h input[type=number]::-webkit-inner-spin-button,
   .svc-row-t input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
   .svc-row-h input[type=number],.svc-row-t input[type=number]{-moz-appearance:textfield}
-  /* Under 380px klemmer 1fr+96+66+34 navnefeltet så «Hodebunnsmassasje»/«Skinnfade» blir
-     uleselig. Min-kolonnen (1–2 siffer) trenger ikke 66px → 44px gir navnet luft. Gjelder
-     BEGGE radtypene så gridene ikke divergerer på samme skjerm. */
-  @media(max-width:379px){
-    .svc-head-h,.svc-row-h,.svc-head-t,.svc-row-t{grid-template-columns:1fr 96px 44px 34px}
-  }
   /* Betaling — rad = én betalingsmetode (tekstfelt + ×), samme uttrykk som tjeneste-radene */
   .pay-row{display:grid;grid-template-columns:1fr 34px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);max-width:440px}
   .pay-row:last-of-type{border-bottom:0}
@@ -345,7 +355,7 @@
   .svc-divider{height:1px;background:var(--line);margin:26px 0 0}
   .svc-err{font-size:12px;color:#c0392b;margin-top:8px;min-height:15px}
   .btn:disabled{opacity:.4;cursor:default}
-  .svc-rm{appearance:none;border:1px solid var(--line-2);background:var(--surface);color:var(--mut);height:36px;border-radius:7px;cursor:pointer;font-size:16px;position:relative}
+  .svc-rm{appearance:none;flex:0 0 34px;width:34px;border:1px solid var(--line-2);background:var(--surface);color:var(--mut);height:36px;border-radius:7px;cursor:pointer;font-size:16px;position:relative}
   .svc-rm:hover{color:var(--bad);border-color:var(--bad)}
   .addbtn{appearance:none;border:1px dashed var(--line-2);background:0;color:var(--mut);border-radius:8px;padding:10px;width:100%;max-width:440px;cursor:pointer;font:inherit;font-size:13px;margin-top:10px}
   .addbtn:hover{border-color:var(--info);color:var(--ink)}
@@ -1522,7 +1532,7 @@
 
     <p class="svc-group-h">Hovedtjenester</p>
     <p class="svc-group-s">Kunden velger én. Minst én kreves.</p>
-    <div class="svc-head-h"><span>Tjeneste</span><span>Pris (kr)</span><span>Min.</span><span></span></div>
+    <div class="svc-head-h"><span class="svc-navn">Tjeneste</span><div class="svc-tall"><span class="svc-pris">Pris (kr)</span><span class="svc-min">Min.</span><span class="svc-rm-h"></span></div></div>
     <div id="hovedList"></div>
     <button class="addbtn" id="addHoved">+ Legg til hovedtjeneste</button>
 
@@ -1530,7 +1540,7 @@
 
     <p class="svc-group-h">Tillegg</p>
     <p class="svc-group-s">Kunden kan huke av flere. Valgfritt.</p>
-    <div class="svc-head-t"><span>Tillegg</span><span>Pris (kr)</span><span>Min.</span><span></span></div>
+    <div class="svc-head-t"><span class="svc-navn">Tillegg</span><div class="svc-tall"><span class="svc-pris">Pris (kr)</span><span class="svc-min">Min.</span><span class="svc-rm-h"></span></div></div>
     <div id="tilleggList"></div>
     <button class="addbtn" id="addTillegg">+ Legg til tillegg</button>
 
@@ -4237,8 +4247,11 @@ function wbRender(ns,lap){   // no-show: ferskest øverst (backend DESC). lapsed
 /* ---- Tjenester ---- */
 let hoved=[{name:"Skinnfade",price:450,min:45},{name:"Klipp",price:300,min:30}];
 let tillegg=[{name:"Skjegg",price:150,min:0},{name:"Hårvask",price:80,min:0}];
-function hovedRow(s,i){return '<div class="svc-row-h"><input value="'+esc(s.name)+'" data-l="h" data-i="'+i+'" data-f="name" placeholder="F.eks. Fade"><input type="number" value="'+s.price+'" data-l="h" data-i="'+i+'" data-f="price" min="0"><input type="number" value="'+s.min+'" data-l="h" data-i="'+i+'" data-f="min" min="1"><button class="svc-rm" data-l="h" data-i="'+i+'" aria-label="Fjern">&times;</button></div>';}
-function tilleggRow(s,i){return '<div class="svc-row-t"><input value="'+esc(s.name)+'" data-l="t" data-i="'+i+'" data-f="name" placeholder="F.eks. Skjegg"><input type="number" value="'+s.price+'" data-l="t" data-i="'+i+'" data-f="price" min="0"><input type="number" value="'+s.min+'" data-l="t" data-i="'+i+'" data-f="min" min="0"><button class="svc-rm" data-l="t" data-i="'+i+'" aria-label="Fjern">&times;</button></div>';}
+// size-attributtet driver navnefeltets innholdsbredde → brekk-terskelen. Gulv 6 (nytt/tomt felt
+// blir ikke absurd smalt), tak 28 (superlange navn brekker uansett, ellipsis tar resten).
+function svcSize(n){return Math.min(Math.max((n||'').length+1,6),28);}
+function hovedRow(s,i){return '<div class="svc-row-h"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="h" data-i="'+i+'" data-f="name" placeholder="F.eks. Fade"><div class="svc-tall"><input class="svc-pris" type="number" value="'+s.price+'" data-l="h" data-i="'+i+'" data-f="price" min="0"><input class="svc-min" type="number" value="'+s.min+'" data-l="h" data-i="'+i+'" data-f="min" min="1"><button class="svc-rm" data-l="h" data-i="'+i+'" aria-label="Fjern">&times;</button></div></div>';}
+function tilleggRow(s,i){return '<div class="svc-row-t"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="t" data-i="'+i+'" data-f="name" placeholder="F.eks. Skjegg"><div class="svc-tall"><input class="svc-pris" type="number" value="'+s.price+'" data-l="t" data-i="'+i+'" data-f="price" min="0"><input class="svc-min" type="number" value="'+s.min+'" data-l="t" data-i="'+i+'" data-f="min" min="0"><button class="svc-rm" data-l="t" data-i="'+i+'" aria-label="Fjern">&times;</button></div></div>';}
 function renderSvc(){$("#hovedList").innerHTML=hoved.map(hovedRow).join("");$("#tilleggList").innerHTML=tillegg.map(tilleggRow).join("");validateSvc();}
 function validateSvc(){const harHoved=hoved.filter(s=>s.name.trim()).length>0;const btn=$("#saveSvc"),err=$("#svcErr");if(!harHoved){btn.disabled=true;err.textContent="Du må ha minst én hovedtjeneste før du kan lagre.";}else{btn.disabled=false;err.textContent="";}return harHoved;}
 async function loadTjenester(){
@@ -4254,7 +4267,7 @@ $("#addHoved").addEventListener("click",()=>{hoved.push({name:"",price:0,min:30}
 $("#addTillegg").addEventListener("click",()=>{tillegg.push({name:"",price:0,min:0});renderSvc();});
 $("#hovedList").addEventListener("input",svcInput);
 $("#tilleggList").addEventListener("input",svcInput);
-function svcInput(e){const l=e.target.dataset.l,i=+e.target.dataset.i,f=e.target.dataset.f;if(f==null)return;const arr=l==="h"?hoved:tillegg;arr[i][f]=f==="name"?e.target.value:+e.target.value;validateSvc();}
+function svcInput(e){const l=e.target.dataset.l,i=+e.target.dataset.i,f=e.target.dataset.f;if(f==null)return;const arr=l==="h"?hoved:tillegg;arr[i][f]=f==="name"?e.target.value:+e.target.value;if(f==="name")e.target.size=svcSize(e.target.value);validateSvc();}
 $("#hovedList").addEventListener("click",svcRemove);
 $("#tilleggList").addEventListener("click",svcRemove);
 function svcRemove(e){const b=e.target.closest(".svc-rm");if(!b)return;const l=b.dataset.l,i=+b.dataset.i;(l==="h"?hoved:tillegg).splice(i,1);renderSvc();}
