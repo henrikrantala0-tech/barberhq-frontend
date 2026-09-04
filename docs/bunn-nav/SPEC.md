@@ -5,7 +5,9 @@ Visuell referanse (klikkbar, viser aktiv tilstand):
 https://claude.ai/code/artifact/25068f52-103e-474a-851c-87d33887d5ca
 
 Erstatter dagens dropdown-nav på mobil med fast tab-bar i bunn.
-Fil: `site/no/dashboard.html`. Ikoner: `docs/bunn-nav/ikoner-sprite.svg`.
+Fil: `site/no/dashboard.html`. Ikoner: innbygd `<svg>`-sprite rett etter `<body>`
+i samme fil — **eneste kilde**. (Ingen separat svg-fil: to kopier ville måttet
+synkes manuelt og ryker før eller siden.)
 
 ---
 
@@ -88,8 +90,8 @@ vises — én regel, to utfall.
 
 ## Ikonene
 
-Fem symboler i `ikoner-sprite.svg`. 24×24, `currentColor`. Fire er strek
-(1,75px); **Tjenester er en fylt form** (se unntaket under).
+Fem symboler i den innbygde spriten (`site/no/dashboard.html`, rett etter `<body>`).
+24×24, `currentColor`. Fire er strek (1,75px); **Tjenester er en fylt form** (se unntaket under).
 
 Aktiv tilstand er **én regel, ikke to ikonsett**: hvert ikon har én utpekt
 flate som fylles når `--ac: currentColor` settes på fanen.
