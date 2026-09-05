@@ -21,6 +21,7 @@
     minimal:  ['lys','mork'],
     oransje:  ['lys','mork'],
     sand:     ['lys'],
+    custom:   ['lys','mork'], // «Din egen» (hvit/svart base) støtter begge — synk med backend PALETTE_MODES
   };
   function modeneFor(key){ return PALETTE_MODES[key]||['lys']; } // ukjent → fail-closed: kun lys
   // Dempet/mørkere aksent, ≥4.5:1 som liten tekst mot bg. Lik accent der accent

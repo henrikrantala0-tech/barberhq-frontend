@@ -421,6 +421,22 @@
   .theme-grid{max-width:380px;margin-bottom:10px}
   .swatches{display:flex;gap:5px;margin-top:9px}
   .swatches span{width:18px;height:18px;border-radius:5px;border:1px solid rgba(127,127,127,.3)}
+  /* «Din egen»-utfelling: blå info-ramme (samme som det valgte custom-kortet) gjør at den leser
+     som de aktive custom-kontrollene, ikke en nøytral frittstående seksjon. Sitter tett under
+     rutenettet. Store trykkflater (≥46px) for 320px. */
+  .custom-panel{max-width:680px;margin:2px 0 24px;padding:16px;border:1.5px solid var(--info);border-radius:11px;background:var(--surface)}
+  /* Egenbygd HSV-fargevelger: kvadrat (metning×lyshet) + kulør-slider. Store touch-flater, touch-action:none. */
+  .cpick{margin:0 0 12px;max-width:340px}
+  .cpick-sv{position:relative;width:100%;height:150px;border-radius:8px;border:1px solid var(--line-2);cursor:crosshair;touch-action:none}
+  .cpick-cursor{position:absolute;width:18px;height:18px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none}
+  .cpick-hue{position:relative;width:100%;height:24px;margin-top:12px;border-radius:99px;cursor:pointer;touch-action:none;background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
+  .cpick-thumb{position:absolute;top:50%;width:22px;height:22px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none}
+  .cpick-prev{width:44px;height:44px;border-radius:8px;border:1px solid var(--line-2);flex:0 0 auto;display:inline-block}
+  .custom-fine{display:flex;gap:10px;align-items:center;max-width:340px}
+  .custom-hex{flex:1;min-width:0;font:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink)}
+  .custom-hex:focus{outline:none;border-color:var(--info)}
+  .custom-hex.invalid{border-color:#c0594a}
+  .custom-err{color:#c0594a;font-size:12.5px;margin-top:8px}
   .subcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 24px;max-width:520px}
   .subcard .pln{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
   .subcard .pln b{font-size:26px;font-weight:800;letter-spacing:-.03em}
@@ -1754,6 +1770,23 @@
             <div class="design-controls">
               <p class="dlbl">Palett</p>
               <div class="preset-grid" id="paletteGrid"></div>
+              <!-- «Din egen»-utfelling: vises KUN når custom-kortet er valgt (toggles av renderDesign),
+                   og er stylet (blå ramme + kobler-tunge) som en utvidelse av det valgte kortet — ikke
+                   en frittstående seksjon. Forslag (nivå 1) → color-input (nivå 2) → hex (nivå 3).
+                   Ingen navnefelt: paletten heter «Din egen». -->
+              <div class="custom-panel" id="customPanel" hidden>
+                <!-- Egenbygd HSV-velger (ingen eksterne libs): kvadrat = metning×lyshet, slider = kulør. -->
+                <div class="cpick">
+                  <div class="cpick-sv" id="cpickSV" role="slider" aria-label="Metning og lyshet"><span class="cpick-cursor" id="cpickCursor"></span></div>
+                  <div class="cpick-hue" id="cpickHue" role="slider" aria-label="Kulør"><span class="cpick-thumb" id="cpickThumb"></span></div>
+                </div>
+                <div class="custom-fine">
+                  <span class="cpick-prev" id="cpickPrev" aria-hidden="true"></span>
+                  <input type="text" id="customHex" class="custom-hex" placeholder="#000000" maxlength="7" size="7"
+                         inputmode="text" autocapitalize="none" autocomplete="off" spellcheck="false" aria-label="Fargekode (hex)">
+                </div>
+                <p class="custom-err" id="customErr" hidden>Skriv en gyldig fargekode, f.eks. #1e40af</p>
+              </div>
               <p class="dlbl">Bakgrunn</p>
               <div class="modepick" id="modePick">
                 <!-- aria-pressed="false" i statisk markup: før loadDesign har svart vet vi ikke
@@ -4532,7 +4565,7 @@ const LAYOUTS=[
 // sto markert som valgt palett. Alt sammen usant for en barberer med Profil + Krem & Gull.
 // Med null sier panelet ingenting i stedet. Hver leser under må tåle det — se guardene i
 // refreshSlots(), slotsLaast(), oppdaterPreview() og saveDesign.
-let design={palette:null,font:null,layout:null,mode:null};
+let design={palette:null,font:null,layout:null,mode:null,customAccent:null};
 let savedLayout=design.layout;
 // Har vi et fullstendig design å rendre/lagre? Alle fire må være kjent.
 function designKjent(){return !!(design.layout&&design.palette&&design.font&&design.mode);}
@@ -4551,6 +4584,9 @@ function oppdaterPreview(){
         +'&palette='+encodeURIComponent(design.palette)
         +'&font='+encodeURIComponent(design.font)
         +'&mode='+encodeURIComponent(design.mode);
+  // Custom: send aksenten til server-previewen. Kontrast-logikken (accentText) bor KUN i backend —
+  // vi speiler den ikke her. accent er også med i cache-nøkkelen (qs), så to aksenter kolliderer ikke.
+  if(design.palette==='custom'&&validHex(design.customAccent))qs+='&accent='+encodeURIComponent(normHex(design.customAccent));
   if(previewCache[qs]){f.srcdoc=previewCache[qs];return;}
   apiFetch('/api/dashboard/preview?'+qs).then(function(r){
     if(!r)return; // 401 → apiFetch har allerede sendt til login
@@ -4573,8 +4609,69 @@ function renderPreview(){oppdaterPreview();}
 // må backend også ta imot dem, og vi får to kilder til samme sannhet. Med tom cache henter
 // serveren feltene fra barber-raden av seg selv.
 function invaliderPreview(){previewCache={};oppdaterPreview();}
+/* ---- «Din egen» palett (custom aksent) — server eier fargematten; klienten viser bare valget ---- */
+var CUSTOM_DEFAULT='#0071e3'; // seed-aksent når «Din egen» velges uten farge
+var CUSTOM_HINT='linear-gradient(135deg,#e8590c,#10b981,#6b3df0)';
+// #rrggbb (godtar 3-siffer + manglende #, normaliserer til lowercase 6-siffer som backend krever)
+function normHex(v){if(v==null)return null;v=String(v).trim();if(v&&v[0]!=='#')v='#'+v;
+  if(/^#[0-9a-fA-F]{3}$/.test(v))v='#'+v[1]+v[1]+v[2]+v[2]+v[3]+v[3];
+  return /^#[0-9a-fA-F]{6}$/.test(v)?v.toLowerCase():null;}
+function validHex(v){return !!normHex(v);}
+function customKortHtml(){var v=validHex(design.customAccent);var bg=v?normHex(design.customAccent):CUSTOM_HINT;
+  // Undertittel: hex-koden når satt, ellers en nøytral ledetekst. Ingen navn.
+  return '<button class="preset preset-custom" data-grid="palette" data-key="custom" aria-pressed="'+(design.palette==='custom')+'">'
+    +'<div class="pt">Din egen</div><div class="pd" id="customCardSub">'+(v?normHex(design.customAccent):'Egen aksentfarge')+'</div>'
+    +'<div class="swatches"><span id="customCardSw" style="background:'+bg+'"></span></div></button>';}
+/* ---- Egenbygd HSV-fargevelger (ingen eksterne libs). Kvadrat = metning×lyshet, slider = kulør. ---- */
+var customHSV={h:200,s:0.9,v:0.85};
+function clamp01(x){return x<0?0:x>1?1:x;}
+function hexToRgb(h){h=normHex(h);return h?[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]:null;}
+function chan(n){return Math.round(clamp01(n/255)*255).toString(16).padStart(2,'0');}
+function rgbToHex(r,g,b){return '#'+chan(r)+chan(g)+chan(b);}
+function hsvToRgb(h,s,v){h=(h%360+360)%360;var c=v*s,x=c*(1-Math.abs((h/60)%2-1)),m=v-c,r=0,g=0,b=0;
+  if(h<60){r=c;g=x;}else if(h<120){r=x;g=c;}else if(h<180){g=c;b=x;}else if(h<240){g=x;b=c;}else if(h<300){r=x;b=c;}else{r=c;b=x;}
+  return [(r+m)*255,(g+m)*255,(b+m)*255];}
+function rgbToHsv(r,g,b){r/=255;g/=255;b/=255;var mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn,h=0;
+  if(d){if(mx===r)h=((g-b)/d+6)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60;}
+  return {h:h,s:mx?d/mx:0,v:mx};}
+function hsvHex(){var c=hsvToRgb(customHSV.h,customHSV.s,customHSV.v);return rgbToHex(c[0],c[1],c[2]);}
+function renderPicker(){var sv=$("#cpickSV");if(!sv)return;
+  sv.style.background='linear-gradient(to bottom,transparent,#000),linear-gradient(to right,#fff,hsl('+Math.round(customHSV.h)+',100%,50%))';
+  var cur=$("#cpickCursor");if(cur){cur.style.left=(customHSV.s*100)+'%';cur.style.top=((1-customHSV.v)*100)+'%';}
+  var th=$("#cpickThumb");if(th)th.style.left=(customHSV.h/360*100)+'%';}
+function updateCustomSwatches(){var h=validHex(design.customAccent)?normHex(design.customAccent):null;
+  var sw=$("#customCardSw");if(sw)sw.style.background=h||CUSTOM_HINT;
+  var sub=$("#customCardSub");if(sub)sub.textContent=h||'Egen aksentfarge';
+  var pv=$("#cpickPrev");if(pv)pv.style.background=h||CUSTOM_HINT;}
+// Sett custom-aksent fra hex (forslag/hex-felt/lagret): oppdaterer HSV-state + velger + swatcher.
+// updateField=false når brukeren skriver i hex-feltet (ikke overskriv det de taster).
+function setCustomHex(hex,updateField){var h=normHex(hex);if(!h)return false;design.customAccent=h;
+  var rgb=hexToRgb(h);customHSV=rgbToHsv(rgb[0],rgb[1],rgb[2]);
+  if(updateField){var hx=$("#customHex");if(hx){hx.value=h;hx.classList.remove('invalid');}}
+  var er=$("#customErr");if(er)er.hidden=true;renderPicker();updateCustomSwatches();return true;}
+// Fra velger-drag: HSV → hex, oppdater felt + swatcher + debounced preview.
+function applyHSV(){design.customAccent=hsvHex();var hx=$("#customHex");if(hx){hx.value=design.customAccent;hx.classList.remove('invalid');}
+  var er=$("#customErr");if(er)er.hidden=true;renderPicker();updateCustomSwatches();schedulePreview();}
+// Preview er server-render → ikke fyr på hvert pointermove. Debounce under drag, commit ved slipp.
+var _cpvTimer=null;
+function schedulePreview(){if(_cpvTimer)clearTimeout(_cpvTimer);_cpvTimer=setTimeout(function(){_cpvTimer=null;renderPreview();},150);}
+function commitPreview(){if(_cpvTimer){clearTimeout(_cpvTimer);_cpvTimer=null;}renderPreview();}
+// Drag med mus OG touch via pointer events + setPointerCapture. touch-action:none → ingen scroll under drag.
+function bindPick(el,onMove){if(!el)return;
+  el.addEventListener('pointerdown',function(e){e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch(_){}
+    onMove(e);
+    function mv(ev){ev.preventDefault();onMove(ev);}
+    function up(){el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);commitPreview();}
+    el.addEventListener('pointermove',mv);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);});}
+(function(){var sv=$("#cpickSV"),hue=$("#cpickHue"),hx=$("#customHex");
+  bindPick(sv,function(e){var r=sv.getBoundingClientRect();customHSV.s=clamp01((e.clientX-r.left)/r.width);customHSV.v=clamp01(1-(e.clientY-r.top)/r.height);applyHSV();});
+  bindPick(hue,function(e){var r=hue.getBoundingClientRect();customHSV.h=clamp01((e.clientX-r.left)/r.width)*360;applyHSV();});
+  // Hex-felt: gyldig → flytt velgeren (uten å overskrive det brukeren taster), debounced preview.
+  if(hx)hx.addEventListener("input",function(){var n=normHex(this.value);var er=$("#customErr");
+    if(n){setCustomHex(n,false);schedulePreview();}else{this.classList.add("invalid");if(er)er.hidden=false;}});
+})();
 function renderDesign(){
-  $("#paletteGrid").innerHTML=window.PALETTES_DISPLAY.map(function(p){return '<button class="preset" data-grid="palette" data-key="'+p.key+'" aria-pressed="'+(design.palette===p.key)+'"><div class="pt">'+p.t+'</div><div class="pd">'+p.d+'</div><div class="swatches">'+p.sw.map(function(c){return '<span style="background:'+c+'"></span>';}).join("")+'</div></button>';}).join("");
+  $("#paletteGrid").innerHTML=window.PALETTES_DISPLAY.map(function(p){return '<button class="preset" data-grid="palette" data-key="'+p.key+'" aria-pressed="'+(design.palette===p.key)+'"><div class="pt">'+p.t+'</div><div class="pd">'+p.d+'</div><div class="swatches">'+p.sw.map(function(c){return '<span style="background:'+c+'"></span>';}).join("")+'</div></button>';}).join("")+customKortHtml();
   // Kun beskrivelsen (.pt) — fontnavn-linja (.pd) fjernet fra font-kortene (name-feltet beholdt som metadata).
   $("#fontGrid").innerHTML=FONTS.map(function(f){return '<button class="preset" data-grid="font" data-key="'+f.key+'" aria-pressed="'+(design.font===f.key)+'"><div class="pt">'+f.vibe+'</div></button>';}).join("");
   $("#layoutGrid").innerHTML=LAYOUTS.map(function(l){return '<button class="preset" data-grid="layout" data-key="'+l.key+'" aria-pressed="'+(design.layout===l.key)+'"><div class="pt">'+l.t+'</div><div class="pd">'+l.d+'</div></button>';}).join("");
@@ -4584,6 +4681,13 @@ function renderDesign(){
   var morkBtn=document.querySelector('#modePick .modebtn[data-mode="mork"]');
   if(morkBtn)morkBtn.disabled=(moduser.indexOf('mork')===-1);
   var hint=$("#modeHint"); if(hint)hint.hidden=(moduser.indexOf('mork')!==-1);
+  // «Din egen»-utfelling vises kun når custom er valgt (ellers helt skjult → ingen tom blokk).
+  var cpanel=$("#customPanel"); if(cpanel)cpanel.hidden=(design.palette!=='custom');
+  if(design.palette==='custom'){
+    if(validHex(design.customAccent)){setCustomHex(design.customAccent,true);}
+    else{renderPicker();updateCustomSwatches();var _hx=$("#customHex");if(_hx)_hx.value='';}
+    var _er=$("#customErr"); if(_er)_er.hidden=(design.customAccent==null||validHex(design.customAccent));
+  }
   renderPreview();
 }
 async function loadDesign(){
@@ -4605,24 +4709,36 @@ async function loadDesign(){
     if(d.font)design.font=d.font;
     if(d.layout){design.layout=d.layout;savedLayout=d.layout;}
     if(d.mode)design.mode=d.mode;
+    if(d.custom_accent)design.customAccent=normHex(d.custom_accent);
   }catch(e){}
   renderDesign();
 }
-$("#design").addEventListener("click",function(e){var b=e.target.closest(".preset");if(!b)return;design[b.dataset.grid]=b.dataset.key;
+$("#design").addEventListener("click",function(e){
+  var b=e.target.closest(".preset");if(!b)return;design[b.dataset.grid]=b.dataset.key;
   // Bytte til en lys-only palett (sand) mens Mørk er aktiv → snap til lys; preview følger via renderDesign.
-  if(b.dataset.grid==="palette"){var m=(window.modeneFor?window.modeneFor(design.palette):['lys','mork']);if(m.indexOf(design.mode)===-1)design.mode=m[0];}
+  if(b.dataset.grid==="palette"){
+    // «Din egen» valgt uten farge ennå → seed en standard aksent så preview har noe å vise.
+    if(b.dataset.key==='custom'&&!validHex(design.customAccent))design.customAccent=CUSTOM_DEFAULT;
+    var m=(window.modeneFor?window.modeneFor(design.palette):['lys','mork']);if(m.indexOf(design.mode)===-1)design.mode=m[0];
+  }
   renderDesign();if(b.dataset.grid==="layout")refreshSlots();});
 $("#modePick").addEventListener("click",function(e){var b=e.target.closest(".modebtn");if(!b||b.disabled)return;var m=(window.modeneFor?window.modeneFor(design.palette):['lys','mork']);if(m.indexOf(b.dataset.mode)===-1)return;design.mode=b.dataset.mode;renderDesign();});
 $("#saveDesign").addEventListener("click",async function(){
   // Uten alle fire ville PUT-en skrevet null over det barbereren faktisk har lagret fra før.
   if(!designKjent()){alert('Fikk ikke hentet designinnstillingene dine. Last siden på nytt før du lagrer.');return;}
   const btn=$("#saveDesign");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
-  const r=await apiFetch('/api/dashboard/design',{method:'PUT',body:JSON.stringify({
-    palette: design.palette,
-    font:    design.font,
-    layout:  design.layout,
-    mode:    design.mode,
-  })});
+  // accent+name sendes KUN ved custom. For innebygde paletter utelates de → backend COALESCE
+  // bevarer barberens egen palett selv om han prøver en annen.
+  const body={palette:design.palette,font:design.font,layout:design.layout,mode:design.mode};
+  if(design.palette==='custom'){
+    // Klient-validering av hex (backend gir 400 uansett, men brukeren skal slippe å vente på kallet).
+    const norm=normHex($("#customHex")?$("#customHex").value:design.customAccent);
+    if(!norm){const er=$("#customErr");if(er)er.hidden=false;const hf=$("#customHex");if(hf){hf.classList.add("invalid");hf.focus();}btn.disabled=false;btn.textContent=orig;return;}
+    design.customAccent=norm;
+    body.accent=norm;
+    // Ingen name sendes — paletten heter «Din egen». Backend-kolonnen står ubrukt.
+  }
+  const r=await apiFetch('/api/dashboard/design',{method:'PUT',body:JSON.stringify(body)});
   btn.disabled=false;btn.textContent=orig;
   if(!r)return;
   if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre design. Prøv igjen.');return;}
