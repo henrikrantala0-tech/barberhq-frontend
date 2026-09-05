@@ -1715,16 +1715,18 @@
            Vekst-fanens .acc-list er umerket og beholder flere åpne samtidig. -->
       <div class="acc-list side-accs" id="sideAccs" data-single>
 
-        <!-- Profil — åpen som standard (aria-expanded="true", .acc-body uten hidden). -->
+        <!-- Profil — lukket som standard (aria-expanded="false", .acc-body med hidden), som de
+             øvrige Din side-trekkspillene. Preview lever på panel-nivå (.side-wrap), ikke i
+             denne .acc-body, så den står uansett når alt er lukket. -->
         <div class="acc" id="accProfil">
-          <button type="button" class="acc-head" aria-expanded="true">
+          <button type="button" class="acc-head" aria-expanded="false">
             <span class="acc-htext">
               <span class="acc-title">Profil</span>
               <span class="acc-sub">Grunninfo som vises på bookingsiden din.</span>
             </span>
             <span class="acc-chev">▾</span>
           </button>
-          <div class="acc-body">
+          <div class="acc-body" hidden>
             <div class="fld"><label>Navn på salongen</label><input id="pf-shop" type="text"></div>
             <div class="fld"><label>Adresse <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><input id="pf-address" type="text"><p class="fld-hint">Skriv full adresse (gate, nummer, postnr, by) så kunder finner frem i kart. Vil du ikke dele nøyaktig sted, skriv bare byen.</p></div>
             <div class="fld"><label>Spesialitet <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><input id="pf-tagline" type="text" maxlength="60"></div>
