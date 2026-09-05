@@ -70,6 +70,8 @@
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:8px}
   .stat{background:var(--surface);padding:18px 20px}
   .stat .l{font-size:11.5px;color:var(--mut);font-weight:500;letter-spacing:.02em;text-transform:uppercase;display:flex;align-items:center;gap:5px}
+  /* Setningscase-variant (Vekst: «Kunder i snitt per måned») — de øvrige stat-etikettene er versaler. */
+  .stat .l.l-plain{text-transform:none}
   .stat .v{font-size:30px;font-weight:800;letter-spacing:-.04em;margin-top:7px;line-height:1;font-variant-numeric:tabular-nums}
   .stat .v .u{font-size:15px;font-weight:300;color:var(--mut);margin-right:3px;letter-spacing:0}
   .stat .sub{font-size:12px;margin-top:6px;font-weight:500}
@@ -3199,10 +3201,10 @@ function renderVekstKpi(stats){
   var rec=stats&&stats.record_customers_month;
   var total=months.reduce(function(a,m){return a+(m.customers||0);},0);
   var avg=months.length?Math.round(total/months.length):0;
-  var bestSub=rec?("Beste måned: "+monthLbl(rec.ym).slice(0,3)+" ("+rec.customers+")"):"Ingen data ennå";
+  var bestSub=rec?("Beste måned: "+monthLbl(rec.ym)+" med "+rec.customers):"Ingen data ennå"; // full måned, liten forbokstav (MONTHS)
   var klipp=(stats&&stats.completed_all_time)||0;
   $("#vekstStats").innerHTML=
-     '<div class="stat"><div class="l">Snitt kunder/måned</div><div class="v info">'+avg+'</div><div class="sub mut">'+bestSub+'</div></div>'
+     '<div class="stat"><div class="l l-plain">Kunder i snitt per måned</div><div class="v info">'+avg+'</div><div class="sub mut">'+bestSub+'</div></div>'
     +'<div class="stat"><div class="l">Klipp totalt</div><div class="v info">'+klipp.toLocaleString("no-NO")+'</div><div class="sub mut">gjennom hele historikken</div></div>';
 }
 
