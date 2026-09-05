@@ -2541,13 +2541,17 @@ function renderBarChart(data,period){
   $("#chartSub").textContent=sub;
   // Månedsvisning ("maaned"-pill eller historisk ym): dagnr-etikettene tynnes på smal skjerm
   // via .cbar-lbl-minor (CSS-breakpoint ≤700px). Uke/2uker uendret. Alle stolper beholdes.
+  // MEN kun når det er nok stolper til at tallene faktisk OVERLAPPER — målt @320px: ingen
+  // overlapp t.o.m. 20 stolper, overlapp fra ~21+. Kort inneværende måned (f.eks. 1.–5.) har
+  // rikelig plass og skal vise ALLE tallene; fulle måneder (28–31) tynnes til 1/5/10/…/30.
   var isMonth=period==="maaned"||/^\d{4}-\d{2}$/.test(period);
+  var tynnEtiketter=isMonth && data.length>20;
   $("#chartBars").innerHTML=data.map(function(d){
     var h=Math.max(Math.round(d.kr/max*MAXH),4);
     var col=colorForRatio(d.kr/max);
     var lbl=d.l2?'<span>'+d.l+'</span><span class="cbar-lbl-sub">'+d.l2+'</span>':d.l;
     var day=isMonth?+d.l:0;
-    var lblCls=isMonth&&!(day===1||day%5===0)?"cbar-lbl cbar-lbl-minor":"cbar-lbl";
+    var lblCls=tynnEtiketter&&!(day===1||day%5===0)?"cbar-lbl cbar-lbl-minor":"cbar-lbl";
     // Ingen tall over stolpen — beløpet står i HUD-kortet ved trykk (og overlappet hverandre på fullt månedsdiagram).
     return '<div class="cbar-col"><div class="cbar-bar" style="height:'+h+'px;--bar-top:'+col.top+';--bar-bot:'+col.bot+'"></div><div class="'+lblCls+'">'+lbl+'</div></div>';
   }).join("");
