@@ -1836,11 +1836,13 @@
 
     <!-- Fire trekkspill, samme mønster og samme .acc-CSS som «Din side». data-single →
          ett åpent om gangen (Vekst-fanens .acc-list er umerket og beholder flere åpne).
-         Abonnement er åpen som standard: det er spørsmålet barbereren kommer hit for. -->
+         Alle Konto-trekkspillene åpner LUKKET (aria-expanded="false", .acc-body med hidden).
+         Abonnement ligger øverst fordi den er viktigst — det er spørsmålet barbereren kommer
+         hit for — men den foldes ut ved trykk som de andre, ikke automatisk. -->
     <div class="acc-list side-accs" id="kontoAccs" data-single>
 
       <div class="acc" id="accAbonnement">
-        <button type="button" class="acc-head" aria-expanded="true">
+        <button type="button" class="acc-head" aria-expanded="false">
           <span class="acc-htext">
             <!-- Prikken gjentar nav-prikken. Med data-single lukkes denne seksjonen når du
                  åpner en annen, og da er headeren eneste sted sporet kan fortsette. Vist
@@ -1854,7 +1856,7 @@
           </span>
           <span class="acc-chev">▾</span>
         </button>
-        <div class="acc-body">
+        <div class="acc-body" hidden>
 
     <!-- ETT kort, ÉN knapp. Abonnement og publisering var to kort med hver sin statuspille
          og hver sin knapp — men de beskrev samme spørsmål: «hva må jeg gjøre nå?».
