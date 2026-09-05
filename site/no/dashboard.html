@@ -4665,7 +4665,8 @@ function customKortHtml(){var v=validHex(design.customAccent);var bg=v?normHex(d
   // Undertittel: hex-koden når satt, ellers en nøytral ledetekst. Ingen navn.
   return '<button class="preset preset-custom" data-grid="palette" data-key="custom" aria-pressed="'+(design.palette==='custom')+'">'
     +'<div class="pt">Din egen</div><div class="pd" id="customCardSub">'+(v?normHex(design.customAccent):'Egen aksentfarge')+'</div>'
-    +'<div class="swatches"><span id="customCardSw" style="background:'+bg+'"></span></div></button>';}
+    // Tre-farge-stripe som de innebygde kortene: hvit base, aksent (live), svart base.
+    +'<div class="swatches"><span style="background:#ffffff"></span><span id="customCardSw" style="background:'+bg+'"></span><span style="background:#0a0a0a"></span></div></button>';}
 /* ---- Egenbygd HSV-fargevelger (ingen eksterne libs). Kvadrat = metning×lyshet, slider = kulør. ---- */
 var customHSV={h:200,s:0.9,v:0.85};
 function clamp01(x){return x<0?0:x>1?1:x;}
