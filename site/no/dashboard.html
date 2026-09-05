@@ -437,6 +437,12 @@
   .custom-hex:focus{outline:none;border-color:var(--info)}
   .custom-hex.invalid{border-color:#c0594a}
   .custom-err{color:#c0594a;font-size:12.5px;margin-top:8px}
+  /* Momentum-kort (Vekst): positiv bonus-nudge, grønn venstrekant. Skjult by default. */
+  .momentum{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--good);border-radius:12px;padding:16px 18px;margin:24px 0}
+  .momentum[hidden]{display:none}
+  .momentum-h{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em;margin:0 0 6px}
+  .momentum-t{font-size:13.5px;color:var(--mut);line-height:1.5;margin:0 0 14px}
+  .momentum .btn{display:inline-block;width:auto}
   .subcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 24px;max-width:520px}
   .subcard .pln{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
   .subcard .pln b{font-size:26px;font-weight:800;letter-spacing:-.03em}
@@ -1382,6 +1388,13 @@
       <button type="button" data-p="maaned" aria-selected="true">Denne måneden</button>
     </div>
     <div id="attrRows"><p class="wb-empty">Laster …</p></div>
+    <!-- Momentum-kort: bonus-nudge, vises KUN ved lav forfalt-andel (loadMomentum). Ligger over
+         både Automatikk (rebooking) og Personlig (verving); knappen åpner Verving i samme fane. -->
+    <div class="momentum" id="momentumCard" hidden>
+      <p class="momentum-h">Godt momentum</p>
+      <p class="momentum-t">Nesten alle faste kundene dine har booket ny time. Nå er et godt tidspunkt å hente inn nye.</p>
+      <button class="btn" id="momentumVerveBtn" type="button">Åpne verving</button>
+    </div>
     <!-- FLYTMODELL — «Slik henger det sammen» (over alle accordions, alltid åpen).
          [oversettelse: sv/da/en] nye strenger: Kvelden før · Påminnelse · Automatisk · Booket via siden din · Du tar over.
          (Den gamle acc-lead-en i Rebooking finnes ikke lenger — slått sammen med noten 06.08.) -->
@@ -2283,6 +2296,10 @@ async function apiFetch(path,opts={}){
 const DAYS=["Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag","Søndag"];
 const MONTHS=["januar","februar","mars","april","mai","juni","juli","august","september","oktober","november","desember"];
 
+// Momentum-kort (Vekst): vises kun når andelen forfalte gjengangere (overdue/returning) er UNDER
+// denne grensen. Justeres når vi ser ekte tall — hold den HER, ikke spredt i logikken.
+const MOMENTUM_LAV_TERSKEL=0.20;
+
 
 const MOCK={
   bookings:[
@@ -2316,6 +2333,11 @@ const api={
     if(!r||!r.ok)return{daily:[]}; // 401 → apiFetch har alt redirigert; tom → tom akse, ingen krasj
     return r.json();
   },
+  // Momentum (Vekst): { overdue, returning, show }. Feil → null (kortet skjules, ingen melding).
+  async momentum(){
+    const r=await apiFetch('/api/dashboard/momentum');
+    if(!r||!r.ok)return null;
+    return r.json(); },
   // Ekte, session-basert attribusjon → {period,vervet,recovery,rebooking:{count,revenue}}. Mater «Drevet av BarberHQ» (Oversikt).
   async attribution(period){
     const r=await apiFetch('/api/dashboard/attribution?period='+encodeURIComponent(period));
@@ -3300,7 +3322,29 @@ async function loadVekst(){
   renderVekstKpi(stats);
   renderMonthChart(stats);
   renderAttribusjon();
+  loadMomentum();
 }
+
+/* ---- Momentum-kort (Vekst): bonus-nudge når rebooking holder de faste, tid for å verve nye ---- */
+function renderMomentum(m){
+  var card=$("#momentumCard"); if(!card)return;
+  // Vis KUN når backend sier show OG andelen forfalte er UNDER grensen. Høy andel (rebooking gjør
+  // jobben) / show:false / manglende data → skjul helt (ingen «alt er bra»-støy). returning>0 verner mot 0/0.
+  var vis=!!(m && m.show===true && m.returning>0 && (m.overdue/m.returning) < MOMENTUM_LAV_TERSKEL);
+  card.hidden=!vis;
+}
+async function loadMomentum(){
+  // Bonus, ikke kjerne: feiler kallet, viser vi ingenting (ingen feilmelding, ingen tom boks).
+  try{ renderMomentum(await api.momentum()); }
+  catch(e){ var c=$("#momentumCard"); if(c)c.hidden=true; }
+}
+// Knapp → åpne Verving-trekkspillet i samme fane og scroll dit.
+(function(){var b=$("#momentumVerveBtn"); if(!b)return;
+  b.addEventListener("click",function(){
+    var head=document.querySelector('#accVerv .acc-head');
+    if(head && head.getAttribute('aria-expanded')!=='true') head.click();
+    var acc=$("#accVerv"); if(acc) acc.scrollIntoView({behavior:'smooth',block:'start'});
+  });})();
 
 /* ---- Attribusjon (Vekst): «Hvor kundene kommer fra» ---- */
 // Egen periode-state, bevisst skilt fra Oversiktens curPeriod: de to flatene skal kunne
