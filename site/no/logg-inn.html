@@ -65,6 +65,8 @@ a{text-decoration:none;color:inherit}
 .pw-alt-link:hover{color:#bbb;text-decoration:underline}
 .pw-panel{display:none;margin-top:14px}
 .pw-panel.show{display:block}
+/* Kontekst over passordfeltet: knytter det til det delte e-postfeltet over. */
+.pw-context{font-size:13px;color:#9a9a9a;text-align:left;margin-bottom:12px;line-height:1.45}
 
 /* ── Bunn-lenker ── */
 .card-foot{margin-top:22px;padding-top:18px;border-top:1px solid #1a1a1a;text-align:center;color:#8c8c8c;font-size:13.5px}
@@ -114,6 +116,7 @@ a{text-decoration:none;color:inherit}
       <button class="pw-alt-link" id="pw-alt-btn" type="button">Logg inn med passord</button>
     </div>
     <div class="pw-panel" id="pw-panel">
+      <p class="pw-context" id="pw-context"></p>
       <div class="field">
         <label for="pw">Passord</label>
         <div class="pw-wrap">
@@ -156,6 +159,7 @@ a{text-decoration:none;color:inherit}
   var magicOk     = document.getElementById('magic-ok');
   var pwAltBtn    = document.getElementById('pw-alt-btn');
   var pwPanel     = document.getElementById('pw-panel');
+  var pwContext   = document.getElementById('pw-context');
 
   // Vis utløpt-lenke-feil fra ?error=expired (uendret)
   var params = new URLSearchParams(location.search);
@@ -168,6 +172,7 @@ a{text-decoration:none;color:inherit}
   // ── PRIMÆR: magisk lenke (deler e-postfeltet med passord-innlogging) ──
   async function sendMagicLink() {
     magicOk.classList.remove('show');
+    error.classList.remove('show');   // symmetrisk: fjern ev. passord-feil så to meldinger ikke står samtidig
     magicSubmit.disabled    = true;
     magicSubmit.textContent = 'Sender …';
 
@@ -188,10 +193,25 @@ a{text-decoration:none;color:inherit}
   // Enter i e-postfeltet utløser primærhandlingen (send lenke)
   email.addEventListener('keydown', function (e) { if (e.key === 'Enter') sendMagicLink(); });
 
+  // Kontekst-linja over passordfeltet: «Logger inn som <e-post>», ellers C-hint ved tom e-post.
+  function updatePwContext() {
+    var v = email.value.trim();
+    pwContext.textContent = v ? ('Logger inn som ' + v) : 'Bruk e-posten du skrev over';
+  }
+  // Hold linja i synk hvis brukeren endrer e-posten mens panelet er åpent.
+  email.addEventListener('input', function () {
+    if (pwPanel.classList.contains('show')) updatePwContext();
+  });
+
   // ── SEKUNDÆR: fold ut passord-innlogging ──
   pwAltBtn.addEventListener('click', function () {
     pwPanel.classList.toggle('show');
-    if (pwPanel.classList.contains('show')) pw.focus();
+    if (pwPanel.classList.contains('show')) {
+      magicOk.classList.remove('show');   // gått over på passord → skjul magisk-lenke-kvitteringen
+      updatePwContext();
+      // Tom e-post → fokuser feltet over (der hint-en peker); ellers rett i passord.
+      if (email.value.trim()) pw.focus(); else email.focus();
+    }
   });
 
   // Vis/skjul passord
@@ -213,6 +233,7 @@ a{text-decoration:none;color:inherit}
 
   async function login() {
     error.classList.remove('show');
+    magicOk.classList.remove('show');   // gått over på passord → skjul magisk-lenke-kvitteringen
     submit.disabled     = true;
     submit.textContent  = 'Logger inn …';
 
