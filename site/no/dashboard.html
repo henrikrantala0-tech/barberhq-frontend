@@ -679,7 +679,7 @@
      ingen max-width: den fyller kolonnen (uten det ble det luft rundt en kappet stolpe). */
   .mcol{flex:1 1 0;max-width:96px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
   .mval{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink-2);letter-spacing:-.01em}
-  .mbar{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--bar-top),var(--bar-bot));min-height:5px;transition:height .25s ease}
+  .mbar{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--bar-top),var(--bar-bot));min-height:5px} /* transition:height fjernet — Vekst-stolpene animerer ikke (innerHTML-rebuild), men den persistente height-transisjonen ga samme iOS-repaint-feil ved temabytte som .cbar-bar */
   .mlbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
   .mbar.gull{filter:drop-shadow(0 0 2px rgba(255,224,138,.9)) drop-shadow(0 0 8px rgba(240,194,75,.55)) drop-shadow(0 0 16px rgba(240,194,75,.28))} /* identisk glød som Oversikts .rekord-gull */
   /* Gull-tallet gjenbruker .rekord-gull (samme gradient + glød som Oversikts rekord-KPI) — se renderMonthChart */
@@ -688,7 +688,9 @@
   .chart-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;min-height:52px}
   .chartbars{display:flex;align-items:flex-end;gap:5px;height:160px;padding:0 2px}
   .cbar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;min-width:0}
-  .cbar-bar{width:100%;max-width:52px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--bar-top),var(--bar-bot));min-height:4px;transition:height .25s ease}
+  /* Entré-/vekst-animasjonen skalerer med transform (scaleY), ikke height — height-transition ga
+     hvert stolpe-lag en iOS-repaint-feil ved temabytte. transform-origin:bottom → vokser opp fra aksen. */
+  .cbar-bar{width:100%;max-width:52px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--bar-top),var(--bar-bot));min-height:4px;transform-origin:bottom;transition:transform .25s ease}
   .cbar-lbl{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;text-align:center;line-height:1.3}
   .cbar-lbl-sub{font-size:9px;display:block;opacity:.7;text-transform:none;letter-spacing:0}
   /* Månedsvisning på smal skjerm: 28–31 dagnr-etiketter overlapper (31×~20px=620px > 430px).
@@ -2639,20 +2641,23 @@ var UNIFORM_MS=150, OUT_QUART='cubic-bezier(.165,.84,.44,1)';
 var ENTRY_STEP=95, ENTRY_RISE=350, ENTRY_MAX_TOTAL=3000; // (N-1)*step + rise ≤ 3000ms → 90-heatmap kappes, sprenger aldri
 function prefersReduced(){ return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }
 function animateBars(entering){
-  var bars=_chartBars.querySelectorAll('.cbar-bar'), targets=[];
-  for(var j=0;j<bars.length;j++){ targets.push(bars[j].style.height); bars[j].style.height='0px'; } // født på target → kollaps til 0
-  void _chartBars.offsetHeight; // tving reflow (0 males før flipp)
+  // Alt C: entré-/vekst-animasjonen bruker transform: scaleY (origin bottom), IKKE height.
+  // Høyden står fast (satt i renderBarChart-markupen); vi skalerer bare 0→1 opp fra aksen.
+  // height-transition ga hvert stolpe-lag en iOS-repaint-feil ved temabytte; transform gjør ikke det.
+  var bars=_chartBars.querySelectorAll('.cbar-bar');
+  for(var j=0;j<bars.length;j++){ bars[j].style.transition='none'; bars[j].style.transform='scaleY(0)'; } // født på full høyde → snap til skala 0
+  void _chartBars.offsetHeight; // tving reflow (skala 0 males før flipp)
   var N=bars.length;
   // Clamp: hvis (N-1)*step + rise ville overstige taket, skaleres steppet ned så total = taket.
   // Mye stagger på få stolper (tydelig kaskade), lite på mange (90-heatmap holder seg ≤ ENTRY_MAX_TOTAL).
   var step=(N>1 && (N-1)*ENTRY_STEP+ENTRY_RISE>ENTRY_MAX_TOTAL) ? Math.floor((ENTRY_MAX_TOTAL-ENTRY_RISE)/(N-1)) : ENTRY_STEP;
   for(var i=0;i<bars.length;i++){
     var b=bars[i];
-    b.style.transitionProperty='height';
+    b.style.transitionProperty='transform';
     b.style.transitionTimingFunction=OUT_QUART;
     b.style.transitionDuration=(entering?ENTRY_RISE:UNIFORM_MS)+'ms';
     b.style.transitionDelay=(entering? i*step : 0)+'ms'; // stagger kun ved entré (venstre→høyre)
-    b.style.height=targets[i]; // flipp → transition kjører 0→target
+    b.style.transform='scaleY(1)'; // flipp → transition kjører scaleY 0→1
   }
 }
 function countUp(el,target,ms,fmt){
