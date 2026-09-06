@@ -11,7 +11,9 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.1.0/dist/tabler-icons.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
+/* scroll-padding-top = sticky-navens høyde (.nav-wrap 68px) + 16px luft, så footer-ankrene
+   #personvern/#cookies (og alle andre) lander UNDER navigasjonen, ikke bak den. */
+html{scroll-behavior:smooth;scroll-padding-top:84px}
 body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;color:#fff;line-height:1.6;overflow-x:hidden}
 .wrap{max-width:1100px;margin:0 auto;padding:0 32px}
 .eyebrow{color:#7a7a7a;font-size:12px;letter-spacing:.2em;font-weight:600}
@@ -213,11 +215,11 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   </ul>
   <p>Kunden kan melde seg av rebooking når som helst via lenken i meldingen. Avmelding gjelder umiddelbart og påvirker ikke påminnelser om timer han faktisk har bestilt.</p>
 
-  <h2>Data om deg</h2>
+  <h2 id="personvern">Data om deg</h2>
   <p>Vi lagrer navn, e-post, telefonnummer og opplysningene om virksomheten din. Vi bruker dem til å drive tjenesten og til å kontakte deg om ting som gjelder kontoen din.</p>
   <p>Du kan be om innsyn i, retting av eller sletting av opplysningene dine ved å sende en e-post.</p>
 
-  <h2>Cookies</h2>
+  <h2 id="cookies">Cookies</h2>
   <p>Vi bruker én informasjonskapsel: en innloggingscookie som holder deg logget inn i dashbordet. Den settes først når du logger inn, varer i 30 dager, og kan ikke leses av andre nettsteder.</p>
   <p>Vi har ingen sporing, ingen analyseverktøy og ingen annonsecookies.</p>
   <p>Kundene dine får ingen informasjonskapsler når de booker time.</p>
