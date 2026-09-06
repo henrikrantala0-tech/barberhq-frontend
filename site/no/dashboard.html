@@ -4852,6 +4852,11 @@ $("#saveDesign").addEventListener("click",async function(){
 // ⚠ null !== 0. `typeof x === 'number'` slår sammen «ikke startet» og «utløpt» til samme
 // gren — to helt ulike tilstander (A mot C/D). Sjekk === null og === 0 hver for seg.
 var _billing=null;
+// Vekst-skjoldet trigges KUN av effective_plan==='basis' — backendens autoritative «hva gjelder
+// nå», ikke b.plan. b.plan er NULL for en barber i prøveperiode (trial_vindu → Vekst), så leser
+// vi den, låser vi de eneste live-kundene ute mens de prøver. Eksplisitt 'basis' → skjold; alt
+// annet (inkl. _billing===null før lasting, manglende felt, 'vekst') → INGEN skjold, ingen eksempeltall.
+function erBasis(){ return !!(_billing && String(_billing.effective_plan).toLowerCase()==='basis'); }
 // Plan-navn + pris, ÉN kilde — delt av renderKonto (viser aktiv plan) og plan-velgeren
 // (visPlanVelger). NOK fordi /no/-fila; backend bør på sikt sende pris-strengen i status så
 // andre markeder/valutaer stemmer. Løftet fra lokal i renderKonto da velgeren også trengte den.
