@@ -457,6 +457,21 @@
   .momentum-h{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em;margin:0 0 6px}
   .momentum-t{font-size:13.5px;color:var(--mut);line-height:1.5;margin:0 0 14px}
   .momentum .btn{display:inline-block;width:auto}
+  /* Vekst-skjold (Basis-visning): halvgjennomsiktig lås over hele kortet. Hele laget klikkbart
+     → Konto. Innholdet under er dimmet + ikke-interaktivt (pointer-events:none + inputs disabled).
+     .eksempel-merke ligger OVER skjoldet (z 6 > 5) så «Eksempel» leses tydelig, ikke bak lås-laget. */
+  .skjold-vert{position:relative}
+  .skjold-vert > *:not(.skjold):not(.eksempel-merke){pointer-events:none}
+  .skjold{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
+    background:rgba(10,10,10,.66);backdrop-filter:blur(1.5px);border-radius:inherit;cursor:pointer;text-align:center;padding:16px}
+  html:not([data-theme="dark"]) .skjold{background:rgba(255,255,255,.62)}
+  .skjold-ic{width:26px;height:26px;color:var(--ink);opacity:.92}
+  .skjold-h{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
+  .skjold-lenke{font-size:12.5px;color:var(--info);text-decoration:underline;text-underline-offset:2px}
+  .skjold:focus-visible{outline:2px solid var(--info);outline-offset:-3px}
+  .eksempel-merke{position:absolute;top:10px;left:10px;z-index:6;pointer-events:none;
+    background:var(--surface);border:1px solid var(--line-2);color:var(--mut);
+    font-size:11px;font-weight:600;letter-spacing:.02em;padding:3px 8px;border-radius:99px}
   .subcard{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:22px 24px;max-width:520px}
   .subcard .pln{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
   .subcard .pln b{font-size:26px;font-weight:800;letter-spacing:-.03em}
@@ -2790,10 +2805,74 @@ function renderWeekInsight(p){
 }
 function krFmt(n){return (n||0).toLocaleString("no-NO")+" kr";} // "9 800 kr" (kr bak, no-NO tusenskille)
 
+/* ---- Vekst-skjold (Basis-visning) — deles av Oversikt «Drevet av» + Vekst-flatene ---- */
+// Eksempeltall bak skjoldet — KUN i attribusjonskortene, hardkodet i ÉN blokk. Ingen delta.
+var VEKST_EKSEMPEL={rebooking:{count:10,revenue:3900},vervet:{count:3,revenue:1150},
+  recovery:{count:5,revenue:1800},total:{count:18,revenue:6850}};
+var SKJOLD_LAAS_SVG='<svg class="skjold-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>';
+// Skjold-klikk → Konto-fanen + åpne/scroll abonnementsseksjonen. Gjenbruker switchPanel (ingen ny fanebytte).
+function aapneAbonnement(){
+  if(typeof switchPanel==='function')switchPanel('abonnement');
+  var acc=document.getElementById('accAbonnement');
+  if(acc){ var head=acc.querySelector('.acc-head');
+    if(head && head.getAttribute('aria-expanded')!=='true')head.click();
+    acc.scrollIntoView({behavior:'smooth',block:'start'}); }
+}
+// Legg/fjern skjold på et kort. Sjekker erBasis() selv → kall settSkjold(host) etter enhver render.
+// Deaktiverer bare kontroller VI slår av (data-skjold-disabled), så fjernSkjold ikke rører en
+// kontroll som var disabled av annen grunn (f.eks. en lagre-knapp midt i lagring).
+function settSkjold(host){
+  if(!host)return;
+  if(!erBasis()){fjernSkjold(host);return;}
+  host.classList.add('skjold-vert');
+  host.querySelectorAll('input,select,textarea,button').forEach(function(el){
+    if(!el.closest('.skjold') && !el.disabled){el.disabled=true;el.setAttribute('data-skjold-disabled','1');} });
+  if(host.querySelector(':scope > .skjold'))return; // allerede skjoldet
+  var s=document.createElement('div');
+  s.className='skjold'; s.setAttribute('role','button'); s.tabIndex=0;
+  s.setAttribute('aria-label','Vekst-funksjon — se abonnement');
+  s.innerHTML=SKJOLD_LAAS_SVG+'<span class="skjold-h">Vekst-funksjon</span><span class="skjold-lenke">Se abonnement</span>';
+  s.addEventListener('click',aapneAbonnement);
+  s.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){e.preventDefault();aapneAbonnement();} });
+  host.appendChild(s);
+}
+function fjernSkjold(host){
+  if(!host)return;
+  var s=host.querySelector(':scope > .skjold'); if(s)s.remove();
+  host.querySelectorAll('[data-skjold-disabled]').forEach(function(el){ el.disabled=false; el.removeAttribute('data-skjold-disabled'); });
+  host.classList.remove('skjold-vert');
+}
+// Eksempel-markup for «Drevet av» (hero-stil). Samme drv-klasser som ekte + «Eksempel»-merke, ingen delta.
+function eksempelDrivenByHtml(){
+  var E=VEKST_EKSEMPEL;
+  var rows=[{name:"Rebooking",o:E.rebooking,color:"var(--good)"},{name:"Verving",o:E.vervet,color:"#e0844a"},{name:"Vinn tilbake",o:E.recovery,color:"var(--info)"}];
+  var rowsHtml=rows.map(function(r){return '<div class="drv-row2"><div class="drv-left"><span class="drv-dot" style="background:'+r.color+'"></span><span class="drv-nm">'+r.name+'</span></div><div class="drv-right"><span class="drv-cuts">'+r.o.count+' klipp</span><span class="drv-val">'+krFmt(r.o.revenue)+'</span></div></div>';}).join("");
+  return '<span class="eksempel-merke">Eksempel</span>'
+    +'<div class="drv-hero"><p class="drv-hero-lbl">Hentet inn med BarberHQ</p><p class="drv-hero-num">'+krFmt(E.total.revenue)+'</p></div>'
+    +'<div class="drv-rows">'+rowsHtml+'</div>'
+    +'<p class="drv-trust">Kun fullførte, betalte klipp. Estimert fra dine priser.</p>';
+}
+// Re-render skjoldede flater etter at billing (effective_plan) er lastet — flatene kan ha rendret
+// før _billing kom (erBasis var false → ekte/tom sti). Kalles fra loadBilling.
+function oppdaterSkjoldFlater(){
+  if(document.getElementById('drivenBy') && typeof renderDrivenBy==='function' && typeof curPeriod!=='undefined')renderDrivenBy(curPeriod);
+}
+
 // «Drevet av BarberHQ» (Oversikt): hero-tall + delta + tre rader fra EKTE /attribution (count+revenue).
 // Henter SITT eget periode-tall — ikke stolpediagrammets total (diagram = alle klipp, panel = funksjons-klipp).
+// Basis-visning av «Drevet av»: eksempeltall + skjold. Synkron (ingen fetch) → kan aldri klobbes
+// av et sent await. Delt fast-path + post-await-fallback i renderDrivenBy mot billing-race.
+function visEksempelDrivenBy(wrap){
+  var lbl=$("#drivenByLabel"); if(lbl)lbl.textContent="Klipp BarberHQ hentet inn eller hentet tilbake.";
+  var sa=$("#drivenBySeeAll"); if(sa)sa.hidden=false; // «Se alt i Vekst» står, fører til (skjoldede) Vekst
+  wrap.innerHTML=eksempelDrivenByHtml();
+  settSkjold(wrap);
+}
 async function renderDrivenBy(period){
   var wrap=$("#drivenBy"); if(!wrap)return;
+  // Basis: skjold + eksempeltall. INGEN API-kall (lekker aldri ekte tall til basis), ingen delta.
+  if(erBasis())return visEksempelDrivenBy(wrap);
+  fjernSkjold(wrap); // ikke-basis → aldri skjold (rydder .skjold-vert-klassen før ekte render)
   // Perioden sto tidligere som en løs etikett i høyre hjørne av overskriftsraden, der den
   // leste som en klikkbar velger. Den er ren tekst, så den hører hjemme i setningen.
   // ⚠ BASISSETNINGEN ER DELT MED renderAttribusjon() I VEKST — HOLD DEM I SYNK.
@@ -2805,6 +2884,9 @@ async function renderDrivenBy(period){
 
   var seeAll=$("#drivenBySeeAll");
   var data=await api.attribution(period);
+  // Billing kan ha kommet UNDER fetch-en (init-race): ble planen basis i mellomtiden, bytt til
+  // eksempel her — ellers klobber dette sene svaret et eksempel-render som alt har skjedd.
+  if(erBasis())return visEksempelDrivenBy(wrap);
   if(!data){ wrap.innerHTML=""; if(seeAll)seeAll.hidden=true; return; } // feil/401 → tomt, ingen krasj
 
   var reb=data.rebooking||{count:0,revenue:0};
@@ -4868,6 +4950,8 @@ async function loadBilling(){
   _billing=await r.json();
   renderKonto(_billing);
   settRebookInfo(); // Vekst-ikonet henger på _billing — se kommentaren over funksjonen
+  // effective_plan kom nå → re-render skjoldede flater som kan ha rendret før billing (erBasis var false).
+  if(typeof oppdaterSkjoldFlater==='function')oppdaterSkjoldFlater();
 }
 // Hovedhandlingen er ÉN knapp. `_kontoAksjon` sier hva et trykk skal gjøre i nåværende
 // tilstand — knappen har ingen egen lytter per tilstand, og vi speiler ingen tilstandsmaskin.
