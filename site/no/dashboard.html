@@ -2775,7 +2775,6 @@ function renderWeekInsight(p){
   wi.hidden = !(showPct || showBar); // ingen tomme bokser når begge er under terskel
 }
 function krFmt(n){return (n||0).toLocaleString("no-NO")+" kr";} // "9 800 kr" (kr bak, no-NO tusenskille)
-function attribSum(a){ if(!a)return 0; return (a.rebooking&&a.rebooking.revenue||0)+(a.recovery&&a.recovery.revenue||0)+(a.vervet&&a.vervet.revenue||0); }
 
 // «Drevet av BarberHQ» (Oversikt): hero-tall + delta + tre rader fra EKTE /attribution (count+revenue).
 // Henter SITT eget periode-tall — ikke stolpediagrammets total (diagram = alle klipp, panel = funksjons-klipp).
@@ -2797,10 +2796,18 @@ async function renderDrivenBy(period){
   var reb=data.rebooking||{count:0,revenue:0};
   var rec=data.recovery ||{count:0,revenue:0};
   var ver=data.vervet   ||{count:0,revenue:0};
-  var totalCount=(reb.count||0)+(rec.count||0)+(ver.count||0);
 
-  // Tomtilstand: ingen funksjons-klipp i perioden → skjul rader + delta + «Se alt i Vekst» (ingenting å se der ennå).
-  if(totalCount===0){
+  // data.total (backend efaa553) er ENESTE kilde for totalen — vi summerer ALDRI kategoriene
+  // selv. Mangler den, er svaret ufullstendig → ærlig feilstate, aldri et klient-summert tall.
+  var total=data.total;
+  if(!total||total.revenue==null||total.count==null){
+    if(seeAll)seeAll.hidden=true;
+    wrap.innerHTML='<p class="wb-empty">Kunne ikke hente tallene akkurat nå.</p>';
+    return;
+  }
+
+  // Tomtilstand: ingen tilskrevne klipp i perioden → skjul rader + delta + «Se alt i Vekst» (ingenting å se der ennå).
+  if(total.count===0){
     if(seeAll)seeAll.hidden=true;
     wrap.innerHTML='<div class="drv-empty">'
       +'<div class="drv-empty-mark">✦</div>'
@@ -2810,14 +2817,15 @@ async function renderDrivenBy(period){
     return;
   }
 
-  var totalRev=attribSum(data);
+  var totalRev=total.revenue;
 
-  // Delta: KUN på uke, kun positiv. «Forrige uke» = 2uker-sum − uke-sum (rullende, disjunkte 7-dagersblokker).
+  // Delta: KUN på uke, kun positiv. «Forrige uke» = 2uker-total − uke-total (rullende, disjunkte
+  // 7-dagersblokker). Krever 2uker-total; mangler den, dropper vi delta (ikke feil hele panelet).
   var deltaHtml="";
   if(period==="uke"){
     var two=await api.attribution("2uker");
-    if(two){
-      var prevWeek=attribSum(two)-totalRev;
+    if(two&&two.total&&two.total.revenue!=null){
+      var prevWeek=two.total.revenue-totalRev;
       var delta=totalRev-prevWeek;
       if(delta>0) deltaHtml='<p class="drv-delta">↑ '+krFmt(delta)+' fra forrige uke</p>';
     }
@@ -3362,7 +3370,13 @@ async function renderAttribusjon(){
   var ver=data.vervet||{count:0,revenue:0};
   var rec=data.recovery||{count:0,revenue:0};
   var reb=data.rebooking||{count:0,revenue:0};
-  if(!((ver.count||0)+(rec.count||0)+(reb.count||0))){
+  // data.total er ENESTE kilde for «Totalt»-raden — aldri klient-sum. Mangler den → feilstate.
+  var total=data.total;
+  if(!total||total.revenue==null||total.count==null){
+    el.innerHTML='<p class="wb-empty">Kunne ikke hente tallene akkurat nå.</p>';
+    return;
+  }
+  if(total.count===0){
     el.innerHTML='<p class="wb-empty">Ingen tilskrevne klipp i denne perioden ennå.</p>';
     return;
   }
@@ -3375,11 +3389,11 @@ async function renderAttribusjon(){
     {name:"Verving",      o:ver, color:"#e0844a"},     // oransje
     {name:"Vinn tilbake", o:rec, color:"var(--info)"}, // blå #4d8bff
   ];
-  // Totalen er summen av DISSE TRE — ikke alle klipp i perioden. Kategorien 'ny' (kundens
-  // første booking uten verving) klassifiseres i backend og filtreres bort før svaret.
-  // Derfor «Tilskrevet totalt», ikke «Totalt», og derfor aldri en prosentandel.
-  var totCount=(ver.count||0)+(rec.count||0)+(reb.count||0);
-  var totRev=(ver.revenue||0)+(rec.revenue||0)+(reb.revenue||0);
+  // Totalen kommer fra backendens autoritative data.total (sjekket over), ikke klient-sum.
+  // Fortsatt ikke alle klipp i perioden: kategorien 'ny' (kundens første booking uten verving)
+  // klassifiseres og filtreres bort i backend før svaret. Derfor «Totalt» uten prosentandel.
+  var totCount=total.count;
+  var totRev=total.revenue;
   el.innerHTML='<div class="drv-rows">'+rows.map(function(r){
     return '<div class="drv-row2">'
       +'<div class="drv-left"><span class="drv-dot" style="background:'+r.color+'"></span><span class="drv-nm">'+r.name+'</span></div>'
