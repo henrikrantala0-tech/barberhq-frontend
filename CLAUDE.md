@@ -365,7 +365,7 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 - **Uke-rekord (lag 4) — KUN pill-modus inneværende uke:** `current_week_revenue`/`best_week_revenue`/`best_week_start` fra `/stats` (backend-beregnet, on-read/Oslo, best = MAX ferdige uker). Gull-KPI (`#estRevValue` gull-gradient + drop-shadow-glow + puls) tenner kun ved `current > best` OG `curPeriod==="uke"`. Dempet «Beste uke: X kr · [mnd]»-fotnote ellers.
 - **Persentil + rekord-bar (batch 2) — KUN pill-modus inneværende uke:** fra `/stats.weekly_revenue` (`[{week_start,revenue}]`, all-time ferdige uker, on-read/Oslo, `max==best_week_revenue` per konstruksjon). Persentil «Bedre enn X% av dine egne uker» vist ved ≥6 uker OG pct≥50 (over median), undertrykt ved rekord. Rekord-bar `current/best`: <0.80 skjul · 0.80–1.0 «X kr unna» · ≥1.0 «Ny rekord denne uka! 🔥» 100% gull. Baren eier rekord-budskapet (tømmer `#rekordNote`) → ingen dobbelt. Skjult på 2uker/måned/historisk måned.
 - **Merk (aldri sett live):** mot volum-test er `current_week` (~10 550) « `best` (13 950 = 76%) → persentil + rekord-bar naturlig SKJULT. «unna»/«rekord»-tilstand kun Playwright/deterministisk verifisert. `gull-demo.cjs`-fixtur (backend-repo) kan heve `current` over tersklene for å se dem live.
-- **«Drevet av BarberHQ» (Oversikt):** `renderDrivenBy` henter alltid ekte `GET /api/dashboard/attribution?period=uke|2uker|maaned` (session) via `api.attribution` — mock (`MOCK_ATTRIBUTION` + `USE_MOCK`-flagget) fjernet i `fa02e3f`. Tre rader (rebooking/vinn-tilbake/vervet); 0-rad-kategori rendrer «0 klipp · 0 kr», alle tre 0 → tomtilstand «Her bygger verdien seg opp». Delta «fra forrige uke» kun på uke-pill (2uker−uke). Skjult på historisk måneds-visning. Gjenstår: backend-query + verifiser ekte/seedet tall mot prod — se Må gjøres.
+- **«Drevet av BarberHQ» (Oversikt):** `renderDrivenBy` henter ekte `GET /api/dashboard/attribution?period=uke|2uker|maaned` (session) via `api.attribution` for ikke-basis — mock (`MOCK_ATTRIBUTION` + `USE_MOCK`) fjernet i `fa02e3f`. Ved Basis-plan vises eksempeltall bak lås i stedet (Basis-visning, INGEN API-kall — lekker aldri ekte tall). Totalen kommer fra backendens autoritative `data.total {count,revenue}` (efaa553), gjort til ENESTE kilde i `46701a3` (klient-sum `attribSum` fjernet; mangler total → feilstate, aldri klient-sum). Tre rader (rebooking/verving/vinn tilbake); 0-rad «0 klipp · 0 kr», alle tre 0 → «Her bygger verdien seg opp». Delta «fra forrige uke» kun på uke-pill (2uker−uke), aldri på eksempeldata. Skjult på historisk måned. Gjenstår kun: verifiser seedede/ekte tall mot prod.
 
 ### Bildeplasserings-system (slots)
 - `images` har `slot` (portrett/hero/galleri) + `sort_order`. Barbereren trykker en slot-boks per layout → laster opp dit. Galleri-grense 10; erstatning av portrett/hero sletter gammelt helt (DB+R2). `PATCH /images/:id/slot` flytter. Layout-bytte hard-sletter (DB+R2), transaksjonssikret (BEGIN/COMMIT/ROLLBACK, R2 best-effort utenfor transaksjon).
@@ -403,8 +403,10 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
 1. **Oversikt** = Oversikt + Bookinger + vinn-tilbake-**liste**. Pengeside-rekkefølge:
    KPI/omsetning → graf → «Drevet av BarberHQ» → kommende bookinger → full booking-liste
    (no-show-marker) → vinn-tilbake-liste.
-2. **Vekst** = vekst-tall (rebooking-rate/trend/attribusjon, mock) + SMS-knottene
-   (påminnelse/rebooking/intervall, ekte `GET/PUT /api/dashboard/settings`). Divider mellom
+2. **Vekst** = vekst-tall (rebooking-rate/trend) + attribusjon (EKTE `/attribution`, ikke mock) + SMS-knottene
+   (påminnelse/rebooking/intervall, ekte `GET/PUT /api/dashboard/settings`). Hele fanens Vekst-flater
+   (attribusjon/momentum/rebooking/vinn-tilbake/verving) skjules bak lås + eksempeltall ved Basis-plan
+   (`erBasis()` — se Basis-visning). Divider mellom
    måling (over) og kontroll (under). Plassholder-kommentar for vinn-tilbake-**konfig**
    (auto-SMS ved kansellering/no-show) — bygges med vekstfeaturen.
 3. **Tjenester & tider** (`data-panel="tjenester"`) = tjenester + arbeidstider.
@@ -428,6 +430,16 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   (`POST /api/dashboard/billing/checkout` → redirect til `{url}`). Retur fra Stripe håndteres av
   `applyBillingReturn()` på `?live=1` / `?avbrutt=1` — tvinger fram Konto-fanen, viser kvitterings-
   banner og stripper query-en med `replaceState`. Betaling ≠ publisering: «Gå live» er separat.
+- **Basis-visning (Vekst-skjold).** Barbereren på Basis-plan ser Vekst-flatene låst i stedet for
+  ekte data. Trigges KUN av `erBasis()` = `_billing.effective_plan==='basis'` (backendens autoritative
+  «hva gjelder nå» — ALDRI `b.plan`, som er NULL i trial → ville låst prøvekunder ute). Trial/Vekst =
+  uendret dashbord. Skjold-komponent (`settSkjold`/`fjernSkjold`): halvgjennomsiktig lås + «Se abonnement»
+  (klikk → `switchPanel('abonnement')` + scroll `#accAbonnement`), innhold under `pointer-events:none`
+  + inputs disabled. Flater: Oversikt «Drevet av» + Vekst attribusjon/momentum/rebooking/vinn-tilbake/
+  verving (påminnelse + `#vekstStats`/trend IKKE låst — volum, ikke Vekst-attribusjon). Attribusjons-
+  kortene viser eksempeltall (`VEKST_EKSEMPEL`, 6 850 kr) bak lås med «Eksempel»-merke, INGEN API-kall.
+  Backend gater også: `PUT /settings` → 403 viser «Se abonnement»-lenka, ikke generisk feil. Én commit-
+  kjede `d309cd0`→`249a126`→`6c7efaf`. Render: `tools/render/skjold.mjs` (basis + trial-kontroll).
 - **Tema-toggle: header (→31.07) → egen Innstillinger-fane (31.07) → Konto (06.08).** `#themeBtn`
   er samme knapp og samme id hele veien (all tema-JS er urørt), nå i en `.tog-row` nederst i Konto
   med etikett «Mørk modus» + «Huskes i denne nettleseren». Headerens `.who` har kun barbernavnet.
@@ -487,8 +499,8 @@ tas i backend-repoet.
 - **ÅPEN — `buildPalette` er duplisert i `fyll.cjs` og `site/no/palett.js`, og må holdes i synk
   manuelt.** Fortsatt to kopier (verifisert 12.08). Ingen delt kilde.
 
-- **ÅPEN — tredelt fane uten dekkende navn.** Fanen på `dashboard.html:774` inneholder tjenester
-  med priser, Arbeidstider (`:1205`) og Google Calendar (`:1173`). Etiketten «Tjenester & tider»
+- **ÅPEN — tredelt fane uten dekkende navn.** Fanen på `dashboard.html:1681` inneholder tjenester
+  med priser, Arbeidstider (`:1734`) og Google Calendar (`:1692`). Etiketten «Tjenester & tider»
   nevner ikke de to siste. Navnedriften mot panel-tittelen er rettet (`58e7e60`); selve
   navngivningen står åpen.
 
@@ -613,8 +625,9 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
 ### Løst før/ved lansering (ikke gjenoppdag)
 - **Stripe-billing + konverteringsflyt** — plan-velger Basis/Vekst, `startCheckout {plan}`,
   checkout/portal i Konto. Pris fra `PLAN_INFO[b.plan]` (249/399, fail-closed). Live og
-  prod-verifisert (`364e2c5`). `effective_plan`/`effective_plan_grunn` leses fortsatt ikke i
-  frontend (feltene ligger klare den dagen «i prøveperiode» vs «Vekst-abonnement» skal skilles).
+  prod-verifisert (`364e2c5`). `effective_plan` leses nå av `erBasis()` (Vekst-skjoldet / Basis-visning
+  — skjuler Vekst-flatene bak lås + eksempeltall når `effective_plan==='basis'`); `effective_plan_grunn`
+  leses av `renderKonto` (`:5047`, billing-tilstandene). Ikke lenger «ligger klare, ubrukt».
 - **«Gå live»-publisering** — barbereren publiserer selv fra Konto
   («Publiser og start gratis prøveperiode» → `PUT /api/dashboard/page-status`), eneste vei
   `forhandsvist → live`, skriver `trial_start_at` atomisk. Avpubliser er samme vei tilbake.
@@ -651,16 +664,21 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
    bilde-hjelpetekster, Vekst-flytens ledd, SMS-trekkspill, palett-navn og alt sv/da/en. Markør:
    `[oversettelse: sv/da/en]`. ⚠ `.ds-tab` rad 4/5 kan IKKE oversettes rett — de er sanne i det
    nordiske feltet, men usanne i USA (theCut PRO inkluderer begge). Faktasjekk, ikke språkjobb.
+   **en/-flater som venter på denne fasen (ikke åpne no/-oppgaver):** terms/cookies-innhold (no/ er
+   dekket av `vilkar.html`; en/ mangler innhold + har døde footer-`<a href="#">`), og «Forgot
+   password»-flyten (pkt 5).
 
 #### Innhold / sider
-7. **Terms- og Cookies-sider mangler — BÅDE en/ og no/.** Footerne på alle fire sider per språk
-   (`index`, `funksjoner`, `priser`, `support`) har `<a href="#">` for Terms/Vilkår og Cookies.
-   Privacy er løst i en/ (`privacy.html`); no/ trenger en oversatt `personvern.html`. Merk
-   `netlify.toml`: hele `/en/*` har `X-Robots-Tag: noindex` til oversettelsesfasen er ferdig.
-8. **Døde footer-lenker (kartlagt 29.07, delvis rettet).** Vilkår/Personvern/Cookies peker nå på
-   `vilkar.html` (men innholdet mangler, se punkt 7). Samme gjennomgang gjenstår på
-   `funksjoner.html`, `priser.html`, `support.html` og i en/. `Se dashbordet` (`id="demoNavBtn"`)
-   er `href="#"` med vilje (`DEMO_ENABLED = false`) — ikke en bug.
+7. **Terms/Cookies-innhold: no/ DEKKET.** no/-footerne (`index`/`funksjoner`/`priser`/`support`)
+   peker på `vilkar.html` — kombinert vilkår + personvern + cookies, ekte innhold, ingen døde lenker
+   (verifisert 06.09). no/ har personvern INNE i vilkar.html (`#personvern`), ikke som egen
+   `personvern.html`. en/-innholdet hører til oversettelsesfasen (pkt 6), ikke en åpen no/-oppgave.
+   Merk `netlify.toml`: hele `/en/*` har `X-Robots-Tag: noindex` til oversettelsesfasen er ferdig.
+8. **Døde footer-lenker (no/ FERDIG 06.09).** Vilkår/Personvern/Cookies peker på `vilkar.html` —
+   som HAR innhold (18 seksjoner), ikke «mangler». Personvern/Cookies lander på `#personvern`/`#cookies`
+   (id-anker + `scroll-padding-top:84px` for sticky nav, `59d56c4`). Alle fire no/-footere verifisert
+   uten døde lenker (`index`/`funksjoner`/`priser`/`support`). en/-footerne hører til oversettelsesfasen
+   (pkt 6). `Se dashbordet` (`id="demoNavBtn"`) er `href="#"` med vilje (`DEMO_ENABLED = false`) — ikke en bug.
 9. **Landingsside-tekst (`site/no/index.html`).** «Bygd for å fylle stolen»-seksjonen skal endres
    (anker `<h2 class="sys-h2">`, omfang ikke bestemt), og siden mangler et sted som pitcher løftet
    direkte: FLERE KUNDER + OVERSIKT skal stå sammen ett sted, ikke bare underforstått i
@@ -672,11 +690,12 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
     valg som må tas stilling til. Ikke gjenoppdag som bug.
 
 #### Data / backend-avhengig
-11. **Koble ekte data i Vekst.** Oversikt (diagram/KPI/rekord/månedsvelger) er EKTE mot
-    `/stats` + `/stats/month`; bookinger-liste ekte. Gjenstår: Vekst-fanen (stats/trend) +
-    «Drevet av»-attribusjon. Frontend GJORT (`fa02e3f`); venter på backend
-    `GET /api/dashboard/attribution?period=uke|2uker|maaned` (query-plan + åpen vervet-beslutning i
-    barberhq-backend CLAUDE.md) + verifisering av ekte/seedet tall mot prod. No-show-knapp mock.
+11. **Koble ekte data i Vekst.** Oversikt (diagram/KPI/rekord/månedsvelger) EKTE mot
+    `/stats` + `/stats/month`; bookinger-liste ekte. «Drevet av»/Vekst-attribusjon er nå EKTE
+    ende-til-ende: backend `GET /api/dashboard/attribution` returnerer `total {count,revenue}`
+    (efaa553), frontend gjort autoritativ på `data.total` (`46701a3`, klient-sum fjernet). Gjenstår
+    kun: verifiser seedede/ekte tall mot prod. No-show-knapp mock. (Ved Basis-plan vises eksempeltall
+    bak lås, ikke ekte data — se Basis-visning.)
 12. **Vekstfeatures (backend):** rebooking, verving, vinn-tilbake auto-SMS. Deretter
     landingsside-avsnitt under «fyll stolen» som forklarer dem.
 13. **Test full klikk-flyt med ekte klippbilde** — crop + lagring i Din side, verifiser riktig slot
