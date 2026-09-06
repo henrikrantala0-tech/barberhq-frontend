@@ -116,4 +116,36 @@ console.log('\nerBasis: basis =', [...new Set(b.map(r=>r.erBasis))], ' trial =',
 console.log('Skjold i basis (per flate som finnes):', b.filter(r=>r.finnes).map(r=>r.flate+':'+(r.skjold?'JA':'nei')).join(' · '));
 console.log('Skjold i trial (skal være 0):', t.filter(r=>r.skjold).length);
 console.log('JS-feil totalt:', rad.filter(r=>r.jsfeil!=='ingen').length);
+
+// ── 403-test: PUT /settings → 403 skal vise lås-teksten, ikke «Kunne ikke lagre» ──────────────
+// Kjøres i TRIAL (ingen skjold → #vervPct er enablet), med forbudt403 → backend gater planen.
+{
+  const page = await browser.newPage({ viewport:{ width:375, height:1100 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  await page.route('**/api/**', router('trial', true)); // forbudt403 = true
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst'));
+  await page.waitForTimeout(1400);
+  // Åpne verving-accordionen og trigg rabatt-endringen (gyldig verdi 5–50).
+  await page.evaluate(() => { const h=document.querySelector('#accVerv .acc-head'); if(h && h.getAttribute('aria-expanded')!=='true') h.click(); });
+  await page.waitForTimeout(200);
+  await page.evaluate(() => { const el=document.querySelector('#vervPct'); el.value='25'; el.dispatchEvent(new Event('change',{bubbles:true})); });
+  await page.waitForTimeout(500);
+  const m = await page.evaluate(() => {
+    const err = document.querySelector('#vervPctErr');
+    return { synlig: err ? !err.hidden : false, tekst: err ? err.textContent.trim() : '',
+      harLenke: err ? !!err.querySelector('a.skjold-lenke') : false,
+      erGenerisk: err ? /Kunne ikke lagre/.test(err.textContent) : false };
+  });
+  await page.evaluate(() => { const e=document.querySelector('#accVerv'); if(e)e.scrollIntoView({block:'center'}); });
+  await page.waitForTimeout(150);
+  await page.screenshot({ path:`${OUT}/skjold-403-375.png`, fullPage:false });
+  console.log('\n=== 403-test (PUT /settings → 403) ===');
+  console.log('  feilfelt synlig:', m.synlig, '| tekst:', JSON.stringify(m.tekst));
+  console.log('  har «Se abonnement»-lenke:', m.harLenke, '| er generisk feil:', m.erGenerisk);
+  console.log('  403-lås OK («Se abonnement»-lenke, IKKE generisk, 0 JS-feil):',
+    (m.harLenke && !m.erGenerisk && errs.length===0) ? 'JA' : 'NEI');
+  await page.close();
+}
+
 await browser.close(); server.close();

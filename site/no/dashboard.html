@@ -466,8 +466,7 @@
     background:rgba(10,10,10,.66);backdrop-filter:blur(1.5px);border-radius:inherit;cursor:pointer;text-align:center;padding:16px}
   html:not([data-theme="dark"]) .skjold{background:rgba(255,255,255,.62)}
   .skjold-ic{width:26px;height:26px;color:var(--ink);opacity:.92}
-  .skjold-h{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.01em}
-  .skjold-lenke{font-size:12.5px;color:var(--info);text-decoration:underline;text-underline-offset:2px}
+  .skjold-lenke{font-size:13px;color:var(--info);text-decoration:underline;text-underline-offset:2px}
   .skjold:focus-visible{outline:2px solid var(--info);outline-offset:-3px}
   .eksempel-merke{position:absolute;top:10px;left:10px;z-index:6;pointer-events:none;
     background:var(--surface);border:1px solid var(--line-2);color:var(--mut);
@@ -1409,6 +1408,9 @@
          «Personlig». ⚠ Gjelder KUN denne forekomsten. Oversiktens «Drevet av BarberHQ»
          (#drivenByWrap) står i et panel-kort og beholder .block-h — hever man den også,
          sprenger den kortet den ligger i. -->
+    <!-- #attrKort er skjold-host for attribusjonen i basis (settSkjold i renderAttribusjon).
+         Wrapper sec-h + periodevelger + rader som ÉN enhet; momentum-kortet under er egen host. -->
+    <div id="attrKort">
     <p class="sec-h">Drevet av BarberHQ</p>
     <p class="block-s">Klipp BarberHQ hentet inn eller hentet tilbake.</p>
     <div class="segs" id="attrPeriod" role="group" aria-label="Periode for attribusjon">
@@ -1417,6 +1419,7 @@
       <button type="button" data-p="maaned" aria-selected="true">Denne måneden</button>
     </div>
     <div id="attrRows"><p class="wb-empty">Laster …</p></div>
+    </div>
     <!-- Momentum-kort: bonus-nudge, vises KUN ved lav forfalt-andel (loadMomentum). Ligger over
          både Automatikk (rebooking) og Personlig (verving); knappen åpner Verving i samme fane. -->
     <div class="momentum" id="momentumCard" hidden>
@@ -2447,9 +2450,10 @@ const api={
     if(!r||!r.ok)return null;   // 404/400/401 → null → fallback-noten blir stående
     return r.json();
   },
+  // Returnerer Response (ikke boolean) så kallere kan skille 403 (Vekst-lås) fra annen feil.
+  // Fire-and-forget-kallere (SMS-brytere) ignorerer den fortsatt trygt.
   async saveSettings(patch){
-    const r=await apiFetch('/api/dashboard/settings',{method:'PUT',body:JSON.stringify(patch)});
-    return r&&r.ok;
+    return await apiFetch('/api/dashboard/settings',{method:'PUT',body:JSON.stringify(patch)});
   },
   async winback(group){
     const r=await apiFetch('/api/dashboard/winback'+(group?('?group='+encodeURIComponent(group)):''));
@@ -2819,19 +2823,24 @@ function aapneAbonnement(){
     acc.scrollIntoView({behavior:'smooth',block:'start'}); }
 }
 // Legg/fjern skjold på et kort. Sjekker erBasis() selv → kall settSkjold(host) etter enhver render.
-// Deaktiverer bare kontroller VI slår av (data-skjold-disabled), så fjernSkjold ikke rører en
-// kontroll som var disabled av annen grunn (f.eks. en lagre-knapp midt i lagring).
-function settSkjold(host){
+// opts.eksempel=true → «Eksempel»-merke øverst (KUN attribusjonskortene), lagt som eget host-barn
+// OVER skjoldet. Deaktiverer bare kontroller VI slår av (data-skjold-disabled), så fjernSkjold ikke
+// rører en kontroll som var disabled av annen grunn (f.eks. en lagre-knapp midt i lagring).
+function settSkjold(host,opts){
   if(!host)return;
   if(!erBasis()){fjernSkjold(host);return;}
   host.classList.add('skjold-vert');
+  if(opts&&opts.eksempel&&!host.querySelector(':scope > .eksempel-merke')){
+    var e=document.createElement('span'); e.className='eksempel-merke'; e.textContent='Eksempel';
+    host.insertBefore(e,host.firstChild);
+  }
   host.querySelectorAll('input,select,textarea,button').forEach(function(el){
     if(!el.closest('.skjold') && !el.disabled){el.disabled=true;el.setAttribute('data-skjold-disabled','1');} });
   if(host.querySelector(':scope > .skjold'))return; // allerede skjoldet
   var s=document.createElement('div');
   s.className='skjold'; s.setAttribute('role','button'); s.tabIndex=0;
-  s.setAttribute('aria-label','Vekst-funksjon — se abonnement');
-  s.innerHTML=SKJOLD_LAAS_SVG+'<span class="skjold-h">Vekst-funksjon</span><span class="skjold-lenke">Se abonnement</span>';
+  s.setAttribute('aria-label','Se abonnement');
+  s.innerHTML=SKJOLD_LAAS_SVG+'<span class="skjold-lenke">Se abonnement</span>';
   s.addEventListener('click',aapneAbonnement);
   s.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){e.preventDefault();aapneAbonnement();} });
   host.appendChild(s);
@@ -2839,23 +2848,50 @@ function settSkjold(host){
 function fjernSkjold(host){
   if(!host)return;
   var s=host.querySelector(':scope > .skjold'); if(s)s.remove();
+  var e=host.querySelector(':scope > .eksempel-merke'); if(e)e.remove();
   host.querySelectorAll('[data-skjold-disabled]').forEach(function(el){ el.disabled=false; el.removeAttribute('data-skjold-disabled'); });
   host.classList.remove('skjold-vert');
 }
-// Eksempel-markup for «Drevet av» (hero-stil). Samme drv-klasser som ekte + «Eksempel»-merke, ingen delta.
-function eksempelDrivenByHtml(){
+// Skjold de STATISKE Vekst-accordionene (rebooking/vinn tilbake/verving). Attribusjon + momentum
+// skjoldes av sine egne render-funksjoner. settSkjold self-sjekker erBasis → skjold eller fjern.
+function skjoldVekstFlater(){
+  ['#accRebook','#accWinback','#accVerv'].forEach(function(sel){ var el=$(sel); if(el)settSkjold(el); });
+}
+// Basis-bruker som treffer en Vekst-innstilling (skjoldet disabler inputs, men backend gater også):
+// PUT /settings → 403 → samme lås-tekst som skjoldet i feilfeltet, ikke «Kunne ikke lagre».
+function erSettings403(r){ return !!(r && r.status===403); }
+function visSettingsLaas(errEl){
+  if(!errEl)return;
+  errEl.innerHTML='<a href="#" class="skjold-lenke">Se abonnement</a>';
+  errEl.hidden=false;
+  var a=errEl.querySelector('a'); if(a)a.addEventListener('click',function(e){e.preventDefault();aapneAbonnement();});
+}
+// Eksempel-rader (delt drv-markup). hero=true → «Drevet av»-stil (hero-tall); ellers Vekst-stil
+// («Totalt»-rad + attr-note). Ingen delta i noen av dem. «Eksempel»-merket legges av settSkjold.
+function eksempelRaderHtml(hero){
   var E=VEKST_EKSEMPEL;
   var rows=[{name:"Rebooking",o:E.rebooking,color:"var(--good)"},{name:"Verving",o:E.vervet,color:"#e0844a"},{name:"Vinn tilbake",o:E.recovery,color:"var(--info)"}];
   var rowsHtml=rows.map(function(r){return '<div class="drv-row2"><div class="drv-left"><span class="drv-dot" style="background:'+r.color+'"></span><span class="drv-nm">'+r.name+'</span></div><div class="drv-right"><span class="drv-cuts">'+r.o.count+' klipp</span><span class="drv-val">'+krFmt(r.o.revenue)+'</span></div></div>';}).join("");
-  return '<span class="eksempel-merke">Eksempel</span>'
-    +'<div class="drv-hero"><p class="drv-hero-lbl">Hentet inn med BarberHQ</p><p class="drv-hero-num">'+krFmt(E.total.revenue)+'</p></div>'
-    +'<div class="drv-rows">'+rowsHtml+'</div>'
-    +'<p class="drv-trust">Kun fullførte, betalte klipp. Estimert fra dine priser.</p>';
+  if(hero){
+    return '<div class="drv-hero"><p class="drv-hero-lbl">Hentet inn med BarberHQ</p><p class="drv-hero-num">'+krFmt(E.total.revenue)+'</p></div>'
+      +'<div class="drv-rows">'+rowsHtml+'</div>'
+      +'<p class="drv-trust">Kun fullførte, betalte klipp. Estimert fra dine priser.</p>';
+  }
+  return '<div class="drv-rows">'+rowsHtml
+    +'<div class="drv-row2 attr-total"><div class="drv-left"><span class="drv-nm">Totalt</span></div><div class="drv-right"><span class="drv-cuts">'+E.total.count+' klipp</span><span class="drv-val">'+krFmt(E.total.revenue)+'</span></div></div>'
+    +'</div><p class="attr-note">Ikke alle klipp i perioden. Kunder som fant deg på egen hånd telles ikke med her.</p>';
 }
+function eksempelDrivenByHtml(){ return eksempelRaderHtml(true); }
 // Re-render skjoldede flater etter at billing (effective_plan) er lastet — flatene kan ha rendret
 // før _billing kom (erBasis var false → ekte/tom sti). Kalles fra loadBilling.
 function oppdaterSkjoldFlater(){
   if(document.getElementById('drivenBy') && typeof renderDrivenBy==='function' && typeof curPeriod!=='undefined')renderDrivenBy(curPeriod);
+  // Vekst-flatene: kun hvis fanen faktisk er lastet (unngå unødig attribusjon-fetch før åpning).
+  if(typeof aktivtPanel==='function' && aktivtPanel()==='vekst'){
+    if(typeof renderAttribusjon==='function')renderAttribusjon();
+    if(typeof loadMomentum==='function')loadMomentum();
+    skjoldVekstFlater();
+  }
 }
 
 // «Drevet av BarberHQ» (Oversikt): hero-tall + delta + tre rader fra EKTE /attribution (count+revenue).
@@ -2866,7 +2902,7 @@ function visEksempelDrivenBy(wrap){
   var lbl=$("#drivenByLabel"); if(lbl)lbl.textContent="Klipp BarberHQ hentet inn eller hentet tilbake.";
   var sa=$("#drivenBySeeAll"); if(sa)sa.hidden=false; // «Se alt i Vekst» står, fører til (skjoldede) Vekst
   wrap.innerHTML=eksempelDrivenByHtml();
-  settSkjold(wrap);
+  settSkjold(wrap,{eksempel:true});
 }
 async function renderDrivenBy(period){
   var wrap=$("#drivenBy"); if(!wrap)return;
@@ -3425,8 +3461,9 @@ async function loadVekst(){
   var stats=await api.statsDaily(); // EKTE /stats (months/record_customers_month/completed_all_time). Tom {daily:[]} ved feil → KPI 0 / tomt diagram, ingen krasj.
   renderVekstKpi(stats);
   renderMonthChart(stats);
-  renderAttribusjon();
-  loadMomentum();
+  renderAttribusjon();   // basis → eksempel + skjold på #attrKort
+  loadMomentum();        // basis + synlig → skjold på #momentumCard
+  skjoldVekstFlater();   // basis → skjold på rebooking/vinn tilbake/verving-accordionene
 }
 
 /* ---- Momentum-kort (Vekst): bonus-nudge når rebooking holder de faste, tid for å verve nye ---- */
@@ -3436,6 +3473,7 @@ function renderMomentum(m){
   // jobben) / show:false / manglende data → skjul helt (ingen «alt er bra»-støy). returning>0 verner mot 0/0.
   var vis=!!(m && m.show===true && m.returning>0 && (m.overdue/m.returning) < MOMENTUM_LAV_TERSKEL);
   card.hidden=!vis;
+  if(vis)settSkjold(card); else fjernSkjold(card); // basis + synlig → skjold (Vekst-nudge)
 }
 async function loadMomentum(){
   // Bonus, ikke kjerne: feiler kallet, viser vi ingenting (ingen feilmelding, ingen tom boks).
@@ -3459,9 +3497,18 @@ async function loadMomentum(){
 // filtrerer den bort før den svarer. Derfor ingen prosentandeler her — kun absolutte tall.
 // Omsetningen er rabattert (price_nok minus discount_pct), ikke listepris.
 var attrPeriod="maaned";
+// Basis-visning av Vekst-attribusjonen: eksempeltall + skjold på #attrKort. Synkron.
+function visEksempelAttribusjon(el){
+  el.innerHTML=eksempelRaderHtml(false);
+  var kort=$("#attrKort"); if(kort)settSkjold(kort,{eksempel:true});
+}
 async function renderAttribusjon(){
   var el=$("#attrRows"); if(!el)return;
+  // Basis: skjold + eksempeltall. INGEN API-kall (lekker aldri ekte tall til basis), ingen delta.
+  if(erBasis())return visEksempelAttribusjon(el);
+  var kortEl=$("#attrKort"); if(kortEl)fjernSkjold(kortEl); // ikke-basis → aldri skjold
   var data=await api.attribution(attrPeriod);
+  if(erBasis())return visEksempelAttribusjon(el); // billing kom under fetch → bytt til eksempel
   if(!data){ el.innerHTML='<p class="wb-empty">Kunne ikke hente tallene akkurat nå.</p>'; return; } // 401→redirigert; annen feil→ærlig melding
   var ver=data.vervet||{count:0,revenue:0};
   var rec=data.recovery||{count:0,revenue:0};
@@ -4380,8 +4427,9 @@ document.querySelectorAll('#vervRecipient button').forEach(function(b){
   b.addEventListener('click',async function(){
     var forrige=_vervLagret.recipient, err=$("#vervPctErr");
     setVervRecipient(b.dataset.r);
-    var ok=await api.saveSettings({referral_reward_recipient:b.dataset.r});
-    if(ok){ _vervLagret.recipient=b.dataset.r; err.hidden=true; }
+    var r=await api.saveSettings({referral_reward_recipient:b.dataset.r});
+    if(erSettings403(r)){ setVervRecipient(forrige); visSettingsLaas(err); return; } // Vekst-lås, ikke generisk feil
+    if(r&&r.ok){ _vervLagret.recipient=b.dataset.r; err.hidden=true; }
     else  { setVervRecipient(forrige); err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false; }
   });
 });
@@ -4390,6 +4438,7 @@ $("#vervPct").addEventListener('change',async function(){
   if(!Number.isInteger(v)||v<5||v>50){ err.textContent='Rabatt må være et heltall mellom 5 og 50 %.'; err.hidden=false; return; }
   err.hidden=true;
   var r=await apiFetch('/api/dashboard/settings',{method:'PUT',body:JSON.stringify({referral_discount_pct:v})});
+  if(erSettings403(r)){ visSettingsLaas(err); return; } // Vekst-lås → samme lås-tekst som skjoldet
   if(r&&!r.ok){ var d=await r.json().catch(function(){return{};}); err.textContent=(d&&d.error)||'Kunne ikke lagre.'; err.hidden=false; return; } // backend-feil pent
   _vervLagret.pct=v;   // først NÅ er prosenten sann å love bort
 });
