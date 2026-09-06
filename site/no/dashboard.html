@@ -2508,7 +2508,7 @@ function fillMonths(months){
   var sel=$("#monthSel"); if(!sel) return;
   var cur=osloYm();
   var opts=(months||[]).filter(function(m){return m!==cur;}).slice().reverse(); // ASC → nyest øverst
-  var html='<option value="">— velg måned —</option>';
+  var html='<option value="">Velg måned</option>';
   for(var i=0;i<opts.length;i++){ var ym=opts[i]; html+='<option value="'+ym+'">'+MONTHS[+ym.slice(5,7)-1]+' '+ym.slice(0,4)+'</option>'; }
   sel.innerHTML=html;
 }
@@ -3633,7 +3633,7 @@ async function loadGoogleStatus(){
 }
 
 function buildMonthSelect(){
-  const sel=$("#monthSel"); if(sel) sel.innerHTML='<option value="">— velg måned —</option>'; // placeholder; fillMonths() fyller ekte måneder etter /stats
+  const sel=$("#monthSel"); if(sel) sel.innerHTML='<option value="">Velg måned</option>'; // placeholder; fillMonths() fyller ekte måneder etter /stats
 }
 
 /* ── Hash-router ──────────────────────────────────────────────────────────────
