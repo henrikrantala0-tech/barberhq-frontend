@@ -2771,7 +2771,10 @@ function applyRekord(p){
     note.textContent="Ny rekord denne uka";
     if(!rekordPulsed && !prefersReduced()){ rev.classList.add('rekord-puls'); rekordPulsed=true; } // puls kun første gang
   } else if(!hasRecord){
-    note.textContent="Rekord settes denne uka"; // fersk: invitasjon, aldri "0 kr"
+    // «Rekord settes denne uka» er en invitasjon — men bare når det FAKTISK er tjent noe denne
+    // uka. Uten record OG med 0 kr (ingen bookinger) er den en tom/falsk påstand: 0 «slår» ingenting.
+    // Rotårsak, ikke skjuling — grenen manglet et gulv på current_week_revenue. Ved 0 → ingen note.
+    note.textContent=(p.current_week_revenue>0)?"Rekord settes denne uka":"";
   } else {
     var mnd=new Date(p.best_week_start+'T12:00:00').toLocaleDateString('nb-NO',{month:'long'}); // T12 unngår tz-slip
     var kr=(p.best_week_approximate?'ca. ':'')+p.best_week_revenue.toLocaleString('no-NO')+' kr';
