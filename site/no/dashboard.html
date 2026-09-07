@@ -3476,7 +3476,13 @@ function byggCal(){
 }
 function renderDaystrip(){
   var strip=$("#calDaystrip"),html='',todayKey=calDayKey(new Date());
-  for(var k=CAL.minKey;k<=CAL.maxKey;k=calNesteKey(k,1)){var d=new Date(k),n=dagBookinger(k).length;
+  // Rotårsak-fiks (mobil): strippen starter på I DAG (eller aktiv dag hvis den er tidligere — navigert
+  // bakover / last-past), så i dag ligger HELT TIL VENSTRE med kommende dager til høyre. Uten dette ligger
+  // 14 fortids-chips (CAL.minKey = i dag−14) foran og dytter i dag mot høyre. scrollIntoView() under kan
+  // ikke redde det: renderCal() kjøres MENS overlayet er skjult (openKalender: render før hidden=false), så
+  // den forankrer ikke — venstrekanten må være riktig i seg selv. Desktop (>760) viser hele vinduet som før.
+  var start=(window.innerWidth<=760)?Math.max(CAL.minKey,Math.min(todayKey,CAL.active)):CAL.minKey;
+  for(var k=start;k<=CAL.maxKey;k=calNesteKey(k,1)){var d=new Date(k),n=dagBookinger(k).length;
     html+='<button class="cal-chip'+(k===todayKey?' is-today':'')+(k===CAL.active?' active':'')+'" data-key="'+k+'"><span class="chip-wd">'+DAYS[(d.getDay()+6)%7].slice(0,3)+'</span><span class="chip-d">'+d.getDate()+'</span>'+(n?'<span class="chip-count">'+n+'</span>':'')+'</button>';}
   strip.innerHTML=html;
   var act=strip.querySelector('.cal-chip.active');if(act)act.scrollIntoView({inline:'center',block:'nearest'});
