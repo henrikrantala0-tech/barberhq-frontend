@@ -52,6 +52,12 @@ function router(variant, forbudt403) {
     if (p === '/api/dashboard/billing/status') return json(billing(variant));
     if (p === '/api/dashboard/attribution')    return json(ATTR);
     if (p === '/api/dashboard/momentum')       return json({ show:true, overdue:1, returning:20 });
+    // Lojalitet: kun trial (kontroll) kaller ruta — basis rendrer eksempel uten fetch.
+    if (p === '/api/dashboard/loyalty')        return json({ enabled:true, threshold:10, pct:100, count_history:false,
+      participants:[{customer_id:1,name:'Amir Haddad',phone:'99887766',stamps:10,reward_ready:true},
+                    {customer_id:2,name:'Kari Nordmann',phone:'91234567',stamps:7,reward_ready:false}],
+      eligible:[{customer_id:6,name:'Sara Ali',phone:'99001122',last_visit:'2026-09-05T10:00:00Z',completed_count:8}],
+      totals:{in_progress:12,ready:1,redeemed_month:3,participants:2,eligible:1} });
     const listeAktig = /images|bookings|recent|services|hours|winback|referrals|rebooking|sms-logg/.test(p);
     return json(listeAktig ? [] : {});
   };
@@ -65,6 +71,7 @@ const FLATER = [
   { navn:'Vekst rebooking',   panel:'vekst', host:'#accRebook' },
   { navn:'Vekst vinn tilbake',panel:'vekst', host:'#accWinback' },
   { navn:'Vekst verving',     panel:'vekst', host:'#accVerv' },
+  { navn:'Vekst lojalitet',   panel:'vekst', host:'#accLoyal' },
 ];
 
 const MAAL = `(sel) => {

@@ -462,11 +462,16 @@
      .eksempel-merke ligger OVER skjoldet (z 6 > 5) så «Eksempel» leses tydelig, ikke bak lås-laget. */
   .skjold-vert{position:relative}
   .skjold-vert > *:not(.skjold):not(.eksempel-merke){pointer-events:none}
+  /* Lett skjold: lav overlegg-opacity + svak sløring, så innholdet under SÅ VIDT antydes. Lås,
+     kortnavn (leses gjennom) og «Se abonnement» skal fortsatt leses først — derfor skygge på
+     ikon + lenke så de popper over det svake innholdet, i begge temaer. */
   .skjold{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
-    background:rgba(10,10,10,.66);backdrop-filter:blur(1.5px);border-radius:inherit;cursor:pointer;text-align:center;padding:16px}
-  html:not([data-theme="dark"]) .skjold{background:rgba(255,255,255,.62)}
-  .skjold-ic{width:26px;height:26px;color:var(--ink);opacity:.92}
-  .skjold-lenke{font-size:13px;color:var(--info);text-decoration:underline;text-underline-offset:2px}
+    background:rgba(10,10,10,.48);backdrop-filter:blur(1px);border-radius:inherit;cursor:pointer;text-align:center;padding:16px}
+  html:not([data-theme="dark"]) .skjold{background:rgba(255,255,255,.48)}
+  .skjold-ic{width:26px;height:26px;color:var(--ink);opacity:.95;filter:drop-shadow(0 1px 2px rgba(0,0,0,.45))}
+  .skjold-lenke{font-size:13px;color:var(--info);text-decoration:underline;text-underline-offset:2px;text-shadow:0 1px 2px rgba(0,0,0,.45)}
+  html:not([data-theme="dark"]) .skjold-ic{filter:drop-shadow(0 1px 2px rgba(255,255,255,.8))}
+  html:not([data-theme="dark"]) .skjold-lenke{text-shadow:0 1px 2px rgba(255,255,255,.8)}
   .skjold:focus-visible{outline:2px solid var(--info);outline-offset:-3px}
   .eksempel-merke{position:absolute;top:10px;left:10px;z-index:6;pointer-events:none;
     background:var(--surface);border:1px solid var(--line-2);color:var(--mut);
@@ -2979,6 +2984,8 @@ function krFmt(n){return (n||0).toLocaleString("no-NO")+" kr";} // "9 800 kr" (k
 // Eksempeltall bak skjoldet — KUN i attribusjonskortene, hardkodet i ÉN blokk. Ingen delta.
 var VEKST_EKSEMPEL={rebooking:{count:10,revenue:3900},vervet:{count:3,revenue:1150},
   recovery:{count:5,revenue:1800},total:{count:18,revenue:6850}};
+// Lojalitet har BEVISST ingen eksempeltall bak skjoldet — kortet skjoldes som accordionene og viser
+// bare sin egen beskrivelse (ingenting å skimte). De to «Drevet av»-flatene beholder eksemplene over.
 var SKJOLD_LAAS_SVG='<svg class="skjold-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>';
 // Skjold-klikk → Konto-fanen + åpne/scroll abonnementsseksjonen. Gjenbruker switchPanel (ingen ny fanebytte).
 function aapneAbonnement(){
@@ -3018,10 +3025,11 @@ function fjernSkjold(host){
   host.querySelectorAll('[data-skjold-disabled]').forEach(function(el){ el.disabled=false; el.removeAttribute('data-skjold-disabled'); });
   host.classList.remove('skjold-vert');
 }
-// Skjold de STATISKE Vekst-accordionene (rebooking/vinn tilbake/verving). Attribusjon + momentum
-// skjoldes av sine egne render-funksjoner. settSkjold self-sjekker erBasis → skjold eller fjern.
+// Skjold de STATISKE Vekst-accordionene (rebooking/vinn tilbake/verving/lojalitet). Attribusjon +
+// momentum skjoldes av sine egne render-funksjoner. settSkjold self-sjekker erBasis → skjold eller
+// fjern. Lojalitet er med her (uten «Eksempel»-merke) — kortet viser bare sin egen beskrivelse.
 function skjoldVekstFlater(){
-  ['#accRebook','#accWinback','#accVerv'].forEach(function(sel){ var el=$(sel); if(el)settSkjold(el); });
+  ['#accRebook','#accWinback','#accVerv','#accLoyal'].forEach(function(sel){ var el=$(sel); if(el)settSkjold(el); });
 }
 // Basis-bruker som treffer en Vekst-innstilling (skjoldet disabler inputs, men backend gater også):
 // PUT /settings → 403 → samme lås-tekst som skjoldet i feilfeltet, ikke «Kunne ikke lagre».
@@ -3056,6 +3064,7 @@ function oppdaterSkjoldFlater(){
   if(typeof aktivtPanel==='function' && aktivtPanel()==='vekst'){
     if(typeof renderAttribusjon==='function')renderAttribusjon();
     if(typeof loadMomentum==='function')loadMomentum();
+    if(typeof loadLoyalty==='function')loadLoyalty();   // basis → returnerer tidlig (skjoldVekstFlater skjolder)
     skjoldVekstFlater();
   }
 }
@@ -3172,6 +3181,12 @@ async function loadUpcoming(){
 // Rabatt-flagg (spec 4): blå pill ved navnet når bookingen har referral_discount. Ingen pill uten feltet.
 function discountPill(b){
   var rd=b&&b.referral_discount; if(!rd)return'';
+  // Lojalitet-rolle (klippekort): «Lojalitet · Gratis klipp» ved 100, ellers «Lojalitet · X %».
+  // Verving vinner ved kollisjon — backend avgjør hvilket objekt som sendes; frontend viser det den får.
+  if(rd.rolle==='lojalitet'){
+    var t=(+rd.pct>=100)?'Gratis klipp':((rd.pct||0)+' %');
+    return ' <span class="rpill blue">Lojalitet · '+t+'</span>';
+  }
   var label=rd.rolle==='verver'?'Verve-bonus':'Velkomstrabatt'; // ny kunde = velkomstrabatt (matcher løftet på bookingsida) · verver = verve-bonus
   return ' <span class="rpill blue">'+label+' · '+(rd.pct||0)+'%</span>';
 }
@@ -4478,6 +4493,7 @@ document.querySelectorAll('#rebookPills button').forEach(function(b){
 // Oppdateres KUN etter bekreftet lagring (og ved lasting fra /settings).
 var _vervLagret = { pct: 20, recipient: 'begge' };
 async function loadVerving(){
+  if(erBasis())return;   // skjoldet Vekst-flate → ingen henting av kundedata i basis (samme mønster som lojalitet)
   var s=await api.settings();
   setVervRecipient(s.referral_reward_recipient||'begge');
   $("#vervPct").value=(s.referral_discount_pct!=null?s.referral_discount_pct:20);
@@ -4690,19 +4706,23 @@ function showToast(msg){
 }
 
 /* ---- Lojalitetsprogram (Vekst) ------------------------------------------------
-   To deler i ETT trekkspill: (1) DELTAKERLISTE — kunder som er med, klare først; (2) LEGG TIL
-   KUNDE — kunder som ikke er med ennå, én «Legg til» per kunde (barberen velger, ingen «legg til
-   alle»). Kilde for kandidatene er /customers/recent (delt med Verving) minus deltakerne.
-   api.loyalty mater deltakerliste + innstillinger (steg 2); api.recentCustomers mater kandidatene.
-   UI-navn «Lojalitetsprogram»; koden beholder loyalty_* / id-er med «loyal». */
+   To deler i ETT trekkspill: (1) DELTAKERLISTE (participants) — kunder som er med, klare først;
+   (2) LEGG TIL KUNDE — kandidater fra d.eligible (backend-filtrert), én «Legg til» per kunde
+   (barberen velger, ingen «legg til alle»). Ett /loyalty-kall mater begge deler + innstillinger.
+   UI-navn «Lojalitetsprogram»; koden beholder loyalty_* / id-er med «loyal».
+   Basis: eksempeltall bak Vekst-skjoldet, ALDRI API-kall (lekker aldri ekte tall). */
 // Sist lastede respons — så en re-render (etter lagret innstilling) slipper nytt kall.
 var _loyal=null;
 async function loadLoyalty(){
+  // Basis: skjoldes av skjoldVekstFlater som de andre accordionene — INGEN fetch, INGEN eksempeltall
+  // (kortet viser bare sin egen beskrivelse i headeren). Lekker aldri ekte tall til basis.
+  if(erBasis())return;
   _loyal=await api.loyalty();
+  if(erBasis())return;   // billing kom under fetch → ikke render (skjoldVekstFlater skjolder kortet)
   renderLoyalSett(_loyal);
   renderLoyalOversikt(_loyal);
-  // «Legg til»-flaten kun når programmet er PÅ. Kandidatene er nå d.eligible fra SAMME rute
-  // (backend ekskluderer allerede deltakerne) — ikke lenger /customers/recent minus deltakere.
+  // «Legg til»-flaten kun når programmet er PÅ. Kandidatene er d.eligible fra SAMME rute
+  // (backend ekskluderer allerede deltakerne).
   renderLoyalLeggTil((_loyal && _loyal.enabled) ? (_loyal.eligible||[]) : []);
 }
 // Belønningstekst leses av pct: 100 = gratis klipp, ellers X % rabatt. ÉN kilde — brukes både i
@@ -5026,6 +5046,7 @@ document.querySelectorAll('.acc-head').forEach(function(h){
 // teksten stemmer med det du ser når du åpner den.
 let wbFresh=0;   // antall rader i Vinn tilbake — driver badge (Vekst) + Oversikt-nudge
 async function loadWinback(){
+  if(erBasis())return;   // skjoldet Vekst-flate → ingen henting av kundedata i basis (samme mønster som lojalitet)
   const d=await api.winback();            // begge grupper (backend consent-filtrert; lapsed kan være tynn/tom → ikke en bug)
   const ns=d.no_show||[], lap=d.lapsed||[];
   wbRender(ns, lap);
@@ -6177,9 +6198,10 @@ buildMonthSelect();
 initChartTouch(); // lag 2: koble pointer-events på #chartBars (én gang; overlever innerHTML-rebuild)
 loadProfil(); // fyller header-navn + profil-fane ved sideload
 loadOversikt();loadBookinger();
-loadWinback(); // vinn-tilbake bor nå i Vekst; init-kallet fyller Oversikt-nudgen (ferske no-shows) + badge ved sideload
 loadPayment(); // betalingsmetoder (Tjenester-fanen) fra innstillings-loaderen
-loadBilling().then(applyBillingReturn); // abonnementsstatus (ekte) → deretter ev. retur-flagg fra Stripe
+// Oversikt-nudgen (ferske no-shows) fylles av loadWinback — men FØRST etter at plan er kjent, så
+// erBasis()-guarden virker og basis ikke henter kundedata ved sideload (init-race lukket).
+loadBilling().then(applyBillingReturn).finally(function(){ loadWinback(); }); // abonnementsstatus → retur-flagg → nudge
 hentSjekklisteData(); // «Fullfør siden»-guide: hent haker (images/services/hours/profile) ved sideload
 anvendHash(); // åpne panelet fra location.hash (ukjent/tom → standardpanel). Stripe-retur over
               // kjører async etterpå og kan overstyre til Konto — det er tilsiktet.

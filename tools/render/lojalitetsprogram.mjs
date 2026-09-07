@@ -315,4 +315,83 @@ for (const tema of ['dark','light']) {
 }
 console.log('  hjelpetekst (av): "Slås den på, …" — betinget, beskriver ikke en tilstand som ikke gjelder.');
 
+// ── STEG 3: pill på booking-rader (Oversikt › Kommende bookinger) ────────────────────────────────
+// «Lojalitet · Gratis klipp» (pct 100) / «Lojalitet · X %» (ellers). Verving-pill til sammenligning.
+console.log('\n=== STEG 3: booking-pill ===');
+{
+  const iso = h => new Date(Date.now()+h*3600000).toISOString();
+  const BOOKINGS = [
+    { id:1, name:'Ola Nordmann',  service:'Herreklipp', start:iso(3), status:'booket', referral_discount:{ rolle:'lojalitet', pct:100 } },
+    { id:2, name:'Kari Nordmann', service:'Skin fade',  start:iso(5), status:'booket', referral_discount:{ rolle:'lojalitet', pct:50 } },
+    { id:3, name:'Petter Hansen', service:'Klipp',      start:iso(7), status:'booket', referral_discount:{ rolle:'verver',   pct:20 } },
+  ];
+  for (const tema of ['dark','light']) {
+    const page = await browser.newPage({ viewport:{ width:320, height:900 }, deviceScaleFactor:2 });
+    const errs=[]; page.on('pageerror',e=>errs.push(e.message));
+    await page.addInitScript(t=>{try{localStorage.setItem('bhq-theme',t);}catch(e){}},tema);
+    await page.route('**/api/**', route=>{
+      const p=new URL(route.request().url()).pathname;
+      const j=o=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(o)});
+      if(p==='/api/dashboard/profile')return j(PROFILE);
+      if(p==='/api/dashboard/billing/status')return j(BILLING);
+      if(p==='/api/dashboard/bookings')return j(BOOKINGS);
+      return j(/images|recent|services|hours|winback|referrals|rebooking|sms-logg|stats|attribution|momentum|loyalty/.test(p)?[]:{});
+    });
+    await page.goto(`http://localhost:${PORT}/no/dashboard.html`,{waitUntil:'networkidle'});
+    await page.addStyleTag({content:SKJUL_BARER});
+    await page.waitForTimeout(900);   // Oversikt er standardpanel → Kommende laster ved init
+    const pills = await page.evaluate(()=>[...document.querySelectorAll('#upcomingList .rpill')].map(p=>p.textContent.trim()));
+    await page.evaluate(()=>{const e=document.querySelector('#upcomingList'); if(e)e.scrollIntoView({block:'start'});});
+    await page.waitForTimeout(150);
+    await page.screenshot({path:`${OUT}/loyal-pill-${tema}-01.png`, fullPage:false});
+    console.log(`  Kommende-pills (${tema}): ${JSON.stringify(pills)} | JS-feil:${errs.length}`);
+    await page.close();
+  }
+}
+
+// ── STEG 4: Basis — LETT skjold på ALLE skjoldede kort, INGEN datahenting (guard-verifisering) ────
+// Fullside-screenshot av Vekst (basis): attribusjon + rebooking + vinn tilbake + verving + lojalitet,
+// alle med det lettere skjoldet. Verifiserer at kundedata-loaderne IKKE henter i basis, at lojalitet
+// er skjoldet UTEN «Eksempel»-merke, og at «Drevet av»/attribusjon beholder sitt eksempel-merke.
+console.log('\n=== STEG 4: Basis — lett skjold, ingen datahenting ===');
+{
+  const BILLING_BASIS = { subscription_status:'active', page_status:'live', plan:'basis',
+    effective_plan:'basis', effective_plan_grunn:'subscription', trial_days_left:null,
+    nedtaking_dager_igjen:null, myk_periode:false, needs_attention:false, attention_grunn:null };
+  for (const tema of ['dark','light']) {
+    const page = await browser.newPage({ viewport:{ width:320, height:900 }, deviceScaleFactor:2 });
+    const errs=[]; page.on('pageerror',e=>errs.push(e.message));
+    const fetched={loyalty:false,winback:false,referrals:false,recent:false,settings:false};
+    await page.addInitScript(t=>{try{localStorage.setItem('bhq-theme',t);}catch(e){}},tema);
+    await page.route('**/api/**', route=>{
+      const p=new URL(route.request().url()).pathname;
+      const j=o=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(o)});
+      if(p==='/api/dashboard/profile')return j(PROFILE);
+      if(p==='/api/dashboard/billing/status')return j(BILLING_BASIS);
+      if(p==='/api/dashboard/loyalty'){fetched.loyalty=true;return j({});}       // skal ALDRI treffes i basis
+      if(p==='/api/dashboard/winback'){fetched.winback=true;return j({no_show:[],lapsed:[]});}
+      if(p==='/api/dashboard/referrals'){fetched.referrals=true;return j([]);}
+      if(p==='/api/dashboard/customers/recent'){fetched.recent=true;return j({customers:[]});}
+      if(p==='/api/dashboard/settings'){fetched.settings=true;return j({});}      // påminnelse (IKKE låst) → forventet TRUE
+      return j(/images|bookings|services|hours|sms-logg|stats|attribution|momentum/.test(p)?[]:{});
+    });
+    await page.goto(`http://localhost:${PORT}/no/dashboard.html`,{waitUntil:'networkidle'});
+    await page.addStyleTag({content:SKJUL_BARER});
+    await page.evaluate(()=>switchPanel('vekst'));
+    await page.waitForTimeout(1400);
+    const m = await page.evaluate(()=>({
+      skjoldede: document.querySelectorAll('#vekst .skjold-vert').length,
+      loyalSkjold: !!document.querySelector('#accLoyal > .skjold'),
+      loyalMerke: document.querySelector('#accLoyal > .eksempel-merke')?.textContent || '(ingen)',
+      attrMerke: document.querySelector('#attrKort > .eksempel-merke')?.textContent || '(ingen)',
+      seLenker: document.querySelectorAll('#vekst .skjold .skjold-lenke').length,
+    }));
+    await page.screenshot({path:`${OUT}/loyal-skjold-basis-${tema}.png`, fullPage:true});
+    console.log(`  Basis (${tema}): skjoldede=${m.skjoldede} loyalSkjold=${m.loyalSkjold} loyalMerke=${m.loyalMerke} attrMerke=${m.attrMerke} seLenker=${m.seLenker}`);
+    console.log(`     datahenting: loyalty=${fetched.loyalty} winback=${fetched.winback} referrals=${fetched.referrals} recent=${fetched.recent} settings=${fetched.settings}(påminnelse, forventet) | JS-feil:${errs.length}`);
+    console.log(`     ${OUT}\\loyal-skjold-basis-${tema}.png`);
+    await page.close();
+  }
+}
+
 await browser.close(); server.close();
