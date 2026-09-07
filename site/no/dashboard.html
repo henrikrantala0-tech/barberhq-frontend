@@ -1003,8 +1003,21 @@
   .wb-meta .rpill{vertical-align:middle;margin-left:4px}
   /* «Slå på»-knapp (av-tilstand): tydelig primær-CTA (fylt), ikke en dempet lenke — det er
      neste handling barberen skal gjøre. Bruker samme .btn-verdier som resten av dashbordet. */
-  .kl-empty-cta{appearance:none;margin-top:14px;padding:11px 20px;border:0;background:var(--ink);color:var(--bg);border-radius:10px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:-.01em}
+  .kl-empty-cta{appearance:none;margin-top:14px;padding:11px 20px;border:0;background:var(--ink);color:var(--bg);border-radius:10px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:-.01em;
+    min-height:44px;box-sizing:border-box;display:inline-flex;align-items:center;justify-content:center}
   .kl-empty-cta:hover{opacity:.9}
+  /* Trykkflater ≥44px i lojalitetskortet (padding/min-height, ALDRI større skrift → layouten vokser
+     bare med selve kontrollhøyden). Scopet så global .btn/.verv-btn/.sw ikke røres.
+     Selects: border-box + min-height. «Legg til» + «Vis flere» + endrings-bekreftelsens .btn-knapper. */
+  #loyalSett .kl-select{box-sizing:border-box;min-height:44px}
+  /* Toggle: slideren er position:absolute;inset:0, så min-height ville strekt selve pillen til 44px.
+     I stedet en USYNLIG 44px hitboks (::after) sentrert på bryteren — trykkflate uten visuell endring
+     og uten at raden vokser (::after er absolutt). ±6px horisontalt gir litt slark på den smale toggelen. */
+  .kl-sw{position:relative}
+  .kl-sw::after{content:"";position:absolute;left:-6px;right:-6px;top:50%;transform:translateY(-50%);height:44px}
+  .kl-save-ja,.kl-save-nei{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  #loyalLeggTil .verv-btn{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  #loyalLeggTilMore{min-height:44px}
   /* Innstillings-etikettene skal LESE som aktive, ikke deaktiverte — samme farge som kortets
      overskrifter (--ink), ikke den dempede --mut-2 fra delte .seg-lead. Scopet til #loyalSett
      så Rebooking/Verving-etikettene er urørt. Kontrast: --ink er hovedtekstfargen i begge temaer. */
@@ -1041,8 +1054,11 @@
   .kl-dmain{flex:1;min-width:0}
   .kl-dside{flex-shrink:0;display:flex;align-items:center;gap:6px}
   /* Fjern = sjeldnest handling → diskret person-minus-ikon (ikke «Fjern»-lenke på hver rad).
-     Ikke søppelbøtte: kunden tas ut av programmet, ingenting slettes. */
-  .kl-remove{appearance:none;border:0;background:0;color:var(--mut-2);cursor:pointer;padding:7px;line-height:0;border-radius:7px}
+     Ikke søppelbøtte: kunden tas ut av programmet, ingenting slettes. Trykkflate 44×44 (ikonet
+     forblir 16px, sentrert — hitboks via flex, ikke større skrift). Radhøyden drives av navn+meta
+     (~60px) → 44px-boksen vokser ikke raden. */
+  .kl-remove{appearance:none;border:0;background:0;color:var(--mut-2);cursor:pointer;padding:0;line-height:0;border-radius:8px;
+    min-width:44px;min-height:44px;display:inline-flex;align-items:center;justify-content:center}
   .kl-remove:hover{color:var(--bad);background:rgba(127,127,127,.1)}
   .kl-remove svg{width:16px;height:16px;display:block}
   .kl-act{flex-basis:100%}
@@ -1050,19 +1066,19 @@
   /* Bekreftelse (SIER hva som skjer, ikke bare «Bekreft») + Fjern/Avbryt — full bredde under raden. */
   .kl-confirm{display:flex;flex-direction:column;gap:6px;align-items:flex-start;padding-top:2px}
   .kl-confirm-txt{font-size:11.5px;color:var(--mut);line-height:1.4}
-  .kl-confirm-act{display:flex;gap:16px}
-  .kl-fjern-ja{appearance:none;border:0;background:0;color:var(--bad);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;padding:2px 4px;letter-spacing:-.01em}
-  .kl-fjern-nei{appearance:none;border:0;background:0;color:var(--mut);font:inherit;font-size:12.5px;cursor:pointer;text-decoration:underline;padding:2px 4px;letter-spacing:-.01em}
-  .kl-fjern-nei:hover{color:var(--ink-2)}
+  .kl-confirm-act{display:flex;gap:16px;align-items:center}
+  /* Bekreftelses-tekstknapper: min-height 44 for trykkflate (padding, ikke større skrift → font 12.5
+     uendret, layout vokser bare med knappehøyden). Delt av fjern-/av-boksene. */
+  .kl-fjern-ja,.kl-off-ja{appearance:none;border:0;background:0;color:var(--bad);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;padding:0 4px;letter-spacing:-.01em;min-height:44px;display:inline-flex;align-items:center}
+  .kl-fjern-nei,.kl-off-nei{appearance:none;border:0;background:0;color:var(--mut);font:inherit;font-size:12.5px;cursor:pointer;text-decoration:underline;padding:0 4px;letter-spacing:-.01em;min-height:44px;display:inline-flex;align-items:center}
+  .kl-fjern-nei:hover,.kl-off-nei:hover{color:var(--ink-2)}
   /* Advarsel om uthentede belønninger — av-tilstand (linje over «Slå på») + av-bryter (boks m/ handling).
      Warn-farget ramme, ingen tung bakgrunn (gul flate blir grelt på begge temaer). */
   .kl-warn{margin:14px 0 0;padding:10px 12px;border:1px solid var(--warn);border-radius:10px;font-size:12px;line-height:1.45;color:var(--ink-2)}
   .kl-offwarn{margin-top:12px;padding:11px 13px;border:1px solid var(--warn);border-radius:10px}
   .kl-warn-txt{font-size:12px;line-height:1.45;color:var(--ink-2)}
-  .kl-warn-act{display:flex;gap:16px;margin-top:9px}
-  .kl-off-ja{appearance:none;border:0;background:0;color:var(--bad);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;padding:2px 4px;letter-spacing:-.01em}
-  .kl-off-nei{appearance:none;border:0;background:0;color:var(--mut);font:inherit;font-size:12.5px;cursor:pointer;text-decoration:underline;padding:2px 4px;letter-spacing:-.01em}
-  .kl-off-nei:hover{color:var(--ink-2)}
+  .kl-warn-act{display:flex;gap:16px;margin-top:9px;align-items:center}
+  /* (.kl-off-ja/-nei styles er slått sammen med .kl-fjern-ja/-nei over — samme 44px-trykkflate.) */
 
   /* ---- Flytmodell (Vekst) — port av mockup, repo-tokens + literal brand-tint (jf. .rpill.blue) ---- */
   .flow{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 20px 16px;margin-top:28px}
