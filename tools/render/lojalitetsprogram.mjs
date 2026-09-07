@@ -258,55 +258,48 @@ async function apnAccLoyal(page, variant, tema){
   await page.evaluate(()=>{const h=document.querySelector('#accLoyal .acc-head'); if(h)h.click();});
   await page.waitForTimeout(300);
 }
-console.log('\n=== Interaktive tilstander ===');
-for (const tema of ['dark','light']) {
-  // Fjern-bekreftelse: skal SI hva som skjer, ikke bare «Bekreft».
-  {
-    const page = await browser.newPage({ viewport:{width:320,height:720}, deviceScaleFactor:2 });
-    const errs=[]; page.on('pageerror',e=>errs.push(e.message));
-    await apnAccLoyal(page,'paa_liste',tema);
-    // Klikk fjern-ikonet på FØRSTE rad (Amir, Kan hente) → pillen skal fortsatt stå.
-    await page.evaluate(()=>{ document.querySelector('#loyalOversikt .kl-drow .kl-remove')?.click(); });
-    await page.waitForTimeout(200);
-    const info = await page.evaluate(()=>{ const row=document.querySelector('#loyalOversikt .kl-drow');
-      return { txt: row?.querySelector('.kl-confirm-txt')?.textContent||'', pill: !!row?.querySelector('.rpill.ok') }; });
-    await page.evaluate(()=>{ const c=document.querySelector('#loyalOversikt .wb-card'); if(c)c.scrollIntoView({block:'center'}); });
-    await page.waitForTimeout(150);
-    await page.screenshot({path:`${OUT}/loyal-zfjern-${tema}-01.png`, fullPage:false});
-    console.log(`  Fjern-bekreftelse (${tema}): ${JSON.stringify(info.txt)} | pill står: ${info.pill} | JS-feil:${errs.length}`);
-    await page.close();
-  }
-  // Av-bryter-advarsel: forsøk å slå av med uthentede belønninger → advarsel, bryter blir PÅ.
-  {
-    const page = await browser.newPage({ viewport:{width:320,height:720}, deviceScaleFactor:2 });
-    const errs=[]; page.on('pageerror',e=>errs.push(e.message));
-    await apnAccLoyal(page,'paa_liste',tema);
-    await page.evaluate(()=>{ const t=document.querySelector('#tog-loyal'); t.checked=false; t.dispatchEvent(new Event('change',{bubbles:true})); });
-    await page.waitForTimeout(200);
-    const w = await page.evaluate(()=>({ vis: !document.querySelector('#loyalOffWarn')?.hidden,
-      txt: document.querySelector('#loyalOffWarn .kl-warn-txt')?.textContent||'',
-      paa: !!document.querySelector('#tog-loyal')?.checked }));
-    await page.evaluate(()=>{ const s=document.querySelector('#loyalSett'); if(s)s.scrollIntoView({block:'start'}); });
-    await page.waitForTimeout(150);
-    await page.screenshot({path:`${OUT}/loyal-zavvarsel-${tema}-01.png`, fullPage:false});
-    console.log(`  Av-advarsel (${tema}): synlig=${w.vis} bryterPå=${w.paa} ${JSON.stringify(w.txt)} | JS-feil:${errs.length}`);
-    await page.close();
-  }
-  // Endrings-bekreftelse: endre belønning MENS kunder samler → linje før lagring, må bekreftes.
-  {
-    const page = await browser.newPage({ viewport:{width:320,height:720}, deviceScaleFactor:2 });
-    const errs=[]; page.on('pageerror',e=>errs.push(e.message));
-    await apnAccLoyal(page,'paa_liste',tema);
-    await page.evaluate(()=>{ const s=document.querySelector('#loyalPct'); s.value='50'; s.dispatchEvent(new Event('change',{bubbles:true})); });
-    await page.waitForTimeout(200);
-    const w = await page.evaluate(()=>({ vis: !document.querySelector('#loyalSaveWarn')?.hidden,
-      txt: document.querySelector('#loyalSaveWarn .kl-warn-txt')?.textContent||'',
-      pct: document.querySelector('#loyalPct')?.value }));
-    await page.evaluate(()=>{ const s=document.querySelector('#loyalSett'); if(s)s.scrollIntoView({block:'start'}); });
-    await page.waitForTimeout(150);
-    await page.screenshot({path:`${OUT}/loyal-zendring-${tema}-01.png`, fullPage:false});
-    console.log(`  Endrings-bekreftelse (${tema}): synlig=${w.vis} pct=${w.pct} ${JSON.stringify(w.txt)} | JS-feil:${errs.length}`);
-    await page.close();
+// De tre bekreftelses-boksene, 320 + desktop (1280), begge temaer. Element-screenshot av selve
+// boksen så knappene er lesbare på begge bredder. Måler også knappe-klasser/bakgrunn for å bekrefte
+// at endrings-bekreftelsen bruker .btn/.btn-outline (ikke ustylte systemknapper).
+console.log('\n=== Interaktive tilstander (knappestiler) ===');
+for (const bredde of [320,1280]) {
+  for (const tema of ['dark','light']) {
+    // Fjern-bekreftelse
+    {
+      const page = await browser.newPage({ viewport:{width:bredde,height:900}, deviceScaleFactor:2 });
+      const errs=[]; page.on('pageerror',e=>errs.push(e.message));
+      await apnAccLoyal(page,'paa_liste',tema);
+      await page.evaluate(()=>{ document.querySelector('#loyalOversikt .kl-drow .kl-remove')?.click(); });
+      await page.waitForTimeout(200);
+      const knp = await page.evaluate(()=>[...document.querySelectorAll('#loyalOversikt .kl-drow .kl-act button')].map(b=>({t:b.textContent,cls:b.className})));
+      await page.locator('#loyalOversikt .kl-drow').first().screenshot({path:`${OUT}/loyal-zfjern-${tema}-${bredde}.png`});
+      console.log(`  Fjern (${tema}/${bredde}): ${JSON.stringify(knp)} | JS-feil:${errs.length}`);
+      await page.close();
+    }
+    // Av-bryter-advarsel
+    {
+      const page = await browser.newPage({ viewport:{width:bredde,height:900}, deviceScaleFactor:2 });
+      const errs=[]; page.on('pageerror',e=>errs.push(e.message));
+      await apnAccLoyal(page,'paa_liste',tema);
+      await page.evaluate(()=>{ const t=document.querySelector('#tog-loyal'); t.checked=false; t.dispatchEvent(new Event('change',{bubbles:true})); });
+      await page.waitForTimeout(200);
+      const knp = await page.evaluate(()=>[...document.querySelectorAll('#loyalOffWarn button')].map(b=>({t:b.textContent,cls:b.className})));
+      await page.locator('#loyalOffWarn').screenshot({path:`${OUT}/loyal-zavvarsel-${tema}-${bredde}.png`});
+      console.log(`  Av-advarsel (${tema}/${bredde}): ${JSON.stringify(knp)} | JS-feil:${errs.length}`);
+      await page.close();
+    }
+    // Endrings-bekreftelse (den som var ustylt) — skal nå ha .btn (Lagre) + .btn-outline (Avbryt).
+    {
+      const page = await browser.newPage({ viewport:{width:bredde,height:900}, deviceScaleFactor:2 });
+      const errs=[]; page.on('pageerror',e=>errs.push(e.message));
+      await apnAccLoyal(page,'paa_liste',tema);
+      await page.evaluate(()=>{ const s=document.querySelector('#loyalPct'); s.value='50'; s.dispatchEvent(new Event('change',{bubbles:true})); });
+      await page.waitForTimeout(200);
+      const knp = await page.evaluate(()=>[...document.querySelectorAll('#loyalSaveWarn button')].map(b=>({t:b.textContent,cls:b.className,bg:getComputedStyle(b).backgroundColor})));
+      await page.locator('#loyalSaveWarn').screenshot({path:`${OUT}/loyal-zendring-${tema}-${bredde}.png`});
+      console.log(`  Endring (${tema}/${bredde}): ${JSON.stringify(knp)} | JS-feil:${errs.length}`);
+      await page.close();
+    }
   }
 }
 

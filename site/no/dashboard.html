@@ -5007,7 +5007,9 @@ function loyalSettEndring(felt, verdi, selectEl, forrige){
   if(samler>0){
     _loyalPending={felt:felt, verdi:verdi, select:selectEl, forrige:forrige};
     if(sw){ sw.hidden=false; sw.innerHTML='<p class="kl-warn-txt">'+loyalEndringTekst(samler)+'</p>'
-      +'<div class="kl-warn-act"><button class="kl-save-ja" type="button">Lagre</button><button class="kl-save-nei" type="button">Avbryt</button></div>'; }
+      // Dashbordets knappestiler: Lagre = primær (.btn), Avbryt = sekundær/dempet (.btn-outline).
+      // .kl-save-ja/-nei beholdes for delegasjonen; .btn/.btn-outline gir stilen.
+      +'<div class="kl-warn-act"><button class="btn kl-save-ja" type="button">Lagre</button><button class="btn-outline kl-save-nei" type="button">Avbryt</button></div>'; }
     return;
   }
   if(sw)sw.hidden=true;
