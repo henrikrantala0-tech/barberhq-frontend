@@ -72,8 +72,9 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
 
 ## Låste beslutninger (ikke reåpne uten at Henrik ber om det)
 
-- **Pris:** 249 kr/mnd fast (ingen 499-trapp foreløpig). **30 dagers gratis prøveperiode** i alle
-  markeder — bevisst og riktig, ikke en feil i koden. Her sto det «(trial_period_days: 30)», som
+- **Pris:** to planer — **Basis 89 kr/mnd, Vekst 179 kr/mnd** (`PLAN_INFO` `:5502`, fail-closed;
+  ingen fast 249 eller 499-trapp lenger — verifisert mot kode 07.09). **30 dagers gratis prøveperiode**
+  i alle markeder — bevisst og riktig, ikke en feil i koden. Her sto det «(trial_period_days: 30)», som
   bare er én av **tre** grener i `checkoutTrialParams` (backend `src/lib/trial.js`) — verifisert
   12.08 mot koden:
   1. **`trial_start_at` er NULL** → `{ trial_period_days: TRIAL_DAGER }`. Stripe teller selv de
@@ -89,8 +90,10 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
   regner den ut som `NEDTAKINGSDAGER = TRIAL_DAGER + MYK_PERIODE_DAGER`. Ikke hardkod 37.
 - **Marked:** fire land samtidig — NO / SE / DK / UK. Tyskland droppet.
 - **Domene:** `trybarberhq.com` + `trybarberhq.no`.
-- **MVP har ingen pengestrøm** gjennom plattformen. Kunder betaler barberen
-  direkte i salongen. Betalingsmetoder vises kun som info.
+- **Ingen KUNDE-pengestrøm** gjennom plattformen: kunder betaler barberen direkte i salongen,
+  betalingsmetoder vises kun som info (`loadPayment`, Tjenester-fanen). ⚠ Barberens ABONNEMENT går
+  derimot via Stripe og er LIVE (`loadBilling` → checkout/portal, `PLAN_INFO` 89/179) — ikke bland
+  de to. «Ingen pengestrøm» gjaldt aldri abonnementet.
 - **Stripe Connect Express** utsatt til depositum/no-show-funksjon bygges.
   Penger skal ALDRI gå via Henriks konto — hver barber egen mottaker.
 - **Kalender:** dashbord er master. Enveis push til Google Calendar (OAuth)
