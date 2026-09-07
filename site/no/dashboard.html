@@ -518,6 +518,12 @@
   /* margin-left var 2px — arvet fra da klassen satt under en knapp med egen innrykk. Nå står
      den alene under hovedhandlingen og skal flukte med resten av teksten i kortet. */
   .sub-micro{font-size:12px;color:var(--mut);margin:10px 0 0;line-height:1.45;max-width:520px}
+  /* Plan-nedgang: rolig informasjonsboks INNI abonnementskortet — ingen rød, ingen ikon, ingen
+     «handle nå». plan_faller er bevisst utenfor attention_grunn (ingenting er galt), så dette
+     leser som info, ikke varsel. Diskret topp-skille som .fld-vis/.pw-felt, dempet brødtekst. */
+  .plan-fall{margin-top:16px;padding-top:16px;border-top:1px solid var(--line);max-width:520px}
+  .plan-fall p{font-size:13px;color:var(--ink-2);line-height:1.5;margin:0}
+  .plan-fall .lnk-quiet{margin-top:10px}
   /* Plan-velger (checkout): Basis/Vekst. Vises KUN i checkout-tilstander (visPlanVelger).
      px-verdier som resten av .subcard — dashboard.html bruker ikke --fs-skalaen. var(--info)
      er #1456a8 lys / #4d8bff mørk → riktig merkeblå i begge tema uten hardkodet hex. */
@@ -2147,6 +2153,16 @@
            steder å holde etiketten og aksjonen i synk. -->
       <button class="btn" id="kontoAksjon" style="display:none"></button>
       <p class="sub-micro" id="kontoMikro" style="display:none"></p>
+      <!-- Plan-nedgang: rolig INFORMASJON (ikke varsel) — vises KUN på _billing.plan_faller, dvs.
+           kort lagt inn på Basis mens prøven løper. Han har Vekst nå, faller til Basis ved
+           prøveslutt. Bevisst utenfor attention_grunn: ingenting er galt, kortet virker, siden
+           står — derfor ingen rød farge, ikke varselikon, ikke «Handle nå». Dagene fra
+           trial_days_left (IKKE days_left — ulik klokke). «Bytt til Vekst» åpner den eksisterende
+           plan-velgeren over, ingen ny flate. [oversettelse: sv/da/en] -->
+      <div class="plan-fall" id="planFall" style="display:none">
+        <p id="planFallTekst"></p>
+        <button class="lnk-quiet" id="planFallBtn" type="button">Bytt til Vekst</button>
+      </div>
       <!-- <div>, ikke <p>: forhåndsvisnings-tilstanden legger en <p class="pub-note"> under
            lenka, og <p> inne i <p> er ugyldig HTML — parseren lukker den ytre og noten havner
            utenfor blokka som skjules/vises. [oversettelse: sv/da/en] -->
@@ -5576,7 +5592,8 @@ function renderKonto(b){
   const status=$("#kontoStatus"),tekst=$("#kontoTekst"),knapp=$("#kontoAksjon"),
         lenke=$("#pubLink"),manage=$("#manageSub"),av=$("#unpublish"),dot=$("#kontoDot"),
         tall=$("#kontoTall"),tallStor=$("#kontoTallStor"),tallSuff=$("#kontoTallSuff"),
-        tallSub=$("#kontoTallSub"),mikro=$("#kontoMikro");
+        tallSub=$("#kontoTallSub"),mikro=$("#kontoMikro"),
+        planFall=$("#planFall"),planFallTekst=$("#planFallTekst");
   if(!status)return;
   // Hjemskjerm-nudgen (topplinje) re-evalueres ved hver billing-render — så den dukker opp i
   // samme øyeblikk page_status blir 'live' (publisering) og forsvinner ved avpublisering.
@@ -5586,6 +5603,7 @@ function renderKonto(b){
   knapp.style.display='none';lenke.style.display='none';
   manage.style.display='none';av.style.display='none';
   tall.style.display='none';tallSub.style.display='none';mikro.style.display='none';
+  if(planFall)planFall.style.display='none';
   tekst.style.display='';   // forhandsvist-grenen skjuler den; nullstill så andre tilstander viser den
   var pv=$("#planVelger"); if(pv)pv.style.display='none';   // vises kun av checkout-grenene
   _kontoAksjon=null;
@@ -5699,6 +5717,23 @@ function renderKonto(b){
     tekst.textContent='Vi får ikke vist abonnementet ditt akkurat nå. Tilgangen din er upåvirket.';
   }
 
+  // Plan-nedgang: INFORMASJON, ikke varsel. Drevet KUN av b.plan_faller (kort på Basis mens
+  // prøven løper → Vekst nå, faller til Basis ved prøveslutt). Bevisst UTENFOR if/else-dispatchen
+  // og attention_grunn: ingenting er galt, så den overlever alle plan-tilstander og legger seg
+  // ved siden av dem. Dagene fra `igjen` (= trial_days_left), ALDRI days_left — days_left er
+  // Stripes dato og kan ligge opptil to døgn senere enn det lokale vinduet planen faller ved.
+  // «1 dag igjen» / «21 dager igjen» via _dager. Mangler et gyldig dag-tall (skal ikke skje mens
+  // prøven løper) → dropp dag-leddet, aldri et oppdiktet tall.
+  if(planFall){
+    if(b.plan_faller){
+      const dagLedd=(typeof igjen==='number'&&igjen>0) ? (' — '+_dager(igjen)+' igjen') : '';
+      planFallTekst.textContent='Du har Vekst ut prøveperioden'+dagLedd
+        +'. Deretter går du over til Basis, og du mister lojalitetsprogram, verving, rebooking og vinn tilbake.';
+      planFall.style.display='';
+    }else{
+      planFall.style.display='none';
+    }
+  }
   // Avpubliser: tekstlenke i ALLE tilstander der siden faktisk står live. Aldri en knapp.
   // Unntak: oppsagt/ubetalt — sida er på vei ned, og «Avpubliser» ville tilbudt å ta ned noe
   // som allerede tas ned. Kortet sier nedtaking; veien tilbake er «Legg inn kort».
@@ -6192,6 +6227,18 @@ document.querySelectorAll('#planVelger .plan-opt').forEach(function(b){
   var velg=function(){ if(IS_DEMO)return; velgPlan(b.dataset.plan); };
   b.addEventListener('click',velg);
   b.addEventListener('mouseenter',velg);
+});
+// «Bytt til Vekst» i plan-nedgang-kortet: går til den EKSISTERENDE plan-velgeren i Konto (ingen
+// ny flate). Åpner velgeren med Vekst valgt og gjør checkout-knappen synlig — samme checkout-vei
+// som de øvrige grenene. _kontoAksjon settes FØR velgPlan så velgPlan skriver riktig knappetekst.
+var _planFallBtn=$("#planFallBtn");
+if(_planFallBtn)_planFallBtn.addEventListener('click',function(){
+  if(IS_DEMO)return;
+  _kontoAksjon='checkout';
+  visPlanVelger();
+  velgPlan('vekst');
+  var k=$("#kontoAksjon"); if(k){ k.className='btn'; k.style.display=''; }
+  var pv=$("#planVelger"); if(pv)pv.scrollIntoView({behavior:'smooth',block:'center'});
 });
 
 // POST /billing/checkout {plan:'basis'|'vekst'} → {url}. plan er ALLTID små bokstaver —
