@@ -2618,14 +2618,14 @@ const api={
   },
   async winback(group){
     const r=await apiFetch('/api/dashboard/winback'+(group?('?group='+encodeURIComponent(group)):''));
-    if(!r||!r.ok)return{no_show:[],lapsed:[]};
+    if(!r||!r.ok)return null; // 401→apiFetch redirigerte; annen feil (bl.a. 403 fra Vekst-gaten)→null. En BLOKKERT forespørsel deler ALDRI form med en tom liste — kalleren viser feilstate, ikke «alt gjort».
     return r.json();
   },
   // winbackContacted() er FJERNET — Vinn tilbake er ren oversikt og skriver ingenting.
   // Backend-ruta POST /winback/:id/contacted står urørt, den har bare ingen kaller.
   async referrals(){
     const r=await apiFetch('/api/dashboard/referrals');
-    if(!r||!r.ok)return [];
+    if(!r||!r.ok)return null; // 403 fra Vekst-gaten (m.fl.) → null, ikke [] — «ingen vervinger» og «blokkert» er ulike tilstander. Kalleren viser feilstate.
     return r.json();
   },
   // GET /api/dashboard/loyalty → {enabled,threshold,pct,activated_at,count_history,
@@ -2646,7 +2646,7 @@ const api={
   },
   async rebookingCandidates(){ // GET /api/dashboard/rebooking → {enabled,interval_days,customers:[{customer_id,name,phone,last_visit_at,days_since,last_service}]}
     const r=await apiFetch('/api/dashboard/rebooking');
-    if(!r||!r.ok)return{customers:[]};
+    if(!r||!r.ok)return null; // 403 fra Vekst-gaten (m.fl.) → null, ikke tom liste. Ingen kaller p.t., men kontrakten holdes lik de andre Vekst-listene.
     return r.json();
   },
   // GET /api/dashboard/customers/recent → {limit,customers:[{customer_id,name,phone,referral_code,last_visit_at,last_service}]}
@@ -2657,7 +2657,7 @@ const api={
   async recentCustomers(limit){
     const n=(limit==null?100:limit);
     const r=await apiFetch('/api/dashboard/customers/recent?limit='+encodeURIComponent(n));
-    if(!r||!r.ok)return{customers:[]};
+    if(!r||!r.ok)return null; // 403 (om/når gaten dekker denne) m.fl. → null, ikke {customers:[]}. Kalleren viser feilstate på verve-send-lista.
     return r.json();
   },
 };
@@ -4516,17 +4516,20 @@ document.querySelectorAll('#rebookPills button').forEach(function(b){
 var _vervLagret = { pct: 20, recipient: 'begge' };
 async function loadVerving(){
   if(erBasis())return;   // skjoldet Vekst-flate → ingen henting av kundedata i basis (samme mønster som lojalitet)
-  var s=await api.settings();
-  setVervRecipient(s.referral_reward_recipient||'begge');
-  $("#vervPct").value=(s.referral_discount_pct!=null?s.referral_discount_pct:20);
-  _vervLagret.recipient = s.referral_reward_recipient || 'begge';
-  _vervLagret.pct       = (s.referral_discount_pct != null ? s.referral_discount_pct : 20);
-  $("#vervPctErr").hidden=true;
-  renderReferrals(await api.referrals());
-  // /customers/recent, IKKE /rebooking. Den siste finner kunder som ikke har booket ny time
-  // på 28–60 dager — motsatt av «sist klippet», og den kan per definisjon ikke inneholde noen
-  // som var her nylig. Se backend-kommentaren over ruta.
-  renderSendList((await api.recentCustomers()).customers||[]);
+  try{
+    var s=await api.settings(); // api.settings feiler ALDRI til null (returnerer _hentFeilet-objekt), så .referral_* er trygt
+    setVervRecipient(s.referral_reward_recipient||'begge');
+    $("#vervPct").value=(s.referral_discount_pct!=null?s.referral_discount_pct:20);
+    _vervLagret.recipient = s.referral_reward_recipient || 'begge';
+    _vervLagret.pct       = (s.referral_discount_pct != null ? s.referral_discount_pct : 20);
+    $("#vervPctErr").hidden=true;
+    renderReferrals(await api.referrals());   // null = 403/feil → feilstate i renderReferrals (ikke «ingen vervinger»)
+    // /customers/recent, IKKE /rebooking. Den siste finner kunder som ikke har booket ny time
+    // på 28–60 dager — motsatt av «sist klippet», og den kan per definisjon ikke inneholde noen
+    // som var her nylig. Se backend-kommentaren over ruta.
+    var rc=await api.recentCustomers();       // null = 403/feil → feilstate (ikke .customers på null)
+    renderSendList(rc?(rc.customers||[]):null);
+  }catch(e){ renderReferrals(null); renderSendList(null); } // kast → begge listene i feilstate, aldri evig «Laster …»
 }
 function setVervRecipient(r){
   document.querySelectorAll('#vervRecipient button').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.r===r?'true':'false'); });
@@ -4536,12 +4539,18 @@ function vervDate(iso){ if(!iso)return'–'; var d=new Date(iso); return String(
 // bak en egen knapp — den er kvittering, ikke handling, og skal ikke stjele plass fra lista
 // du faktisk skal gjøre noe med.
 var VERV_FORST=4;
-var _vervRefs=[], _vervRefsAlle=false;
-var _vervSend=[], _vervSendAlle=false;
+var _vervRefs=[], _vervRefsAlle=false, _vervRefsFeil=false;
+var _vervSend=[], _vervSendAlle=false, _vervSendFeil=false;
 
 function renderReferrals(list){
-  if(arguments.length) { _vervRefs=list||[]; _vervRefsAlle=false; }
+  // null (bare på arg-kall) = 403/feil → feilstate. Flagget bæres så et no-arg re-render («Vis flere»)
+  // ikke faller tilbake til «ingen vervinger». Ekte tom liste = [] → «ingen vervinger ennå».
+  if(arguments.length) { _vervRefsFeil=(list===null); _vervRefs=(list===null?[]:(list||[])); _vervRefsAlle=false; }
   var el=$("#vervReferrals"), mer=$("#vervRefMore"); if(!el)return;
+  if(_vervRefsFeil){
+    el.innerHTML='<p class="wb-empty">Kunne ikke hente vervinger akkurat nå — last siden på nytt.</p>';
+    if(mer)mer.hidden=true; return;
+  }
   if(!_vervRefs.length){
     el.innerHTML='<p class="wb-empty">Ingen vervinger ennå — send lenka til en fornøyd kunde.</p>';
     if(mer)mer.hidden=true; return;
@@ -4591,8 +4600,13 @@ function sisteBesok(c){
   return ' · ' + (d===0 ? 'i dag' : d===1 ? 'i går' : d+' dager siden');
 }
 function renderSendList(list){
-  if(arguments.length) { _vervSend=list||[]; _vervSendAlle=false; }
+  // null (bare på arg-kall) = 403/feil → feilstate. Ekte tom = [] → «ingen kunder å sende til».
+  if(arguments.length) { _vervSendFeil=(list===null); _vervSend=(list===null?[]:(list||[])); _vervSendAlle=false; }
   var el=$("#vervSendList"), mer=$("#vervSendMore"); if(!el)return;
+  if(_vervSendFeil){
+    el.innerHTML='<p class="wb-empty">Kunne ikke hente kundelista akkurat nå — last siden på nytt.</p>';
+    if(mer)mer.hidden=true; return;
+  }
   if(!_vervSend.length){
     el.innerHTML='<p class="wb-empty">Ingen kunder å sende til akkurat nå.</p>';
     if(mer)mer.hidden=true; return;
@@ -4739,13 +4753,17 @@ async function loadLoyalty(){
   // Basis: skjoldes av skjoldVekstFlater som de andre accordionene — INGEN fetch, INGEN eksempeltall
   // (kortet viser bare sin egen beskrivelse i headeren). Lekker aldri ekte tall til basis.
   if(erBasis())return;
-  _loyal=await api.loyalty();
-  if(erBasis())return;   // billing kom under fetch → ikke render (skjoldVekstFlater skjolder kortet)
-  renderLoyalSett(_loyal);
-  renderLoyalOversikt(_loyal);
-  // «Legg til»-flaten kun når programmet er PÅ. Kandidatene er d.eligible fra SAMME rute
-  // (backend ekskluderer allerede deltakerne).
-  renderLoyalLeggTil((_loyal && _loyal.enabled) ? (_loyal.eligible||[]) : []);
+  try{
+    _loyal=await api.loyalty();          // null = 403/feil → renderLoyalOversikt(null) viser feilstate (alt på plass)
+    if(erBasis())return;   // billing kom under fetch → ikke render (skjoldVekstFlater skjolder kortet)
+    renderLoyalSett(_loyal);
+    renderLoyalOversikt(_loyal);
+    // «Legg til»-flaten kun når programmet er PÅ. Kandidatene er d.eligible fra SAMME rute
+    // (backend ekskluderer allerede deltakerne).
+    renderLoyalLeggTil((_loyal && _loyal.enabled) ? (_loyal.eligible||[]) : []);
+  }catch(e){ // kast (reject/JSON) → samme feilstate som null, aldri evig «Laster …»
+    _loyal=null; renderLoyalSett(null); renderLoyalOversikt(null); renderLoyalLeggTil([]);
+  }
 }
 // Belønningstekst leses av pct: 100 = gratis klipp, ellers X % rabatt. ÉN kilde — brukes både i
 // select-alternativet og ev. andre steder, så teksten ikke drifter.
@@ -5079,13 +5097,22 @@ document.querySelectorAll('.acc-head').forEach(function(h){
 // synker ville løyet om det het «å følge opp» og telte et utvalg — nå teller det lista, og
 // teksten stemmer med det du ser når du åpner den.
 let wbFresh=0;   // antall rader i Vinn tilbake — driver badge (Vekst) + Oversikt-nudge
+// Feilstate: 403 fra Vekst-gaten eller et kast (nettverks-reject / korrupt body) skal aldri
+// etterlate «Laster …» og ALDRI vise «bra jobba» (som ville påstått at alt er fulgt opp).
+function wbFeil(){
+  var el=$("#wbList"); if(el)el.innerHTML='<p class="wb-empty">Kunne ikke hente vinn tilbake akkurat nå — last siden på nytt.</p>';
+  wbFresh=0; updateWbSignals(0); // nullstill badge/nudge så et blokkert kall ikke etterlater et gammelt tall
+}
 async function loadWinback(){
   if(erBasis())return;   // skjoldet Vekst-flate → ingen henting av kundedata i basis (samme mønster som lojalitet)
-  const d=await api.winback();            // begge grupper (backend consent-filtrert; lapsed kan være tynn/tom → ikke en bug)
-  const ns=d.no_show||[], lap=d.lapsed||[];
-  wbRender(ns, lap);
-  wbFresh=ns.length+lap.length;
-  updateWbSignals(wbFresh);
+  try{
+    const d=await api.winback();          // null = 403/feil (IKKE tom liste) → feilstate. Ekte tom = {no_show:[],lapsed:[]}.
+    if(!d){ wbFeil(); return; }
+    const ns=d.no_show||[], lap=d.lapsed||[]; // begge grupper (backend consent-filtrert; lapsed kan være tynn/tom → ikke en bug)
+    wbRender(ns, lap);
+    wbFresh=ns.length+lap.length;
+    updateWbSignals(wbFresh);
+  }catch(e){ wbFeil(); } // kast (reject/JSON) → samme feilstate, aldri evig «Laster …»
 }
 function updateWbSignals(n){
   var badge=$("#wbBadge"); if(badge){ badge.textContent=n; badge.hidden=!(n>0); }
