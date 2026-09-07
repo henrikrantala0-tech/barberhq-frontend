@@ -206,7 +206,11 @@ for (const variant of ['paa_liste','paa_innlost']) {
   const errs=[]; page.on('pageerror',e=>errs.push(e.message));
   await apnAccLoyal(page,'paa_liste','dark');
   const antT = await page.evaluate(()=>document.querySelector('#loyalThreshold').options.length);
-  const antP = await page.evaluate(()=>document.querySelector('#loyalPct').options.length);
+  const pctInfo = await page.evaluate(()=>{ const s=document.querySelector('#loyalPct');
+    return { labels:[...s.options].map(o=>o.textContent), valgt:s.options[s.selectedIndex]?.textContent }; });
+  // LUKKET tilstand FØRST — slik barbereren faktisk ser den (vanlig <select>, ingen size satt).
+  // De åpne listbox-variantene under er KUN render-triks for å vise alle alternativene i ett bilde.
+  await page.locator('#loyalSett').screenshot({ path:`${OUT}/loyal-innst-lukket-dark.png` });
   await page.evaluate(()=>{ const s=document.querySelector('#loyalThreshold'); s.size=s.options.length; });
   await page.waitForTimeout(150);
   await page.locator('#loyalSett').screenshot({ path:`${OUT}/loyal-terskelvalg-dark.png` });
@@ -214,9 +218,32 @@ for (const variant of ['paa_liste','paa_innlost']) {
   await page.waitForTimeout(150);
   await page.locator('#loyalSett').screenshot({ path:`${OUT}/loyal-belonningvalg-dark.png` });
   console.log(`\n=== Select-alternativer (åpne) ===`);
-  console.log(`  terskel=${antT} (5–20 ⇒ 16), belønning=${antP} (20–100 steg 10 ⇒ 9) | JS-feil:${errs.length}`);
+  console.log(`  terskel=${antT} (5–20 ⇒ 16)`);
+  console.log(`  belønning (skal være 4: 25/50/75/Gratis klipp): ${JSON.stringify(pctInfo.labels)} · default valgt="${pctInfo.valgt}"`);
+  console.log(`  LUKKET (som barbereren ser den): ${OUT}\\loyal-innst-lukket-dark.png`);
   console.log(`  ${OUT}\\loyal-terskelvalg-dark.png`);
   console.log(`  ${OUT}\\loyal-belonningvalg-dark.png`);
+  await page.close();
+}
+// Lagret verdi UTENFOR de fire (pct:30) → skal vises som EGET alternativ, ikke snappet til nærmeste.
+{
+  const page = await browser.newPage({ viewport:{ width:320, height:900 }, deviceScaleFactor:2 });
+  const errs=[]; page.on('pageerror',e=>errs.push(e.message));
+  await page.addInitScript(()=>{ try{localStorage.setItem('bhq-theme','dark');}catch(e){} });
+  await page.route('**/api/**', route=>{
+    const p=new URL(route.request().url()).pathname;
+    const j=o=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(o)});
+    if(p==='/api/dashboard/profile')return j(PROFILE);
+    if(p==='/api/dashboard/billing/status')return j(BILLING);
+    if(p==='/api/dashboard/loyalty')return j({enabled:true,threshold:10,pct:30,count_history:false,participants:[],eligible:[],totals:{in_progress:0,ready:0,redeemed_month:0,participants:0,eligible:0}});
+    return j(/images|bookings|recent|services|hours|winback|referrals|rebooking|sms-logg|stats|attribution|momentum/.test(p)?[]:{});
+  });
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`,{waitUntil:'networkidle'});
+  await page.evaluate(()=>switchPanel('vekst')); await page.waitForTimeout(900);
+  await page.evaluate(()=>{const h=document.querySelector('#accLoyal .acc-head'); if(h)h.click();}); await page.waitForTimeout(250);
+  const info = await page.evaluate(()=>{ const s=document.querySelector('#loyalPct');
+    return { labels:[...s.options].map(o=>o.textContent), valgt:s.options[s.selectedIndex]?.textContent }; });
+  console.log(`  lagret utenfor settet (pct:30): ${JSON.stringify(info.labels)} · valgt="${info.valgt}" (skal ha «30 % rabatt» som eget, valgt) | JS-feil:${errs.length}`);
   await page.close();
 }
 

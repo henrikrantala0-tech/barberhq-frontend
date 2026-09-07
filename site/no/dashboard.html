@@ -4760,17 +4760,27 @@ function settLoyalHistoryNote(on){
 // UT av programmet, klippene beholdes. En søppelbøtte ville lovet sletting. Fjern er sjeldnest,
 // skal ikke stå som lenke på hver rad.
 var LOYAL_REMOVE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" y1="11" x2="16" y2="11"/></svg>';
+// Belønning: FIRE faste valg — 25/50/75 % + Gratis klipp (100). Default Gratis klipp.
+var LOYAL_PCT_VALG=[25,50,75,100];
 // Innstillinger (steg 2): synlig KUN når programmet er PÅ. Fyller selectene fra threshold/pct og
-// speiler enabled/count_history. Bygger select-alternativene én gang (idempotent på lengde).
+// speiler enabled/count_history.
 function renderLoyalSett(d){
   var sett=$("#loyalSett"); if(!sett)return;
   sett.hidden = !(d && d.enabled);
   if(!d) return;
   var ter=$("#loyalThreshold"), pct=$("#loyalPct");
   if(ter && !ter.options.length){ for(var i=5;i<=20;i++){ var o=document.createElement('option'); o.value=i; o.textContent=i+' klipp'; ter.appendChild(o); } }
-  if(pct && !pct.options.length){ for(var p=20;p<=100;p+=10){ var op=document.createElement('option'); op.value=p; op.textContent=belonningTekst(p); pct.appendChild(op); } }
+  if(pct){
+    // Fire faste valg. En lagret verdi UTENFOR settet (f.eks. eldre 20/30) vises som EGET alternativ,
+    // ikke snappet til nærmeste — så barberen ser den ekte lagrede prosenten. Bygges hver render.
+    var valgtPct=(d.pct!=null? +d.pct : 100);
+    var vals=LOYAL_PCT_VALG.slice();
+    if(vals.indexOf(valgtPct)<0){ vals.push(valgtPct); vals.sort(function(a,b){return a-b;}); }
+    pct.innerHTML='';
+    vals.forEach(function(p){ var op=document.createElement('option'); op.value=p; op.textContent=belonningTekst(p); pct.appendChild(op); });
+    pct.value=valgtPct;
+  }
   if(ter) ter.value = (d.threshold!=null? d.threshold : 10);
-  if(pct) pct.value = (d.pct!=null? d.pct : 100);
   var tg=$("#tog-loyal"); if(tg) tg.checked=!!d.enabled;
   var th=$("#tog-loyalHistory"); if(th) th.checked=!!d.count_history;
   settLoyalHistoryNote(!!d.count_history);
