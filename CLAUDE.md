@@ -367,6 +367,23 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 - **Merk (aldri sett live):** mot volum-test er `current_week` (~10 550) « `best` (13 950 = 76%) → persentil + rekord-bar naturlig SKJULT. «unna»/«rekord»-tilstand kun Playwright/deterministisk verifisert. `gull-demo.cjs`-fixtur (backend-repo) kan heve `current` over tersklene for å se dem live.
 - **«Drevet av BarberHQ» (Oversikt):** `renderDrivenBy` henter ekte `GET /api/dashboard/attribution?period=uke|2uker|maaned` (session) via `api.attribution` for ikke-basis — mock (`MOCK_ATTRIBUTION` + `USE_MOCK`) fjernet i `fa02e3f`. Ved Basis-plan vises eksempeltall bak lås i stedet (Basis-visning, INGEN API-kall — lekker aldri ekte tall). Totalen kommer fra backendens autoritative `data.total {count,revenue}` (efaa553), gjort til ENESTE kilde i `46701a3` (klient-sum `attribSum` fjernet; mangler total → feilstate, aldri klient-sum). Tre rader (rebooking/verving/vinn tilbake); 0-rad «0 klipp · 0 kr», alle tre 0 → «Her bygger verdien seg opp». Delta «fra forrige uke» kun på uke-pill (2uker−uke), aldri på eksempeldata. Skjult på historisk måned. Gjenstår kun: verifiser seedede/ekte tall mot prod.
 
+### Lojalitetsprogram (Vekst-fanen)
+Ett trekkspill (`#accLoyal`) nederst i «Personlig»-lista, under Verving — speiler Vervings struktur:
+INNSTILLINGER øverst, READ-ONLY oversikt under. **UI-navn «Lojalitetsprogram»; koden beholder `loyalty_*`**
+(id-er `#loyal…`). Pill-rollen på bookinger heter `lojalitet`.
+- **Kontrakt** `GET /api/dashboard/loyalty` → `{ enabled, threshold, pct, activated_at, count_history,
+  participants[{customer_id,name,phone,opt_in_at,stamps,reward_ready}],
+  eligible[{customer_id,name,phone,last_visit,completed_count}],
+  totals{in_progress,ready,redeemed_month,participants,eligible} }`. `stamps` = inneværende runde (0..terskel,
+  eksakt multiplum vises som terskel); `reward_ready` er UAVHENGIG av stamps. `totals` er populert også når `enabled:false`.
+- **Ett kall** (`api.loyalty`) mater innstillinger + deltakerliste + kandidater. Ingen `/customers/recent` lenger — kandidatene er `eligible` (backend-filtrert, ekskluderer deltakerne). `completed_count` skiller stamkunde fra engangskunde.
+- **Innstillinger:** program på/av (`loyalty_enabled`), terskel `<select>` 5–20 (default 10), belønning 20–100 steg 10 («Gratis klipp» ved 100 / «X % rabatt»), «Tell med klipp fra før» (`loyalty_count_history`, tilstands-speilet hjelpetekst). Lagres via `PUT /settings`; 403 → «Se abonnement»-lås. **Bekreftelse før av** (uthentede belønninger `ready` + de som `slutter å samle`) og **før terskel/pct-endring** mens `in_progress>0` (revert-til-lagret ved Avbryt).
+- **Deltakere (opt-in):** kan-hente ALLTID øverst, så flest klipp. «X av terskel», klikk-kopierbart nummer, grønn «Kan hente». `reward_ready`+`stamps<terskel` → linje «Ubrukt belønning fra forrige runde». Diskret **person-minus-ikon** (ikke søppelbøtte — sletter ingenting) → bekreftelse UNDER raden («Kunden slutter å samle. Klippene beholdes.»); pill står. `has_unused_reward:true` i PUT-svaret → toast om at belønningen gjelder fortsatt.
+- **Legg til kunde (opt-in):** `eligible` med `completed_count`, én «Legg til» per kunde, **ingen «legg til alle»**. `PUT /api/dashboard/customers/:id/loyalty {opt_in}` → `{customer_id,opt_in,opt_in_at,has_unused_reward}` (`api.loyaltyOptIn`).
+- **Pill på bookinger:** `discountPill` → `rolle==='lojalitet'` gir «Lojalitet · Gratis klipp» (pct 100) / «Lojalitet · X %». Dekker Kommende + full liste + detalj-modal. Verving vinner ved kollisjon — backend sender ett objekt.
+- **Basis:** skjoldes som de andre Vekst-accordionene (`skjoldVekstFlater` inkluderer `#accLoyal`), UTEN eksempeltall og UTEN «Eksempel»-merke — `loadLoyalty` returnerer tidlig ved `erBasis()` (ingen `/loyalty`-kall). Se Basis-visning.
+- Render: `tools/render/lojalitetsprogram.mjs` (av / på-tom / på-liste / etter-innløsning + interaktive tilstander + pill + basis, 320/375, mørk/lys).
+
 ### Bildeplasserings-system (slots)
 - `images` har `slot` (portrett/hero/galleri) + `sort_order`. Barbereren trykker en slot-boks per layout → laster opp dit. Galleri-grense 10; erstatning av portrett/hero sletter gammelt helt (DB+R2). `PATCH /images/:id/slot` flytter. Layout-bytte hard-sletter (DB+R2), transaksjonssikret (BEGIN/COMMIT/ROLLBACK, R2 best-effort utenfor transaksjon).
 - `byggSideFraBarber()` leser slots (ikke opplastingsrekkefølge) — barberens plassering styrer siden.
@@ -404,9 +421,9 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
    KPI/omsetning → graf → «Drevet av BarberHQ» → kommende bookinger → full booking-liste
    (no-show-marker) → vinn-tilbake-liste.
 2. **Vekst** = vekst-tall (rebooking-rate/trend) + attribusjon (EKTE `/attribution`, ikke mock) + SMS-knottene
-   (påminnelse/rebooking/intervall, ekte `GET/PUT /api/dashboard/settings`). Hele fanens Vekst-flater
-   (attribusjon/momentum/rebooking/vinn-tilbake/verving) skjules bak lås + eksempeltall ved Basis-plan
-   (`erBasis()` — se Basis-visning). Divider mellom
+   (påminnelse/rebooking/intervall, ekte `GET/PUT /api/dashboard/settings`) + **Lojalitetsprogram** (se
+   egen seksjon). Hele fanens Vekst-flater (attribusjon/momentum/rebooking/vinn-tilbake/verving/lojalitet)
+   skjules bak lås ved Basis-plan (`erBasis()` — se Basis-visning). Divider mellom
    måling (over) og kontroll (under). Plassholder-kommentar for vinn-tilbake-**konfig**
    (auto-SMS ved kansellering/no-show) — bygges med vekstfeaturen.
 3. **Tjenester & tider** (`data-panel="tjenester"`) = tjenester + arbeidstider.
@@ -436,10 +453,19 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   uendret dashbord. Skjold-komponent (`settSkjold`/`fjernSkjold`): halvgjennomsiktig lås + «Se abonnement»
   (klikk → `switchPanel('abonnement')` + scroll `#accAbonnement`), innhold under `pointer-events:none`
   + inputs disabled. Flater: Oversikt «Drevet av» + Vekst attribusjon/momentum/rebooking/vinn-tilbake/
-  verving (påminnelse + `#vekstStats`/trend IKKE låst — volum, ikke Vekst-attribusjon). Attribusjons-
-  kortene viser eksempeltall (`VEKST_EKSEMPEL`, 6 850 kr) bak lås med «Eksempel»-merke, INGEN API-kall.
-  Backend gater også: `PUT /settings` → 403 viser «Se abonnement»-lenka, ikke generisk feil. Én commit-
-  kjede `d309cd0`→`249a126`→`6c7efaf`. Render: `tools/render/skjold.mjs` (basis + trial-kontroll).
+  verving/**lojalitet** (påminnelse + `#vekstStats`/trend IKKE låst — volum, ikke Vekst-attribusjon).
+  **Lett skjold:** overlegg `.48` + `blur(1px)` (var `.66/1.5px`) så innholdet under så vidt antydes;
+  lås-ikon + «Se abonnement» har skygge (mørk/lys per tema) for å leses først. **Kun de to «Drevet av»/
+  attribusjons-flatene** viser eksempeltall (`VEKST_EKSEMPEL`, 6 850 kr) med «Eksempel»-merke.
+  **Lojalitet skjoldes UTEN eksempeltall** (`VEKST_EKSEMPEL` har ingen `loyalty`-blokk) — kortet viser
+  bare sin egen beskrivelse; rebooking/vinn-tilbake/verving likeså.
+  **INGEN datahenting på skjoldede flater:** `loadWinback`/`loadVerving`/`loadLoyalty` returnerer tidlig
+  ved `erBasis()` (init-`loadWinback` er flyttet til ETTER `loadBilling` så plan er kjent). `loadSmsInnstillinger`
+  guardes IKKE — den fyller også den ULÅSTE SMS-påminnelsen og henter kun barberens egne settings, ikke kundedata.
+  Backend gater WRITE: `PUT /settings` + `PUT /customers/:id/loyalty` → 403 for basis (`dashboard.js:1131/1136/1200`),
+  viser «Se abonnement»-lenka. **⚠ Backend-funn (uløst):** GET `/winback`/`/referrals`/`/customers/recent` er
+  IKKE plan-gatet (kun `asyncRoute`, ingen middleware) — frontend-guardene dekker klienten, backend bør gate også.
+  Render: `tools/render/skjold.mjs` (basis + trial) + `tools/render/lojalitetsprogram.mjs` (STEG 4: full Vekst-panel + fetch-guards).
 - **Tema-toggle: header (→31.07) → egen Innstillinger-fane (31.07) → Konto (06.08).** `#themeBtn`
   er samme knapp og samme id hele veien (all tema-JS er urørt), nå i en `.tog-row` nederst i Konto
   med etikett «Mørk modus» + «Huskes i denne nettleseren». Headerens `.who` har kun barbernavnet.
