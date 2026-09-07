@@ -977,6 +977,84 @@
   .verv-modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
   .verv-modal-actions button[disabled]{opacity:.5;cursor:not-allowed}
 
+  /* ---- Lojalitetsprogram (Vekst) — read-only oversikt (steg 1) + innstillinger (steg 2) ---- */
+  /* Tre totaler: samme 1px-hairline-grid som .stats, men kompakt for å ligge inne i et trekkspill.
+     Sentrert tall + liten etikett. grid 3 like kolonner så «Innløst denne mnd.» kan wrappe på 320
+     uten å skyve de andre. */
+  .kl-totals{display:grid;grid-template-columns:repeat(3,1fr);gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin:2px 0 14px}
+  .kl-tot{background:var(--surface);padding:13px 8px;text-align:center;min-width:0}
+  .kl-tot .v{font-size:22px;font-weight:800;letter-spacing:-.03em;line-height:1;font-variant-numeric:tabular-nums}
+  .kl-tot .l{font-size:10.5px;color:var(--mut);font-weight:600;letter-spacing:.02em;margin-top:6px;line-height:1.3}
+  /* «X av Y»-teller i raden (gjenbruker .wb-meta ellers). Framheves litt fordi det er radens tall. */
+  .kl-count{font-variant-numeric:tabular-nums}
+  /* Kopierbart nummer: som .wb-phone (blå, klikk = kopier), på egen linje under «X av Y». */
+  .kl-tel{display:block;margin-top:3px;color:var(--info);cursor:pointer;user-select:all;font-variant-numeric:tabular-nums}
+  .kl-tel:hover{text-decoration:underline}
+  /* «Kan hente»-pillen på meta-linja, ved «X av Y». */
+  .wb-meta .rpill{vertical-align:middle;margin-left:4px}
+  /* «Slå på»-knapp (av-tilstand): tydelig primær-CTA (fylt), ikke en dempet lenke — det er
+     neste handling barberen skal gjøre. Bruker samme .btn-verdier som resten av dashbordet. */
+  .kl-empty-cta{appearance:none;margin-top:14px;padding:11px 20px;border:0;background:var(--ink);color:var(--bg);border-radius:10px;font:inherit;font-size:14px;font-weight:600;cursor:pointer;letter-spacing:-.01em}
+  .kl-empty-cta:hover{opacity:.9}
+  /* Innstillings-etikettene skal LESE som aktive, ikke deaktiverte — samme farge som kortets
+     overskrifter (--ink), ikke den dempede --mut-2 fra delte .seg-lead. Scopet til #loyalSett
+     så Rebooking/Verving-etikettene er urørt. Kontrast: --ink er hovedtekstfargen i begge temaer. */
+  #loyalSett .seg-lead{color:var(--ink)}
+  /* Lik vertikal avstand mellom de fire innstillingsradene. .seg-line + .seg-line-adjacencyen
+     brøt der en skjult warn-div lå mellom to rader (ga tettere avstand) — fast margin per rad
+     løser det uavhengig av de skjulte divene. */
+  #loyalSett .seg-line{margin-top:18px}
+  #loyalSett .seg-line:first-child{margin-top:0}
+  #loyalHistoryNote{margin-top:10px}
+  /* Under 400px: select-radene stables — etikett over, select i FULL bredde. Da får de to
+     selectene lik bredde og flukter. Toggle-radene beholder etikett venstre / bryter høyre. */
+  @media(max-width:400px){
+    #loyalSett .kl-selrow{flex-direction:column;align-items:stretch;gap:6px}
+    #loyalSett .kl-selrow .seg-lead{flex:none}
+    #loyalSett .kl-selrow .kl-select{margin-left:0;width:100%}
+  }
+  /* Innstillinger: native select stylet mot .sett-num-in-inputen (samme ramme/høyde). */
+  .kl-select{appearance:none;padding:7px 30px 7px 11px;border:1px solid var(--line-2);border-radius:8px;font:inherit;font-size:13px;background:var(--surface);color:var(--ink);cursor:pointer;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
+  .kl-select:focus{outline:2px solid var(--info);outline-offset:1px}
+  .kl-select{margin-left:auto}
+  /* Bryter høyre i innstillingsraden (skiller den fra .acc-sw som har trekkspill-marg). */
+  .kl-sw{margin-left:auto}
+  /* Skille mellom innstillinger og deltakerliste. */
+  .kl-hr{border:0;border-top:1px solid var(--line);margin:18px 0 4px}
+  /* Linje under raden når «Kan hente» vises med klipp under terskel (ubrukt belønning fra forrige runde). */
+  .kl-note{font-size:11px;color:var(--mut);margin-top:4px;line-height:1.3}
+  /* Deltakerrad — EGEN layout (ikke .wb-row, som stabler på ≤380 og ville dyttet ikonet på egen
+     linje). Navn/klipp/nummer til venstre, pill + diskret fjern-ikon top-høyre på ALLE bredder →
+     lista puster. Bekreftelsen (.kl-act) spenner full bredde UNDER raden, kun når ikonet trykkes. */
+  .kl-drow{display:flex;flex-wrap:wrap;align-items:flex-start;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line)}
+  .kl-drow:last-child{border-bottom:0}
+  .kl-dmain{flex:1;min-width:0}
+  .kl-dside{flex-shrink:0;display:flex;align-items:center;gap:6px}
+  /* Fjern = sjeldnest handling → diskret person-minus-ikon (ikke «Fjern»-lenke på hver rad).
+     Ikke søppelbøtte: kunden tas ut av programmet, ingenting slettes. */
+  .kl-remove{appearance:none;border:0;background:0;color:var(--mut-2);cursor:pointer;padding:7px;line-height:0;border-radius:7px}
+  .kl-remove:hover{color:var(--bad);background:rgba(127,127,127,.1)}
+  .kl-remove svg{width:16px;height:16px;display:block}
+  .kl-act{flex-basis:100%}
+  .kl-act:empty{display:none}
+  /* Bekreftelse (SIER hva som skjer, ikke bare «Bekreft») + Fjern/Avbryt — full bredde under raden. */
+  .kl-confirm{display:flex;flex-direction:column;gap:6px;align-items:flex-start;padding-top:2px}
+  .kl-confirm-txt{font-size:11.5px;color:var(--mut);line-height:1.4}
+  .kl-confirm-act{display:flex;gap:16px}
+  .kl-fjern-ja{appearance:none;border:0;background:0;color:var(--bad);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;padding:2px 4px;letter-spacing:-.01em}
+  .kl-fjern-nei{appearance:none;border:0;background:0;color:var(--mut);font:inherit;font-size:12.5px;cursor:pointer;text-decoration:underline;padding:2px 4px;letter-spacing:-.01em}
+  .kl-fjern-nei:hover{color:var(--ink-2)}
+  /* Advarsel om uthentede belønninger — av-tilstand (linje over «Slå på») + av-bryter (boks m/ handling).
+     Warn-farget ramme, ingen tung bakgrunn (gul flate blir grelt på begge temaer). */
+  .kl-warn{margin:14px 0 0;padding:10px 12px;border:1px solid var(--warn);border-radius:10px;font-size:12px;line-height:1.45;color:var(--ink-2)}
+  .kl-offwarn{margin-top:12px;padding:11px 13px;border:1px solid var(--warn);border-radius:10px}
+  .kl-warn-txt{font-size:12px;line-height:1.45;color:var(--ink-2)}
+  .kl-warn-act{display:flex;gap:16px;margin-top:9px}
+  .kl-off-ja{appearance:none;border:0;background:0;color:var(--bad);font:inherit;font-size:12.5px;font-weight:600;cursor:pointer;padding:2px 4px;letter-spacing:-.01em}
+  .kl-off-nei{appearance:none;border:0;background:0;color:var(--mut);font:inherit;font-size:12.5px;cursor:pointer;text-decoration:underline;padding:2px 4px;letter-spacing:-.01em}
+  .kl-off-nei:hover{color:var(--ink-2)}
+
   /* ---- Flytmodell (Vekst) — port av mockup, repo-tokens + literal brand-tint (jf. .rpill.blue) ---- */
   .flow{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 20px 16px;margin-top:28px}
   .flow-h{font-size:15px;font-weight:700;letter-spacing:-.01em;margin-bottom:4px}
@@ -1639,6 +1717,64 @@
           <div id="vervRefWrap" hidden>
             <div id="vervReferrals"><p class="wb-empty">Laster …</p></div>
             <button class="up-more" id="vervRefMore" type="button" hidden></button>
+          </div>
+        </div>
+      </div>
+
+      <!-- Lojalitetsprogram — ett trekkspill som speiler Verving: INNSTILLINGER øverst i body
+           (bygges i steg 2, #loyalSett), READ-ONLY oversikt under (#loyalOversikt), som Vinn
+           tilbake. Navn i UI/docs = «Lojalitetsprogram»; koden beholder loyalty_* (id-er, felt).
+           Pill på bookingsrader forkortes til «Lojalitet» — se discountPill. -->
+      <div class="acc" id="accLoyal">
+        <button type="button" class="acc-head" aria-expanded="false">
+          <span class="acc-htext">
+            <span class="acc-title">Lojalitetsprogram</span>
+            <span class="acc-sub">Kunder samler ett klipp per tur og får en gratis eller rabattert klipp når kortet er fullt.</span>
+          </span>
+          <!-- Chevron fordi denne raden IKKE har bryter (av/på ligger som innstilling inni) — se regelen ved .acc-chev. -->
+          <span class="acc-chev">▾</span>
+        </button>
+        <div class="acc-body" hidden>
+          <!-- INNSTILLINGER (steg 2) — øverst, synlig KUN når programmet er PÅ. loyalty_enabled er
+               PROGRAMNIVÅ (mekanikken i drift, med terskel + belønningsprosent); opt-in er per kunde
+               (Legg til / Fjern). Selectene bestemmer alle tall i kortet — «X av {terskel}» og
+               belønningsteksten leses herfra, ingenting hardkodet. [oversettelse: sv/da/en] -->
+          <div id="loyalSett" hidden>
+            <div class="seg-line">
+              <span class="seg-lead">Program på</span>
+              <label class="sw sw-green kl-sw"><input type="checkbox" id="tog-loyal"><span class="sl"></span></label>
+            </div>
+            <!-- Advarsel ved forsøk på å slå AV programmet mens det finnes uthentede belønninger. -->
+            <div id="loyalOffWarn" class="kl-offwarn" hidden></div>
+            <div class="seg-line kl-selrow">
+              <label class="seg-lead" for="loyalThreshold">Klipp til belønning</label>
+              <select id="loyalThreshold" class="kl-select"></select>
+            </div>
+            <div class="seg-line kl-selrow">
+              <label class="seg-lead" for="loyalPct">Belønning</label>
+              <select id="loyalPct" class="kl-select"></select>
+            </div>
+            <!-- Bekreftelse ved endring av terskel/belønning MENS kunder samler (in_progress>0). -->
+            <div id="loyalSaveWarn" class="kl-offwarn" hidden></div>
+            <div class="seg-line">
+              <span class="seg-lead">Tell med klipp fra før</span>
+              <label class="sw sw-green kl-sw"><input type="checkbox" id="tog-loyalHistory"><span class="sl"></span></label>
+            </div>
+            <p class="sett-note" id="loyalHistoryNote">Slås den på, får kunder du legger til med klippene de allerede har hos deg — noen kan da ha en belønning klar med en gang.</p>
+            <p class="sett-hint" id="loyalSettErr" hidden></p>
+            <hr class="kl-hr">
+          </div>
+          <!-- Del 1 — DELTAKERLISTE: tre totaler + kunder som er med (sortert kan-hente først, så
+               nærmest belønning). Av-tilstand (program ikke på) = pitch + «Slå på»-knapp. -->
+          <div id="loyalOversikt"><p class="wb-empty">Laster …</p></div>
+          <!-- Del 2 — LEGG TIL KUNDE: kunder som IKKE er med ennå (kilde: /customers/recent minus
+               deltakerne), én «Legg til»-knapp per kunde. INGEN «legg til alle» med vilje —
+               barberen velger hvem. Skjult til programmet er på. -->
+          <div id="loyalLeggTilWrap" hidden>
+            <p class="block-h" style="margin-top:22px">Legg til kunde</p>
+            <p class="block-s">Du velger hvem som blir med i lojalitetsprogrammet.</p>
+            <div id="loyalLeggTil"></div>
+            <button class="up-more" id="loyalLeggTilMore" type="button" hidden></button>
           </div>
         </div>
       </div>
@@ -2466,6 +2602,22 @@ const api={
     const r=await apiFetch('/api/dashboard/referrals');
     if(!r||!r.ok)return [];
     return r.json();
+  },
+  // GET /api/dashboard/loyalty → {enabled,threshold,pct,activated_at,count_history,
+  //   customers:[{customer_id,name,phone,stamps,reward_ready}],
+  //   totals:{in_progress,ready,redeemed_month}}. Ett kall mater BÅDE innstillinger og oversikt.
+  // Feil/401 → null: kalleren viser feilstate, aldri oppdiktede tall (jf. api.settings()-noten).
+  async loyalty(){
+    const r=await apiFetch('/api/dashboard/loyalty');
+    if(!r||!r.ok)return null;
+    return r.json();
+  },
+  // PUT /api/dashboard/customers/:id/loyalty {opt_in} → melder en kunde inn (true) / ut (false).
+  //   Svar: {customer_id, opt_in, opt_in_at, has_unused_reward}. Ruta er i kontrakten.
+  // Returnerer Response så kalleren kan skille 403 (Vekst-lås) fra annen feil OG lese svar-body.
+  async loyaltyOptIn(customerId, optIn){
+    return await apiFetch('/api/dashboard/customers/'+encodeURIComponent(customerId)+'/loyalty',
+      {method:'PUT',body:JSON.stringify({opt_in:!!optIn})});
   },
   async rebookingCandidates(){ // GET /api/dashboard/rebooking → {enabled,interval_days,customers:[{customer_id,name,phone,last_visit_at,days_since,last_service}]}
     const r=await apiFetch('/api/dashboard/rebooking');
@@ -3801,7 +3953,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   $("#"+id).classList.add("active");
   if(window.__syncBunnNav)window.__syncBunnNav();   // speil aktiv fane i bunn-nav (mobil)
   if(id==="oversikt"){loadOversikt();loadBookinger();}
-  if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();}
+  if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();loadLoyalty();}
   if(id==="tjenester"){loadTjenester();loadArbeidstider();}
   // «Din side» laster alle tre trekkspillene. loadProfil FØRST — den fyller Profil-feltene
   // (navn/adresse/bio/tagline) som bor i dette panelet, før vi bruker tid på design + bilder.
@@ -4525,6 +4677,309 @@ function showToast(msg){
   t.textContent=msg; t.classList.add('show');
   clearTimeout(_toastT); _toastT=setTimeout(function(){ t.classList.remove('show'); },1900);
 }
+
+/* ---- Lojalitetsprogram (Vekst) ------------------------------------------------
+   To deler i ETT trekkspill: (1) DELTAKERLISTE — kunder som er med, klare først; (2) LEGG TIL
+   KUNDE — kunder som ikke er med ennå, én «Legg til» per kunde (barberen velger, ingen «legg til
+   alle»). Kilde for kandidatene er /customers/recent (delt med Verving) minus deltakerne.
+   api.loyalty mater deltakerliste + innstillinger (steg 2); api.recentCustomers mater kandidatene.
+   UI-navn «Lojalitetsprogram»; koden beholder loyalty_* / id-er med «loyal». */
+// Sist lastede respons — så en re-render (etter lagret innstilling) slipper nytt kall.
+var _loyal=null;
+async function loadLoyalty(){
+  _loyal=await api.loyalty();
+  renderLoyalSett(_loyal);
+  renderLoyalOversikt(_loyal);
+  // «Legg til»-flaten kun når programmet er PÅ. Kandidatene er nå d.eligible fra SAMME rute
+  // (backend ekskluderer allerede deltakerne) — ikke lenger /customers/recent minus deltakere.
+  renderLoyalLeggTil((_loyal && _loyal.enabled) ? (_loyal.eligible||[]) : []);
+}
+// Belønningstekst leses av pct: 100 = gratis klipp, ellers X % rabatt. ÉN kilde — brukes både i
+// select-alternativet og ev. andre steder, så teksten ikke drifter.
+function belonningTekst(pct){ return (+pct>=100) ? 'Gratis klipp' : (pct+' % rabatt'); }
+// «· N dager siden» for kandidatlista (eligible.last_visit er ISO-dato). Tom streng ved manglende.
+function loyalSisteBesok(iso){
+  if(!iso) return '';
+  var d=Math.floor((Date.now()-new Date(iso))/86400000);
+  if(!(d>=0)) return '';
+  return ' · '+(d===0?'i dag':d===1?'i går':d+' dager siden');
+}
+// Uthentede belønninger (totals.ready): tekst for av-TILSTANDEN (over «Slå på»).
+function loyalUthentetTekst(n){ return n+' '+(n===1?'kunde har':'kunder har')+' en belønning de ikke har hentet — de kan fortsatt hente den.'; }
+// Advarsel FØR av (i innstillingene): begge tallene — belønninger som gjelder fortsatt (ready) OG
+// de som slutter å samle mens programmet er av (in_progress). Klippene MISTES IKKE — de beholdes
+// og telles igjen ved påslag, så teksten sier «slutter å samle», ikke «mister fremgangen».
+function loyalAvAdvarsel(ready, samler){
+  var d=[];
+  if(ready>0)  d.push(ready+' '+(ready===1?'kunde har':'kunder har')+' en belønning de kan hente — den gjelder fortsatt.');
+  if(samler>0) d.push(samler+' '+(samler===1?'kunde slutter':'kunder slutter')+' å samle mens programmet er av.');
+  return d.join(' ');
+}
+// Endringstekst (terskel/belønning mens kunder samler): vist FØR lagring, må bekreftes.
+function loyalEndringTekst(n){ return n+' '+(n===1?'kunde samler':'kunder samler')+' nå. De får den nye belønningen. Allerede opptjente belønninger beholder den gamle.'; }
+// «Tell med klipp fra før»-hjelpetekst speiler togglen: presens når PÅ, betinget når AV — så den
+// aldri beskriver en tilstand som ikke gjelder.
+function settLoyalHistoryNote(on){
+  var n=$("#loyalHistoryNote"); if(!n)return;
+  n.textContent = on
+    ? 'Kunder du legger til får med klippene de allerede har hos deg — noen kan ha en belønning klar med en gang.'
+    : 'Slås den på, får kunder du legger til med klippene de allerede har hos deg — noen kan da ha en belønning klar med en gang.';
+}
+// Diskret fjern-ikon: PERSON-MINUS, ikke søppelbøtte. Handlingen sletter ingenting — kunden tas
+// UT av programmet, klippene beholdes. En søppelbøtte ville lovet sletting. Fjern er sjeldnest,
+// skal ikke stå som lenke på hver rad.
+var LOYAL_REMOVE_SVG='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><line x1="22" y1="11" x2="16" y2="11"/></svg>';
+// Innstillinger (steg 2): synlig KUN når programmet er PÅ. Fyller selectene fra threshold/pct og
+// speiler enabled/count_history. Bygger select-alternativene én gang (idempotent på lengde).
+function renderLoyalSett(d){
+  var sett=$("#loyalSett"); if(!sett)return;
+  sett.hidden = !(d && d.enabled);
+  if(!d) return;
+  var ter=$("#loyalThreshold"), pct=$("#loyalPct");
+  if(ter && !ter.options.length){ for(var i=5;i<=20;i++){ var o=document.createElement('option'); o.value=i; o.textContent=i+' klipp'; ter.appendChild(o); } }
+  if(pct && !pct.options.length){ for(var p=20;p<=100;p+=10){ var op=document.createElement('option'); op.value=p; op.textContent=belonningTekst(p); pct.appendChild(op); } }
+  if(ter) ter.value = (d.threshold!=null? d.threshold : 10);
+  if(pct) pct.value = (d.pct!=null? d.pct : 100);
+  var tg=$("#tog-loyal"); if(tg) tg.checked=!!d.enabled;
+  var th=$("#tog-loyalHistory"); if(th) th.checked=!!d.count_history;
+  settLoyalHistoryNote(!!d.count_history);
+  var err=$("#loyalSettErr"); if(err) err.hidden=true;
+  var warn=$("#loyalOffWarn"); if(warn) warn.hidden=true;
+  var sw=$("#loyalSaveWarn"); if(sw) sw.hidden=true; _loyalPending=null;
+}
+// Del 1 — deltakerliste: pitch/«Slå på» (av) · totaler + deltakere (på). Ingen falsk påstand ved 0.
+function renderLoyalOversikt(d){
+  var el=$("#loyalOversikt"), wrap=$("#loyalLeggTilWrap"); if(!el)return;
+  if(!d){ el.innerHTML='<p class="wb-empty">Kunne ikke hente lojalitetsprogrammet — last siden på nytt.</p>'; if(wrap)wrap.hidden=true; return; }
+  if(!d.enabled){
+    // Pitch før påslag: DET som skiller programmet fra alle andres — barberen velger selv hvem.
+    // Svaret på spørsmålet han har rett før han trykker «Slå på».
+    // Uthentede belønninger overlever avslag → vis antallet over knappen så barberen vet de gjelder.
+    var uthentet=(d.totals && d.totals.ready) || 0;
+    var advarsel = uthentet>0 ? '<p class="kl-warn">'+loyalUthentetTekst(uthentet)+'</p>' : '';
+    el.innerHTML='<p class="wb-empty">Du velger selv hvilke kunder som er med.</p>'
+      +advarsel
+      +'<button class="kl-empty-cta" id="loyalSlaaPaa" type="button">Slå på lojalitetsprogram</button>';
+    if(wrap)wrap.hidden=true;   // ingen «legg til» før programmet er på
+    return;
+  }
+  if(wrap)wrap.hidden=false;
+  var t=d.totals||{}, terskel=d.threshold||0;
+  var totalsHtml='<div class="kl-totals">'
+    +'<div class="kl-tot"><div class="v">'+(t.in_progress||0)+'</div><div class="l">Samler</div></div>'
+    +'<div class="kl-tot"><div class="v">'+(t.ready||0)+'</div><div class="l">Kan hente</div></div>'
+    +'<div class="kl-tot"><div class="v">'+(t.redeemed_month||0)+'</div><div class="l">Innløst denne mnd.</div></div>'
+    +'</div>';
+  var kunder=(d.participants||[]).slice().sort(function(a,b){
+    // Kan-hente ALLTID øverst (uansett antall klipp), deretter nærmest belønning (flest klipp).
+    return (b.reward_ready?1:0)-(a.reward_ready?1:0)
+        || (b.stamps||0)-(a.stamps||0);
+  });
+  var deltakere;
+  if(!kunder.length){
+    // Tom deltakerliste (programmet på, ingen lagt til): barberen velger selv — pek til «Legg til».
+    deltakere='<p class="wb-empty">Du velger selv hvem som er med — legg til kundene du vil ha med nedenfor.</p>';
+  } else {
+    deltakere='<div class="wb-card">'+kunder.map(function(c){
+      var kanHente=!!c.reward_ready, stamps=c.stamps||0;
+      var pill=kanHente?'<span class="rpill ok">Kan hente</span>':'';
+      // reward_ready MED klipp under terskel = ubrukt belønning fra en TIDLIGERE runde (kunden
+      // samler på ny runde nå). Uten linja ser «Kan hente» på f.eks. 3/10 ut som en feil.
+      // Bekreftet i kontrakten: stamps = inneværende runde (0..terskel), reward_ready er UAVHENGIG
+      // av stamps. Denne raden er derfor riktig.
+      var note=(kanHente && stamps<terskel) ? '<div class="kl-note">Ubrukt belønning fra forrige runde</div>' : '';
+      // Fjern er den sjeldneste handlingen → diskret ikon til høyre (ikke en «Fjern»-lenke på HVER
+      // rad, som gjør lista lang og støyende). Trykk ikon → bekreftelse i .kl-act under (pill står).
+      var remove='<button class="kl-remove" data-id="'+esc(String(c.customer_id||''))+'" data-name="'+esc(c.name||'')+'" type="button" aria-label="Fjern kunde fra programmet">'+LOYAL_REMOVE_SVG+'</button>';
+      // Pillen står PÅ meta-linja (ved «X av Y»), ikke ved navnet — så navnet får full bredde og
+      // ikke klippes til «Amir Hadd…» når pill + ikon deler linje 1 med navnet.
+      return '<div class="kl-drow"><div class="kl-dmain">'
+        +'<div class="wb-name">'+esc(c.name||'–')+'</div>'
+        +'<div class="wb-meta"><span class="kl-count">'+stamps+' av '+terskel+'</span>'+(pill?' '+pill:'')
+          +(c.phone?'<span class="kl-tel" data-tel="'+esc(c.phone)+'">'+esc(c.phone)+'</span>':'')+'</div>'
+        +note
+        +'</div><div class="kl-dside">'+remove+'</div><div class="kl-act"></div></div>';
+    }).join('')+'</div>';
+  }
+  el.innerHTML=totalsHtml+'<p class="block-h" style="margin-top:6px">Deltakere</p>'+deltakere;
+}
+// Del 2 — «Legg til kunde». Samme rad-/knapp-mønster som Vervings send-liste (4 først + «Vis flere»,
+// .verv-btn). INGEN «legg til alle» med vilje.
+var LOYAL_FORST=4;
+var _loyalKand=[], _loyalKandAlle=false;
+function renderLoyalLeggTil(list){
+  if(arguments.length){ _loyalKand=list||[]; _loyalKandAlle=false; }
+  var el=$("#loyalLeggTil"), mer=$("#loyalLeggTilMore"); if(!el)return;
+  if(!_loyalKand.length){
+    el.innerHTML='<p class="wb-empty">Ingen kunder å legge til akkurat nå.</p>';
+    if(mer)mer.hidden=true; return;
+  }
+  var vis=_loyalKandAlle?_loyalKand:_loyalKand.slice(0,LOYAL_FORST);
+  el.innerHTML='<div class="wb-card">'+vis.map(function(c){
+    // completed_count = totalt antall klipp → skiller stamkunde fra engangskunde (det tallet
+    // barberen trenger for å velge hvem som er verdt å ha med). last_visit gir ferskhet.
+    var antall=(c.completed_count||0), meta=antall+(antall===1?' klipp':' klipp')+loyalSisteBesok(c.last_visit);
+    return '<div class="wb-row"><div class="wb-info">'
+      +'<div class="wb-name">'+esc(c.name||'–')+'</div>'
+      +'<div class="wb-meta">'+meta+'</div></div>'
+      +'<div class="wb-right"><button class="verv-btn" data-id="'+esc(String(c.customer_id||''))+'" data-name="'+esc(c.name||'')+'">Legg til</button></div></div>';
+  }).join('')+'</div>';
+  if(mer){
+    var rest=_loyalKand.length-LOYAL_FORST;
+    mer.hidden = rest<=0;
+    mer.innerHTML = _loyalKandAlle ? 'Vis færre <span class="chev up"></span>' : ('Vis flere ('+rest+') <span class="chev"></span>');
+  }
+}
+// Delegasjon (deltakerliste): kopier nummer · «Slå på» (av-tilstand) · «Fjern» (opt-out, to-stegs).
+$("#loyalOversikt").addEventListener('click',async function(e){
+  var tel=e.target.closest('.kl-tel');
+  if(tel){ var ok=await kopierTekst(tel.dataset.tel||''); if(ok)showToast('Nummer kopiert'); return; }
+  // «Slå på» = programnivå PÅ (loyalty_enabled). Re-last → settings + tom deltakerliste + «Legg til».
+  var slaa=e.target.closest('#loyalSlaaPaa');
+  if(slaa){
+    slaa.disabled=true; slaa.textContent='Slår på …';
+    var rs=await api.saveSettings({loyalty_enabled:true});
+    if(erSettings403(rs)){ slaa.disabled=false; slaa.textContent='Slå på lojalitetsprogram'; showToast('Se abonnement for å bruke Vekst'); return; }
+    if(rs&&rs.ok){ loadLoyalty(); }
+    else { slaa.disabled=false; slaa.textContent='Slå på lojalitetsprogram'; showToast('Kunne ikke slå på. Prøv igjen.'); }
+    return;
+  }
+  // Fjern-ikon → bekreftelse i .kl-act UNDER pillen (pillen står, så en kan-hente-kunde ikke ser
+  // ut som en uten mens barberen vurderer å fjerne ham). Bekreftelsen SIER hva som skjer.
+  var rem=e.target.closest('.kl-remove');
+  if(rem){
+    var drow=rem.closest('.kl-drow'), act=drow&&drow.querySelector('.kl-act');
+    if(act){
+      act.innerHTML=loyalConfirmHtml(rem.dataset.id, rem.dataset.name);
+      clearTimeout(_loyalFjernT); _loyalFjernT=setTimeout(function(){ renderLoyalOversikt(_loyal); },6000); // auto-avbryt
+    }
+    return;
+  }
+  // Avbryt bekreftelsen → tilbakestill lista.
+  if(e.target.closest('.kl-fjern-nei')){ clearTimeout(_loyalFjernT); renderLoyalOversikt(_loyal); return; }
+  // Bekreft fjerning → opt-out, re-last. has_unused_reward → linje om at belønningen fortsatt gjelder.
+  var ja=e.target.closest('.kl-fjern-ja');
+  if(ja){
+    clearTimeout(_loyalFjernT); ja.disabled=true; ja.textContent='Fjerner …';
+    var rf=await api.loyaltyOptIn(ja.dataset.id,false);
+    if(erSettings403(rf)){ showToast('Se abonnement for å bruke Vekst'); renderLoyalOversikt(_loyal); return; }
+    if(rf&&rf.ok){
+      var body=await rf.json().catch(function(){return{};});
+      if(body&&body.has_unused_reward) showToast((ja.dataset.name||'Kunden')+' er fjernet — har fortsatt en ubrukt belønning som gjelder.');
+      else showToast('Fjernet');
+      loadLoyalty();
+    } else { showToast('Kunne ikke fjerne. Prøv igjen.'); renderLoyalOversikt(_loyal); }
+    return;
+  }
+});
+// Bekreftelses-markup for Fjern: forklarer konsekvensen før handling.
+var _loyalFjernT;
+function loyalConfirmHtml(id,name){
+  return '<div class="kl-confirm"><span class="kl-confirm-txt">Kunden slutter å samle. Klippene beholdes.</span>'
+    +'<span class="kl-confirm-act">'
+      +'<button class="kl-fjern-ja" data-id="'+esc(String(id||''))+'" data-name="'+esc(name||'')+'">Fjern</button>'
+      +'<button class="kl-fjern-nei" type="button">Avbryt</button>'
+    +'</span></div>';
+}
+// Delegasjon («Legg til»): opt-in per kunde → re-last (kunden flytter fra kandidat til deltaker).
+$("#loyalLeggTil").addEventListener('click',async function(e){
+  var b=e.target.closest('.verv-btn'); if(!b||b.disabled)return;
+  b.disabled=true; b.textContent='Legger til …';
+  var r=await api.loyaltyOptIn(b.dataset.id,true);
+  if(erSettings403(r)){ b.disabled=false; b.textContent='Legg til'; showToast('Se abonnement for å bruke Vekst'); return; }
+  if(r&&r.ok){ showToast('Lagt til'); loadLoyalty(); }
+  else { b.disabled=false; b.textContent='Legg til'; showToast('Kunne ikke legge til. Prøv igjen.'); }
+});
+$("#loyalLeggTilMore").addEventListener('click',function(){ _loyalKandAlle=!_loyalKandAlle; renderLoyalLeggTil(); });
+
+// Innstillinger (steg 2) → PUT /settings. 403 = Basis-lås → samme lås-tekst som skjoldet, ikke
+// generisk feil. Endring av terskel/pct oppdaterer _loyal + re-rendrer så «X av Y» stemmer straks.
+$("#tog-loyal").addEventListener('change',async function(){
+  var err=$("#loyalSettErr"), warn=$("#loyalOffWarn");
+  // Slår AV med belønninger klare ELLER kunder som samler → bekreft først (ikke slå av i blinde).
+  // Viser begge tallene. Holder bryteren PÅ til barberen bekrefter «Slå av likevel».
+  if(!this.checked){
+    var t=(_loyal && _loyal.totals) || {}, ready=t.ready||0, samler=t.in_progress||0;
+    if(ready>0 || samler>0){
+      this.checked=true;
+      if(warn){ warn.hidden=false; warn.innerHTML='<p class="kl-warn-txt">'+loyalAvAdvarsel(ready,samler)+'</p>'
+        +'<div class="kl-warn-act"><button class="kl-off-ja" type="button">Slå av likevel</button><button class="kl-off-nei" type="button">Avbryt</button></div>'; }
+      return;
+    }
+  }
+  if(warn)warn.hidden=true;
+  var r=await api.saveSettings({loyalty_enabled:this.checked});
+  if(erSettings403(r)){ this.checked=!this.checked; visSettingsLaas(err); return; }
+  if(r&&r.ok){ if(err)err.hidden=true; loadLoyalty(); }   // av → skjul lister; på → vis
+  else { this.checked=!this.checked; if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} }
+});
+// Delegasjon i innstillingene: av-bryter-advarsel + terskel/belønning-bekreftelse (før lagring).
+$("#loyalSett").addEventListener('click',async function(e){
+  // Av-bryter-advarsel: «Slå av likevel» → PUT loyalty_enabled:false · «Avbryt» → behold på.
+  if(e.target.closest('.kl-off-nei')){ var w=$("#loyalOffWarn"); if(w)w.hidden=true; return; }
+  var ja=e.target.closest('.kl-off-ja');
+  if(ja){
+    ja.disabled=true; ja.textContent='Slår av …';
+    var r=await api.saveSettings({loyalty_enabled:false});
+    if(erSettings403(r)){ visSettingsLaas($("#loyalSettErr")); return; }
+    if(r&&r.ok){ var w=$("#loyalOffWarn"); if(w)w.hidden=true; loadLoyalty(); }
+    else { ja.disabled=false; ja.textContent='Slå av likevel'; showToast('Kunne ikke slå av. Prøv igjen.'); }
+    return;
+  }
+  // Terskel/belønning-bekreftelse: «Avbryt» → tilbakestill selecten til lagret verdi.
+  if(e.target.closest('.kl-save-nei')){
+    var sw=$("#loyalSaveWarn"); if(sw)sw.hidden=true;
+    if(_loyalPending && _loyalPending.select) _loyalPending.select.value=_loyalPending.forrige;
+    _loyalPending=null; return;
+  }
+  var sja=e.target.closest('.kl-save-ja');
+  if(sja){
+    sja.disabled=true; sja.textContent='Lagrer …';
+    if(_loyalPending) await loyalLagre(_loyalPending.felt, _loyalPending.verdi);
+    var sw2=$("#loyalSaveWarn"); if(sw2)sw2.hidden=true; _loyalPending=null;
+    return;
+  }
+});
+// Lagre én innstilling (terskel/belønning) → oppdater _loyal + re-render oversikt («X av Y» straks).
+async function loyalLagre(felt, verdi){
+  var err=$("#loyalSettErr"), patch={}; patch[felt]=verdi;
+  var r=await api.saveSettings(patch);
+  if(erSettings403(r)){ visSettingsLaas(err); return false; }
+  if(r&&r.ok){ if(err)err.hidden=true;
+    if(felt==='loyalty_threshold' && _loyal) _loyal.threshold=verdi;
+    if(felt==='loyalty_pct'       && _loyal) _loyal.pct=verdi;
+    renderLoyalOversikt(_loyal); return true; }
+  if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} return false;
+}
+// Endring av terskel/belønning: samler kunder nå (in_progress>0)? → bekreft FØR lagring (vis
+// konsekvensen). Ellers lagre direkte. Holder selectens NYE verdi synlig mens bekreftelsen står.
+var _loyalPending=null;
+function loyalSettEndring(felt, verdi, selectEl, forrige){
+  var samler=(_loyal && _loyal.totals && _loyal.totals.in_progress)||0;
+  var sw=$("#loyalSaveWarn");
+  if(samler>0){
+    _loyalPending={felt:felt, verdi:verdi, select:selectEl, forrige:forrige};
+    if(sw){ sw.hidden=false; sw.innerHTML='<p class="kl-warn-txt">'+loyalEndringTekst(samler)+'</p>'
+      +'<div class="kl-warn-act"><button class="kl-save-ja" type="button">Lagre</button><button class="kl-save-nei" type="button">Avbryt</button></div>'; }
+    return;
+  }
+  if(sw)sw.hidden=true;
+  loyalLagre(felt, verdi);
+}
+$("#loyalThreshold").addEventListener('change',function(){
+  loyalSettEndring('loyalty_threshold', parseInt(this.value,10), this, (_loyal&&_loyal.threshold!=null)?_loyal.threshold:10);
+});
+$("#loyalPct").addEventListener('change',function(){
+  loyalSettEndring('loyalty_pct', parseInt(this.value,10), this, (_loyal&&_loyal.pct!=null)?_loyal.pct:100);
+});
+$("#tog-loyalHistory").addEventListener('change',async function(){
+  var err=$("#loyalSettErr");
+  settLoyalHistoryNote(this.checked);   // speil togglen straks
+  var r=await api.saveSettings({loyalty_count_history:this.checked});
+  if(erSettings403(r)){ this.checked=!this.checked; settLoyalHistoryNote(this.checked); visSettingsLaas(err); return; }
+  if(r&&r.ok){ if(err)err.hidden=true; if(_loyal)_loyal.count_history=this.checked; }
+  else { this.checked=!this.checked; settLoyalHistoryNote(this.checked); if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} }
+});
 
 /* ---- Accordion (Vekst + «Din side») — chevron + aria + skjul/vis body ---- */
 document.querySelectorAll('.acc-head').forEach(function(h){
