@@ -650,7 +650,7 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
 
 ### Løst før/ved lansering (ikke gjenoppdag)
 - **Stripe-billing + konverteringsflyt** — plan-velger Basis/Vekst, `startCheckout {plan}`,
-  checkout/portal i Konto. Pris fra `PLAN_INFO[b.plan]` (249/399, fail-closed). Live og
+  checkout/portal i Konto. Pris fra `PLAN_INFO[b.plan]` (89 Basis / 179 Vekst, fail-closed — verifisert `:5502` 07.09). Live og
   prod-verifisert (`364e2c5`). `effective_plan` leses nå av `erBasis()` (Vekst-skjoldet / Basis-visning
   — skjuler Vekst-flatene bak lås + eksempeltall når `effective_plan==='basis'`); `effective_plan_grunn`
   leses av `renderKonto` (`:5047`, billing-tilstandene). Ikke lenger «ligger klare, ubrukt».
@@ -663,71 +663,76 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
 - **Duplikat-e-post (backend):** unik-indeks på `lower(email)` + deterministisk login følges videre
   i barberhq-backend. Ikke en frontend-oppgave; ikke lenger launch-gating.
 
+### Løst post-launch (ikke gjenoppdag) — verifisert mot kode + git-logg 07.09
+- **Lojalitetsprogram (Vekst-fanen)** — bygget ende-til-ende (`0fa6821`→`97ddf43`): deltakere,
+  innstillinger (fire belønningsvalg 25/50/75/Gratis), «Legg til» (eligible + completed_count),
+  pill på bookinger, Basis-skjold UTEN eksempeltall, ingen datahenting på skjoldede flater. Egen seksjon over.
+- **Full mobil-gjennomgang av dashbordet** — kjørt (0 brukne flater); funn fikset (periodepiller
+  `9ee04ca`, pris-0 `5fe012d`). Verktøy: `tools/render/mobil-gjennomgang.mjs`.
+- **Bunn-nav på mobil** — BYGGET (`75a7386`), innhold klarer baren (`4abe4a1`). Ikke lenger «vurder».
+- **Like periode-piller på 320** — `9ee04ca`: `#segs` (Oversikt) + `#attrPeriod` (Vekst),
+  `.segs:not(.segs-val){display:flex;width:100%}` + `button{flex:1}` → 88/88/88.
+- **Pris-0-markør i tjeneste-lista** — `5fe012d`: rød kant + «Sett pris».
+- **Kalender-dagvelger på mobil starter på i dag** — `7d76c8c` (rotårsak i rekkevidden, ikke scroll-hack).
+
 ### Post-launch — gjenstående arbeid
 
 #### Mobil (primærflate — de fleste barberere bruker dashbordet fra telefon)
-1. **Full mobil-gjennomgang av HELE dashbordet (`site/no/dashboard.html`).** Alle fem faner
-   systematisk på 320/375/390 (Playwright, `device_scale_factor=2`, «Disable cache» PÅ):
-   Oversikt (diagram + HUD-kort + KPI + «Drevet av» + booking-lister), Vekst, Tjenester & tider
-   (inkl. `.gcal-warn`), Din side (preview + slot-bokser + crop-modal + profilfeltene), Konto.
-   Se etter horisontal overflow, for små trykkflater, lister/tabeller som ikke brekker, modaler
-   som ikke får plass, og «Mer»-menyen. Kartlegg først, bli enige om lista, så fiks.
-2. **Bunn-nav på mobil** — vurder fast bunn-navigasjon som primær fane-bytter på telefon.
-3. **Mobilfikser fra funnlista.** Kjent funn (06.08, bevisst utsatt): periodepillene brekker til
-   to linjer på 320 («Siste uke / Siste 2 uker» + «Denne måneden» under). Skyldes
-   `.segs{flex-wrap:wrap}`, DELT CSS mellom Oversiktens `#segs` og Vekstens `#attrPeriod` — en fiks
-   treffer begge flater. Nye funn fra gjennomgangen føyes til her.
+- Full gjennomgang, bunn-nav og periodepille-fiksen er GJORT — se «Løst post-launch». Nye mobilfunn
+  føyes til her.
+- **Utestående:** mobil-gjennomgang av lojalitetsprogram-kortet alene @320/375/390 (trial + basis,
+  alle tilstander) — den eneste flaten som ikke var med i gårsdagens gjennomgang. Rapport i
+  `docs/mobil-lojalitet.md` (07.09), ufikset — bli enige om lista før fiks.
 
 #### i18n (en/sv/da — oversettelsesfasen)
-4. **Kundesiden er hardkodet norsk (backend).** `booking-module.cjs` har ingen i18n («Velg
+1. **Kundesiden er hardkodet norsk (backend).** `booking-module.cjs` har ingen i18n («Velg
    tjeneste», «Velg time», «Bygget med BarberHQ» osv.), og `prisTekst()` hardkoder `' kr'` — ingen
    valuta-abstraksjon. En UK/US-barberer via en/ får norsk bookingside med kroner. Må løses i
    backend før en/ tar imot ekte barberere.
-5. **«Forgot password?» er død i en/** — `<a href="#" class="forgot">` i `site/en/logg-inn.html`.
+2. **«Forgot password?» er død i en/** — `<a href="#" class="forgot">` i `site/en/logg-inn.html`.
    Magisk-lenke-flyten (`POST /api/send-magic-link` + `opprett-passord.html`) finnes bare i no/.
    Krever lenke/flyt i `en/logg-inn.html` + en engelsk `opprett-passord.html`.
-6. **Oversettelse (utsatt fase) — full streng-liste under «Teknisk gjeld».** Kort: plassholdere,
+3. **Oversettelse (utsatt fase) — full streng-liste under «Teknisk gjeld».** Kort: plassholdere,
    bilde-hjelpetekster, Vekst-flytens ledd, SMS-trekkspill, palett-navn og alt sv/da/en. Markør:
    `[oversettelse: sv/da/en]`. ⚠ `.ds-tab` rad 4/5 kan IKKE oversettes rett — de er sanne i det
    nordiske feltet, men usanne i USA (theCut PRO inkluderer begge). Faktasjekk, ikke språkjobb.
    **en/-flater som venter på denne fasen (ikke åpne no/-oppgaver):** terms/cookies-innhold (no/ er
    dekket av `vilkar.html`; en/ mangler innhold + har døde footer-`<a href="#">`), og «Forgot
-   password»-flyten (pkt 5).
+   password»-flyten (pkt 2).
 
 #### Innhold / sider
-7. **Terms/Cookies-innhold: no/ DEKKET.** no/-footerne (`index`/`funksjoner`/`priser`/`support`)
+4. **Terms/Cookies-innhold: no/ DEKKET.** no/-footerne (`index`/`funksjoner`/`priser`/`support`)
    peker på `vilkar.html` — kombinert vilkår + personvern + cookies, ekte innhold, ingen døde lenker
    (verifisert 06.09). no/ har personvern INNE i vilkar.html (`#personvern`), ikke som egen
-   `personvern.html`. en/-innholdet hører til oversettelsesfasen (pkt 6), ikke en åpen no/-oppgave.
+   `personvern.html`. en/-innholdet hører til oversettelsesfasen (pkt 3), ikke en åpen no/-oppgave.
    Merk `netlify.toml`: hele `/en/*` har `X-Robots-Tag: noindex` til oversettelsesfasen er ferdig.
-8. **Døde footer-lenker (no/ FERDIG 06.09).** Vilkår/Personvern/Cookies peker på `vilkar.html` —
+5. **Døde footer-lenker (no/ FERDIG 06.09).** Vilkår/Personvern/Cookies peker på `vilkar.html` —
    som HAR innhold (18 seksjoner), ikke «mangler». Personvern/Cookies lander på `#personvern`/`#cookies`
    (id-anker + `scroll-padding-top:84px` for sticky nav, `59d56c4`). Alle fire no/-footere verifisert
    uten døde lenker (`index`/`funksjoner`/`priser`/`support`). en/-footerne hører til oversettelsesfasen
-   (pkt 6). `Se dashbordet` (`id="demoNavBtn"`) er `href="#"` med vilje (`DEMO_ENABLED = false`) — ikke en bug.
-9. **Landingsside-tekst (`site/no/index.html`).** «Bygd for å fylle stolen»-seksjonen skal endres
+   (pkt 3). `Se dashbordet` (`id="demoNavBtn"`) er `href="#"` med vilje (`DEMO_ENABLED = false`) — ikke en bug.
+6. **Landingsside-tekst (`site/no/index.html`).** «Bygd for å fylle stolen»-seksjonen skal endres
    (anker `<h2 class="sys-h2">`, omfang ikke bestemt), og siden mangler et sted som pitcher løftet
    direkte: FLERE KUNDER + OVERSIKT skal stå sammen ett sted, ikke bare underforstått i
    feature-seksjonene. Begge trekker budskapet fra «færre hull» til «flere kunder». Avklares før kode.
-10. **`.ds-tab` nivåmerking + rebooking/verving-rader.** Radene ble tatt UT 12.08 (`8c41945`) og INN
+7. **`.ds-tab` nivåmerking + rebooking/verving-rader.** Radene ble tatt UT 12.08 (`8c41945`) og INN
     igjen 13.08 (`9de6c17`) — omgjort beslutning, ikke regresjon; ikke «rett» tilbake uten å spørre.
     De leser som BarberHQ-egenskaper for alle, mens begge er Vekst-eksklusive ifølge `priser.html`.
     En `.ds-note`-fotnote for nivåmerking ble bygget og fjernet igjen på Henriks beskjed — bevisst
     valg som må tas stilling til. Ikke gjenoppdag som bug.
 
 #### Data / backend-avhengig
-11. **Koble ekte data i Vekst.** Oversikt (diagram/KPI/rekord/månedsvelger) EKTE mot
+8. **Koble ekte data i Vekst.** Oversikt (diagram/KPI/rekord/månedsvelger) EKTE mot
     `/stats` + `/stats/month`; bookinger-liste ekte. «Drevet av»/Vekst-attribusjon er nå EKTE
     ende-til-ende: backend `GET /api/dashboard/attribution` returnerer `total {count,revenue}`
     (efaa553), frontend gjort autoritativ på `data.total` (`46701a3`, klient-sum fjernet). Gjenstår
     kun: verifiser seedede/ekte tall mot prod. No-show-knapp mock. (Ved Basis-plan vises eksempeltall
     bak lås, ikke ekte data — se Basis-visning.)
-12. **Vekstfeatures (backend):** rebooking, verving, vinn-tilbake auto-SMS. Deretter
+9. **Vekstfeatures (backend):** rebooking, verving, vinn-tilbake auto-SMS. Deretter
     landingsside-avsnitt under «fyll stolen» som forklarer dem.
-13. **Test full klikk-flyt med ekte klippbilde** — crop + lagring i Din side, verifiser riktig slot
+10. **Test full klikk-flyt med ekte klippbilde** — crop + lagring i Din side, verifiser riktig slot
     på ekte kundeside. Bevist via API, ikke UI-flyt ennå.
-14. **Pris-0-markør i tjeneste-lista** — rød kant + «Sett pris» (parallell til kundesidens
-    `prisTekst`-vern; gå-live blokkeres allerede server-side).
+    (Pris-0-markøren som sto her er GJORT — `5fe012d`, se «Løst post-launch».)
 
 ### Lav / polish
 - **WebAuthn-instruksjonsbanner + «App kommer»-banner** i dashboard.
