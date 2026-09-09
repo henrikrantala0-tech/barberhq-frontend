@@ -1176,6 +1176,11 @@
   .seg-line{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin-top:4px}
   .seg-line + .seg-line{margin-top:14px}
   .seg-lead{font-size:12.5px;color:var(--mut-2);flex-shrink:0}
+  /* Kontroll-etikett: «Send etter» (Rebooking) skal lese som et VALG, ikke som forklaringsteksten
+     over. Hvit + litt større + halvfet (samme retning som #loyalSett sin --ink-override, scopet hit).
+     + luft mellom forklaringen (#rebookPreview) og valget. Bevisst KUN Rebooking — Verving beholdt. */
+  .seg-lead-ktrl{font-size:13.5px;font-weight:600;color:var(--ink)}
+  #rebookPreview + .seg-line{margin-top:16px}
   /* Info-ikon ved «Send etter». title= er brukt ellers i dashbordet, men duger IKKE her:
      den vises aldri på touch, og dashbordet er mobil-primært. Derfor en ekte boble som
      åpnes på BÅDE trykk og hover. */
@@ -1648,7 +1653,7 @@
                Samme streng står fortsatt i #paamPreview (SMS-påminnelse) — ikke rørt her. -->
           <div id="rebookPreview"></div>
           <div class="seg-line">
-            <span class="seg-lead">Send etter<!--
+            <span class="seg-lead seg-lead-ktrl">Send etter<!--
               --><span class="info-wrap" id="rebookInfoWrap" hidden><!--
                 --><button type="button" class="info-i" id="rebookInfo" aria-expanded="false"
                         aria-controls="rebookInfoTip" aria-label="Om rebooking i prøveperioden">i</button><!--
