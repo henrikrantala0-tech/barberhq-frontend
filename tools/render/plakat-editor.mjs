@@ -56,6 +56,7 @@ function router(plan, previewStatus, ctr, images=IMAGES){ return route => {
   }
   if (p === '/api/dashboard/plakat/render') { if (ctr) ctr.n++; return route.fulfill({ status:200, contentType:'image/png', body:PNG1x1 }); }
   if (p === '/api/dashboard/plakat/layout') return json(mockLayout(Math.max(0, Math.min(4, parseInt(url.searchParams.get('antall'),10)||0))));
+  if (p === '/api/dashboard/plakat/regler') return json({ skjoldStyrke:{ min:0.6, max:1.4, default:1 }, barber:{ palette:'krem', morkSperret:false }, maler:{} });
   if (p === '/api/dashboard/profile')        return json(PROFILE);
   if (p === '/api/dashboard/design')         return json(DESIGN);
   if (p === '/api/dashboard/images')         return json(images);
@@ -72,6 +73,7 @@ const S1 = `() => ({ kort:document.querySelectorAll('.plakat-kort').length, laas
 const S2 = `() => { const q=s=>document.querySelector(s); const frame=q('#plakatFrame');
   return { iframe: !!frame, srcErPreview: !!(frame && /\\/plakat\\/preview\\?/.test(frame.src)),
     segs: document.querySelectorAll('.pk-seg').length, slider: !!q('.pk-slider'), checks: document.querySelectorAll('.pk-check input').length,
+    sliderMin: q('.pk-slider') ? q('.pk-slider').min : null, sliderMax: q('.pk-slider') ? q('.pk-slider').max : null, sliderVal: q('.pk-slider') ? q('.pk-slider').value : null,
     celler: document.querySelectorAll('.pk-celle').length, implisittValgt: !!q('.pk-celle.implisitt.valgt'),
     lasterVist: q('#plakatPrevLaster') ? getComputedStyle(q('#plakatPrevLaster')).display!=='none' : null,
     feilVist: q('#plakatPrevFeil') ? getComputedStyle(q('#plakatPrevFeil')).display!=='none' : null,
@@ -107,8 +109,9 @@ for (const bredde of [320, 375]) {
   await page.locator('.plakat-kort').nth(1).click(); await page.waitForTimeout(1000);
   const m = await page.evaluate(eval(S2));
   await shot(page, `skjerm2-${bredde}`);
-  rad.push({ skjerm:`2 · ${bredde}`, iframe:m.iframe, 'src=preview':m.srcErPreview, 'segs(2 fmt)':m.segs, slider:m.slider, 'checks(2)':m.checks,
-    'celle(1)':m.celler, 'implisitt':m.implisittValgt, 'laster':m.lasterVist, 'feil':m.feilVist, jsfeil: errs.length?errs.join('; '):'ingen' });
+  rad.push({ skjerm:`2 · ${bredde}`, iframe:m.iframe, 'src=preview':m.srcErPreview, 'segs(2 fmt)':m.segs, slider:m.slider,
+    'styrke': m.sliderMin+'–'+m.sliderMax+'@'+m.sliderVal, 'checks(2)':m.checks, 'celle(1)':m.celler, 'implisitt':m.implisittValgt,
+    'laster':m.lasterVist, 'feil':m.feilVist, jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
 }
 

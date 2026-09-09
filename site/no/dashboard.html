@@ -6654,7 +6654,7 @@ function erStandalone(){
       var a=document.getElementById('accAbonnement'); if(a) a.scrollIntoView({block:'center'});
       return;
     }
-    await hentBilder(); await hentDesign();
+    await hentBilder(); await hentDesign(); await hentRegler();
     if(!PS) PS=last()||seed();
     if(!PS.plakater || PS.plakater.length!==MALER.length || !malDef((PS.plakater[0]||{}).id)){ var _k=PS.kampanjetype; PS=seed(); PS.kampanjetype=_k; } // migrer gammel tilstand
     if(type) PS.kampanjetype=type; // knappen setter kampanjetype for hele økten (valgt ved inngangen)
@@ -6750,12 +6750,23 @@ function erStandalone(){
   //   style-src 'unsafe-inline'; script-src 'unsafe-inline'; font-src data:; img-src https: data:
   var PREVIEW_BASE='/api/dashboard/plakat';
   var CANVAS={'4:5':{w:1080,h:1350}, '9:16':{w:1080,h:1920}};
-  var _preT=null, _palett=null, _mode=null, _layout=null;
+  var _preT=null, _palett=null, _mode=null, _layout=null, _regler=null;
 
   async function hentDesign(){
     if(_palett) return;
     if(typeof design!=='undefined' && design && design.palette){ _palett=design.palette; _mode=design.mode; return; }
     if(typeof api!=='undefined' && api && api.design){ try{ var d=await api.design(); if(d&&d.palette){ _palett=d.palette; _mode=d.mode; } }catch(e){} }
+  }
+  // /regler gir plan-oppløste grenser (bl.a. skjoldStyrke {min,max,default}) — hentes én gang ved
+  // editor-oppstart så slideren leser området fra backend i stedet for å hardkode. Fallbacken er kun
+  // en trygghet hvis kallet feiler; den speiler dagens backend-verdier (symmetrisk 0.6–1.4 om 1).
+  async function hentRegler(){
+    if(_regler) return;
+    try{ var r=await fetch(PREVIEW_BASE+'/regler',{credentials:'include'}); if(r.ok){ var j=await r.json(); if(j) _regler=j; } }catch(e){}
+  }
+  function styrkeOmr(){
+    var s=_regler&&_regler.skjoldStyrke;
+    return (s&&typeof s.min==='number'&&typeof s.max==='number') ? {min:s.min,max:s.max,default:(typeof s.default==='number'?s.default:1)} : {min:0.6,max:1.4,default:1};
   }
   // Bakgrunnen UTLEDES av barberens palett/modus (bookingsiden), ikke av et valg i editoren.
   // Sand-paletten er lys-only → alltid «sand»; ellers følger color_mode (mørk/lys). Backend leser
@@ -6912,8 +6923,13 @@ function erStandalone(){
     kontr.appendChild(ktrlRad('Format', fRow));
 
     if(harSkjold(p)){
-      var slid=document.createElement('input'); slid.type='range'; slid.min='0.6'; slid.max='1'; slid.step='0.05';
-      slid.value=String(Math.max(0.6, Math.min(1, p.skjoldStyrke||1))); slid.className='pk-slider';
+      // Området leses fra /regler (styrkeOmr), ikke hardkodet. Default (1) ligger midt i 0.6–1.4, så
+      // thumben starter sentrert → synlig at styrken kan BÅDE dempes og forsterkes.
+      var omr=styrkeOmr();
+      if(p.skjoldStyrke==null) p.skjoldStyrke=omr.default;
+      p.skjoldStyrke=Math.max(omr.min, Math.min(omr.max, p.skjoldStyrke));
+      var slid=document.createElement('input'); slid.type='range'; slid.min=String(omr.min); slid.max=String(omr.max); slid.step='0.05';
+      slid.value=String(p.skjoldStyrke); slid.className='pk-slider';
       slid.addEventListener('input',function(){ p.skjoldStyrke=parseFloat(slid.value); lagre(); planleggPreview(); });
       kontr.appendChild(ktrlRad('Skjoldstyrke', slid));
     }
@@ -6941,7 +6957,7 @@ function erStandalone(){
     // Gjenopprett hvis økten var åpen (refresh/tapt nett skal ikke lukke editoren).
     var s=last();
     if(s && s.aapen){ PS=s; document.body.classList.add('plakat-lock'); overlay().classList.add('open'); render();
-      Promise.all([hentBilder(),hentDesign()]).then(render); }
+      Promise.all([hentBilder(),hentDesign(),hentRegler()]).then(render); }
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', plakatInit); else plakatInit();
 })();
