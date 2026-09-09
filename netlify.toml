@@ -45,29 +45,14 @@
   status = 404
   force = true
 
-# 1. Språk-redirects (kun /, med Accept-Language-betingelse)
-[[redirects]]
-  from = "/"
-  to = "/sv/"
-  status = 302
-  conditions = {Language = ["sv"]}
-
-[[redirects]]
-  from = "/"
-  to = "/da/"
-  status = 302
-  conditions = {Language = ["da"]}
-
+# 1. Rot → /no/ for ALLE, uavhengig av Accept-Language. Markedet er NO, /no/ er master.
+#    Språk-betinget ruting er FJERNET: Googlebot (uten norsk Accept-Language) traff før fallbacken
+#    /en/ — utdatert copy + noindex — og fikk den indeksert, så norske søk landet der oversatt.
+#    Nå går alle (inkl. bots) til /no/, som er kanonisk (se <link rel=canonical> i no/index.html).
+#    302 (ikke 301) bevisst: reversibelt når sv/da/en faktisk oversettes og språk-ruting skal tilbake.
 [[redirects]]
   from = "/"
   to = "/no/"
-  status = 302
-  conditions = {Language = ["nb", "nn", "no"]}
-
-# Resten av verden → engelsk.
-[[redirects]]
-  from = "/"
-  to = "/en/"
   status = 302
 
 # 2. Bare språk-koder uten trailing slash → redirect til katalog.
