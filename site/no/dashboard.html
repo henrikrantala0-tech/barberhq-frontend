@@ -2546,7 +2546,6 @@
   .pk-check{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:14px;color:var(--ink);cursor:pointer}
   .pk-check.av{opacity:.4;cursor:default}
   .pk-check input{width:18px;height:18px;accent-color:#2563eb}
-  .pk-note{font-size:12px;color:var(--mut);margin:6px 2px 0}
   .pk-actions{display:flex;gap:12px;margin-top:22px}
   .pk-actions .btn-outline{flex:1;justify-content:center;padding:12px}
 </style>
@@ -6903,6 +6902,7 @@ function erStandalone(){
     var wrap=document.getElementById('plakatPrevWrap'); if(!wrap) return;
     ['.pk-tekst','.pk-guide-v','.pk-guide-h'].forEach(function(sel){ var e=wrap.querySelector(sel); if(e) e.remove(); });
     var p=finn(PS.valgtId); if(!p||!_layout||!_layout.canvas) return;
+    if(antallFor(p)===0) return; // beslutning 4: mal 1 (tekst, flex) ignorerer tekstOffset i backend — ingen flytt-boks
     var cv=_layout.canvas, s=(wrap.clientWidth||300)/cv.w;
     var bw=TEKST_ANKER.w*cv.w, bh=TEKST_ANKER.h*cv.h;
     var boks=document.createElement('div'); boks.className='pk-tekst'; boks.style.touchAction='none';
@@ -7058,7 +7058,6 @@ function erStandalone(){
     var qrRow=avkryssRad('QR-kode', PS.visQr, !qrTillatt(p.format), function(v){ PS.visQr=v; lagre(); planleggPreview(); }); qrCb=qrRow.querySelector('input');
     kontr.appendChild(qrRow);
     kontr.appendChild(avkryssRad('Lenke', PS.visLenke, false, function(v){ PS.visLenke=v; lagre(); planleggPreview(); }));
-    var note=document.createElement('p'); note.className='pk-note'; note.textContent='QR og lenke gjelder alle plakater'; kontr.appendChild(note);
 
     var handl=document.createElement('div'); handl.className='pk-actions';
     var ned=document.createElement('button'); ned.type='button'; ned.className='btn-outline'; ned.textContent='Last ned'; ned.addEventListener('click',function(){ lastNed(p); });
