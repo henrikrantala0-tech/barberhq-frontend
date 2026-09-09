@@ -78,7 +78,7 @@ async function openAcc(page, sel){ await page.evaluate((s)=>{ const h=document.q
 const S1 = `() => ({ kort:document.querySelectorAll('.plakat-kort').length, laast:document.querySelectorAll('.plakat-kort.laast').length,
   thumbs:document.querySelectorAll('img.plakat-kort-thumb').length, lastet:document.querySelectorAll('.plakat-kort.har-miniatyr').length })`;
 const S2 = `() => { const q=s=>document.querySelector(s); const frame=q('#plakatFrame');
-  return { iframe: !!frame, srcErPreview: !!(frame && /\\/plakat\\/preview\\?/.test(frame.src)),
+  return { iframe: !!frame, srcdocSatt: !!(frame && frame.srcdoc && /Verv en venn/.test(frame.srcdoc)),
     segs: document.querySelectorAll('.pk-seg').length, slider: !!q('.pk-slider'), checks: document.querySelectorAll('.pk-check input').length,
     sliderMin: q('.pk-slider') ? q('.pk-slider').min : null, sliderMax: q('.pk-slider') ? q('.pk-slider').max : null, sliderVal: q('.pk-slider') ? q('.pk-slider').value : null,
     celler: document.querySelectorAll('.pk-celle').length, implisittValgt: !!q('.pk-celle.implisitt.valgt'),
@@ -123,7 +123,7 @@ for (const bredde of [320, 375]) {
   await page.locator('.plakat-kort').nth(1).click(); await page.waitForTimeout(1000);
   const m = await page.evaluate(eval(S2));
   await shot(page, `skjerm2-${bredde}`);
-  rad.push({ skjerm:`2 · ${bredde}`, iframe:m.iframe, 'src=preview':m.srcErPreview, 'segs(2 fmt)':m.segs, slider:m.slider,
+  rad.push({ skjerm:`2 · ${bredde}`, iframe:m.iframe, srcdoc:m.srcdocSatt?'ok':'FEIL', 'segs(2 fmt)':m.segs, slider:m.slider,
     'styrke': m.sliderMin+'–'+m.sliderMax+'@'+m.sliderVal, 'checks(2)':m.checks, 'celle(1)':m.celler, 'implisitt':m.implisittValgt,
     'laster':m.lasterVist, 'feil':m.feilVist, jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
@@ -138,7 +138,7 @@ for (const bredde of [320, 375]) {
   await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(400);
   await page.locator('.plakat-kort').nth(0).click(); await page.waitForTimeout(600);
   const m = await page.evaluate(eval(S2));
-  rad.push({ bredde:'375 mal1', iframe:m.iframe, 'src=preview':m.srcErPreview, 'segs(2 fmt)':m.segs, slider:m.slider, 'checks(2)':m.checks, laster:'—', feil:'—', jsfeil:'—' });
+  rad.push({ bredde:'375 mal1', iframe:m.iframe, srcdoc:m.srcdocSatt?'ok':'FEIL', 'segs(2 fmt)':m.segs, slider:m.slider, 'checks(2)':m.checks, laster:'—', feil:'—', jsfeil:'—' });
   await page.close();
 }
 
@@ -152,7 +152,7 @@ for (const bredde of [320, 375]) {
   await page.locator('.plakat-kort').nth(1).click(); await page.waitForTimeout(700);
   const m = await page.evaluate(eval(S2));
   await shot(page, 'feil-403-375');
-  rad.push({ bredde:'375 403', iframe:m.iframe, 'src=preview':'—', 'segs(2 fmt)':m.segs, slider:m.slider, 'checks(2)':m.checks, laster:m.lasterVist, feil:m.feilVist+' «'+m.feilTekst+'»', jsfeil:'—' });
+  rad.push({ bredde:'375 403', iframe:m.iframe, srcdoc:'—', 'segs(2 fmt)':m.segs, slider:m.slider, 'checks(2)':m.checks, laster:m.lasterVist, feil:m.feilVist+' «'+m.feilTekst+'»', jsfeil:'—' });
   await page.close();
 }
 
@@ -195,7 +195,7 @@ for (const bredde of [320, 375]) {
   const m = await page.evaluate(eval(S3B));
   await shot(page, 'lag3b-375');
   rad.push({ skjerm:'3b · dra', guideV:m.guideV, guideH:m.guideH, begge:(m.guideV==='block'&&m.guideH==='block')?'ok':'FEIL',
-    tdx:m.tdx, tdy:m.tdy, 'ingen-per-piksel': prevUnderDrag===prevFoer?'ok':'FEIL', 'reload=1x': (prev-prevUnderDrag)===2?'ok':'FEIL',
+    tdx:m.tdx, tdy:m.tdy, 'ingen-per-piksel': prevUnderDrag===prevFoer?'ok':'FEIL', 'reload=1x(1 req)': (prev-prevUnderDrag)===1?'ok':'FEIL',
     'håndtak-transp': m.transp?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
 }
