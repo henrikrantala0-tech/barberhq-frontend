@@ -2482,6 +2482,14 @@
   .plakat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;padding:16px}
   .plakat-kort{position:relative;aspect-ratio:4/5;border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden;cursor:pointer;display:flex;align-items:flex-end;padding:12px;text-align:left}
   .plakat-kort-navn{font-size:13px;font-weight:600;color:var(--ink)}
+  /* Anbefalte maler (mal1/mal2) i 2-kolonners grid = større kort; øvrige i 3-kolonner = mindre. */
+  .plakat-grid-stor{grid-template-columns:repeat(2,1fr)}
+  .plakat-grid-liten{grid-template-columns:repeat(3,1fr);gap:10px;padding-top:0}
+  .plakat-seksjon-h{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);margin:20px 16px 2px}
+  .plakat-grid-liten .plakat-kort{aspect-ratio:3/4;padding:9px}
+  .plakat-grid-liten .plakat-kort-navn{font-size:11.5px}
+  .plakat-kort.laast{opacity:.5;border-style:dashed;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:2px}
+  .plakat-kort-mangler{font-size:10.5px;color:var(--mut);font-weight:500}
   .plakat-velg{padding:0 16px 20px}
   .plakat-velg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
   .plakat-velg-bilde{aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--line);cursor:pointer;padding:0;background:none}
@@ -6606,17 +6614,24 @@ function erStandalone(){
     g.sort(function(a,c){return (a.sort_order||0)-(c.sort_order||0);});
     return g;
   }
-  function brukteBildeIder(){ return (PS.plakater||[]).map(function(p){return p.image_id;}).filter(Boolean); }
-  function ledigeBilder(){ var brukt=brukteBildeIder(); return galleriBilder().filter(function(b){return brukt.indexOf(b.id)===-1;}); }
+  // Alle fem malene genereres fra START; galleriets bildeantall avgjør hvilke som er TILGJENGELIGE.
+  // Backend utleder mal av plasser.length (0→mal1, 1→mal2, 2→mal3, 3→mal4, 4→2×2), så frontend
+  // sender bare N bilder. mal1+mal2 er anbefalte (vises først, større); resten under, mindre.
+  var MALER=[
+    {id:'mal1', antall:0, navn:'Uten bilde',  anbefalt:true},
+    {id:'mal2', antall:1, navn:'Ett bilde',   anbefalt:true},
+    {id:'mal3', antall:2, navn:'To bilder',   anbefalt:false},
+    {id:'mal4', antall:3, navn:'Tre bilder',  anbefalt:false},
+    {id:'fire', antall:4, navn:'Fire bilder', anbefalt:false}
+  ];
+  function malDef(id){ for(var i=0;i<MALER.length;i++) if(MALER[i].id===id) return MALER[i]; return null; }
+  function tilgjengelig(p){ return galleriBilder().length >= ((malDef(p.id)||{}).antall||0); }
+  function plasserFor(p){ return galleriBilder().slice(0, (malDef(p.id)||{}).antall||0); }
 
-  function seed(){
-    var g=galleriBilder();
-    var liste=[{id:'mal1', mal:'mal1', image_id:null}];
-    if(g[0]) liste.push({id:'p'+g[0].id, mal:'mal2', image_id:g[0].id});
-    return { aapen:false, valgtId:null, kampanjetype:null, visQr:null, visLenke:null, plakater:liste };
-  }
+  function seed(){ return { aapen:false, valgtId:null, kampanjetype:null, visQr:null, visLenke:null,
+    plakater: MALER.map(function(m){ return { id:m.id }; }) }; }
 
-  function navn(p){ return p.mal==='mal1' ? 'Uten bilde' : 'Med bilde'; }
+  function navn(p){ var m=malDef(p.id); return m ? m.navn : ''; }
   function finn(id){ return (PS.plakater||[]).filter(function(p){return p.id===id;})[0]; }
   function overlay(){ return document.getElementById('plakatOverlay'); }
 
@@ -6629,6 +6644,7 @@ function erStandalone(){
     }
     await hentBilder(); await hentDesign();
     if(!PS) PS=last()||seed();
+    if(!PS.plakater || PS.plakater.length!==MALER.length || !malDef((PS.plakater[0]||{}).id)){ var _k=PS.kampanjetype; PS=seed(); PS.kampanjetype=_k; } // migrer gammel tilstand
     if(type) PS.kampanjetype=type; // knappen setter kampanjetype for hele økten (valgt ved inngangen)
     PS.aapen=true; lagre();
     document.body.classList.add('plakat-lock');
@@ -6641,13 +6657,7 @@ function erStandalone(){
     document.body.classList.remove('plakat-lock');
   }
   function tilSkjerm1(){ PS.valgtId=null; lagre(); render(); }
-  function velg(id){ PS.valgtId=id; lagre(); render(); }
-
-  function leggTilBilde(id){
-    if(brukteBildeIder().indexOf(id)!==-1) return;
-    PS.plakater.push({id:'p'+id, mal:'mal2', image_id:id});
-    lagre(); render();
-  }
+  function velg(id){ var p=finn(id); if(p && !tilgjengelig(p)) return; PS.valgtId=id; lagre(); render(); }
 
   function render(){
     var scroll=document.getElementById('plakatScroll');
@@ -6657,41 +6667,33 @@ function erStandalone(){
     scroll.innerHTML='';
     if(PS.valgtId==null){
       back.hidden=true; tittel.textContent='Velg plakat';
-      var grid=document.createElement('div'); grid.className='plakat-grid';
-      PS.plakater.forEach(function(p){
-        var kort=document.createElement('button'); kort.type='button'; kort.className='plakat-kort';
-        var nvn=document.createElement('span'); nvn.className='plakat-kort-navn'; nvn.textContent=navn(p);
-        kort.appendChild(nvn);
-        kort.addEventListener('click',function(){ velg(p.id); });
-        grid.appendChild(kort);
-      });
-      if(ledigeBilder().length){
-        var add=document.createElement('button'); add.type='button'; add.className='plakat-legg-til';
-        add.textContent='+ Legg til bilde';
-        add.addEventListener('click', visVelger);
-        grid.appendChild(add);
-      }
-      scroll.appendChild(grid);
+      var g=galleriBilder().length;
+      var stor=document.createElement('div'); stor.className='plakat-grid plakat-grid-stor';
+      var liten=document.createElement('div'); liten.className='plakat-grid plakat-grid-liten';
+      PS.plakater.forEach(function(p){ var m=malDef(p.id); if(!m) return; (m.anbefalt?stor:liten).appendChild(lagKort(p, m, g>=m.antall, g)); });
+      scroll.appendChild(stor);
+      var sh=document.createElement('p'); sh.className='plakat-seksjon-h'; sh.textContent='Flere maler'; scroll.appendChild(sh);
+      scroll.appendChild(liten);
     } else {
       renderSkjerm2(scroll, back, tittel);
     }
   }
 
-  function visVelger(){
-    var scroll=document.getElementById('plakatScroll');
-    var ledig=ledigeBilder(); if(!ledig.length) return;
-    var wrap=document.createElement('div'); wrap.className='plakat-velg';
-    var h=document.createElement('p'); h.className='block-s'; h.textContent='Velg et galleri-bilde';
-    var g=document.createElement('div'); g.className='plakat-velg-grid';
-    ledig.forEach(function(b){
-      var btn=document.createElement('button'); btn.type='button'; btn.className='plakat-velg-bilde';
-      var im=document.createElement('img'); im.src=b.url; im.alt=''; btn.appendChild(im);
-      btn.addEventListener('click',function(){ leggTilBilde(b.id); });
-      g.appendChild(btn);
-    });
-    wrap.appendChild(h); wrap.appendChild(g);
-    scroll.appendChild(wrap);
-    wrap.scrollIntoView({block:'nearest'});
+  function lagKort(p, m, lov, g){
+    var kort=document.createElement('button'); kort.type='button';
+    kort.className='plakat-kort'+(m.anbefalt?' stor':'')+(lov?'':' laast');
+    var nvn=document.createElement('span'); nvn.className='plakat-kort-navn'; nvn.textContent=m.navn;
+    kort.appendChild(nvn);
+    if(!lov){
+      var hint=document.createElement('span'); hint.className='plakat-kort-mangler';
+      hint.textContent='Legg til bilde';
+      kort.appendChild(hint);
+      // Trykk tar barbereren dit bilder legges til → «Din side».
+      kort.addEventListener('click', function(){ lukk(); switchPanel('design'); });
+    } else {
+      kort.addEventListener('click', function(){ velg(p.id); });
+    }
+    return kort;
   }
 
   // ── Lag 2: forhåndsvisning (iframe mot backend-ruta) + kontroller ───────────────────────────
@@ -6713,8 +6715,8 @@ function erStandalone(){
   // Speiler backendens plakatTilstand.js (tilgjengeligeFormater/qrTillatt) — IKKE en ny regel.
   function tilgjengeligeFormater(antall){ return (antall|0)<=1 ? ['4:5','9:16'] : ['4:5']; }
   function qrTillatt(format){ return (format||'4:5')==='4:5'; }
-  function antallFor(p){ return p && p.image_id ? 1 : 0; }
-  function harSkjold(p){ return antallFor(p)===1; } // mal2 har fullflate-skjold; mal1 (tekst) har ikke
+  function antallFor(p){ return p ? ((malDef(p.id)||{}).antall||0) : 0; }
+  function harSkjold(p){ var n=antallFor(p); return n===1 || n===4; } // mal2 + 2×2 har fullflate-skjold
 
   // Sett/håndhev standardverdier (lag-1-tilstand mangler dem; sand kan ikke mørk osv.).
   function normaliser(p){
@@ -6728,7 +6730,7 @@ function erStandalone(){
   }
 
   function plakatQuery(p){
-    var plasser = p.image_id ? [{image_id:String(p.image_id)}] : [];
+    var plasser = plasserFor(p).map(function(b){ return {image_id:String(b.id)}; });
     return 'format='+encodeURIComponent(p.format)
       +'&background='+encodeURIComponent(bakgrunnFraBarber())
       +'&kampanjetype='+encodeURIComponent(PS.kampanjetype||'verving')
