@@ -99,11 +99,12 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 /* Stablingen bor nå på .hero-inner (over), som er det eneste innholds-barnet. */
 .hero-eyebrow{display:block;font-size:16px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9a9a9a;margin-bottom:30px}
 .hero h1{font-weight:800;line-height:1.1;letter-spacing:-.045em}
-/* Gulvet var 30px med nbsp (én ubrytelig linje) fordi >30px sprengte 320-skjermens 280px.
-   For å skalere tittelen opp på mobil er nbsp fjernet (regulære mellomrom) → den kan nå brekke
-   til TO linjer på 320 i stedet for å flyte ut. Gulv 36px: 1 linje på ≥402, 2 linjer på 320
-   (verifisert ≤2 + ingen overflyt). Brekker den til tre, skal det rapporteres — ikke skaleres ned. */
-.hero h1 .h1-big{display:block;font-size:clamp(40px,7vw,82px);animation:heroIn 1.2s cubic-bezier(.22,.61,.36,1) both}
+/* To setninger i hver sin .h1-big (display:block) → alltid to linjer, «Flere kunder.» over
+   «Mindre administrasjon.». Størrelsen er redusert fra clamp(40px,7vw,82px), som dominerte
+   resten av sida. clamp(26px,8vw,56px): 26px på 320 og 30px på 375 — begge setninger på hver
+   sin linje uten at «Mindre administrasjon.» brekker (verifisert), skalerer til 56px på desktop.
+   Går floor over 26px, brekker «Mindre administrasjon.» til to linjer på 320 («Mindre» alene). */
+.hero h1 .h1-big{display:block;font-size:clamp(26px,8vw,56px);animation:heroIn 1.2s cubic-bezier(.22,.61,.36,1) both}
 @keyframes heroIn{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
 .hero-sub{color:#b4b4b4;font-size:19px;line-height:1.6;max-width:560px;margin:36px auto 0}
 /* nowrap: «Flere kunder, mer inntekt.» er løftet, og et linjebrekk midt i det gjør det til
@@ -1376,10 +1377,10 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   </video>
   <div class="hero-inner">
     <span class="hero-eyebrow">Bookingsystem for barberere</span>
-    <h1><span class="h1-big">“Når har du ledig?”</span></h1>
+    <h1><span class="h1-big">Flere kunder.</span><span class="h1-big">Mindre administrasjon.</span></h1>
     <p class="hero-sub">Ikke bare en bookingside — et helt system. Automatiske påminnelser, rebooking og full oversikt. <strong>Flere kunder, mer inntekt.</strong></p>
     <div class="hero-btns">
-      <a href="kom-i-gang.html" class="btn btn-fill" onclick="gtag('event','cta_klikk',{plassering:'hero'})">Prøv gratis</a>
+      <a href="kom-i-gang.html" class="btn btn-fill" onclick="gtag('event','cta_klikk',{plassering:'hero'})">Start gratis i 30 dager</a>
     </div>
     <div class="hero-note"><i class="ti ti-eye"></i>Du trenger ikke legge inn betalingskort for å prøve.</div>
     <a href="#produkt" class="hero-see">Se hvordan det virker<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></a>
@@ -2184,7 +2185,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   <div class="reveal cta-body">
     <h2>Vi setter opp siden din — og hjelper deg fylle kalenderen</h2>
     <p>Fra skjema til ferdig side på under et døgn. 30 dager gratis.</p>
-    <a href="kom-i-gang.html" class="btn btn-fill" onclick="gtag('event','cta_klikk',{plassering:'footer'})">Prøv gratis</a>
+    <a href="kom-i-gang.html" class="btn btn-fill" onclick="gtag('event','cta_klikk',{plassering:'footer'})">Start gratis i 30 dager</a>
   </div>
 </section>
 
