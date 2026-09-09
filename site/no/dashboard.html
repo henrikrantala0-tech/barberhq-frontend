@@ -2490,6 +2490,26 @@
   .plakat-stor{margin:16px auto;width:min(88vw,340px);aspect-ratio:4/5;border:1px solid var(--line);border-radius:16px;background:var(--surface);display:flex;align-items:center;justify-content:center;text-align:center;color:var(--mut);font-size:13px;padding:16px}
   .plakat-kontroller{padding:0 16px 40px}
   @media(min-width:561px){.plakat-grid{grid-template-columns:repeat(3,1fr)}}
+  /* Lag 2 — preview (skalert iframe) + kontroller */
+  .plakat-prev{position:relative;width:100%;max-width:340px;margin:16px auto 4px;overflow:hidden;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
+  .plakat-frame{border:0;display:block;transform-origin:0 0;background:var(--surface)}
+  .plakat-prev-laster{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--surface)}
+  .pk-spinner{width:26px;height:26px;border:3px solid var(--line-2);border-top-color:#2563eb;border-radius:50%;animation:pkspin .8s linear infinite}
+  @keyframes pkspin{to{transform:rotate(360deg)}}
+  .plakat-prev-feil{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--ink);font-size:13px;line-height:1.5;background:var(--surface)}
+  .pk-row{display:flex;align-items:center;gap:12px;margin-top:16px}
+  .pk-label{flex:0 0 96px;font-size:13px;font-weight:600;color:var(--ink)}
+  .pk-seg-row{display:flex;gap:8px;flex-wrap:wrap;flex:1}
+  .pk-seg{appearance:none;font:inherit;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;background:var(--surface);color:var(--ink);border:1px solid var(--line-2);letter-spacing:-.01em}
+  .pk-seg.on{background:#2563eb;color:#fff;border-color:#2563eb}
+  .pk-seg:disabled{opacity:.4;cursor:default}
+  .pk-slider{flex:1;accent-color:#2563eb}
+  .pk-check{display:flex;align-items:center;gap:10px;margin-top:14px;font-size:14px;color:var(--ink);cursor:pointer}
+  .pk-check.av{opacity:.4;cursor:default}
+  .pk-check input{width:18px;height:18px;accent-color:#2563eb}
+  .pk-note{font-size:12px;color:var(--mut);margin:6px 2px 0}
+  .pk-actions{display:flex;gap:12px;margin-top:22px}
+  .pk-actions .btn-outline{flex:1;justify-content:center;padding:12px}
 </style>
 <div class="cal-overlay" id="calOverlay" role="dialog" aria-modal="true" aria-label="Kalender" hidden></div>
 <div class="bk-detail-backdrop" id="bkDetailBackdrop" hidden></div>
@@ -6608,7 +6628,7 @@ function erStandalone(){
       var a=document.getElementById('accAbonnement'); if(a) a.scrollIntoView({block:'center'});
       return;
     }
-    await hentBilder();
+    await hentBilder(); await hentDesign();
     if(!PS) PS=last()||seed();
     if(type) PS.kampanjetype=type; // knappen setter kampanjetype for hele økten (valgt ved inngangen)
     PS.aapen=true; lagre();
@@ -6654,12 +6674,7 @@ function erStandalone(){
       }
       scroll.appendChild(grid);
     } else {
-      back.hidden=false; tittel.textContent='Rediger';
-      var p=finn(PS.valgtId)||{mal:'mal1'};
-      var stor=document.createElement('div'); stor.className='plakat-stor';
-      stor.textContent='Forhåndsvisning kommer (lag 2) — '+navn(p);
-      var kontr=document.createElement('div'); kontr.className='plakat-kontroller'; kontr.id='plakatKontroller';
-      scroll.appendChild(stor); scroll.appendChild(kontr);
+      renderSkjerm2(scroll, back, tittel);
     }
   }
 
@@ -6680,15 +6695,164 @@ function erStandalone(){
     wrap.scrollIntoView({block:'nearest'});
   }
 
+  // ── Lag 2: forhåndsvisning (iframe mot backend-ruta) + kontroller ───────────────────────────
+  // RELATIV URL → same-origin (Netlify-proxy til Railway) → auth-cookie (.trybarberhq.com) følger med,
+  // og backend setter sin EGEN CSP på svaret (dashboardets ville blokkert plakatens inline styles).
+  var PREVIEW_BASE='/api/dashboard/plakat';
+  var CANVAS={'4:5':{w:1080,h:1350}, '9:16':{w:1080,h:1920}};
+  var _preT=null, _palett=null;
+
+  async function hentDesign(){
+    if(_palett) return;
+    if(typeof design!=='undefined' && design && design.palette){ _palett=design.palette; return; }
+    if(typeof api!=='undefined' && api && api.design){ try{ var d=await api.design(); if(d&&d.palette) _palett=d.palette; }catch(e){} }
+  }
+  function erSand(){ return _palett==='sand'; }
+  function stdBakgrunn(){ return erSand() ? 'sand' : 'mork'; }
+  // Speiler backendens plakatTilstand.js (tilgjengeligeFormater/qrTillatt) — IKKE en ny regel.
+  function tilgjengeligeFormater(antall){ return (antall|0)<=1 ? ['4:5','9:16'] : ['4:5']; }
+  function qrTillatt(format){ return (format||'4:5')==='4:5'; }
+  function antallFor(p){ return p && p.image_id ? 1 : 0; }
+  function harSkjold(p){ return antallFor(p)===1; } // mal2 har fullflate-skjold; mal1 (tekst) har ikke
+
+  // Sett/håndhev standardverdier (lag-1-tilstand mangler dem; sand kan ikke mørk osv.).
+  function normaliser(p){
+    if(!p) return p;
+    if(!p.format) p.format='4:5';
+    if(!p.background) p.background=stdBakgrunn();
+    if(p.skjoldStyrke==null) p.skjoldStyrke=1;
+    if(erSand() && p.background==='mork') p.background='sand';
+    if(tilgjengeligeFormater(antallFor(p)).indexOf(p.format)===-1) p.format='4:5';
+    if(PS.visQr==null) PS.visQr=true; if(PS.visLenke==null) PS.visLenke=false;
+    if(!qrTillatt(p.format)) PS.visQr=false;
+    return p;
+  }
+
+  function plakatQuery(p){
+    var plasser = p.image_id ? [{image_id:String(p.image_id)}] : [];
+    return 'format='+encodeURIComponent(p.format)
+      +'&background='+encodeURIComponent(p.background)
+      +'&kampanjetype='+encodeURIComponent(PS.kampanjetype||'verving')
+      +'&plasser='+encodeURIComponent(JSON.stringify(plasser))
+      +'&visQr='+(PS.visQr?'1':'0')
+      +'&visLenke='+(PS.visLenke?'1':'0')
+      +'&styrke='+encodeURIComponent(String(p.skjoldStyrke));
+  }
+
+  // Skaler 1080-lerretet til wrap-bredden med transform:scale — lerretet endres ALDRI.
+  function skalerFrame(){
+    var wrap=document.getElementById('plakatPrevWrap'), frame=document.getElementById('plakatFrame');
+    if(!wrap||!frame) return; var p=finn(PS.valgtId); if(!p) return;
+    var c=CANVAS[p.format]||CANVAS['4:5'];
+    var s=(wrap.clientWidth||300)/c.w;
+    frame.style.width=c.w+'px'; frame.style.height=c.h+'px'; frame.style.transform='scale('+s+')';
+    wrap.style.height=Math.round(c.h*s)+'px';
+  }
+  function visLaster(paa){ var o=document.getElementById('plakatPrevLaster'); if(o) o.style.display=paa?'flex':'none'; }
+  function visPrevFeil(m){ var o=document.getElementById('plakatPrevFeil'); if(!o) return; o.textContent=m||''; o.style.display=m?'flex':'none'; if(m) visLaster(false); }
+
+  async function lastPreview(){
+    var p=finn(PS.valgtId); if(!p) return;
+    var frame=document.getElementById('plakatFrame'); if(!frame) return;
+    var url=PREVIEW_BASE+'/preview?'+plakatQuery(p);
+    visPrevFeil(''); visLaster(true);
+    // Egen status-sjekk: en iframe fyrer ikke 'error' på HTTP 4xx (den viser feil-body). Fetch gir status.
+    try{
+      var r=await fetch(url,{credentials:'include'});
+      if(r.status===403){ visPrevFeil('Plakater krever Vekst-abonnement — se Konto.'); return; }
+      if(r.status===400){ var j=null; try{ j=await r.json(); }catch(e){} visPrevFeil((j&&j.error)||'Denne kombinasjonen går ikke.'); return; }
+      if(!r.ok){ visPrevFeil('Forhåndsvisning feilet ('+r.status+'). Prøv igjen.'); return; }
+      frame.onload=function(){ visLaster(false); };
+      frame.src=url; // 200 → last i iframe (egen CSP fra backend)
+    }catch(e){ visPrevFeil('Fikk ikke kontakt med serveren.'); }
+  }
+  function planleggPreview(){ clearTimeout(_preT); _preT=setTimeout(lastPreview,250); } // debounce (slider spammer ikke)
+
+  function markOn(seg){ var row=seg.parentNode; [].forEach.call(row.querySelectorAll('.pk-seg'),function(x){ x.classList.toggle('on', x===seg); }); }
+  function segKnapp(verdi,label,aktiv,disabled,onClick){
+    var b=document.createElement('button'); b.type='button'; b.className='pk-seg'+(aktiv?' on':''); b.textContent=label;
+    if(disabled) b.disabled=true; else b.addEventListener('click',function(){ onClick(b); });
+    return b;
+  }
+  function ktrlRad(label, innhold){ var row=document.createElement('div'); row.className='pk-row';
+    var l=document.createElement('span'); l.className='pk-label'; l.textContent=label; row.appendChild(l); row.appendChild(innhold); return row; }
+  function avkryssRad(label, sjekket, disabled, onChange){
+    var row=document.createElement('label'); row.className='pk-check'+(disabled?' av':'');
+    var cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!!sjekket && !disabled; if(disabled) cb.disabled=true;
+    cb.addEventListener('change',function(){ onChange(cb.checked); });
+    var t=document.createElement('span'); t.textContent=label; row.appendChild(cb); row.appendChild(t); return row;
+  }
+  function renderUrl(p){ return PREVIEW_BASE+'/render?'+plakatQuery(p); }
+  function lastNed(p){ var a=document.createElement('a'); a.href=renderUrl(p); a.download=''; document.body.appendChild(a); a.click(); a.remove(); }
+  async function delPlakat(p){
+    var url=renderUrl(p);
+    try{
+      if(navigator.share && navigator.canShare){
+        var r=await fetch(url,{credentials:'include'}); if(!r.ok) throw 0;
+        var fil=new File([await r.blob()],'plakat.png',{type:'image/png'});
+        if(navigator.canShare({files:[fil]})){ await navigator.share({files:[fil], title:'Plakat'}); return; }
+      }
+    }catch(e){}
+    lastNed(p); // fallback: last ned om deling ikke støttes
+  }
+
+  function renderSkjerm2(scroll, back, tittel){
+    back.hidden=false; tittel.textContent='Rediger';
+    var p=normaliser(finn(PS.valgtId)); if(!p){ tilSkjerm1(); return; } lagre();
+
+    var wrap=document.createElement('div'); wrap.className='plakat-prev'; wrap.id='plakatPrevWrap';
+    var frame=document.createElement('iframe'); frame.className='plakat-frame'; frame.id='plakatFrame';
+    frame.title='Forhåndsvisning'; frame.setAttribute('scrolling','no'); frame.tabIndex=-1;
+    var laster=document.createElement('div'); laster.className='plakat-prev-laster'; laster.id='plakatPrevLaster'; laster.innerHTML='<span class="pk-spinner"></span>';
+    var feil=document.createElement('div'); feil.className='plakat-prev-feil'; feil.id='plakatPrevFeil'; feil.style.display='none';
+    wrap.appendChild(frame); wrap.appendChild(laster); wrap.appendChild(feil); scroll.appendChild(wrap);
+
+    var kontr=document.createElement('div'); kontr.className='plakat-kontroller';
+    var qrCb=null;
+    function oppdaterQr(){ if(!qrCb) return; var lov=qrTillatt(p.format); qrCb.disabled=!lov; if(!lov){ qrCb.checked=false; PS.visQr=false; } qrCb.parentNode.classList.toggle('av',!lov); }
+
+    var lovligeFmt=tilgjengeligeFormater(antallFor(p));
+    var fRow=document.createElement('div'); fRow.className='pk-seg-row';
+    [['4:5','4:5'],['9:16','9:16']].forEach(function(f){ fRow.appendChild(segKnapp(f[0],f[1], p.format===f[0], lovligeFmt.indexOf(f[0])===-1, function(seg){
+      p.format=f[0]; markOn(seg); oppdaterQr(); lagre(); skalerFrame(); planleggPreview(); })); });
+    kontr.appendChild(ktrlRad('Format', fRow));
+
+    var bRow=document.createElement('div'); bRow.className='pk-seg-row';
+    [['mork','Mørk'],['sand','Sand'],['lys','Lys']].forEach(function(b){ bRow.appendChild(segKnapp(b[0],b[1], p.background===b[0], (b[0]==='mork'&&erSand()), function(seg){
+      p.background=b[0]; markOn(seg); lagre(); planleggPreview(); })); });
+    kontr.appendChild(ktrlRad('Bakgrunn', bRow));
+
+    if(harSkjold(p)){
+      var slid=document.createElement('input'); slid.type='range'; slid.min='0.6'; slid.max='1'; slid.step='0.05';
+      slid.value=String(Math.max(0.6, Math.min(1, p.skjoldStyrke||1))); slid.className='pk-slider';
+      slid.addEventListener('input',function(){ p.skjoldStyrke=parseFloat(slid.value); lagre(); planleggPreview(); });
+      kontr.appendChild(ktrlRad('Skjoldstyrke', slid));
+    }
+
+    var qrRow=avkryssRad('QR-kode', PS.visQr, !qrTillatt(p.format), function(v){ PS.visQr=v; lagre(); planleggPreview(); }); qrCb=qrRow.querySelector('input');
+    kontr.appendChild(qrRow);
+    kontr.appendChild(avkryssRad('Lenke', PS.visLenke, false, function(v){ PS.visLenke=v; lagre(); planleggPreview(); }));
+    var note=document.createElement('p'); note.className='pk-note'; note.textContent='QR og lenke gjelder alle plakater'; kontr.appendChild(note);
+
+    var handl=document.createElement('div'); handl.className='pk-actions';
+    var ned=document.createElement('button'); ned.type='button'; ned.className='btn-outline'; ned.textContent='Last ned'; ned.addEventListener('click',function(){ lastNed(p); });
+    var del=document.createElement('button'); del.type='button'; del.className='btn-outline'; del.textContent='Del'; del.addEventListener('click',function(){ delPlakat(p); });
+    handl.appendChild(ned); handl.appendChild(del); kontr.appendChild(handl);
+    scroll.appendChild(kontr);
+
+    skalerFrame(); lastPreview();
+  }
+
   function plakatInit(){
     var bV=document.getElementById('plakatOpenVerving'); if(bV) bV.addEventListener('click', function(){ aapne('verving'); });
-    var bL=document.getElementById('plakatOpenLojalitet'); if(bL) bL.addEventListener('click', function(){ aapne('lojalitet'); });
+    var bL=document.getElementById('plakatOpenLojalitet'); if(bL) bL.addEventListener('click', function(){ aapne('loyalitet'); });
     var x=document.getElementById('plakatX'); if(x) x.addEventListener('click', lukk);
     var back=document.getElementById('plakatBack'); if(back) back.addEventListener('click', tilSkjerm1);
+    window.addEventListener('resize', function(){ if(PS && PS.valgtId!=null && overlay().classList.contains('open')) skalerFrame(); });
     // Gjenopprett hvis økten var åpen (refresh/tapt nett skal ikke lukke editoren).
     var s=last();
     if(s && s.aapen){ PS=s; document.body.classList.add('plakat-lock'); overlay().classList.add('open'); render();
-      hentBilder().then(render); }
+      Promise.all([hentBilder(),hentDesign()]).then(render); }
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', plakatInit); else plakatInit();
 })();
