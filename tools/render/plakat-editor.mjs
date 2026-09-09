@@ -1,5 +1,7 @@
 // tools/render/plakat-editor.mjs — Kampanjeplakat-editoren i dashbordet (lag 1 + lag 2).
 // Lag 1: to sekundærknapper i Vekst-trekkspillene → fullskjerm-overlay, skjerm 1 (velg plakat).
+//   Skjerm 1 = fem maler; tilgjengelige kort får lat-lastet miniatyr (GET /render?bredde=400),
+//   låste kort får INGEN <img> og henter aldri (verifiseres: renderKall == antall tilgjengelige).
 // Lag 2: skjerm 2 = levende preview i <iframe src=…/plakat/preview> (skalert 1080-lerret) + kontroller
 //   (format/bakgrunn/skjoldstyrke/QR/lenke/last ned/del), debounce, laster-indikator, 400/403-feilstate.
 // Mocker /api/dashboard/* (inkl. plakat/preview + /render). Screenshots → .render-ut/plakat-*.png.
@@ -30,7 +32,7 @@ const LOY = { enabled:true, threshold:10, pct:100, count_history:false, particip
 const POSTER = '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0}.p{width:1080px;height:1350px;background:linear-gradient(160deg,#141414,#3a2f22);color:#e9d8b8;font:700 90px system-ui;display:flex;align-items:center;justify-content:center;text-align:center}</style></head><body><div class="p">Verv en venn<br>begge får 45%</div></body></html>';
 const PNG1x1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMCAQABsaG/AAAAAElFTkSuQmCC','base64');
 
-function router(plan, previewStatus){ return route => {
+function router(plan, previewStatus, ctr){ return route => {
   const req = route.request(); const p = new URL(req.url()).pathname;
   const json = (o,s=200) => route.fulfill({ status:s, contentType:'application/json', body:JSON.stringify(o) });
   if (p === '/api/dashboard/plakat/preview'){
@@ -38,7 +40,7 @@ function router(plan, previewStatus){ return route => {
     if (previewStatus === 400) return route.fulfill({ status:400, contentType:'application/json', body:JSON.stringify({error:'Denne kombinasjonen finnes ikke.'}) });
     return route.fulfill({ status:200, contentType:'text/html', headers:{'content-security-policy':"style-src 'self' 'unsafe-inline'; img-src https: data:"}, body:POSTER });
   }
-  if (p === '/api/dashboard/plakat/render') return route.fulfill({ status:200, contentType:'image/png', body:PNG1x1 });
+  if (p === '/api/dashboard/plakat/render') { if (ctr) ctr.n++; return route.fulfill({ status:200, contentType:'image/png', body:PNG1x1 }); }
   if (p === '/api/dashboard/profile')        return json(PROFILE);
   if (p === '/api/dashboard/design')         return json(DESIGN);
   if (p === '/api/dashboard/images')         return json(IMAGES);
@@ -50,6 +52,8 @@ function router(plan, previewStatus){ return route => {
 
 const shot = (page, n) => page.screenshot({ path:`${OUT}/plakat-l2b-${n}.png`, fullPage:false });
 async function openAcc(page, sel){ await page.evaluate((s)=>{ const h=document.querySelector(s+' .acc-head'); if(h && h.getAttribute('aria-expanded')!=='true') h.click(); }, sel); await page.waitForTimeout(300); }
+const S1 = `() => ({ kort:document.querySelectorAll('.plakat-kort').length, laast:document.querySelectorAll('.plakat-kort.laast').length,
+  thumbs:document.querySelectorAll('img.plakat-kort-thumb').length, lastet:document.querySelectorAll('.plakat-kort.har-miniatyr').length })`;
 const S2 = `() => { const q=s=>document.querySelector(s); const frame=q('#plakatFrame');
   return { iframe: !!frame, srcErPreview: !!(frame && /\\/plakat\\/preview\\?/.test(frame.src)),
     segs: document.querySelectorAll('.pk-seg').length, slider: !!q('.pk-slider'), checks: document.querySelectorAll('.pk-check input').length,
@@ -61,18 +65,24 @@ const browser = await chromium.launch();
 const rad = [];
 
 for (const bredde of [320, 375]) {
+  const ctr = { n:0 };
   const page = await browser.newPage({ viewport:{ width:bredde, height:820 }, deviceScaleFactor:2 });
   const errs = []; page.on('pageerror', e => errs.push(e.message));
-  await page.route('**/api/**', router('vekst', 200));
+  await page.route('**/api/**', router('vekst', 200, ctr));
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
   await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
   await openAcc(page, '#accVerv');
-  await page.click('#plakatOpenVerving'); await page.waitForTimeout(400);   // skjerm 1
-  // Skjerm 2, mal 2 («Med bilde») → skjoldstyrke-slider skal finnes
+  await page.click('#plakatOpenVerving'); await page.waitForTimeout(800);   // skjerm 1 (miniatyrer laster)
+  // Skjerm 1: 2 galleri-bilder → mal1/mal2/mal3 tilgjengelige (3 miniatyrer), mal4/2×2 låst (2, ingen fetch).
+  const s1 = await page.evaluate(eval(S1));
+  await shot(page, `skjerm1-${bredde}`);
+  rad.push({ skjerm:`1 · ${bredde}`, kort:s1.kort, laast:s1.laast, thumbs:s1.thumbs, lastet:s1.lastet, renderKall:ctr.n,
+    'låst=ingen-fetch': ctr.n === (s1.kort - s1.laast) ? 'ok' : 'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
+  // Skjerm 2, mal 2 («Ett bilde») → skjoldstyrke-slider skal finnes
   await page.locator('.plakat-kort').nth(1).click(); await page.waitForTimeout(700);
   const m = await page.evaluate(eval(S2));
   await shot(page, `skjerm2-${bredde}`);
-  rad.push({ bredde, iframe:m.iframe, 'src=preview':m.srcErPreview, 'segs(2 fmt)':m.segs, slider:m.slider, 'checks(2)':m.checks,
+  rad.push({ skjerm:`2 · ${bredde}`, iframe:m.iframe, 'src=preview':m.srcErPreview, 'segs(2 fmt)':m.segs, slider:m.slider, 'checks(2)':m.checks,
     'laster':m.lasterVist, 'feil':m.feilVist, jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
 }

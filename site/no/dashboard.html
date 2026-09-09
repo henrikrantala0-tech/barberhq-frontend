@@ -2490,6 +2490,11 @@
   .plakat-grid-liten .plakat-kort-navn{font-size:11.5px}
   .plakat-kort.laast{opacity:.5;border-style:dashed;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:2px}
   .plakat-kort-mangler{font-size:10.5px;color:var(--mut);font-weight:500}
+  /* Miniatyr fyller kortet bak navnet; toner inn ved last, navn får scrim + hvit tekst for lesbarhet. */
+  .plakat-kort-thumb{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:block;opacity:0;transition:opacity .25s}
+  .plakat-kort.har-miniatyr .plakat-kort-thumb{opacity:1}
+  .plakat-kort.har-miniatyr::after{content:"";position:absolute;left:0;right:0;bottom:0;height:55%;background:linear-gradient(180deg,transparent,rgba(0,0,0,.62));pointer-events:none}
+  .plakat-kort.har-miniatyr .plakat-kort-navn{position:relative;z-index:1;color:#fff;text-shadow:0 1px 3px rgba(0,0,0,.55)}
   .plakat-velg{padding:0 16px 20px}
   .plakat-velg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
   .plakat-velg-bilde{aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--line);cursor:pointer;padding:0;background:none}
@@ -6674,6 +6679,7 @@ function erStandalone(){
       scroll.appendChild(stor);
       var sh=document.createElement('p'); sh.className='plakat-seksjon-h'; sh.textContent='Flere maler'; scroll.appendChild(sh);
       scroll.appendChild(liten);
+      settOppMiniatyrer(scroll);
     } else {
       renderSkjerm2(scroll, back, tittel);
     }
@@ -6691,9 +6697,39 @@ function erStandalone(){
       // Trykk tar barbereren dit bilder legges til → «Din side».
       kort.addEventListener('click', function(){ lukk(); switchPanel('design'); });
     } else {
+      // Tilgjengelig mal → miniatyr (lat-lastet, se settOppMiniatyrer). Låste kort får INGEN <img>.
+      var thumb=document.createElement('img'); thumb.className='plakat-kort-thumb'; thumb.alt='';
+      thumb.setAttribute('data-src', PREVIEW_BASE+'/render?'+miniatyrQuery(p));
+      thumb.addEventListener('load', function(){ kort.classList.add('har-miniatyr'); });
+      kort.appendChild(thumb);
       kort.addEventListener('click', function(){ velg(p.id); });
     }
     return kort;
+  }
+
+  // Miniatyr per tilgjengelig mal: GET /render?bredde=400 med malens plasser (galleri-id-er, ingen
+  // base64 → GET, aldri POST). Lat-lastet med IntersectionObserver; låste kort får ingen <img> og
+  // henter derfor aldri. Bakgrunn/kampanjetype speiler previewen; QR/lenke droppes (støy i småformat).
+  var _miniObs=null;
+  function miniatyrQuery(p){
+    var plasser = plasserFor(p).map(function(b){ return {image_id:String(b.id)}; });
+    return 'bredde=400'
+      +'&format='+encodeURIComponent('4:5')
+      +'&background='+encodeURIComponent(bakgrunnFraBarber())
+      +'&kampanjetype='+encodeURIComponent(PS.kampanjetype||'verving')
+      +'&plasser='+encodeURIComponent(JSON.stringify(plasser))
+      +'&visQr=0&visLenke=0&styrke=1';
+  }
+  function settOppMiniatyrer(scroll){
+    if(_miniObs){ _miniObs.disconnect(); _miniObs=null; }
+    var imgs=scroll.querySelectorAll('img.plakat-kort-thumb[data-src]');
+    if(!imgs.length) return;
+    function last(im){ im.src=im.getAttribute('data-src'); im.removeAttribute('data-src'); }
+    if(!('IntersectionObserver' in window)){ [].forEach.call(imgs,last); return; } // gammel nettleser: last alle
+    _miniObs=new IntersectionObserver(function(entries,obs){
+      entries.forEach(function(e){ if(e.isIntersecting){ last(e.target); obs.unobserve(e.target); } });
+    },{rootMargin:'200px'});
+    [].forEach.call(imgs,function(im){ _miniObs.observe(im); });
   }
 
   // ── Lag 2: forhåndsvisning (iframe mot backend-ruta) + kontroller ───────────────────────────
