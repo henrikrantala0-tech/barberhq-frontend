@@ -2516,6 +2516,14 @@
   .pk-celle:not(.implisitt):hover{border-color:rgba(255,255,255,.55)}
   .pk-celle.valgt{border-color:#fff;box-shadow:0 0 0 3px #2f6df6,0 0 0 6px rgba(0,0,0,.28)}
   .pk-celle.valgt::after{content:"✓";position:absolute;top:5px;right:5px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;background:#2f6df6;color:#fff;border-radius:50%;font-size:12px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.45)}
+  /* Lag 3b — dra tekstblokken + midtstillings-hjelpelinjer. */
+  /* Transparent håndtak → tilbudsteksten synlig under; etiketten flyttet ut til en pille over boksen. */
+  .pk-tekst{position:absolute;box-sizing:border-box;border:2px dashed rgba(255,255,255,.9);border-radius:8px;background:transparent;cursor:move;pointer-events:auto;box-shadow:0 0 0 2px rgba(0,0,0,.28)}
+  .pk-tekst.drar{background:rgba(47,109,246,.12);border-style:solid}
+  .pk-tekst-l{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:4px;white-space:nowrap;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:rgba(20,20,20,.9);padding:3px 8px;border-radius:20px;box-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none}
+  .pk-tekst-l.under{bottom:auto;top:100%;margin-bottom:0;margin-top:4px}
+  .pk-guide-v{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed #2f6df6;box-shadow:0 0 0 .5px rgba(255,255,255,.4);pointer-events:none}
+  .pk-guide-h{position:absolute;left:0;right:0;height:0;border-top:1px dashed #2f6df6;box-shadow:0 0 0 .5px rgba(255,255,255,.4);pointer-events:none}
   .pk-row{display:flex;align-items:center;gap:12px;margin-top:16px}
   .pk-label{flex:0 0 96px;font-size:13px;font-weight:600;color:var(--ink)}
   .pk-seg-row{display:flex;gap:8px;flex-wrap:wrap;flex:1}
@@ -6783,6 +6791,7 @@ function erStandalone(){
     if(!p) return p;
     if(!p.format) p.format='4:5';
     if(p.skjoldStyrke==null) p.skjoldStyrke=1;
+    if(p.tdx==null) p.tdx=0; if(p.tdy==null) p.tdy=0; // tekst-offset (lag 3b), lerret-piksler
     if(tilgjengeligeFormater(antallFor(p)).indexOf(p.format)===-1) p.format='4:5';
     if(PS.visQr==null) PS.visQr=true; if(PS.visLenke==null) PS.visLenke=false;
     if(!qrTillatt(p.format)) PS.visQr=false;
@@ -6797,7 +6806,9 @@ function erStandalone(){
       +'&plasser='+encodeURIComponent(JSON.stringify(plasser))
       +'&visQr='+(PS.visQr?'1':'0')
       +'&visLenke='+(PS.visLenke?'1':'0')
-      +'&styrke='+encodeURIComponent(String(p.skjoldStyrke));
+      +'&styrke='+encodeURIComponent(String(p.skjoldStyrke))
+      +'&tdx='+encodeURIComponent(String(p.tdx||0))
+      +'&tdy='+encodeURIComponent(String(p.tdy||0));
   }
 
   // Skaler 1080-lerretet til wrap-bredden med transform:scale — lerretet endres ALDRI. Bruker
@@ -6851,7 +6862,47 @@ function erStandalone(){
     var laster=document.getElementById('plakatPrevLaster');
     if(laster) wrap.insertBefore(lag, laster); else wrap.appendChild(lag);
   }
-  function oppdaterLayout(p){ return hentLayout(p).then(function(){ skalerFrame(); tegnCeller(); }); }
+
+  // ── Lag 3b: dra tekstblokken (offer-blokken) ────────────────────────────────────────────────
+  // tdx/tdy = offset i LERRET-piksler fra blokkens standardplass; backend legger dem på offer-blokken.
+  // En lokal «spøkelses»-boks flyttes LIVE under draget (ingen preview-lasting per piksel) — ny preview
+  // hentes først ved slipp (planleggPreview). Myk snap til horisontal midt (±SNAP_LERRET) med vertikal
+  // hjelpelinje; horisontal hjelpelinje når blokka står på lerretets vertikale midt.
+  var TEKST_ANKER={ x:0.5, y:0.72, w:0.72, h:0.22 }; // brøk av lerretet = standardplass (tdx=tdy=0)
+  var SNAP_LERRET=8; // ±8 lerret-px (~2–3 skjerm-px) → lett å treffe midten, fri plassering utenfor sona
+  function tegnTekst(){
+    var wrap=document.getElementById('plakatPrevWrap'); if(!wrap) return;
+    ['.pk-tekst','.pk-guide-v','.pk-guide-h'].forEach(function(sel){ var e=wrap.querySelector(sel); if(e) e.remove(); });
+    var p=finn(PS.valgtId); if(!p||!_layout||!_layout.canvas) return;
+    var cv=_layout.canvas, s=(wrap.clientWidth||300)/cv.w;
+    var bw=TEKST_ANKER.w*cv.w, bh=TEKST_ANKER.h*cv.h;
+    var boks=document.createElement('div'); boks.className='pk-tekst'; boks.style.touchAction='none';
+    boks.style.width=(bw*s)+'px'; boks.style.height=(bh*s)+'px';
+    var lbl=document.createElement('span'); lbl.className='pk-tekst-l'; lbl.textContent='Flytt tekst'; boks.appendChild(lbl);
+    var gv=document.createElement('div'); gv.className='pk-guide-v'; gv.style.left=(cv.w/2*s)+'px';
+    var gh=document.createElement('div'); gh.className='pk-guide-h'; gh.style.top=(cv.h/2*s)+'px';
+    function plasser(){
+      var cx=TEKST_ANKER.x*cv.w + (p.tdx||0), cy=TEKST_ANKER.y*cv.h + (p.tdy||0); // senter i lerret-px
+      var topPx=(cy-bh/2)*s; boks.style.left=((cx-bw/2)*s)+'px'; boks.style.top=topPx+'px';
+      lbl.classList.toggle('under', topPx < 24); // etikett over boksen; flipp under om vi er nær toppen
+      gv.style.display = Math.abs(p.tdx||0) <= SNAP_LERRET ? 'block' : 'none';        // horisontal midtstilling
+      gh.style.display = Math.abs(cy - cv.h/2) <= SNAP_LERRET ? 'block' : 'none';     // vertikal midtstilling
+    }
+    var drag=null;
+    boks.addEventListener('pointerdown',function(e){ e.preventDefault(); try{ boks.setPointerCapture(e.pointerId); }catch(_){}
+      drag={x0:e.clientX, y0:e.clientY, tdx0:(p.tdx||0), tdy0:(p.tdy||0)}; boks.classList.add('drar'); });
+    boks.addEventListener('pointermove',function(e){ if(!drag) return;
+      var ndx=drag.tdx0 + (e.clientX-drag.x0)/s, ndy=drag.tdy0 + (e.clientY-drag.y0)/s;
+      if(Math.abs(ndx) <= SNAP_LERRET) ndx=0; // snap horisontal midt
+      if(Math.abs((TEKST_ANKER.y*cv.h + ndy) - cv.h/2) <= SNAP_LERRET) ndy = cv.h/2 - TEKST_ANKER.y*cv.h; // snap vertikal midt
+      p.tdx=Math.round(ndx); p.tdy=Math.round(ndy); plasser(); }); // kun lokal flytting — ingen preview-lasting
+    function slipp(){ if(!drag) return; drag=null; boks.classList.remove('drar'); lagre(); planleggPreview(); } // ny preview ved slipp
+    boks.addEventListener('pointerup', slipp); boks.addEventListener('pointercancel', slipp);
+    plasser();
+    var laster=document.getElementById('plakatPrevLaster');
+    [gv, gh, boks].forEach(function(el){ if(laster) wrap.insertBefore(el, laster); else wrap.appendChild(el); }); // boks øverst, under laster/feil
+  }
+  function oppdaterLayout(p){ return hentLayout(p).then(function(){ skalerFrame(); tegnCeller(); tegnTekst(); }); }
   function visLaster(paa){ var o=document.getElementById('plakatPrevLaster'); if(o) o.style.display=paa?'flex':'none'; }
   function visPrevFeil(m){ var o=document.getElementById('plakatPrevFeil'); if(!o) return; o.textContent=m||''; o.style.display=m?'flex':'none'; if(m) visLaster(false); }
 
@@ -6953,7 +7004,7 @@ function erStandalone(){
     var bL=document.getElementById('plakatOpenLojalitet'); if(bL) bL.addEventListener('click', function(){ aapne('loyalitet'); });
     var x=document.getElementById('plakatX'); if(x) x.addEventListener('click', lukk);
     var back=document.getElementById('plakatBack'); if(back) back.addEventListener('click', tilSkjerm1);
-    window.addEventListener('resize', function(){ if(PS && PS.valgtId!=null && overlay().classList.contains('open')){ skalerFrame(); tegnCeller(); } });
+    window.addEventListener('resize', function(){ if(PS && PS.valgtId!=null && overlay().classList.contains('open')){ skalerFrame(); tegnCeller(); tegnTekst(); } });
     // Gjenopprett hvis økten var åpen (refresh/tapt nett skal ikke lukke editoren).
     var s=last();
     if(s && s.aapen){ PS=s; document.body.classList.add('plakat-lock'); overlay().classList.add('open'); render();

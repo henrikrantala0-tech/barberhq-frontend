@@ -1,6 +1,8 @@
-// tools/render/plakat-editor.mjs — Kampanjeplakat-editoren i dashbordet (lag 1 + lag 2 + lag 3a).
+// tools/render/plakat-editor.mjs — Kampanjeplakat-editoren i dashbordet (lag 1 + lag 2 + lag 3a + 3b).
 // Lag 3a: celle-trykkflater over iframen (/layout-mock), samme s som iframe-skalering (align < 2px),
 //   tap treffer riktig celle, ett-bilde-maler har implisitt valgt celle. Se S3 + 2×2-blokken.
+// Lag 3b: dra tekstblokken — vertikal + horisontal hjelpelinje ved midtstilling, lokal flytting (ingen
+//   fetch per piksel), én reload ved slipp, gjennomsiktig håndtak. Se S3B + dra-blokken.
 // Lag 1: to sekundærknapper i Vekst-trekkspillene → fullskjerm-overlay, skjerm 1 (velg plakat).
 //   Skjerm 1 = fem maler; tilgjengelige kort får lat-lastet miniatyr (GET /render?bredde=400),
 //   låste kort får INGEN <img> og henter aldri (verifiseres: renderKall == antall tilgjengelige).
@@ -87,6 +89,13 @@ const S3 = `() => { const wrap=document.getElementById('plakatPrevWrap'); if(!wr
     maxAvvik=Math.max(maxAvvik, Math.abs((r.left-wr.left)-c.x*s), Math.abs((r.top-wr.top)-c.y*s), Math.abs(r.width-c.w*s), Math.abs(r.height-c.h*s)); });
   const v=document.querySelector('.pk-celle.valgt');
   return { celler:kn.length, maxAvvikPx:Math.round(maxAvvik*100)/100, valgtSlot: v?v.dataset.slot:null }; }`;
+// Lag 3b: tekst-dra — hjelpelinjer, offset (fra sessionStorage) og gjennomsiktig håndtak.
+const S3B = `()=>{ const wrap=document.getElementById('plakatPrevWrap'); const box=wrap.querySelector('.pk-tekst');
+  const gv=wrap.querySelector('.pk-guide-v'), gh=wrap.querySelector('.pk-guide-h');
+  let st=null; try{ st=JSON.parse(sessionStorage.getItem('bhq-plakat')); }catch(e){}
+  const p=st&&(st.plakater||[]).filter(x=>x.id===st.valgtId)[0];
+  return { guideV:gv?getComputedStyle(gv).display:null, guideH:gh?getComputedStyle(gh).display:null,
+    tdx:p?p.tdx:null, tdy:p?p.tdy:null, transp: box?getComputedStyle(box).backgroundColor==='rgba(0, 0, 0, 0)':null }; }`;
 
 const browser = await chromium.launch();
 const rad = [];
@@ -156,6 +165,33 @@ for (const bredde of [320, 375]) {
   await shot(page, 'lag3a-2x2-375');
   rad.push({ skjerm:'3a · 2×2', celler:m.celler, maxAvvikPx:m.maxAvvikPx, valgt:m.valgtSlot,
     treff: m.valgtSlot==='bilde-2'?'ok':'FEIL', 'align<2px': m.maxAvvikPx<2?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
+// Lag 3b — dra tekstblokken opp til lerretets senter: begge hjelpelinjer, lokal flytting (ingen fetch
+// per piksel), én reload ved slipp (2 req: status-fetch + iframe-src), gjennomsiktig håndtak.
+{
+  const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  let prev = 0; page.on('request', r => { if (r.url().includes('/plakat/preview')) prev++; });
+  await page.route('**/api/**', router('vekst', 200, null, IMAGES4));
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
+  await page.locator('.plakat-kort', { hasText:'Fire bilder' }).click(); await page.waitForTimeout(1200);
+  const prevFoer = prev;
+  const s = await page.evaluate(() => document.getElementById('plakatPrevWrap').clientWidth/1080);
+  const opp = (0.72-0.5)*1350*s;  // px opp fra standardplass (0.72) til lerretets vertikale midt (0.5)
+  const bb = await page.locator('.pk-tekst').boundingBox(); const cx = bb.x+bb.width/2, cy = bb.y+bb.height/2;
+  await page.mouse.move(cx, cy); await page.mouse.down();
+  for (let i=1;i<=8;i++){ await page.mouse.move(cx, cy-opp*i/8); await page.waitForTimeout(20); }
+  const prevUnderDrag = prev;
+  await page.mouse.up(); await page.waitForTimeout(500);
+  const m = await page.evaluate(eval(S3B));
+  await shot(page, 'lag3b-375');
+  rad.push({ skjerm:'3b · dra', guideV:m.guideV, guideH:m.guideH, begge:(m.guideV==='block'&&m.guideH==='block')?'ok':'FEIL',
+    tdx:m.tdx, tdy:m.tdy, 'ingen-per-piksel': prevUnderDrag===prevFoer?'ok':'FEIL', 'reload=1x': (prev-prevUnderDrag)===2?'ok':'FEIL',
+    'håndtak-transp': m.transp?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
 }
 
