@@ -110,6 +110,19 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .hero h1 .h1-big{display:block;font-size:clamp(26px,8vw,56px);animation:heroIn 1.2s cubic-bezier(.22,.61,.36,1) both}
 @keyframes heroIn{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
 .hero-sub{color:#b4b4b4;font-size:15px;line-height:1.6;max-width:560px;margin:36px auto 0}
+/* Innkommende DM-bobler i tomrommet mellom undertekst og CTA. I NORMAL FLYT (ikke absolutt) så
+   de aldri kan kollidere med .hero-sub over eller .hero-btns under — de skyver layouten i stedet.
+   margin-top:auto på BÅDE .hero-dms og .hero-btns splitter tomrommet 50/50 → gruppa sentreres i
+   voiden (lavere enn før), gap:24px sprer de to boblene. Slide-avstanden (24px) < hero-inner sin
+   32px sidepolstring → ingen vannrett overflyt. Systemfarger: #2a2a2a (bg), #333 (kant), #fff.
+   Timing: boble 1 glir inn 2s etter last, boble 2 1,5s etter den (delay 3,5s); fill-mode both → blir liggende. */
+.hero-dms{display:flex;flex-direction:column;gap:24px;width:100%;max-width:340px;margin:auto auto 0}
+.dm{align-self:flex-start;max-width:82%;background:#2a2a2a;border:1px solid #333;color:#fff;font-size:14.5px;line-height:1.35;padding:11px 16px;border-radius:18px 18px 18px 5px;text-align:left;opacity:1;transform:none}
+.dm-1{animation:dmInL .5s cubic-bezier(.22,.61,.36,1) 2s both}
+.dm-2{align-self:flex-end;border-radius:18px 18px 5px 18px;animation:dmInR .5s cubic-bezier(.22,.61,.36,1) 3.5s both}
+@keyframes dmInL{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
+@keyframes dmInR{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
+@media(prefers-reduced-motion:reduce){.dm-1,.dm-2{animation:none;opacity:1;transform:none}}
 .hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:auto}
 .btn{display:inline-flex;align-items:center;gap:9px;font-size:15px;font-weight:600;padding:15px 30px;border-radius:99px;text-decoration:none;transition:all .2s;cursor:pointer;border:0}
 .btn-fill{background:#2563eb;color:#fff}
@@ -1379,6 +1392,10 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     <span class="hero-eyebrow">Bookingsystem for barberere</span>
     <h1><span class="h1-big">Flere kunder.</span><span class="h1-big">Mindre administrasjon.</span></h1>
     <p class="hero-sub">Ikke bare en bookingside — et helt system. Automatiske påminnelser, rebooking og full oversikt.</p>
+    <div class="hero-dms" aria-hidden="true">
+      <span class="dm dm-1">Når har du ledig?</span>
+      <span class="dm dm-2">Når kan du?</span>
+    </div>
     <div class="hero-btns">
       <a href="kom-i-gang.html" class="btn btn-fill" onclick="gtag('event','cta_klikk',{plassering:'hero'})">Start gratis i 30 dager</a>
     </div>
