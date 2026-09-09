@@ -2522,6 +2522,18 @@
   .pk-tekst.drar{background:rgba(47,109,246,.12);border-style:solid}
   .pk-tekst-l{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:4px;white-space:nowrap;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:rgba(20,20,20,.9);padding:3px 8px;border-radius:20px;box-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none}
   .pk-tekst-l.under{bottom:auto;top:100%;margin-bottom:0;margin-top:4px}
+  /* Lag 3c — beskjær-ikon i cellehjørne + beskjæringsvisning. */
+  .pk-celle-crop{position:absolute;width:26px;height:26px;display:flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:7px;background:rgba(20,20,20,.82);color:#fff;cursor:pointer;pointer-events:auto;box-shadow:0 1px 4px rgba(0,0,0,.5)}
+  .pk-celle-crop:hover{background:#2f6df6}
+  .pk-crop{position:absolute;inset:0;z-index:20;background:rgba(8,8,8,.95);display:flex;align-items:center;justify-content:center;padding:16px}
+  .pk-crop-inner{display:flex;flex-direction:column;gap:12px;width:100%;max-width:520px;max-height:100%}
+  .pk-crop-tittel{margin:0;color:#fff;font-size:15px;font-weight:600}
+  .pk-crop-canvas{flex:1;min-height:0;overflow:hidden;background:#111;border-radius:10px}
+  .pk-crop-canvas img{display:block;max-width:100%}
+  .pk-crop-akt{display:flex;gap:10px;justify-content:flex-end}
+  .pk-crop-akt button{font:inherit;font-size:14px;font-weight:600;padding:11px 16px;border-radius:10px;cursor:pointer;min-height:44px}
+  .pk-crop-avbryt{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff}
+  .pk-crop-bruk{background:#2f6df6;border:1px solid #2f6df6;color:#fff}
   .pk-guide-v{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed #2f6df6;box-shadow:0 0 0 .5px rgba(255,255,255,.4);pointer-events:none}
   .pk-guide-h{position:absolute;left:0;right:0;height:0;border-top:1px dashed #2f6df6;box-shadow:0 0 0 .5px rgba(255,255,255,.4);pointer-events:none}
   .pk-row{display:flex;align-items:center;gap:12px;margin-top:16px}
@@ -6799,7 +6811,13 @@ function erStandalone(){
   }
 
   function plakatQuery(p){
-    var plasser = plasserFor(p).map(function(b){ return {image_id:String(b.id)}; });
+    var celler = (_layout&&_layout.celler)||[];
+    var plasser = plasserFor(p).map(function(b, i){
+      var o = {image_id:String(b.id)};
+      var slot = celler[i] && celler[i].slot, r = slot && p.rects && p.rects[slot]; // lag 3c: utsnitt per celle
+      if(r) o.rect = {x:r.x, y:r.y, w:r.w, h:r.h};
+      return o;
+    });
     return 'format='+encodeURIComponent(p.format)
       +'&background='+encodeURIComponent(bakgrunnFraBarber())
       +'&kampanjetype='+encodeURIComponent(PS.kampanjetype||'verving')
@@ -6848,7 +6866,7 @@ function erStandalone(){
     var flervalg=_layout.celler.length>1; // ett-bilde-mal: cellen er implisitt valgt, ingen trykk nødvendig
     if(!flervalg) p.valgtCelle=_layout.celler[0].slot;
     var lag=document.createElement('div'); lag.className='pk-celler';
-    _layout.celler.forEach(function(celle){
+    _layout.celler.forEach(function(celle, idx){
       var b=document.createElement('button'); b.type='button';
       b.className='pk-celle'+(flervalg?'':' implisitt')+(p.valgtCelle===celle.slot?' valgt':'');
       b.style.left=(celle.x*s)+'px'; b.style.top=(celle.y*s)+'px';
@@ -6857,6 +6875,16 @@ function erStandalone(){
       if(flervalg){ b.addEventListener('click',function(){ p.valgtCelle=celle.slot; lagre(); tegnCeller(); }); }
       else { b.disabled=true; }
       lag.appendChild(b);
+      // Lag 3c: beskjær-ikon i cellens hjørne (egen knapp, ikke nested i celle-knappen → gyldig markup).
+      var bilde=plasserFor(p)[idx];
+      if(bilde){
+        var ik=document.createElement('button'); ik.type='button'; ik.className='pk-celle-crop';
+        ik.title='Beskjær'; ik.setAttribute('aria-label','Beskjær bilde');
+        ik.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2v16h16M2 6h16v16"/></svg>';
+        ik.style.left=((celle.x+celle.w)*s - 30)+'px'; ik.style.top=(celle.y*s + 6)+'px';
+        ik.addEventListener('click',function(e){ e.stopPropagation(); aapneBeskjaer(celle, bilde); });
+        lag.appendChild(ik);
+      }
     });
     // Bak laster/feil-overleggene (opake) så cellene ikke lyser gjennom mens previewen lastes.
     var laster=document.getElementById('plakatPrevLaster');
@@ -6903,6 +6931,47 @@ function erStandalone(){
     [gv, gh, boks].forEach(function(el){ if(laster) wrap.insertBefore(el, laster); else wrap.appendChild(el); }); // boks øverst, under laster/feil
   }
   function oppdaterLayout(p){ return hentLayout(p).then(function(){ skalerFrame(); tegnCeller(); tegnTekst(); }); }
+
+  // ── Lag 3c: beskjæring per celle ──────────────────────────────────────────────────────────────
+  // Ikon i cellens hjørne åpner en visning med bildet stort. Cropper.js låser utsnittsboksen til cellens
+  // sideforhold (aspect fra /layout). Resultatet er {x,y,w,h} i bildets EGNE pikselkoordinater (getData),
+  // klampet innenfor bildets grenser (backend avviser utsnitt utenfor → 400). Lagres på p.rects[slot] og
+  // sendes som plass.rect. Ikke-destruktivt: originalbildet røres aldri (kun et utsnitt-rektangel).
+  function aapneBeskjaer(celle, bilde){
+    if(typeof Cropper==='undefined') return; // biblioteket lastes globalt (lib/cropper.min.js) før denne IIFE-en
+    var lag=document.createElement('div'); lag.className='pk-crop';
+    var inner=document.createElement('div'); inner.className='pk-crop-inner';
+    var tittel=document.createElement('p'); tittel.className='pk-crop-tittel'; tittel.textContent='Beskjær bilde';
+    var wrap=document.createElement('div'); wrap.className='pk-crop-canvas';
+    var img=document.createElement('img'); img.crossOrigin='anonymous'; img.alt='';
+    wrap.appendChild(img);
+    var akt=document.createElement('div'); akt.className='pk-crop-akt';
+    var avbryt=document.createElement('button'); avbryt.type='button'; avbryt.className='pk-crop-avbryt'; avbryt.textContent='Avbryt';
+    var bruk=document.createElement('button'); bruk.type='button'; bruk.className='pk-crop-bruk'; bruk.textContent='Bruk beskjæring';
+    akt.appendChild(avbryt); akt.appendChild(bruk);
+    inner.appendChild(tittel); inner.appendChild(wrap); inner.appendChild(akt); lag.appendChild(inner);
+    overlay().appendChild(lag);
+    var cr=null;
+    img.onload=function(){
+      cr=new Cropper(img,{ viewMode:1, aspectRatio:(celle.aspect||1), autoCropArea:1, background:false, responsive:true, dragMode:'move' });
+      var p=finn(PS.valgtId); var r=p&&p.rects&&p.rects[celle.slot];
+      if(r) try{ cr.setData({x:r.x, y:r.y, width:r.w, height:r.h}); }catch(_){}  // gjenopprett forrige utsnitt
+    };
+    img.src=bilde.url;
+    function lukk(){ if(cr){ try{cr.destroy();}catch(_){} cr=null; } lag.remove(); }
+    avbryt.addEventListener('click', lukk);
+    lag.addEventListener('click', function(e){ if(e.target===lag) lukk(); }); // klikk på bakteppet lukker
+    bruk.addEventListener('click', function(){
+      if(!cr) return;
+      var d=cr.getData(true); // {x,y,width,height,...} i naturlige piksler, avrundet
+      var nat=cr.getImageData(); var NW=nat.naturalWidth||0, NH=nat.naturalHeight||0;
+      var x=Math.max(0, Math.min(Math.round(d.x), Math.max(0,NW-1))), y=Math.max(0, Math.min(Math.round(d.y), Math.max(0,NH-1)));
+      var w=Math.max(1, Math.min(Math.round(d.width), NW-x)), h=Math.max(1, Math.min(Math.round(d.height), NH-y)); // klamp innenfor bildet
+      var p=finn(PS.valgtId); if(!p){ lukk(); return; }
+      p.rects=p.rects||{}; p.rects[celle.slot]={x:x, y:y, w:w, h:h};
+      lagre(); lukk(); planleggPreview(); // nytt utsnitt → hent oppdatert preview
+    });
+  }
   function visLaster(paa){ var o=document.getElementById('plakatPrevLaster'); if(o) o.style.display=paa?'flex':'none'; }
   function visPrevFeil(m){ var o=document.getElementById('plakatPrevFeil'); if(!o) return; o.textContent=m||''; o.style.display=m?'flex':'none'; if(m) visLaster(false); }
 

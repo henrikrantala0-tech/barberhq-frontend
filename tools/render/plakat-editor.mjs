@@ -3,6 +3,8 @@
 //   tap treffer riktig celle, ett-bilde-maler har implisitt valgt celle. Se S3 + 2×2-blokken.
 // Lag 3b: dra tekstblokken — vertikal + horisontal hjelpelinje ved midtstilling, lokal flytting (ingen
 //   fetch per piksel), én reload ved slipp, gjennomsiktig håndtak. Se S3B + dra-blokken.
+// Lag 3c: beskjæring — hjørne-ikon → Cropper-view låst til cellens aspect, rect i bilde-piksler innenfor
+//   bildets grenser. Se crop-blokken (ekte webp for naturlige dimensjoner).
 // Lag 1: to sekundærknapper i Vekst-trekkspillene → fullskjerm-overlay, skjerm 1 (velg plakat).
 //   Skjerm 1 = fem maler; tilgjengelige kort får lat-lastet miniatyr (GET /render?bredde=400),
 //   låste kort får INGEN <img> og henter aldri (verifiseres: renderKall == antall tilgjengelige).
@@ -35,17 +37,20 @@ const LOY = { enabled:true, threshold:10, pct:100, count_history:false, particip
 // Mock-poster: 1080×1350-lerret som iframen skalerer. Egen CSP-header (som backend).
 const POSTER = '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0}.p{width:1080px;height:1350px;background:linear-gradient(160deg,#141414,#3a2f22);color:#e9d8b8;font:700 90px system-ui;display:flex;align-items:center;justify-content:center;text-align:center}</style></head><body><div class="p">Verv en venn<br>begge får 45%</div></body></html>';
 const PNG1x1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMCAQABsaG/AAAAAElFTkSuQmCC','base64');
-const IMAGES4 = ['#c0392b','#2980b9','#27ae60','#8e44ad'].map((c,i)=>({ id:`${i+1}1111111-1111-1111-1111-111111111111`, url:svg(c), slot:'galleri', sort_order:i }));
-// /layout-mock: celle-geometri i lerret-piksler per antall (2×2 for fire, én stor for ett-bilde).
+// Ekte webp → Cropper får naturlige pikseldimensjoner i lag-3c-beskjæringen (data-URI ville gitt 0 el. feil).
+const IMAGES4 = ['bilde-1','bilde-2','bilde-3','bilde-4'].map((_,i)=>({ id:`${i+1}1111111-1111-1111-1111-111111111111`, url:'/no/images/layout-profil.webp', slot:'galleri', sort_order:i }));
+// /layout-mock: celle-geometri i lerret-piksler per antall (2×2 for fire, én stor for ett-bilde) + aspect.
 function mockLayout(antall){
   const CV = { w:1080, h:1350 };
+  const asp = c => ({ ...c, aspect: Math.round((c.w/c.h)*10000)/10000 });
   if (antall <= 0) return { canvas:CV, celler:[] };
-  if (antall === 1) return { canvas:CV, celler:[{ slot:'bilde-1', x:60, y:120, w:960, h:1110 }] };
-  if (antall === 4) return { canvas:CV, celler:[
+  let celler;
+  if (antall === 1) celler = [{ slot:'bilde-1', x:60, y:120, w:960, h:1110 }];
+  else if (antall === 4) celler = [
     { slot:'bilde-1', x:60, y:120, w:468, h:543 }, { slot:'bilde-2', x:552, y:120, w:468, h:543 },
-    { slot:'bilde-3', x:60, y:687, w:468, h:543 }, { slot:'bilde-4', x:552, y:687, w:468, h:543 } ] };
-  const w = Math.floor((960 - (antall-1)*24)/antall);
-  return { canvas:CV, celler:Array.from({length:antall},(_,i)=>({ slot:'bilde-'+(i+1), x:60+i*(w+24), y:120, w, h:1110 })) };
+    { slot:'bilde-3', x:60, y:687, w:468, h:543 }, { slot:'bilde-4', x:552, y:687, w:468, h:543 } ];
+  else { const w = Math.floor((960 - (antall-1)*24)/antall); celler = Array.from({length:antall},(_,i)=>({ slot:'bilde-'+(i+1), x:60+i*(w+24), y:120, w, h:1110 })); }
+  return { canvas:CV, celler: celler.map(asp) };
 }
 
 function router(plan, previewStatus, ctr, images=IMAGES){ return route => {
@@ -192,6 +197,35 @@ for (const bredde of [320, 375]) {
   rad.push({ skjerm:'3b · dra', guideV:m.guideV, guideH:m.guideH, begge:(m.guideV==='block'&&m.guideH==='block')?'ok':'FEIL',
     tdx:m.tdx, tdy:m.tdy, 'ingen-per-piksel': prevUnderDrag===prevFoer?'ok':'FEIL', 'reload=1x': (prev-prevUnderDrag)===2?'ok':'FEIL',
     'håndtak-transp': m.transp?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
+// Lag 3c — beskjæring: hjørne-ikon åpner crop-view; boksen er låst til cellens aspect; resultatet er
+// {x,y,w,h} i bildets EGNE piksler, klampet innenfor bildet (backend avviser utenfor).
+{
+  const ASP = Math.round((468/543)*10000)/10000;
+  const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  await page.route('**/api/**', router('vekst', 200, null, IMAGES4));
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
+  await page.locator('.plakat-kort', { hasText:'Fire bilder' }).click(); await page.waitForTimeout(1200);
+  await page.locator('.pk-celle-crop').first().click(); await page.waitForTimeout(900);
+  const cropAapen = await page.evaluate(() => !!document.querySelector('.pk-crop'));
+  const NW = await page.evaluate(() => { const i=document.querySelector('.pk-crop-canvas img'); return i?i.naturalWidth:0; });
+  const NH = await page.evaluate(() => { const i=document.querySelector('.pk-crop-canvas img'); return i?i.naturalHeight:0; });
+  const dr = async (sel,dx,dy)=>{ const bb=await page.locator(sel).boundingBox(); if(!bb) return; const x=bb.x+bb.width/2,y=bb.y+bb.height/2;
+    await page.mouse.move(x,y); await page.mouse.down(); await page.mouse.move(x+dx,y+dy); await page.mouse.up(); await page.waitForTimeout(100); };
+  await dr('.cropper-face', 24, -18); await dr('.cropper-point.point-se', -40, -30);   // flytt + skaler boksen
+  await shot(page, 'lag3c-375');
+  await page.click('.pk-crop-bruk'); await page.waitForTimeout(400);
+  const rect = await page.evaluate(() => { let st=null; try{ st=JSON.parse(sessionStorage.getItem('bhq-plakat')); }catch(e){}
+    const p=st&&(st.plakater||[]).filter(x=>x.id===st.valgtId)[0]; return p&&p.rects?p.rects['bilde-1']:null; });
+  const aspOk = rect ? Math.abs((rect.w/rect.h)-ASP)<0.06 : false;
+  const inn = rect ? (rect.x>=0&&rect.y>=0&&rect.x+rect.w<=NW&&rect.y+rect.h<=NH) : false;
+  rad.push({ skjerm:'3c · crop', cropAapen:cropAapen?'ok':'FEIL', 'bilde-px':NW+'×'+NH, rect:rect?`${rect.x},${rect.y},${rect.w}×${rect.h}`:null,
+    'aspekt-låst': aspOk?'ok':'FEIL', innenfor: inn?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
 }
 
