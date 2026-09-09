@@ -1,6 +1,14 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
+<!-- Google tag (gtag.js) - GA4, cookieless (client_storage: none) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6NSM1CSJKG"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-6NSM1CSJKG', { client_storage: 'none' });
+</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>BarberHQ — Kom i gang</title>
@@ -441,7 +449,7 @@ async function submitFinal(){
     try{ raw=await res.text(); data=JSON.parse(raw); }
     catch(e){ parseOk=false; console.error('onboarding: kunne ikke parse svaret som JSON:', e, '| rå body:', raw); }
     // Suksess: KUN ok:true && slug. Aldri ok:true alene. → dashbordet, «Din side», der flyten fortsetter.
-    if(parseOk && data && data.ok===true && data.slug){ window.location.href='/no/dashboard.html?velkommen=1#dinside'; return; }
+    if(parseOk && data && data.ok===true && data.slug){ if(typeof gtag==='function') gtag('event','skjema_fullfort'); window.location.href='/no/dashboard.html?velkommen=1#dinside'; return; }
     // slug:null — skill de tre tilstandene på status-feltet:
     if(parseOk && data && data.status==='email_taken'){ visObError(data.melding, true); return; }        // konto finnes → Logg inn
     // Merk: 'timezone_required' håndteres IKKE her — den kan ikke oppstå fra no/. market utledes
@@ -474,6 +482,16 @@ function visObError(msg, visLogin){
 }
 
 refreshImages();
+
+// GA4: skjema_start - forste felt-fokus i skjemaet, en gang per sesjon
+(function(){
+  var kort=document.getElementById('obForm'); if(!kort) return;
+  function start(){
+    try{ if(sessionStorage.getItem('skjema_start_sendt')) return; sessionStorage.setItem('skjema_start_sendt','1'); }catch(e){}
+    if(typeof gtag==='function') gtag('event','skjema_start');
+  }
+  kort.addEventListener('focusin', start, { once:true });
+})();
 </script>
 </body>
 </html>

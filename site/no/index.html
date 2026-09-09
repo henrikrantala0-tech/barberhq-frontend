@@ -1,6 +1,14 @@
 ﻿<!DOCTYPE html>
 <html lang="no" class="no-js">
 <head>
+<!-- Google tag (gtag.js) - GA4, cookieless (client_storage: none) -->
+<script async src="https://www.googletagmanager.com/gtag/js?id=G-6NSM1CSJKG"></script>
+<script>
+  window.dataLayer = window.dataLayer || [];
+  function gtag(){dataLayer.push(arguments);}
+  gtag('js', new Date());
+  gtag('config', 'G-6NSM1CSJKG', { client_storage: 'none' });
+</script>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1">
 <title>BarberHQ — Din egen bookingside</title>
@@ -1371,7 +1379,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     <h1><span class="h1-big">“Når har du ledig?”</span></h1>
     <p class="hero-sub">Ikke bare en bookingside — et helt system. Automatiske påminnelser, rebooking og full oversikt. <strong>Flere kunder, mer inntekt.</strong></p>
     <div class="hero-btns">
-      <a href="kom-i-gang.html" class="btn btn-fill">Prøv gratis</a>
+      <a href="kom-i-gang.html" class="btn btn-fill" onclick="gtag('event','cta_klikk',{plassering:'hero'})">Prøv gratis</a>
     </div>
     <div class="hero-note"><i class="ti ti-eye"></i>Du trenger ikke legge inn betalingskort for å prøve.</div>
     <a href="#produkt" class="hero-see">Se hvordan det virker<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></a>
@@ -2176,7 +2184,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   <div class="reveal cta-body">
     <h2>Vi setter opp siden din — og hjelper deg fylle kalenderen</h2>
     <p>Fra skjema til ferdig side på under et døgn. 30 dager gratis.</p>
-    <a href="kom-i-gang.html" class="btn btn-fill">Prøv gratis</a>
+    <a href="kom-i-gang.html" class="btn btn-fill" onclick="gtag('event','cta_klikk',{plassering:'footer'})">Prøv gratis</a>
   </div>
 </section>
 
