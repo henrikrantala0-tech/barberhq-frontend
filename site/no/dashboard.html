@@ -2509,6 +2509,13 @@
   .pk-spinner{width:26px;height:26px;border:3px solid var(--line-2);border-top-color:#2563eb;border-radius:50%;animation:pkspin .8s linear infinite}
   @keyframes pkspin{to{transform:rotate(360deg)}}
   .plakat-prev-feil{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--ink);font-size:13px;line-height:1.5;background:var(--surface)}
+  /* Lag 3a — celle-trykkflater over iframen (samme s som iframe-innholdet, se tegnCeller/skalerFrame). */
+  .pk-celler{position:absolute;left:0;top:0;pointer-events:none}
+  .pk-celle{position:absolute;margin:0;padding:0;background:transparent;border:2px solid transparent;border-radius:8px;cursor:pointer;pointer-events:auto;transition:border-color .12s,box-shadow .12s}
+  .pk-celle.implisitt{cursor:default}
+  .pk-celle:not(.implisitt):hover{border-color:rgba(255,255,255,.55)}
+  .pk-celle.valgt{border-color:#fff;box-shadow:0 0 0 3px #2f6df6,0 0 0 6px rgba(0,0,0,.28)}
+  .pk-celle.valgt::after{content:"✓";position:absolute;top:5px;right:5px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;background:#2f6df6;color:#fff;border-radius:50%;font-size:12px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.45)}
   .pk-row{display:flex;align-items:center;gap:12px;margin-top:16px}
   .pk-label{flex:0 0 96px;font-size:13px;font-weight:600;color:var(--ink)}
   .pk-seg-row{display:flex;gap:8px;flex-wrap:wrap;flex:1}
@@ -6661,7 +6668,7 @@ function erStandalone(){
     overlay().classList.remove('open');
     document.body.classList.remove('plakat-lock');
   }
-  function tilSkjerm1(){ PS.valgtId=null; lagre(); render(); }
+  function tilSkjerm1(){ PS.valgtId=null; _layout=null; lagre(); render(); }
   function velg(id){ var p=finn(id); if(p && !tilgjengelig(p)) return; PS.valgtId=id; lagre(); render(); }
 
   function render(){
@@ -6743,7 +6750,7 @@ function erStandalone(){
   //   style-src 'unsafe-inline'; script-src 'unsafe-inline'; font-src data:; img-src https: data:
   var PREVIEW_BASE='/api/dashboard/plakat';
   var CANVAS={'4:5':{w:1080,h:1350}, '9:16':{w:1080,h:1920}};
-  var _preT=null, _palett=null, _mode=null;
+  var _preT=null, _palett=null, _mode=null, _layout=null;
 
   async function hentDesign(){
     if(_palett) return;
@@ -6782,15 +6789,58 @@ function erStandalone(){
       +'&styrke='+encodeURIComponent(String(p.skjoldStyrke));
   }
 
-  // Skaler 1080-lerretet til wrap-bredden med transform:scale — lerretet endres ALDRI.
+  // Skaler 1080-lerretet til wrap-bredden med transform:scale — lerretet endres ALDRI. Bruker
+  // _layout.canvas når det er hentet (samme kilde som celle-trykkflatene → NØYAKTIG samme s), ellers
+  // CANVAS-fallbacken før /layout har svart. iframe-høyde = wrapW*canvas.h/canvas.w (samme s begge akser).
   function skalerFrame(){
     var wrap=document.getElementById('plakatPrevWrap'), frame=document.getElementById('plakatFrame');
     if(!wrap||!frame) return; var p=finn(PS.valgtId); if(!p) return;
-    var c=CANVAS[p.format]||CANVAS['4:5'];
+    var c=(_layout&&_layout.canvas)?_layout.canvas:(CANVAS[p.format]||CANVAS['4:5']);
     var s=(wrap.clientWidth||300)/c.w;
     frame.style.width=c.w+'px'; frame.style.height=c.h+'px'; frame.style.transform='scale('+s+')';
     wrap.style.height=Math.round(c.h*s)+'px';
   }
+
+  // ── Lag 3a: celle-valg ──────────────────────────────────────────────────────────────────────
+  // /layout gir canvas {w,h} + celler[] {slot,x,y,w,h} i LERRET-piksler for (antall, format, bakgrunn).
+  // Geometrien avhenger av bakgrunn (mal 2 i 9:16 har ulik plassering per bakgrunn), derfor hentes den
+  // på nytt ved format-bytte. Trykkflatene posisjoneres med s = wrap.clientWidth/canvas.w — SAMME s som
+  // skalerFrame gir iframe-innholdet. Skaleres de ulikt, treffer flatene feil celle.
+  function layoutQuery(p){
+    return 'antall='+antallFor(p)
+      +'&format='+encodeURIComponent(p.format)
+      +'&background='+encodeURIComponent(bakgrunnFraBarber());
+  }
+  async function hentLayout(p){
+    _layout=null;
+    try{
+      var r=await fetch(PREVIEW_BASE+'/layout?'+layoutQuery(p),{credentials:'include'});
+      if(r.ok){ var j=await r.json(); if(j&&j.canvas) _layout=j; }
+    }catch(e){}
+  }
+  function tegnCeller(){
+    var wrap=document.getElementById('plakatPrevWrap'); if(!wrap) return;
+    var gml=wrap.querySelector('.pk-celler'); if(gml) gml.remove();
+    var p=finn(PS.valgtId); if(!p||!_layout||!_layout.celler||!_layout.celler.length) return;
+    var cv=_layout.canvas, s=(wrap.clientWidth||300)/cv.w;
+    var flervalg=_layout.celler.length>1; // ett-bilde-mal: cellen er implisitt valgt, ingen trykk nødvendig
+    if(!flervalg) p.valgtCelle=_layout.celler[0].slot;
+    var lag=document.createElement('div'); lag.className='pk-celler';
+    _layout.celler.forEach(function(celle){
+      var b=document.createElement('button'); b.type='button';
+      b.className='pk-celle'+(flervalg?'':' implisitt')+(p.valgtCelle===celle.slot?' valgt':'');
+      b.style.left=(celle.x*s)+'px'; b.style.top=(celle.y*s)+'px';
+      b.style.width=(celle.w*s)+'px'; b.style.height=(celle.h*s)+'px';
+      b.setAttribute('aria-label','Velg bilde-felt'); b.dataset.slot=celle.slot;
+      if(flervalg){ b.addEventListener('click',function(){ p.valgtCelle=celle.slot; lagre(); tegnCeller(); }); }
+      else { b.disabled=true; }
+      lag.appendChild(b);
+    });
+    // Bak laster/feil-overleggene (opake) så cellene ikke lyser gjennom mens previewen lastes.
+    var laster=document.getElementById('plakatPrevLaster');
+    if(laster) wrap.insertBefore(lag, laster); else wrap.appendChild(lag);
+  }
+  function oppdaterLayout(p){ return hentLayout(p).then(function(){ skalerFrame(); tegnCeller(); }); }
   function visLaster(paa){ var o=document.getElementById('plakatPrevLaster'); if(o) o.style.display=paa?'flex':'none'; }
   function visPrevFeil(m){ var o=document.getElementById('plakatPrevFeil'); if(!o) return; o.textContent=m||''; o.style.display=m?'flex':'none'; if(m) visLaster(false); }
 
@@ -6842,6 +6892,7 @@ function erStandalone(){
   function renderSkjerm2(scroll, back, tittel){
     back.hidden=false; tittel.textContent='Rediger';
     var p=normaliser(finn(PS.valgtId)); if(!p){ tilSkjerm1(); return; } lagre();
+    _layout=null; // ny plakat/format → hent geometrien på nytt (unngå stale celle-plassering)
 
     var wrap=document.createElement('div'); wrap.className='plakat-prev'; wrap.id='plakatPrevWrap';
     var frame=document.createElement('iframe'); frame.className='plakat-frame'; frame.id='plakatFrame';
@@ -6857,7 +6908,7 @@ function erStandalone(){
     var lovligeFmt=tilgjengeligeFormater(antallFor(p));
     var fRow=document.createElement('div'); fRow.className='pk-seg-row';
     [['4:5','4:5'],['9:16','9:16']].forEach(function(f){ fRow.appendChild(segKnapp(f[0],f[1], p.format===f[0], lovligeFmt.indexOf(f[0])===-1, function(seg){
-      p.format=f[0]; markOn(seg); oppdaterQr(); lagre(); skalerFrame(); planleggPreview(); })); });
+      p.format=f[0]; markOn(seg); oppdaterQr(); lagre(); skalerFrame(); planleggPreview(); oppdaterLayout(p); })); });
     kontr.appendChild(ktrlRad('Format', fRow));
 
     if(harSkjold(p)){
@@ -6878,7 +6929,7 @@ function erStandalone(){
     handl.appendChild(ned); handl.appendChild(del); kontr.appendChild(handl);
     scroll.appendChild(kontr);
 
-    skalerFrame(); lastPreview();
+    skalerFrame(); lastPreview(); oppdaterLayout(p);
   }
 
   function plakatInit(){
@@ -6886,7 +6937,7 @@ function erStandalone(){
     var bL=document.getElementById('plakatOpenLojalitet'); if(bL) bL.addEventListener('click', function(){ aapne('loyalitet'); });
     var x=document.getElementById('plakatX'); if(x) x.addEventListener('click', lukk);
     var back=document.getElementById('plakatBack'); if(back) back.addEventListener('click', tilSkjerm1);
-    window.addEventListener('resize', function(){ if(PS && PS.valgtId!=null && overlay().classList.contains('open')) skalerFrame(); });
+    window.addEventListener('resize', function(){ if(PS && PS.valgtId!=null && overlay().classList.contains('open')){ skalerFrame(); tegnCeller(); } });
     // Gjenopprett hvis økten var åpen (refresh/tapt nett skal ikke lukke editoren).
     var s=last();
     if(s && s.aapen){ PS=s; document.body.classList.add('plakat-lock'); overlay().classList.add('open'); render();
