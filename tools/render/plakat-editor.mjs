@@ -37,6 +37,9 @@ const LOY = { enabled:true, threshold:10, pct:100, count_history:false, particip
 // Mock-poster: 1080×1350-lerret som iframen skalerer. Egen CSP-header (som backend).
 const POSTER = '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0}.p{width:1080px;height:1350px;background:linear-gradient(160deg,#141414,#3a2f22);color:#e9d8b8;font:700 90px system-ui;display:flex;align-items:center;justify-content:center;text-align:center}</style></head><body><div class="p">Verv en venn<br>begge får 45%</div></body></html>';
 const PNG1x1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMCAQABsaG/AAAAAElFTkSuQmCC','base64');
+// POST-preview (Form B): ekko base64-bildene inn i posteren så srcdoc viser at kamerarull-bildet fløt gjennom.
+const POSTER_KAM = datas => '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0}.p{width:1080px;height:1350px;background:#141414;display:flex;align-items:center;justify-content:center;gap:20px}</style></head><body><div class="p">'+datas.map(d=>'<img src="'+d+'" style="width:420px;height:520px;object-fit:cover;border-radius:14px;border:4px solid #2f6df6">').join('')+'</div></body></html>';
+const OPPLAST = path.resolve(ROOT, 'no/images/layout-profil.webp'); // ekte fil å «velge fra kamerarull»
 // Ekte webp → Cropper får naturlige pikseldimensjoner i lag-3c-beskjæringen (data-URI ville gitt 0 el. feil).
 const IMAGES4 = ['bilde-1','bilde-2','bilde-3','bilde-4'].map((_,i)=>({ id:`${i+1}1111111-1111-1111-1111-111111111111`, url:'/no/images/layout-profil.webp', slot:'galleri', sort_order:i }));
 // /layout-mock: celle-geometri i lerret-piksler per antall (2×2 for fire, én stor for ett-bilde) + aspect.
@@ -50,7 +53,7 @@ function mockLayout(antall){
     { slot:'bilde-1', x:60, y:120, w:468, h:543 }, { slot:'bilde-2', x:552, y:120, w:468, h:543 },
     { slot:'bilde-3', x:60, y:687, w:468, h:543 }, { slot:'bilde-4', x:552, y:687, w:468, h:543 } ];
   else { const w = Math.floor((960 - (antall-1)*24)/antall); celler = Array.from({length:antall},(_,i)=>({ slot:'bilde-'+(i+1), x:60+i*(w+24), y:120, w, h:1110 })); }
-  return { canvas:CV, celler: celler.map(asp) };
+  return { canvas:CV, celler: celler.map(asp), tekst: (antall===0 ? null : { x:90, y:760, w:900, h:340 }) };
 }
 
 function router(plan, previewStatus, ctr, images=IMAGES){ return route => {
@@ -59,6 +62,10 @@ function router(plan, previewStatus, ctr, images=IMAGES){ return route => {
   if (p === '/api/dashboard/plakat/preview'){
     if (previewStatus === 403) return route.fulfill({ status:403, contentType:'application/json', body:JSON.stringify({error:'Plakater krever Vekst.'}) });
     if (previewStatus === 400) return route.fulfill({ status:400, contentType:'application/json', body:JSON.stringify({error:'Denne kombinasjonen finnes ikke.'}) });
+    if (req.method()==='POST'){ let body={}; try{ body=req.postDataJSON(); }catch(e){}
+      const datas=(body.plasser||[]).filter(x=>x&&x.data).map(x=>x.data);
+      return route.fulfill({ status:200, contentType:'text/html', headers:{'content-security-policy':"style-src 'self' 'unsafe-inline'; img-src https: data:"}, body: datas.length ? POSTER_KAM(datas) : POSTER });
+    }
     return route.fulfill({ status:200, contentType:'text/html', headers:{'content-security-policy':"style-src 'self' 'unsafe-inline'; img-src https: data:"}, body:POSTER });
   }
   if (p === '/api/dashboard/plakat/render') { if (ctr) ctr.n++; return route.fulfill({ status:200, contentType:'image/png', body:PNG1x1 }); }
@@ -251,6 +258,26 @@ for (const bredde of [320, 375]) {
     const p=st&&(st.plakater||[]).filter(x=>x.id===st.valgtId)[0]; return { valgt:p&&p.bilder?p.bilder['bilde-1']:null, lukket:!document.querySelector('.pk-bildevelg') }; });
   rad.push({ skjerm:'7 · endre bilde', 'ikoner(4)':ikoner, velger:v.aapen?'ok':'FEIL', 'på body':v.body?'ok':'FEIL', 'bilder(4)':v.bilder,
     'swap lagret': e.valgt==='31111111-1111-1111-1111-111111111111'?'ok':'FEIL', lukket:e.lukket?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
+// Del 2 — kamerarull: «Velg bilde» har en Kamerarull-flis → opplasting blir nedskalert base64 i cellen (POST).
+{
+  const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  let post = 0; page.on('request', r => { if (r.method()==='POST' && r.url().includes('/plakat/preview')) post++; });
+  await page.route('**/api/**', router('vekst', 200, null, IMAGES4));
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
+  await page.locator('.plakat-kort', { hasText:'Fire bilder' }).click(); await page.waitForTimeout(1100);
+  await page.locator('.pk-celle-bytt').first().click(); await page.waitForTimeout(500);
+  const flis = await page.evaluate(() => !!document.querySelector('.pk-bildevelg-kamera'));
+  await page.locator('.pk-bildevelg-kamera input[type=file]').setInputFiles(OPPLAST); await page.waitForTimeout(1300);   // velg fil → nedskaler → POST
+  const b = await page.evaluate(() => { let s=null; try{ s=JSON.parse(sessionStorage.getItem('bhq-plakat')); }catch(e){}
+    const p=s&&(s.plakater||[]).filter(x=>x.id===s.valgtId)[0]; const im=p&&p.bilder?p.bilder['bilde-1']:null;
+    return { base64: !!(im&&im.data&&/^data:image\/jpeg/.test(im.data)), w:im?im.width:null, h:im?im.height:null }; });
+  rad.push({ skjerm:'del2 · kamerarull', flis:flis?'ok':'FEIL', 'celle=base64':b.base64?'ok':'FEIL', dim:b.w+'×'+b.h, POST:post>0?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
 }
 

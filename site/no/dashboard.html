@@ -2532,6 +2532,8 @@
   .pk-bildevelg-bilde{aspect-ratio:1;border-radius:10px;overflow:hidden;border:2px solid transparent;cursor:pointer;padding:0;background:none}
   .pk-bildevelg-bilde.valgt{border-color:#2f6df6}
   .pk-bildevelg-bilde img{width:100%;height:100%;object-fit:cover;display:block}
+  .pk-bildevelg-kamera{aspect-ratio:1;border-radius:10px;border:1px dashed rgba(255,255,255,.4);background:rgba(255,255,255,.05);color:#fff;cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:11px;font-weight:600;padding:6px;text-align:center}
+  .pk-bildevelg-kamera.valgt{border-color:#2f6df6;border-style:solid;background:rgba(47,109,246,.14)}
   /* Fixed + z-index over plakat-overlayet (1000), montert på <body> → ALLTID øverst (fikser lag-bak-noe). */
   .pk-crop{position:fixed;inset:0;z-index:1100;background:rgba(8,8,8,.96);display:flex;align-items:center;justify-content:center;padding:16px}
   .pk-crop-inner{display:flex;flex-direction:column;gap:12px;width:100%;max-width:520px;max-height:100%}
@@ -6670,6 +6672,7 @@ function erStandalone(){
     return g.map(function(def, i){ // beslutning 7: per-celle bilde-override (p.bilder[slot])
       var slot=celler[i] && celler[i].slot, ov=slot && p.bilder[slot];
       if(!ov) return def;
+      if(typeof ov==='object' && ov.data) return ov; // kamerarull-base64 (bor kun i sessionStorage)
       var funnet=galleriBilder().filter(function(b){ return String(b.id)===String(ov); })[0];
       return funnet || def;
     });
@@ -7021,6 +7024,26 @@ function erStandalone(){
     topp.appendChild(tittel); topp.appendChild(xbtn);
     var grid=document.createElement('div'); grid.className='pk-bildevelg-grid';
     var naa = p.bilder && p.bilder[celle.slot];
+    // Kamerarull: filvelger → nedskalert base64 (cellebevisst: fullflate-celle 2160 px, kvadrant ~1080).
+    // Bildet lagres KUN i sessionStorage (p.bilder[slot] = {data,width,height}), aldri i galleriet.
+    var kamera=document.createElement('button'); kamera.type='button';
+    kamera.className='pk-bildevelg-kamera'+((naa && typeof naa==='object' && naa.data)?' valgt':'');
+    kamera.innerHTML='<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="6" width="18" height="14" rx="2"/><circle cx="12" cy="13" r="3.2"/><path d="M8.5 6l1-2h5l1 2"/></svg><span>Kamerarull</span>';
+    var fil=document.createElement('input'); fil.type='file'; fil.accept='image/*'; fil.style.display='none'; kamera.appendChild(fil);
+    kamera.addEventListener('click', function(){ fil.click(); });
+    fil.addEventListener('change', function(){
+      var f=fil.files && fil.files[0]; if(!f) return;
+      var cv=(_layout&&_layout.canvas)||{w:1080,h:1350};
+      var maksKant = (celle.w >= cv.w*0.6) ? 2160 : 1080; // fullflate-celle → 2160 px, kvadrant → ~1080
+      nedskalerTilBase64(f, maksKant, function(data, w, h){
+        if(!data) return;
+        p.bilder=p.bilder||{}; p.bilder[celle.slot]={ data:data, width:w, height:h };
+        if(p.rects) delete p.rects[celle.slot]; // gammelt utsnitt gjaldt forrige bilde
+        try{ lagre(); }catch(e){} // base64 kan sprenge sessionStorage-kvoten — ikke la det krasje editoren
+        lag.remove(); tegnCeller(); planleggPreview();
+      });
+    });
+    grid.appendChild(kamera);
     g.forEach(function(b){
       var btn=document.createElement('button'); btn.type='button'; btn.className='pk-bildevelg-bilde'+(String(naa)===String(b.id)?' valgt':'');
       var im=document.createElement('img'); im.src=b.url; im.alt=''; btn.appendChild(im);
@@ -7036,6 +7059,26 @@ function erStandalone(){
     xbtn.addEventListener('click', lukk);
     lag.addEventListener('click', function(e){ if(e.target===lag) lukk(); });
     document.body.appendChild(lag);
+  }
+  // Les fil lokalt, nedskaler til maksKant lengste kant, returner JPEG data-URI + de FAKTISKE dimensjonene
+  // (sendes med som width/height — backend bruker dem til rect-grense + cover). Nedskalering før base64.
+  function nedskalerTilBase64(file, maksKant, cb){
+    var reader=new FileReader();
+    reader.onload=function(){
+      var img=new Image();
+      img.onload=function(){
+        var W=img.naturalWidth||0, H=img.naturalHeight||0; if(!W||!H){ cb(null); return; }
+        var skala=Math.min(1, maksKant/Math.max(W,H));
+        var w=Math.max(1, Math.round(W*skala)), h=Math.max(1, Math.round(H*skala));
+        var c=document.createElement('canvas'); c.width=w; c.height=h;
+        c.getContext('2d').drawImage(img, 0, 0, w, h);
+        try{ cb(c.toDataURL('image/jpeg', 0.85), w, h); }catch(e){ cb(null); }
+      };
+      img.onerror=function(){ cb(null); };
+      img.src=reader.result;
+    };
+    reader.onerror=function(){ cb(null); };
+    reader.readAsDataURL(file);
   }
   function visLaster(paa){ var o=document.getElementById('plakatPrevLaster'); if(o) o.style.display=paa?'flex':'none'; }
   function visPrevFeil(m){ var o=document.getElementById('plakatPrevFeil'); if(!o) return; o.textContent=m||''; o.style.display=m?'flex':'none'; if(m) visLaster(false); }
