@@ -1749,6 +1749,9 @@
             <div id="vervReferrals"><p class="wb-empty">Laster …</p></div>
             <button class="up-more" id="vervRefMore" type="button" hidden></button>
           </div>
+
+          <!-- «Generer plakat» (Vekst) — nederst i seksjonen, under alt innhold. kampanjetype=verving. -->
+          <div class="plakat-gen"><button type="button" class="btn-outline" id="plakatOpenVerving">Generer plakat</button></div>
         </div>
       </div>
 
@@ -1806,6 +1809,8 @@
             <p class="block-s">Du velger hvem som blir med i lojalitetsprogrammet.</p>
             <div id="loyalLeggTil"></div>
             <button class="up-more" id="loyalLeggTilMore" type="button" hidden></button>
+            <!-- «Generer plakat» (Vekst) — nederst i seksjonen, i #loyalLeggTilWrap → vises kun når programmet er PÅ. kampanjetype=lojalitet. -->
+            <div class="plakat-gen"><button type="button" class="btn-outline" id="plakatOpenLojalitet">Generer plakat</button></div>
           </div>
         </div>
       </div>
@@ -1840,6 +1845,16 @@
         <button class="crop-btn-save" id="vervCopy" type="button">Kopier melding</button>
       </div>
     </div>
+  </div>
+
+  <!-- ===== KAMPANJEPLAKATER — fullskjerm-editor (Lag 1: skjelett + navigasjon) ===== -->
+  <div class="plakat-overlay" id="plakatOverlay" role="dialog" aria-modal="true" aria-label="Generer plakat">
+    <div class="plakat-top">
+      <button class="plakat-back" id="plakatBack" type="button" hidden>‹ Tilbake</button>
+      <span class="plakat-tittel" id="plakatTittel">Velg plakat</span>
+      <button class="plakat-x" id="plakatX" type="button" aria-label="Lukk">×</button>
+    </div>
+    <div class="plakat-scroll" id="plakatScroll"></div>
   </div>
 
   <!-- PROFIL-panelet er FJERNET 08.08 — innholdet bor nå som trekkspill i #design («Din side»). -->
@@ -2450,6 +2465,31 @@
   .bk-detail-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
   .bk-detail-actions .noshowbtn{width:100%;justify-content:center;padding:11px}
   .bk-detail-actions .row-err{text-align:center}
+  /* ===== KAMPANJEPLAKATER — Lag 1: skjelett + navigasjon ===== */
+  /* «Generer plakat» bor inne i Verving- og Lojalitet-trekkspillet (sekundær .btn-outline),
+     ikke som egen primærknapp. .plakat-gen gir bare luft over knappen. */
+  .plakat-gen{margin-top:18px}
+  .plakat-overlay{position:fixed;inset:0;z-index:1000;background:var(--bg);display:none;flex-direction:column}
+  .plakat-overlay.open{display:flex}
+  body.plakat-lock{overflow:hidden}
+  .plakat-top{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);flex:0 0 auto}
+  .plakat-top .plakat-tittel{flex:1 1 auto;font-size:16px;font-weight:700;color:var(--ink);text-align:center}
+  .plakat-back,.plakat-x{background:none;border:0;color:var(--ink);font:inherit;font-weight:600;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;border-radius:8px}
+  .plakat-back{font-size:15px;padding:0 6px}
+  .plakat-back[hidden]{display:none} /* author-display slår ellers av UA [hidden]{display:none} */
+  .plakat-x{font-size:28px;line-height:1;padding:0 10px;justify-content:center}
+  .plakat-scroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch}
+  .plakat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;padding:16px}
+  .plakat-kort{position:relative;aspect-ratio:4/5;border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden;cursor:pointer;display:flex;align-items:flex-end;padding:12px;text-align:left}
+  .plakat-kort-navn{font-size:13px;font-weight:600;color:var(--ink)}
+  .plakat-legg-til{grid-column:1/-1;border:1px dashed var(--line-2);border-radius:14px;background:none;color:var(--ink);font:inherit;font-size:14px;font-weight:600;padding:16px;cursor:pointer;min-height:56px}
+  .plakat-velg{padding:0 16px 20px}
+  .plakat-velg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+  .plakat-velg-bilde{aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--line);cursor:pointer;padding:0;background:none}
+  .plakat-velg-bilde img{width:100%;height:100%;object-fit:cover;display:block}
+  .plakat-stor{margin:16px auto;width:min(88vw,340px);aspect-ratio:4/5;border:1px solid var(--line);border-radius:16px;background:var(--surface);display:flex;align-items:center;justify-content:center;text-align:center;color:var(--mut);font-size:13px;padding:16px}
+  .plakat-kontroller{padding:0 16px 40px}
+  @media(min-width:561px){.plakat-grid{grid-template-columns:repeat(3,1fr)}}
 </style>
 <div class="cal-overlay" id="calOverlay" role="dialog" aria-modal="true" aria-label="Kalender" hidden></div>
 <div class="bk-detail-backdrop" id="bkDetailBackdrop" hidden></div>
@@ -6520,6 +6560,137 @@ function erStandalone(){
     try{ localStorage.setItem(KEY, String(Date.now())); }catch(_){}
     el.classList.remove('show');
   });
+})();
+
+/* ===== KAMPANJEPLAKATER — Lag 1: skjelett + navigasjon =====
+   To skjermer i ett fullskjerm-overlay. Tilstanden holdes i sessionStorage så en refresh eller
+   et tapt nett beholder utkastet. Preview (lag 2), kontroller (lag 3), interaksjoner (lag 4) og
+   beskjæring (lag 5) kommer senere. Kontrakt: docs/08-kampanjeplakater.md Del 8 (backend-repo). */
+(function(){
+  var PLAKAT_KEY='bhq-plakat';
+  var PS=null; // plakat-tilstand
+
+  function last(){ try{ var s=sessionStorage.getItem(PLAKAT_KEY); if(s) return JSON.parse(s); }catch(e){} return null; }
+  function lagre(){ try{ sessionStorage.setItem(PLAKAT_KEY, JSON.stringify(PS)); }catch(e){} }
+
+  // Bildene hentes ved åpning — editoren kan åpnes uten at Din side-fanen har lastet imgs ennå.
+  var _bilder=null;
+  async function hentBilder(){
+    if(typeof imgs!=='undefined' && imgs && imgs.length){ _bilder=imgs.slice(); return; }
+    if(typeof api!=='undefined' && api && api.images){ try{ var r=await api.images(); if(Array.isArray(r)) _bilder=r; }catch(e){} }
+    if(!_bilder) _bilder=[];
+  }
+  // Galleri-bilder (samme kilde som bookingsiden), sortert på sort_order.
+  function galleriBilder(){
+    var g=(_bilder||[]).filter(function(x){return x.slot==='galleri';});
+    if(!g.length) g=(_bilder||[]).slice(); // fallback: kun portrett/hero
+    g.sort(function(a,c){return (a.sort_order||0)-(c.sort_order||0);});
+    return g;
+  }
+  function brukteBildeIder(){ return (PS.plakater||[]).map(function(p){return p.image_id;}).filter(Boolean); }
+  function ledigeBilder(){ var brukt=brukteBildeIder(); return galleriBilder().filter(function(b){return brukt.indexOf(b.id)===-1;}); }
+
+  function seed(){
+    var g=galleriBilder();
+    var liste=[{id:'mal1', mal:'mal1', image_id:null}];
+    if(g[0]) liste.push({id:'p'+g[0].id, mal:'mal2', image_id:g[0].id});
+    return { aapen:false, valgtId:null, kampanjetype:null, visQr:null, visLenke:null, plakater:liste };
+  }
+
+  function navn(p){ return p.mal==='mal1' ? 'Uten bilde' : 'Med bilde'; }
+  function finn(id){ return (PS.plakater||[]).filter(function(p){return p.id===id;})[0]; }
+  function overlay(){ return document.getElementById('plakatOverlay'); }
+
+  async function aapne(type){
+    // Hele plakat-flaten er Vekst. Basis → send til abonnement (samme vei som skjold-lenka).
+    if(typeof erBasis==='function' && erBasis()){
+      switchPanel('abonnement');
+      var a=document.getElementById('accAbonnement'); if(a) a.scrollIntoView({block:'center'});
+      return;
+    }
+    await hentBilder();
+    if(!PS) PS=last()||seed();
+    if(type) PS.kampanjetype=type; // knappen setter kampanjetype for hele økten (valgt ved inngangen)
+    PS.aapen=true; lagre();
+    document.body.classList.add('plakat-lock');
+    overlay().classList.add('open');
+    render();
+  }
+  function lukk(){
+    if(PS){ PS.aapen=false; lagre(); }
+    overlay().classList.remove('open');
+    document.body.classList.remove('plakat-lock');
+  }
+  function tilSkjerm1(){ PS.valgtId=null; lagre(); render(); }
+  function velg(id){ PS.valgtId=id; lagre(); render(); }
+
+  function leggTilBilde(id){
+    if(brukteBildeIder().indexOf(id)!==-1) return;
+    PS.plakater.push({id:'p'+id, mal:'mal2', image_id:id});
+    lagre(); render();
+  }
+
+  function render(){
+    var scroll=document.getElementById('plakatScroll');
+    var back=document.getElementById('plakatBack');
+    var tittel=document.getElementById('plakatTittel');
+    if(!scroll) return;
+    scroll.innerHTML='';
+    if(PS.valgtId==null){
+      back.hidden=true; tittel.textContent='Velg plakat';
+      var grid=document.createElement('div'); grid.className='plakat-grid';
+      PS.plakater.forEach(function(p){
+        var kort=document.createElement('button'); kort.type='button'; kort.className='plakat-kort';
+        var nvn=document.createElement('span'); nvn.className='plakat-kort-navn'; nvn.textContent=navn(p);
+        kort.appendChild(nvn);
+        kort.addEventListener('click',function(){ velg(p.id); });
+        grid.appendChild(kort);
+      });
+      if(ledigeBilder().length){
+        var add=document.createElement('button'); add.type='button'; add.className='plakat-legg-til';
+        add.textContent='+ Legg til bilde';
+        add.addEventListener('click', visVelger);
+        grid.appendChild(add);
+      }
+      scroll.appendChild(grid);
+    } else {
+      back.hidden=false; tittel.textContent='Rediger';
+      var p=finn(PS.valgtId)||{mal:'mal1'};
+      var stor=document.createElement('div'); stor.className='plakat-stor';
+      stor.textContent='Forhåndsvisning kommer (lag 2) — '+navn(p);
+      var kontr=document.createElement('div'); kontr.className='plakat-kontroller'; kontr.id='plakatKontroller';
+      scroll.appendChild(stor); scroll.appendChild(kontr);
+    }
+  }
+
+  function visVelger(){
+    var scroll=document.getElementById('plakatScroll');
+    var ledig=ledigeBilder(); if(!ledig.length) return;
+    var wrap=document.createElement('div'); wrap.className='plakat-velg';
+    var h=document.createElement('p'); h.className='block-s'; h.textContent='Velg et galleri-bilde';
+    var g=document.createElement('div'); g.className='plakat-velg-grid';
+    ledig.forEach(function(b){
+      var btn=document.createElement('button'); btn.type='button'; btn.className='plakat-velg-bilde';
+      var im=document.createElement('img'); im.src=b.url; im.alt=''; btn.appendChild(im);
+      btn.addEventListener('click',function(){ leggTilBilde(b.id); });
+      g.appendChild(btn);
+    });
+    wrap.appendChild(h); wrap.appendChild(g);
+    scroll.appendChild(wrap);
+    wrap.scrollIntoView({block:'nearest'});
+  }
+
+  function plakatInit(){
+    var bV=document.getElementById('plakatOpenVerving'); if(bV) bV.addEventListener('click', function(){ aapne('verving'); });
+    var bL=document.getElementById('plakatOpenLojalitet'); if(bL) bL.addEventListener('click', function(){ aapne('lojalitet'); });
+    var x=document.getElementById('plakatX'); if(x) x.addEventListener('click', lukk);
+    var back=document.getElementById('plakatBack'); if(back) back.addEventListener('click', tilSkjerm1);
+    // Gjenopprett hvis økten var åpen (refresh/tapt nett skal ikke lukke editoren).
+    var s=last();
+    if(s && s.aapen){ PS=s; document.body.classList.add('plakat-lock'); overlay().classList.add('open'); render();
+      hentBilder().then(render); }
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', plakatInit); else plakatInit();
 })();
 </script>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
