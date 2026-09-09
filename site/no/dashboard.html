@@ -2482,7 +2482,6 @@
   .plakat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;padding:16px}
   .plakat-kort{position:relative;aspect-ratio:4/5;border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden;cursor:pointer;display:flex;align-items:flex-end;padding:12px;text-align:left}
   .plakat-kort-navn{font-size:13px;font-weight:600;color:var(--ink)}
-  .plakat-legg-til{grid-column:1/-1;border:1px dashed var(--line-2);border-radius:14px;background:none;color:var(--ink);font:inherit;font-size:14px;font-weight:600;padding:16px;cursor:pointer;min-height:56px}
   .plakat-velg{padding:0 16px 20px}
   .plakat-velg-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
   .plakat-velg-bilde{aspect-ratio:1;border-radius:10px;overflow:hidden;border:1px solid var(--line);cursor:pointer;padding:0;background:none}
@@ -6700,15 +6699,17 @@ function erStandalone(){
   // og backend setter sin EGEN CSP på svaret (dashboardets ville blokkert plakatens inline styles).
   var PREVIEW_BASE='/api/dashboard/plakat';
   var CANVAS={'4:5':{w:1080,h:1350}, '9:16':{w:1080,h:1920}};
-  var _preT=null, _palett=null;
+  var _preT=null, _palett=null, _mode=null;
 
   async function hentDesign(){
     if(_palett) return;
-    if(typeof design!=='undefined' && design && design.palette){ _palett=design.palette; return; }
-    if(typeof api!=='undefined' && api && api.design){ try{ var d=await api.design(); if(d&&d.palette) _palett=d.palette; }catch(e){} }
+    if(typeof design!=='undefined' && design && design.palette){ _palett=design.palette; _mode=design.mode; return; }
+    if(typeof api!=='undefined' && api && api.design){ try{ var d=await api.design(); if(d&&d.palette){ _palett=d.palette; _mode=d.mode; } }catch(e){} }
   }
-  function erSand(){ return _palett==='sand'; }
-  function stdBakgrunn(){ return erSand() ? 'sand' : 'mork'; }
+  // Bakgrunnen UTLEDES av barberens palett/modus (bookingsiden), ikke av et valg i editoren.
+  // Sand-paletten er lys-only → alltid «sand»; ellers følger color_mode (mørk/lys). Backend leser
+  // den fra query i dag; ideelt utleder backend den selv fra sesjons-barberen (følge-opp).
+  function bakgrunnFraBarber(){ return _palett==='sand' ? 'sand' : (_mode==='lys' ? 'lys' : 'mork'); }
   // Speiler backendens plakatTilstand.js (tilgjengeligeFormater/qrTillatt) — IKKE en ny regel.
   function tilgjengeligeFormater(antall){ return (antall|0)<=1 ? ['4:5','9:16'] : ['4:5']; }
   function qrTillatt(format){ return (format||'4:5')==='4:5'; }
@@ -6719,9 +6720,7 @@ function erStandalone(){
   function normaliser(p){
     if(!p) return p;
     if(!p.format) p.format='4:5';
-    if(!p.background) p.background=stdBakgrunn();
     if(p.skjoldStyrke==null) p.skjoldStyrke=1;
-    if(erSand() && p.background==='mork') p.background='sand';
     if(tilgjengeligeFormater(antallFor(p)).indexOf(p.format)===-1) p.format='4:5';
     if(PS.visQr==null) PS.visQr=true; if(PS.visLenke==null) PS.visLenke=false;
     if(!qrTillatt(p.format)) PS.visQr=false;
@@ -6731,7 +6730,7 @@ function erStandalone(){
   function plakatQuery(p){
     var plasser = p.image_id ? [{image_id:String(p.image_id)}] : [];
     return 'format='+encodeURIComponent(p.format)
-      +'&background='+encodeURIComponent(p.background)
+      +'&background='+encodeURIComponent(bakgrunnFraBarber())
       +'&kampanjetype='+encodeURIComponent(PS.kampanjetype||'verving')
       +'&plasser='+encodeURIComponent(JSON.stringify(plasser))
       +'&visQr='+(PS.visQr?'1':'0')
@@ -6759,12 +6758,12 @@ function erStandalone(){
     // Egen status-sjekk: en iframe fyrer ikke 'error' på HTTP 4xx (den viser feil-body). Fetch gir status.
     try{
       var r=await fetch(url,{credentials:'include'});
-      if(r.status===403){ visPrevFeil('Plakater krever Vekst-abonnement — se Konto.'); return; }
-      if(r.status===400){ var j=null; try{ j=await r.json(); }catch(e){} visPrevFeil((j&&j.error)||'Denne kombinasjonen går ikke.'); return; }
-      if(!r.ok){ visPrevFeil('Forhåndsvisning feilet ('+r.status+'). Prøv igjen.'); return; }
+      // Nøytral feil uansett årsak (403/400/5xx) — knappen er utilgjengelig for Basis, så en
+      // «krever Vekst»-melding ville vært feil budskap. En tom iframe uten forklaring er verre.
+      if(!r.ok){ visPrevFeil('Kunne ikke vise forhåndsvisningen akkurat nå. Prøv igjen.'); return; }
       frame.onload=function(){ visLaster(false); };
       frame.src=url; // 200 → last i iframe (egen CSP fra backend)
-    }catch(e){ visPrevFeil('Fikk ikke kontakt med serveren.'); }
+    }catch(e){ visPrevFeil('Kunne ikke vise forhåndsvisningen akkurat nå. Prøv igjen.'); }
   }
   function planleggPreview(){ clearTimeout(_preT); _preT=setTimeout(lastPreview,250); } // debounce (slider spammer ikke)
 
@@ -6816,11 +6815,6 @@ function erStandalone(){
     [['4:5','4:5'],['9:16','9:16']].forEach(function(f){ fRow.appendChild(segKnapp(f[0],f[1], p.format===f[0], lovligeFmt.indexOf(f[0])===-1, function(seg){
       p.format=f[0]; markOn(seg); oppdaterQr(); lagre(); skalerFrame(); planleggPreview(); })); });
     kontr.appendChild(ktrlRad('Format', fRow));
-
-    var bRow=document.createElement('div'); bRow.className='pk-seg-row';
-    [['mork','Mørk'],['sand','Sand'],['lys','Lys']].forEach(function(b){ bRow.appendChild(segKnapp(b[0],b[1], p.background===b[0], (b[0]==='mork'&&erSand()), function(seg){
-      p.background=b[0]; markOn(seg); lagre(); planleggPreview(); })); });
-    kontr.appendChild(ktrlRad('Bakgrunn', bRow));
 
     if(harSkjold(p)){
       var slid=document.createElement('input'); slid.type='range'; slid.min='0.6'; slid.max='1'; slid.step='0.05';

@@ -48,7 +48,7 @@ function router(plan, previewStatus){ return route => {
   return json(/images|bookings|recent|services|hours|winback|referrals|rebooking|sms-logg/.test(p) ? [] : {});
 }; }
 
-const shot = (page, n) => page.screenshot({ path:`${OUT}/plakat-l2-${n}.png`, fullPage:false });
+const shot = (page, n) => page.screenshot({ path:`${OUT}/plakat-l2b-${n}.png`, fullPage:false });
 async function openAcc(page, sel){ await page.evaluate((s)=>{ const h=document.querySelector(s+' .acc-head'); if(h && h.getAttribute('aria-expanded')!=='true') h.click(); }, sel); await page.waitForTimeout(300); }
 const S2 = `() => { const q=s=>document.querySelector(s); const frame=q('#plakatFrame');
   return { iframe: !!frame, srcErPreview: !!(frame && /\\/plakat\\/preview\\?/.test(frame.src)),
@@ -72,7 +72,7 @@ for (const bredde of [320, 375]) {
   await page.locator('.plakat-kort').nth(1).click(); await page.waitForTimeout(700);
   const m = await page.evaluate(eval(S2));
   await shot(page, `skjerm2-${bredde}`);
-  rad.push({ bredde, iframe:m.iframe, 'src=preview':m.srcErPreview, 'segs(5)':m.segs, slider:m.slider, 'checks(2)':m.checks,
+  rad.push({ bredde, iframe:m.iframe, 'src=preview':m.srcErPreview, 'segs(2 fmt)':m.segs, slider:m.slider, 'checks(2)':m.checks,
     'laster':m.lasterVist, 'feil':m.feilVist, jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
 }
@@ -86,7 +86,7 @@ for (const bredde of [320, 375]) {
   await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(400);
   await page.locator('.plakat-kort').nth(0).click(); await page.waitForTimeout(600);
   const m = await page.evaluate(eval(S2));
-  rad.push({ bredde:'375 mal1', iframe:m.iframe, 'src=preview':m.srcErPreview, 'segs(5)':m.segs, slider:m.slider, 'checks(2)':m.checks, laster:'—', feil:'—', jsfeil:'—' });
+  rad.push({ bredde:'375 mal1', iframe:m.iframe, 'src=preview':m.srcErPreview, 'segs(2 fmt)':m.segs, slider:m.slider, 'checks(2)':m.checks, laster:'—', feil:'—', jsfeil:'—' });
   await page.close();
 }
 
@@ -100,7 +100,7 @@ for (const bredde of [320, 375]) {
   await page.locator('.plakat-kort').nth(1).click(); await page.waitForTimeout(700);
   const m = await page.evaluate(eval(S2));
   await shot(page, 'feil-403-375');
-  rad.push({ bredde:'375 403', iframe:m.iframe, 'src=preview':'—', 'segs(5)':m.segs, slider:m.slider, 'checks(2)':m.checks, laster:m.lasterVist, feil:m.feilVist+' «'+m.feilTekst+'»', jsfeil:'—' });
+  rad.push({ bredde:'375 403', iframe:m.iframe, 'src=preview':'—', 'segs(2 fmt)':m.segs, slider:m.slider, 'checks(2)':m.checks, laster:m.lasterVist, feil:m.feilVist+' «'+m.feilTekst+'»', jsfeil:'—' });
   await page.close();
 }
 
