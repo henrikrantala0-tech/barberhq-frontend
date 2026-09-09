@@ -6697,8 +6697,14 @@ function erStandalone(){
   }
 
   // ── Lag 2: forhåndsvisning (iframe mot backend-ruta) + kontroller ───────────────────────────
-  // RELATIV URL → same-origin (Netlify-proxy til Railway) → auth-cookie (.trybarberhq.com) følger med,
-  // og backend setter sin EGEN CSP på svaret (dashboardets ville blokkert plakatens inline styles).
+  // RELATIV URL → same-origin (Netlify-proxy til Railway) → auth-cookie (.trybarberhq.com) følger med.
+  // CSP-AVHENGIGHET (verifisert 09.09): dashbordet setter INGEN CSP i dag — verken <meta> i denne fila
+  // eller Content-Security-Policy-header i netlify.toml. Både Design-previewen (oppdaterPreview → f.srcdoc)
+  // og plakat-previewen lener seg på det: en srcdoc-iframe er same-origin og arver forelderens policy,
+  // altså «ingen CSP», så plakatens inline <style>, inline style=, @font-face url(data:) og inline <script>
+  // (FIT_SCRIPT) kjører fritt. Innføres en CSP på dashbordet senere, MÅ BEGGE previews whitelistes
+  // eksplisitt — ellers knekker begge STILLE (blank iframe, ingen feilmelding):
+  //   style-src 'unsafe-inline'; script-src 'unsafe-inline'; font-src data:; img-src https: data:
   var PREVIEW_BASE='/api/dashboard/plakat';
   var CANVAS={'4:5':{w:1080,h:1350}, '9:16':{w:1080,h:1920}};
   var _preT=null, _palett=null, _mode=null;
