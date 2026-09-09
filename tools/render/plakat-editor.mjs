@@ -193,7 +193,7 @@ for (const bredde of [320, 375]) {
   await page.locator('.plakat-kort', { hasText:'Fire bilder' }).click(); await page.waitForTimeout(1200);
   const prevFoer = prev;
   const s = await page.evaluate(() => document.getElementById('plakatPrevWrap').clientWidth/1080);
-  const opp = (0.72-0.5)*1350*s;  // px opp fra standardplass (0.72) til lerretets vertikale midt (0.5)
+  const opp = (930-675)*s;  // px opp: offer-blokkens senter (y 760+340/2=930) → lerretets vertikale midt (675)
   const bb = await page.locator('.pk-tekst').boundingBox(); const cx = bb.x+bb.width/2, cy = bb.y+bb.height/2;
   await page.mouse.move(cx, cy); await page.mouse.down();
   for (let i=1;i<=8;i++){ await page.mouse.move(cx, cy-opp*i/8); await page.waitForTimeout(20); }

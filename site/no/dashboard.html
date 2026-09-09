@@ -6929,38 +6929,37 @@ function erStandalone(){
   }
 
   // ── Lag 3b: dra tekstblokken (offer-blokken) ────────────────────────────────────────────────
-  // tdx/tdy = offset i LERRET-piksler fra blokkens standardplass; backend legger dem på offer-blokken.
-  // En lokal «spøkelses»-boks flyttes LIVE under draget (ingen preview-lasting per piksel) — ny preview
-  // hentes først ved slipp (planleggPreview). Myk snap til horisontal midt (±SNAP_LERRET) med vertikal
-  // hjelpelinje; horisontal hjelpelinje når blokka står på lerretets vertikale midt.
-  var TEKST_ANKER={ x:0.5, y:0.72, w:0.72, h:0.22 }; // brøk av lerretet = standardplass (tdx=tdy=0)
+  // Boksen ligger på offer-blokkens EKTE geometri fra /layout.tekst {x,y,w,h} (lerret-piksler); mal 1
+  // (tekstHtml/flex) gir null → ingen boks. tdx/tdy er offset fra base-posisjonen (backend legger dem på
+  // offer-blokken — samme mønster som cellene). Lokal «spøkelses»-boks flyttes LIVE (ingen preview per
+  // piksel), ny preview ved slipp. Myk snap + hjelpelinje når blokkas SENTER treffer lerretets midtakse.
   var SNAP_LERRET=8; // ±8 lerret-px (~2–3 skjerm-px) → lett å treffe midten, fri plassering utenfor sona
   function tegnTekst(){
     var wrap=document.getElementById('plakatPrevWrap'); if(!wrap) return;
     ['.pk-tekst','.pk-guide-v','.pk-guide-h'].forEach(function(sel){ var e=wrap.querySelector(sel); if(e) e.remove(); });
     var p=finn(PS.valgtId); if(!p||!_layout||!_layout.canvas) return;
-    if(antallFor(p)===0) return; // beslutning 4: mal 1 (tekst, flex) ignorerer tekstOffset i backend — ingen flytt-boks
+    var t=_layout.tekst; if(!t) return; // mal 1 (flex) → backend gir null → ingen flytt-boks (beslutning 4)
     var cv=_layout.canvas, s=(wrap.clientWidth||300)/cv.w;
-    var bw=TEKST_ANKER.w*cv.w, bh=TEKST_ANKER.h*cv.h;
     var boks=document.createElement('div'); boks.className='pk-tekst'; boks.style.touchAction='none';
-    boks.style.width=(bw*s)+'px'; boks.style.height=(bh*s)+'px';
+    boks.style.width=(t.w*s)+'px'; boks.style.height=(t.h*s)+'px';
     var lbl=document.createElement('span'); lbl.className='pk-tekst-l'; lbl.textContent='Flytt tekst'; boks.appendChild(lbl);
     var gv=document.createElement('div'); gv.className='pk-guide-v'; gv.style.left=(cv.w/2*s)+'px';
     var gh=document.createElement('div'); gh.className='pk-guide-h'; gh.style.top=(cv.h/2*s)+'px';
     function plasser(){
-      var cx=TEKST_ANKER.x*cv.w + (p.tdx||0), cy=TEKST_ANKER.y*cv.h + (p.tdy||0); // senter i lerret-px
-      var topPx=(cy-bh/2)*s; boks.style.left=((cx-bw/2)*s)+'px'; boks.style.top=topPx+'px';
-      lbl.classList.toggle('under', topPx < 24); // etikett over boksen; flipp under om vi er nær toppen
-      gv.style.display = Math.abs(p.tdx||0) <= SNAP_LERRET ? 'block' : 'none';        // horisontal midtstilling
-      gh.style.display = Math.abs(cy - cv.h/2) <= SNAP_LERRET ? 'block' : 'none';     // vertikal midtstilling
+      var left=(t.x + (p.tdx||0))*s, top=(t.y + (p.tdy||0))*s; // base-posisjon + offset
+      boks.style.left=left+'px'; boks.style.top=top+'px';
+      lbl.classList.toggle('under', top < 24); // etikett over boksen; flipp under om vi er nær toppen
+      var cx=t.x + t.w/2 + (p.tdx||0), cy=t.y + t.h/2 + (p.tdy||0); // blokkas SENTER i lerret-px
+      gv.style.display = Math.abs(cx - cv.w/2) <= SNAP_LERRET ? 'block' : 'none'; // horisontal midtstilling
+      gh.style.display = Math.abs(cy - cv.h/2) <= SNAP_LERRET ? 'block' : 'none'; // vertikal midtstilling
     }
     var drag=null;
     boks.addEventListener('pointerdown',function(e){ e.preventDefault(); try{ boks.setPointerCapture(e.pointerId); }catch(_){}
       drag={x0:e.clientX, y0:e.clientY, tdx0:(p.tdx||0), tdy0:(p.tdy||0)}; boks.classList.add('drar'); });
     boks.addEventListener('pointermove',function(e){ if(!drag) return;
       var ndx=drag.tdx0 + (e.clientX-drag.x0)/s, ndy=drag.tdy0 + (e.clientY-drag.y0)/s;
-      if(Math.abs(ndx) <= SNAP_LERRET) ndx=0; // snap horisontal midt
-      if(Math.abs((TEKST_ANKER.y*cv.h + ndy) - cv.h/2) <= SNAP_LERRET) ndy = cv.h/2 - TEKST_ANKER.y*cv.h; // snap vertikal midt
+      if(Math.abs((t.x + t.w/2 + ndx) - cv.w/2) <= SNAP_LERRET) ndx = cv.w/2 - t.x - t.w/2; // snap horisontal midt
+      if(Math.abs((t.y + t.h/2 + ndy) - cv.h/2) <= SNAP_LERRET) ndy = cv.h/2 - t.y - t.h/2; // snap vertikal midt
       p.tdx=Math.round(ndx); p.tdy=Math.round(ndy); plasser(); }); // kun lokal flytting — ingen preview-lasting
     function slipp(){ if(!drag) return; drag=null; boks.classList.remove('drar'); lagre(); planleggPreview(); } // ny preview ved slipp
     boks.addEventListener('pointerup', slipp); boks.addEventListener('pointercancel', slipp);
