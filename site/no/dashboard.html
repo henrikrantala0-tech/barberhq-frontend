@@ -4591,10 +4591,10 @@ function setVervRecipient(r){
   document.querySelectorAll('#vervRecipient button').forEach(function(b){ b.setAttribute('aria-selected', b.dataset.r===r?'true':'false'); });
 }
 function vervDate(iso){ if(!iso)return'–'; var d=new Date(iso); return String(d.getDate()).padStart(2,'0')+'.'+String(d.getMonth()+1).padStart(2,'0')+'.'+d.getFullYear(); }
-// Begge listene viser 4 først med «Vis flere». Utløste belønninger er i tillegg kollapset
+// Begge listene viser 3 først med «Vis flere». Utløste belønninger er i tillegg kollapset
 // bak en egen knapp — den er kvittering, ikke handling, og skal ikke stjele plass fra lista
 // du faktisk skal gjøre noe med.
-var VERV_FORST=4;
+var VERV_FORST=3;
 var _vervRefs=[], _vervRefsAlle=false, _vervRefsFeil=false;
 var _vervSend=[], _vervSendAlle=false, _vervSendFeil=false;
 
@@ -4940,9 +4940,9 @@ function renderLoyalOversikt(d){
   }
   el.innerHTML=totalsHtml+'<p class="block-h" style="margin-top:6px">Deltakere</p>'+deltakere;
 }
-// Del 2 — «Legg til kunde». Samme rad-/knapp-mønster som Vervings send-liste (4 først + «Vis flere»,
+// Del 2 — «Legg til kunde». Samme rad-/knapp-mønster som Vervings send-liste (3 først + «Vis flere»,
 // .verv-btn). INGEN «legg til alle» med vilje.
-var LOYAL_FORST=4;
+var LOYAL_FORST=3;
 var _loyalKand=[], _loyalKandAlle=false;
 function renderLoyalLeggTil(list){
   if(arguments.length){ _loyalKand=list||[]; _loyalKandAlle=false; }
