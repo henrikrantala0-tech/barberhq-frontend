@@ -2525,15 +2525,14 @@
   /* Lag 3c — beskjær-ikon i cellehjørne + beskjæringsvisning. */
   .pk-celle-crop{position:absolute;width:26px;height:26px;display:flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:7px;background:rgba(20,20,20,.82);color:#fff;cursor:pointer;pointer-events:auto;box-shadow:0 1px 4px rgba(0,0,0,.5)}
   .pk-celle-crop:hover{background:#2f6df6}
-  .pk-crop{position:absolute;inset:0;z-index:20;background:rgba(8,8,8,.95);display:flex;align-items:center;justify-content:center;padding:16px}
+  /* Fixed + z-index over plakat-overlayet (1000), montert på <body> → ALLTID øverst (fikser lag-bak-noe). */
+  .pk-crop{position:fixed;inset:0;z-index:1100;background:rgba(8,8,8,.96);display:flex;align-items:center;justify-content:center;padding:16px}
   .pk-crop-inner{display:flex;flex-direction:column;gap:12px;width:100%;max-width:520px;max-height:100%}
+  .pk-crop-topp{display:flex;align-items:center;justify-content:space-between;gap:12px}
   .pk-crop-tittel{margin:0;color:#fff;font-size:15px;font-weight:600}
+  .pk-crop-x{background:transparent;border:none;color:#fff;font-size:30px;line-height:1;cursor:pointer;padding:0 4px;min-height:44px;min-width:44px;display:flex;align-items:center;justify-content:flex-end}
   .pk-crop-canvas{flex:1;min-height:0;overflow:hidden;background:#111;border-radius:10px}
   .pk-crop-canvas img{display:block;max-width:100%}
-  .pk-crop-akt{display:flex;gap:10px;justify-content:flex-end}
-  .pk-crop-akt button{font:inherit;font-size:14px;font-weight:600;padding:11px 16px;border-radius:10px;cursor:pointer;min-height:44px}
-  .pk-crop-avbryt{background:transparent;border:1px solid rgba(255,255,255,.35);color:#fff}
-  .pk-crop-bruk{background:#2f6df6;border:1px solid #2f6df6;color:#fff}
   .pk-guide-v{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed #2f6df6;box-shadow:0 0 0 .5px rgba(255,255,255,.4);pointer-events:none}
   .pk-guide-h{position:absolute;left:0;right:0;height:0;border-top:1px dashed #2f6df6;box-shadow:0 0 0 .5px rgba(255,255,255,.4);pointer-events:none}
   .pk-row{display:flex;align-items:center;gap:12px;margin-top:16px}
@@ -6942,16 +6941,15 @@ function erStandalone(){
     if(typeof Cropper==='undefined') return; // biblioteket lastes globalt (lib/cropper.min.js) før denne IIFE-en
     var lag=document.createElement('div'); lag.className='pk-crop';
     var inner=document.createElement('div'); inner.className='pk-crop-inner';
+    var topp=document.createElement('div'); topp.className='pk-crop-topp';
     var tittel=document.createElement('p'); tittel.className='pk-crop-tittel'; tittel.textContent='Beskjær bilde';
+    var xbtn=document.createElement('button'); xbtn.type='button'; xbtn.className='pk-crop-x'; xbtn.setAttribute('aria-label','Ferdig'); xbtn.textContent='×';
+    topp.appendChild(tittel); topp.appendChild(xbtn);
     var wrap=document.createElement('div'); wrap.className='pk-crop-canvas';
     var img=document.createElement('img'); img.crossOrigin='anonymous'; img.alt='';
     wrap.appendChild(img);
-    var akt=document.createElement('div'); akt.className='pk-crop-akt';
-    var avbryt=document.createElement('button'); avbryt.type='button'; avbryt.className='pk-crop-avbryt'; avbryt.textContent='Avbryt';
-    var bruk=document.createElement('button'); bruk.type='button'; bruk.className='pk-crop-bruk'; bruk.textContent='Bruk beskjæring';
-    akt.appendChild(avbryt); akt.appendChild(bruk);
-    inner.appendChild(tittel); inner.appendChild(wrap); inner.appendChild(akt); lag.appendChild(inner);
-    overlay().appendChild(lag);
+    inner.appendChild(topp); inner.appendChild(wrap); lag.appendChild(inner);
+    document.body.appendChild(lag); // på <body>, ikke i editoren → fixed+z-index:1100 garanterer at laget er øverst
     var cr=null;
     img.onload=function(){
       cr=new Cropper(img,{ viewMode:1, aspectRatio:(celle.aspect||1), autoCropArea:1, background:false, responsive:true, dragMode:'move' });
@@ -6959,19 +6957,21 @@ function erStandalone(){
       if(r) try{ cr.setData({x:r.x, y:r.y, width:r.w, height:r.h}); }catch(_){}  // gjenopprett forrige utsnitt
     };
     img.src=bilde.url;
-    function lukk(){ if(cr){ try{cr.destroy();}catch(_){} cr=null; } lag.remove(); }
-    avbryt.addEventListener('click', lukk);
-    lag.addEventListener('click', function(e){ if(e.target===lag) lukk(); }); // klikk på bakteppet lukker
-    bruk.addEventListener('click', function(){
-      if(!cr) return;
-      var d=cr.getData(true); // {x,y,width,height,...} i naturlige piksler, avrundet
-      var nat=cr.getImageData(); var NW=nat.naturalWidth||0, NH=nat.naturalHeight||0;
-      var x=Math.max(0, Math.min(Math.round(d.x), Math.max(0,NW-1))), y=Math.max(0, Math.min(Math.round(d.y), Math.max(0,NH-1)));
-      var w=Math.max(1, Math.min(Math.round(d.width), NW-x)), h=Math.max(1, Math.min(Math.round(d.height), NH-y)); // klamp innenfor bildet
-      var p=finn(PS.valgtId); if(!p){ lukk(); return; }
-      p.rects=p.rects||{}; p.rects[celle.slot]={x:x, y:y, w:w, h:h};
-      lagre(); lukk(); planleggPreview(); // nytt utsnitt → hent oppdatert preview
-    });
+    // Beslutning 6: ingen «Bruk beskjæring»-knapp. Kryss (eller klikk på bakteppet) LUKKER og LAGRER utsnittet.
+    function lagreOgLukk(){
+      if(cr){
+        var d=cr.getData(true); // {x,y,width,height,...} i naturlige piksler, avrundet
+        var nat=cr.getImageData(); var NW=nat.naturalWidth||0, NH=nat.naturalHeight||0;
+        var x=Math.max(0, Math.min(Math.round(d.x), Math.max(0,NW-1))), y=Math.max(0, Math.min(Math.round(d.y), Math.max(0,NH-1)));
+        var w=Math.max(1, Math.min(Math.round(d.width), NW-x)), h=Math.max(1, Math.min(Math.round(d.height), NH-y)); // klamp innenfor bildet
+        var p=finn(PS.valgtId);
+        if(p){ p.rects=p.rects||{}; p.rects[celle.slot]={x:x, y:y, w:w, h:h}; lagre(); }
+        try{cr.destroy();}catch(_){} cr=null;
+        lag.remove(); planleggPreview(); // nytt utsnitt → hent oppdatert preview
+      } else { lag.remove(); } // bildet rakk ikke lastes → ingenting å lagre
+    }
+    xbtn.addEventListener('click', lagreOgLukk);
+    lag.addEventListener('click', function(e){ if(e.target===lag) lagreOgLukk(); }); // klikk på bakteppet = ferdig
   }
   function visLaster(paa){ var o=document.getElementById('plakatPrevLaster'); if(o) o.style.display=paa?'flex':'none'; }
   function visPrevFeil(m){ var o=document.getElementById('plakatPrevFeil'); if(!o) return; o.textContent=m||''; o.style.display=m?'flex':'none'; if(m) visLaster(false); }

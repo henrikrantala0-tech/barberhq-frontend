@@ -202,6 +202,7 @@ for (const bredde of [320, 375]) {
 
 // Lag 3c — beskjæring: hjørne-ikon åpner crop-view; boksen er låst til cellens aspect; resultatet er
 // {x,y,w,h} i bildets EGNE piksler, klampet innenfor bildet (backend avviser utenfor).
+// Beslutning 6: ingen «Bruk»-knapp — kryss (.pk-crop-x) lukker OG lagrer; laget monteres på <body>.
 {
   const ASP = Math.round((468/543)*10000)/10000;
   const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
@@ -212,19 +213,22 @@ for (const bredde of [320, 375]) {
   await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
   await page.locator('.plakat-kort', { hasText:'Fire bilder' }).click(); await page.waitForTimeout(1200);
   await page.locator('.pk-celle-crop').first().click(); await page.waitForTimeout(900);
-  const cropAapen = await page.evaluate(() => !!document.querySelector('.pk-crop'));
+  const kro = await page.evaluate(() => { const c=document.querySelector('.pk-crop');
+    return { aapen:!!c, x:!!document.querySelector('.pk-crop-x'), bruk:!!document.querySelector('.pk-crop-bruk'), body:!!(c&&c.parentElement===document.body) }; });
   const NW = await page.evaluate(() => { const i=document.querySelector('.pk-crop-canvas img'); return i?i.naturalWidth:0; });
   const NH = await page.evaluate(() => { const i=document.querySelector('.pk-crop-canvas img'); return i?i.naturalHeight:0; });
   const dr = async (sel,dx,dy)=>{ const bb=await page.locator(sel).boundingBox(); if(!bb) return; const x=bb.x+bb.width/2,y=bb.y+bb.height/2;
     await page.mouse.move(x,y); await page.mouse.down(); await page.mouse.move(x+dx,y+dy); await page.mouse.up(); await page.waitForTimeout(100); };
   await dr('.cropper-face', 24, -18); await dr('.cropper-point.point-se', -40, -30);   // flytt + skaler boksen
   await shot(page, 'lag3c-375');
-  await page.click('.pk-crop-bruk'); await page.waitForTimeout(400);
+  await page.click('.pk-crop-x'); await page.waitForTimeout(400);   // beslutning 6: kryss lukker + lagrer (ingen Bruk-knapp)
+  const lukket = await page.evaluate(() => !document.querySelector('.pk-crop'));
   const rect = await page.evaluate(() => { let st=null; try{ st=JSON.parse(sessionStorage.getItem('bhq-plakat')); }catch(e){}
     const p=st&&(st.plakater||[]).filter(x=>x.id===st.valgtId)[0]; return p&&p.rects?p.rects['bilde-1']:null; });
   const aspOk = rect ? Math.abs((rect.w/rect.h)-ASP)<0.06 : false;
   const inn = rect ? (rect.x>=0&&rect.y>=0&&rect.x+rect.w<=NW&&rect.y+rect.h<=NH) : false;
-  rad.push({ skjerm:'3c · crop', cropAapen:cropAapen?'ok':'FEIL', 'bilde-px':NW+'×'+NH, rect:rect?`${rect.x},${rect.y},${rect.w}×${rect.h}`:null,
+  rad.push({ skjerm:'3c · crop', cropAapen:kro.aapen?'ok':'FEIL', 'X+ingen-Bruk': (kro.x&&!kro.bruk)?'ok':'FEIL', 'på body':kro.body?'ok':'FEIL',
+    'X lukket':lukket?'ok':'FEIL', 'bilde-px':NW+'×'+NH, rect:rect?`${rect.x},${rect.y},${rect.w}×${rect.h}`:null,
     'aspekt-låst': aspOk?'ok':'FEIL', innenfor: inn?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
 }
