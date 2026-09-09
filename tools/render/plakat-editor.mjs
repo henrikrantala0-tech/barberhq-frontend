@@ -233,6 +233,27 @@ for (const bredde of [320, 375]) {
   await page.close();
 }
 
+// Beslutning 7 — «Endre bilde»: bytt-ikon per celle → velger (på <body>) → valgt bilde lagres i p.bilder.
+{
+  const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  await page.route('**/api/**', router('vekst', 200, null, IMAGES4));
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
+  await page.locator('.plakat-kort', { hasText:'Fire bilder' }).click(); await page.waitForTimeout(1100);
+  const ikoner = await page.evaluate(() => document.querySelectorAll('.pk-celle-bytt').length);
+  await page.locator('.pk-celle-bytt').first().click(); await page.waitForTimeout(500);
+  const v = await page.evaluate(() => { const l=document.querySelector('.pk-bildevelg');
+    return { aapen:!!l, body:!!(l&&l.parentElement===document.body), bilder:document.querySelectorAll('.pk-bildevelg-bilde').length }; });
+  await page.locator('.pk-bildevelg-bilde').nth(2).click(); await page.waitForTimeout(400);   // velg 3. bilde
+  const e = await page.evaluate(() => { let st=null; try{ st=JSON.parse(sessionStorage.getItem('bhq-plakat')); }catch(x){}
+    const p=st&&(st.plakater||[]).filter(x=>x.id===st.valgtId)[0]; return { valgt:p&&p.bilder?p.bilder['bilde-1']:null, lukket:!document.querySelector('.pk-bildevelg') }; });
+  rad.push({ skjerm:'7 · endre bilde', 'ikoner(4)':ikoner, velger:v.aapen?'ok':'FEIL', 'på body':v.body?'ok':'FEIL', 'bilder(4)':v.bilder,
+    'swap lagret': e.valgt==='31111111-1111-1111-1111-111111111111'?'ok':'FEIL', lukket:e.lukket?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
 console.table(rad);
 console.log('JS-feil:', rad.filter(r=>r.jsfeil && r.jsfeil!=='ingen' && r.jsfeil!=='—').length);
 await browser.close(); server.close();
