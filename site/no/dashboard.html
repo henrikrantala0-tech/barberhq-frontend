@@ -2541,6 +2541,11 @@
   .pk-tekst.drar{background:rgba(47,109,246,.12);border-style:solid}
   .pk-tekst-l{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:4px;white-space:nowrap;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:rgba(20,20,20,.9);padding:3px 8px;border-radius:20px;box-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none}
   .pk-tekst-l.under{bottom:auto;top:100%;margin-bottom:0;margin-top:4px}
+  /* Zoom-håndtak (tskala): bunn-høyre hjørne av .pk-tekst. Eget element med egen pointerdown +
+     stopPropagation → kolliderer ikke med flytt-draget. Arver .pk-tekst z-index (4) → over cellene (bug 3). */
+  .pk-tekst-zoom{position:absolute;right:-11px;bottom:-11px;width:24px;height:24px;background:#2f6df6;border:2px solid #fff;border-radius:50%;cursor:ns-resize;box-shadow:0 1px 5px rgba(0,0,0,.55);touch-action:none;display:flex;align-items:center;justify-content:center}
+  .pk-tekst-zoom svg{width:13px;height:13px;color:#fff;pointer-events:none}
+  .pk-tekst.zoomer{background:rgba(47,109,246,.12);border-style:solid}
   /* Lag 3c — beskjær-ikon i cellehjørne + beskjæringsvisning. */
   /* (Celle-hjørne-ikonene .pk-celle-crop/.pk-celle-bytt er fjernet — erstattet av .pk-bildeknapper.) */
   /* Beslutning 7 — «Endre bilde»-velger (samme fixed+z-index-mønster som crop). */
@@ -6890,6 +6895,13 @@ function settPlakatVersjon(v){ if(typeof v==='number' && v>_plakatVersjon) _plak
     var s=_regler&&_regler.skjoldStyrke;
     return (s&&typeof s.min==='number'&&typeof s.max==='number') ? {min:s.min,max:s.max,default:(typeof s.default==='number'?s.default:1)} : {min:0.6,max:1.4,default:1};
   }
+  // Tekst-skala (zoom-håndtak): grenser fra /regler.tskala, ikke hardkodet. Fallback matcher backend-default.
+  function tskalaOmr(){
+    var t=_regler&&_regler.tskala;
+    return (t&&typeof t.min==='number'&&typeof t.max==='number')
+      ? {min:t.min,max:t.max,default:(typeof t.default==='number'?t.default:1),step:(typeof t.step==='number'?t.step:0.05)}
+      : {min:0.6,max:1.6,default:1,step:0.05};
+  }
   // Bakgrunnen UTLEDES av barberens palett/modus (bookingsiden), ikke av et valg i editoren.
   // Sand-PALETTEN (palett-navnet er fortsatt 'sand') er lys-only → background alltid «beige»; ellers følger
   // color_mode (mørk/lys). B4-synk: backend har døpt om bakgrunnsverdien 'sand' → 'beige' (alias lever én
@@ -6938,6 +6950,8 @@ function settPlakatVersjon(v){ if(typeof v==='number' && v>_plakatVersjon) _plak
     if(!p.format) p.format='4:5';
     if(p.skjoldStyrke==null) p.skjoldStyrke=1;
     if(p.tdx==null) p.tdx=0; if(p.tdy==null) p.tdy=0; // tekst-offset (lag 3b), lerret-piksler
+    if(p.tskala==null) p.tskala=1;                    // tekst-skala (zoom), default 1
+    var _to=tskalaOmr(); p.tskala=Math.max(_to.min, Math.min(_to.max, p.tskala)); // klamp til /regler-grenser
     if(tilgjengeligeFormater(antallFor(p)).indexOf(p.format)===-1) p.format='4:5';
     if(PS.visQr==null) PS.visQr=true; if(PS.visLenke==null) PS.visLenke=false;
     if(!qrTillatt(p, p.format)) PS.visQr=false;
@@ -6964,7 +6978,7 @@ function settPlakatVersjon(v){ if(typeof v==='number' && v>_plakatVersjon) _plak
   function plakatState(p){
     return { format:p.format, background:bakgrunnFor(p), kampanjetype:PS.kampanjetype||'verving',
       plasser:plasserData(p), visQr:PS.visQr?'1':'0', visLenke:PS.visLenke?'1':'0',
-      styrke:p.skjoldStyrke, tdx:p.tdx||0, tdy:p.tdy||0, v:utseendeVersjon() };
+      styrke:p.skjoldStyrke, tdx:p.tdx||0, tdy:p.tdy||0, tskala:(p.tskala||1), v:utseendeVersjon() };
   }
   function plakatQuery(p){
     return 'format='+encodeURIComponent(p.format)
@@ -6976,6 +6990,7 @@ function settPlakatVersjon(v){ if(typeof v==='number' && v>_plakatVersjon) _plak
       +'&styrke='+encodeURIComponent(String(p.skjoldStyrke))
       +'&tdx='+encodeURIComponent(String(p.tdx||0))
       +'&tdy='+encodeURIComponent(String(p.tdy||0))
+      +'&tskala='+encodeURIComponent(String(p.tskala||1))
       +'&v='+encodeURIComponent(String(utseendeVersjon()));
   }
 
@@ -6997,9 +7012,13 @@ function settPlakatVersjon(v){ if(typeof v==='number' && v>_plakatVersjon) _plak
   // på nytt ved format-bytte. Trykkflatene posisjoneres med s = wrap.clientWidth/canvas.w — SAMME s som
   // skalerFrame gir iframe-innholdet. Skaleres de ulikt, treffer flatene feil celle.
   function layoutQuery(p){
+    // kampanjetype + tskala påvirker tekst-blokkens geometri (copy-lengde + skala) → må med, ellers gir
+    // /layout en tekst-rect som ikke matcher den rendrede plakaten.
     return 'antall='+antallFor(p)
       +'&format='+encodeURIComponent(p.format)
-      +'&background='+encodeURIComponent(bakgrunnFor(p));   // samme gating som render/preview → /layout 400-er aldri på lys-sperret mal
+      +'&background='+encodeURIComponent(bakgrunnFor(p))    // samme gating som render/preview → /layout 400-er aldri på lys-sperret mal
+      +'&kampanjetype='+encodeURIComponent(PS.kampanjetype||'verving')
+      +'&tskala='+encodeURIComponent(String(p.tskala||1));
   }
   async function hentLayout(p){
     // Bug 6 (b): IKKE null-e _layout først. Nulling åpnet et vindu der plasserFor (som mapper bilde-
@@ -7093,6 +7112,41 @@ function settPlakatVersjon(v){ if(typeof v==='number' && v>_plakatVersjon) _plak
       p.tdx=Math.round(ndx); p.tdy=Math.round(ndy); plasser(); }); // kun lokal flytting — ingen preview-lasting
     function slipp(){ if(!drag) return; drag=null; boks.classList.remove('drar'); lagre(); planleggPreview(); } // ny preview ved slipp
     boks.addEventListener('pointerup', slipp); boks.addEventListener('pointercancel', slipp);
+
+    // ── Zoom-håndtak (tskala) ──────────────────────────────────────────────────────────────────
+    // Bunn-høyre hjørne. Anker = boksens TOPP (x/y/w holdes, boksen vokser i høyde). baseH1 er høyden
+    // ved skala 1 (t.h måles ved GJELDENDE p.tskala, så del på den). Draget er LOKALT — ingen fetch;
+    // /layout hentes KUN ved slipp (flytt-draget beholder sin preview-bare oppførsel).
+    var zoom=document.createElement('div'); zoom.className='pk-tekst-zoom'; zoom.setAttribute('aria-hidden','true');
+    zoom.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M7 9l5-5 5 5M7 15l5 5 5-5"/></svg>';
+    boks.appendChild(zoom);
+    // Offer-teksten ligger i preview-IFRAMEN (server-rendret), ikke i overlegget. Under drag skalerer vi
+    // den LOKALT (scaleY, transform-origin topp) så boks + tekst følges hele veien — distorsjonen er
+    // bevisst og transient; /layout re-flower teksten ekte ved slipp (transform nullstilles da). Treffes
+    // via samme top:<y>-hook som lag 3b; finnes den ikke, degraderer vi til ren boks-ghost (ingen transform).
+    function offerBlokk(){ var f=document.getElementById('plakatFrame'); try{ var d=f&&f.contentDocument; return d?d.querySelector('[style*="top:'+t.y+'px"]'):null; }catch(_){ return null; } }
+    var zdrag=null;
+    zoom.addEventListener('pointerdown',function(e){ e.preventDefault(); e.stopPropagation(); // ikke start flytt-draget
+      try{ zoom.setPointerCapture(e.pointerId); }catch(_){}
+      var S0=p.tskala||1, off=offerBlokk();
+      if(off){ off.style.transformOrigin='center top'; off.style.willChange='transform'; }
+      zdrag={omr:tskalaOmr(), baseH1:t.h/S0, topScreen:boks.getBoundingClientRect().top, local:S0, S0:S0, off:off};
+      boks.classList.add('zoomer'); });
+    zoom.addEventListener('pointermove',function(e){ if(!zdrag) return;
+      var hCanvas=(e.clientY - zdrag.topScreen)/s;                                         // boks-topp → peker, lerret-px
+      var local=Math.max(zdrag.omr.min, Math.min(zdrag.omr.max, hCanvas/zdrag.baseH1));
+      zdrag.local=local; boks.style.height=(zdrag.baseH1*local*s)+'px';                    // vokser i høyde, topp fast
+      if(zdrag.off) zdrag.off.style.transform='scaleY('+(local/zdrag.S0)+')';              // tekst følger boksen (distorsjon OK)
+      lbl.textContent=Math.round(local*100)+' %'; });                                      // live etikett i prosent
+    function zoomSlipp(){ if(!zdrag) return;
+      var z=zdrag, step=z.omr.step||0.05;
+      var kvant=Math.max(z.omr.min, Math.min(z.omr.max, Math.round(z.local/step)*step)); kvant=Math.round(kvant*100)/100; // kvantiser + unngå float-drift
+      if(z.off){ z.off.style.transform=''; z.off.style.willChange=''; }                     // nullstill — ekte re-render tar over
+      zdrag=null; boks.classList.remove('zoomer'); lbl.textContent='Flytt tekst';
+      p.tskala=kvant; lagre();
+      oppdaterLayout(p).then(function(){ planleggPreview(); }); }                           // /layout KUN ved zoom-slipp
+    zoom.addEventListener('pointerup', zoomSlipp); zoom.addEventListener('pointercancel', zoomSlipp);
+
     plasser();
     var laster=document.getElementById('plakatPrevLaster');
     [gv, gh, boks].forEach(function(el){ if(laster) wrap.insertBefore(el, laster); else wrap.appendChild(el); }); // boks øverst, under laster/feil
