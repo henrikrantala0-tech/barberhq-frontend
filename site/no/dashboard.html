@@ -7005,13 +7005,23 @@ function erStandalone(){
     var xbtn=document.createElement('button'); xbtn.type='button'; xbtn.className='pk-crop-x'; xbtn.setAttribute('aria-label','Ferdig'); xbtn.textContent='×';
     topp.appendChild(tittel); topp.appendChild(xbtn);
     var wrap=document.createElement('div'); wrap.className='pk-crop-canvas';
-    var img=document.createElement('img'); img.crossOrigin='anonymous'; img.alt='';
+    // INGEN crossOrigin: R2 sender ikke Access-Control-Allow-Origin, så crossOrigin='anonymous' gjorde
+    // bildet CORS-blokkert (naturalWidth=0 → Cropper init aldri → crop «død» på live, stille). Denne croppen
+    // er rect-only (getData/getImageData = utsnitt + naturlige mål, ingen piksel-lesing), så ren canvas
+    // trengs ikke → last bildet som vanlig kryss-origin-bilde. (Din side-croppen LESER piksler og krever
+    // ekte R2 bucket-CORS — se «Kjente sikkerhetshull/brutt».)
+    var img=document.createElement('img'); img.alt='';
     wrap.appendChild(img);
     inner.appendChild(topp); inner.appendChild(wrap); lag.appendChild(inner);
     document.body.appendChild(lag); // på <body>, ikke i editoren → fixed+z-index:1100 garanterer at laget er øverst
     var cr=null;
     img.onload=function(){
-      cr=new Cropper(img,{ viewMode:1, aspectRatio:(celle.aspect||1), autoCropArea:1, background:false, responsive:true, dragMode:'move' });
+      // checkCrossOrigin:false + checkOrientation:false — R2 sender ikke CORS. Med defaults oppdager Cropper
+      // at bildet er kryss-origin og gjør SELV en CORS-request (crossOrigin + ?timestamp på klonen, og en
+      // ArrayBuffer-lesing for EXIF) — begge blokkeres av R2 → .cropper-container bygges aldri → crop «død».
+      // Vi trenger ingen av delene: croppen er rect-only (getData/getImageData = utsnitt + naturlige mål,
+      // ingen piksel-lesing), så Cropper skal bare bruke det opakt lastede bildet som det er.
+      cr=new Cropper(img,{ viewMode:1, aspectRatio:(celle.aspect||1), autoCropArea:1, background:false, responsive:true, dragMode:'move', checkCrossOrigin:false, checkOrientation:false });
       var p=finn(PS.valgtId); var r=p&&p.rects&&p.rects[celle.slot];
       if(r) try{ cr.setData({x:r.x, y:r.y, width:r.w, height:r.h}); }catch(_){}  // gjenopprett forrige utsnitt
     };

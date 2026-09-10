@@ -25,6 +25,12 @@ const server = http.createServer((q, r) => { const f = path.join(ROOT, decodeURI
     r.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' }); r.end(b); }); });
 await new Promise(r => server.listen(0, r));
 const PORT = server.address().port;
+// Kryss-origin bilde-server UTEN Access-Control-Allow-Origin — simulerer R2 (som ikke sender CORS).
+// Regresjonsvern for crossOrigin-fella: et slikt bilde MÅ fortsatt gi cropperInit=true (crop rect-only).
+const IMG_WEBP = fs.readFileSync(path.join(ROOT, 'no/images/layout-profil.webp'));
+const noCorsServer = http.createServer((q, r) => { r.writeHead(200, { 'Content-Type':'image/webp' }); r.end(IMG_WEBP); });
+await new Promise(r => noCorsServer.listen(0, r));
+const NOCORS_PORT = noCorsServer.address().port;
 
 const svg = c => 'data:image/svg+xml,' + encodeURIComponent(`<svg xmlns="http://www.w3.org/2000/svg" width="80" height="80"><rect width="80" height="80" fill="${c}"/></svg>`);
 const IMAGES = [
@@ -418,6 +424,32 @@ for (const bredde of [320, 375]) {
   }
 }
 
+// Regresjon — crossOrigin-fella: crop-bildet ligger på en KRYSS-ORIGIN server UTEN CORS (R2-simulering).
+// Uten crossOrigin='anonymous' skal bildet fortsatt lastes (naturalWidth>0) og Cropper initialiseres —
+// crop er rect-only og trenger ikke ren canvas. Med crossOrigin ville dette gitt naturalWidth=0 → død crop.
+for (const bredde of [320, 375, 1280]) {
+  const page = await browser.newPage({ viewport:{ width:bredde, height:1000 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  const XIMG = ['a','b','c','d'].map((_,i)=>({ id:`${i+1}0000000-0000-0000-0000-000000000000`, url:`http://localhost:${NOCORS_PORT}/x.webp`, slot:'galleri', sort_order:i }));
+  await page.route('**/api/**', router('vekst', 200, null, XIMG, DESIGN));
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
+  await page.locator('.plakat-kort', { hasText:'Fire bilder' }).click(); await page.waitForTimeout(1200);
+  await page.locator('.pk-celle').first().click(); await page.waitForTimeout(200);   // 2×2 krever valgt celle
+  await page.locator('.pk-celle-crop').first().click(); await page.waitForTimeout(1500);   // vent img.onload + Cropper
+  const cr = await page.evaluate(() => { const lag=document.querySelector('.pk-crop'); const cont=document.querySelector('.cropper-container');
+    const img=document.querySelector('.pk-crop-canvas img'); return { modal:!!lag, init:!!cont, nw: img?img.naturalWidth:0 }; });
+  await page.screenshot({ path:`${OUT}/plakat-crop-nocors-${bredde}.png`, fullPage:false });
+  // Ende-til-ende: kryss lukker+lagrer → getData/getImageData (ingen piksel-lesing) skal gi en gyldig rect.
+  await page.locator('.pk-crop-x').click().catch(()=>{}); await page.waitForTimeout(400);
+  const lagret = await page.evaluate(() => { let s=null; try{ s=JSON.parse(sessionStorage.getItem('bhq-plakat')); }catch(e){}
+    const p=s&&(s.plakater||[]).filter(x=>x.id===s.valgtId)[0]; const r=p&&p.rects&&p.rects['bilde-1']; return r?`${r.x},${r.y},${r.w}×${r.h}`:null; });
+  rad.push({ skjerm:`crop u/CORS · ${bredde}`, 'modal-åpen': cr.modal?'ok':'FEIL', 'cropper-init': cr.init?'ok':'FEIL',
+    'naturalWidth>0': cr.nw>0?('ok('+cr.nw+')'):'FEIL(0)', 'rect-lagret': lagret?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
 console.table(rad);
 console.log('JS-feil:', rad.filter(r=>r.jsfeil && r.jsfeil!=='ingen' && r.jsfeil!=='—').length);
-await browser.close(); server.close();
+await browser.close(); server.close(); noCorsServer.close();
