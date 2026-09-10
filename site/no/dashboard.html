@@ -7356,32 +7356,49 @@ function settPlakatVersjon(v){ if(typeof v==='number' && v>_plakatVersjon) _plak
   // Kaller navigator.share() SYNKRONT (ingen await før kallet) → aktivering bevares. AbortError =
   // brukeren lukket arket, ikke en feil. Ingen fallback til nedlasting — en feilet share skal ikke
   // lande på en brutt nedlasting (spec).
-  function shareBlob(blob){
+  // Laste-indikator i en knapp (delt av del/lagre + nedlasting). dataset.orig verner mot dobbel-sett.
+  function settKnappLaster(btn, tekst){ if(!btn) return; if(btn.dataset.orig==null) btn.dataset.orig=btn.textContent; btn.disabled=true; btn.textContent=tekst; }
+  function gjenopprettKnapp(btn){ if(!btn) return; btn.disabled=false; if(btn.dataset.orig!=null){ btn.textContent=btn.dataset.orig; delete btn.dataset.orig; } }
+  function shareBlob(blob, suksessTekst, btn, lasterTekst){
     var fil=new File([blob],'plakat.png',{type:'image/png'});
     if(!(navigator.share && (!navigator.canShare || navigator.canShare({files:[fil]})))){
       visPkToast('Deling støttes ikke på denne enheten.', false); return;
     }
-    navigator.share({files:[fil], title:'Plakat'}).catch(function(e){
+    // Laste-indikator FRA trykket TIL share() settles: arket kan bruke tid, og toasten kommer først når
+    // det er ferdig — uten indikator i mellomtiden ser det ut som ingenting skjer (bit oss 10.09). Settes
+    // synkront FØR share() (bare DOM-skriv, bryter ikke iOS-aktiveringen).
+    if(btn) settKnappLaster(btn, lasterTekst||'Lagrer…');
+    // KUN files — INGEN title/text/url: del nøyaktig den formen canShare({files}) validerte (kjent iOS-
+    // skjørhet med tekstfelt ved siden av files). resolve = brukeren FULLFØRTE en handling (lagret/delte)
+    // → grønn-hake-toast; AbortError = avbrutt → ingen toast. (share() sier ikke HVILKEN handling, men
+    // knappen er «Lagre bilde», så «Lagret» er dekkende.)
+    navigator.share({files:[fil]}).then(function(){
+      if(suksessTekst) visPkToast(suksessTekst, true);
+    }).catch(function(e){
       if(e && e.name!=='AbortError') visPkToast('Kunne ikke dele. Prøv igjen.', false);
-    });
+    }).finally(function(){ gjenopprettKnapp(btn); });
   }
   // «Del» (og iOS «Lagre bilde»): på iOS bruk forhåndsblob → synkron share. Er den ikke klar ennå,
   // KAN vi ikke awaite uten å miste aktivering → be ærlig om ett nytt trykk (ikke en stille feil).
   // Android/desktop tåler et kort await før share.
-  function delEllerLagre(p){
+  function delEllerLagre(p, btn){
+    var suksess = ER_IOS ? 'Lagret' : 'Delt';   // iOS-knappen = «Lagre bilde»; Android/desktop = «Del»
+    var laster  = ER_IOS ? 'Lagrer…' : 'Deler…';
     if(ER_IOS){
       var b=ferskBlob(p);
-      if(b){ shareBlob(b); } else { forberedDelBlob(p); visPkToast('Klargjør bildet – trykk igjen om et øyeblikk.', false); }
+      if(b){ shareBlob(b, suksess, btn, laster); } else { forberedDelBlob(p); visPkToast('Klargjør bildet – trykk igjen om et øyeblikk.', false); }
       return;
     }
     var fersk=ferskBlob(p);
-    if(fersk){ shareBlob(fersk); return; }
-    hentPlakatBlob(p).then(shareBlob).catch(function(){ visPkToast('Kunne ikke dele. Prøv igjen.', false); });
+    if(fersk){ shareBlob(fersk, suksess, btn, laster); return; }
+    // Android/desktop: hent ved klikk → indikator alt her (fetch tar tid før share)
+    settKnappLaster(btn, laster);
+    hentPlakatBlob(p).then(function(b){ shareBlob(b, suksess, btn, laster); }).catch(function(){ gjenopprettKnapp(btn); visPkToast('Kunne ikke dele. Prøv igjen.', false); });
   }
   // «Last ned» på desktop/Android: ekte nedlasting via <a download>, laste-indikator i knappen,
   // «Lastet ned»-toast ved suksess. (På iOS er knappen «Lagre bilde» → delEllerLagre, se over.)
   async function lastNedDirekte(p, btn){
-    var orig=btn.textContent; btn.disabled=true; btn.textContent='Laster ned …';
+    settKnappLaster(btn, 'Laster ned …');
     try{
       var blob=ferskBlob(p)||await hentPlakatBlob(p);
       var u=URL.createObjectURL(blob);
@@ -7389,7 +7406,7 @@ function settPlakatVersjon(v){ if(typeof v==='number' && v>_plakatVersjon) _plak
       setTimeout(function(){ URL.revokeObjectURL(u); }, 1000);
       visPkToast('Lastet ned', true);
     }catch(e){ visPkToast('Kunne ikke laste ned. Prøv igjen.', false); }
-    finally{ btn.disabled=false; btn.textContent=orig; }
+    finally{ gjenopprettKnapp(btn); }
   }
 
   function renderSkjerm2(scroll, back, tittel){
@@ -7437,8 +7454,8 @@ function settPlakatVersjon(v){ if(typeof v==='number' && v>_plakatVersjon) _plak
     // og går via share-arket (der «Lagre bilde» ligger). Desktop/Android: ekte nedlasting.
     var ned=document.createElement('button'); ned.type='button'; ned.className='btn-outline';
     ned.textContent=ER_IOS?'Lagre bilde':'Last ned';
-    ned.addEventListener('click',function(){ ER_IOS ? delEllerLagre(p) : lastNedDirekte(p, ned); });
-    var del=document.createElement('button'); del.type='button'; del.className='btn-outline pk-del'; del.textContent='Del'; del.addEventListener('click',function(){ delEllerLagre(p); });
+    ned.addEventListener('click',function(){ ER_IOS ? delEllerLagre(p, ned) : lastNedDirekte(p, ned); });
+    var del=document.createElement('button'); del.type='button'; del.className='btn-outline pk-del'; del.textContent='Del'; del.addEventListener('click',function(){ delEllerLagre(p, del); });
     // iOS: «Lagre bilde» og «Del» åpner SAMME share-ark → to knapper er forvirrende. Arket dekker begge
     // behov, så «Del» skjules på iOS. Android/desktop beholder begge (der gjør de ulike ting: ekte
     // nedlasting vs. deling). (På desktop skjules «Del» dessuten ≥768px av CSS-en.)
