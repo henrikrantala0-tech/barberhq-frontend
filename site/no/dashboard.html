@@ -6799,8 +6799,12 @@ function erStandalone(){
 
   async function hentDesign(){
     if(_palett) return;
+    // Global `design` er kun fylt hvis Design-fanen har vært åpnet (loadDesign). Editoren åpnes fra
+    // Vekst, så den er som regel tom her → hent /design direkte (api.design finnes ikke). Uten dette
+    // står _palett/_mode undefined og bakgrunnFraBarber() faller alltid til «mork» — en sand-barber
+    // ville da sendt mørk, som backend 400-er.
     if(typeof design!=='undefined' && design && design.palette){ _palett=design.palette; _mode=design.mode; return; }
-    if(typeof api!=='undefined' && api && api.design){ try{ var d=await api.design(); if(d&&d.palette){ _palett=d.palette; _mode=d.mode; } }catch(e){} }
+    try{ var r=await fetch('/api/dashboard/design',{credentials:'include'}); if(r&&r.ok){ var d=await r.json(); if(d&&d.palette){ _palett=d.palette; _mode=d.mode; } } }catch(e){}
   }
   // /regler gir plan-oppløste grenser (bl.a. skjoldStyrke {min,max,default}) — hentes én gang ved
   // editor-oppstart så slideren leser området fra backend i stedet for å hardkode. Fallbacken er kun
