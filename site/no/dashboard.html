@@ -6759,10 +6759,11 @@ function erStandalone(){
     var plasser = plasserFor(p).map(function(b){ return {image_id:String(b.id)}; });
     return 'bredde=400'
       +'&format='+encodeURIComponent('4:5')
-      +'&background='+encodeURIComponent(bakgrunnFraBarber())
+      +'&background='+encodeURIComponent(bakgrunnFor(p, '4:5'))
       +'&kampanjetype='+encodeURIComponent(PS.kampanjetype||'verving')
       +'&plasser='+encodeURIComponent(JSON.stringify(plasser))
-      +'&visQr=0&visLenke=0&styrke=1';
+      +'&visQr=0&visLenke=0&styrke=1'
+      +'&v='+encodeURIComponent(String(utseendeVersjon()));
   }
   function settOppMiniatyrer(scroll){
     if(_miniObs){ _miniObs.disconnect(); _miniObs=null; }
@@ -6813,6 +6814,25 @@ function erStandalone(){
   // Sand-paletten er lys-only → alltid «sand»; ellers følger color_mode (mørk/lys). Backend leser
   // den fra query i dag; ideelt utleder backend den selv fra sesjons-barberen (følge-opp).
   function bakgrunnFraBarber(){ return _palett==='sand' ? 'sand' : (_mode==='lys' ? 'lys' : 'mork'); }
+  // Cache-buster: /render?bredde=… cacher per URL, men font/palett/color_mode leses fra barber-RADEN
+  // (ikke query), så URL-en er identisk før/etter et design-bytte → barbereren får gammel PNG.
+  // utseendeVersjon (epoch-ms av updated_at, bumpes ved BÅDE design- og profil-lagring) endrer URL-en
+  // når utseendet gjør. Kilde: /regler.barber.utseendeVersjon — ikke et eget frontend-skjema.
+  function utseendeVersjon(){ var b=_regler&&_regler.barber; return (b&&typeof b.utseendeVersjon==='number')?b.utseendeVersjon:0; }
+  // Lys kan være sperret PER MAL: mal 4 (3 bilder) og 2×2 (4 bilder) mangler lys-variant (backend
+  // 400-er lys der), og en sand-barber sperrer mørk. Fasit er /regler.maler[*].formater[fmt].bakgrunner;
+  // maler er nøklet på template-navn, men hver bærer .bilder = antall, så vi matcher på antall.
+  function lysTillatt(p, format){
+    var maler=_regler&&_regler.maler; if(!maler) return false;                 // regler mangler → fail-closed
+    var antall=(malDef(p.id)||{}).antall||0, def=null;
+    for(var k in maler){ if(maler[k] && maler[k].bilder===antall){ def=maler[k]; break; } }
+    var f=def&&def.formater&&def.formater[format||p.format||'4:5'];
+    return !!(f && f.bakgrunner && f.bakgrunner.indexOf('lys')!==-1);
+  }
+  // Editoren skal ALDRI sende en background backend vil nekte. bakgrunnFraBarber() er utgangspunktet;
+  // er resultatet «lys» men lys ikke bekreftet tillatt for malen+formatet, tvinges mørk (fail-closed:
+  // ukjent/manglende felt → mørk). «sand» (kun sand-barber) og «mørk» er alltid gyldige på egen vei.
+  function bakgrunnFor(p, format){ var bg=bakgrunnFraBarber(); return (bg==='lys' && !lysTillatt(p, format)) ? 'mork' : bg; }
   // Speiler backendens plakatTilstand.js (tilgjengeligeFormater/qrTillatt) — IKKE en ny regel.
   function tilgjengeligeFormater(antall){ return (antall|0)<=1 ? ['4:5','9:16'] : ['4:5']; }
   function qrTillatt(format){ return (format||'4:5')==='4:5'; }
@@ -6845,13 +6865,13 @@ function erStandalone(){
   function harBase64(p){ return plasserData(p).some(function(pl){ return pl && pl.data; }); } // base64 → POST, ellers GET
   // POST-body (Form B): tilstanden som objekt. Backend leser req.body ved POST, req.query ved GET (samme felt).
   function plakatState(p){
-    return { format:p.format, background:bakgrunnFraBarber(), kampanjetype:PS.kampanjetype||'verving',
+    return { format:p.format, background:bakgrunnFor(p), kampanjetype:PS.kampanjetype||'verving',
       plasser:plasserData(p), visQr:PS.visQr?'1':'0', visLenke:PS.visLenke?'1':'0',
       styrke:p.skjoldStyrke, tdx:p.tdx||0, tdy:p.tdy||0 };
   }
   function plakatQuery(p){
     return 'format='+encodeURIComponent(p.format)
-      +'&background='+encodeURIComponent(bakgrunnFraBarber())
+      +'&background='+encodeURIComponent(bakgrunnFor(p))
       +'&kampanjetype='+encodeURIComponent(PS.kampanjetype||'verving')
       +'&plasser='+encodeURIComponent(JSON.stringify(plasserData(p)))
       +'&visQr='+(PS.visQr?'1':'0')
@@ -6881,7 +6901,7 @@ function erStandalone(){
   function layoutQuery(p){
     return 'antall='+antallFor(p)
       +'&format='+encodeURIComponent(p.format)
-      +'&background='+encodeURIComponent(bakgrunnFraBarber());
+      +'&background='+encodeURIComponent(bakgrunnFor(p));   // samme gating som render/preview → /layout 400-er aldri på lys-sperret mal
   }
   async function hentLayout(p){
     _layout=null;

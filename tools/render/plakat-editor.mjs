@@ -37,8 +37,38 @@ const LOY = { enabled:true, threshold:10, pct:100, count_history:false, particip
 // Mock-poster: 1080×1350-lerret som iframen skalerer. Egen CSP-header (som backend).
 const POSTER = '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0}.p{width:1080px;height:1350px;background:linear-gradient(160deg,#141414,#3a2f22);color:#e9d8b8;font:700 90px system-ui;display:flex;align-items:center;justify-content:center;text-align:center}</style></head><body><div class="p">Verv en venn<br>begge får 45%</div></body></html>';
 const PNG1x1 = Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+M8AAAMCAQABsaG/AAAAAElFTkSuQmCC','base64');
+// Miniatyrene er <img src=/render?…> → /render MÅ svare med ekte bilde-bytes, ikke 1×1 (som blir en
+// svart flate strukket over kortet). Vi pre-rendrer POSTER_BG(bg) til en PNG per bakgrunn (bygges etter
+// browser-launch) og serverer den etter background-param, så miniatyrene viser faktisk plakat-innhold.
+let POSTER_PNG = {};
 // POST-preview (Form B): ekko base64-bildene inn i posteren så srcdoc viser at kamerarull-bildet fløt gjennom.
 const POSTER_KAM = datas => '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0}.p{width:1080px;height:1350px;background:#141414;display:flex;align-items:center;justify-content:center;gap:20px}</style></head><body><div class="p">'+datas.map(d=>'<img src="'+d+'" style="width:420px;height:520px;object-fit:cover;border-radius:14px;border:4px solid #2f6df6">').join('')+'</div></body></html>';
+// SELV-KONSISTENT mock: offer-teksten tegnes PÅ /layout.tekst-recten (samme TEKST_RECT), så dra-boksen
+// (som leser /layout.tekst) faktisk omslutter teksten. Ellers bommer boksen i renderen uten at noe feiler.
+const TEKST_RECT = { x:90, y:760, w:900, h:340 };  // lerret-px; delt av mockLayout OG POSTER_BG
+// Bakgrunns-reflekterende poster: mocken tegner mørk/lys/sand etter background-parameteren + skriver den
+// synlig, så et screenshot BEVISER hvilken bakgrunn editoren faktisk sendte (mørk = lys ble tvunget).
+const BG_FARGE = { mork:['#141414','#e9d8b8'], lys:['#f3efe6','#3a2f22'], sand:['#efe6d6','#5a4a2f'] };
+// tekstOffset (dx,dy) MÅ honoreres — ellers følger ikke mock-teksten dra-boksen, og post-drag ser det ut
+// som om boksen bommer (ekte backend flytter offer-blokka via fillPoster, jf. plakat-tekstoffset.test.mjs).
+const POSTER_BG = (bg, dx=0, dy=0) => { const f = BG_FARGE[bg] || BG_FARGE.mork; const t = TEKST_RECT;
+  return '<!doctype html><html><head><meta charset="utf-8"><style>html,body{margin:0}'
+    +'.p{position:relative;width:1080px;height:1350px;background:'+f[0]+';color:'+f[1]+';font-family:system-ui}'
+    +'.tekst{position:absolute;left:'+(t.x+dx)+'px;top:'+(t.y+dy)+'px;width:'+t.w+'px;height:'+t.h+'px;box-sizing:border-box;'
+    +'display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;font:700 90px system-ui}'
+    +'.b{position:absolute;left:0;right:0;top:48px;text-align:center;font-size:52px;opacity:.7}'
+    +'</style></head><body><div class="p"><div class="b">background='+bg+'</div>'
+    +'<div class="tekst">Verv en venn<br>begge får 45%</div></div></body></html>'; };
+// Ekte /regler-form (byggRegler for en KREM-barber, verifisert 10.09 mot backend): mal2/mal4/2×2 mangler
+// lys → lys-barber på dem må tvinges mørk. utseendeVersjon = epoch-ms (cache-buster på miniatyr-URL).
+const UTSEENDE_V = 1789041600000;
+const MALER_KREM = {
+  tekst:        { bilder:0, formater:{ '4:5':{ bakgrunner:['mork','sand','lys'], qr:true }, '9:16':{ bakgrunner:['mork','sand','lys'], qr:false } } },
+  mal2:         { bilder:1, formater:{ '4:5':{ bakgrunner:['mork','sand'], qr:true }, '9:16':{ bakgrunner:['mork','sand'], qr:false } } },
+  mal3:         { bilder:2, formater:{ '4:5':{ bakgrunner:['mork','sand','lys'], qr:true } } },
+  mal4:         { bilder:3, formater:{ '4:5':{ bakgrunner:['mork','sand'], qr:true } } },
+  'fire-bilder':{ bilder:4, formater:{ '4:5':{ bakgrunner:['mork','sand'], qr:true } } },
+};
 const OPPLAST = path.resolve(ROOT, 'no/images/layout-profil.webp'); // ekte fil å «velge fra kamerarull»
 // Ekte webp → Cropper får naturlige pikseldimensjoner i lag-3c-beskjæringen (data-URI ville gitt 0 el. feil).
 const IMAGES4 = ['bilde-1','bilde-2','bilde-3','bilde-4'].map((_,i)=>({ id:`${i+1}1111111-1111-1111-1111-111111111111`, url:'/no/images/layout-profil.webp', slot:'galleri', sort_order:i }));
@@ -53,26 +83,29 @@ function mockLayout(antall){
     { slot:'bilde-1', x:60, y:120, w:468, h:543 }, { slot:'bilde-2', x:552, y:120, w:468, h:543 },
     { slot:'bilde-3', x:60, y:687, w:468, h:543 }, { slot:'bilde-4', x:552, y:687, w:468, h:543 } ];
   else { const w = Math.floor((960 - (antall-1)*24)/antall); celler = Array.from({length:antall},(_,i)=>({ slot:'bilde-'+(i+1), x:60+i*(w+24), y:120, w, h:1110 })); }
-  return { canvas:CV, celler: celler.map(asp), tekst: (antall===0 ? null : { x:90, y:760, w:900, h:340 }) };
+  return { canvas:CV, celler: celler.map(asp), tekst: (antall===0 ? null : { ...TEKST_RECT }) };
 }
 
-function router(plan, previewStatus, ctr, images=IMAGES){ return route => {
+function router(plan, previewStatus, ctr, images=IMAGES, design=DESIGN){ return route => {
   const req = route.request(); const url = new URL(req.url()); const p = url.pathname;
   const json = (o,s=200) => route.fulfill({ status:s, contentType:'application/json', body:JSON.stringify(o) });
+  const CSP = { 'content-security-policy':"style-src 'self' 'unsafe-inline'; img-src https: data:" };
   if (p === '/api/dashboard/plakat/preview'){
     if (previewStatus === 403) return route.fulfill({ status:403, contentType:'application/json', body:JSON.stringify({error:'Plakater krever Vekst.'}) });
     if (previewStatus === 400) return route.fulfill({ status:400, contentType:'application/json', body:JSON.stringify({error:'Denne kombinasjonen finnes ikke.'}) });
     if (req.method()==='POST'){ let body={}; try{ body=req.postDataJSON(); }catch(e){}
       const datas=(body.plasser||[]).filter(x=>x&&x.data).map(x=>x.data);
-      return route.fulfill({ status:200, contentType:'text/html', headers:{'content-security-policy':"style-src 'self' 'unsafe-inline'; img-src https: data:"}, body: datas.length ? POSTER_KAM(datas) : POSTER });
+      return route.fulfill({ status:200, contentType:'text/html', headers:CSP, body: datas.length ? POSTER_KAM(datas) : POSTER_BG(body.background||'mork', +(body.tdx||0), +(body.tdy||0)) });
     }
-    return route.fulfill({ status:200, contentType:'text/html', headers:{'content-security-policy':"style-src 'self' 'unsafe-inline'; img-src https: data:"}, body:POSTER });
+    return route.fulfill({ status:200, contentType:'text/html', headers:CSP, body:POSTER_BG(url.searchParams.get('background')||'mork', +(url.searchParams.get('tdx')||0), +(url.searchParams.get('tdy')||0)) });
   }
-  if (p === '/api/dashboard/plakat/render') { if (ctr) ctr.n++; return route.fulfill({ status:200, contentType:'image/png', body:PNG1x1 }); }
+  if (p === '/api/dashboard/plakat/render') { if (ctr) ctr.n++;
+    const bg = url.searchParams.get('background') || 'mork';
+    return route.fulfill({ status:200, contentType:'image/png', body: POSTER_PNG[bg] || POSTER_PNG.mork || PNG1x1 }); }
   if (p === '/api/dashboard/plakat/layout') return json(mockLayout(Math.max(0, Math.min(4, parseInt(url.searchParams.get('antall'),10)||0))));
-  if (p === '/api/dashboard/plakat/regler') return json({ skjoldStyrke:{ min:0.6, max:1.4, default:1 }, barber:{ palette:'krem', morkSperret:false }, maler:{} });
+  if (p === '/api/dashboard/plakat/regler') return json({ skjoldStyrke:{ min:0.6, max:1.4, default:1 }, barber:{ palette:design.palette, morkSperret:design.palette==='sand', utseendeVersjon:UTSEENDE_V }, maler:MALER_KREM });
   if (p === '/api/dashboard/profile')        return json(PROFILE);
-  if (p === '/api/dashboard/design')         return json(DESIGN);
+  if (p === '/api/dashboard/design')         return json(design);
   if (p === '/api/dashboard/images')         return json(images);
   if (p === '/api/dashboard/billing/status') return json({ subscription_status: plan==='basis'?'active':'trialing', page_status:'live', plan: plan==='basis'?'basis':null, effective_plan:plan, effective_plan_grunn: plan==='basis'?'subscription':'trial_vindu', trial_days_left:30, myk_periode:false, needs_attention:false });
   if (p === '/api/dashboard/loyalty')        return json(LOY);
@@ -110,6 +143,10 @@ const S3B = `()=>{ const wrap=document.getElementById('plakatPrevWrap'); const b
     tdx:p?p.tdx:null, tdy:p?p.tdy:null, transp: box?getComputedStyle(box).backgroundColor==='rgba(0, 0, 0, 0)':null }; }`;
 
 const browser = await chromium.launch();
+// Bygg poster-PNG-ene (4:5-lerret) én gang — /render-mocken serverer dem etter background.
+{ const pp = await browser.newPage({ viewport:{ width:1080, height:1350 }, deviceScaleFactor:1 });
+  for (const bg of ['mork','lys','sand']) { await pp.setContent(POSTER_BG(bg), { waitUntil:'load' }); POSTER_PNG[bg] = await pp.screenshot({ type:'png' }); }
+  await pp.close(); }
 const rad = [];
 
 for (const bredde of [320, 375]) {
@@ -121,7 +158,8 @@ for (const bredde of [320, 375]) {
   await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
   await openAcc(page, '#accVerv');
   await page.click('#plakatOpenVerving'); await page.waitForTimeout(800);   // skjerm 1 (miniatyrer laster)
-  // Skjerm 1: 2 galleri-bilder → mal1/mal2/mal3 tilgjengelige (3 miniatyrer), mal4/2×2 låst (2, ingen fetch).
+  // Skjerm 1 (tre maler): 2 galleri-bilder → «Uten bilde»/«Ett bilde» tilgjengelige (2 miniatyrer),
+  // «Fire bilder» (2×2, krever 4) låst (1, ingen fetch). Tre like kort, ingen «Flere maler»-seksjon.
   const s1 = await page.evaluate(eval(S1));
   await shot(page, `skjerm1-${bredde}`);
   rad.push({ skjerm:`1 · ${bredde}`, kort:s1.kort, laast:s1.laast, thumbs:s1.thumbs, lastet:s1.lastet, renderKall:ctr.n,
@@ -181,9 +219,9 @@ for (const bredde of [320, 375]) {
 }
 
 // Lag 3b — dra tekstblokken opp til lerretets senter: begge hjelpelinjer, lokal flytting (ingen fetch
-// per piksel), én reload ved slipp (2 req: status-fetch + iframe-src), gjennomsiktig håndtak.
-{
-  const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+// per piksel), én reload ved slipp (2 req: status-fetch + iframe-src), gjennomsiktig håndtak. @320/375.
+for (const bredde of [320, 375]) {
+  const page = await browser.newPage({ viewport:{ width:bredde, height:1000 }, deviceScaleFactor:2 });
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   let prev = 0; page.on('request', r => { if (r.url().includes('/plakat/preview')) prev++; });
   await page.route('**/api/**', router('vekst', 200, null, IMAGES4));
@@ -191,6 +229,12 @@ for (const bredde of [320, 375]) {
   await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
   await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
   await page.locator('.plakat-kort', { hasText:'Fire bilder' }).click(); await page.waitForTimeout(1200);
+  // Base-posisjon (tdx=tdy=0): dra-boksens skjerm-rect skal matche skalert /layout.tekst-rect < 2px —
+  // samme krav som celle-overlayene (S3). Fanger «boks bommer på teksten» maskinelt, ikke bare med øyne.
+  const boksAlign = await page.evaluate((T) => { const wrap=document.getElementById('plakatPrevWrap'); const box=wrap&&wrap.querySelector('.pk-tekst');
+    if(!wrap||!box) return { avvik:999 }; const wr=wrap.getBoundingClientRect(), s=wrap.clientWidth/1080, r=box.getBoundingClientRect();
+    const avvik=Math.max(Math.abs((r.left-wr.left)-T.x*s), Math.abs((r.top-wr.top)-T.y*s), Math.abs(r.width-T.w*s), Math.abs(r.height-T.h*s));
+    return { avvik:Math.round(avvik*100)/100 }; }, TEKST_RECT);
   const prevFoer = prev;
   const s = await page.evaluate(() => document.getElementById('plakatPrevWrap').clientWidth/1080);
   const opp = (930-675)*s;  // px opp: offer-blokkens senter (y 760+340/2=930) → lerretets vertikale midt (675)
@@ -198,11 +242,26 @@ for (const bredde of [320, 375]) {
   await page.mouse.move(cx, cy); await page.mouse.down();
   for (let i=1;i<=8;i++){ await page.mouse.move(cx, cy-opp*i/8); await page.waitForTimeout(20); }
   const prevUnderDrag = prev;
-  await page.mouse.up(); await page.waitForTimeout(500);
+  // MID-DRAG: boksen er flyttet, men ingen ny preview er lastet ennå (ingen fetch per piksel) → mock-teksten
+  // står fortsatt på base-y. «Boks over, tekst under» her er RIKTIG og forventet — draget er ikke sluppet.
+  await page.screenshot({ path:`${OUT}/plakat-3b-mid-drag-${bredde}.png`, fullPage:false });
+  await page.mouse.up(); await page.waitForTimeout(700);
   const m = await page.evaluate(eval(S3B));
-  await shot(page, 'lag3b-375');
-  rad.push({ skjerm:'3b · dra', guideV:m.guideV, guideH:m.guideH, begge:(m.guideV==='block'&&m.guideH==='block')?'ok':'FEIL',
+  // POST-RELEASE: ny preview lastet med tekstOffset → mock-teksten har fulgt boksen. Boks og EKTE mock-tekst
+  // skal være samlokalisert < 2px (samme krav som base-align), nå på den forskjøvede posisjonen.
+  const postBox = await page.evaluate(() => { const wrap=document.getElementById('plakatPrevWrap'); const box=wrap&&wrap.querySelector('.pk-tekst');
+    if(!wrap||!box) return null; const wr=wrap.getBoundingClientRect(), b=box.getBoundingClientRect();
+    return { wl:wr.left, wt:wr.top, s:wrap.clientWidth/1080, bl:b.left, bt:b.top, bw:b.width, bh:b.height }; });
+  const frB = await (await page.$('#plakatFrame')).contentFrame();
+  const mtxt = frB ? await frB.evaluate(() => { const e=document.querySelector('.tekst'); if(!e) return null; const r=e.getBoundingClientRect(); return { left:r.left, top:r.top, w:r.width, h:r.height }; }) : null;
+  let postAvvik = 999;
+  if (postBox && mtxt) { const tl=postBox.wl+mtxt.left*postBox.s, tt=postBox.wt+mtxt.top*postBox.s, tw=mtxt.w*postBox.s, th=mtxt.h*postBox.s;
+    postAvvik = Math.round(Math.max(Math.abs(postBox.bl-tl), Math.abs(postBox.bt-tt), Math.abs(postBox.bw-tw), Math.abs(postBox.bh-th))*100)/100; }
+  await page.screenshot({ path:`${OUT}/plakat-3b-etter-slipp-${bredde}.png`, fullPage:false });
+  rad.push({ skjerm:`3b · dra ${bredde}`, 'boksAvvikPx':boksAlign.avvik, 'boks-align<2px': boksAlign.avvik<2?'ok':'FEIL',
+    guideV:m.guideV, guideH:m.guideH, begge:(m.guideV==='block'&&m.guideH==='block')?'ok':'FEIL',
     tdx:m.tdx, tdy:m.tdy, 'ingen-per-piksel': prevUnderDrag===prevFoer?'ok':'FEIL', 'reload=1x(1 req)': (prev-prevUnderDrag)===1?'ok':'FEIL',
+    'post-avvik-px':postAvvik, 'post-samlokalisert<2px': postAvvik<2?'ok':'FEIL',
     'håndtak-transp': m.transp?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
 }
@@ -279,6 +338,84 @@ for (const bredde of [320, 375]) {
     return { base64: !!(im&&im.data&&/^data:image\/jpeg/.test(im.data)), w:im?im.width:null, h:im?im.height:null }; });
   rad.push({ skjerm:'del2 · kamerarull', flis:flis?'ok':'FEIL', 'celle=base64':b.base64?'ok':'FEIL', dim:b.w+'×'+b.h, POST:post>0?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
+}
+
+// Lys-gating + cache-buster — LYS krem-barber (mode:lys) med 4 galleri-bilder → alle fem maler
+// tilgjengelige. 2×2 (fire) og mal2 mangler lys-variant → editoren MÅ tvinge mørk; mal3/tekst har lys
+// → beholdes. Miniatyr-URL-ene skal bære v=<utseendeVersjon>. Bevises både på param og på skjerm-farge.
+const DESIGN_LYS = { ...DESIGN, mode:'lys' };
+for (const bredde of [320, 375]) {
+  const page = await browser.newPage({ viewport:{ width:bredde, height:1000 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  const miniByCount = {}; const previewBg = {};
+  page.on('request', r => { const u=r.url();
+    if (u.includes('/plakat/render')){ const q=new URL(u).searchParams;
+      if (q.get('bredde')==='400'){ let pl=[]; try{ pl=JSON.parse(q.get('plasser')||'[]'); }catch(e){}
+        miniByCount[pl.length] = { bg:q.get('background'), v:q.get('v') }; } }
+    if (u.includes('/plakat/preview')){ const bg = r.method()==='POST'
+      ? (()=>{ let b={}; try{ b=r.postDataJSON(); }catch(e){} return b.background; })()
+      : new URL(u).searchParams.get('background'); previewBg._siste = bg; }
+  });
+  await page.route('**/api/**', router('vekst', 200, null, IMAGES4, DESIGN_LYS));
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(1100);
+  await page.screenshot({ path:`${OUT}/plakat-lysgating-skjerm1-${bredde}.png`, fullPage:false });   // miniatyr-vegg: lys/mørk blandet
+  // Skjerm 1: miniatyr-bakgrunn per bildeantall (lys-barber): «Uten bilde» (tekst, 0) beholder lys,
+  // «Ett bilde» (mal2, 1) og 2×2 (fire, 4) tvinges mørk. Alle miniatyr-URL-er bærer v=<utseendeVersjon>.
+  const alleV = Object.values(miniByCount).every(x => x.v === String(UTSEENDE_V));
+  // Skjerm 2, «Fire bilder» (2×2, ingen lys) → background=mork tvunget, poster tegnes mørk.
+  await page.locator('.plakat-kort', { hasText:'Fire bilder' }).click(); await page.waitForTimeout(1100);
+  const bgFire = previewBg._siste;
+  await page.screenshot({ path:`${OUT}/plakat-lysgating-fire-${bredde}.png`, fullPage:false });
+  // Tilbake → «Uten bilde» (mal1/tekst, HAR lys) → background=lys beholdt, poster tegnes lys (ingen over-tvang).
+  await page.click('#plakatBack'); await page.waitForTimeout(500);
+  await page.locator('.plakat-kort', { hasText:'Uten bilde' }).click(); await page.waitForTimeout(1100);
+  const bgMal1 = previewBg._siste;
+  await page.screenshot({ path:`${OUT}/plakat-lysgating-mal1-${bredde}.png`, fullPage:false });
+  rad.push({ skjerm:`lys-gate · ${bredde}`,
+    'mini2×2(mørk)': (miniByCount[4]||{}).bg==='mork'?'ok':'FEIL', 'mini-tekst(lys)': (miniByCount[0]||{}).bg==='lys'?'ok':'FEIL',
+    'alle v=utseende': alleV?'ok':'FEIL', 'fire→bg': bgFire, 'tvunget-mørk': bgFire==='mork'?'ok':'FEIL',
+    'mal1→bg': bgMal1, 'lys-beholdt': bgMal1==='lys'?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
+// Punkt 4 — bevis mot EKTE backend-geometri (ikke mock): fixtures/plakat-mal2-*.{json,html} er generert i
+// backend-repoet fra byggLayout() + fillPoster() (samme spec.offer). Dra-boksen (fra ekte /layout.tekst)
+// skal omslutte den EKTE offer-blokka i den ekte poster-HTML-en < 2px. Måler boksens skjerm-rect mot
+// offer-blokkas faktiske rect INNE i iframen (mappet lerret→skjerm med samme s).
+{
+  const FIX_LAYOUT = JSON.parse(fs.readFileSync(path.resolve(import.meta.dirname, 'fixtures/plakat-mal2-layout.json'), 'utf8'));
+  const FIX_HTML = fs.readFileSync(path.resolve(import.meta.dirname, 'fixtures/plakat-mal2-preview.html'), 'utf8');
+  for (const bredde of [320, 375]) {
+    const page = await browser.newPage({ viewport:{ width:bredde, height:1000 }, deviceScaleFactor:2 });
+    const errs = []; page.on('pageerror', e => errs.push(e.message));
+    const base = router('vekst', 200, null, IMAGES, DESIGN);   // mørk barber, 2 galleri → «Ett bilde» tilgjengelig
+    await page.route('**/api/**', route => { const u = new URL(route.request().url()); const pth = u.pathname;
+      if (pth === '/api/dashboard/plakat/layout')  return route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify(FIX_LAYOUT) });
+      if (pth === '/api/dashboard/plakat/preview') return route.fulfill({ status:200, contentType:'text/html', body:FIX_HTML });
+      return base(route); });
+    await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+    await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+    await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
+    await page.locator('.plakat-kort', { hasText:'Ett bilde' }).click(); await page.waitForTimeout(1600);
+    await page.screenshot({ path:`${OUT}/plakat-ekte-boks-${bredde}.png`, fullPage:false });
+    // Boksens skjerm-rect + wrap-origo + s (parent). Offer-blokkas rect hentes fra iframen (lerret-koord).
+    const M = await page.evaluate(() => { const wrap=document.getElementById('plakatPrevWrap'); const box=wrap&&wrap.querySelector('.pk-tekst');
+      if(!wrap||!box) return null; const wr=wrap.getBoundingClientRect(), b=box.getBoundingClientRect();
+      return { wl:wr.left, wt:wr.top, s:wrap.clientWidth/1080, bl:b.left, bt:b.top, bw:b.width, bh:b.height }; });
+    const fr = await (await page.$('#plakatFrame')).contentFrame();
+    // Offer-blokka er den absoluttposisjonerte div-en på ekte offer-y (unik i HTML-en). getBoundingClientRect
+    // inne i iframen = lerret-koordinater (iframe-viewport er 1080 bredt).
+    const off = fr ? await fr.evaluate((y) => { const e=document.querySelector('[style*="top:'+y+'px"]'); if(!e) return null;
+      const r=e.getBoundingClientRect(); return { left:r.left, top:r.top, w:r.width, h:r.height }; }, FIX_LAYOUT.tekst.y) : null;
+    let avvik = 999;
+    if (M && off) { const offL=M.wl+off.left*M.s, offT=M.wt+off.top*M.s, offW=off.w*M.s, offH=off.h*M.s;
+      avvik = Math.round(Math.max(Math.abs(M.bl-offL), Math.abs(M.bt-offT), Math.abs(M.bw-offW), Math.abs(M.bh-offH))*100)/100; }
+    rad.push({ skjerm:`ekte-geo · ${bredde}`, 'layout.tekst': `${FIX_LAYOUT.tekst.x},${FIX_LAYOUT.tekst.y},${FIX_LAYOUT.tekst.w}×${FIX_LAYOUT.tekst.h}`,
+      'offer-funnet': off?'ok':'FEIL', 'boks-avvik-px': avvik, 'boks-på-ekte-tekst<2px': avvik<2?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
+    await page.close();
+  }
 }
 
 console.table(rad);
