@@ -6823,9 +6823,10 @@ function erStandalone(){
     return (s&&typeof s.min==='number'&&typeof s.max==='number') ? {min:s.min,max:s.max,default:(typeof s.default==='number'?s.default:1)} : {min:0.6,max:1.4,default:1};
   }
   // Bakgrunnen UTLEDES av barberens palett/modus (bookingsiden), ikke av et valg i editoren.
-  // Sand-paletten er lys-only → alltid «sand»; ellers følger color_mode (mørk/lys). Backend leser
-  // den fra query i dag; ideelt utleder backend den selv fra sesjons-barberen (følge-opp).
-  function bakgrunnFraBarber(){ return _palett==='sand' ? 'sand' : (_mode==='lys' ? 'lys' : 'mork'); }
+  // Sand-PALETTEN (palett-navnet er fortsatt 'sand') er lys-only → background alltid «beige»; ellers følger
+  // color_mode (mørk/lys). B4-synk: backend har døpt om bakgrunnsverdien 'sand' → 'beige' (alias lever én
+  // release). Palett-referansen (_palett==='sand') er UENDRET — kun background-VERDIEN er beige.
+  function bakgrunnFraBarber(){ return _palett==='sand' ? 'beige' : (_mode==='lys' ? 'lys' : 'mork'); }
   // Cache-buster: /render?bredde=… cacher per URL, men font/palett/color_mode leses fra barber-RADEN
   // (ikke query), så URL-en er identisk før/etter et design-bytte → barbereren får gammel PNG.
   // utseendeVersjon (epoch-ms av updated_at, bumpes ved BÅDE design- og profil-lagring) endrer URL-en
@@ -6843,7 +6844,7 @@ function erStandalone(){
   }
   // Editoren skal ALDRI sende en background backend vil nekte. bakgrunnFraBarber() er utgangspunktet;
   // er resultatet «lys» men lys ikke bekreftet tillatt for malen+formatet, tvinges mørk (fail-closed:
-  // ukjent/manglende felt → mørk). «sand» (kun sand-barber) og «mørk» er alltid gyldige på egen vei.
+  // ukjent/manglende felt → mørk). «beige» (kun sand-palett-barber) og «mørk» er alltid gyldige på egen vei.
   function bakgrunnFor(p, format){ var bg=bakgrunnFraBarber(); return (bg==='lys' && !lysTillatt(p, format)) ? 'mork' : bg; }
   // Speiler backendens plakatTilstand.js (tilgjengeligeFormater/qrTillatt) — IKKE en ny regel.
   function tilgjengeligeFormater(antall){ return (antall|0)<=1 ? ['4:5','9:16'] : ['4:5']; }

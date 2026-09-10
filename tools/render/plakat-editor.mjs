@@ -52,9 +52,10 @@ const POSTER_KAM = datas => '<!doctype html><html><head><meta charset="utf-8"><s
 // SELV-KONSISTENT mock: offer-teksten tegnes PÅ /layout.tekst-recten (samme TEKST_RECT), så dra-boksen
 // (som leser /layout.tekst) faktisk omslutter teksten. Ellers bommer boksen i renderen uten at noe feiler.
 const TEKST_RECT = { x:90, y:760, w:900, h:340 };  // lerret-px; delt av mockLayout OG POSTER_BG
-// Bakgrunns-reflekterende poster: mocken tegner mørk/lys/sand etter background-parameteren + skriver den
+// Bakgrunns-reflekterende poster: mocken tegner mørk/lys/beige etter background-parameteren + skriver den
 // synlig, så et screenshot BEVISER hvilken bakgrunn editoren faktisk sendte (mørk = lys ble tvunget).
-const BG_FARGE = { mork:['#141414','#e9d8b8'], lys:['#f3efe6','#3a2f22'], sand:['#efe6d6','#5a4a2f'] };
+// B4-synk: bakgrunnsverdien heter 'beige' (backend døpte om 'sand' → 'beige'); palett-navnet er fortsatt 'sand'.
+const BG_FARGE = { mork:['#141414','#e9d8b8'], lys:['#f3efe6','#3a2f22'], beige:['#efe6d6','#5a4a2f'] };
 // tekstOffset (dx,dy) MÅ honoreres — ellers følger ikke mock-teksten dra-boksen, og post-drag ser det ut
 // som om boksen bommer (ekte backend flytter offer-blokka via fillPoster, jf. plakat-tekstoffset.test.mjs).
 const POSTER_BG = (bg, dx=0, dy=0) => { const f = BG_FARGE[bg] || BG_FARGE.mork; const t = TEKST_RECT;
@@ -69,11 +70,11 @@ const POSTER_BG = (bg, dx=0, dy=0) => { const f = BG_FARGE[bg] || BG_FARGE.mork;
 // lys → lys-barber på dem må tvinges mørk. utseendeVersjon = epoch-ms (cache-buster på miniatyr-URL).
 const UTSEENDE_V = 1789041600000;
 const MALER_KREM = {
-  tekst:        { bilder:0, formater:{ '4:5':{ bakgrunner:['mork','sand','lys'], qr:true }, '9:16':{ bakgrunner:['mork','sand','lys'], qr:false } } },
-  mal2:         { bilder:1, formater:{ '4:5':{ bakgrunner:['mork','sand'], qr:true }, '9:16':{ bakgrunner:['mork','sand'], qr:false } } },
-  mal3:         { bilder:2, formater:{ '4:5':{ bakgrunner:['mork','sand','lys'], qr:true } } },
-  mal4:         { bilder:3, formater:{ '4:5':{ bakgrunner:['mork','sand'], qr:true } } },
-  'fire-bilder':{ bilder:4, formater:{ '4:5':{ bakgrunner:['mork','sand'], qr:true } } },
+  tekst:        { bilder:0, formater:{ '4:5':{ bakgrunner:['mork','beige','lys'], qr:true }, '9:16':{ bakgrunner:['mork','beige','lys'], qr:false } } },
+  mal2:         { bilder:1, formater:{ '4:5':{ bakgrunner:['mork','beige'], qr:true }, '9:16':{ bakgrunner:['mork','beige'], qr:false } } },
+  mal3:         { bilder:2, formater:{ '4:5':{ bakgrunner:['mork','beige','lys'], qr:true } } },
+  mal4:         { bilder:3, formater:{ '4:5':{ bakgrunner:['mork','beige'], qr:true } } },
+  'fire-bilder':{ bilder:4, formater:{ '4:5':{ bakgrunner:['mork','beige'], qr:true } } },
 };
 const OPPLAST = path.resolve(ROOT, 'no/images/layout-profil.webp'); // ekte fil å «velge fra kamerarull»
 // Ekte webp → Cropper får naturlige pikseldimensjoner i lag-3c-beskjæringen (data-URI ville gitt 0 el. feil).
@@ -151,7 +152,7 @@ const S3B = `()=>{ const wrap=document.getElementById('plakatPrevWrap'); const b
 const browser = await chromium.launch();
 // Bygg poster-PNG-ene (4:5-lerret) én gang — /render-mocken serverer dem etter background.
 { const pp = await browser.newPage({ viewport:{ width:1080, height:1350 }, deviceScaleFactor:1 });
-  for (const bg of ['mork','lys','sand']) { await pp.setContent(POSTER_BG(bg), { waitUntil:'load' }); POSTER_PNG[bg] = await pp.screenshot({ type:'png' }); }
+  for (const bg of ['mork','lys','beige']) { await pp.setContent(POSTER_BG(bg), { waitUntil:'load' }); POSTER_PNG[bg] = await pp.screenshot({ type:'png' }); }
   await pp.close(); }
 const rad = [];
 
@@ -521,6 +522,28 @@ for (const bredde of [320, 375, 1280]) {
     'celle faktisk byttet': (s1.valgt!==s2.valgt && s2.valgt!=null)?'ok':'FEIL',
     'ingen ny render v/cellevalg': nEtter===nFoer?'ok':'FEIL', 'styrke-param sendt': styrkeParams.length>0?'ok':'FEIL',
     'ingen celle-param i kall': !celleParam?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
+// B4-synk — sand-PALETT-barber (palett-navnet er fortsatt 'sand') skal få background 'beige' (ikke 'sand',
+// ikke 400, ikke feil farge). Bekrefter at frontend sender den omdøpte verdien og at posteren tegnes beige.
+const DESIGN_SAND = { ...DESIGN, palette:'sand', mode:'lys' };   // sand-paletten er lys-only
+for (const bredde of [320, 375]) {
+  const page = await browser.newPage({ viewport:{ width:bredde, height:900 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  let bgParam=null;
+  page.on('request', r => { const u=r.url(); if(u.includes('/plakat/preview')){ if(r.method()==='POST'){ let b={}; try{ b=r.postDataJSON(); }catch(e){} bgParam=b.background; } else bgParam=new URL(u).searchParams.get('background'); } });
+  await page.route('**/api/**', router('vekst', 200, null, IMAGES4, DESIGN_SAND));
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
+  await page.locator('.plakat-kort',{hasText:'Ett bilde'}).click(); await page.waitForTimeout(1400);
+  await page.screenshot({ path:`${OUT}/plakat-b4-sand-beige-${bredde}.png`, fullPage:false });
+  const feilVist = await page.evaluate(()=>{ const f=document.getElementById('plakatPrevFeil'); return f?getComputedStyle(f).display!=='none':false; });
+  const fr = await (await page.$('#plakatFrame')).contentFrame();
+  const posterBg = fr ? await fr.evaluate(()=>{ const p=document.querySelector('.p'); return p?getComputedStyle(p).backgroundColor:null; }) : null;
+  rad.push({ skjerm:`b4 sand→beige · ${bredde}`, 'bg-param': bgParam, 'er beige': bgParam==='beige'?'ok':'FEIL',
+    'ikke 400/feil': feilVist===false?'ok':'FEIL', 'poster beige-farge': posterBg==='rgb(239, 230, 214)'?'ok':('FEIL('+posterBg+')'), jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
 }
 

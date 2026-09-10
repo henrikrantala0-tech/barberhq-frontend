@@ -430,7 +430,9 @@ pushet er testrunde-fiksene (bug 3 / beslutning 4–7 / kamerarull / miniatyr-ca
   i cellen → POST-veien til preview/render. Nedskaleringen er **cellebevisst**: fullflate-celle
   (bredde ≥ 60 % av lerretet) → 2160 px lengste kant, kvadrant → 1080 px (`dashboard.html:7041`).
 - **Bakgrunn/palett arves — velges IKKE i editoren:** `bakgrunnFraBarber()` utleder bakgrunnen av
-  barberens bookingside-palett/-modus (`hentDesign`): sand → «sand», ellers mørk/lys. **Gated per mal:**
+  barberens bookingside-palett/-modus (`hentDesign`): **sand-PALETT → background «beige»** (B4-synk 10.09:
+  backend døpte om bakgrunnsverdien `'sand'` → `'beige'`, alias lever én release; palett-NAVNET er fortsatt
+  `'sand'` — kun background-verdien er beige), ellers mørk/lys. **Gated per mal:**
   `bakgrunnFor(p)` sjekker `/regler.maler[*].formater[fmt].bakgrunner` (matchet på `.bilder = antall`);
   er utgangspunktet «lys» men lys ikke tillatt for malen (i dagens spec mangler mal 2, mal 4 og 2×2
   lys-variant — men lista leses fra `/regler`, hardkodes aldri), tvinges mørk. Fail-closed: manglende/ukjent `/regler` → mørk. Editoren sender aldri en bakgrunn backend 400-er.
