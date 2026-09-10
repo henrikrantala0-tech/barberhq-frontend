@@ -1088,6 +1088,9 @@
 
   /* ---- Flytmodell (Vekst) — port av mockup, repo-tokens + literal brand-tint (jf. .rpill.blue) ---- */
   .flow{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 20px 16px;margin-top:28px}
+  /* Tittelrad som toggle. Desktop: ser ut som før (chevron skjult, cursor default, flow-body alltid vist). */
+  .flow-head{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:none;border:0;padding:0;text-align:left;color:inherit;font:inherit;cursor:default}
+  .flow-chev{display:none;color:var(--mut-2);font-size:12px;line-height:1;transition:transform .2s;flex-shrink:0}
   .flow-h{font-size:15px;font-weight:700;letter-spacing:-.01em;margin-bottom:4px}
   .flow-sub{color:var(--mut);font-size:12.5px;line-height:1.5;margin-bottom:18px}
   .flow-steps{display:grid;grid-template-columns:1fr 20px 1fr 20px 1fr 20px 1fr;gap:7px;align-items:stretch}
@@ -1138,6 +1141,15 @@
     .flow-arrow{padding:2px 0}
     .flow-arrow .fa-right{display:none}
     .flow-arrow .fa-down{display:block}
+  }
+  /* Mobil (<768px): sammenleggbar flyt — kollapset by default (kun tittelraden + chevron), toggle på
+     .flow-head. Desktop uendret (flow-body alltid vist, chevron skjult). Tilstand huskes ikke. Se JS-toggle. */
+  @media(max-width:767px){
+    .flow-head{cursor:pointer}
+    .flow-chev{display:block}
+    .flow.aapen .flow-chev{transform:rotate(180deg)}
+    .flow-body{display:none}
+    .flow.aapen .flow-body{display:block}
   }
 
   /* ---- Accordion (Vekst) ---- */
@@ -1552,7 +1564,13 @@
          flytmodellen under er ikke bare SMS. [oversettelse: sv/da/en] -->
     <p class="sec-h">Automatikk</p>
     <div class="flow">
-      <h3 class="flow-h">Slik henger det sammen</h3>
+      <!-- Mobil (<768px): sammenleggbar — kun tittelraden vises, resten bak flow-body. Desktop: alltid
+           åpen (chevron skjult, flow-body vist av CSS). Tilstand huskes ikke (per beslutning). -->
+      <button type="button" class="flow-head" aria-expanded="false">
+        <h3 class="flow-h">Slik henger det sammen</h3>
+        <span class="flow-chev" aria-hidden="true">&#9662;</span>
+      </button>
+      <div class="flow-body">
       <p class="flow-sub">Automatikken tar de første ukene. Etter 60 dager er det din tur.</p>
       <div class="flow-steps">
         <div class="flow-step fs-auto">
@@ -1587,6 +1605,7 @@
         <span><span class="fl-dot" style="background:#3ecf7e"></span>Automatikken jobber</span>
         <span><span class="fl-dot" style="background:#4d8bff"></span>Din tur</span>
       </div>
+      </div><!-- /flow-body -->
     </div>
 
     <!-- ACCORDIONS: to lister, ikke én — maskin under «Automatikk», menneske under «Personlig».
@@ -3837,6 +3856,23 @@ async function loadMomentum(){
     if(head && head.getAttribute('aria-expanded')!=='true') head.click();
     var acc=$("#accVerv"); if(acc) acc.scrollIntoView({behavior:'smooth',block:'start'});
   });})();
+
+/* ---- Flytmodell (Vekst): sammenleggbar på mobil (<768px), alltid åpen på desktop ---- */
+// CSS eier synligheten (flow-body vises alltid ≥768px, skjules by default <768px med mindre .aapen).
+// JS holder KUN klassen + aria-expanded i synk. Klikk toggler bare under 768px; på desktop er raden
+// ikke-interaktiv (cursor default) og aria står 'true'. Ingen tilstands-lagring (per beslutning).
+(function(){
+  var flow=document.querySelector('.flow'); if(!flow)return;
+  var head=flow.querySelector('.flow-head'); if(!head)return;
+  function erMobil(){ return window.innerWidth < 768; }
+  function sync(){ head.setAttribute('aria-expanded', (!erMobil()||flow.classList.contains('aapen'))?'true':'false'); }
+  head.addEventListener('click',function(){
+    if(!erMobil())return;               // desktop: alltid åpen, toggle er nulloperasjon
+    flow.classList.toggle('aapen'); sync();
+  });
+  window.addEventListener('resize',sync);
+  sync();                               // sett riktig aria ved last (desktop=true, mobil-lukket=false)
+})();
 
 /* ---- Attribusjon (Vekst): «Hvor kundene kommer fra» ---- */
 // Egen periode-state, bevisst skilt fra Oversiktens curPeriod: de to flatene skal kunne
