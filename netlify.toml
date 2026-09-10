@@ -97,6 +97,16 @@
   status = 200
   force = true
 
+# 3b. Bilde-råruta → backend. /api/dashboard/images returnerer url=/images/raw/<id> (flersegment),
+#     som IKKE fanges av /:slug (ett segment) og ikke har noen lokal fil → 404 på dashboard-origin.
+#     Uten denne proxyen laster crop-bildet og bildevelgerens galleri-thumbs aldri (verifisert:
+#     backend-origin serverer /images/raw/<id> med 200, Netlify-origin ONERROR). Må FØR /:slug.
+[[redirects]]
+  from = "/images/*"
+  to = "https://api.trybarberhq.com/images/:splat"
+  status = 200
+  force = true
+
 # 4. Proxy: ett-segment-stier → backend (barbersider).
 #    :slug matcher kun ett segment — /no/priser (to segmenter) fanges aldri.
 #    Status 200 = rewrite/proxy, URL forblir trybarberhq.com i adressefeltet.
