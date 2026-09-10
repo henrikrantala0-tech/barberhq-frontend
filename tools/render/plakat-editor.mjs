@@ -577,6 +577,34 @@ for (const bredde of [320, 375, 1280]) {
   await page.close();
 }
 
+// Bug 6 — bytt bilde → bytt format skal vise NYTT bilde. FORSINKET /layout (>250ms) eksponerer racen:
+// uten fiksen fyrer preview mens _layout er i transitt → plasserFor fallback til standard (gammelt) bilde.
+// Med fiksen (behold gammel _layout + sekvensér preview etter layout) bærer preview alltid nytt bilde-id.
+for (const bredde of [320, 375]) {
+  const page = await browser.newPage({ viewport:{ width:bredde, height:1000 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  const previewPlasser = [];   // image_id-lister fra hvert GET /preview
+  page.on('request', r => { const u=r.url(); if(u.includes('/plakat/preview') && r.method()==='GET'){
+    try{ const pl=JSON.parse(new URL(u).searchParams.get('plasser')||'[]'); previewPlasser.push(pl.map(x=>x.image_id||(x.data?'base64':null))); }catch(e){} } });
+  const base = router('vekst', 200, null, IMAGES4, DESIGN);
+  await page.route('**/api/**', async route => { const p=new URL(route.request().url()).pathname;
+    if (p==='/api/dashboard/plakat/layout'){ await new Promise(res=>setTimeout(res,400)); return base(route); }   // forsinket layout
+    return base(route); });
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
+  await page.locator('.plakat-kort',{hasText:'Ett bilde'}).click(); await page.waitForTimeout(1700);   // mal2 (4:5+9:16), vent forsinket layout
+  await page.locator('.pk-bildeknapper-btn',{hasText:'Endre bilde'}).click(); await page.waitForTimeout(500);
+  await page.locator('.pk-bildevelg-bilde').nth(1).click(); await page.waitForTimeout(900);            // bytt til bilde B (2. galleri)
+  previewPlasser.length=0;                                                                              // se kun preview ETTER formatbytte
+  await page.locator('.pk-seg', { hasText:'9:16' }).click(); await page.waitForTimeout(1400);           // bytt format → forsinket layout + preview
+  const B='21111111-1111-1111-1111-111111111111';   // IMAGES4[1].id (2. galleri-bilde)
+  const siste = previewPlasser[previewPlasser.length-1] || [];
+  rad.push({ skjerm:`bug6 bilde/format · ${bredde}`, 'preview-plasser-etter-format': JSON.stringify(siste),
+    'bærer NYTT bilde (B)': siste.includes(B)?'ok':'FEIL', 'antall preview etter format': previewPlasser.length, jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
 console.table(rad);
 console.log('JS-feil:', rad.filter(r=>r.jsfeil && r.jsfeil!=='ingen' && r.jsfeil!=='—').length);
 await browser.close(); server.close(); noCorsServer.close();

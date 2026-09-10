@@ -6919,7 +6919,11 @@ function erStandalone(){
       +'&background='+encodeURIComponent(bakgrunnFor(p));   // samme gating som render/preview → /layout 400-er aldri på lys-sperret mal
   }
   async function hentLayout(p){
-    _layout=null;
+    // Bug 6 (b): IKKE null-e _layout først. Nulling åpnet et vindu der plasserFor (som mapper bilde-
+    // override via celler[i].slot) falt tilbake til standard galleri-rekkefølge → formatbytte etter
+    // bildebytte viste GAMMELT bilde. Beholder forrige _layout til den nye ankommer (slot-navn er
+    // format-uavhengige, så override-mappingen forblir korrekt i mellomtiden). Ved plakat-VALG nuller
+    // renderSkjerm2 eksplisitt (ny mal → gamle celler ugyldige) og sekvenserer preview etter layout.
     try{
       var r=await fetch(PREVIEW_BASE+'/layout?'+layoutQuery(p),{credentials:'include'});
       if(r.ok){ var j=await r.json(); if(j&&j.canvas) _layout=j; }
@@ -7212,7 +7216,9 @@ function erStandalone(){
     var lovligeFmt=tilgjengeligeFormater(antallFor(p));
     var fRow=document.createElement('div'); fRow.className='pk-seg-row';
     [['4:5','4:5'],['9:16','9:16']].forEach(function(f){ fRow.appendChild(segKnapp(f[0],f[1], p.format===f[0], lovligeFmt.indexOf(f[0])===-1, function(seg){
-      p.format=f[0]; markOn(seg); oppdaterQr(); lagre(); skalerFrame(); planleggPreview(); oppdaterLayout(p); })); });
+      // Bug 6 (a): sekvensér preview ETTER layout. Preview må vente på ny /layout så plasserFor kjører
+      // mot gjeldende celler (riktig bilde-override), ikke fyre mens layout er i transitt.
+      p.format=f[0]; markOn(seg); oppdaterQr(); lagre(); oppdaterLayout(p).then(function(){ planleggPreview(); }); })); });
     kontr.appendChild(ktrlRad('Format', fRow));
 
     if(harSkjold(p)){
@@ -7252,7 +7258,10 @@ function erStandalone(){
     var hoyre=document.createElement('div'); hoyre.className='pk-col-kontroller'; hoyre.appendChild(bknapp); hoyre.appendChild(kontr);
     layout.appendChild(venstre); layout.appendChild(hoyre); scroll.appendChild(layout);
 
-    skalerFrame(); lastPreview(); oppdaterLayout(p);
+    // Bug 6 (a): preview sekvensert etter layout også ved plakat-valg — _layout er null-et over (ny mal),
+    // så lastPreview må vente til cellene finnes, ellers faller plasserFor til standard bilde ved førstevisning.
+    // skalerFrame() kjøres straks for umiddelbar iframe-størrelse (CANVAS[p.format]-fallback når _layout=null).
+    skalerFrame(); oppdaterLayout(p).then(function(){ lastPreview(); });
   }
 
   function plakatInit(){
