@@ -2504,12 +2504,14 @@
   /* Lag 2 — preview (skalert iframe) + kontroller */
   .plakat-prev{position:relative;width:100%;max-width:340px;margin:16px auto 4px;overflow:hidden;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
   .plakat-frame{border:0;display:block;transform-origin:0 0;background:var(--surface)}
-  .plakat-prev-laster{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--surface)}
+  .plakat-prev-laster{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;background:var(--surface)}
   .pk-spinner{width:26px;height:26px;border:3px solid var(--line-2);border-top-color:#2563eb;border-radius:50%;animation:pkspin .8s linear infinite}
   @keyframes pkspin{to{transform:rotate(360deg)}}
-  .plakat-prev-feil{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--ink);font-size:13px;line-height:1.5;background:var(--surface)}
+  .plakat-prev-feil{position:absolute;inset:0;z-index:6;display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--ink);font-size:13px;line-height:1.5;background:var(--surface)}
   /* Lag 3a — celle-trykkflater over iframen (samme s som iframe-innholdet, se tegnCeller/skalerFrame). */
-  .pk-celler{position:absolute;left:0;top:0;pointer-events:none}
+  /* z-index: celler(2) < tekst/guider(4) < laster/feil(6). Dra-boksen (og zoom-håndtaket) MÅ ligge over
+     cellene — ellers okkluderer re-innsatte celler boksen etter bildebytte (bug 3), så teksten ikke kan dras. */
+  .pk-celler{position:absolute;left:0;top:0;z-index:2;pointer-events:none}
   .pk-celle{position:absolute;margin:0;padding:0;background:transparent;border:2px solid transparent;border-radius:8px;cursor:pointer;pointer-events:auto;transition:border-color .12s,box-shadow .12s}
   .pk-celle.implisitt{cursor:default}
   .pk-celle:not(.implisitt):hover{border-color:rgba(255,255,255,.55)}
@@ -2517,7 +2519,7 @@
   .pk-celle.valgt::after{content:"✓";position:absolute;top:5px;right:5px;width:20px;height:20px;display:flex;align-items:center;justify-content:center;background:#2f6df6;color:#fff;border-radius:50%;font-size:12px;font-weight:700;box-shadow:0 1px 4px rgba(0,0,0,.45)}
   /* Lag 3b — dra tekstblokken + midtstillings-hjelpelinjer. */
   /* Transparent håndtak → tilbudsteksten synlig under; etiketten flyttet ut til en pille over boksen. */
-  .pk-tekst{position:absolute;box-sizing:border-box;border:2px dashed rgba(255,255,255,.9);border-radius:8px;background:transparent;cursor:move;pointer-events:auto;box-shadow:0 0 0 2px rgba(0,0,0,.28)}
+  .pk-tekst{position:absolute;z-index:4;box-sizing:border-box;border:2px dashed rgba(255,255,255,.9);border-radius:8px;background:transparent;cursor:move;pointer-events:auto;box-shadow:0 0 0 2px rgba(0,0,0,.28)}
   .pk-tekst.drar{background:rgba(47,109,246,.12);border-style:solid}
   .pk-tekst-l{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:4px;white-space:nowrap;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:rgba(20,20,20,.9);padding:3px 8px;border-radius:20px;box-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none}
   .pk-tekst-l.under{bottom:auto;top:100%;margin-bottom:0;margin-top:4px}
@@ -2540,8 +2542,8 @@
   .pk-crop-x{background:transparent;border:none;color:#fff;font-size:30px;line-height:1;cursor:pointer;padding:0 4px;min-height:44px;min-width:44px;display:flex;align-items:center;justify-content:flex-end}
   .pk-crop-canvas{flex:1;min-height:0;overflow:hidden;background:#111;border-radius:10px}
   .pk-crop-canvas img{display:block;max-width:100%}
-  .pk-guide-v{position:absolute;top:0;bottom:0;width:0;border-left:1px dashed #2f6df6;box-shadow:0 0 0 .5px rgba(255,255,255,.4);pointer-events:none}
-  .pk-guide-h{position:absolute;left:0;right:0;height:0;border-top:1px dashed #2f6df6;box-shadow:0 0 0 .5px rgba(255,255,255,.4);pointer-events:none}
+  .pk-guide-v{position:absolute;top:0;bottom:0;width:0;z-index:4;border-left:1px dashed #2f6df6;box-shadow:0 0 0 .5px rgba(255,255,255,.4);pointer-events:none}
+  .pk-guide-h{position:absolute;left:0;right:0;height:0;z-index:4;border-top:1px dashed #2f6df6;box-shadow:0 0 0 .5px rgba(255,255,255,.4);pointer-events:none}
   .pk-row{display:flex;align-items:center;gap:12px;margin-top:16px}
   .pk-label{flex:0 0 96px;font-size:13px;font-weight:600;color:var(--ink)}
   .pk-seg-row{display:flex;gap:8px;flex-wrap:wrap;flex:1}
@@ -7090,7 +7092,7 @@ function erStandalone(){
         p.bilder=p.bilder||{}; p.bilder[celle.slot]={ data:data, width:w, height:h };
         if(p.rects) delete p.rects[celle.slot]; // gammelt utsnitt gjaldt forrige bilde
         try{ lagre(); }catch(e){} // base64 kan sprenge sessionStorage-kvoten — ikke la det krasje editoren
-        lag.remove(); tegnCeller(); planleggPreview();
+        lag.remove(); tegnCeller(); tegnTekst(); planleggPreview(); // tegnTekst: dra-boksen re-innsettes ØVER cellene (bug 3)
       });
     });
     grid.appendChild(kamera);
@@ -7100,7 +7102,7 @@ function erStandalone(){
       btn.addEventListener('click', function(){
         p.bilder=p.bilder||{}; p.bilder[celle.slot]=b.id;
         if(p.rects) delete p.rects[celle.slot]; // gammelt utsnitt gjaldt forrige bilde → nullstill
-        lagre(); lag.remove(); tegnCeller(); planleggPreview(); // nytt bilde → tegn ikoner på nytt + oppdatert preview
+        lagre(); lag.remove(); tegnCeller(); tegnTekst(); planleggPreview(); // tegnTekst: dra-boksen re-innsettes ØVER cellene (bug 3)
       });
       grid.appendChild(btn);
     });

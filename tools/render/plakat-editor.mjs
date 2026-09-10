@@ -516,7 +516,7 @@ for (const bredde of [320, 375, 1280]) {
     const p=s&&(s.plakater||[]).filter(x=>x.id===s.valgtId)[0]; return { styrke:p?p.skjoldStyrke:null, valgt:p?p.valgtCelle:null }; });
   const s0=await les(); const nFoer=styrkeParams.length;
   await page.locator('.pk-celle').nth(0).click(); await page.waitForTimeout(250); const s1=await les();
-  await page.locator('.pk-celle').nth(2).click(); await page.waitForTimeout(250); const s2=await les();
+  await page.locator('.pk-celle').nth(1).click(); await page.waitForTimeout(250); const s2=await les();   // øvre celler (ikke under tekst-boksen som nå ligger på topp, z-index:4)
   const nEtter=styrkeParams.length;
   rad.push({ skjerm:'skjold-global', 'styrke uendret v/cellebytte': (s0.styrke===s1.styrke && s1.styrke===s2.styrke && s0.styrke!=null)?('ok('+s0.styrke+')'):'FEIL',
     'celle faktisk byttet': (s1.valgt!==s2.valgt && s2.valgt!=null)?'ok':'FEIL',
@@ -544,6 +544,36 @@ for (const bredde of [320, 375]) {
   const posterBg = fr ? await fr.evaluate(()=>{ const p=document.querySelector('.p'); return p?getComputedStyle(p).backgroundColor:null; }) : null;
   rad.push({ skjerm:`b4 sand→beige · ${bredde}`, 'bg-param': bgParam, 'er beige': bgParam==='beige'?'ok':'FEIL',
     'ikke 400/feil': feilVist===false?'ok':'FEIL', 'poster beige-farge': posterBg==='rgb(239, 230, 214)'?'ok':('FEIL('+posterBg+')'), jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
+// Bug 3 — dra-boksen må ligge OVER cellene etter bildebytte: re-innsatte .pk-celler skal ikke okkludere
+// .pk-tekst. To assertions: (a) elementFromPoint på boks-senter treffer .pk-tekst (ikke en .pk-celle);
+// (b) boksen er faktisk DRAGBAR etter swap (tdy endres). Uten fiksen fanges cellene peker-eventene → FEIL.
+for (const bredde of [320, 375, 1280]) {
+  const page = await browser.newPage({ viewport:{ width:bredde, height:1100 }, deviceScaleFactor:1 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  await page.route('**/api/**', router('vekst', 200, null, IMAGES4, DESIGN));
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
+  await page.locator('.plakat-kort',{hasText:'Fire bilder'}).click(); await page.waitForTimeout(1200);
+  await page.locator('.pk-celle').first().click(); await page.waitForTimeout(200);
+  // Bytt bilde (trigger tegnCeller — den re-innsatte cellene som før okkluderte boksen)
+  await page.locator('.pk-bildeknapper-btn',{hasText:'Endre bilde'}).click(); await page.waitForTimeout(500);
+  await page.locator('.pk-bildevelg-bilde').nth(1).click(); await page.waitForTimeout(700);
+  const lesTdy = () => page.evaluate(() => { let s=null; try{ s=JSON.parse(sessionStorage.getItem('bhq-plakat')); }catch(e){} const p=s&&(s.plakater||[]).filter(x=>x.id===s.valgtId)[0]; return p?(p.tdy||0):null; });
+  const paaTopp = await page.evaluate(() => { const b=document.querySelector('.pk-tekst'); if(!b) return false;
+    const r=b.getBoundingClientRect(); const el=document.elementFromPoint(Math.round(r.left+r.width/2), Math.round(r.top+r.height/2)); return !!(el && el.closest('.pk-tekst')); });
+  const bb = await page.locator('.pk-tekst').boundingBox(); const cx=bb.x+bb.width/2, cy=bb.y+bb.height/2;
+  const tdyFoer = await lesTdy();
+  await page.mouse.move(cx, cy); await page.mouse.down();
+  for (let i=1;i<=5;i++){ await page.mouse.move(cx, cy-8*i); await page.waitForTimeout(15); }
+  await page.mouse.up(); await page.waitForTimeout(200);
+  const tdyEtter = await lesTdy();
+  await page.screenshot({ path:`${OUT}/plakat-bug3-dra-etter-swap-${bredde}.png`, fullPage:false });
+  rad.push({ skjerm:`bug3 dra-boks · ${bredde}`, 'boks-på-topp-etter-swap': paaTopp?'ok':'FEIL',
+    'dragbar-etter-swap': (tdyEtter!=null && tdyFoer!=null && tdyEtter<tdyFoer)?'ok':'FEIL', 'tdy': tdyFoer+'→'+tdyEtter, jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
 }
 
