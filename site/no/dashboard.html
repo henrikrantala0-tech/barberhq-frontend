@@ -2484,15 +2484,10 @@
   .plakat-back[hidden]{display:none} /* author-display slår ellers av UA [hidden]{display:none} */
   .plakat-x{font-size:28px;line-height:1;padding:0 10px;justify-content:center}
   .plakat-scroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch}
-  .plakat-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;padding:16px}
+  /* Tre like kort i én rad på alle bredder — ingen anbefalt-tier, ingen «Flere maler». */
+  .plakat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px}
   .plakat-kort{position:relative;aspect-ratio:4/5;border:1px solid var(--line);border-radius:14px;background:var(--surface);overflow:hidden;cursor:pointer;display:flex;align-items:flex-end;padding:12px;text-align:left}
   .plakat-kort-navn{font-size:13px;font-weight:600;color:var(--ink)}
-  /* Anbefalte maler (mal1/mal2) i 2-kolonners grid = større kort; øvrige i 3-kolonner = mindre. */
-  .plakat-grid-stor{grid-template-columns:repeat(2,1fr)}
-  .plakat-grid-liten{grid-template-columns:repeat(3,1fr);gap:10px;padding-top:0}
-  .plakat-seksjon-h{font-size:12px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);margin:20px 16px 2px}
-  .plakat-grid-liten .plakat-kort{aspect-ratio:3/4;padding:9px}
-  .plakat-grid-liten .plakat-kort-navn{font-size:11.5px}
   .plakat-kort.laast{opacity:.5;border-style:dashed;flex-direction:column;align-items:flex-start;justify-content:flex-end;gap:2px}
   .plakat-kort-mangler{font-size:10.5px;color:var(--mut);font-weight:500}
   /* Miniatyr fyller kortet bak navnet; toner inn ved last, navn får scrim + hvit tekst for lesbarhet. */
@@ -2506,7 +2501,6 @@
   .plakat-velg-bilde img{width:100%;height:100%;object-fit:cover;display:block}
   .plakat-stor{margin:16px auto;width:min(88vw,340px);aspect-ratio:4/5;border:1px solid var(--line);border-radius:16px;background:var(--surface);display:flex;align-items:center;justify-content:center;text-align:center;color:var(--mut);font-size:13px;padding:16px}
   .plakat-kontroller{padding:0 16px 40px}
-  @media(min-width:561px){.plakat-grid{grid-template-columns:repeat(3,1fr)}}
   /* Lag 2 — preview (skalert iframe) + kontroller */
   .plakat-prev{position:relative;width:100%;max-width:340px;margin:16px auto 4px;overflow:hidden;border-radius:14px;background:var(--surface);border:1px solid var(--line)}
   .plakat-frame{border:0;display:block;transform-origin:0 0;background:var(--surface)}
@@ -6661,13 +6655,13 @@ function erStandalone(){
   }
   // Alle fem malene genereres fra START; galleriets bildeantall avgjør hvilke som er TILGJENGELIGE.
   // Backend utleder mal av plasser.length (0→mal1, 1→mal2, 2→mal3, 3→mal4, 4→2×2), så frontend
-  // sender bare N bilder. mal1+mal2 er anbefalte (vises først, større); resten under, mindre.
+  // sender bare N bilder. Tre maler tilbys — like store, ingen anbefalt-tier, ingen «Flere maler».
+  // (To/Tre bilder = mal3/mal4 er fjernet fra editoren; backend støtter dem fortsatt, vi sender bare
+  // 0/1/4 bilder.) Fire bilder (2×2) låses ved < 4 galleribilder.
   var MALER=[
-    {id:'mal1', antall:0, navn:'Uten bilde',  anbefalt:true},
-    {id:'mal2', antall:1, navn:'Ett bilde',   anbefalt:true},
-    {id:'mal3', antall:2, navn:'To bilder',   anbefalt:false},
-    {id:'mal4', antall:3, navn:'Tre bilder',  anbefalt:false},
-    {id:'fire', antall:4, navn:'Fire bilder', anbefalt:false}
+    {id:'mal1', antall:0, navn:'Uten bilde'},
+    {id:'mal2', antall:1, navn:'Ett bilde'},
+    {id:'fire', antall:4, navn:'Fire bilder'}
   ];
   function malDef(id){ for(var i=0;i<MALER.length;i++) if(MALER[i].id===id) return MALER[i]; return null; }
   function tilgjengelig(p){ return galleriBilder().length >= ((malDef(p.id)||{}).antall||0); }
@@ -6725,12 +6719,10 @@ function erStandalone(){
     if(PS.valgtId==null){
       back.hidden=true; tittel.textContent='Velg plakat';
       var g=galleriBilder().length;
-      var stor=document.createElement('div'); stor.className='plakat-grid plakat-grid-stor';
-      var liten=document.createElement('div'); liten.className='plakat-grid plakat-grid-liten';
-      PS.plakater.forEach(function(p){ var m=malDef(p.id); if(!m) return; (m.anbefalt?stor:liten).appendChild(lagKort(p, m, g>=m.antall, g)); });
-      scroll.appendChild(stor);
-      var sh=document.createElement('p'); sh.className='plakat-seksjon-h'; sh.textContent='Flere maler'; scroll.appendChild(sh);
-      scroll.appendChild(liten);
+      // Tre like kort i ett rutenett — ingen anbefalt-tier, ingen «Flere maler»-seksjon.
+      var grid=document.createElement('div'); grid.className='plakat-grid';
+      PS.plakater.forEach(function(p){ var m=malDef(p.id); if(!m) return; grid.appendChild(lagKort(p, m, g>=m.antall, g)); });
+      scroll.appendChild(grid);
       settOppMiniatyrer(scroll);
     } else {
       renderSkjerm2(scroll, back, tittel);
@@ -6739,7 +6731,7 @@ function erStandalone(){
 
   function lagKort(p, m, lov, g){
     var kort=document.createElement('button'); kort.type='button';
-    kort.className='plakat-kort'+(m.anbefalt?' stor':'')+(lov?'':' laast');
+    kort.className='plakat-kort'+(lov?'':' laast');
     var nvn=document.createElement('span'); nvn.className='plakat-kort-navn'; nvn.textContent=m.navn;
     kort.appendChild(nvn);
     if(!lov){
