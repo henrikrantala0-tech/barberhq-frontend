@@ -652,6 +652,29 @@ for (const bredde of [320, 375, 1280]) {
   await page.close();
 }
 
+// A-i — crop på KAMERARULL-bilde (base64). Regresjon: aapneBeskjaer leste bilde.url (undefined for base64)
+// → Cropper init aldri → spørsmålstegn. Nå img.src=bilde.data||bilde.url. Last kamerarull → Beskjær →
+// assert crop-bildet er en data-URI + Cropper bygger (.cropper-container) + naturalWidth>0.
+{
+  const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  await page.route('**/api/**', router('vekst', 200, null, IMAGES4, DESIGN));
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
+  await page.locator('.plakat-kort', { hasText:'Fire bilder' }).click(); await page.waitForTimeout(1100);
+  await page.locator('.pk-celle').first().click(); await page.waitForTimeout(200);
+  await page.locator('.pk-bildeknapper-btn', { hasText:'Endre bilde' }).click(); await page.waitForTimeout(500);
+  await page.locator('.pk-bildevelg-kamera input[type=file]').setInputFiles(OPPLAST); await page.waitForTimeout(1400);   // kamerarull → base64 i cellen, velger lukkes
+  await page.locator('.pk-bildeknapper-btn', { hasText:'Beskjær' }).click(); await page.waitForTimeout(1600);           // crop på base64-cellen
+  const cr = await page.evaluate(() => { const img=document.querySelector('.pk-crop-canvas img');
+    return { init: !!document.querySelector('.cropper-container'), erData: !!(img && /^data:image/.test(img.src)), nw: img?img.naturalWidth:0 }; });
+  await page.screenshot({ path:`${OUT}/plakat-crop-kamerarull-375.png`, fullPage:false });
+  rad.push({ skjerm:'A-i crop kamerarull', 'src=data-URI': cr.erData?'ok':'FEIL', 'cropper-init': cr.init?'ok':'FEIL',
+    'naturalWidth>0': cr.nw>0?('ok('+cr.nw+')'):'FEIL(0)', jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
 console.table(rad);
 console.log('JS-feil:', rad.filter(r=>r.jsfeil && r.jsfeil!=='ingen' && r.jsfeil!=='—').length);
 await browser.close(); server.close(); noCorsServer.close();

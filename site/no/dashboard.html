@@ -6775,7 +6775,13 @@ function erStandalone(){
   // henter derfor aldri. Bakgrunn/kampanjetype speiler previewen; QR/lenke droppes (støy i småformat).
   var _miniObs=null;
   function miniatyrQuery(p){
-    var plasser = plasserFor(p).map(function(b){ return {image_id:String(b.id)}; });
+    // Kamerarull-bilder er base64 (ingen .id) og kan ikke sendes via GET → fall tilbake til standard
+    // galleri-bilde for cellen i miniatyren (ellers image_id="undefined" → brutt thumbnail). Preview/render
+    // (POST-veien) viser base64-bildet ekte; miniatyren er kun en liten forhåndsvisning.
+    var plasser = plasserFor(p).map(function(b, i){
+      if(b && b.data){ var def=galleriBilder()[i]; return def ? {image_id:String(def.id)} : null; }
+      return {image_id:String(b.id)};
+    }).filter(Boolean);
     return 'bredde=400'
       +'&format='+encodeURIComponent('4:5')
       +'&background='+encodeURIComponent(bakgrunnFor(p, '4:5'))
@@ -7067,7 +7073,7 @@ function erStandalone(){
       var p=finn(PS.valgtId); var r=p&&p.rects&&p.rects[celle.slot];
       if(r) try{ cr.setData({x:r.x, y:r.y, width:r.w, height:r.h}); }catch(_){}  // gjenopprett forrige utsnitt
     };
-    img.src=bilde.url;
+    img.src=(bilde.data||bilde.url);   // kamerarull → base64 data-URI (.data); galleri → .url. Begge former.
     // Beslutning 6: ingen «Bruk beskjæring»-knapp. Kryss (eller klikk på bakteppet) LUKKER og LAGRER utsnittet.
     function lagreOgLukk(){
       if(cr){

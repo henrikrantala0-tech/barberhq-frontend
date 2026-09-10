@@ -425,7 +425,14 @@ pushet er testrunde-fiksene (bug 3 / beslutning 4–7 / kamerarull / miniatyr-ca
   og Cropper ville ellers gjort en egen CORS-request (crossOrigin+timestamp) → død crop. Rect-only crop
   trenger ingen ren canvas. Se «Kjent brutt på live» i Bildeplasserings-system.
 - **Beslutning 7 — «Endre bilde»:** knapp på valgt celle → bildevelger (galleri, på `<body>`) → lagres i
-  `p.bilder[slot]`.
+  `p.bilder[slot]`. **⚠ Kamerarull-bilder er base64 (`{data,width,height}`, ingen `.url`/`.id`)** — alt som
+  leser bilde-objektet MÅ håndtere BEGGE former: crop `img.src=bilde.data||bilde.url`; `plasserData` sender
+  `{data}` vs `{image_id}`; `miniatyrQuery` (GET, kan ikke bære base64) faller tilbake til standard galleri-
+  bilde for cellen. (Base64-vs-URL-forveksling har brutt crop to ganger.)
+- **Bildevalg er GLOBALT per mal, delt på tvers av kampanjetype — BEVISST (10.09), ikke en glipp.**
+  `p.bilder`/`p.rects` ligger på plakat-objektet i `PS.plakater`; `PS.kampanjetype` er ÉN sesjonsverdi. Så
+  samme bilde/utsnitt vises på både verving- og lojalitet-plakaten — kampanjen skiller kun TEKSTEN (copy).
+  Barbereren bruker samme salong-foto på begge. Ikke «fiks» dette til per-kampanje uten at Henrik ber om det.
 - **Del 2 — kamerarull:** «Velg bilde» har en Kamerarull-flis (file input) → nedskalert base64 (jpeg)
   i cellen → POST-veien til preview/render. Nedskaleringen er **cellebevisst**: fullflate-celle
   (bredde ≥ 60 % av lerretet) → 2160 px lengste kant, kvadrant → 1080 px (`dashboard.html:7041`).
