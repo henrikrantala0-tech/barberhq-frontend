@@ -387,6 +387,41 @@ INNSTILLINGER øverst, READ-ONLY oversikt under. **UI-navn «Lojalitetsprogram»
 - **Basis:** skjoldes som de andre Vekst-accordionene (`skjoldVekstFlater` inkluderer `#accLoyal`), UTEN eksempeltall og UTEN «Eksempel»-merke — `loadLoyalty` returnerer tidlig ved `erBasis()` (ingen `/loyalty`-kall). Se Basis-visning.
 - Render: `tools/render/lojalitetsprogram.mjs` (av / på-tom / på-liste / etter-innløsning + interaktive tilstander + pill + basis, 320/375, mørk/lys).
 
+### Kampanjeplakater (Vekst-fanen) — bygget 10.09, IKKE pushet
+Fullskjerm-editor (`#plakatOverlay`) i `dashboard.html`, åpnet fra to «Generer plakat»-knapper: én i
+Verving-trekkspillet, én i Lojalitet-trekkspillet (`#loyalLeggTilWrap`, kun når programmet er PÅ).
+Knappen setter `kampanjetype` (`verving`/`lojalitet`) for hele økten. Hele flaten er Vekst —
+`erBasis()` sender til abonnement. Tilstand i sessionStorage (`bhq-plakat`), overlever refresh.
+**Backend-kontrakt:** `GET/POST /api/dashboard/plakat/{preview,render}` + `GET /plakat/{layout,regler}`
+(`docs/08-kampanjeplakater.md` Del 8, backend-repo). **Rutene er prod-verifisert 10.09.**
+- **Skjerm 1 «Velg plakat»:** fem maler etter bildeantall — `mal1` «Uten bilde» (0) … `fire` «Fire
+  bilder» (2×2). `mal1`+`mal2` anbefalt (større, øverst), resten under «Flere maler». Tilgjengelighet
+  = antall galleri-bilder ≥ malens `antall`; låst kort → «Legg til bilde» → Din side. Lat-lastede
+  miniatyrer (`GET /render?bredde=400`); **låste kort henter aldri** (render-test: `renderKall == tilgjengelige`).
+- **Skjerm 2 «Rediger»:** levende preview i iframe via `srcdoc` (POST når en celle bærer
+  kamerarull-base64, GET ellers — iframe kan ikke navigere til POST). Kontroller: format 4:5 / 9:16
+  (filtrert per bildeantall), skjoldstyrke-slider (område fra `/regler`, kun når malen har skjold),
+  QR + Lenke-avkryssing (QR kun visse format), Last ned + Del (`navigator.share` → PNG-blob, fallback
+  nedlasting). Debounce 250 ms; nøytral feilstate ved 400/403/5xx.
+- **Lag 3a — celle-valg:** trykkflater lagt over iframen (geometri fra `/layout`, samme skalering,
+  align < 2px); ett-bilde-mal har implisitt valgt celle.
+- **Lag 3b (beslutning 5) — dra tekstblokken:** på ekte tekst-geometri fra `/layout.tekst`,
+  midtstillings-hjelpelinjer, lokal flytting (ingen fetch per piksel), én reload ved slipp, offset
+  `tdx/tdy` i lerret-piksler. Mal 1 (flex) → backend gir `tekst:null` → ingen flytt-boks.
+- **Lag 3c (beslutning 6) — beskjæring per celle:** Cropper låst til cellens aspect, rect i bildets
+  egne piksler klampet innenfor bildet; **kryss lukker OG lagrer** (ingen «Bruk»-knapp), montert på `<body>`.
+- **Beslutning 7 — «Endre bilde» per celle:** bytt-ikon → bildevelger (galleri, på `<body>`) → lagres i
+  `p.bilder[slot]`.
+- **Del 2 — kamerarull:** «Velg bilde» har en Kamerarull-flis (file input) → nedskalert base64 (jpeg)
+  i cellen → POST-veien til preview/render. Nedskaleringen er **cellebevisst**: fullflate-celle
+  (bredde ≥ 60 % av lerretet) → 2160 px lengste kant, kvadrant → 1080 px (`dashboard.html:7041`).
+- **Bakgrunn/palett arves — velges IKKE i editoren:** `bakgrunnFraBarber()` utleder bakgrunnen av
+  barberens bookingside-palett/-modus (`hentDesign`): sand → «sand», ellers mørk/lys. Editoren leser
+  KUN `skjoldStyrke` fra `/regler` — `barber.morkSperret` og `maler` (hvilke maler tilbyr lys palett)
+  er ikke konsumert ennå. **⚠ Strammer backend inn lys-palett per mal, må frontend synkes.**
+- **Render-test:** `tools/render/plakat-editor.mjs` (skjerm 1, skjerm 2, mal1-uten-slider, 403-feilstate,
+  lag 3a 2×2, 3b dra, 3c crop, beslutning 7, del 2 kamerarull) @320/375.
+
 ### Bildeplasserings-system (slots)
 - `images` har `slot` (portrett/hero/galleri) + `sort_order`. Barbereren trykker en slot-boks per layout → laster opp dit. Galleri-grense 10; erstatning av portrett/hero sletter gammelt helt (DB+R2). `PATCH /images/:id/slot` flytter. Layout-bytte hard-sletter (DB+R2), transaksjonssikret (BEGIN/COMMIT/ROLLBACK, R2 best-effort utenfor transaksjon).
 - `byggSideFraBarber()` leser slots (ikke opplastingsrekkefølge) — barberens plassering styrer siden.
@@ -683,9 +718,11 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
 #### Mobil (primærflate — de fleste barberere bruker dashbordet fra telefon)
 - Full gjennomgang, bunn-nav og periodepille-fiksen er GJORT — se «Løst post-launch». Nye mobilfunn
   føyes til her.
-- **Utestående:** mobil-gjennomgang av lojalitetsprogram-kortet alene @320/375/390 (trial + basis,
-  alle tilstander) — den eneste flaten som ikke var med i gårsdagens gjennomgang. Rapport i
-  `docs/mobil-lojalitet.md` (07.09), ufikset — bli enige om lista før fiks.
+- **Lojalitetsprogram-kortet @320/375/390 (trial + basis) — FERDIG.** Mobil-gjennomgangen er kjørt
+  (21 kjøringer, 0 JS-feil, 0 overflow, ingen klipping). Trykkflate-funnene (bekreftelses-tekstknapper
+  22px, fjern-ikon 30px m.fl.) er fikset i `f955de8` — alle kontroller ≥44px via padding/hitboks,
+  uendret skrift. `tools/render/mobil-lojalitet.mjs` er nå en bestått regresjonstest. Rapporten i
+  `docs/mobil-lojalitet.md` (07.09) beholdes som historikk over hva som ble funnet.
 
 #### i18n (en/sv/da — oversettelsesfasen)
 1. **Kundesiden er hardkodet norsk (backend).** `booking-module.cjs` har ingen i18n («Velg
