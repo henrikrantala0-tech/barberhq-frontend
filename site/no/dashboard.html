@@ -6633,10 +6633,11 @@ function erStandalone(){
   });
 })();
 
-/* ===== KAMPANJEPLAKATER — Lag 1: skjelett + navigasjon =====
+/* ===== KAMPANJEPLAKATER — fullskjerm-editor =====
    To skjermer i ett fullskjerm-overlay. Tilstanden holdes i sessionStorage så en refresh eller
-   et tapt nett beholder utkastet. Preview (lag 2), kontroller (lag 3), interaksjoner (lag 4) og
-   beskjæring (lag 5) kommer senere. Kontrakt: docs/08-kampanjeplakater.md Del 8 (backend-repo). */
+   et tapt nett beholder utkastet. Alle lagene er nå bygget: preview (lag 2), kontroller + celle-valg
+   (lag 3a), dra tekstblokken (lag 3b), beskjæring (lag 3c), «Endre bilde» (beslutning 7) og kamerarull.
+   Kontrakt: docs/08-kampanjeplakater.md Del 8 (backend-repo). */
 (function(){
   var PLAKAT_KEY='bhq-plakat';
   var PS=null; // plakat-tilstand
