@@ -2555,6 +2555,15 @@
   .pk-check input{width:18px;height:18px;accent-color:#2563eb}
   .pk-actions{display:flex;gap:12px;margin-top:22px}
   .pk-actions .btn-outline{flex:1;justify-content:center;padding:12px}
+  .pk-actions .btn-outline:disabled{opacity:.55;cursor:default}
+  /* Nedlastings-kvittering: sentrert på skjermen (spec), grønn hake. Egen fra den delte
+     bunn-toasten (#toast) fordi posisjon + hake avviker; z over editor (1000) og crop-lag (1100). */
+  .pk-toast{position:fixed;left:50%;top:50%;transform:translate(-50%,-50%) scale(.96);display:flex;
+    align-items:center;gap:9px;background:#1a1a1a;color:#fff;font-size:14px;font-weight:600;
+    padding:14px 20px;border-radius:12px;box-shadow:0 8px 30px rgba(0,0,0,.35);opacity:0;
+    pointer-events:none;transition:opacity .18s,transform .18s;z-index:1300;max-width:80vw;text-align:center}
+  .pk-toast.inn{opacity:1;transform:translate(-50%,-50%) scale(1)}
+  .pk-toast svg{width:20px;height:20px;color:#39d98a;flex-shrink:0}
   /* ── Skjerm 2-layout: «Beskjær»/«Endre bilde»-knapper + enkeltkolonne (mobil) → to kolonner (≥768px) ── */
   .pk-bildeknapper{display:flex;flex-wrap:wrap;gap:10px;padding:0 16px;margin:16px 0 0}
   .pk-bildeknapper-btn{flex:1;min-width:120px;justify-content:center;padding:12px}
@@ -7194,6 +7203,7 @@ function settPlakatVersjon(v){ if(typeof v==='number' && v>_plakatVersjon) _plak
       var html=await r.text();
       frame.onload=function(){ visLaster(false); };
       frame.removeAttribute('src'); frame.srcdoc=html;
+      if(ER_IOS) forberedDelBlob(p); // hold del/lagre-blob klar → synkron share på første trykk
     }catch(e){ visPrevFeil('Kunne ikke vise forhåndsvisningen akkurat nå. Prøv igjen.'); }
   }
   function planleggPreview(){ clearTimeout(_preT); _preT=setTimeout(lastPreview,250); } // debounce (slider spammer ikke)
@@ -7219,20 +7229,77 @@ function settPlakatVersjon(v){ if(typeof v==='number' && v>_plakatVersjon) _plak
       : await fetch(renderUrl(p), {credentials:'include'});
     if(!r.ok) throw 0; return await r.blob();
   }
-  async function lastNed(p){
-    if(!harBase64(p)){ var a=document.createElement('a'); a.href=renderUrl(p); a.download=''; document.body.appendChild(a); a.click(); a.remove(); return; }
-    try{ var blob=await hentPlakatBlob(p); var u=URL.createObjectURL(blob); // base64 kan ikke GET-lenkes → hent blob og last ned
-      var a=document.createElement('a'); a.href=u; a.download='plakat.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){ URL.revokeObjectURL(u); },1000);
-    }catch(e){}
+  // iOS (alle nettlesere der er WebKit) IGNORERER <a download> → ingen stille disk-lagring mulig.
+  // Den ekte veien til Bilder-appen er share-arket («Lagre bilde»). iPadOS rapporterer seg som Mac,
+  // så maxTouchPoints skiller den fra en ekte Mac.
+  var ER_IOS = /iP(hone|od|ad)/.test(navigator.userAgent)
+            || (navigator.platform==='MacIntel' && (navigator.maxTouchPoints||0) > 1);
+
+  // Sentrert nedlastings-toast (spec). Én om gangen; forsvinner selv etter ~2 s.
+  var _pkToastEl=null, _pkToastT=null;
+  function visPkToast(tekst, medHake){
+    if(_pkToastEl){ _pkToastEl.remove(); _pkToastEl=null; }
+    var t=document.createElement('div'); t.className='pk-toast'; t.setAttribute('role','status'); t.setAttribute('aria-live','polite');
+    if(medHake) t.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+    var s=document.createElement('span'); s.textContent=tekst; t.appendChild(s);
+    document.body.appendChild(t); _pkToastEl=t;
+    requestAnimationFrame(function(){ t.classList.add('inn'); });
+    clearTimeout(_pkToastT);
+    _pkToastT=setTimeout(function(){ t.classList.remove('inn'); setTimeout(function(){ if(t===_pkToastEl) _pkToastEl=null; t.remove(); }, 220); }, 2200);
   }
-  async function delPlakat(p){
+
+  // Forhåndsgenerering (KUN iOS): del/lagre må kalle navigator.share() SYNKRONT i trykket — en await
+  // mellom trykk og share() spiser transient activation på iOS (kald fetch = 1. trykk dør, varm =
+  // 2. trykk virker → «dobbelttrykk»-symptomet). Vi holder en ferdig blob klar, oppdatert etter hver
+  // preview, så både «Lagre bilde» og «Del» fyrer på første trykk uten async-gap.
+  var _delCache={ sig:null, blob:null, pending:false };
+  function delSig(p){ return harBase64(p) ? JSON.stringify(plakatState(p)) : plakatQuery(p); }
+  function forberedDelBlob(p){
+    var sig=delSig(p);
+    if(_delCache.sig===sig && (_delCache.blob||_delCache.pending)) return; // klar eller på vei
+    _delCache={ sig:sig, blob:null, pending:true };
+    hentPlakatBlob(p).then(function(b){ if(_delCache.sig===sig){ _delCache.blob=b; _delCache.pending=false; } })
+                     .catch(function(){ if(_delCache.sig===sig) _delCache.pending=false; });
+  }
+  function ferskBlob(p){ var sig=delSig(p); return (_delCache.blob && _delCache.sig===sig) ? _delCache.blob : null; }
+
+  // Kaller navigator.share() SYNKRONT (ingen await før kallet) → aktivering bevares. AbortError =
+  // brukeren lukket arket, ikke en feil. Ingen fallback til nedlasting — en feilet share skal ikke
+  // lande på en brutt nedlasting (spec).
+  function shareBlob(blob){
+    var fil=new File([blob],'plakat.png',{type:'image/png'});
+    if(!(navigator.share && (!navigator.canShare || navigator.canShare({files:[fil]})))){
+      visPkToast('Deling støttes ikke på denne enheten.', false); return;
+    }
+    navigator.share({files:[fil], title:'Plakat'}).catch(function(e){
+      if(e && e.name!=='AbortError') visPkToast('Kunne ikke dele. Prøv igjen.', false);
+    });
+  }
+  // «Del» (og iOS «Lagre bilde»): på iOS bruk forhåndsblob → synkron share. Er den ikke klar ennå,
+  // KAN vi ikke awaite uten å miste aktivering → be ærlig om ett nytt trykk (ikke en stille feil).
+  // Android/desktop tåler et kort await før share.
+  function delEllerLagre(p){
+    if(ER_IOS){
+      var b=ferskBlob(p);
+      if(b){ shareBlob(b); } else { forberedDelBlob(p); visPkToast('Klargjør bildet – trykk igjen om et øyeblikk.', false); }
+      return;
+    }
+    var fersk=ferskBlob(p);
+    if(fersk){ shareBlob(fersk); return; }
+    hentPlakatBlob(p).then(shareBlob).catch(function(){ visPkToast('Kunne ikke dele. Prøv igjen.', false); });
+  }
+  // «Last ned» på desktop/Android: ekte nedlasting via <a download>, laste-indikator i knappen,
+  // «Lastet ned»-toast ved suksess. (På iOS er knappen «Lagre bilde» → delEllerLagre, se over.)
+  async function lastNedDirekte(p, btn){
+    var orig=btn.textContent; btn.disabled=true; btn.textContent='Laster ned …';
     try{
-      if(navigator.share && navigator.canShare){
-        var fil=new File([await hentPlakatBlob(p)],'plakat.png',{type:'image/png'});
-        if(navigator.canShare({files:[fil]})){ await navigator.share({files:[fil], title:'Plakat'}); return; }
-      }
-    }catch(e){}
-    lastNed(p); // fallback: last ned om deling ikke støttes
+      var blob=ferskBlob(p)||await hentPlakatBlob(p);
+      var u=URL.createObjectURL(blob);
+      var a=document.createElement('a'); a.href=u; a.download='plakat.png'; document.body.appendChild(a); a.click(); a.remove();
+      setTimeout(function(){ URL.revokeObjectURL(u); }, 1000);
+      visPkToast('Lastet ned', true);
+    }catch(e){ visPkToast('Kunne ikke laste ned. Prøv igjen.', false); }
+    finally{ btn.disabled=false; btn.textContent=orig; }
   }
 
   function renderSkjerm2(scroll, back, tittel){
@@ -7276,8 +7343,16 @@ function settPlakatVersjon(v){ if(typeof v==='number' && v>_plakatVersjon) _plak
     kontr.appendChild(avkryssRad('Lenke', PS.visLenke, false, function(v){ PS.visLenke=v; lagre(); planleggPreview(); }));
 
     var handl=document.createElement('div'); handl.className='pk-actions';
-    var ned=document.createElement('button'); ned.type='button'; ned.className='btn-outline'; ned.textContent='Last ned'; ned.addEventListener('click',function(){ lastNed(p); });
-    var del=document.createElement('button'); del.type='button'; del.className='btn-outline pk-del'; del.textContent='Del'; del.addEventListener('click',function(){ delPlakat(p); });
+    // iOS: «Last ned» kan ikke lagre stille (download-attributt ignoreres) → knappen er «Lagre bilde»
+    // og går via share-arket (der «Lagre bilde» ligger). Desktop/Android: ekte nedlasting.
+    var ned=document.createElement('button'); ned.type='button'; ned.className='btn-outline';
+    ned.textContent=ER_IOS?'Lagre bilde':'Last ned';
+    ned.addEventListener('click',function(){ ER_IOS ? delEllerLagre(p) : lastNedDirekte(p, ned); });
+    var del=document.createElement('button'); del.type='button'; del.className='btn-outline pk-del'; del.textContent='Del'; del.addEventListener('click',function(){ delEllerLagre(p); });
+    // iOS: «Lagre bilde» og «Del» åpner SAMME share-ark → to knapper er forvirrende. Arket dekker begge
+    // behov, så «Del» skjules på iOS. Android/desktop beholder begge (der gjør de ulike ting: ekte
+    // nedlasting vs. deling). (På desktop skjules «Del» dessuten ≥768px av CSS-en.)
+    if(ER_IOS) del.style.display='none';
     handl.appendChild(ned); handl.appendChild(del); kontr.appendChild(handl); // .pk-del skjules ≥768px (CSS)
 
     // «Beskjær»/«Endre bilde» — tekstknapper på VALGT celle (erstatter celle-hjørne-ikonene). Egen rad
