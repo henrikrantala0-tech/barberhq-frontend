@@ -432,6 +432,16 @@ pushet er testrunde-fiksene (bug 3 / beslutning 4–7 / kamerarull / miniatyr-ca
 - `images` har `slot` (portrett/hero/galleri) + `sort_order`. Barbereren trykker en slot-boks per layout → laster opp dit. Galleri-grense 10; erstatning av portrett/hero sletter gammelt helt (DB+R2). `PATCH /images/:id/slot` flytter. Layout-bytte hard-sletter (DB+R2), transaksjonssikret (BEGIN/COMMIT/ROLLBACK, R2 best-effort utenfor transaksjon).
 - `byggSideFraBarber()` leser slots (ikke opplastingsrekkefølge) — barberens plassering styrer siden.
 - **Crop:** Cropper.js 1.6.2 self-hostet i `site/no/lib/`. Beskjær-ikon (modal) + ×-ikon per bilde. Crop og Endre bruker `PUT /api/dashboard/images/:id` — bytter R2-fil, bevarer slot/sort_order (destruktiv klientside-crop, canvas→blob→PUT). Aspect: portrett 1:1, galleri 3:4, hero 9:19.5.
+- **⚠ KJENT BRUTT PÅ LIVE — «Din side»-croppen krever R2 bucket-CORS.** R2 pub-hosten sender IKKE
+  `Access-Control-Allow-Origin` (verifisert 10.09 mot `pub-…​.r2.dev`). Denne croppen LESER piksler
+  (`getCroppedCanvas().toBlob()`, `#cropImg crossorigin="anonymous"`), så den KREVER et CORS-rent bilde —
+  uten ACAO blir canvasen tainted og croppen feiler. **Kan IKKE fikses fra frontend** (samme triks som
+  plakat-croppen, `checkCrossOrigin:false`, hjelper ikke fordi den trenger pikslene). Fiks hører hjemme i
+  backend/Cloudflare: konfigurer R2 bucket-CORS (ACAO for `trybarberhq.com`/`.no`). Da virker BÅDE denne
+  og plakat-croppen kunne brukt den «rene» veien. «Bevist via API, ikke UI-flyt ennå» stemte — UI-flyten
+  var reelt brutt. **Plakat-croppen er derimot fikset** (10.09): den er rect-only (`getData`/`getImageData`,
+  ingen piksel-lesing), så den kjører nå med `checkCrossOrigin:false` + `checkOrientation:false` og uten
+  `img.crossOrigin` → Cropper bruker det opakt lastede kryss-origin-bildet direkte, ingen CORS-request.
 
 ### Ordre → barber (Modell B — automatisk)
 - Ordre inn → `buildBarberFromOrder(orderId,{pool})` (`src/lib/`) kjøres AUTOMATISK: egen transaksjon, idempotent, `rows[0]`-safe. Slug mot `barbers`, INSERT barbers, UPDATE `orders.barber_id`, re-knytt onboarding-bilder, auto-tildel slots (galleri maks 10; hero → første bilde; direkte → ingen; portrett ALDRI auto). Ved suksess: `orders.status = 'forhandsvist'`.
