@@ -387,17 +387,20 @@ INNSTILLINGER øverst, READ-ONLY oversikt under. **UI-navn «Lojalitetsprogram»
 - **Basis:** skjoldes som de andre Vekst-accordionene (`skjoldVekstFlater` inkluderer `#accLoyal`), UTEN eksempeltall og UTEN «Eksempel»-merke — `loadLoyalty` returnerer tidlig ved `erBasis()` (ingen `/loyalty`-kall). Se Basis-visning.
 - Render: `tools/render/lojalitetsprogram.mjs` (av / på-tom / på-liste / etter-innløsning + interaktive tilstander + pill + basis, 320/375, mørk/lys).
 
-### Kampanjeplakater (Vekst-fanen) — bygget 10.09, IKKE pushet
+### Kampanjeplakater (Vekst-fanen)
 Fullskjerm-editor (`#plakatOverlay`) i `dashboard.html`, åpnet fra to «Generer plakat»-knapper: én i
 Verving-trekkspillet, én i Lojalitet-trekkspillet (`#loyalLeggTilWrap`, kun når programmet er PÅ).
 Knappen setter `kampanjetype` (`verving`/`lojalitet`) for hele økten. Hele flaten er Vekst —
 `erBasis()` sender til abonnement. Tilstand i sessionStorage (`bhq-plakat`), overlever refresh.
+**Base-editoren er pushet og live** — prod-testet på dashbordet 09.09. Det som (per 10.09) IKKE er
+pushet er testrunde-fiksene (bug 3 / beslutning 4–7 / kamerarull / miniatyr-cachebuster / lys-gating).
 **Backend-kontrakt:** `GET/POST /api/dashboard/plakat/{preview,render}` + `GET /plakat/{layout,regler}`
-(`docs/08-kampanjeplakater.md` Del 8, backend-repo). **Rutene er prod-verifisert 10.09.**
+(`docs/08-kampanjeplakater.md` Del 8, backend-repo) — prod-verifisert 09.09.
 - **Skjerm 1 «Velg plakat»:** fem maler etter bildeantall — `mal1` «Uten bilde» (0) … `fire` «Fire
   bilder» (2×2). `mal1`+`mal2` anbefalt (større, øverst), resten under «Flere maler». Tilgjengelighet
   = antall galleri-bilder ≥ malens `antall`; låst kort → «Legg til bilde» → Din side. Lat-lastede
-  miniatyrer (`GET /render?bredde=400`); **låste kort henter aldri** (render-test: `renderKall == tilgjengelige`).
+  miniatyrer (`GET /render?bredde=400&v=<utseendeVersjon>` — cache-buster fra `/regler.barber`, så
+  PNG-en fornyes ved design-/profil-bytte); **låste kort henter aldri** (render-test: `renderKall == tilgjengelige`).
 - **Skjerm 2 «Rediger»:** levende preview i iframe via `srcdoc` (POST når en celle bærer
   kamerarull-base64, GET ellers — iframe kan ikke navigere til POST). Kontroller: format 4:5 / 9:16
   (filtrert per bildeantall), skjoldstyrke-slider (område fra `/regler`, kun når malen har skjold),
@@ -416,9 +419,12 @@ Knappen setter `kampanjetype` (`verving`/`lojalitet`) for hele økten. Hele flat
   i cellen → POST-veien til preview/render. Nedskaleringen er **cellebevisst**: fullflate-celle
   (bredde ≥ 60 % av lerretet) → 2160 px lengste kant, kvadrant → 1080 px (`dashboard.html:7041`).
 - **Bakgrunn/palett arves — velges IKKE i editoren:** `bakgrunnFraBarber()` utleder bakgrunnen av
-  barberens bookingside-palett/-modus (`hentDesign`): sand → «sand», ellers mørk/lys. Editoren leser
-  KUN `skjoldStyrke` fra `/regler` — `barber.morkSperret` og `maler` (hvilke maler tilbyr lys palett)
-  er ikke konsumert ennå. **⚠ Strammer backend inn lys-palett per mal, må frontend synkes.**
+  barberens bookingside-palett/-modus (`hentDesign`): sand → «sand», ellers mørk/lys. **Gated per mal:**
+  `bakgrunnFor(p)` sjekker `/regler.maler[*].formater[fmt].bakgrunner` (matchet på `.bilder = antall`);
+  er utgangspunktet «lys» men lys ikke tillatt for malen (i dagens spec mangler mal 2, mal 4 og 2×2
+  lys-variant — men lista leses fra `/regler`, hardkodes aldri), tvinges mørk. Fail-closed: manglende/ukjent `/regler` → mørk. Editoren sender aldri en bakgrunn backend 400-er.
+  Samme gating på render/preview OG `/layout` (geometrien avhenger av bakgrunn). `skjoldStyrke` leses
+  også fra `/regler`; `morkSperret` er implisitt dekket (sand → `bakgrunnFraBarber` gir aldri lys/mørk).
 - **Render-test:** `tools/render/plakat-editor.mjs` (skjerm 1, skjerm 2, mal1-uten-slider, 403-feilstate,
   lag 3a 2×2, 3b dra, 3c crop, beslutning 7, del 2 kamerarull) @320/375.
 
