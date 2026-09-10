@@ -107,6 +107,21 @@
   status = 200
   force = true
 
+# 3c. Kampanje-landingssider → backend. /verv/<slug> og /lojalitet/<slug> er nye offentlige backend-ruter;
+#     uten disse treffer de Netlifys 404 og når aldri Railway (samme klasse som /images/*-gapet). Må FØR
+#     /:slug — ellers sluker ett-segment-regelen dem ikke (de er to segmenter), men /verv alene ville.
+[[redirects]]
+  from = "/verv/*"
+  to = "https://api.trybarberhq.com/verv/:splat"
+  status = 200
+  force = true
+
+[[redirects]]
+  from = "/lojalitet/*"
+  to = "https://api.trybarberhq.com/lojalitet/:splat"
+  status = 200
+  force = true
+
 # 4. Proxy: ett-segment-stier → backend (barbersider).
 #    :slug matcher kun ett segment — /no/priser (to segmenter) fanges aldri.
 #    Status 200 = rewrite/proxy, URL forblir trybarberhq.com i adressefeltet.

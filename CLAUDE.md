@@ -54,6 +54,12 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
   på disk er stien alltid `site/<språk>/`.
 - netlify.toml — styrer språk-ruting på Netlify. (`_redirects` er BORTE — rutingen ble
   konsolidert inn i netlify.toml i commit `6c4be83`.)
+- **⚠ FAST SJEKK — ny offentlig backend-rute = oppdater Netlify-proxyen.** Backend-ruter serveres via
+  proxy-regler i netlify.toml (`/api/*`, `/book/*`, `/avmeld/*`, `/images/*`, `/verv/*`, `/lojalitet/*`
+  → `api.trybarberhq.com`, status 200, force, ALLE før `/:slug`). En backend-rute UTEN en slik regel
+  treffer Netlifys statiske 404 og når aldri Railway. Dette har bitt oss to ganger 10.09 (`/images/*` for
+  crop/bildevelger, `/verv/*`+`/lojalitet/*` for kampanje-landinger). **Legger backend til en ny offentlig
+  rute, MÅ en proxy-regel inn her — plassert FØR `/:slug`, ellers sluker ett-segment-slug-regelen den.**
 - Hver språkmappe: index.html (landing), kom-i-gang.html (onboarding),
   dashboard.html, + funksjoner/priser/support/logg-inn.html/opprett-passord.html
 - **Logo:** `assets/logo/` — master SVG + eksportvarianter (email, social, og).
