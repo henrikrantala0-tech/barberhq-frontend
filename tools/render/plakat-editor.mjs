@@ -624,6 +624,34 @@ for (const bredde of [320, 375, 1280]) {
   await page.close();
 }
 
+// Bug 4b — miniatyr-cachebuster (v=utseendeVersjon) må oppdateres ved reopen etter innstillings-endring.
+// _regler var memoisert hele sesjonen → v= frøs på første åpning → gammel kampanjecopy. Fiks: aapne()
+// nullstiller _regler → re-henter. Scenario: /regler gir V1, åpne (miniatyr v=V1), lukk, endre til V2,
+// gjenåpne → miniatyr v=V2 (endret). Uten fiksen ville v= forblitt V1.
+{
+  const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  let regVer = 1000;                       // V1
+  const renderV = [];                      // v= fra hvert bredde=400 miniatyr-kall
+  page.on('request', r => { const u=r.url(); if(u.includes('/plakat/render')){ const q=new URL(u).searchParams; if(q.get('bredde')==='400') renderV.push(q.get('v')); } });
+  const base = router('vekst', 200, null, IMAGES4, DESIGN);
+  await page.route('**/api/**', route => { const p=new URL(route.request().url()).pathname;
+    if (p==='/api/dashboard/plakat/regler') return route.fulfill({ status:200, contentType:'application/json',
+      body:JSON.stringify({ skjoldStyrke:{min:0.6,max:1.4,default:1}, barber:{palette:'krem',morkSperret:false,utseendeVersjon:regVer}, maler:MALER_KREM }) });
+    return base(route); });
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(1000);   // skjerm 1 miniatyrer → v=V1
+  const vFoer = renderV[renderV.length-1];
+  await page.click('#plakatX'); await page.waitForTimeout(400);                                                // lukk editoren
+  regVer = 2000; renderV.length=0;                                                                            // simulert innstillings-endring (updated_at bumpet)
+  await page.click('#plakatOpenVerving'); await page.waitForTimeout(1000);                                     // gjenåpne → miniatyrer på nytt
+  const vEtter = renderV[renderV.length-1];
+  rad.push({ skjerm:'bug4b kampanjecopy', 'v-før': vFoer, 'v-etter': vEtter,
+    'v endres v/reopen': (vFoer==='1000' && vEtter==='2000')?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
 console.table(rad);
 console.log('JS-feil:', rad.filter(r=>r.jsfeil && r.jsfeil!=='ingen' && r.jsfeil!=='—').length);
 await browser.close(); server.close(); noCorsServer.close();

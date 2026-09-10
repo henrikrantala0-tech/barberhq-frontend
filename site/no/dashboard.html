@@ -6706,6 +6706,11 @@ function erStandalone(){
       var a=document.getElementById('accAbonnement'); if(a) a.scrollIntoView({block:'center'});
       return;
     }
+    // Bug 4b: nullstill memoiserte _regler/_palett/_mode så de RE-HENTES ved hver åpning. Ellers frøs
+    // utseendeVersjon (fra _regler.barber) på første åpning → miniatyr-cache-busteren (v=) oppdaterte seg
+    // aldri etter en innstillings-endring (rabatt/terskel) → HTTP-cache serverte gammel kampanjecopy.
+    // Backend bumper allerede updated_at ved PUT /settings; frontend måtte bare slutte å fryse versjonen.
+    _regler=null; _palett=null; _mode=null;
     await hentBilder(); await hentDesign(); await hentRegler();
     if(!PS) PS=last()||seed();
     if(!PS.plakater || PS.plakater.length!==MALER.length || !malDef((PS.plakater[0]||{}).id)){ var _k=PS.kampanjetype; PS=seed(); PS.kampanjetype=_k; } // migrer gammel tilstand
