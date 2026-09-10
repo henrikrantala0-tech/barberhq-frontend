@@ -2749,7 +2749,11 @@ const api={
   // Returnerer Response (ikke boolean) så kallere kan skille 403 (Vekst-lås) fra annen feil.
   // Fire-and-forget-kallere (SMS-brytere) ignorerer den fortsatt trygt.
   async saveSettings(patch){
-    return await apiFetch('/api/dashboard/settings',{method:'PUT',body:JSON.stringify(patch)});
+    const r=await apiFetch('/api/dashboard/settings',{method:'PUT',body:JSON.stringify(patch)});
+    // PUT-responsen bærer utseendeVersjon (epoch-ms) — mat plakat-cachebusteren (monoton). Leses fra en
+    // KLONE så kalleren fortsatt kan gjøre r.json() for feil/verdier. Dekker verving/lojalitet + SMS.
+    if(r&&r.ok){ try{ const j=await r.clone().json(); if(j&&typeof j.utseendeVersjon==='number') settPlakatVersjon(j.utseendeVersjon); }catch(_){} }
+    return r;
   },
   async winback(group){
     const r=await apiFetch('/api/dashboard/winback'+(group?('?group='+encodeURIComponent(group)):''));
@@ -4790,7 +4794,7 @@ $("#vervPct").addEventListener('change',async function(){
   var v=parseInt(this.value,10), err=$("#vervPctErr");
   if(!Number.isInteger(v)||v<5||v>50){ err.textContent='Rabatt må være et heltall mellom 5 og 50 %.'; err.hidden=false; return; }
   err.hidden=true;
-  var r=await apiFetch('/api/dashboard/settings',{method:'PUT',body:JSON.stringify({referral_discount_pct:v})});
+  var r=await api.saveSettings({referral_discount_pct:v});   // via saveSettings → mater plakat-versjonen fra PUT-responsen
   if(erSettings403(r)){ visSettingsLaas(err); return; } // Vekst-lås → samme lås-tekst som skjoldet
   if(r&&!r.ok){ var d=await r.json().catch(function(){return{};}); err.textContent=(d&&d.error)||'Kunne ikke lagre.'; err.hidden=false; return; } // backend-feil pent
   _vervLagret.pct=v;   // først NÅ er prosenten sann å love bort
@@ -6646,6 +6650,13 @@ function erStandalone(){
    et tapt nett beholder utkastet. Alle lagene er nå bygget: preview (lag 2), kontroller + celle-valg
    (lag 3a), dra tekstblokken (lag 3b), beskjæring (lag 3c), «Endre bilde» (beslutning 7) og kamerarull.
    Kontrakt: docs/08-kampanjeplakater.md Del 8 (backend-repo). */
+// Delt plakat-versjon (utseendeVersjon, epoch-ms) — cachebuster for ALLE plakat-URL-er (miniatyr +
+// preview + render). TO skrivere: /regler ved editor-åpning (hentRegler) OG PUT /settings-responsen ved
+// innstillings-lagring (api.saveSettings, i Vekst-fanen UTENFOR denne IIFE-en). Top-level var → begge ser
+// den. MONOTON: skriv aldri en eldre verdi over en nyere (et /regler-svar underveis fra før en PUT skal
+// ikke overskrive den ferske PUT-versjonen). utseendeVersjon = updated_at, øker kun → max() er trygt.
+var _plakatVersjon = 0;
+function settPlakatVersjon(v){ if(typeof v==='number' && v>_plakatVersjon) _plakatVersjon=v; }
 (function(){
   var PLAKAT_KEY='bhq-plakat';
   var PS=null; // plakat-tilstand
@@ -6829,7 +6840,7 @@ function erStandalone(){
   // en trygghet hvis kallet feiler; den speiler dagens backend-verdier (symmetrisk 0.6–1.4 om 1).
   async function hentRegler(){
     if(_regler) return;
-    try{ var r=await fetch(PREVIEW_BASE+'/regler',{credentials:'include'}); if(r.ok){ var j=await r.json(); if(j) _regler=j; } }catch(e){}
+    try{ var r=await fetch(PREVIEW_BASE+'/regler',{credentials:'include'}); if(r.ok){ var j=await r.json(); if(j){ _regler=j; if(j.barber) settPlakatVersjon(j.barber.utseendeVersjon); } } }catch(e){}
   }
   function styrkeOmr(){
     var s=_regler&&_regler.skjoldStyrke;
@@ -6844,7 +6855,7 @@ function erStandalone(){
   // (ikke query), så URL-en er identisk før/etter et design-bytte → barbereren får gammel PNG.
   // utseendeVersjon (epoch-ms av updated_at, bumpes ved BÅDE design- og profil-lagring) endrer URL-en
   // når utseendet gjør. Kilde: /regler.barber.utseendeVersjon — ikke et eget frontend-skjema.
-  function utseendeVersjon(){ var b=_regler&&_regler.barber; return (b&&typeof b.utseendeVersjon==='number')?b.utseendeVersjon:0; }
+  function utseendeVersjon(){ return _plakatVersjon; }   // delt kilde: matet av /regler + PUT /settings-respons (monoton)
   // Lys kan være sperret PER MAL: mal 4 (3 bilder) og 2×2 (4 bilder) mangler lys-variant (backend
   // 400-er lys der), og en sand-barber sperrer mørk. Fasit er /regler.maler[*].formater[fmt].bakgrunner;
   // maler er nøklet på template-navn, men hver bærer .bilder = antall, så vi matcher på antall.
@@ -6902,10 +6913,14 @@ function erStandalone(){
   }
   function harBase64(p){ return plasserData(p).some(function(pl){ return pl && pl.data; }); } // base64 → POST, ellers GET
   // POST-body (Form B): tilstanden som objekt. Backend leser req.body ved POST, req.query ved GET (samme felt).
+  // v=utseendeVersjon på BÅDE preview og render (som miniatyrQuery): kampanje-copy (rabatt/terskel) og
+  // font/palett leses fra barber-RADEN, ikke query → uten v= er URL-en identisk før/etter en endring →
+  // HTTP-cache serverte gammel copy på den valgte plakaten. utseendeVersjon bumpes ved PUT /settings
+  // (prod-verifisert), så v= endres når copy-en gjør.
   function plakatState(p){
     return { format:p.format, background:bakgrunnFor(p), kampanjetype:PS.kampanjetype||'verving',
       plasser:plasserData(p), visQr:PS.visQr?'1':'0', visLenke:PS.visLenke?'1':'0',
-      styrke:p.skjoldStyrke, tdx:p.tdx||0, tdy:p.tdy||0 };
+      styrke:p.skjoldStyrke, tdx:p.tdx||0, tdy:p.tdy||0, v:utseendeVersjon() };
   }
   function plakatQuery(p){
     return 'format='+encodeURIComponent(p.format)
@@ -6916,7 +6931,8 @@ function erStandalone(){
       +'&visLenke='+(PS.visLenke?'1':'0')
       +'&styrke='+encodeURIComponent(String(p.skjoldStyrke))
       +'&tdx='+encodeURIComponent(String(p.tdx||0))
-      +'&tdy='+encodeURIComponent(String(p.tdy||0));
+      +'&tdy='+encodeURIComponent(String(p.tdy||0))
+      +'&v='+encodeURIComponent(String(utseendeVersjon()));
   }
 
   // Skaler 1080-lerretet til wrap-bredden med transform:scale — lerretet endres ALDRI. Bruker

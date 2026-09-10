@@ -407,6 +407,13 @@ pushet er testrunde-fiksene (bug 3 / beslutning 4–7 / kamerarull / miniatyr-ca
   **plakat-globalt/fullflate — uavhengig av valgt celle**), QR + Lenke-avkryssing (QR kun visse format),
   Last ned + Del (`navigator.share` → PNG-blob, fallback nedlasting). Debounce 250 ms; nøytral feilstate
   ved 400/403/5xx.
+- **Cachebuster `v=utseendeVersjon` på ALLE plakat-URL-er** (miniatyr + preview + render) — copy (rabatt/
+  terskel) og font/palett leses fra barber-RADEN, ikke query, så uten `v=` cacher HTTP-en gammel copy.
+  **Kilde er en DELT top-level `var _plakatVersjon`** (`utseendeVersjon()` leser den), med **to skrivere:**
+  `hentRegler` (fra `/regler.barber.utseendeVersjon` ved editor-åpning) OG `api.saveSettings` (fra `PUT
+  /settings`-RESPONSENS top-level `utseendeVersjon` ved innstillings-lagring i Vekst-fanen — utenfor plakat-
+  IIFE-en). **`settPlakatVersjon` er MONOTON** (skriver aldri eldre over nyere → et `/regler`-svar underveis
+  fra før en PUT overskriver ikke den ferske PUT-versjonen). Ikke bryt denne delte kilden.
 - **Layout (`.pk-layout`):** enkeltkolonne på mobil (plakat → knapper → kontroller); **to kolonner ≥768px**
   (plakat ~460px venstre, knapper+kontroller høyre). **«Del» skjules ≥768px** (`navigator.share` er mobil-
   sentrisk; på desktop faller den til nedlasting → misvisende ved siden av «Last ned»).

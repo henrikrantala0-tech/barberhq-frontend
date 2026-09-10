@@ -675,6 +675,36 @@ for (const bredde of [320, 375, 1280]) {
   await page.close();
 }
 
+// B (+ A-ii) — PUT /settings-responsens utseendeVersjon blir delt versjonskilde for plakat-URL-ene.
+// Lagre verving-rabatt (PUT → v=V_PUT, høyere enn /reglers UTSEENDE_V) → åpne editor. Monoton: /reglers
+// eldre verdi overskriver IKKE V_PUT. Både miniatyr- (render) og preview-URL skal bære V_PUT.
+{
+  const V_PUT = UTSEENDE_V + 1000;
+  const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  const renderV = [], previewV = [];
+  page.on('request', r => { const u=r.url();
+    if(u.includes('/plakat/render')){ const q=new URL(u).searchParams; if(q.get('bredde')==='400') renderV.push(q.get('v')); }
+    if(u.includes('/plakat/preview') && r.method()==='GET'){ previewV.push(new URL(u).searchParams.get('v')); } });
+  const base = router('vekst', 200, null, IMAGES4, DESIGN);
+  await page.route('**/api/**', route => { const req=route.request(); const p=new URL(req.url()).pathname;
+    if(p==='/api/dashboard/settings' && req.method()==='PUT') return route.fulfill({ status:200, contentType:'application/json',
+      body:JSON.stringify({ referral_reward_recipient:'begge', referral_discount_pct:30, loyalty_enabled:true, loyalty_threshold:10, loyalty_pct:100, utseendeVersjon:V_PUT }) });
+    return base(route); });   // /regler (base) gir eldre UTSEENDE_V
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  // Lagre verving-rabatt → PUT-respons v=V_PUT → api.saveSettings mater settPlakatVersjon(V_PUT)
+  await page.evaluate(() => { const el=document.getElementById('vervPct'); el.value='30'; el.dispatchEvent(new Event('change',{bubbles:true})); });
+  await page.waitForTimeout(600);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(1100);   // skjerm 1 → miniatyr /render v=
+  const miniV = renderV[renderV.length-1];
+  await page.locator('.plakat-kort', { hasText:'Ett bilde' }).click(); await page.waitForTimeout(1200);       // skjerm 2 → preview v=
+  const prevV = previewV[previewV.length-1];
+  rad.push({ skjerm:'B PUT-versjon', 'V_PUT':String(V_PUT), 'miniatyr v=':miniV, 'preview v=':prevV,
+    'begge=PUT-versjon': (miniV===String(V_PUT) && prevV===String(V_PUT))?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
 console.table(rad);
 console.log('JS-feil:', rad.filter(r=>r.jsfeil && r.jsfeil!=='ingen' && r.jsfeil!=='—').length);
 await browser.close(); server.close(); noCorsServer.close();
