@@ -6850,7 +6850,19 @@ function erStandalone(){
   function bakgrunnFor(p, format){ var bg=bakgrunnFraBarber(); return (bg==='lys' && !lysTillatt(p, format)) ? 'mork' : bg; }
   // Speiler backendens plakatTilstand.js (tilgjengeligeFormater/qrTillatt) — IKKE en ny regel.
   function tilgjengeligeFormater(antall){ return (antall|0)<=1 ? ['4:5','9:16'] : ['4:5']; }
-  function qrTillatt(format){ return (format||'4:5')==='4:5'; }
+  // QR-tillatelse leses fra /regler (samme mønster som lysTillatt) — IKKE hardkodet 4:5-only. Backend
+  // støtter nå QR på 9:16 (qr:true i /regler.maler[*].formater[fmt]); den gamle hardkoden slo den feilaktig
+  // av. Matcher på .bilder = antall. Fallback (regler mangler): gammel 4:5-only, så vi aldri over-aktiverer.
+  function qrTillatt(p, format){
+    var maler=_regler&&_regler.maler;
+    if(maler && p){
+      var antall=(malDef(p.id)||{}).antall||0, def=null;
+      for(var k in maler){ if(maler[k] && maler[k].bilder===antall){ def=maler[k]; break; } }
+      var f=def&&def.formater&&def.formater[format||p.format||'4:5'];
+      if(f) return !!f.qr;
+    }
+    return (format||(p&&p.format)||'4:5')==='4:5';
+  }
   function antallFor(p){ return p ? ((malDef(p.id)||{}).antall||0) : 0; }
   function harSkjold(p){ var n=antallFor(p); return n===1 || n===4; } // mal2 + 2×2 har fullflate-skjold
 
@@ -6862,7 +6874,7 @@ function erStandalone(){
     if(p.tdx==null) p.tdx=0; if(p.tdy==null) p.tdy=0; // tekst-offset (lag 3b), lerret-piksler
     if(tilgjengeligeFormater(antallFor(p)).indexOf(p.format)===-1) p.format='4:5';
     if(PS.visQr==null) PS.visQr=true; if(PS.visLenke==null) PS.visLenke=false;
-    if(!qrTillatt(p.format)) PS.visQr=false;
+    if(!qrTillatt(p, p.format)) PS.visQr=false;
     return p;
   }
 
@@ -7211,7 +7223,7 @@ function erStandalone(){
 
     var kontr=document.createElement('div'); kontr.className='plakat-kontroller';
     var qrCb=null;
-    function oppdaterQr(){ if(!qrCb) return; var lov=qrTillatt(p.format); qrCb.disabled=!lov; if(!lov){ qrCb.checked=false; PS.visQr=false; } qrCb.parentNode.classList.toggle('av',!lov); }
+    function oppdaterQr(){ if(!qrCb) return; var lov=qrTillatt(p, p.format); qrCb.disabled=!lov; if(!lov){ qrCb.checked=false; PS.visQr=false; } qrCb.parentNode.classList.toggle('av',!lov); }
 
     var lovligeFmt=tilgjengeligeFormater(antallFor(p));
     var fRow=document.createElement('div'); fRow.className='pk-seg-row';
@@ -7233,7 +7245,7 @@ function erStandalone(){
       kontr.appendChild(ktrlRad('Skjoldstyrke', slid));
     }
 
-    var qrRow=avkryssRad('QR-kode', PS.visQr, !qrTillatt(p.format), function(v){ PS.visQr=v; lagre(); planleggPreview(); }); qrCb=qrRow.querySelector('input');
+    var qrRow=avkryssRad('QR-kode', PS.visQr, !qrTillatt(p, p.format), function(v){ PS.visQr=v; lagre(); planleggPreview(); }); qrCb=qrRow.querySelector('input');
     kontr.appendChild(qrRow);
     kontr.appendChild(avkryssRad('Lenke', PS.visLenke, false, function(v){ PS.visLenke=v; lagre(); planleggPreview(); }));
 

@@ -70,8 +70,8 @@ const POSTER_BG = (bg, dx=0, dy=0) => { const f = BG_FARGE[bg] || BG_FARGE.mork;
 // lys → lys-barber på dem må tvinges mørk. utseendeVersjon = epoch-ms (cache-buster på miniatyr-URL).
 const UTSEENDE_V = 1789041600000;
 const MALER_KREM = {
-  tekst:        { bilder:0, formater:{ '4:5':{ bakgrunner:['mork','beige','lys'], qr:true }, '9:16':{ bakgrunner:['mork','beige','lys'], qr:false } } },
-  mal2:         { bilder:1, formater:{ '4:5':{ bakgrunner:['mork','beige'], qr:true }, '9:16':{ bakgrunner:['mork','beige'], qr:false } } },
+  tekst:        { bilder:0, formater:{ '4:5':{ bakgrunner:['mork','beige','lys'], qr:true }, '9:16':{ bakgrunner:['mork','beige','lys'], qr:true } } },
+  mal2:         { bilder:1, formater:{ '4:5':{ bakgrunner:['mork','beige'], qr:true }, '9:16':{ bakgrunner:['mork','beige'], qr:true } } },   // 9:16 qr:true (live-verifisert kontrakt)
   mal3:         { bilder:2, formater:{ '4:5':{ bakgrunner:['mork','beige','lys'], qr:true } } },
   mal4:         { bilder:3, formater:{ '4:5':{ bakgrunner:['mork','beige'], qr:true } } },
   'fire-bilder':{ bilder:4, formater:{ '4:5':{ bakgrunner:['mork','beige'], qr:true } } },
@@ -602,6 +602,25 @@ for (const bredde of [320, 375]) {
   const siste = previewPlasser[previewPlasser.length-1] || [];
   rad.push({ skjerm:`bug6 bilde/format · ${bredde}`, 'preview-plasser-etter-format': JSON.stringify(siste),
     'bærer NYTT bilde (B)': siste.includes(B)?'ok':'FEIL', 'antall preview etter format': previewPlasser.length, jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
+// Bug 3(QR) — QR-avkryssingen skal være AKTIV på 9:16 (backend gir qr:true i /regler). Gammel hardkode
+// (qrTillatt = 4:5-only) slo den feilaktig av. mal2: 4:5 QR aktiv → bytt til 9:16 → QR fortsatt aktiv.
+for (const bredde of [320, 375, 1280]) {
+  const page = await browser.newPage({ viewport:{ width:bredde, height:1000 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  await page.route('**/api/**', router('vekst', 200, null, IMAGES4, DESIGN));
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
+  await page.locator('.plakat-kort',{hasText:'Ett bilde'}).click(); await page.waitForTimeout(1200);   // mal2 (4:5 + 9:16)
+  const qrState = () => page.evaluate(() => { const rows=[...document.querySelectorAll('.pk-check')]; const qr=rows.find(r=>/QR/.test(r.textContent)); const inp=qr&&qr.querySelector('input'); return inp?{ disabled:inp.disabled, av:qr.classList.contains('av') }:null; });
+  const qr45 = await qrState();
+  await page.locator('.pk-seg',{hasText:'9:16'}).click(); await page.waitForTimeout(1200);
+  const qr916 = await qrState();
+  await page.screenshot({ path:`${OUT}/plakat-qr-9x16-${bredde}.png`, fullPage:false });
+  rad.push({ skjerm:`QR 9:16 · ${bredde}`, 'QR@4:5 aktiv': (qr45&&!qr45.disabled)?'ok':'FEIL', 'QR@9:16 aktiv': (qr916&&!qr916.disabled&&!qr916.av)?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
 }
 
