@@ -403,17 +403,28 @@ pushet er testrunde-fiksene (bug 3 / beslutning 4–7 / kamerarull / miniatyr-ca
   PNG-en fornyes ved design-/profil-bytte); **låste kort henter aldri** (render-test: `renderKall == tilgjengelige`).
 - **Skjerm 2 «Rediger»:** levende preview i iframe via `srcdoc` (POST når en celle bærer
   kamerarull-base64, GET ellers — iframe kan ikke navigere til POST). Kontroller: format 4:5 / 9:16
-  (filtrert per bildeantall), skjoldstyrke-slider (område fra `/regler`, kun når malen har skjold),
-  QR + Lenke-avkryssing (QR kun visse format), Last ned + Del (`navigator.share` → PNG-blob, fallback
-  nedlasting). Debounce 250 ms; nøytral feilstate ved 400/403/5xx.
+  (filtrert per bildeantall), skjoldstyrke-slider (område fra `/regler`, kun når malen har skjold,
+  **plakat-globalt/fullflate — uavhengig av valgt celle**), QR + Lenke-avkryssing (QR kun visse format),
+  Last ned + Del (`navigator.share` → PNG-blob, fallback nedlasting). Debounce 250 ms; nøytral feilstate
+  ved 400/403/5xx.
+- **Layout (`.pk-layout`):** enkeltkolonne på mobil (plakat → knapper → kontroller); **to kolonner ≥768px**
+  (plakat ~460px venstre, knapper+kontroller høyre). **«Del» skjules ≥768px** (`navigator.share` er mobil-
+  sentrisk; på desktop faller den til nedlasting → misvisende ved siden av «Last ned»).
 - **Lag 3a — celle-valg:** trykkflater lagt over iframen (geometri fra `/layout`, samme skalering,
-  align < 2px); ett-bilde-mal har implisitt valgt celle.
+  align < 2px); ett-bilde-mal har implisitt valgt celle (`p.valgtCelle`). Valget styrer «Beskjær»/«Endre
+  bilde»-knappene (se under). 2×2 uten valg → knappene deaktivert + hint «Velg et bilde først».
 - **Lag 3b (beslutning 5) — dra tekstblokken:** på ekte tekst-geometri fra `/layout.tekst`,
   midtstillings-hjelpelinjer, lokal flytting (ingen fetch per piksel), én reload ved slipp, offset
   `tdx/tdy` i lerret-piksler. Mal 1 (flex) → backend gir `tekst:null` → ingen flytt-boks.
-- **Lag 3c (beslutning 6) — beskjæring per celle:** Cropper låst til cellens aspect, rect i bildets
-  egne piksler klampet innenfor bildet; **kryss lukker OG lagrer** (ingen «Bruk»-knapp), montert på `<body>`.
-- **Beslutning 7 — «Endre bilde» per celle:** bytt-ikon → bildevelger (galleri, på `<body>`) → lagres i
+- **«Beskjær» / «Endre bilde» — tekstknapper (`.pk-bildeknapper`), IKKE celle-hjørne-ikoner** (de er
+  fjernet). Virker på VALGT celle (`valgtCelleData(p)`); skjult ved mal 1 (ingen celler). Egen rad under
+  plakaten (mobil) / øverst i høyre kolonne (desktop).
+- **Lag 3c (beslutning 6) — beskjæring:** «Beskjær» på valgt celle → Cropper låst til cellens aspect, rect
+  i bildets egne piksler klampet innenfor bildet; **kryss lukker OG lagrer** (ingen «Bruk»-knapp), på `<body>`.
+  **⚠ `checkCrossOrigin:false` + `checkOrientation:false` + ingen `img.crossOrigin`** — R2 sender ikke CORS,
+  og Cropper ville ellers gjort en egen CORS-request (crossOrigin+timestamp) → død crop. Rect-only crop
+  trenger ingen ren canvas. Se «Kjent brutt på live» i Bildeplasserings-system.
+- **Beslutning 7 — «Endre bilde»:** knapp på valgt celle → bildevelger (galleri, på `<body>`) → lagres i
   `p.bilder[slot]`.
 - **Del 2 — kamerarull:** «Velg bilde» har en Kamerarull-flis (file input) → nedskalert base64 (jpeg)
   i cellen → POST-veien til preview/render. Nedskaleringen er **cellebevisst**: fullflate-celle

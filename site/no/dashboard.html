@@ -2522,8 +2522,7 @@
   .pk-tekst-l{position:absolute;left:50%;bottom:100%;transform:translateX(-50%);margin-bottom:4px;white-space:nowrap;font-size:10.5px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#fff;background:rgba(20,20,20,.9);padding:3px 8px;border-radius:20px;box-shadow:0 1px 4px rgba(0,0,0,.5);pointer-events:none}
   .pk-tekst-l.under{bottom:auto;top:100%;margin-bottom:0;margin-top:4px}
   /* Lag 3c — beskjær-ikon i cellehjørne + beskjæringsvisning. */
-  .pk-celle-crop,.pk-celle-bytt{position:absolute;width:26px;height:26px;display:flex;align-items:center;justify-content:center;padding:0;border:none;border-radius:7px;background:rgba(20,20,20,.82);color:#fff;cursor:pointer;pointer-events:auto;box-shadow:0 1px 4px rgba(0,0,0,.5)}
-  .pk-celle-crop:hover,.pk-celle-bytt:hover{background:#2f6df6}
+  /* (Celle-hjørne-ikonene .pk-celle-crop/.pk-celle-bytt er fjernet — erstattet av .pk-bildeknapper.) */
   /* Beslutning 7 — «Endre bilde»-velger (samme fixed+z-index-mønster som crop). */
   .pk-bildevelg{position:fixed;inset:0;z-index:1100;background:rgba(8,8,8,.96);display:flex;align-items:center;justify-content:center;padding:16px}
   .pk-bildevelg-inner{display:flex;flex-direction:column;gap:12px;width:100%;max-width:520px;max-height:100%}
@@ -2555,6 +2554,19 @@
   .pk-check input{width:18px;height:18px;accent-color:#2563eb}
   .pk-actions{display:flex;gap:12px;margin-top:22px}
   .pk-actions .btn-outline{flex:1;justify-content:center;padding:12px}
+  /* ── Skjerm 2-layout: «Beskjær»/«Endre bilde»-knapper + enkeltkolonne (mobil) → to kolonner (≥768px) ── */
+  .pk-bildeknapper{display:flex;flex-wrap:wrap;gap:10px;padding:0 16px;margin:16px 0 0}
+  .pk-bildeknapper-btn{flex:1;min-width:120px;justify-content:center;padding:12px}
+  .pk-bildeknapper-btn:disabled{opacity:.4;cursor:default}
+  .pk-hint{flex-basis:100%;margin:0;padding-top:6px;text-align:center;font-size:12px;color:var(--mut)}
+  @media(min-width:768px){
+    .pk-layout{display:grid;grid-template-columns:auto minmax(300px,360px);gap:28px;align-items:start;justify-content:center;padding:20px}
+    .pk-col-preview{min-width:0}
+    .plakat-prev{max-width:460px;margin:0 auto}     /* poster dominerer venstre kolonne (~460px) */
+    .pk-bildeknapper{padding:0;margin:0}
+    .plakat-kontroller{padding:0 0 40px}
+    .pk-del{display:none}   /* «Del» faller tilbake til nedlasting på desktop → misvisende; «Last ned» står ved siden av */
+  }
 </style>
 <div class="cal-overlay" id="calOverlay" role="dialog" aria-modal="true" aria-label="Kalender" hidden></div>
 <div class="bk-detail-backdrop" id="bkDetailBackdrop" hidden></div>
@@ -6913,7 +6925,7 @@ function erStandalone(){
   function tegnCeller(){
     var wrap=document.getElementById('plakatPrevWrap'); if(!wrap) return;
     var gml=wrap.querySelector('.pk-celler'); if(gml) gml.remove();
-    var p=finn(PS.valgtId); if(!p||!_layout||!_layout.celler||!_layout.celler.length) return;
+    var p=finn(PS.valgtId); if(!p||!_layout||!_layout.celler||!_layout.celler.length){ oppdaterBildeknapper(); return; } // mal 1: ingen celler → skjul knapperaden
     var cv=_layout.canvas, s=(wrap.clientWidth||300)/cv.w;
     var flervalg=_layout.celler.length>1; // ett-bilde-mal: cellen er implisitt valgt, ingen trykk nødvendig
     if(!flervalg) p.valgtCelle=_layout.celler[0].slot;
@@ -6927,27 +6939,33 @@ function erStandalone(){
       if(flervalg){ b.addEventListener('click',function(){ p.valgtCelle=celle.slot; lagre(); tegnCeller(); }); }
       else { b.disabled=true; }
       lag.appendChild(b);
-      // Lag 3c: beskjær-ikon i cellens hjørne (egen knapp, ikke nested i celle-knappen → gyldig markup).
-      var bilde=plasserFor(p)[idx];
-      if(bilde){
-        var ik=document.createElement('button'); ik.type='button'; ik.className='pk-celle-crop';
-        ik.title='Beskjær'; ik.setAttribute('aria-label','Beskjær bilde');
-        ik.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M6 2v16h16M2 6h16v16"/></svg>';
-        ik.style.left=((celle.x+celle.w)*s - 30)+'px'; ik.style.top=(celle.y*s + 6)+'px';
-        ik.addEventListener('click',function(e){ e.stopPropagation(); aapneBeskjaer(celle, bilde); });
-        lag.appendChild(ik);
-        // Beslutning 7: «Endre bilde»-ikon (bytt galleri-bilde i cellen) — motsatt hjørne av beskjær-ikonet.
-        var bytt=document.createElement('button'); bytt.type='button'; bytt.className='pk-celle-bytt';
-        bytt.title='Endre bilde'; bytt.setAttribute('aria-label','Endre bilde');
-        bytt.innerHTML='<svg viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 1l4 4-4 4"/><path d="M3 11V9a4 4 0 0 1 4-4h14"/><path d="M7 23l-4-4 4-4"/><path d="M21 13v2a4 4 0 0 1-4 4H3"/></svg>';
-        bytt.style.left=(celle.x*s + 6)+'px'; bytt.style.top=(celle.y*s + 6)+'px';
-        bytt.addEventListener('click',function(e){ e.stopPropagation(); aapneBildevelger(celle); });
-        lag.appendChild(bytt);
-      }
+      // Ingen hjørne-ikoner lenger: «Beskjær»/«Endre bilde» er tekstknapper (.pk-bildeknapper) som virker
+      // på VALGT celle (p.valgtCelle). Cellene her er kun trykkflater for valg (aksent-ramme = .valgt).
     });
     // Bak laster/feil-overleggene (opake) så cellene ikke lyser gjennom mens previewen lastes.
     var laster=document.getElementById('plakatPrevLaster');
     if(laster) wrap.insertBefore(lag, laster); else wrap.appendChild(lag);
+    oppdaterBildeknapper(); // valgt celle endret → oppdater knappenes aktiv/deaktivert-tilstand + hint
+  }
+  // Valgt celle → {celle, bilde} for tekstknappene. null hvis ingen celle valgt / uten bilde (2×2 før valg).
+  function valgtCelleData(p){
+    if(!p || !_layout || !_layout.celler || !_layout.celler.length) return null;
+    var idx=-1; for(var i=0;i<_layout.celler.length;i++){ if(_layout.celler[i].slot===p.valgtCelle){ idx=i; break; } }
+    if(idx<0) return null;
+    var bilde=plasserFor(p)[idx]; if(!bilde) return null;
+    return { celle:_layout.celler[idx], bilde:bilde };
+  }
+  // «Beskjær»/«Endre bilde»: skjult ved mal 1 (ingen celler); deaktivert + hint ved 2×2 uten valgt celle;
+  // aktive ved mal 2 (implisitt celle) og 2×2 med valgt celle.
+  function oppdaterBildeknapper(){
+    var rad=document.querySelector('.pk-bildeknapper'); if(!rad) return;
+    var p=finn(PS.valgtId); if(!p) return;
+    var harCeller=!!(_layout && _layout.celler && _layout.celler.length);
+    rad.style.display = harCeller ? '' : 'none';
+    if(!harCeller) return;
+    var aktiv=!!valgtCelleData(p);
+    [].forEach.call(rad.querySelectorAll('.pk-bildeknapper-btn'), function(b){ b.disabled=!aktiv; });
+    var hint=rad.querySelector('.pk-hint'); if(hint) hint.style.display = aktiv ? 'none' : '';
   }
 
   // ── Lag 3b: dra tekstblokken (offer-blokken) ────────────────────────────────────────────────
@@ -7182,7 +7200,7 @@ function erStandalone(){
     frame.title='Forhåndsvisning'; frame.setAttribute('scrolling','no'); frame.tabIndex=-1;
     var laster=document.createElement('div'); laster.className='plakat-prev-laster'; laster.id='plakatPrevLaster'; laster.innerHTML='<span class="pk-spinner"></span>';
     var feil=document.createElement('div'); feil.className='plakat-prev-feil'; feil.id='plakatPrevFeil'; feil.style.display='none';
-    wrap.appendChild(frame); wrap.appendChild(laster); wrap.appendChild(feil); scroll.appendChild(wrap);
+    wrap.appendChild(frame); wrap.appendChild(laster); wrap.appendChild(feil);
 
     var kontr=document.createElement('div'); kontr.className='plakat-kontroller';
     var qrCb=null;
@@ -7212,9 +7230,24 @@ function erStandalone(){
 
     var handl=document.createElement('div'); handl.className='pk-actions';
     var ned=document.createElement('button'); ned.type='button'; ned.className='btn-outline'; ned.textContent='Last ned'; ned.addEventListener('click',function(){ lastNed(p); });
-    var del=document.createElement('button'); del.type='button'; del.className='btn-outline'; del.textContent='Del'; del.addEventListener('click',function(){ delPlakat(p); });
-    handl.appendChild(ned); handl.appendChild(del); kontr.appendChild(handl);
-    scroll.appendChild(kontr);
+    var del=document.createElement('button'); del.type='button'; del.className='btn-outline pk-del'; del.textContent='Del'; del.addEventListener('click',function(){ delPlakat(p); });
+    handl.appendChild(ned); handl.appendChild(del); kontr.appendChild(handl); // .pk-del skjules ≥768px (CSS)
+
+    // «Beskjær»/«Endre bilde» — tekstknapper på VALGT celle (erstatter celle-hjørne-ikonene). Egen rad
+    // UNDER plakaten (mobil) / øverst i høyre kolonne (desktop). Hint-linje når ingen celle er valgt.
+    var bknapp=document.createElement('div'); bknapp.className='pk-bildeknapper';
+    var bBesk=document.createElement('button'); bBesk.type='button'; bBesk.className='btn-outline pk-bildeknapper-btn'; bBesk.textContent='Beskjær';
+    bBesk.addEventListener('click',function(){ var d=valgtCelleData(finn(PS.valgtId)); if(d) aapneBeskjaer(d.celle, d.bilde); });
+    var bEndre=document.createElement('button'); bEndre.type='button'; bEndre.className='btn-outline pk-bildeknapper-btn'; bEndre.textContent='Endre bilde';
+    bEndre.addEventListener('click',function(){ var d=valgtCelleData(finn(PS.valgtId)); if(d) aapneBildevelger(d.celle); });
+    var bHint=document.createElement('p'); bHint.className='pk-hint'; bHint.textContent='Velg et bilde først';
+    bknapp.appendChild(bBesk); bknapp.appendChild(bEndre); bknapp.appendChild(bHint);
+
+    // To-kolonne på ≥768px (plakat venstre, knapper+kontroller høyre); enkeltkolonne stablet på mobil.
+    var layout=document.createElement('div'); layout.className='pk-layout';
+    var venstre=document.createElement('div'); venstre.className='pk-col-preview'; venstre.appendChild(wrap);
+    var hoyre=document.createElement('div'); hoyre.className='pk-col-kontroller'; hoyre.appendChild(bknapp); hoyre.appendChild(kontr);
+    layout.appendChild(venstre); layout.appendChild(hoyre); scroll.appendChild(layout);
 
     skalerFrame(); lastPreview(); oppdaterLayout(p);
   }

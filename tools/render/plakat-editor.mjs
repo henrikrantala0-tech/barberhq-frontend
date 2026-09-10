@@ -284,7 +284,8 @@ for (const bredde of [320, 375]) {
   await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
   await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
   await page.locator('.plakat-kort', { hasText:'Fire bilder' }).click(); await page.waitForTimeout(1200);
-  await page.locator('.pk-celle-crop').first().click(); await page.waitForTimeout(900);
+  await page.locator('.pk-celle').first().click(); await page.waitForTimeout(200);   // velg celle → «Beskjær» aktiveres
+  await page.locator('.pk-bildeknapper-btn', { hasText:'Beskjær' }).click(); await page.waitForTimeout(900);
   const kro = await page.evaluate(() => { const c=document.querySelector('.pk-crop');
     return { aapen:!!c, x:!!document.querySelector('.pk-crop-x'), bruk:!!document.querySelector('.pk-crop-bruk'), body:!!(c&&c.parentElement===document.body) }; });
   const NW = await page.evaluate(() => { const i=document.querySelector('.pk-crop-canvas img'); return i?i.naturalWidth:0; });
@@ -314,14 +315,15 @@ for (const bredde of [320, 375]) {
   await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
   await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
   await page.locator('.plakat-kort', { hasText:'Fire bilder' }).click(); await page.waitForTimeout(1100);
-  const ikoner = await page.evaluate(() => document.querySelectorAll('.pk-celle-bytt').length);
-  await page.locator('.pk-celle-bytt').first().click(); await page.waitForTimeout(500);
+  await page.locator('.pk-celle').first().click(); await page.waitForTimeout(200);   // velg celle → «Endre bilde» aktiveres
+  const harEndre = await page.evaluate(() => [...document.querySelectorAll('.pk-bildeknapper-btn')].some(b=>b.textContent==='Endre bilde'));
+  await page.locator('.pk-bildeknapper-btn', { hasText:'Endre bilde' }).click(); await page.waitForTimeout(500);
   const v = await page.evaluate(() => { const l=document.querySelector('.pk-bildevelg');
     return { aapen:!!l, body:!!(l&&l.parentElement===document.body), bilder:document.querySelectorAll('.pk-bildevelg-bilde').length }; });
   await page.locator('.pk-bildevelg-bilde').nth(2).click(); await page.waitForTimeout(400);   // velg 3. bilde
   const e = await page.evaluate(() => { let st=null; try{ st=JSON.parse(sessionStorage.getItem('bhq-plakat')); }catch(x){}
     const p=st&&(st.plakater||[]).filter(x=>x.id===st.valgtId)[0]; return { valgt:p&&p.bilder?p.bilder['bilde-1']:null, lukket:!document.querySelector('.pk-bildevelg') }; });
-  rad.push({ skjerm:'7 · endre bilde', 'ikoner(4)':ikoner, velger:v.aapen?'ok':'FEIL', 'på body':v.body?'ok':'FEIL', 'bilder(4)':v.bilder,
+  rad.push({ skjerm:'7 · endre bilde', 'endre-knapp':harEndre?'ok':'FEIL', velger:v.aapen?'ok':'FEIL', 'på body':v.body?'ok':'FEIL', 'bilder(4)':v.bilder,
     'swap lagret': e.valgt==='31111111-1111-1111-1111-111111111111'?'ok':'FEIL', lukket:e.lukket?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
 }
@@ -336,7 +338,8 @@ for (const bredde of [320, 375]) {
   await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
   await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
   await page.locator('.plakat-kort', { hasText:'Fire bilder' }).click(); await page.waitForTimeout(1100);
-  await page.locator('.pk-celle-bytt').first().click(); await page.waitForTimeout(500);
+  await page.locator('.pk-celle').first().click(); await page.waitForTimeout(200);   // velg celle → «Endre bilde» aktiveres
+  await page.locator('.pk-bildeknapper-btn', { hasText:'Endre bilde' }).click(); await page.waitForTimeout(500);
   const flis = await page.evaluate(() => !!document.querySelector('.pk-bildevelg-kamera'));
   await page.locator('.pk-bildevelg-kamera input[type=file]').setInputFiles(OPPLAST); await page.waitForTimeout(1300);   // velg fil → nedskaler → POST
   const b = await page.evaluate(() => { let s=null; try{ s=JSON.parse(sessionStorage.getItem('bhq-plakat')); }catch(e){}
@@ -437,7 +440,7 @@ for (const bredde of [320, 375, 1280]) {
   await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
   await page.locator('.plakat-kort', { hasText:'Fire bilder' }).click(); await page.waitForTimeout(1200);
   await page.locator('.pk-celle').first().click(); await page.waitForTimeout(200);   // 2×2 krever valgt celle
-  await page.locator('.pk-celle-crop').first().click(); await page.waitForTimeout(1500);   // vent img.onload + Cropper
+  await page.locator('.pk-bildeknapper-btn', { hasText:'Beskjær' }).click(); await page.waitForTimeout(1500);   // vent img.onload + Cropper
   const cr = await page.evaluate(() => { const lag=document.querySelector('.pk-crop'); const cont=document.querySelector('.cropper-container');
     const img=document.querySelector('.pk-crop-canvas img'); return { modal:!!lag, init:!!cont, nw: img?img.naturalWidth:0 }; });
   await page.screenshot({ path:`${OUT}/plakat-crop-nocors-${bredde}.png`, fullPage:false });
@@ -447,6 +450,77 @@ for (const bredde of [320, 375, 1280]) {
     const p=s&&(s.plakater||[]).filter(x=>x.id===s.valgtId)[0]; const r=p&&p.rects&&p.rects['bilde-1']; return r?`${r.x},${r.y},${r.w}×${r.h}`:null; });
   rad.push({ skjerm:`crop u/CORS · ${bredde}`, 'modal-åpen': cr.modal?'ok':'FEIL', 'cropper-init': cr.init?'ok':'FEIL',
     'naturalWidth>0': cr.nw>0?('ok('+cr.nw+')'):'FEIL(0)', 'rect-lagret': lagret?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
+// Sak 2 — «Beskjær»/«Endre bilde»-tekstknapper + to-kolonne på desktop. @320/375/1280, tre maler, med/uten
+// valgt celle. Celle-ikonene skal være borte; knappene virker på valgt celle; ≥768px = to kolonner.
+for (const bredde of [320, 375, 1280]) {
+  const page = await browser.newPage({ viewport:{ width:bredde, height:1100 }, deviceScaleFactor:1 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  await page.route('**/api/**', router('vekst', 200, null, IMAGES4, DESIGN));   // 4 galleri → alle tre maler tilgjengelige
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
+  const knappeStatus = () => page.evaluate(() => { const rad=document.querySelector('.pk-bildeknapper');
+    const btns=[...document.querySelectorAll('.pk-bildeknapper-btn')]; const hint=document.querySelector('.pk-hint');
+    return { radVist: rad?getComputedStyle(rad).display!=='none':false, antBtn:btns.length,
+      alleDeakt: btns.length>0 && btns.every(b=>b.disabled), ingenDeakt: btns.length>0 && btns.every(b=>!b.disabled),
+      hintVist: hint?getComputedStyle(hint).display!=='none':false, ikoner: document.querySelectorAll('.pk-celle-crop').length }; });
+  await page.locator('.plakat-kort',{hasText:'Uten bilde'}).click(); await page.waitForTimeout(1100);
+  const m1 = await knappeStatus();                                   // mal 1 → rad skjult
+  await page.click('#plakatBack'); await page.waitForTimeout(400);
+  await page.locator('.plakat-kort',{hasText:'Ett bilde'}).click(); await page.waitForTimeout(1100);
+  const m2 = await knappeStatus();                                   // mal 2 → aktive, hint skjult
+  await page.screenshot({ path:`${OUT}/plakat-sak2-mal2-${bredde}.png`, fullPage:false });
+  await page.click('#plakatBack'); await page.waitForTimeout(400);
+  await page.locator('.plakat-kort',{hasText:'Fire bilder'}).click(); await page.waitForTimeout(1200);
+  const f0 = await knappeStatus();                                   // 2×2 uten valg → deaktivert + hint
+  await page.screenshot({ path:`${OUT}/plakat-sak2-2x2-uvalgt-${bredde}.png`, fullPage:false });
+  await page.locator('.pk-celle').first().click(); await page.waitForTimeout(300);
+  const f1 = await knappeStatus();                                   // 2×2 med valg → aktive
+  await page.screenshot({ path:`${OUT}/plakat-sak2-2x2-valgt-${bredde}.png`, fullPage:false });
+  await page.locator('.pk-bildeknapper-btn',{hasText:'Beskjær'}).click(); await page.waitForTimeout(900);
+  const cropAapnet = await page.evaluate(()=>!!document.querySelector('.pk-crop'));
+  await page.locator('.pk-crop-x').click().catch(()=>{}); await page.waitForTimeout(300);
+  let desk = {};
+  if (bredde===1280) desk = await page.evaluate(() => { const prev=document.querySelector('.plakat-prev'); const kontr=document.querySelector('.plakat-kontroller');
+    const ned=[...document.querySelectorAll('.pk-actions .btn-outline')].find(b=>b.textContent==='Last ned'); const del=document.querySelector('.pk-del'); const slid=document.querySelector('.pk-slider');
+    const pr=prev&&prev.getBoundingClientRect(), kr=kontr&&kontr.getBoundingClientRect(), nr=ned&&ned.getBoundingClientRect();
+    return { toKol: !!(pr&&kr)&&pr.right<=kr.left+1, lastNedSynlig: !!(nr&&nr.width>0&&nr.right<=innerWidth+1),
+      delSkjult: del?getComputedStyle(del).display==='none':null, sliderInnenfor: (slid&&kr)?slid.getBoundingClientRect().width<=kr.width+1:null }; });
+  rad.push({ skjerm:`sak2 · ${bredde}`, 'mal1-skjult': m1.radVist===false?'ok':'FEIL', 'mal2-aktiv': (m2.radVist&&m2.ingenDeakt&&!m2.hintVist)?'ok':'FEIL',
+    '2x2-uvalgt': (f0.radVist&&f0.alleDeakt&&f0.hintVist)?'ok':'FEIL', '2x2-valgt': (f1.ingenDeakt&&!f1.hintVist)?'ok':'FEIL',
+    'ikoner=0': f1.ikoner===0?'ok':'FEIL', 'beskjær→crop': cropAapnet?'ok':'FEIL',
+    ...(bredde===1280?{ '2-kol':desk.toKol?'ok':'FEIL', 'lastned-synlig':desk.lastNedSynlig?'ok':'FEIL', 'del-skjult':desk.delSkjult?'ok':'FEIL', 'slider-innenfor':desk.sliderInnenfor?'ok':'FEIL' }:{}),
+    jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
+// Skjold er PLAKAT-globalt, ikke per celle: cellevalg/-bytte på 2×2 endrer ikke p.skjoldStyrke, utløser
+// INGEN ny render (skjoldet står som før), og styrke-param bærer ingen celle-referanse. Fullflate over alt.
+{
+  const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  const styrkeParams = []; let celleParam = false;
+  page.on('request', r => { const u=r.url(); if(u.includes('/plakat/preview')||u.includes('/plakat/render')){
+    const q=new URL(u).searchParams; if(q.has('styrke')) styrkeParams.push(q.get('styrke'));
+    if([...q.keys()].some(k=>/valgtcelle|^celle$|slot/i.test(k))) celleParam=true; } });
+  await page.route('**/api/**', router('vekst', 200, null, IMAGES4, DESIGN));
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(500);
+  await page.locator('.plakat-kort',{hasText:'Fire bilder'}).click(); await page.waitForTimeout(1300);   // initial preview → styrke-param
+  const les = () => page.evaluate(() => { let s=null; try{ s=JSON.parse(sessionStorage.getItem('bhq-plakat')); }catch(e){}
+    const p=s&&(s.plakater||[]).filter(x=>x.id===s.valgtId)[0]; return { styrke:p?p.skjoldStyrke:null, valgt:p?p.valgtCelle:null }; });
+  const s0=await les(); const nFoer=styrkeParams.length;
+  await page.locator('.pk-celle').nth(0).click(); await page.waitForTimeout(250); const s1=await les();
+  await page.locator('.pk-celle').nth(2).click(); await page.waitForTimeout(250); const s2=await les();
+  const nEtter=styrkeParams.length;
+  rad.push({ skjerm:'skjold-global', 'styrke uendret v/cellebytte': (s0.styrke===s1.styrke && s1.styrke===s2.styrke && s0.styrke!=null)?('ok('+s0.styrke+')'):'FEIL',
+    'celle faktisk byttet': (s1.valgt!==s2.valgt && s2.valgt!=null)?'ok':'FEIL',
+    'ingen ny render v/cellevalg': nEtter===nFoer?'ok':'FEIL', 'styrke-param sendt': styrkeParams.length>0?'ok':'FEIL',
+    'ingen celle-param i kall': !celleParam?'ok':'FEIL', jsfeil: errs.length?errs.join('; '):'ingen' });
   await page.close();
 }
 
