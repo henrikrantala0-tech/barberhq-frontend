@@ -114,10 +114,12 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 /* Innkommende DM-bobler i tomrommet mellom undertekst og CTA. I NORMAL FLYT (ikke absolutt) så
    de aldri kan kollidere med .hero-sub over eller .hero-btns under — de skyver layouten i stedet.
    margin-top:auto på BÅDE .hero-dms og .hero-btns splitter tomrommet 50/50 → gruppa sentreres i
-   voiden (lavere enn før), gap:24px sprer de to boblene. Slide-avstanden (24px) < hero-inner sin
-   32px sidepolstring → ingen vannrett overflyt. Systemfarger: #2a2a2a (bg), #333 (kant), #fff.
+   voiden (lavere enn før), gap:24px sprer de to boblene. Systemfarger: #2a2a2a (bg), #333 (kant), #fff.
+   Slide-avstanden (24px) er STØRRE enn hero-inner sin sidepolstring på mobil (20px, ikke 32px som
+   desktop), så .dm-2 (flex-end) stakk 4px forbi viewporten mens dmInR lå i delay/fill → 4px vannrett
+   overflyt. overflow-x:clip klipper KUN denne dekor-boblen; ingen global overflow-x-maskering (jf. topplinja).
    Timing: boble 1 glir inn 2s etter last, boble 2 1,5s etter den (delay 3,5s); fill-mode both → blir liggende. */
-.hero-dms{display:flex;flex-direction:column;gap:24px;width:100%;max-width:clamp(340px,40vw,540px);margin:auto auto 0}
+.hero-dms{display:flex;flex-direction:column;gap:24px;width:100%;max-width:clamp(340px,40vw,540px);margin:auto auto 0;overflow-x:clip}
 .dm{position:relative;align-self:flex-start;max-width:82%;background:#2a2a2a;border:1px solid #333;color:#fff;font-size:clamp(14.5px,2.5vw,23px);line-height:1.35;padding:clamp(11px,1.2vw,16px) clamp(16px,1.8vw,26px);border-radius:18px 18px 18px 5px;text-align:left;opacity:1;transform:none}
 .dm-1{animation:dmInL .5s cubic-bezier(.22,.61,.36,1) 2s both}
 .dm-2{align-self:flex-end;border-radius:18px 18px 5px 18px;animation:dmInR .5s cubic-bezier(.22,.61,.36,1) 3.5s both}
