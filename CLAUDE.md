@@ -795,6 +795,10 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
    **en/-flater som venter på denne fasen (ikke åpne no/-oppgaver):** terms/cookies-innhold (no/ er
    dekket av `vilkar.html`; en/ mangler innhold + har døde footer-`<a href="#">`), og «Forgot
    password»-flyten (pkt 2).
+4. **Telefon-placeholderen (`#pf-phone` → `contact_phone`, Profil på «Din side», bygget no/ 11.09) er
+   landavhengig — må håndteres i oversettelsesfasen:** «91 23 45 67» er NORSK format og må følge
+   barberens `market` (NO/SE/DK/UK) når sv/da/en bygges. INGEN landkode-håndtering trengs — kunden
+   ringer lokalt.
 
 #### Innhold / sider
 4. **Terms/Cookies-innhold: no/ DEKKET.** no/-footerne (`index`/`funksjoner`/`priser`/`support`)
