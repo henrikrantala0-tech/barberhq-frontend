@@ -469,16 +469,19 @@ pushet er testrunde-fiksene (bug 3 / beslutning 4–7 / kamerarull / miniatyr-ca
 - **Default-layout for ordre-bygde barbere er `showcase`** (`bygg-barber.js STANDARD_DESIGN.layout`, alle bilder → `galleri`); DB-default er `direkte` (ingen bilder). Portrett (profil) og hero er **opt-in** — må velges manuelt i Din side. **Galleri 3:4 er derfor den eneste slotten i faktisk default-bruk** — der betyr crop-kvaliteten noe.
 - **⚠ Kjent avvik — portrett-crop viser KVADRAT, siden viser SIRKEL.** Portrett rendres med `border-radius:50%` (`.portrait img`), men crop-boksen er et 1:1 kvadrat → hjørnene barbereren ser i croppen finnes ikke på siden. Sirkel-crop-boks er teknisk mulig (CSS på `.cropper-view-box` + dimme utenfor sirkelen), men **droppet 11.09**: portrett er opt-in og lite brukt (default er showcase/galleri) — ikke verdt tiden. Ikke gjenoppdag.
 - **⚠ Hero-crop er IKKE WYSIWYG — utsnittet avhenger av kundens viewport.** Hero vises full-bleed (`.hero-media inset:0` i `.cover{min-height:100vh}`, `object-fit:cover; object-position:50% 42%`) mot SKJERMEN, ikke en pinnet 9:19.5-boks. Crop-boksen (9:19.5) er derfor kun sann for en ≈9:19.5-telefon. Målt med samme bilde: smal 0.462 → 99,9 % vertikalt synlig; vanlig telefon 0.562 → ~82 % (**~18 % tap**); nettbrett 0.75 → ~61 % (**~38 % tap**, øverste + nederste åttedel forsvinner). 42%-biasen skyver i tillegg vinduet opp. Prinsipielt umulig å gjøre WYSIWYG i dagens full-bleed hero-design (backend) — ikke en crop-sak. Ikke gjenoppdag.
-- **⚠ KJENT BRUTT PÅ LIVE — «Din side»-croppen krever R2 bucket-CORS.** R2 pub-hosten sender IKKE
-  `Access-Control-Allow-Origin` (verifisert 10.09 mot `pub-…​.r2.dev`). Denne croppen LESER piksler
-  (`getCroppedCanvas().toBlob()`, `#cropImg crossorigin="anonymous"`), så den KREVER et CORS-rent bilde —
-  uten ACAO blir canvasen tainted og croppen feiler. **Kan IKKE fikses fra frontend** (samme triks som
-  plakat-croppen, `checkCrossOrigin:false`, hjelper ikke fordi den trenger pikslene). Fiks hører hjemme i
-  backend/Cloudflare: konfigurer R2 bucket-CORS (ACAO for `trybarberhq.com`/`.no`). Da virker BÅDE denne
-  og plakat-croppen kunne brukt den «rene» veien. «Bevist via API, ikke UI-flyt ennå» stemte — UI-flyten
-  var reelt brutt. **Plakat-croppen er derimot fikset** (10.09): den er rect-only (`getData`/`getImageData`,
-  ingen piksel-lesing), så den kjører nå med `checkCrossOrigin:false` + `checkOrientation:false` og uten
-  `img.crossOrigin` → Cropper bruker det opakt lastede kryss-origin-bildet direkte, ingen CORS-request.
+- **✅ «Din side»-croppen VIRKER på live (korrigert 11.09 — «KJENT BRUTT PÅ LIVE» var FEIL diagnose).**
+  Croppen LESER piksler (`getCroppedCanvas().toBlob()`), men slot-bildet lastes **SAME-ORIGIN** via
+  Netlify-proxyen `/images/raw/:id`: `dashboard.js` returnerer den RELATIVE URL-en (`/images/raw/<id>?v=…`),
+  `images.js` er en «proxy fra R2 — same-origin, ingen CORP-problem», og `netlify.toml` proxyer `/images/*`.
+  Same-origin ⇒ canvasen taintes ALDRI ⇒ `getCroppedCanvas` fungerer. Den gamle linja antok at bildet kom
+  fra R2 pub-hosten (`pub-…r2.dev`, kryss-origin uten ACAO) — det gjelder IKKE dashboardets slot-bilder,
+  så ingen bucket-CORS-fix trengs.
+  **⚠ Guardrail (ikke bryt):** crop-canvaset MÅ laste via den relative URL-en. ALDRI rewrite til
+  `api.trybarberhq.com` eller R2 pub-hosten — det gjør bildet kryss-origin og gjeninnfører hele
+  CORS-avhengigheten (+ en cache-mode-felle). Samme for opplasting: relativ `/api/dashboard/images`.
+  (`#cropImg crossorigin="anonymous"` er et ufarlig levn — no-op på same-origin; kan ryddes senere.)
+  **Plakat-croppen** er rect-only (`getData`/`getImageData`, ingen piksel-lesing) og kjører med
+  `checkCrossOrigin:false` + `checkOrientation:false` uten `img.crossOrigin` — uendret.
 
 ### Ordre → barber (Modell B — automatisk)
 - Ordre inn → `buildBarberFromOrder(orderId,{pool})` (`src/lib/`) kjøres AUTOMATISK: egen transaksjon, idempotent, `rows[0]`-safe. Slug mot `barbers`, INSERT barbers, UPDATE `orders.barber_id`, re-knytt onboarding-bilder, auto-tildel slots (galleri maks 10; hero → første bilde; direkte → ingen; portrett ALDRI auto). Ved suksess: `orders.status = 'forhandsvist'`.
