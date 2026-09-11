@@ -464,6 +464,23 @@
   .momentum-h{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em;margin:0 0 6px}
   .momentum-t{font-size:13.5px;color:var(--mut);line-height:1.5;margin:0 0 14px}
   .momentum .btn{display:inline-block;width:auto}
+  /* Trial-nudge (Oversikt, dag 20+): rolig vekst-nudge med BLÅ venstrekant (samme familie som momentum,
+     men blå = vekst/oppdagelse, ikke grønn bonus). Aldri rød. Styres av initTrialNudge(); hidden by default. */
+  /* Ikke venstrestrek (den kolliderer med .momentum-kortets grønne strek — samme «viktig kort»-signal).
+     Skiller seg via TINTET blå bakgrunn (--info-bg, som .sub-banner.info) + myk blå kant → leser som en
+     promo/nudge, ikke et data-kort. */
+  .trial-nudge{position:relative;background:var(--info-bg);border:1px solid color-mix(in srgb,var(--info) 30%,transparent);border-radius:14px;padding:18px 20px;margin:0 0 24px}
+  .trial-nudge[hidden]{display:none}
+  .trial-nudge-h{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:0 0 7px;padding-right:28px}
+  .trial-nudge-t{font-size:13.5px;color:var(--mut);line-height:1.55;margin:0 0 15px;max-width:520px}
+  /* Likeverdige knapper (begge solid .btn), side ved side (flex:1 + min-width:0 = LIK bredde). To stablede
+     fullbredde-knapper tok for mye plass øverst. Under 340px (f.eks. 320) blir det for trangt side ved side
+     (wrapper til to linjer) → stables der, fortsatt likeverdige. */
+  .trial-nudge-btns{display:flex;gap:10px}
+  .trial-nudge-btns .btn{flex:1;min-width:0;justify-content:center;text-align:center;padding-left:12px;padding-right:12px}
+  @media(max-width:339px){.trial-nudge-btns{flex-direction:column}.trial-nudge-btns .btn{flex:none;width:100%}}
+  .tn-close{position:absolute;top:9px;right:9px;width:32px;height:32px;border:0;background:transparent;color:var(--mut);font-size:20px;line-height:1;cursor:pointer;border-radius:7px;display:flex;align-items:center;justify-content:center}
+  .tn-close:hover{background:var(--line);color:var(--ink)}
   /* Vekst-skjold (Basis-visning): halvgjennomsiktig lås over hele kortet. Hele laget klikkbart
      → Konto. Innholdet under er dimmet + ikke-interaktivt (pointer-events:none + inputs disabled).
      .eksempel-merke ligger OVER skjoldet (z 6 > 5) så «Eksempel» leses tydelig, ikke bak lås-laget. */
@@ -1443,6 +1460,18 @@
 
   <!-- OVERSIKT -->
   <section class="panel active" id="oversikt">
+
+    <!-- Trial-nudge (dag 20+ i prøve): initTrialNudge() styrer synlighet + persistens (shown/dismiss).
+         To knapper åpner Verving-/Lojalitet-trekkspillet i Vekst (panelbytte + scroll). -->
+    <div class="trial-nudge" id="trialNudge" hidden>
+      <button class="tn-close" id="tnClose" type="button" aria-label="Lukk">&times;</button>
+      <p class="trial-nudge-h">Flere nye kunder. Flere som kommer tilbake.</p>
+      <p class="trial-nudge-t">Sett opp verving eller lojalitetsprogram og se hva kundene dine faktisk gjør med det. Du velger belønningen — vi lager kampanjen.</p>
+      <div class="trial-nudge-btns">
+        <button class="btn" id="tnVerv" type="button">Sett opp verving</button>
+        <button class="btn" id="tnLoyal" type="button">Lojalitetsprogram</button>
+      </div>
+    </div>
 
     <!-- 1. Kommende bookinger — løftet ut av .bottom-grid til topp. -->
     <div class="ovs-upcoming">
@@ -2843,6 +2872,10 @@ const api={
     if(!r||!r.ok)return null;
     return r.json();
   },
+  // Trial-nudge (Oversikt): marker vist (server setter shown_at KUN hvis NULL) / lukket (dismissed_at=now).
+  // Tom body. Fire-and-forget — feiler kallet, endrer det bare persistensen, ikke visningen i denne økten.
+  async trialNudgeShown(){ return await apiFetch('/api/dashboard/billing/trial-nudge/shown',{method:'POST',body:'{}'}); },
+  async trialNudgeDismiss(){ return await apiFetch('/api/dashboard/billing/trial-nudge/dismiss',{method:'POST',body:'{}'}); },
   // PUT /api/dashboard/customers/:id/loyalty {opt_in} → melder en kunde inn (true) / ut (false).
   //   Svar: {customer_id, opt_in, opt_in_at, has_unused_reward}. Ruta er i kontrakten.
   // Returnerer Response så kalleren kan skille 403 (Vekst-lås) fra annen feil OG lese svar-body.
@@ -3896,6 +3929,44 @@ async function loadMomentum(){
     if(head && head.getAttribute('aria-expanded')!=='true') head.click();
     var acc=$("#accVerv"); if(acc) acc.scrollIntoView({behavior:'smooth',block:'start'});
   });})();
+
+// ── Trial-nudge (Oversikt) ────────────────────────────────────────────────────────────────────────
+// Rolig vekst-nudge i prøve-vinduet. Persistens (overlever enhetsbytte) via barbers.trial_nudge_shown_at
+// /dismissed_at, lest fra /billing/status og skrevet via POST /billing/trial-nudge/{shown,dismiss}.
+// VISES kun: dag 20+ (trial_days_left<=10) OG effective_plan_grunn==='trial_vindu' (ikke Basis, ikke etter
+// trial). ALDRI hvis funksjonene alt er i bruk (loyalty_enabled ELLER en ekte verving) — det dekker også
+// «forsvinner permanent når han gjør noe etter visning»: neste last ser bruken og skjuler.
+// GJENVISNING: 5 dager etter dismissed_at, ÉN gang. Trial-vinduet (dag 20–30) begrenser naturlig til maks
+// én gjenvisning — en tredje ville landet etter prøveslutt (ikke trial_vindu) og blokkeres av gaten der.
+function aapneVekstAkkordion(sel){
+  if(typeof switchPanel==='function') switchPanel('vekst');
+  // switchPanel klikker nav-knappen (kan lazy-rendre) → åpne akkordionen på neste tick.
+  setTimeout(function(){
+    var head=document.querySelector(sel+' .acc-head');
+    if(head && head.getAttribute('aria-expanded')!=='true') head.click();
+    var acc=document.querySelector(sel); if(acc) acc.scrollIntoView({behavior:'smooth',block:'start'});
+  },70);
+}
+async function initTrialNudge(){
+  var el=$("#trialNudge"); if(!el) return;
+  var b=_billing; if(!b) return;
+  if(erBasis()) return;                                                             // ikke Basis
+  if(String(b.effective_plan_grunn||'').toLowerCase()!=='trial_vindu') return;      // kun i prøve-vinduet
+  if(!(b.trial_days_left<=10)) return;                                              // tidligst dag 20 (av 30)
+  var dis=b.trial_nudge_dismissed_at ? new Date(b.trial_nudge_dismissed_at).getTime() : null;
+  if(dis!=null && Date.now() < dis + 5*86400000) return;                            // lukket → stille i 5 dager
+  // «Brukt funksjonene?» — aldri nudge om noe han alt gjør.
+  var loy=await api.loyalty();          if(loy && loy.enabled===true) return;
+  var refs=await api.referrals();       if(Array.isArray(refs) && refs.length>0) return;
+  try{ var attr=await api.attribution('uke'); if(attr && attr.verving && attr.verving.count>0) return; }catch(_){}
+  el.hidden=false;
+  if(!b.trial_nudge_shown_at){ try{ api.trialNudgeShown(); }catch(_){} }            // sett vist (server: kun hvis NULL)
+}
+(function(){
+  var v=$("#tnVerv");  if(v) v.addEventListener("click",function(){ aapneVekstAkkordion('#accVerv'); });
+  var l=$("#tnLoyal"); if(l) l.addEventListener("click",function(){ aapneVekstAkkordion('#accLoyal'); });
+  var x=$("#tnClose"); if(x) x.addEventListener("click",function(){ var el=$("#trialNudge"); if(el)el.hidden=true; try{ api.trialNudgeDismiss(); }catch(_){} });
+})();
 
 /* ---- Flytmodell (Vekst): sammenleggbar på mobil (<768px), alltid åpen på desktop ---- */
 // CSS eier synligheten (flow-body vises alltid ≥768px, skjules by default <768px med mindre .aapen).
@@ -6553,7 +6624,7 @@ loadOversikt();loadBookinger();
 loadPayment(); // betalingsmetoder (Tjenester-fanen) fra innstillings-loaderen
 // Oversikt-nudgen (ferske no-shows) fylles av loadWinback — men FØRST etter at plan er kjent, så
 // erBasis()-guarden virker og basis ikke henter kundedata ved sideload (init-race lukket).
-loadBilling().then(applyBillingReturn).finally(function(){ loadWinback(); }); // abonnementsstatus → retur-flagg → nudge
+loadBilling().then(applyBillingReturn).finally(function(){ loadWinback(); initTrialNudge(); }); // abonnementsstatus → retur-flagg → nudge (+ trial-nudge, krever _billing)
 hentSjekklisteData(); // «Fullfør siden»-guide: hent haker (images/services/hours/profile) ved sideload
 anvendHash(); // åpne panelet fra location.hash (ukjent/tom → standardpanel). Stripe-retur over
               // kjører async etterpå og kan overstyre til Konto — det er tilsiktet.
