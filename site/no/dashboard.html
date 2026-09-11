@@ -3953,6 +3953,9 @@ async function initTrialNudge(){
   if(erBasis()) return;                                                             // ikke Basis
   if(String(b.effective_plan_grunn||'').toLowerCase()!=='trial_vindu') return;      // kun i prøve-vinduet
   if(!(b.trial_days_left<=10)) return;                                              // tidligst dag 20 (av 30)
+  // Har alt generert en kampanjeplakat → har alt gjort det banneret ber om. Synkront fra _billing
+  // (billig), sjekket FØR de asynkrone kallene så de også spares.
+  if(b.har_generert_plakat===true) return;
   var dis=b.trial_nudge_dismissed_at ? new Date(b.trial_nudge_dismissed_at).getTime() : null;
   if(dis!=null && Date.now() < dis + 5*86400000) return;                            // lukket → stille i 5 dager
   // «Brukt funksjonene?» — aldri nudge om noe han alt gjør.
