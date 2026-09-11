@@ -2025,6 +2025,10 @@
             <div class="fld"><label>Instagram</label><div class="fld-at"><span class="fld-at-sym">@</span><input id="pf-instagram" type="text" placeholder="brukernavn" autocapitalize="off" autocorrect="off" spellcheck="false"></div></div>
             <div class="fld"><label>TikTok</label><div class="fld-at"><span class="fld-at-sym">@</span><input id="pf-tiktok" type="text" placeholder="brukernavn" autocapitalize="off" autocorrect="off" spellcheck="false"></div></div>
             <div class="fld"><label>Snapchat</label><div class="fld-at"><span class="fld-at-sym">@</span><input id="pf-snapchat" type="text" placeholder="brukernavn" autocapitalize="off" autocorrect="off" spellcheck="false"></div></div>
+            <!-- Telefon (contact_phone, migrasjon 062). IKKE @-prefiks — det er et nummer, ikke en handle.
+                 Vises på bookingBEKREFTELSEN (backend), ikke på forsiden. Tomt → '' → backend nullstiller →
+                 vises ikke. Lagres via PUT /settings (api.saveSettings) på «Lagre profil». Maks 32 (backend). -->
+            <div class="fld"><label>Telefon</label><input id="pf-phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="91 23 45 67"><p class="fld-hint">Kunden ser dette på bekreftelsen sin, ikke på selve bookingsiden.</p></div>
             <div class="savebar"><button class="btn" id="saveProfil">Lagre profil</button><span class="saved" id="profilSaved">Lagret &#10003;</span></div>
           </div>
         </div>
@@ -4460,6 +4464,7 @@ async function loadProfil(){
   $("#pf-instagram").value=(p.instagram||"").replace(/^@+/,"");
   $("#pf-tiktok").value=(p.tiktok||"").replace(/^@+/,"");
   $("#pf-snapchat").value=(p.snapchat||"").replace(/^@+/,"");
+  $("#pf-phone").value=p.contact_phone||"";
   // Sett barber-navn i header — null til dette punktet
   const displayName=p.shop||p.name||"";
   CONFIG.BARBER_NAME=displayName;
@@ -4628,9 +4633,10 @@ async function lagreProfil(knappSel, flashSel){
   // Sosiale handles lagres via PUT /settings (backend-kontrakt: normalizeHandle strippar @/URL/domene,
   // tom streng nullstiller kolonnen → ikonet forsvinner fra bookingsiden). Samme «Lagre profil»-knapp.
   const rs=await api.saveSettings({
-    instagram: $("#pf-instagram").value,
-    tiktok:    $("#pf-tiktok").value,
-    snapchat:  $("#pf-snapchat").value,
+    instagram:     $("#pf-instagram").value,
+    tiktok:        $("#pf-tiktok").value,
+    snapchat:      $("#pf-snapchat").value,
+    contact_phone: $("#pf-phone").value,
   });
   btn.disabled=false;btn.textContent=orig;
   if(!r)return;
