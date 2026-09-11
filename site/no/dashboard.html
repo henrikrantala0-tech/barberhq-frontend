@@ -2782,9 +2782,10 @@ const api={
   // Fire-and-forget-kallere (SMS-brytere) ignorerer den fortsatt trygt.
   async saveSettings(patch){
     const r=await apiFetch('/api/dashboard/settings',{method:'PUT',body:JSON.stringify(patch)});
-    // PUT-responsen bærer utseendeVersjon (epoch-ms) — mat plakat-cachebusteren (monoton). Leses fra en
-    // KLONE så kalleren fortsatt kan gjøre r.json() for feil/verdier. Dekker verving/lojalitet + SMS.
-    if(r&&r.ok){ try{ const j=await r.clone().json(); if(j&&typeof j.utseendeVersjon==='number') settPlakatVersjon(j.utseendeVersjon); }catch(_){} }
+    // PUT-responsen bærer utseendeVersjon (tall ELLER opak streng) — mat plakat-cachebusteren (monoton).
+    // Leses fra en KLONE så kalleren fortsatt kan gjøre r.json() for feil/verdier. Dekker verving/lojalitet
+    // + SMS. Ingen typeof-vakt her: settPlakatVersjon validerer selv (tåler begge former, avviser resten).
+    if(r&&r.ok){ try{ const j=await r.clone().json(); if(j&&j.utseendeVersjon!=null) settPlakatVersjon(j.utseendeVersjon); }catch(_){} }
     return r;
   },
   async winback(group){
@@ -6699,13 +6700,30 @@ function erStandalone(){
    et tapt nett beholder utkastet. Alle lagene er nå bygget: preview (lag 2), kontroller + celle-valg
    (lag 3a), dra tekstblokken (lag 3b), beskjæring (lag 3c), «Endre bilde» (beslutning 7) og kamerarull.
    Kontrakt: docs/08-kampanjeplakater.md Del 8 (backend-repo). */
-// Delt plakat-versjon (utseendeVersjon, epoch-ms) — cachebuster for ALLE plakat-URL-er (miniatyr +
-// preview + render). TO skrivere: /regler ved editor-åpning (hentRegler) OG PUT /settings-responsen ved
+// Delt plakat-versjon (utseendeVersjon) — cachebuster for ALLE plakat-URL-er (miniatyr + preview +
+// render). TO skrivere: /regler ved editor-åpning (hentRegler) OG PUT /settings-responsen ved
 // innstillings-lagring (api.saveSettings, i Vekst-fanen UTENFOR denne IIFE-en). Top-level var → begge ser
 // den. MONOTON: skriv aldri en eldre verdi over en nyere (et /regler-svar underveis fra før en PUT skal
-// ikke overskrive den ferske PUT-versjonen). utseendeVersjon = updated_at, øker kun → max() er trygt.
+// ikke overskrive den ferske PUT-versjonen).
+// FORMAT-AGNOSTISK (2026-09-11): backend kan sende BEGGE former uten at deploy-rekkefølgen spiller inn —
+//   gammelt tall (updated_at epoch-ms) ELLER ny opak streng «<updated_at>-<renderversjon>». HELE verdien
+//   bæres videre som v= (uendret pass-through). Monotonien måles KUN på den numeriske updated_at-delen
+//   (prefikset før første «-»), ikke på den rå strengen — leksikografisk «>» ville rangert «…-10» under
+//   «…-2». Ved LIK updated_at (samme lagring, kun renderversjon skiller = en deploy/rollback) VINNER den
+//   nye verdien (busting ved deploy; ingen frys ved rollback), så lenge verdien faktisk er ulik.
 var _plakatVersjon = 0;
-function settPlakatVersjon(v){ if(typeof v==='number' && v>_plakatVersjon) _plakatVersjon=v; }
+// Numerisk sammenlikningsnøkkel: updated_at-delen. Tall→tallet selv; «<ms>-<rev>» / «<ms>»→parseInt-prefiks.
+// Ugyldig/ukjent → -1 (taper mot enhver ekte verdi, men init 0 aksepterer første ekte verdi som «nyere»).
+function _plakatVerNokkel(v){
+  if(typeof v==='number') return isFinite(v) ? v : -1;
+  if(typeof v==='string'){ var n=parseInt(v,10); return isNaN(n) ? -1 : n; }
+  return -1;
+}
+function settPlakatVersjon(v){
+  if(typeof v!=='number' && typeof v!=='string') return;   // slipp gjennom BEGGE former, avvis alt annet
+  var ny=_plakatVerNokkel(v), naa=_plakatVerNokkel(_plakatVersjon);
+  if(ny>naa || (ny===naa && v!==_plakatVersjon)) _plakatVersjon=v;   // nyere updated_at, ellers ny-vinner ved lik
+}
 (function(){
   var PLAKAT_KEY='bhq-plakat';
   var PS=null; // plakat-tilstand

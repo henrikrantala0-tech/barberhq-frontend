@@ -705,6 +705,62 @@ for (const bredde of [320, 375, 1280]) {
   await page.close();
 }
 
+// Format-agnostisk cachebuster (2026-09-11): utseendeVersjon som TALL (gammelt) ELLER «<updated_at>-<rev>»
+// (nytt) — deploy-rekkefølge skal ikke spille inn. Unit-scenarier på den DELTE top-level settPlakatVersjon
+// (+ init 0), pluss E2E: en STRENG fra /regler bæres rått helt ut i miniatyr-v=. Gammelt tall er dessuten
+// dekket av bug4b (v='1000'→'2000') og B (v=String(V_PUT)); de blir stående som bevis på at tall funker.
+{
+  const page = await browser.newPage({ viewport:{ width:375, height:900 }, deviceScaleFactor:1 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  await page.route('**/api/**', router('vekst', 200, null, IMAGES4, DESIGN));
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  // settPlakatVersjon/_plakatVersjon er top-level (klassisk script) → globale. Nullstill mellom hvert scenario.
+  const u = await page.evaluate(() => {
+    const set=(...vs)=>{ window._plakatVersjon=0; vs.forEach(v=>settPlakatVersjon(v)); return _plakatVersjon; };
+    const MS=1789041600000, S=MS+'-7', S_NY='1789041700000-1', S_GML='1789041500000-9';
+    return {
+      tallInn:        set(MS),         // tall aksepteres (bakoverkompat)
+      strengInn:      set(S),          // streng aksepteres, HEL verdi beholdt (init 0 rejecter ikke feil)
+      tallSaaStreng:  set(MS, S),      // deploy: samme updated_at, ny rev → streng vinner (busting skjer)
+      strengSaaTall:  set(S, MS),      // rollback: → tallet vinner (verdi ≠ 0 → ingen frys)
+      eldreForkastet: set(S, S_GML),   // eldre updated_at forkastes (monoton, leksikografi ville feilet)
+      nyereVinner:    set(MS, S_NY),   // nyere updated_at vinner på tvers av format (tall → streng)
+      likNoop:        set(MS, MS),     // identisk verdi → ingen endring
+    };
+  });
+  const MS=1789041600000, S=MS+'-7';
+  rad.push({ skjerm:'v-agnostisk (unit)',
+    'tall inn':          u.tallInn===MS?'ok':'FEIL',
+    'streng inn':        u.strengInn===S?'ok':'FEIL',
+    'tall→streng bust':  u.tallSaaStreng===S?'ok':'FEIL',
+    'streng→tall ufryst':u.strengSaaTall===MS?'ok':'FEIL',
+    'eldre forkastet':   u.eldreForkastet===S?'ok':'FEIL',
+    'nyere vinner':      u.nyereVinner==='1789041700000-1'?'ok':'FEIL',
+    'lik no-op':         u.likNoop===MS?'ok':'FEIL',
+    jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+// E2E — /regler leverer en STRENG utseendeVersjon → miniatyr-URL-ene skal bære den rå strengen som v=.
+{
+  const V_STR = '1789041600000-7';
+  const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  const renderV = [];
+  page.on('request', r => { const u=r.url(); if(u.includes('/plakat/render')){ const q=new URL(u).searchParams; if(q.get('bredde')==='400') renderV.push(q.get('v')); } });
+  const base = router('vekst', 200, null, IMAGES4, DESIGN);
+  await page.route('**/api/**', route => { const p=new URL(route.request().url()).pathname;
+    if (p==='/api/dashboard/plakat/regler') return route.fulfill({ status:200, contentType:'application/json',
+      body:JSON.stringify({ skjoldStyrke:{min:0.6,max:1.4,default:1}, barber:{palette:'krem',morkSperret:false,utseendeVersjon:V_STR}, maler:MALER_KREM }) });
+    return base(route); });
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
+  await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
+  await openAcc(page, '#accVerv'); await page.click('#plakatOpenVerving'); await page.waitForTimeout(1000);
+  const vSiste = renderV[renderV.length-1];
+  rad.push({ skjerm:'v-agnostisk (E2E streng)', 'miniatyr v=':vSiste, 'streng bæres rått': vSiste===V_STR?'ok':'FEIL',
+    jsfeil: errs.length?errs.join('; '):'ingen' });
+  await page.close();
+}
+
 console.table(rad);
 console.log('JS-feil:', rad.filter(r=>r.jsfeil && r.jsfeil!=='ingen' && r.jsfeil!=='—').length);
 await browser.close(); server.close(); noCorsServer.close();
