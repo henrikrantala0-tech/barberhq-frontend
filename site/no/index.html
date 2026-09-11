@@ -519,7 +519,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    designbredden scene 1 er tegnet i. Over 900px viewport er scene 1 derfor 1:1 med
    dashbordet, uten skalering. Under 900px krymper rammen og --rb-s tar over. */
 .rbdemo{display:flex;justify-content:center;width:100%}
-.rbdemo .rb-frame{width:340px}
+.rbdemo .rb-frame{width:340px;container-type:inline-size}
 @media(max-width:900px){.rbdemo .rb-frame{width:256px}}
 .rbdemo .rb-stage{position:absolute;inset:0;background:#0e0e10;color:#fff;
   font-family:'Inter',system-ui,sans-serif;font-size:13px;line-height:1.45}
@@ -708,7 +708,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 /* .pv-dash har INGEN egen skala — hele vinduet (.pv-win) skaleres som én enhet.
    Sto begge, ble innholdet skalert to ganger (0,718 × 0,718 = 0,516) og dashbordet
    fylte bare to tredjedeler av browservinduet. */
-#produkt .pv-phoneframe{width:290px}
+#produkt .pv-phoneframe{width:290px;container-type:inline-size}
 #produkt .pv-deskframe{width:560px}
 /* Mobil-loopens dekor-kloner: skjult på desktop (ring-karusellen :2591 eier de tre
    originalene og skal ikke se seks ekstra kort); vises kun i mobil-media under. */
@@ -721,16 +721,38 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    rebooking-demoen i «Bygd for å fylle stolen». Ingenting her er karusell-spesifikt.
    Det som BLIR i #produkt er bredden (.pv-phoneframe), fokusrammen (.mock.on) og hele
    --ph-s-skaleringen, som drives av settTelefonSkala() over #scene. */
-.iph{background:#000;padding:9px;border-radius:44px;border:1px solid #2a2a2a;
-  box-shadow:0 30px 60px -30px rgba(0,0,0,.9)}
-.iph-screen{position:relative;border-radius:35px;overflow:hidden;aspect-ratio:9/19.5;background:#fff}
-.iph-island{position:absolute;top:8px;left:50%;transform:translateX(-50%);
-  width:90px;height:26px;background:#000;border-radius:13px;z-index:5;pointer-events:none}
-#produkt .mock.on .iph{border-color:#4d8bff}
+/* ===== iPhone 17-ramme (kopiert fra barberhq-video-mappa/ramme/iphone.css) ==================
+   Tilpasning: position:relative + cqw-drevet --fscale i stedet for position:absolute+transform:scale,
+   slik at .iph-screen beholder EKTE layoutbredde — settTelefonSkala og --rb-s-scalerne leser
+   offsetWidth og virker uendret. Proporsjoner, titanium-palett og knappeposisjoner (298/432/528/452
+   native) er 1:1 med videorammen; alt skalerer med --fscale, så knappene glir aldri ut av stilling.
+   Skjermslisse låst 1206:2622 (638:1387). Ingen Dynamic Island (som kilden).
+   --fscale = beholderbredde/702 → rammen fyller kortet og krymper responsivt ned til 320px. */
+.iph{
+  --fscale:calc(100cqw / 702px);
+  --ti-hi:#cdd1d5; --ti-mid:#7f8288; --ti-lo:#46484b; --edge-dark:rgba(0,0,0,.55);
+  position:relative;
+  width:calc(702px*var(--fscale)); height:calc(1451px*var(--fscale));
+  padding:calc(32px*var(--fscale)); border-radius:calc(128px*var(--fscale));
+  background:linear-gradient(145deg,var(--ti-hi) 0%,var(--ti-mid) 20%,var(--ti-lo) 52%,var(--ti-mid) 80%,var(--ti-hi) 100%);
+  box-shadow:0 0 0 calc(1px*var(--fscale)) #e6eaee,0 40px 90px -30px rgba(0,0,0,.85),0 8px 24px rgba(0,0,0,.5)}
+.iph::before{content:"";position:absolute;inset:calc(10px*var(--fscale));
+  border-radius:calc(118px*var(--fscale));background:#050505;
+  box-shadow:inset 0 0 0 calc(1.5px*var(--fscale)) var(--edge-dark)}
+.iph-screen{position:relative;z-index:1;width:100%;height:100%;
+  border-radius:calc(96px*var(--fscale));overflow:hidden;background:#0a0a0a}
+.iph-btn{position:absolute;z-index:2;width:calc(9px*var(--fscale));
+  background:linear-gradient(90deg,#b0b4b8 0%,#6d7074 45%,#4b4d50 100%)}
+.iph-btn.la{left:calc(-5px*var(--fscale));border-radius:calc(4px*var(--fscale)) calc(1px*var(--fscale)) calc(1px*var(--fscale)) calc(4px*var(--fscale));box-shadow:calc(-1px*var(--fscale)) calc(1px*var(--fscale)) calc(2px*var(--fscale)) rgba(0,0,0,.5)}
+.iph-btn.ra{right:calc(-5px*var(--fscale));background:linear-gradient(90deg,#4b4d50 0%,#6d7074 55%,#b0b4b8 100%);border-radius:calc(1px*var(--fscale)) calc(4px*var(--fscale)) calc(4px*var(--fscale)) calc(1px*var(--fscale));box-shadow:calc(1px*var(--fscale)) calc(1px*var(--fscale)) calc(2px*var(--fscale)) rgba(0,0,0,.5)}
+.iph-btn.action{top:calc(298px*var(--fscale));height:calc(42px*var(--fscale))}
+.iph-btn.volup{top:calc(432px*var(--fscale));height:calc(80px*var(--fscale))}
+.iph-btn.voldn{top:calc(528px*var(--fscale));height:calc(80px*var(--fscale))}
+.iph-btn.power{top:calc(452px*var(--fscale));height:calc(122px*var(--fscale))}
+#produkt .mock.on .iph{box-shadow:0 0 0 calc(2px*var(--fscale)) #4d8bff,0 0 24px rgba(77,139,255,.45),0 40px 90px -30px rgba(0,0,0,.85)}
 
-#produkt .brw{background:#141414;border:1px solid #2a2a2a;border-radius:12px;overflow:hidden;
-  box-shadow:0 30px 60px -30px rgba(0,0,0,.9)}
-#produkt .mock.on .brw{border-color:#4d8bff}
+#produkt .brw{background:linear-gradient(#141414,#141414) padding-box,linear-gradient(145deg,#cdd1d5 0%,#7f8288 20%,#46484b 52%,#7f8288 80%,#cdd1d5 100%) border-box;border:8px solid transparent;border-radius:24px;overflow:hidden;box-shadow:0 0 0 1px #e6eaee,0 40px 90px -30px rgba(0,0,0,.85),0 8px 24px rgba(0,0,0,.5)}
+#produkt .mock.on .brw{box-shadow:0 0 0 2px #4d8bff,0 0 24px rgba(77,139,255,.45),0 40px 90px -30px rgba(0,0,0,.85)}
 #produkt .brw-bar{display:flex;align-items:center;gap:10px;padding:0 0 0 12px;background:#101010;border-bottom:1px solid #222}
 #produkt .brw-url{flex:1;font:12px/1 'Inter',system-ui,sans-serif;color:#8a8a8a;background:#1a1a1a;
   border-radius:7px;padding:7px 11px;margin:7px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1160,8 +1182,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 /* (Mobil-telefonrammen for dashbordet er rullet tilbake 09.08 — dashbordet er alltid
    browservindu i designbredde 780.) */
 
-#produkt .brw{background:#141414;border:1px solid #2a2a2a;border-radius:12px;overflow:hidden}
-#produkt .mock.on .brw{border-color:#4d8bff}
+#produkt .brw{background:linear-gradient(#141414,#141414) padding-box,linear-gradient(145deg,#cdd1d5 0%,#7f8288 20%,#46484b 52%,#7f8288 80%,#cdd1d5 100%) border-box;border:8px solid transparent;border-radius:24px;overflow:hidden;box-shadow:0 0 0 1px #e6eaee,0 40px 90px -30px rgba(0,0,0,.85),0 8px 24px rgba(0,0,0,.5)}
+#produkt .mock.on .brw{box-shadow:0 0 0 2px #4d8bff,0 0 24px rgba(77,139,255,.45),0 40px 90px -30px rgba(0,0,0,.85)}
 #produkt .brw-bar{display:flex;align-items:center;gap:14px;padding:0 0 0 16px;
   background:#101010;border-bottom:1px solid #222}
 #produkt .brw-url{flex:1;font:16px/1 'Inter',system-ui,sans-serif;color:#8a8a8a;background:#1a1a1a;
@@ -1355,7 +1377,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .sys-chevron{flex-shrink:0;color:#777;transition:transform .25s ease,color .2s}
 .sys-row[data-open="true"] .sys-chevron{transform:rotate(180deg);color:#fff}
 .sys-panel{max-height:0;overflow:hidden;transition:max-height .4s ease}
-.sys-row[data-open="true"] .sys-panel{max-height:720px}
+.sys-row[data-open="true"] .sys-panel{max-height:760px}
 .sys-panel-in{padding:10px 24px 34px;display:flex;justify-content:center}
 /* Rad 5: Lojalitetsprogram — STATISK bekreftelsesskjerm i SAMME .iph-telefonramme som de fire andre
    radene (klassen «rbdemo lojdemo» arver ramme + statuslinje). data-anim="lojalitet" har ingen handler
@@ -1497,7 +1519,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     <div class="scene" id="scene">
 
       <div class="mock pv-phone pv-phoneframe" data-i="0" role="button" tabindex="0" aria-label="Kalender">
-        <div class="iph"><div class="iph-screen"><div class="iph-island"></div>
+        <div class="iph"><i class="iph-btn la action"></i><i class="iph-btn la volup"></i><i class="iph-btn la voldn"></i><i class="iph-btn ra power"></i><div class="iph-screen">
           <div class="pv-cal">
             <div class="pv-cal-h"><div class="pv-cal-d">Torsdag 13.</div><div class="pv-cal-s"><b id="calCount">0</b> bookinger</div></div>
             <!-- Tom fra start: dagen FYLLES mens man ser på. Sto det tre rader her og en
@@ -1587,7 +1609,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       </div>
 
       <div class="mock pv-phone pv-phoneframe" data-i="2" role="button" tabindex="0" aria-label="Bookingside">
-        <div class="iph"><div class="iph-screen"><div class="iph-island"></div>
+        <div class="iph"><i class="iph-btn la action"></i><i class="iph-btn la volup"></i><i class="iph-btn la voldn"></i><i class="iph-btn ra power"></i><div class="iph-screen">
           <div class="pv-book" id="pvBook"><div class="pv-scale">
             <div class="pv-stage">
               <section class="cover">
@@ -1705,7 +1727,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
           <div class="sys-panel-in">
             <div class="rbdemo">
               <div class="rb-frame">
-                <div class="iph"><div class="iph-screen"><div class="iph-island"></div>
+                <div class="iph"><i class="iph-btn la action"></i><i class="iph-btn la volup"></i><i class="iph-btn la voldn"></i><i class="iph-btn ra power"></i><div class="iph-screen">
                   <div class="rb-stage" id="rbStage">
                     <!-- ÉN statuslinje over alle tre scenene. Fargen flippes av .lys når
                          scene 3 (hvit SMS-skjerm) er aktiv. -->
@@ -1829,7 +1851,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
           <div class="sys-panel-in">
             <div class="rbdemo paademo">
               <div class="rb-frame">
-                <div class="iph"><div class="iph-screen"><div class="iph-island"></div>
+                <div class="iph"><i class="iph-btn la action"></i><i class="iph-btn la volup"></i><i class="iph-btn la voldn"></i><i class="iph-btn ra power"></i><div class="iph-screen">
                   <div class="rb-stage" id="paaStage">
                     <div class="rb-status"><span>19:00</span><span class="sb-right"><svg class="sb-bars" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="1"/><rect x="5" y="5.5" width="3" height="5.5" rx="1"/><rect x="10" y="3" width="3" height="8" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg><svg class="sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg><svg class="sb-batt" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor"/></svg></span></div>
 
@@ -1939,7 +1961,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
           <div class="sys-panel-in">
             <div class="rbdemo vvdemo">
               <div class="rb-frame">
-                <div class="iph"><div class="iph-screen"><div class="iph-island"></div>
+                <div class="iph"><i class="iph-btn la action"></i><i class="iph-btn la volup"></i><i class="iph-btn la voldn"></i><i class="iph-btn ra power"></i><div class="iph-screen">
                   <div class="rb-stage" id="vvStage">
                     <div class="rb-status"><span>9:41</span><span class="sb-right"><svg class="sb-bars" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="1"/><rect x="5" y="5.5" width="3" height="5.5" rx="1"/><rect x="10" y="3" width="3" height="8" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg><svg class="sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg><svg class="sb-batt" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor"/></svg></span></div>
 
@@ -2104,7 +2126,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
           <div class="sys-panel-in">
             <div class="rbdemo wbdemo">
               <div class="rb-frame">
-                <div class="iph"><div class="iph-screen"><div class="iph-island"></div>
+                <div class="iph"><i class="iph-btn la action"></i><i class="iph-btn la volup"></i><i class="iph-btn la voldn"></i><i class="iph-btn ra power"></i><div class="iph-screen">
                   <div class="rb-stage" id="wbStage">
                     <div class="rb-status"><span>9:41</span><span class="sb-right"><svg class="sb-bars" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="1"/><rect x="5" y="5.5" width="3" height="5.5" rx="1"/><rect x="10" y="3" width="3" height="8" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg><svg class="sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg><svg class="sb-batt" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor"/></svg></span></div>
 
@@ -2234,7 +2256,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
           <div class="sys-panel-in">
             <div class="rbdemo lojdemo">
               <div class="rb-frame">
-                <div class="iph"><div class="iph-screen"><div class="iph-island"></div>
+                <div class="iph"><i class="iph-btn la action"></i><i class="iph-btn la volup"></i><i class="iph-btn la voldn"></i><i class="iph-btn ra power"></i><div class="iph-screen">
                   <div class="rb-stage">
                     <div class="rb-status"><span>9:41</span><span class="sb-right"><svg class="sb-bars" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="1"/><rect x="5" y="5.5" width="3" height="5.5" rx="1"/><rect x="10" y="3" width="3" height="8" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg><svg class="sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg><svg class="sb-batt" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor"/></svg></span></div>
                     <section class="rb-scene rb-s1 on" data-s="1">
@@ -2456,7 +2478,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
       var b=skjerm.offsetWidth;
       if(!(b>0))return;
       kort.style.setProperty('--ph-s', (Math.round(b/320*10000)/10000));
-      sc.style.height=Math.round(320*19.5/9)+'px';   // 693 = skjermflaten i designpiksler
+      sc.style.height=Math.round(320*2622/1206)+'px'; // skjermflaten i designpiksler (1206:2622)
     });
   }
 
