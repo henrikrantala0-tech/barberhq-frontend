@@ -1355,6 +1355,25 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .sys-panel{max-height:0;overflow:hidden;transition:max-height .4s ease}
 .sys-row[data-open="true"] .sys-panel{max-height:720px}
 .sys-panel-in{padding:10px 24px 34px;display:flex;justify-content:center}
+/* Rad 5: Lojalitetsprogram — STATISK bekreftelsesskjerm i SAMME .iph-telefonramme som de fire andre
+   radene (klassen «rbdemo lojdemo» arver ramme + statuslinje). data-anim="lojalitet" har ingen handler
+   → ingen animasjon, kun åpne/lukke. Speiler #bk-success i booking-module.cjs:966-983: grønn hake,
+   «Booking bekreftet!» og kvitteringskortet med lojalitetsraden «N av M» + «Fullt kort gir …».
+   «7 av 10» er ren illustrasjon, ikke ekte data (Henrik 11.09). */
+.lojdemo .rb-scene{padding:52px 16px 18px;text-align:center;display:flex;flex-direction:column;justify-content:center;overflow:hidden}
+.lojdemo .loj-ico{width:50px;height:50px;border-radius:50%;background:#3ecf7e;display:flex;align-items:center;justify-content:center;margin:0 auto 14px}
+.lojdemo .loj-ico svg{width:25px;height:25px}
+.lojdemo .loj-h{font-size:19px;font-weight:800;letter-spacing:-.02em;color:#fff;margin:0 0 5px}
+.lojdemo .loj-sub{font-size:12px;color:#8f8f8f;margin:0 0 18px;line-height:1.45}
+.lojdemo .loj-det{background:#141416;border:1px solid #232326;border-radius:14px;padding:4px 16px;text-align:left}
+.lojdemo .loj-row{display:flex;justify-content:space-between;align-items:flex-start;font-size:13px;padding:11px 0;border-bottom:1px solid #232326}
+.lojdemo .loj-row:last-child{border-bottom:none}
+.lojdemo .loj-lbl{color:#8f8f8f;flex-shrink:0;margin-right:12px}
+.lojdemo .loj-val{font-weight:600;text-align:right;color:#fff;white-space:nowrap}
+.lojdemo .loj-loy{flex-direction:column;align-items:stretch}
+.lojdemo .loj-loy-top{display:flex;justify-content:space-between;align-items:flex-start}
+.lojdemo .loj-loy-top .loj-val{color:#4d8bff;font-weight:700}
+.lojdemo .loj-loy-sub{text-align:right;font-size:11px;color:#8f8f8f;margin-top:4px}
 @media(max-width:560px){.sys-section{padding:64px 22px}.sys-head{padding:18px 18px}.sys-head-d{font-size:13px}}
 </style>
 </head>
@@ -1662,7 +1681,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   <div class="sys-inner">
     <div class="sys-eyebrow">DINE STERKESTE VÅPEN</div>
     <h2 class="sys-h2">Bygd for å fylle stolen.</h2>
-    <p class="sys-sub">Fire systemer som holder kalenderen full. Trykk for å se hvordan.</p>
+    <p class="sys-sub">Fem systemer som holder kalenderen full. Trykk for å se hvordan.</p>
 
     <div class="sys-acc">
 
@@ -2185,6 +2204,52 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
                       </div>
                     </section>
 
+                  </div>
+                </div></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Rad 5: Lojalitetsprogram — STATISK bekreftelsesskjerm i samme telefonramme som de fire andre
+           radene. Speiler #bk-success (booking-module.cjs:966-983): lojalitetsraden «N av M» + «Fullt kort
+           gir …». Ingen animasjon (data-anim="lojalitet" uten handler). «7 av 10» = ren illustrasjon. -->
+      <div class="sys-row" data-open="false" data-anim="lojalitet">
+        <button class="sys-head" aria-expanded="false">
+          <span class="sys-head-ico">
+            <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 5.5 12 8c0-2.5 2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>
+          </span>
+          <span class="sys-head-txt">
+            <span class="sys-head-t">Lojalitetsprogram</span>
+            <span class="sys-head-d">Kunden kommer tilbake for å fylle kortet. Du setter terskel og belønning selv.</span>
+          </span>
+          <span class="sys-chevron">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9l6 6 6-6"/></svg>
+          </span>
+        </button>
+        <div class="sys-panel">
+          <div class="sys-panel-in">
+            <div class="rbdemo lojdemo">
+              <div class="rb-frame">
+                <div class="iph"><div class="iph-screen"><div class="iph-island"></div>
+                  <div class="rb-stage">
+                    <div class="rb-status"><span>9:41</span><span class="sb-right"><svg class="sb-bars" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="1"/><rect x="5" y="5.5" width="3" height="5.5" rx="1"/><rect x="10" y="3" width="3" height="8" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg><svg class="sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg><svg class="sb-batt" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor"/></svg></span></div>
+                    <section class="rb-scene rb-s1 on" data-s="1">
+                      <div class="loj-ico"><svg viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div>
+                      <h3 class="loj-h">Booking bekreftet!</h3>
+                      <p class="loj-sub">Vi gleder oss til å se deg hos Grand Barber.</p>
+                      <div class="loj-det">
+                        <div class="loj-row"><span class="loj-lbl">Navn</span><span class="loj-val">Marcus Berg</span></div>
+                        <div class="loj-row"><span class="loj-lbl">Tjeneste</span><span class="loj-val">Klipp + skjegg</span></div>
+                        <div class="loj-row"><span class="loj-lbl">Tid</span><span class="loj-val">14. mar · 14:00</span></div>
+                        <div class="loj-row"><span class="loj-lbl">Total</span><span class="loj-val">45 min · 480 kr</span></div>
+                        <div class="loj-row loj-loy">
+                          <div class="loj-loy-top"><span class="loj-lbl">Lojalitetsprogram</span><span class="loj-val">7 av 10</span></div>
+                          <div class="loj-loy-sub">Fullt kort gir gratis klipp</div>
+                        </div>
+                      </div>
+                    </section>
                   </div>
                 </div></div>
               </div>
