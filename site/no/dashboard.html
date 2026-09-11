@@ -859,6 +859,11 @@
   .crop-modal{position:fixed;inset:0;z-index:400;background:rgba(10,10,10,.97);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px}
   .crop-modal.open{display:flex}
   .crop-modal-inner{width:100%;max-width:580px;display:flex;flex-direction:column;gap:14px}
+  /* Fast-format-indikator (samme rolle som plakatens .pk-crop-aspekt): forklarer at boksen er låst til
+     slottens format og at bildet flyttes/zoomes bak. */
+  .crop-aspekt{display:flex;flex-direction:column;gap:3px}
+  .crop-aspekt-badge{align-self:flex-start;font-size:12px;font-weight:700;color:#fff;background:rgba(37,99,235,.92);border-radius:6px;padding:3px 10px;letter-spacing:.02em}
+  .crop-aspekt-hint{font-size:12px;color:#b9b9b9;line-height:1.4}
   .crop-canvas-wrap{width:100%;max-height:60vh;overflow:hidden;border-radius:10px;background:#111;display:flex;align-items:center;justify-content:center}
   .crop-canvas-wrap img{display:block;max-width:100%;max-height:60vh}
   .crop-actions{display:flex;gap:10px;justify-content:flex-end}
@@ -1845,6 +1850,10 @@
   <!-- Bilder-panelet er slått sammen inn i #design (Design-fanen) -->
   <div id="cropModal" class="crop-modal" aria-modal="true" role="dialog">
     <div class="crop-modal-inner">
+      <div class="crop-aspekt">
+        <span class="crop-aspekt-badge" id="cropAspektBadge"></span>
+        <span class="crop-aspekt-hint">Fast format – dra og zoom bildet for å velge utsnitt.</span>
+      </div>
       <div class="crop-canvas-wrap">
         <img id="cropImg" crossorigin="anonymous" alt="Beskjær bilde">
       </div>
@@ -4249,8 +4258,18 @@ function _openCropModal(imgSrc,imgId,slot){
   document.getElementById('cropSave').disabled=false;
   if(_cropper){_cropper.destroy();_cropper=null;}
   const ratio=slot==='portrett'?1:slot==='hero'?9/19.5:3/4;
+  // Badge: fast slott-format (samme rolle som plakatens aspekt-badge). Kun visning — ikke i cropData.
+  const badge=document.getElementById('cropAspektBadge');
+  if(badge) badge.textContent=slot==='portrett'?'Portrett 1:1':slot==='hero'?'Hero 9:19,5':'Galleri 3:4';
   imgEl.onload=function(){
-    _cropper=new Cropper(imgEl,{viewMode:2,aspectRatio:ratio,autoCropArea:0.8,background:false,responsive:true});
+    // iPhone-modell: fast crop-boks i slottens aspekt (fyller modalen, ikke dragbar/skalerbar), bildet
+    // flyttes og zoomes BAK boksen (dragMode:'move', zoomOnWheel/Touch default på). viewMode:3 tvinger
+    // lerretet (bildet) til ALLTID å fylle containeren → zoom-gulv = bildet dekker boksen fullt, ingen
+    // tomme/svarte kanter kan oppstå ved drag eller utzoom; åpner på min-zoom (lerret = fyll container).
+    // autoCropArea:1 = boksen så stor aspektet tillater. (viewMode:1 ville krympet boksen mot et lite
+    // innpasset lerret ved et bredt bilde — boksen ville ikke fylt modalen.)
+    _cropper=new Cropper(imgEl,{viewMode:3,dragMode:'move',aspectRatio:ratio,autoCropArea:1,
+      cropBoxMovable:false,cropBoxResizable:false,toggleDragModeOnDblclick:false,background:false,responsive:true});
   };
   imgEl.src=imgSrc;
   modal.classList.add('open');
@@ -7211,8 +7230,8 @@ function settPlakatVersjon(v){
     var aspBadge=document.createElement('span'); aspBadge.className='pk-crop-aspekt-badge'; aspBadge.textContent='Utsnitt '+forhold;
     var aspHint=document.createElement('span'); aspHint.className='pk-crop-aspekt-hint';
     aspHint.textContent=(forhold==='4:5' && kan916)
-      ? 'Fast forhold – flytt og skaler fritt innenfor. Bytt til 9:16-format for et høyere utsnitt.'
-      : 'Fast forhold – flytt og skaler fritt innenfor rammen.';
+      ? 'Fast format – dra og zoom bildet for å velge utsnitt. Bytt til 9:16-format for et høyere utsnitt.'
+      : 'Fast format – dra og zoom bildet for å velge utsnitt.';
     aspBar.appendChild(aspBadge); aspBar.appendChild(aspHint);
     inner.appendChild(topp); inner.appendChild(aspBar); inner.appendChild(wrap); lag.appendChild(inner);
     document.body.appendChild(lag); // på <body>, ikke i editoren → fixed+z-index:1100 garanterer at laget er øverst
@@ -7223,10 +7242,15 @@ function settPlakatVersjon(v){
       // ArrayBuffer-lesing for EXIF) — begge blokkeres av R2 → .cropper-container bygges aldri → crop «død».
       // Vi trenger ingen av delene: croppen er rect-only (getData/getImageData = utsnitt + naturlige mål,
       // ingen piksel-lesing), så Cropper skal bare bruke det opakt lastede bildet som det er.
-      // autoCropArea 0.85 (var 1): starter boksen litt innenfor bildet så det er tydelig at den kan FLYTTES
-      // og SKALERES (aspektet forblir låst — cropBoxResizable/Movable er default på). minCropBox* gir et gulv
-      // så den ikke kan dras til null. viewMode:1 holder boksen innenfor bildet.
-      cr=new Cropper(img,{ viewMode:1, aspectRatio:(celle.aspect||1), autoCropArea:0.85, minCropBoxWidth:70, minCropBoxHeight:70, background:false, responsive:true, dragMode:'move', checkCrossOrigin:false, checkOrientation:false });
+      // iPhone-modell: fast crop-boks i cellens aspekt (fyller modalen, ikke dragbar/skalerbar), bildet
+      // flyttes og zoomes BAK boksen. dragMode:'move' + cropBoxMovable/Resizable:false. viewMode:3 tvinger
+      // lerretet til ALLTID å fylle containeren → zoom-gulv = bildet dekker boksen fullt (ingen tomme/svarte
+      // kanter ved drag eller utzoom), åpner på min-zoom. autoCropArea:1 = boksen så stor aspektet tillater.
+      // toggleDragModeOnDblclick:false → dblklikk bytter ikke til «tegn ny boks». checkCrossOrigin/Orientation
+      // false: plakat-crop er rect-only (getData), trenger ikke rene piksler.
+      cr=new Cropper(img,{ viewMode:3, dragMode:'move', aspectRatio:(celle.aspect||1), autoCropArea:1,
+        cropBoxMovable:false, cropBoxResizable:false, toggleDragModeOnDblclick:false,
+        background:false, responsive:true, checkCrossOrigin:false, checkOrientation:false });
       var p=finn(PS.valgtId); var r=p&&p.rects&&p.rects[celle.slot];
       if(r) try{ cr.setData({x:r.x, y:r.y, width:r.w, height:r.h}); }catch(_){}  // gjenopprett forrige utsnitt
     };
