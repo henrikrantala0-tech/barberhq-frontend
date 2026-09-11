@@ -351,6 +351,13 @@
   .fld textarea{min-height:74px;resize:vertical}
   .fld input:focus,.fld textarea:focus{outline:none;border-color:var(--info)}
   .fld-hint{font-size:11.5px;color:var(--mut);margin-top:6px;line-height:1.4;letter-spacing:-.01em}
+  /* Feilmelding under et felt (validering) — rød, samme plass som .fld-hint. Salongnavnet er påkrevd. */
+  .fld-err{font-size:11.5px;color:var(--bad);margin-top:6px;line-height:1.4;letter-spacing:-.01em}
+  /* @-prefiks i de sosiale feltene: @ står fast til venstre i inputen og er IKKE del av verdien
+     (barbereren skriver kun handlen). Gjør det åpenbart at det er brukernavn, ikke URL. */
+  .fld-at{position:relative}
+  .fld-at-sym{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mut);font-size:14px;font-weight:600;line-height:1;pointer-events:none}
+  .fld-at input{padding-left:27px}
   .svc-head2,.svc-row2{display:grid;grid-template-columns:1fr 104px 78px 36px;gap:9px;align-items:center}
   .svc-head2{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;padding:0 2px 6px}
   .svc-row2{padding:10px 0;border-bottom:1px solid var(--line)}
@@ -2004,13 +2011,20 @@
             <span class="acc-chev">▾</span>
           </button>
           <div class="acc-body" hidden>
-            <div class="fld"><label>Navn på salongen</label><input id="pf-shop" type="text"></div>
-            <div class="fld"><label>Adresse <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><input id="pf-address" type="text"><p class="fld-hint">Skriv full adresse (gate, nummer, postnr, by) så kunder finner frem i kart. Vil du ikke dele nøyaktig sted, skriv bare byen.</p></div>
-            <div class="fld"><label>Spesialitet <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><input id="pf-tagline" type="text" maxlength="60"></div>
+            <div class="fld"><label>Navn på salongen</label><input id="pf-shop" type="text"><p class="fld-err" id="shopErr" hidden>Salongnavnet kan ikke være tomt.</p></div>
+            <div class="fld"><label>Adresse</label><input id="pf-address" type="text"><p class="fld-hint">Skriv full adresse (gate, nummer, postnr, by) så kunder finner frem i kart. Vil du ikke dele nøyaktig sted, skriv bare byen.</p></div>
+            <div class="fld"><label>Spesialitet</label><input id="pf-tagline" type="text" maxlength="60"></div>
             <!-- bioHint: se refreshSlots(). Direkte-malen har ingen {{BIO_BLOCK}}, så
                  beskrivelsen lagres men er usynlig i preview — uten denne linja leser det
                  som at lagringen ikke virket. [oversettelse: sv/da/en] -->
-            <div class="fld"><label>Beskrivelse <span style="color:var(--ink-soft);font-weight:400">(valgfritt)</span></label><textarea id="pf-bio"></textarea><p class="fld-hint" id="bioHint" hidden>Direkte-layouten viser ikke beskrivelsen. Den lagres, og dukker opp hvis du bytter layout.</p></div>
+            <div class="fld"><label>Beskrivelse</label><textarea id="pf-bio"></textarea><p class="fld-hint" id="bioHint" hidden>Direkte-layouten viser ikke beskrivelsen. Den lagres, og dukker opp hvis du bytter layout.</p></div>
+            <!-- Sosiale handles. @ vises som FAST prefiks (.fld-at) og er IKKE del av verdien — barbereren
+                 skriver kun handlen. Backend normaliserer uansett bort @/URL/domene; prefikset gjør det
+                 åpenbart at det er brukernavn, ikke lenke. Tomt felt = ingen lenke (ikonet forsvinner fra
+                 bookingsiden). Lagres via PUT /settings (api.saveSettings) sammen med «Lagre profil». -->
+            <div class="fld"><label>Instagram</label><div class="fld-at"><span class="fld-at-sym">@</span><input id="pf-instagram" type="text" placeholder="brukernavn" autocapitalize="off" autocorrect="off" spellcheck="false"></div></div>
+            <div class="fld"><label>TikTok</label><div class="fld-at"><span class="fld-at-sym">@</span><input id="pf-tiktok" type="text" placeholder="brukernavn" autocapitalize="off" autocorrect="off" spellcheck="false"></div></div>
+            <div class="fld"><label>Snapchat</label><div class="fld-at"><span class="fld-at-sym">@</span><input id="pf-snapchat" type="text" placeholder="brukernavn" autocapitalize="off" autocorrect="off" spellcheck="false"></div></div>
             <div class="savebar"><button class="btn" id="saveProfil">Lagre profil</button><span class="saved" id="profilSaved">Lagret &#10003;</span></div>
           </div>
         </div>
@@ -4442,6 +4456,10 @@ async function loadProfil(){
   $("#pf-address").value=p.address||"";
   $("#pf-tagline").value=p.tagline||"";
   $("#pf-bio").value=p.bio||"";
+  // Strip evt. ledende @ ved lasting — @-en vises som fast prefiks (.fld-at), aldri i verdien.
+  $("#pf-instagram").value=(p.instagram||"").replace(/^@+/,"");
+  $("#pf-tiktok").value=(p.tiktok||"").replace(/^@+/,"");
+  $("#pf-snapchat").value=(p.snapchat||"").replace(/^@+/,"");
   // Sett barber-navn i header — null til dette punktet
   const displayName=p.shop||p.name||"";
   CONFIG.BARBER_NAME=displayName;
@@ -4587,6 +4605,18 @@ $("#loggUt").addEventListener("click",async function(){
 // flyttet til Konto, resten står i Profil. Begge sender HELE profilen — trygt uansett om ruta er
 // partial eller full-replace, og feltene er alt fylt av loadProfil ved init. Flash-en skiller dem.
 async function lagreProfil(knappSel, flashSel){
+  // Validering: salongnavnet er PÅKREVD (bygger sidetittel/slug-kontekst). Tomt → avbryt uten PUT,
+  // vis tydelig inline-feil + fokus. Kan lagres fra «Lagre profil» ELLER «Lagre navn», så åpne
+  // Profil-trekkspillet slik at feilen faktisk er synlig.
+  const shopEl=$("#pf-shop"), shopErr=$("#shopErr");
+  if(!shopEl.value.trim()){
+    if(shopErr) shopErr.hidden=false;
+    var _head=document.querySelector('#accProfil .acc-head');
+    if(_head && _head.getAttribute('aria-expanded')!=='true') _head.click();
+    shopEl.focus();
+    return;
+  }
+  if(shopErr) shopErr.hidden=true;
   const btn=$(knappSel);const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
   const r=await apiFetch('/api/dashboard/profile',{method:'PUT',body:JSON.stringify({
     name:    $("#pf-name").value,
@@ -4595,9 +4625,17 @@ async function lagreProfil(knappSel, flashSel){
     tagline: $("#pf-tagline").value,
     bio:     $("#pf-bio").value,
   })});
+  // Sosiale handles lagres via PUT /settings (backend-kontrakt: normalizeHandle strippar @/URL/domene,
+  // tom streng nullstiller kolonnen → ikonet forsvinner fra bookingsiden). Samme «Lagre profil»-knapp.
+  const rs=await api.saveSettings({
+    instagram: $("#pf-instagram").value,
+    tiktok:    $("#pf-tiktok").value,
+    snapchat:  $("#pf-snapchat").value,
+  });
   btn.disabled=false;btn.textContent=orig;
   if(!r)return;
   if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre. Prøv igjen.');return;}
+  if(rs&&!rs.ok){const d=await rs.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre sosiale lenker. Prøv igjen.');return;}
   const displayName=$("#pf-shop").value.trim()||$("#pf-name").value.trim()||"";
   CONFIG.BARBER_NAME=displayName;var el=$("#barberName");if(el)el.textContent=displayName;
   savedFlash(flashSel);
@@ -4606,6 +4644,7 @@ async function lagreProfil(knappSel, flashSel){
 }
 $("#saveProfil").addEventListener("click",function(){lagreProfil("#saveProfil","#profilSaved");});
 $("#saveNavn").addEventListener("click",function(){lagreProfil("#saveNavn","#navnSaved");});
+$("#pf-shop").addEventListener("input",function(){var e=$("#shopErr");if(e&&!e.hidden&&this.value.trim())e.hidden=true;});
 
 /* ---- SMS-knotter (Vekst-fanen) ---- */
 // Het loadInnstillinger() da SMS-knottene bodde i en egen Innstillinger-fane.
