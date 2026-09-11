@@ -2563,6 +2563,11 @@
   .pk-crop-topp{display:flex;align-items:center;justify-content:space-between;gap:12px}
   .pk-crop-tittel{margin:0;color:#fff;font-size:15px;font-weight:600}
   .pk-crop-x{background:transparent;border:none;color:#fff;font-size:30px;line-height:1;cursor:pointer;padding:0 4px;min-height:44px;min-width:44px;display:flex;align-items:center;justify-content:flex-end}
+  /* Fast-forhold-indikator: forklarer HVORFOR crop-boksen har formen den har (celle-aspektet er låst =
+     WYSIWYG mot plakaten), og at 9:16-format er veien til et høyere utsnitt. */
+  .pk-crop-aspekt{display:flex;flex-direction:column;gap:3px;margin:-2px 0 2px}
+  .pk-crop-aspekt-badge{align-self:flex-start;font-size:12px;font-weight:700;color:#fff;background:rgba(37,99,235,.92);border-radius:6px;padding:3px 10px;letter-spacing:.02em}
+  .pk-crop-aspekt-hint{font-size:12px;color:#b9b9b9;line-height:1.4}
   .pk-crop-canvas{flex:1;min-height:0;overflow:hidden;background:#111;border-radius:10px}
   .pk-crop-canvas img{display:block;max-width:100%}
   .pk-guide-v{position:absolute;top:0;bottom:0;width:0;z-index:4;border-left:1px dashed #2f6df6;box-shadow:0 0 0 .5px rgba(255,255,255,.4);pointer-events:none}
@@ -7192,7 +7197,24 @@ function settPlakatVersjon(v){
     // ekte R2 bucket-CORS — se «Kjente sikkerhetshull/brutt».)
     var img=document.createElement('img'); img.alt='';
     wrap.appendChild(img);
-    inner.appendChild(topp); inner.appendChild(wrap); lag.appendChild(inner);
+    // Fast-forhold-indikator (Henrik 2026-09-11): boksen er BEVISST låst til cellens aspekt (4:5 / 9:16) —
+    // fritt aspekt hadde bare blitt cover-klippet tilbake av malen, så crop-boks ≠ resultat. Vis derfor
+    // aktivt forhold + at 9:16-format gir et høyere utsnitt, så formen ikke virker vilkårlig.
+    function forholdTekst(c){
+      if(c && c.w>0 && c.h>0){ var gcd=function(a,b){return b?gcd(b,a%b):a;}; var g=gcd(c.w,c.h)||1; return (c.w/g)+':'+(c.h/g); }
+      return (Math.abs(((c&&c.aspect)||1)-0.5625)<0.03) ? '9:16' : '4:5';
+    }
+    var forhold=forholdTekst(celle);
+    var pAsp=finn(PS.valgtId);
+    var kan916=tilgjengeligeFormater((malDef(pAsp&&pAsp.id)||{}).antall||0).indexOf('9:16')!==-1;
+    var aspBar=document.createElement('div'); aspBar.className='pk-crop-aspekt';
+    var aspBadge=document.createElement('span'); aspBadge.className='pk-crop-aspekt-badge'; aspBadge.textContent='Utsnitt '+forhold;
+    var aspHint=document.createElement('span'); aspHint.className='pk-crop-aspekt-hint';
+    aspHint.textContent=(forhold==='4:5' && kan916)
+      ? 'Fast forhold – flytt og skaler fritt innenfor. Bytt til 9:16-format for et høyere utsnitt.'
+      : 'Fast forhold – flytt og skaler fritt innenfor rammen.';
+    aspBar.appendChild(aspBadge); aspBar.appendChild(aspHint);
+    inner.appendChild(topp); inner.appendChild(aspBar); inner.appendChild(wrap); lag.appendChild(inner);
     document.body.appendChild(lag); // på <body>, ikke i editoren → fixed+z-index:1100 garanterer at laget er øverst
     var cr=null;
     img.onload=function(){
@@ -7201,7 +7223,10 @@ function settPlakatVersjon(v){
       // ArrayBuffer-lesing for EXIF) — begge blokkeres av R2 → .cropper-container bygges aldri → crop «død».
       // Vi trenger ingen av delene: croppen er rect-only (getData/getImageData = utsnitt + naturlige mål,
       // ingen piksel-lesing), så Cropper skal bare bruke det opakt lastede bildet som det er.
-      cr=new Cropper(img,{ viewMode:1, aspectRatio:(celle.aspect||1), autoCropArea:1, background:false, responsive:true, dragMode:'move', checkCrossOrigin:false, checkOrientation:false });
+      // autoCropArea 0.85 (var 1): starter boksen litt innenfor bildet så det er tydelig at den kan FLYTTES
+      // og SKALERES (aspektet forblir låst — cropBoxResizable/Movable er default på). minCropBox* gir et gulv
+      // så den ikke kan dras til null. viewMode:1 holder boksen innenfor bildet.
+      cr=new Cropper(img,{ viewMode:1, aspectRatio:(celle.aspect||1), autoCropArea:0.85, minCropBoxWidth:70, minCropBoxHeight:70, background:false, responsive:true, dragMode:'move', checkCrossOrigin:false, checkOrientation:false });
       var p=finn(PS.valgtId); var r=p&&p.rects&&p.rects[celle.slot];
       if(r) try{ cr.setData({x:r.x, y:r.y, width:r.w, height:r.h}); }catch(_){}  // gjenopprett forrige utsnitt
     };
