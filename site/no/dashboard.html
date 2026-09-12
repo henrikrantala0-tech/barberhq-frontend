@@ -6557,10 +6557,12 @@ async function settSideStatus(nyStatus,btn){
     if(d&&d.page_status){
       _billing=d;
       renderKonto(_billing);
+      // Suksess-feedback gates PÅ SAMME state-oppdatering: en tom/parse-feilet 200-body (uten
+      // page_status) skal ikke vise «Siden din er live!» mens renderKonto fortsatt sier «Ikke
+      // publisert». Publisering → suksesskort (hendelses-drevet, én gang). Avpublisering → toast.
+      if(nyStatus==='live') visSuksesskort();
+      else showToast('Bookingsiden er avpublisert');
     }
-    // Publisering → suksesskort (hendelses-drevet, én gang). Avpublisering → toast som før.
-    if(nyStatus==='live') visSuksesskort();
-    else showToast('Bookingsiden er avpublisert');
     return;
   }
   // RE-SYNK FØR MELDING. Var UI-en utdatert (400 «Ugyldig overgang»), retter den seg her.
