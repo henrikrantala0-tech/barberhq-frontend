@@ -546,15 +546,21 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   «hva gjelder nå» — ALDRI `b.plan`, som er NULL i trial → ville låst prøvekunder ute). Trial/Vekst =
   uendret dashbord. Skjold-komponent (`settSkjold`/`fjernSkjold`): halvgjennomsiktig lås + «Se abonnement»
   (klikk → `switchPanel('abonnement')` + scroll `#accAbonnement`), innhold under `pointer-events:none`
-  + inputs disabled. Flater: Oversikt «Drevet av» + Vekst attribusjon/momentum/rebooking/vinn-tilbake/
-  verving/**lojalitet** (påminnelse + `#vekstStats`/trend IKKE låst — volum, ikke Vekst-attribusjon).
-  **Lett skjold:** overlegg `.48` + `blur(1px)` (var `.66/1.5px`) så innholdet under så vidt antydes;
-  lås-ikon + «Se abonnement» har skygge (mørk/lys per tema) for å leses først. **Kun de to «Drevet av»/
-  attribusjons-flatene** viser eksempeltall (`VEKST_EKSEMPEL`, 6 850 kr) med «Eksempel»-merke.
-  **Lojalitet skjoldes UTEN eksempeltall** (`VEKST_EKSEMPEL` har ingen `loyalty`-blokk) — kortet viser
-  bare sin egen beskrivelse; rebooking/vinn-tilbake/verving likeså.
-  **INGEN datahenting på skjoldede flater:** `loadWinback`/`loadVerving`/`loadLoyalty` returnerer tidlig
-  ved `erBasis()` (init-`loadWinback` er flyttet til ETTER `loadBilling` så plan er kjent). `loadSmsInnstillinger`
+  + inputs disabled.
+  **⚠ TO ULIKE LÅSE-MEKANISMER — fast regel: MÅLING = skjold, HANDLING = lesbar + låsindikator** (13.09):
+  - **MÅLING (teaser, skal IKKE leses):** «Drevet av» (Oversikt), attribusjon (`#attrKort`) og momentum
+    (`#momentumCard`) beholder `settSkjold` — halvgjennomsiktig overlay + `pointer-events:none`. **Lett
+    skjold:** overlegg `.48` + `blur(1px)`; lås-ikon + «Se abonnement» med skygge for å leses først.
+    Kun de to «Drevet av»/attribusjons-flatene viser eksempeltall (`VEKST_EKSEMPEL`, 6 850 kr) + «Eksempel»-merke.
+  - **HANDLING (lesbar, men låst):** funksjons-seksjonene rebooking (`#accRebook`), vinn-tilbake
+    (`#accWinback`), verving (`#accVerv`) og lojalitet (`#accLoyal`) bruker `settHandlingsLaas`/`fjernHandlingsLaas`
+    — INGEN overlay, innholdet er lesbart. Kontrollene disables (`data-laas-disabled`, ALDRI `.acc-head`, så
+    seksjonen kan åpnes/leses) + en liten `.laas-badge` («Vekst» + lås-ikon) i `.acc-title`. Alle fire fra ÉN
+    samlested (`skjoldVekstFlater` → `settHandlingsLaas`), aldri per-sted. Kundedata-listene får en lesbar
+    lås-note (`basisLaasListe`) i stedet for «Laster …» — uten fetch. (påminnelse `#accPaam` + `#vekstStats`/trend
+    er IKKE låst — volum, ikke Vekst.) 403-inline (`#rebookErr`) er sikkerhetsnett, vises normalt aldri.
+  **INGEN datahenting på låste flater:** `loadWinback`/`loadVerving`/`loadLoyalty` returnerer tidlig
+  ved `erBasis()` (nå med `basisLaasListe`-note i lista i stedet for «Laster …»; init-`loadWinback` er kjørt ETTER `loadBilling` så plan er kjent). `loadSmsInnstillinger`
   guardes IKKE — den fyller også den ULÅSTE SMS-påminnelsen og henter kun barberens egne settings, ikke kundedata.
   Backend gater WRITE: `PUT /settings` + `PUT /customers/:id/loyalty` → 403 for basis (`dashboard.js:1131/1136/1200`),
   viser «Se abonnement»-lenka. **⚠ Backend-funn (uløst):** GET `/winback`/`/referrals`/`/customers/recent` er

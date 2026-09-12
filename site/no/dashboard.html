@@ -497,6 +497,11 @@
   html:not([data-theme="dark"]) .skjold-ic{filter:drop-shadow(0 1px 2px rgba(255,255,255,.8))}
   html:not([data-theme="dark"]) .skjold-lenke{text-shadow:0 1px 2px rgba(255,255,255,.8)}
   .skjold:focus-visible{outline:2px solid var(--info);outline-offset:-3px}
+  /* Handlings-lås (funksjons-seksjoner på Basis): INGEN overlay — innholdet er lesbart. Liten
+     «Vekst»-indikator i tittelen. Kontrollene disables (nettleseren dimmer dem). Se CLAUDE.md:
+     måling = skjold, handling = lesbar + låsindikator. */
+  .laas-badge{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:99px;background:var(--line-2);color:var(--mut);font-size:10.5px;font-weight:600;letter-spacing:-.01em;flex-shrink:0}
+  .laas-badge .skjold-ic{width:11px;height:11px;color:currentColor;opacity:1;filter:none}
   .eksempel-merke{position:absolute;top:10px;left:10px;z-index:6;pointer-events:none;
     background:var(--surface);border:1px solid var(--line-2);color:var(--mut);
     font-size:11px;font-weight:600;letter-spacing:.02em;padding:3px 8px;border-radius:99px}
@@ -3283,11 +3288,40 @@ function fjernSkjold(host){
   host.querySelectorAll('[data-skjold-disabled]').forEach(function(el){ el.disabled=false; el.removeAttribute('data-skjold-disabled'); });
   host.classList.remove('skjold-vert');
 }
-// Skjold de STATISKE Vekst-accordionene (rebooking/vinn tilbake/verving/lojalitet). Attribusjon +
-// momentum skjoldes av sine egne render-funksjoner. settSkjold self-sjekker erBasis → skjold eller
-// fjern. Lojalitet er med her (uten «Eksempel»-merke) — kortet viser bare sin egen beskrivelse.
+// HANDLINGS-lås for FUNKSJONS-seksjoner (rebooking/vinn tilbake/verving/lojalitet) på Basis.
+// I motsetning til settSkjold (MÅLING-teaser: overlay skjuler innholdet) er innholdet her LESBART —
+// ingen overlay — men handlingene er låst (kontrollene disables, ALDRI .acc-head, så seksjonen kan
+// åpnes og leses) + en liten «Vekst»-indikator i tittelen. Regel: måling = skjold, handling =
+// lesbar + låsindikator (se CLAUDE.md). Self-sjekker erBasis → lås eller fjern.
+function settHandlingsLaas(host){
+  if(!host)return;
+  if(!erBasis()){ fjernHandlingsLaas(host); return; }
+  host.classList.add('handlingslaas');
+  host.querySelectorAll('input,select,textarea,button').forEach(function(el){
+    if(el.classList.contains('acc-head'))return;        // seksjonen skal kunne åpnes/lukkes og leses
+    if(!el.disabled){ el.disabled=true; el.setAttribute('data-laas-disabled','1'); }
+  });
+  var titel=host.querySelector('.acc-title');
+  if(titel && !titel.querySelector('.laas-badge')){
+    var b=document.createElement('span'); b.className='laas-badge';
+    b.innerHTML=SKJOLD_LAAS_SVG+'<span>Vekst</span>'; b.title='Med i Vekst-planen';
+    titel.appendChild(b);
+  }
+}
+function fjernHandlingsLaas(host){
+  if(!host)return;
+  host.classList.remove('handlingslaas');
+  host.querySelectorAll('[data-laas-disabled]').forEach(function(el){ el.disabled=false; el.removeAttribute('data-laas-disabled'); });
+  var b=host.querySelector('.laas-badge'); if(b)b.remove();
+}
+// Basis: en funksjons-seksjons KUNDE-liste hentes aldri (ingen ekte tall) — vis en kort, lesbar
+// lås-note i stedet for «Laster …», uten å hente noe. Kalles fra loadernes erBasis-gren.
+function basisLaasListe(el){ if(el) el.innerHTML='<p class="wb-empty">Med i Vekst-planen — oppgrader for å bruke dette.</p>'; }
+// Funksjons-seksjonene får HANDLINGS-lås (lesbar + indikator), IKKE skjold. Attribusjon/«Drevet av»/
+// momentum beholder settSkjold (måling = teaser) via sine egne render-funksjoner. Samme vei inn som
+// før (skjoldVekstFlater) → dekkes av billing-race-helingen i oppdaterSkjoldFlater.
 function skjoldVekstFlater(){
-  ['#accRebook','#accWinback','#accVerv','#accLoyal'].forEach(function(sel){ var el=$(sel); if(el)settSkjold(el); });
+  ['#accRebook','#accWinback','#accVerv','#accLoyal'].forEach(function(sel){ var el=$(sel); if(el)settHandlingsLaas(el); });
 }
 // Basis-bruker som treffer en Vekst-innstilling (skjoldet disabler inputs, men backend gater også):
 // PUT /settings → 403 → samme lås-tekst som skjoldet i feilfeltet, ikke «Kunne ikke lagre».
@@ -3324,6 +3358,9 @@ function oppdaterSkjoldFlater(){
   if(typeof aktivtPanel==='function' && aktivtPanel()==='vekst'){
     if(typeof renderAttribusjon==='function')renderAttribusjon();
     if(typeof loadMomentum==='function')loadMomentum();
+    // Re-kjør kundedata-loaderne med kjent plan (sikkerhetsnett + drenerer race-vinduets gate-utsettelse).
+    if(typeof loadWinback==='function')loadWinback();
+    if(typeof loadVerving==='function')loadVerving();
     if(typeof loadLoyalty==='function')loadLoyalty();   // basis → returnerer tidlig (skjoldVekstFlater skjolder)
     skjoldVekstFlater();
   }
@@ -4882,7 +4919,8 @@ document.querySelectorAll('#rebookPills button').forEach(function(b){
 // Oppdateres KUN etter bekreftet lagring (og ved lasting fra /settings).
 var _vervLagret = { pct: 20, recipient: 'begge' };
 async function loadVerving(){
-  if(erBasis())return;   // skjoldet Vekst-flate → ingen henting av kundedata i basis (samme mønster som lojalitet)
+  if(billingUkjent())return;   // delt billing-gate: ingen fetch før planen er kjent (re-kjøres av oppdaterSkjoldFlater)
+  if(erBasis()){ basisLaasListe($("#vervSendList")); return; }   // Basis: aldri henting av kundedata — lesbar lås-note (handlings-lås gir indikator + disable)
   try{
     var s=await api.settings(); // api.settings feiler ALDRI til null (returnerer _hentFeilet-objekt), så .referral_* er trygt
     setVervRecipient(s.referral_reward_recipient||'begge');
@@ -5117,9 +5155,10 @@ function showToast(msg){
 // Sist lastede respons — så en re-render (etter lagret innstilling) slipper nytt kall.
 var _loyal=null;
 async function loadLoyalty(){
-  // Basis: skjoldes av skjoldVekstFlater som de andre accordionene — INGEN fetch, INGEN eksempeltall
-  // (kortet viser bare sin egen beskrivelse i headeren). Lekker aldri ekte tall til basis.
-  if(erBasis())return;
+  // Basis: handlings-lås av skjoldVekstFlater (lesbar + indikator) — INGEN fetch, INGEN eksempeltall.
+  // Lekker aldri ekte tall til basis. Oversikt-lista får en lesbar lås-note i stedet for «Laster …».
+  if(billingUkjent())return;   // delt billing-gate: ingen fetch før planen er kjent (re-kjøres av oppdaterSkjoldFlater)
+  if(erBasis()){ basisLaasListe($("#loyalOversikt")); return; }
   try{
     _loyal=await api.loyalty();          // null = 403/feil → renderLoyalOversikt(null) viser feilstate (alt på plass)
     if(erBasis())return;   // billing kom under fetch → ikke render (skjoldVekstFlater skjolder kortet)
@@ -5469,7 +5508,8 @@ function wbFeil(){
   wbFresh=0; updateWbSignals(0); // nullstill badge/nudge så et blokkert kall ikke etterlater et gammelt tall
 }
 async function loadWinback(){
-  if(erBasis())return;   // skjoldet Vekst-flate → ingen henting av kundedata i basis (samme mønster som lojalitet)
+  if(billingUkjent())return;   // delt billing-gate: ingen fetch før planen er kjent (re-kjøres av oppdaterSkjoldFlater)
+  if(erBasis()){ basisLaasListe($("#wbList")); return; }   // Basis: aldri henting av kundedata — lesbar lås-note
   try{
     const d=await api.winback();          // null = 403/feil (IKKE tom liste) → feilstate. Ekte tom = {no_show:[],lapsed:[]}.
     if(!d){ wbFeil(); return; }
@@ -5904,6 +5944,16 @@ var _billing=null;
 // vi den, låser vi de eneste live-kundene ute mens de prøver. Eksplisitt 'basis' → skjold; alt
 // annet (inkl. _billing===null før lasting, manglende felt, 'vekst') → INGEN skjold, ingen eksempeltall.
 function erBasis(){ return !!(_billing && String(_billing.effective_plan).toLowerCase()==='basis'); }
+// ── Billing-gate for kundedata-loaderne (ROT-ÅRSAK) ─────────────────────────────────────────────
+// Ekte kundedata (winback/verving/lojalitet) skal ALDRI fetches før planen er kjent. Ellers henter
+// race-vinduet — deep-link #vekst fyrer vekst-loaderne i anvendHash FØR /billing/status svarer —
+// ekte kundedata som på Basis deretter er SYNLIG (overlayet er fjernet i ny modell). ÉN delt gate:
+// er billing ukjent, returnerer loaderen uten å fetche; loadBilling → oppdaterSkjoldFlater re-kjører
+// dem når planen er kjent. FAIL-CLOSED: slår /billing/status feil, forblir gaten lukket (ingen fetch)
+// framfor å risikere en Basis-lekkasje. Rebooking (loadSmsInnstillinger) er UNNTATT — den henter kun
+// barberens egne settings, aldri kundedata.
+var _billingKjent=false;
+function billingUkjent(){ return !_billingKjent; }
 // Plan-navn + pris, ÉN kilde — delt av renderKonto (viser aktiv plan) og plan-velgeren
 // (visPlanVelger). NOK fordi /no/-fila; backend bør på sikt sende pris-strengen i status så
 // andre markeder/valutaer stemmer. Løftet fra lokal i renderKonto da velgeren også trengte den.
@@ -5913,9 +5963,11 @@ async function loadBilling(){
   if(!r)return; // 401 → apiFetch redirigerte (forventet, ikke logg)
   if(!r.ok){ console.error('loadBilling: /billing/status svarte '+r.status); return; } // logg, ikke svelg
   _billing=await r.json();
+  _billingKjent=true;   // ÅPNE billing-gaten: kundedata-loaderne kan nå fetche (planen er kjent)
   renderKonto(_billing);
   settRebookInfo(); // Vekst-ikonet henger på _billing — se kommentaren over funksjonen
-  // effective_plan kom nå → re-render skjoldede flater som kan ha rendret før billing (erBasis var false).
+  // effective_plan kom nå → re-render skjoldede flater som kan ha rendret før billing (erBasis var false),
+  // OG re-kjør kundedata-loaderne som gate-et seg ut i race-vinduet (deep-link #vekst).
   if(typeof oppdaterSkjoldFlater==='function')oppdaterSkjoldFlater();
 }
 // Hovedhandlingen er ÉN knapp. `_kontoAksjon` sier hva et trykk skal gjøre i nåværende
