@@ -5341,7 +5341,7 @@ $("#loyalLeggTil").addEventListener('click',async function(e){
 $("#loyalLeggTilMore").addEventListener('click',function(){ _loyalKandAlle=!_loyalKandAlle; renderLoyalLeggTil(); });
 
 // Innstillinger (steg 2) → PUT /settings. 403 = Basis-lås → samme lås-tekst som skjoldet, ikke
-// generisk feil. Endring av terskel/pct oppdaterer _loyal + re-rendrer så «X av Y» stemmer straks.
+// generisk feil. Endring av terskel/pct → loadLoyalty() etter lagring (stamps/totals er backend-avledet).
 $("#tog-loyal").addEventListener('change',async function(){
   var err=$("#loyalSettErr"), warn=$("#loyalOffWarn");
   // Slår AV med belønninger klare ELLER kunder som samler → bekreft først (ikke slå av i blinde).
@@ -5388,15 +5388,13 @@ $("#loyalSett").addEventListener('click',async function(e){
     return;
   }
 });
-// Lagre én innstilling (terskel/belønning) → oppdater _loyal + re-render oversikt («X av Y» straks).
+// Lagre én innstilling (terskel/belønning) → ved suksess loadLoyalty() (fersk stamps/totals fra
+// backend). IKKE lokal patch: «X av Y» og totalene er backend-avledet av terskelen.
 async function loyalLagre(felt, verdi){
   var err=$("#loyalSettErr"), patch={}; patch[felt]=verdi;
   var r=await api.saveSettings(patch);
   if(erSettings403(r)){ visSettingsLaas(err); return false; }
-  if(r&&r.ok){ if(err)err.hidden=true;
-    if(felt==='loyalty_threshold' && _loyal) _loyal.threshold=verdi;
-    if(felt==='loyalty_pct'       && _loyal) _loyal.pct=verdi;
-    renderLoyalOversikt(_loyal); return true; }
+  if(r&&r.ok){ if(err)err.hidden=true; loadLoyalty(); return true; }   // refetch: stamps/reward_ready/totals er backend-avledet av terskelen — kan ikke utledes lokalt (samme mønster som de andre loyalty-mutasjonene)
   if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} return false;
 }
 // Endring av terskel/belønning: samler kunder nå (in_progress>0)? → bekreft FØR lagring (vis
