@@ -2709,7 +2709,10 @@ const CONFIG={
 // kroppen på hver eneste 401 og kjent til backend-koder den ikke har noe med å gjøre.
 // ⚠ Setter du raw401, må kallstedet SELV håndtere ekte sesjonsutløp.
 async function apiFetch(path,opts={}){
-  const{body,headers={},raw401, ...rest}=opts;
+  // sameOrigin: behold RELATIV URL (same-origin via Netlify-proxy) i stedet for CONFIG.API_BASE.
+  // Brukes av plakat-editoren — den MÅ være same-origin (CLAUDE.md-guardrail), men skal fortsatt
+  // arve 401-redirecten. Slik rutes plakat gjennom apiFetch uten å bli kryss-origin.
+  const{body,headers={},raw401,sameOrigin, ...rest}=opts;
   const init={credentials:'include',...rest};
   if(body!==undefined){
     init.body=body;
@@ -2718,7 +2721,7 @@ async function apiFetch(path,opts={}){
   } else {
     init.headers={...headers};
   }
-  const r=await fetch(CONFIG.API_BASE+path,init);
+  const r=await fetch((sameOrigin?'':CONFIG.API_BASE)+path,init);
   if(r.status===401&&!raw401){location.href='/no/logg-inn.html';return null;}
   return r;
 }
@@ -7130,14 +7133,14 @@ function settPlakatVersjon(v){
     // står _palett/_mode undefined og bakgrunnFraBarber() faller alltid til «mork» — en sand-barber
     // ville da sendt mørk, som backend 400-er.
     if(typeof design!=='undefined' && design && design.palette){ _palett=design.palette; _mode=design.mode; return; }
-    try{ var r=await fetch('/api/dashboard/design',{credentials:'include'}); if(r&&r.ok){ var d=await r.json(); if(d&&d.palette){ _palett=d.palette; _mode=d.mode; } } }catch(e){}
+    try{ var r=await apiFetch('/api/dashboard/design',{sameOrigin:true}); if(r&&r.ok){ var d=await r.json(); if(d&&d.palette){ _palett=d.palette; _mode=d.mode; } } }catch(e){}
   }
   // /regler gir plan-oppløste grenser (bl.a. skjoldStyrke {min,max,default}) — hentes én gang ved
   // editor-oppstart så slideren leser området fra backend i stedet for å hardkode. Fallbacken er kun
   // en trygghet hvis kallet feiler; den speiler dagens backend-verdier (symmetrisk 0.6–1.4 om 1).
   async function hentRegler(){
     if(_regler) return;
-    try{ var r=await fetch(PREVIEW_BASE+'/regler',{credentials:'include'}); if(r.ok){ var j=await r.json(); if(j){ _regler=j; if(j.barber) settPlakatVersjon(j.barber.utseendeVersjon); } } }catch(e){}
+    try{ var r=await apiFetch(PREVIEW_BASE+'/regler',{sameOrigin:true}); if(r&&r.ok){ var j=await r.json(); if(j){ _regler=j; if(j.barber) settPlakatVersjon(j.barber.utseendeVersjon); } } }catch(e){}
   }
   function styrkeOmr(){
     var s=_regler&&_regler.skjoldStyrke;
@@ -7275,8 +7278,8 @@ function settPlakatVersjon(v){
     // format-uavhengige, så override-mappingen forblir korrekt i mellomtiden). Ved plakat-VALG nuller
     // renderSkjerm2 eksplisitt (ny mal → gamle celler ugyldige) og sekvenserer preview etter layout.
     try{
-      var r=await fetch(PREVIEW_BASE+'/layout?'+layoutQuery(p),{credentials:'include'});
-      if(r.ok){ var j=await r.json(); if(j&&j.canvas) _layout=j; }
+      var r=await apiFetch(PREVIEW_BASE+'/layout?'+layoutQuery(p),{sameOrigin:true});
+      if(r&&r.ok){ var j=await r.json(); if(j&&j.canvas) _layout=j; }
     }catch(e){}
   }
   function tegnCeller(){
@@ -7558,8 +7561,9 @@ function settPlakatVersjon(v){
     // navigere til en POST. Ett kall per reload (mot to før: status-fetch + iframe-src bortfaller).
     try{
       var r = harBase64(p)
-        ? await fetch(PREVIEW_BASE+'/preview', {method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify(plakatState(p))})
-        : await fetch(PREVIEW_BASE+'/preview?'+plakatQuery(p), {credentials:'include'});
+        ? await apiFetch(PREVIEW_BASE+'/preview', {sameOrigin:true, method:'POST', body:JSON.stringify(plakatState(p))})
+        : await apiFetch(PREVIEW_BASE+'/preview?'+plakatQuery(p), {sameOrigin:true});
+      if(!r){ visLaster(false); return; } // 401 → apiFetch redirigerte til login (ikke stå fast på «Prøv igjen»)
       // Nøytral feil uansett årsak (403/400/5xx) — knappen er utilgjengelig for Basis, så en «krever Vekst»-
       // melding ville vært feil budskap. En tom iframe uten forklaring er verre.
       if(!r.ok){ visPrevFeil('Kunne ikke vise forhåndsvisningen akkurat nå. Prøv igjen.'); return; }
@@ -7588,9 +7592,9 @@ function settPlakatVersjon(v){
   function renderUrl(p){ return PREVIEW_BASE+'/render?'+plakatQuery(p); } // kun GET-veien (ingen base64)
   async function hentPlakatBlob(p){ // POST når base64, GET ellers → PNG-blob
     var r = harBase64(p)
-      ? await fetch(PREVIEW_BASE+'/render', {method:'POST', credentials:'include', headers:{'Content-Type':'application/json'}, body:JSON.stringify(plakatState(p))})
-      : await fetch(renderUrl(p), {credentials:'include'});
-    if(!r.ok) throw 0; return await r.blob();
+      ? await apiFetch(PREVIEW_BASE+'/render', {sameOrigin:true, method:'POST', body:JSON.stringify(plakatState(p))})
+      : await apiFetch(renderUrl(p), {sameOrigin:true});
+    if(!r||!r.ok) throw 0; return await r.blob();   // !r = 401, apiFetch redirigerte
   }
   // iOS (alle nettlesere der er WebKit) IGNORERER <a download> → ingen stille disk-lagring mulig.
   // Den ekte veien til Bilder-appen er share-arket («Lagre bilde»). iPadOS rapporterer seg som Mac,
