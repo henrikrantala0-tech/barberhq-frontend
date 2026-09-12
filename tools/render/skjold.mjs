@@ -309,4 +309,55 @@ console.log('\n=== RACE-ASSERT (deep-link #vekst, Basis, treg billing) ===');
   await page.close();
 }
 
+// ── BILLING-FEIL-ASSERT: en fetch-feil skal ALDRI gi permanent «Laster …» ────────────
+// Vekst deep-link, /billing/status = 500 → gatede seksjoner viser synlig feil + «Prøv igjen»
+// (ikke «Laster», ingen kundedata). Retry med billing 200 → data laster. Biter hvis fiksen mangler.
+console.log('\n=== BILLING-FEIL-ASSERT (Vekst deep-link, billing 500 → retry) ===');
+{
+  let billingOk=false;
+  const router = async route => {
+    const req=route.request(); const p=new URL(req.url()).pathname;
+    const json=o=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(o)});
+    if(p==='/api/dashboard/billing/status'){ if(!billingOk) return route.fulfill({status:500,contentType:'application/json',body:'{"error":"x"}'}); return json(billing('vekst')); }
+    if(p==='/api/dashboard/profile') return json(PROFILE);
+    if(p==='/api/dashboard/design') return json({palette:'minimal',font:'fraunces',layout:'showcase',mode:'mork'});
+    if(p==='/api/dashboard/settings') return json({sms_paaminnelse_enabled:true,sms_rebooking_enabled:true,rebooking_interval_days:35,referral_discount_pct:20,referral_reward_recipient:'begge',loyalty_enabled:true,loyalty_threshold:10,loyalty_pct:100,loyalty_count_history:false});
+    if(p==='/api/dashboard/attribution') return json(ATTR);
+    if(p==='/api/dashboard/momentum') return json({show:true,overdue:1,returning:20});
+    if(p==='/api/dashboard/loyalty') return json(LOYAL);
+    if(p==='/api/dashboard/sms-preview') return json({kind:new URL(req.url()).searchParams.get('kind'),body:'Hei',tegn:3,segmenter:1,gsm7:true,transaksjonell:true});
+    if(p==='/api/dashboard/winback') return json({no_show:[{customer_id:1,name:'Ola Nordmann',phone:'99887766',last_service:'Fade',days_since:2}],lapsed:[]});
+    if(p==='/api/dashboard/referrals') return json([]);
+    if(/customers\/recent/.test(p)) return json([]);
+    if(p==='/api/dashboard/preview') return route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><body></body>'});
+    if(p==='/api/dashboard/google/status') return json({connected:false,scope_ok:true});
+    const liste=/images|bookings|stats|hours|services|sms-logg/.test(p);
+    return json(liste?[]:{});
+  };
+  const page=await browser.newPage({viewport:{width:375,height:1100},deviceScaleFactor:2});
+  const errs=[]; page.on('pageerror',e=>errs.push(e.message));
+  await page.route('**/api/**', router);
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html#vekst`,{waitUntil:'domcontentloaded'});
+  await page.waitForTimeout(1600);
+  const feil = await page.evaluate(()=>{
+    const g=s=>(document.querySelector(s)||{}).textContent||'';
+    const wb=g('#wbList'),vv=g('#vervSendList'),lo=g('#loyalOversikt'); const alle=wb+vv+lo;
+    return { visFeil: /Kunne ikke laste/.test(wb)&&/Kunne ikke laste/.test(vv)&&/Kunne ikke laste/.test(lo),
+      retryKnapper: document.querySelectorAll('[data-billing-retry]').length,
+      laster: /Laster/.test(alle), kundedata: /Ola Nordmann|99887766/.test(alle) };
+  });
+  await kryssKlipp(page,'#accWinback',`${OUT}/billingfeil-375.png`);
+  console.log(`  Fase1 (billing 500): feil+retry=${feil.visFeil} retry-knapper=${feil.retryKnapper}(skal 3) · «Laster»=${feil.laster}(skal false) · kundedata=${feil.kundedata}(skal false)`);
+  billingOk=true;
+  await page.evaluate(()=>{ var b=document.querySelector('[data-billing-retry]'); if(b)b.click(); }); // delegert handler; knappen kan ligge i kollapset accordion
+  await page.waitForTimeout(1300);
+  const etter = await page.evaluate(()=>{ const wb=(document.querySelector('#wbList')||{}).textContent||'';
+    return { wb, feilStår:/Kunne ikke laste/.test(wb), lasterStår:/Laster …/.test(wb), harData:/Ola Nordmann/.test(wb) }; });
+  const ok = feil.visFeil && feil.retryKnapper===3 && !feil.laster && !feil.kundedata
+    && etter.harData && !etter.feilStår && !etter.lasterStår && errs.length===0;
+  console.log(`  Fase2 (retry, billing 200): #wbList="${etter.wb.replace(/\s+/g,' ').trim().slice(0,45)}" (data=${etter.harData}, feil borte=${!etter.feilStår})`);
+  console.log('  BILLING-FEIL-ASSERT OK (feil+retry ved feil, INGEN «Laster»/kundedata; retry laster data):', ok?'JA':'NEI');
+  await page.close();
+}
+
 await browser.close(); server.close();

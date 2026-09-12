@@ -502,6 +502,8 @@
      måling = skjold, handling = lesbar + låsindikator. */
   .laas-badge{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:99px;background:var(--line-2);color:var(--mut);font-size:10.5px;font-weight:600;letter-spacing:-.01em;flex-shrink:0}
   .laas-badge .skjold-ic{width:11px;height:11px;color:currentColor;opacity:1;filter:none}
+  /* «Prøv igjen» i billing-feil-noten (gatede Vekst-seksjoner) — lenke-knapp, ikke stille «Laster». */
+  .retry-lenke{appearance:none;border:0;background:0;padding:0;color:var(--info);font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
   .eksempel-merke{position:absolute;top:10px;left:10px;z-index:6;pointer-events:none;
     background:var(--surface);border:1px solid var(--line-2);color:var(--mut);
     font-size:11px;font-weight:600;letter-spacing:.02em;padding:3px 8px;border-radius:99px}
@@ -4922,7 +4924,7 @@ document.querySelectorAll('#rebookPills button').forEach(function(b){
 // Oppdateres KUN etter bekreftet lagring (og ved lasting fra /settings).
 var _vervLagret = { pct: 20, recipient: 'begge' };
 async function loadVerving(){
-  if(billingUkjent())return;   // delt billing-gate: ingen fetch før planen er kjent (re-kjøres av oppdaterSkjoldFlater)
+  if(billingUkjent()){ if(_billingFeilet) visBillingFeil($("#vervSendList")); return; }   // delt billing-gate: billing-feil → synlig feil+retry, ikke stille «Laster»
   if(erBasis()){ basisLaasListe($("#vervSendList")); return; }   // Basis: aldri henting av kundedata — lesbar lås-note (handlings-lås gir indikator + disable)
   try{
     var s=await api.settings(); // api.settings feiler ALDRI til null (returnerer _hentFeilet-objekt), så .referral_* er trygt
@@ -5160,7 +5162,7 @@ var _loyal=null;
 async function loadLoyalty(){
   // Basis: handlings-lås av skjoldVekstFlater (lesbar + indikator) — INGEN fetch, INGEN eksempeltall.
   // Lekker aldri ekte tall til basis. Oversikt-lista får en lesbar lås-note i stedet for «Laster …».
-  if(billingUkjent())return;   // delt billing-gate: ingen fetch før planen er kjent (re-kjøres av oppdaterSkjoldFlater)
+  if(billingUkjent()){ if(_billingFeilet) visBillingFeil($("#loyalOversikt")); return; }   // delt billing-gate: billing-feil → synlig feil+retry, ikke stille «Laster»
   if(erBasis()){ basisLaasListe($("#loyalOversikt")); return; }
   try{
     _loyal=await api.loyalty();          // null = 403/feil → renderLoyalOversikt(null) viser feilstate (alt på plass)
@@ -5511,7 +5513,7 @@ function wbFeil(){
   wbFresh=0; updateWbSignals(0); // nullstill badge/nudge så et blokkert kall ikke etterlater et gammelt tall
 }
 async function loadWinback(){
-  if(billingUkjent())return;   // delt billing-gate: ingen fetch før planen er kjent (re-kjøres av oppdaterSkjoldFlater)
+  if(billingUkjent()){ if(_billingFeilet) visBillingFeil($("#wbList")); return; }   // delt billing-gate: ingen fetch før planen er kjent (billing-feil → synlig feil+retry, ikke stille «Laster»)
   if(erBasis()){ basisLaasListe($("#wbList")); return; }   // Basis: aldri henting av kundedata — lesbar lås-note
   try{
     const d=await api.winback();          // null = 403/feil (IKKE tom liste) → feilstate. Ekte tom = {no_show:[],lapsed:[]}.
@@ -5955,18 +5957,29 @@ function erBasis(){ return !!(_billing && String(_billing.effective_plan).toLowe
 // dem når planen er kjent. FAIL-CLOSED: slår /billing/status feil, forblir gaten lukket (ingen fetch)
 // framfor å risikere en Basis-lekkasje. Rebooking (loadSmsInnstillinger) er UNNTATT — den henter kun
 // barberens egne settings, aldri kundedata.
-var _billingKjent=false;
+var _billingKjent=false, _billingFeilet=false;
 function billingUkjent(){ return !_billingKjent; }
+// Billing-fetch feilet (!ok ELLER nettverkskast): de gatede seksjonene skal ALDRI stå på «Laster …»
+// og ALDRI fetche (lekkasje-vernet står — vi vet fortsatt ikke planen). I stedet: synlig feil +
+// «Prøv igjen» som re-kjører loadBilling. Ikke fail-open til ugatet fetch.
+function visBillingFeil(el){ if(el) el.innerHTML='<p class="wb-empty">Kunne ikke laste akkurat nå. <button type="button" class="retry-lenke" data-billing-retry>Prøv igjen</button></p>'; }
+function billingFeilRender(){ ['#wbList','#vervSendList','#loyalOversikt'].forEach(function(s){ visBillingFeil($(s)); }); }
+document.addEventListener('click',function(e){ var b=e.target.closest('[data-billing-retry]'); if(!b)return; e.preventDefault();
+  ['#wbList','#vervSendList','#loyalOversikt'].forEach(function(s){ var el=$(s); if(el)el.innerHTML='<p class="wb-empty">Laster …</p>'; });
+  loadBilling(); // suksess → oppdaterSkjoldFlater re-kjører loaderne; ny feil → billingFeilRender igjen
+});
 // Plan-navn + pris, ÉN kilde — delt av renderKonto (viser aktiv plan) og plan-velgeren
 // (visPlanVelger). NOK fordi /no/-fila; backend bør på sikt sende pris-strengen i status så
 // andre markeder/valutaer stemmer. Løftet fra lokal i renderKonto da velgeren også trengte den.
 const PLAN_INFO={basis:{navn:'Basis',pris:'89 kr'},vekst:{navn:'Vekst',pris:'179 kr'}};
 async function loadBilling(){
-  const r=await apiFetch('/api/dashboard/billing/status');
+  let r;
+  try{ r=await apiFetch('/api/dashboard/billing/status'); }
+  catch(e){ console.error('loadBilling: nettverksfeil', e); _billingFeilet=true; billingFeilRender(); return; } // kast → synlig feil+retry, ikke stille «Laster»
   if(!r)return; // 401 → apiFetch redirigerte (forventet, ikke logg)
-  if(!r.ok){ console.error('loadBilling: /billing/status svarte '+r.status); return; } // logg, ikke svelg
+  if(!r.ok){ console.error('loadBilling: /billing/status svarte '+r.status); _billingFeilet=true; billingFeilRender(); return; } // logg + synlig feil+retry (gaten forblir lukket, ingen fetch)
   _billing=await r.json();
-  _billingKjent=true;   // ÅPNE billing-gaten: kundedata-loaderne kan nå fetche (planen er kjent)
+  _billingKjent=true; _billingFeilet=false;   // ÅPNE billing-gaten: kundedata-loaderne kan nå fetche (planen er kjent)
   renderKonto(_billing);
   settRebookInfo(); // Vekst-ikonet henger på _billing — se kommentaren over funksjonen
   // effective_plan kom nå → re-render skjoldede flater som kan ha rendret før billing (erBasis var false),
