@@ -97,6 +97,15 @@
   status = 200
   force = true
 
+# 3a2. Kortlenke-ruta → backend (avmeldRouter). /a/<token> er den korte handlingslenka i utsendte
+#      rebooking-SMS-er (GET viser + POST utfører). Uten denne treffer den Netlifys statiske 404 og
+#      når aldri Railway — samme klasse som /images/*- og /verv/*-gapene. Må FØR /:slug (ett segment).
+[[redirects]]
+  from = "/a/*"
+  to = "https://api.trybarberhq.com/a/:splat"
+  status = 200
+  force = true
+
 # 3b. Bilde-råruta → backend. /api/dashboard/images returnerer url=/images/raw/<id> (flersegment),
 #     som IKKE fanges av /:slug (ett segment) og ikke har noen lokal fil → 404 på dashboard-origin.
 #     Uten denne proxyen laster crop-bildet og bildevelgerens galleri-thumbs aldri (verifisert:
