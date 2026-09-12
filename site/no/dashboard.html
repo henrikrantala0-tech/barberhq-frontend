@@ -1676,6 +1676,7 @@
           </button>
           <label class="sw sw-green acc-sw"><input type="checkbox" id="tog-paam"><span class="sl"></span></label>
         </div>
+        <p class="sett-err" id="paamErr" hidden></p>
         <div class="acc-body" hidden>
           <!-- Startinnholdet ER fallbacken. Svarer ikke /sms-preview — eller kjører JS-en
                aldri — blir noten stående, og trekkspillet åpner til noe i stedet for ingenting.
@@ -1704,6 +1705,7 @@
           </button>
           <label class="sw sw-green acc-sw"><input type="checkbox" id="tog-rebook"><span class="sl"></span></label>
         </div>
+        <p class="sett-err" id="rebookErr" hidden></p>
         <div class="acc-body" hidden>
           <!-- TOM MED VILJE. Her sto «SMS-utsending kobles på snart — valget ditt lagres» som
                fallback til renderSmsPreview hadde svart. Den er fra før utsendingen gikk live og
@@ -1712,7 +1714,7 @@
                kun saveSettings, og dette er en ren preview-beholder.
                Samme streng står fortsatt i #paamPreview (SMS-påminnelse) — ikke rørt her. -->
           <div id="rebookPreview"></div>
-          <div class="seg-line">
+          <div class="seg-line" id="rebookIntervallRad">
             <span class="seg-lead seg-lead-ktrl">Send etter<!--
               --><span class="info-wrap" id="rebookInfoWrap" hidden><!--
                 --><button type="button" class="info-i" id="rebookInfo" aria-expanded="false"
@@ -2842,7 +2844,8 @@ const api={
     return r.json();
   },
   // Returnerer Response (ikke boolean) så kallere kan skille 403 (Vekst-lås) fra annen feil.
-  // Fire-and-forget-kallere (SMS-brytere) ignorerer den fortsatt trygt.
+  // ALLE kallere MÅ sjekke svaret og rulle tilbake ved feil — SMS-bryterne + rebook-pillene går
+  // via lagreSmsInnstilling. Fire-and-forget ble fjernet: en feilet lagring så ut som suksess.
   async saveSettings(patch){
     const r=await apiFetch('/api/dashboard/settings',{method:'PUT',body:JSON.stringify(patch)});
     // PUT-responsen bærer utseendeVersjon (tall ELLER opak streng) — mat plakat-cachebusteren (monoton).
@@ -3289,9 +3292,11 @@ function skjoldVekstFlater(){
 // Basis-bruker som treffer en Vekst-innstilling (skjoldet disabler inputs, men backend gater også):
 // PUT /settings → 403 → samme lås-tekst som skjoldet i feilfeltet, ikke «Kunne ikke lagre».
 function erSettings403(r){ return !!(r && r.status===403); }
-function visSettingsLaas(errEl){
+function visSettingsLaas(errEl, prefix){
   if(!errEl)return;
-  errEl.innerHTML='<a href="#" class="skjold-lenke">Se abonnement</a>';
+  // prefix = valgfri feature-kontekst (f.eks. «Rebooking er med i Vekst.») FORAN «Se abonnement»-lenka.
+  // Lenka går til Konto-fanen via aapneAbonnement — samme mekanisme for alle Vekst-lås (verving/loyalty/SMS).
+  errEl.innerHTML=(prefix?(prefix+' '):'')+'<a href="#" class="skjold-lenke">Se abonnement</a>';
   errEl.hidden=false;
   var a=errEl.querySelector('a'); if(a)a.addEventListener('click',function(e){e.preventDefault();aapneAbonnement();});
 }
@@ -4738,6 +4743,7 @@ async function loadSmsInnstillinger(){
   settBryter($("#tog-paam"),   s.sms_paaminnelse_enabled);
   settBryter($("#tog-rebook"), s.sms_rebooking_enabled);
   setRebookPills(s.rebooking_interval_days);
+  syncRebookIntervall();   // skjul intervallet hvis rebooking er av / ukjent
   // Feilmeldinga skrus av ved hvert vellykket kall, ikke bare på. Uten else-grenen ville
   // den blitt stående etter at et senere kall gikk gjennom.
   var fe=$("#settFeil"); if(fe) fe.hidden = !_settingsUkjent;
@@ -4821,22 +4827,49 @@ function settBryter(el, verdi){
   el.checked = !_settingsUkjent && !!verdi;
   el.indeterminate = _settingsUkjent;
 }
-function bryterSkriv(el, felt){
+// Delt skrive-helper for SMS-bryterne + rebook-pillene. Tidligere var alle tre fire-and-forget
+// (saveSettings uten await/sjekk) → en feilet lagring så ut som suksess og rullet aldri tilbake.
+// Nå samme invariant som verving/loyalty: await, sjekk svaret, rull tilbake UI ved feil, meld fra
+// i et INLINE feilfelt VED kontrollen (errEl) — ikke en løsrevet toast. 403 er FORVENTET på
+// Vekst-flater (rebooking) for Basis → feature-spesifikk lås + «Se abonnement»-lenke til Konto
+// (vekstNavn satt), ikke generisk feil. Én helper for alle tre så invarianten ikke faller ut igjen.
+async function lagreSmsInnstilling(patch, rullTilbake, errEl, vekstNavn){
+  var r=await api.saveSettings(patch);
+  if(erSettings403(r)){ rullTilbake(); visSettingsLaas(errEl, vekstNavn ? (vekstNavn+' er med i Vekst.') : null); return false; }
+  if(!(r&&r.ok)){ rullTilbake(); if(errEl){ errEl.textContent='Kunne ikke lagre. Prøv igjen.'; errEl.hidden=false; } return false; }
+  if(errEl) errEl.hidden=true;
+  return true;
+}
+// Intervall-pillene er en AVHENGIG innstilling → skjules når rebooking er av (samme mønster som
+// renderLoyalSett skjuler lojalitets-innstillingene når programmet er av). Ukjent tilstand → skjult.
+function syncRebookIntervall(){
+  var t=$("#tog-rebook"), rad=$("#rebookIntervallRad");
+  if(rad) rad.hidden = !(t && t.checked && !_settingsUkjent);
+}
+function bryterSkriv(el, felt, errEl){
   if(_settingsUkjent){          // klikket nullstilte indeterminate — sett den tilbake
     el.checked=false; el.indeterminate=true;
     return;
   }
+  var forrige=!el.checked;      // change har alt flippet bryteren; forrige = motsatt av nå
   var p={}; p[felt]=el.checked;
-  api.saveSettings(p);
+  lagreSmsInnstilling(p, function(){ el.checked=forrige; }, errEl);
 }
-$("#tog-paam").addEventListener("change",function(){bryterSkriv(this,'sms_paaminnelse_enabled');});
-$("#tog-rebook").addEventListener("change",function(){bryterSkriv(this,'sms_rebooking_enabled');});
+$("#tog-paam").addEventListener("change",function(){bryterSkriv(this,'sms_paaminnelse_enabled', $("#paamErr"));});
+$("#tog-rebook").addEventListener("change",function(){
+  if(_settingsUkjent){ this.checked=false; this.indeterminate=true; return; }
+  var el=this, forrige=!el.checked;
+  syncRebookIntervall();          // speil pillenes synlighet mot den nye tilstanden straks
+  lagreSmsInnstilling({sms_rebooking_enabled:el.checked}, function(){ el.checked=forrige; syncRebookIntervall(); }, $("#rebookErr"), 'Rebooking');
+});
 document.querySelectorAll('#rebookPills button').forEach(function(b){
   b.addEventListener('click',function(){
     if(_settingsUkjent) return;        // ingen skriving, og ingen pille tennes på gjetning
+    var forrigeEl=document.querySelector('#rebookPills button[aria-selected="true"]');
+    var forrigeDays=forrigeEl?+forrigeEl.dataset.days:null;   // for rollback ved feil
     var days=+b.dataset.days;
     setRebookPills(days);              // backend validerer 28/35/45; UI sender kun disse
-    api.saveSettings({rebooking_interval_days:days});
+    lagreSmsInnstilling({rebooking_interval_days:days}, function(){ setRebookPills(forrigeDays); }, $("#rebookErr"), 'Rebooking');
   });
 });
 
