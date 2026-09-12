@@ -5054,8 +5054,14 @@ document.querySelectorAll('#vervRecipient button').forEach(function(b){
   // «begge», bygger modalen feil melding — og det er nettopp den uenigheten vi fjerner her.
   b.addEventListener('click',async function(){
     var forrige=_vervLagret.recipient, err=$("#vervPctErr");
+    var piller=document.querySelectorAll('#vervRecipient button');
     setVervRecipient(b.dataset.r);
+    // Synkron disable av ALLE piller FØR await (som de tunge lagre-knappene) → et andre klikk mens
+    // kallet er i lufta fyrer ikke (disabled-knapper gir ingen click) → ingen A→B-race der _vervLagret
+    // settes i svar-rekkefølge i stedet for klikk-rekkefølge.
+    piller.forEach(function(x){x.disabled=true;});
     var r=await api.saveSettings({referral_reward_recipient:b.dataset.r});
+    piller.forEach(function(x){x.disabled=false;}); // re-enable i ALLE grener
     if(erSettings403(r)){ setVervRecipient(forrige); visSettingsLaas(err); return; } // Vekst-lås, ikke generisk feil
     if(r&&r.ok){ _vervLagret.recipient=b.dataset.r; err.hidden=true; }
     else  { setVervRecipient(forrige); err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false; }
@@ -5067,8 +5073,10 @@ $("#vervPct").addEventListener('change',async function(){
   err.hidden=true;
   var r=await api.saveSettings({referral_discount_pct:v});   // via saveSettings → mater plakat-versjonen fra PUT-responsen
   if(erSettings403(r)){ visSettingsLaas(err); return; } // Vekst-lås → samme lås-tekst som skjoldet
-  if(r&&!r.ok){ var d=await r.json().catch(function(){return{};}); err.textContent=(d&&d.error)||'Kunne ikke lagre.'; err.hidden=false; return; } // backend-feil pent
-  _vervLagret.pct=v;   // først NÅ er prosenten sann å love bort
+  // Oppdater _vervLagret.pct KUN ved bekreftet lagring — som recipient-søsteren. Før falt null/401
+  // gjennom til mutasjonen (r&&!r.ok er false ved r===null) → prosenten ble «lovet bort» uten lagring.
+  if(r&&r.ok){ _vervLagret.pct=v; err.hidden=true; }   // først NÅ er prosenten sann å love bort
+  else { var d=r?await r.json().catch(function(){return{};}):null; err.textContent=(d&&d.error)||'Kunne ikke lagre.'; err.hidden=false; }
 });
 // Kopier-modal (spec 2d): redigerbar melding + ekte verve-lenke, kopieres til utklippstavla.
 // Het «send» og hadde en disabled Send-knapp da SMS var planen; verving sendes ikke via SMS
