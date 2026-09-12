@@ -5693,6 +5693,7 @@ $("#saveSvc").addEventListener("click",async function(){
   btn.disabled=false;btn.textContent=orig;
   if(!r)return;
   if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre tjenester. Prøv igjen.');return;}
+  await loadTjenester(); // refetch: tomme (ufiltrerte) rader forsvinner lokalt + backend-normalisering (min/pris/rekkefølge) speiles. Samme mønster som loyalty/design.
   savedFlash("#svcSaved");
   oppdaterSjekkliste(); // tjeneste-haken (≥1 med pris) kan ha endret seg
 });
@@ -5721,6 +5722,7 @@ $("#savePay").addEventListener('click',async function(){
   btn.disabled=false;btn.textContent=orig;
   if(!r)return;
   if(!r.ok){var d=await r.json().catch(function(){});alert((d&&d.error)||'Kunne ikke lagre betaling. Prøv igjen.');return;}
+  await loadPayment(); // refetch: tomme rader forsvinner lokalt + backend speiles (samme som loadTjenester over)
   savedFlash("#paySaved");
 });
 
