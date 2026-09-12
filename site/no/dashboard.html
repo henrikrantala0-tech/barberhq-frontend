@@ -3208,7 +3208,7 @@ function applyRekord(p){
     note.textContent=(p.current_week_revenue>0)?"Rekord settes denne uka":"";
   } else {
     var mnd=new Date(p.best_week_start+'T12:00:00').toLocaleDateString('nb-NO',{month:'long'}); // T12 unngår tz-slip
-    var kr=(p.best_week_approximate?'ca. ':'')+p.best_week_revenue.toLocaleString('no-NO')+' kr';
+    var kr=(p.best_week_approximate?'ca. ':'')+(p.best_week_revenue?.toLocaleString('no-NO')||'0')+' kr';
     note.textContent="Beste uke: "+kr+" · "+mnd;
   }
 }
