@@ -878,6 +878,39 @@
   .drv-empty-mark{width:40px;height:40px;border-radius:50%;background:var(--good-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:20px;color:var(--good)}
   .drv-empty-h{margin:0 0 8px;font-size:16px;font-weight:600;color:var(--ink-2)}
   .drv-empty-p{margin:0 auto;max-width:280px;font-size:13px;color:var(--mut);line-height:1.55}
+  /* «Drevet av BarberHQ» v2 — Hentet inn + På vei. Farger fra tema-variablene (adapterer lys/mørk;
+     designets dark-hex #141414/#242424/#8a8a8a/#cfcfcf/#4d8bff = mørk-tema-verdiene). Ingen prikker. */
+  .di-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
+  .di-title{padding:18px 18px 0;font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+  .di-hentet{padding:16px 18px 4px}
+  .di-eyebrow{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mut)}
+  .di-hero{font-size:36px;font-weight:800;letter-spacing:-.035em;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:11px}
+  .di-hero.di-hero-zero{color:var(--mut)}
+  .di-kr{font-weight:300;font-size:23px;color:var(--ink-2)}
+  .di-rows{margin-top:14px}
+  .di-row{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:48px;border-top:1px solid var(--line)}
+  .di-arm{font-size:13.5px;font-weight:500;color:var(--ink)}
+  .di-value{font-size:13px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
+  .di-row.di-zero .di-arm,.di-row.di-zero .di-value{color:var(--mut);font-weight:500}
+  .di-row.di-zero .di-value{font-size:12.5px}
+  .di-row.di-off .di-arm,.di-row.di-off .di-value{color:var(--mut-2)}   /* «Av» — DØD KODE (ingen kilde i /attribution) */
+  .di-value.di-setup{color:var(--info);font-weight:600;font-size:13px}
+  .di-loj-label{display:flex;align-items:baseline;gap:7px;min-width:0}
+  .di-loj-sub{font-size:11.5px;color:var(--mut-2);font-weight:400}
+  .di-divider{height:1px;background:var(--line);margin-top:6px}
+  .di-pv{padding:18px 18px 20px}
+  .di-pv-eyebrow{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mut)}
+  .di-pv-block{margin-top:16px}
+  .di-pv-sub{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mut)}
+  .di-pv-num{font-size:30px;font-weight:800;letter-spacing:-.035em;line-height:1;margin-top:8px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .di-pv-date{font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-top:8px;color:var(--ink)}
+  .di-pv-txt{font-size:13px;line-height:1.45;color:var(--ink-2);margin-top:6px}
+  .di-pv-consent{font-size:12.5px;line-height:1.45;color:var(--info);margin-top:6px;font-variant-numeric:tabular-nums}
+  .di-pv-hr{height:1px;background:var(--line);margin:18px 0}
+  .di-basis-note{font-size:13px;line-height:1.45;font-weight:600;color:var(--ink);margin-top:8px}
+  .di-basis-sell{font-size:12.5px;line-height:1.5;color:var(--mut);margin-top:16px}
+  .di-cta{margin-top:14px;width:100%;min-height:46px;background:var(--ink);color:var(--bg);border:none;border-radius:8px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
+  .di-cta-price{font-size:11.5px;line-height:1.45;color:var(--mut-2);margin-top:10px;text-align:center}
   html[data-theme="dark"] body{background:#0a0a0a}
 /* ----- Tre-kolonns bunnrad ----- */
   /* .bottom-grid er FJERNET — Kommende bookinger og Drevet av deler ikke lenger container.
@@ -1543,11 +1576,9 @@
 
     <!-- 5. Drevet av BarberHQ — løftet ut av .bottom-grid til bunn. -->
     <div id="drivenByWrap">
-      <!-- ⚠ Tittel + basissetning er DELT med attribusjonsseksjonen i Vekst — hold dem i synk.
-           Perioden lå tidligere som en løs «denne uka»-etikett i høyre hjørne; den er flyttet
-           inn i setningen (settes av renderDrivenBy) fordi den så klikkbar ut uten å være det. -->
-      <p class="block-h" style="margin:0 0 3px">Drevet av BarberHQ</p>
-      <p class="block-s" id="drivenByLabel">Klipp BarberHQ hentet inn eller hentet tilbake.</p>
+      <!-- v2: tittelen «Drevet av BarberHQ» rendres NÅ inne i kortet (di-title) av renderDrivenBy,
+           ikke som løs .block-h over. Ingen undertekst i panelet (design turn 2). Vekst-fanens
+           attribusjonskort beholder sin egen sec-h + block-s. -->
       <div id="drivenBy"></div>
       <button class="see-all-btn" id="drivenBySeeAll" onclick="switchPanel('vekst')">Se alt i Vekst →</button>
     </div>
@@ -2983,7 +3014,7 @@ async function loadOversikt(){
 
   var dw=$("#drivenByWrap");if(dw)dw.hidden=false; // pill-modus: alltid synlig (skjules kun på historisk måned)
   renderBarChart(days,curPeriod);
-  renderDrivenBy(curPeriod);
+  renderDrivenBy(); // panelet henter alltid siste_maaned selv — frikoblet fra #segs/curPeriod
   loadUpcoming();
 }
 
@@ -3358,7 +3389,7 @@ function eksempelDrivenByHtml(){ return eksempelRaderHtml(true); }
 // Re-render skjoldede flater etter at billing (effective_plan) er lastet — flatene kan ha rendret
 // før _billing kom (erBasis var false → ekte/tom sti). Kalles fra loadBilling.
 function oppdaterSkjoldFlater(){
-  if(document.getElementById('drivenBy') && typeof renderDrivenBy==='function' && typeof curPeriod!=='undefined')renderDrivenBy(curPeriod);
+  if(document.getElementById('drivenBy') && typeof renderDrivenBy==='function')renderDrivenBy();
   // Vekst-flatene: kun hvis fanen faktisk er lastet (unngå unødig attribusjon-fetch før åpning).
   if(typeof aktivtPanel==='function' && aktivtPanel()==='vekst'){
     if(typeof renderAttribusjon==='function')renderAttribusjon();
@@ -3381,97 +3412,103 @@ function visEksempelDrivenBy(wrap){
   wrap.innerHTML=eksempelDrivenByHtml();
   settSkjold(wrap,{eksempel:true});
 }
-async function renderDrivenBy(period){
+// ── «Drevet av BarberHQ» v2 — delte byggere (brukt av renderDrivenBy + renderAttribusjon) ──
+// Kontrakt (backend 46898fd+d9048ee): { paaVei, hentetInn? }. hentetInn MANGLER for Basis —
+// fravær = signalet, aldri en tom verdi. Alt leses via ?. / ||-guard → manglende nøkkel kaster aldri.
+function diTitle(){ return '<div class="di-title">Drevet av BarberHQ</div>'; }
+function diHero(rev){ // hovedtall: «2 048» + dempet « kr»; 0 → dempet hele
+  return '<div class="di-hero'+((rev||0)>0?'':' di-hero-zero')+'">'+(rev||0).toLocaleString('no-NO')+'<span class="di-kr"> kr</span></div>';
+}
+function pvDato(iso){ // 'YYYY-MM-DD' → «14. sep»; null/ugyldig → null
+  if(!iso) return null;
+  var d=new Date(iso+'T12:00:00'); if(isNaN(d.getTime())) return null;
+  return d.toLocaleDateString('nb-NO',{day:'numeric',month:'short'}).replace(/\.$/,'');
+}
+// Hentet inn-rad. o={count,revenue}. opts.av=true → «Av»-tilstand (40%): DØD KODE i dag — rebooking
+// KAN slås av (sms_rebooking_enabled), men /attribution bærer ingen på/av-status. Utløses aldri før
+// backend evt. legger et arm-flagg. Se rapport 14.09. aktiv m/tall = hvit, aktiv u/tall = dempet (55%).
+function diArmRad(navn, o, opts){
+  if(opts && opts.av){ return '<div class="di-row di-off"><span class="di-arm">'+esc(navn)+'</span><span class="di-value">Av</span></div>'; }
+  var har=!!(o && o.count>0);
+  return '<div class="di-row'+(har?'':' di-zero')+'"><span class="di-arm">'+esc(navn)+'</span>'
+    +'<span class="di-value">'+(o?(o.count||0):0)+' klipp · '+krFmt(o?(o.revenue||0):0)+'</span></div>';
+}
+// Lojalitet-rad: ALDRI kroner. program={klipp,kunder} (beholdning). kunder>0 → tall; ellers «Sett opp»
+// (blå) — matcher ny konto (2c). ⚠ Uten et loyalty_enabled-flagg i /attribution kan «Sett opp»
+// (ikke aktivert) og «uten deltakere» (aktivert, 0 opt-in) IKKE skilles — vi viser «Sett opp». Se rapport.
+function diLojRad(loj){
+  var p=(loj&&loj.program)||{klipp:0,kunder:0};
+  var etikett='<span class="di-loj-label"><span class="di-arm">Lojalitet</span><span class="di-loj-sub">totalt</span></span>';
+  if((p.kunder||0)>0){
+    return '<div class="di-row">'+etikett+'<span class="di-value">'+(p.klipp||0)+' klipp · '+(p.kunder||0)+' kunder i programmet</span></div>';
+  }
+  return '<div class="di-row">'+etikett+'<span class="di-value di-setup">Sett opp</span></div>';
+}
+// Hentet inn-blokk (kun Vekst): eyebrow + hovedtall + fire armer i låst presedens-rekkefølge.
+// ⚠ REKKEFØLGE + KATEGORIER SPEILET AV renderAttribusjon() — HOLD DEM I SYNK.
+function diHentetInnHtml(hi){
+  var total=(hi&&hi.total)||{count:0,revenue:0};
+  return '<div class="di-hentet"><div class="di-eyebrow">HENTET INN MED BARBERHQ</div>'
+    +diHero(total.revenue)
+    +'<div class="di-rows">'
+      +diArmRad('Verving', hi&&hi.vervet)
+      +diLojRad(hi&&hi.lojalitet)
+      +diArmRad('Vinn tilbake', hi&&hi.vinnTilbake)
+      +diArmRad('Rebooking', hi&&hi.rebooking)
+    +'</div></div>';
+}
+// På vei-blokk: kunder/datoer, ALDRI kroner. opts.basis=true → «På Basis får ingen…» + selg + CTA.
+function diPaaVeiHtml(pv, opts){
+  var rb=(pv&&pv.rebooking)||{naar_vindu_30d:0,med_samtykke:0};
+  var wb=(pv&&pv.winback)||{foerste_passerer_60:null,passerer_innen_30d:0};
+  var basis=!!(opts&&opts.basis);
+  var h='<div class="di-pv"><div class="di-pv-eyebrow">PÅ VEI</div>'
+    +'<div class="di-pv-block"><div class="di-pv-sub">REBOOKING</div>'
+      +'<div class="di-pv-num">'+(rb.naar_vindu_30d||0)+'</div>'
+      +'<div class="di-pv-txt">kunder når vinduet de neste 30 dagene</div>'
+      +'<div class="di-pv-consent">'+(rb.med_samtykke||0)+' av '+(rb.naar_vindu_30d||0)+' har SMS-samtykke i dag</div>'
+      +(basis?'<div class="di-basis-note">På Basis får ingen av dem SMS.</div>':'')
+    +'</div>';
+  var dato=pvDato(wb.foerste_passerer_60);
+  if(dato){
+    h+='<div class="di-pv-hr"></div><div class="di-pv-block"><div class="di-pv-sub">VINN TILBAKE</div>'
+      +'<div class="di-pv-date">'+dato+'</div>'
+      +'<div class="di-pv-txt">første kunde passerer 60-dagersgrensen</div></div>';
+  }
+  if(basis) h+='<div class="di-pv-hr"></div>'+basisVekstSellCta();
+  return h+'</div>';
+}
+// Selg + CTA (Basis). Delt av Oversikt-panelet og Vekst-attribusjonskortet.
+function basisVekstSellCta(){
+  return '<div class="di-basis-sell">Vekst sender rebooking-SMS automatisk og gir deg en liste over kunder du kan vinne tilbake.</div>'
+    +'<button type="button" class="di-cta" data-di-oppgrader>Oppgrader til Vekst</button>'
+    +'<div class="di-cta-price">179 kr/mnd, ingen binding</div>';
+}
+function koblePaaVeiCta(host){ var b=host&&host.querySelector('[data-di-oppgrader]'); if(b)b.addEventListener('click',function(){ if(typeof aapneAbonnement==='function')aapneAbonnement(); }); }
+
+// «Drevet av BarberHQ» (Oversikt). Henter ALLTID siste_maaned (ny default) — panelet har ingen
+// egen periodevelger (design turn 2). Basis-signal = hentetInn mangler → kun På vei + CTA.
+async function renderDrivenBy(){
   var wrap=$("#drivenBy"); if(!wrap)return;
-  // Plan må være kjent FØR henting: uten dette kan en Basis-konto rekke å hente ekte /attribution i
-  // oppstarts-race-et (erBasis() er false mens _billing===null). Samme vakt som loadMomentum (3da2f68):
-  // billingUkjent() FØRST, så erBasis(). oppdaterSkjoldFlater re-kjører renderDrivenBy når billing lander.
-  if(billingUkjent())return;
-  // Basis: skjold + eksempeltall. INGEN API-kall (lekker aldri ekte tall til basis), ingen delta.
-  if(erBasis())return visEksempelDrivenBy(wrap);
-  fjernSkjold(wrap); // ikke-basis → aldri skjold (rydder .skjold-vert-klassen før ekte render)
-  // Perioden sto tidligere som en løs etikett i høyre hjørne av overskriftsraden, der den
-  // leste som en klikkbar velger. Den er ren tekst, så den hører hjemme i setningen.
-  // ⚠ BASISSETNINGEN ER DELT MED renderAttribusjon() I VEKST — HOLD DEM I SYNK.
-  // Forskjellen er tilsiktet: her henger perioden på, fordi Oversikt ikke har en egen
-  // periodevelger ved siden av panelet. Vekst har det, og ville dublert informasjonen.
-  var perLbl=period==="uke"?"denne uka":period==="2uker"?"siste 2 uker":"denne måneden";
-  var lbl=$("#drivenByLabel");
-  if(lbl)lbl.textContent="Klipp BarberHQ hentet inn eller hentet tilbake — "+perLbl+".";
-
+  if(billingUkjent())return; // behold vakt (e5aa245): ingen henting/render før planen er kjent
   var seeAll=$("#drivenBySeeAll");
-  var data=await api.attribution(period);
-  // Billing kan ha kommet UNDER fetch-en (init-race): ble planen basis i mellomtiden, bytt til
-  // eksempel her — ellers klobber dette sene svaret et eksempel-render som alt har skjedd.
-  if(erBasis())return visEksempelDrivenBy(wrap);
-  if(!data){ wrap.innerHTML=""; if(seeAll)seeAll.hidden=true; return; } // feil/401 → tomt, ingen krasj
-
-  var reb=data.rebooking||{count:0,revenue:0};
-  var rec=data.recovery ||{count:0,revenue:0};
-  var ver=data.vervet   ||{count:0,revenue:0};
-
-  // data.total (backend efaa553) er ENESTE kilde for totalen — vi summerer ALDRI kategoriene
-  // selv. Mangler den, er svaret ufullstendig → ærlig feilstate, aldri et klient-summert tall.
-  var total=data.total;
-  if(!total||total.revenue==null||total.count==null){
+  var data=await api.attribution('siste_maaned');
+  if(!data){ wrap.innerHTML=''; if(seeAll)seeAll.hidden=true; return; } // feil/401 → tomt, ingen krasj
+  var hi=data.hentetInn; // MANGLER for Basis (backend plan-shaper) — fail-trygt under
+  if(!hi){
+    // BASIS: ingen «Hentet inn» i det hele tatt — kun På vei + selg + CTA.
     if(seeAll)seeAll.hidden=true;
-    wrap.innerHTML='<p class="wb-empty">Kunne ikke hente tallene akkurat nå.</p>';
+    wrap.innerHTML='<div class="di-card">'+diTitle()+diPaaVeiHtml(data.paaVei,{basis:true})+'</div>';
+    koblePaaVeiCta(wrap);
     return;
   }
-
-  // Tomtilstand: ingen tilskrevne klipp i perioden → skjul rader + delta + «Se alt i Vekst» (ingenting å se der ennå).
-  if(total.count===0){
-    if(seeAll)seeAll.hidden=true;
-    wrap.innerHTML='<div class="drv-empty">'
-      +'<div class="drv-empty-mark">✦</div>'
-      +'<p class="drv-empty-h">Her bygger verdien seg opp</p>'
-      +'<p class="drv-empty-p">Etter hvert som kunder rebooker, kommer tilbake eller verver venner, ser du hvor mye BarberHQ henter inn for deg.</p>'
-      +'</div>';
-    return;
-  }
-
-  var totalRev=total.revenue;
-
-  // Delta: KUN på uke, kun positiv. «Forrige uke» = 2uker-total − uke-total (rullende, disjunkte
-  // 7-dagersblokker). Krever 2uker-total; mangler den, dropper vi delta (ikke feil hele panelet).
-  var deltaHtml="";
-  if(period==="uke"){
-    var two=await api.attribution("2uker");
-    if(two&&two.total&&two.total.revenue!=null){
-      var prevWeek=two.total.revenue-totalRev;
-      var delta=totalRev-prevWeek;
-      if(delta>0) deltaHtml='<p class="drv-delta">↑ '+krFmt(delta)+' fra forrige uke</p>';
-    }
-  }
-
-  // Etikettene MÅ matche trekkspillene i Vekst («Vinn tilbake», «Verving») — det er DER
-  // barbereren møter mekanismene og lærer hva de heter. Het tidligere «Vinn-tilbake» og
-  // «Vervet» her; to navn på samme kategori på to flater er én ting for mye å holde styr på.
-  //
-  // ⚠ REKKEFØLGEN ER SPEILET AV renderAttribusjon() I VEKST — HOLD DEM I SYNK.
-  // Rebooking → Verving → Vinn tilbake, med samme farge per kategori begge steder.
-  // Sto tidligere i motsatt orden på de to flatene: samme tre farger, ulik rekkefølge,
-  // som er nøyaktig oppskriften på å lese feil rad ved rask skanning.
-  var rows=[
-    {name:"Rebooking",    o:reb, color:"var(--good)"}, // grønn #3ecf7e
-    {name:"Verving",      o:ver, color:"#e0844a"},     // oransje
-    {name:"Vinn tilbake", o:rec, color:"var(--info)"}, // blå #4d8bff
-  ];
-  var rowsHtml=rows.map(function(r){
-    return '<div class="drv-row2">'
-      +'<div class="drv-left"><span class="drv-dot" style="background:'+r.color+'"></span><span class="drv-nm">'+r.name+'</span></div>'
-      +'<div class="drv-right"><span class="drv-cuts">'+(r.o.count||0)+' klipp</span><span class="drv-val">'+krFmt(r.o.revenue||0)+'</span></div>'
-      +'</div>';
-  }).join("");
-
-  if(seeAll)seeAll.hidden=false; // fylt tilstand → Vekst-lenken synlig
-  wrap.innerHTML='<div class="drv-hero">'
-    +'<p class="drv-hero-lbl">Hentet inn med BarberHQ</p>'
-    +'<p class="drv-hero-num">'+krFmt(totalRev)+'</p>'
-    +deltaHtml
-    +'</div>'
-    +'<div class="drv-rows">'+rowsHtml+'</div>'
-    +'<p class="drv-trust">Kun fullførte, betalte klipp. Estimert fra dine priser.</p>';
+  // VEKST: Hentet inn + På vei.
+  if(seeAll)seeAll.hidden=false;
+  wrap.innerHTML='<div class="di-card">'+diTitle()
+    +diHentetInnHtml(hi)
+    +'<div class="di-divider"></div>'
+    +diPaaVeiHtml(data.paaVei,{basis:false})
+  +'</div>';
 }
 // Kommende bookinger: dag-gruppert. «I dag» + «I morgen» er faste ankere (alltid
 // synlig, også tomme). Dager lenger frem vises kun med bookinger, datert. Kompakt
