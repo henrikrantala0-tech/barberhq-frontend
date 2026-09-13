@@ -1,9 +1,11 @@
-// aktivert-flaggene i «Drevet av»-panelet: rebooking.aktivert + lojalitet.program.aktivert.
-// Mot to EKTE prod-shapes (13.09):
-//  - grand-barber: rebooking AV men M/TALL → «Av»-rad (di-off) selv om armen har kr; lojalitet PÅ.
-//  - ahmed-fadezz: rebooking PÅ (normal rad); lojalitet AV (aktivert=false) → «Sett opp» (blå).
-// Vokter at aktivert=false gir av/«Sett opp» UAVHENGIG av tall, og at «uten deltakere» (aktivert,
-// 0 kunder) skilles fra «Sett opp» (ikke aktivert). page.on('pageerror') obligatorisk.
+// rebooking.aktivert-flagget i «Drevet av»-panelet + vakt at LOJALITET aldri vises.
+// Mot EKTE prod-shapes (13.09), men lojalitet fjernet som arm (14.09):
+//  - grand-barber: rebooking AV men M/TALL → «Av»-rad (di-off) selv om armen har kr.
+//  - ahmed-fadezz: rebooking PÅ (normal rad m/kr).
+//  - utan-deltakere: rebooking aktivert, 0 → «Ingen ennå».
+// Alle tre mock-ene BÆRER en lojalitet-node (count/revenue/program) — vakten vokter at panelet
+// IGNORERER den fullstendig: ingen «Lojalitet»-arm, ingen .di-setup, ingen «kunder i programmet».
+// Vakten BITER hvis lojalitet-raden kommer tilbake. page.on('pageerror') obligatorisk.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -25,27 +27,28 @@ const PORT = server.address().port;
 const bill = { subscription_status:'active', plan:'vekst', effective_plan:'vekst', effective_plan_grunn:'subscription',
   page_status:'live', days_left:99, trial_days_left:null, myk_periode:false, needs_attention:false };
 const paaVei = { rebooking:{naar_vindu_30d:88,med_samtykke:7}, winback:{foerste_passerer_60:'2026-09-14',passerer_innen_30d:3}, lojalitet:{aktive_stampkort:4,ett_klipp_unna:1}, verving:{lenke_finnes:true} };
+// total = TRE armer (verving+vinn-tilbake+rebooking), lojalitet EKSKLUDERT (speiler backend 14.09).
 const STATES = {
-  // rebooking AV m/tall (6/2048) → «Av». lojalitet PÅ (aktivert, periode 1 klipp + 4 kunder) → 3 linjer m/kr.
-  'grand-barber': { paaVei, hentetInn:{ period:'siste_maaned', total:{count:7,revenue:2048},
+  // rebooking AV m/tall (6/2048) → «Av». lojalitet-node BÆRES men skal ignoreres av panelet.
+  'grand-barber': { paaVei, hentetInn:{ period:'siste_maaned', total:{count:6,revenue:2048},
     vervet:{count:0,revenue:0}, lojalitet:{count:1,revenue:0,program:{klipp:9,kunder:4,aktivert:true}},
     vinnTilbake:{count:0,revenue:0}, rebooking:{count:6,revenue:2048,aktivert:false} } },
-  // rebooking PÅ (5/1750) → normal. lojalitet AV (aktivert:false) → «Sett opp».
+  // rebooking PÅ (5/1750) → normal. lojalitet AV (aktivert:false) — skal likevel ikke gi «Sett opp»-rad.
   'ahmed-fadezz': { paaVei, hentetInn:{ period:'siste_maaned', total:{count:8,revenue:2850},
     vervet:{count:2,revenue:700}, lojalitet:{count:0,revenue:0,program:{klipp:0,kunder:0,aktivert:false}},
     vinnTilbake:{count:1,revenue:400}, rebooking:{count:5,revenue:1750,aktivert:true} } },
-  // Ekstra vakt: lojalitet AKTIVERT men 0 kunder → dempet «0 klipp · 0 kunder», IKKE «Sett opp».
+  // rebooking aktivert, 0 → «Ingen ennå». lojalitet aktivert m/tall — skal ikke vises.
   'utan-deltakere': { paaVei, hentetInn:{ period:'siste_maaned', total:{count:0,revenue:0},
-    vervet:{count:0,revenue:0}, lojalitet:{count:0,revenue:0,program:{klipp:0,kunder:0,aktivert:true}},
+    vervet:{count:0,revenue:0}, lojalitet:{count:2,revenue:900,program:{klipp:12,kunder:5,aktivert:true}},
     vinnTilbake:{count:0,revenue:0}, rebooking:{count:0,revenue:0,aktivert:true} } },
 };
 const stats = { daily:[], months_with_data:[], current_week_revenue:0, best_week_revenue:0, best_week_start:null, weekly_revenue:[] };
-// Turn 3: lojalitet er 3-linjers (primaer + 2 sekundaer) via .di-loj-val — UNNTATT «Sett opp» (.di-value).
-// Tomme armer sier «Ingen ennå». Av-rad = di-off uavhengig av tall.
+// Kun rebooking-arm vaktes nå. aktivert=false → «Av» (di-off) UAVHENGIG av tall; count>0 → «N klipp · X kr»;
+// count===0 (aktivert) → «Ingen ennå». Lojalitet: se lojFinnes-vakten (skal ALDRI finnes).
 const forvent = {
-  'grand-barber':  { rebooking:{value:'Av', off:true},          lojalitet:{primaer:'1 klipp · 0 kr', sekInkl:'4 kunder i programmet'} },
-  'ahmed-fadezz':  { rebooking:{inneholder:'klipp', off:false}, lojalitet:{value:'Sett opp', setup:true} },
-  'utan-deltakere':{ rebooking:{value:'Ingen ennå', off:false}, lojalitet:{primaer:'Ingen ennå', sekInkl:'0 kunder i programmet'} },
+  'grand-barber':  { value:'Av', off:true },
+  'ahmed-fadezz':  { inneholder:'klipp', off:false },
+  'utan-deltakere':{ value:'Ingen ennå', off:false },
 };
 
 const browser = await chromium.launch();
@@ -70,29 +73,26 @@ for (const [navn, attr] of Object.entries(STATES)) {
     const rad = await page.evaluate(() => {
       const finn = (arm) => { for (const r of document.querySelectorAll('#drivenBy .di-row')) {
         const a=r.querySelector('.di-arm'); if (!a || a.textContent.trim()!==arm) continue;
-        const lojVal=r.querySelector('.di-loj-val');
-        if (lojVal){ const prim=r.querySelector('.di-loj-primaer'); return { primaer:prim?prim.textContent.trim():'', sekundaer:[...r.querySelectorAll('.di-loj-sek')].map(s=>s.textContent.trim()), off:false, setup:false }; }
         const v=r.querySelector('.di-value');
-        return { value:v?v.textContent.trim():'', off:r.classList.contains('di-off'), setup:!!(v&&v.classList.contains('di-setup')) };
+        return { value:v?v.textContent.trim():'', off:r.classList.contains('di-off') };
       } return null; };
-      return { rebooking:finn('Rebooking'), lojalitet:finn('Lojalitet') };
+      const armer = [...document.querySelectorAll('#drivenBy .di-row .di-arm')].map(a=>a.textContent.trim());
+      // Lojalitet skal ALDRI finnes: ingen «Lojalitet»-arm, ingen .di-setup i panelet.
+      const lojFinnes = armer.includes('Lojalitet') || !!document.querySelector('#drivenBy .di-setup');
+      return { rebooking:finn('Rebooking'), armer, lojFinnes };
     });
     const node = await page.$('#drivenBy'); if (node && bredde===375) await node.screenshot({ path:`${OUT}/aktivert-${navn}-375.png` });
 
     const f = forvent[navn];
-    const rb = rad.rebooking || {}, lo = rad.lojalitet || {};
-    let ok = errs.length===0 && rad.rebooking && rad.lojalitet;
-    if (f.rebooking.value!=null)      ok = ok && rb.value===f.rebooking.value;
-    if (f.rebooking.inneholder)       ok = ok && (rb.value||'').includes(f.rebooking.inneholder) && !/Av/.test(rb.value||'');
-    if (f.rebooking.off!=null)        ok = ok && rb.off===f.rebooking.off;
-    if (f.lojalitet.value!=null)      ok = ok && lo.value===f.lojalitet.value;   // «Sett opp»-tilfellet (.di-value)
-    if (f.lojalitet.setup!=null)      ok = ok && lo.setup===f.lojalitet.setup;
-    if (f.lojalitet.primaer!=null)    ok = ok && lo.primaer===f.lojalitet.primaer;  // 3-linjers via .di-loj-primaer
-    if (f.lojalitet.sekInkl)          ok = ok && (lo.sekundaer||[]).some(s=>s.includes(f.lojalitet.sekInkl));
-    const lojVis = lo.value!=null ? (lo.value+(lo.setup?' [blå]':'')) : (lo.primaer+' + ['+(lo.sekundaer||[]).length+' sek]');
+    const rb = rad.rebooking || {};
+    let ok = errs.length===0 && rad.rebooking && !rad.lojFinnes;
+    if (f.value!=null)      ok = ok && rb.value===f.value;
+    if (f.inneholder)       ok = ok && (rb.value||'').includes(f.inneholder) && !/Av/.test(rb.value||'');
+    if (f.off!=null)        ok = ok && rb.off===f.off;
     rapport.push({ konto:navn, bredde,
       'rebooking': (rb.value||'(mangler)')+(rb.off?' [di-off]':''),
-      'lojalitet': lojVis,
+      'armer': rad.armer.join(','),
+      'lojalitet': rad.lojFinnes?'FINNES✗':'borte',
       jsfeil: errs.length?errs.join('; ').slice(0,40):'ingen', ok: ok?'✓':'✗' });
     await page.close();
   }
@@ -100,8 +100,8 @@ for (const [navn, attr] of Object.entries(STATES)) {
 console.table(rapport);
 const ok = rapport.every(r => r.ok==='✓');
 console.log('«Av» vises uavhengig av tall (grand-barber):', rapport.filter(r=>r.konto==='grand-barber').every(r=>/^Av \[di-off\]/.test(r.rebooking)) ? 'ja ✓':'NEI ✗');
-console.log('«Sett opp» kun ved ikke-aktivert (ahmed):   ', rapport.filter(r=>r.konto==='ahmed-fadezz').every(r=>/Sett opp \[blå\]/.test(r.lojalitet)) ? 'ja ✓':'NEI ✗');
-console.log('«uten deltakere» = 3 linjer, ikke «Sett opp»:', rapport.filter(r=>r.konto==='utan-deltakere').every(r=>/Ingen ennå \+ \[2 sek\]/.test(r.lojalitet)) ? 'ja ✓':'NEI ✗');
+console.log('Lojalitet ALDRI i panelet (biter hvis raden kommer tilbake):', rapport.every(r=>r.lojalitet==='borte') ? 'ja ✓':'NEI ✗');
+console.log('Armer = kun Verving/Vinn tilbake/Rebooking:', rapport.every(r=>r.armer==='Verving,Vinn tilbake,Rebooking') ? 'ja ✓':'NEI ✗');
 console.log('SAMLET:', ok ? 'GRØNT ✓' : 'NOE FEILER ✗');
 await browser.close(); server.close();
 process.exit(ok ? 0 : 1);

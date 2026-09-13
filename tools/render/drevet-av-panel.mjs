@@ -1,9 +1,12 @@
-// «Drevet av BarberHQ» v2 — panelet mot ny /attribution-shape ({paaVei, hentetInn?}).
+// «Drevet av BarberHQ» v2 — panelet mot /attribution-shape ({paaVei, hentetInn?}).
 // Tre tilstander × Oversikt + Vekst × 320/375. Vokter:
-//  - Vekst m/data: Hentet inn (kr) + Lojalitet-program + På vei (Oversikt) / rader (Vekst).
+//  - Panelet har NØYAKTIG TRE armer: Verving, Vinn tilbake, Rebooking — i den rekkefølgen.
+//    LOJALITET er fjernet (14.09) og skal ALDRI finnes i panelet — vakten BITER hvis raden kommer tilbake
+//    (ingen «Lojalitet»-arm, ingen .di-setup, ingen «kunder i programmet»-linje).
+//  - Vekst m/data: Hentet inn (total) + tre armer + På vei (Oversikt) / rader (Vekst).
 //  - Basis: hentetInn MANGLER → INGEN «Hentet inn», kun På vei + CTA (Oversikt) / CTA (Vekst).
 //    Manglende hentetInn skal ALDRI kaste (fail-trygt).
-//  - Ny konto: 0 kr uten undertekst, Lojalitet «Sett opp».
+//  - Ny konto: 0 kr uten undertekst, tre armer «Ingen ennå».
 // page.on('pageerror') obligatorisk — se tools/render/README.md.
 import http from 'node:http';
 import fs from 'node:fs';
@@ -61,26 +64,31 @@ for (const flate of ['oversikt','vekst']) {
       const host = flate === 'vekst' ? '#attrRows' : '#drivenBy';
       const m = await page.evaluate((h) => {
         const el = document.querySelector(h); const t = el ? el.innerText : '';
+        const armer = el ? [...el.querySelectorAll('.di-row')].map(r => { const a=r.querySelector('.di-arm'); return a?a.textContent.trim():''; }).filter(Boolean) : [];
         return {
-          harHentetInn: /HENTET INN MED BARBERHQ/.test(t),
-          harProgram:   /kunder i programmet/.test(t),
-          harSettOpp:   !!(el && el.querySelector('.di-setup')),
-          harPaaVei:    /PÅ VEI/.test(t),
-          harCta:       !!document.querySelector('[data-di-oppgrader]'),
-          tom:          !!(el && el.innerText.trim()===''),
+          harHentetInn:      /HENTET INN MED BARBERHQ/.test(t),
+          harBunntekst:      /Kun klipp BarberHQ har bidratt til/.test(t),        // #4: skal være FALSE (flyttet til undertittel)
+          // Lojalitet skal ALDRI finnes: ingen «Lojalitet»-arm, ingen .di-setup, ingen program-linje.
+          lojFinnes:         armer.includes('Lojalitet') || /Lojalitet/.test(t) || /kunder i programmet|klipp registrert/.test(t) || !!(el && el.querySelector('.di-setup')),
+          armer:             armer.join(','),
+          harTreArmer:       armer.length===3 && armer[0]==='Verving' && armer[1]==='Vinn tilbake' && armer[2]==='Rebooking',
+          harPaaVei:         /PÅ VEI/.test(t),
+          harCta:            !!document.querySelector('[data-di-oppgrader]'),
         };
       }, host);
       const node = await page.$(host); if (node && bredde===375) await node.screenshot({ path:`${OUT}/drevet-av-${flate}-${navn}-375.png` });
 
-      // Forventninger per tilstand/flate
-      let ok = errs.length===0;
-      if (navn==='basis') ok = ok && m.harCta && !m.harHentetInn;                              // Basis: CTA, ingen Hentet inn
-      if (navn==='vekst'  && flate==='oversikt') ok = ok && m.harHentetInn && m.harProgram && m.harPaaVei;
-      if (navn==='vekst'  && flate==='vekst')    ok = ok && m.harProgram && !m.harPaaVei;      // Vekst-fanen: rader, ingen På vei
-      if (navn==='nykonto'&& flate==='oversikt') ok = ok && m.harHentetInn && m.harSettOpp;    // Lojalitet «Sett opp»
-      rapport.push({ flate, tilstand:navn, bredde, hentetInn:m.harHentetInn?'ja':'nei', program:m.harProgram?'ja':'nei',
-        settOpp:m.harSettOpp?'ja':'nei', paaVei:m.harPaaVei?'ja':'nei', cta:m.harCta?'ja':'nei',
-        jsfeil: errs.length?errs.join('; ').slice(0,40):'ingen', ok: ok?'✓':'✗' });
+      // Globalt: bunntekst borte + lojalitet ALDRI i panelet (biter hvis raden kommer tilbake). Så per tilstand/flate.
+      let ok = errs.length===0 && !m.harBunntekst && !m.lojFinnes;
+      // Basis (14.09): tre låste armer, INGEN total/hentetInn. CTA KUN på Vekst-fanen; på Oversikt bærer «På vei» (ingen CTA).
+      if (navn==='basis' && flate==='oversikt') ok = ok && !m.harHentetInn && m.harTreArmer && m.harPaaVei && !m.harCta;
+      if (navn==='basis' && flate==='vekst')    ok = ok && !m.harHentetInn && m.harTreArmer && !m.harPaaVei && m.harCta;
+      if (navn==='vekst'  && flate==='oversikt') ok = ok && m.harHentetInn && m.harPaaVei && m.harTreArmer;
+      if (navn==='vekst'  && flate==='vekst')    ok = ok && !m.harPaaVei && m.harTreArmer;   // rader, ingen På vei
+      if (navn==='nykonto'&& flate==='oversikt') ok = ok && m.harHentetInn && m.harTreArmer;
+      rapport.push({ flate, tilstand:navn, bredde, hentetInn:m.harHentetInn?'ja':'nei', bunntekst:m.harBunntekst?'JA✗':'nei',
+        lojalitet:m.lojFinnes?'FINNES✗':'borte', armer:m.armer||'—', treArmer:m.harTreArmer?'ja':(navn==='basis'?'—':'NEI✗'),
+        paaVei:m.harPaaVei?'ja':'nei', cta:m.harCta?'ja':'nei', jsfeil: errs.length?errs.join('; ').slice(0,40):'ingen', ok: ok?'✓':'✗' });
       await page.close();
     }
   }
@@ -88,6 +96,7 @@ for (const flate of ['oversikt','vekst']) {
 console.table(rapport);
 const ok = rapport.every(r => r.ok==='✓');
 console.log('Basis uten hentetInn kaster ikke:', rapport.filter(r=>r.tilstand==='basis').every(r=>r.jsfeil==='ingen') ? 'ja ✓' : 'NEI ✗');
+console.log('Lojalitet ALDRI i panelet (alle flater):', rapport.every(r=>r.lojalitet==='borte') ? 'ja ✓' : 'NEI ✗');
 console.log('SAMLET:', ok ? 'GRØNT ✓' : 'NOE FEILER ✗');
 await browser.close(); server.close();
 process.exit(ok ? 0 : 1);

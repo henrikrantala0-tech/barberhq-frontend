@@ -68,6 +68,7 @@
      har INGEN velger (frikoblet, siste_maaned — da564bd). */
   #attrPeriod{position:relative;display:flex;gap:4px;height:42px;box-sizing:border-box;padding:3px;
     background:var(--bg);border:1px solid var(--line);border-radius:10px}
+  #attrPeriod[hidden]{display:none}   /* id-display:flex slår ellers UA [hidden] → må tvinges (Basis skjuler velgeren) */
   #attrPeriod .perseg-btn{flex:1;border:none;border-radius:8px;background:transparent;font-family:inherit;
     font-size:12.5px;font-weight:600;color:var(--mut);cursor:pointer;letter-spacing:-.01em;white-space:nowrap}
   #attrPeriod .perseg-btn:hover{color:var(--ink)}
@@ -901,31 +902,29 @@
      designets dark-hex #141414/#242424/#8a8a8a/#cfcfcf/#4d8bff = mørk-tema-verdiene). Ingen prikker. */
   .di-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
   .di-title{padding:18px 18px 0;font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
-  .di-hentet{padding:18px 18px 2px}
+  .di-hentet{padding:26px 18px 2px}   /* #2: 26px topp gir luft over totalen (Oversikt) */
   .di-eyebrow{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mut);margin-bottom:12px}
   /* Totalblokka (turn 3): to stablede tall + periode-etikett. */
   .di-total-klipp{font-size:30px;font-weight:800;letter-spacing:-.035em;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
   .di-total-kr{font-size:34px;font-weight:800;letter-spacing:-.035em;line-height:1;margin-top:6px;color:var(--ink);font-variant-numeric:tabular-nums}
   .di-kr{font-weight:300;font-size:22px;color:var(--ink-2)}
   .di-total.di-tom .di-total-klipp,.di-total.di-tom .di-total-kr{color:var(--mut)}
+  #attrRows .di-total{margin-top:26px}   /* #2: luft fra periodevelgeren til totalen (Vekst) */
   .di-periode{font-size:12px;color:var(--mut);margin-top:8px}
   .di-rows{margin-top:16px}
   .di-row{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:48px;border-top:1px solid var(--line)}
-  .di-row.di-loj{min-height:58px}   /* lojalitet: alltid 3 linjer (primær + 2 sekundær) */
   .di-arm{font-size:13.5px;font-weight:500;color:var(--ink)}
   .di-value{font-size:13px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
   .di-row.di-zero .di-arm,.di-row.di-zero .di-value{color:var(--mut);font-weight:500}  /* «Ingen ennå» ≈55% */
   .di-row.di-zero .di-value{font-size:12.5px}
   .di-row.di-off .di-arm,.di-row.di-off .di-value{color:var(--mut-2)}  /* «Av» ≈40% — skillbar fra «Ingen ennå» */
-  .di-value.di-setup{color:var(--info);font-weight:600;font-size:13px}
-  /* Lojalitet-verdi: periode-primær + to beholdnings-sekundærlinjer. */
-  .di-loj-val{text-align:right}
-  .di-loj-primaer{display:block;font-size:13px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
-  .di-loj-primaer.di-tom{color:var(--mut);font-weight:500;font-size:12.5px}   /* «Ingen ennå» som primær */
-  .di-loj-sek{display:block;font-size:12px;color:var(--mut);margin-top:3px;font-variant-numeric:tabular-nums}
-  /* Bunntekst som siste rad i radgruppa (hårlinje over), ikke egen blokk. */
-  .di-fotnote{font-size:11.5px;line-height:1.45;color:var(--mut);border-top:1px solid var(--line);padding:12px 0 4px}
-  .di-fotnote.di-fotnote-vekst{padding:12px 0 0}
+  /* Basis: tre låste rader, INGEN total/lås-ikon (fjernet 14.09). opacity:.4 (IKKE rgba hvit — ville
+     forsvunnet i lys modus) gir 40 % på tema-riktig blekk i begge moduser; maskert tekst bærer låsen.
+     .di-basis-blokk = Oversikt-wrapper (18px sider som .di-hentet, INGEN 26px-topp totalen hadde).
+     .di-basis-rows nuller 16px total→rader-gapet → første rad rett under undertittelen, ingen hull. */
+  .di-row.di-basis-laast{opacity:.4}
+  .di-basis-blokk{padding:0 18px 2px}
+  .di-basis-rows{margin-top:0}
   .di-divider{height:1px;background:var(--line);margin-top:6px}
   .di-pv{padding:18px 18px 20px}
   .di-pv-eyebrow{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mut)}
@@ -940,8 +939,6 @@
   .di-basis-sell{font-size:12.5px;line-height:1.5;color:var(--mut);margin-top:16px}
   .di-cta{margin-top:14px;width:100%;min-height:46px;background:var(--ink);color:var(--bg);border:none;border-radius:8px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
   .di-cta-price{font-size:11.5px;line-height:1.45;color:var(--mut-2);margin-top:10px;text-align:center}
-  .di-attr-basis{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:18px}
-  .di-attr-basis .di-basis-sell{margin-top:0}
   html[data-theme="dark"] body{background:#0a0a0a}
 /* ----- Tre-kolonns bunnrad ----- */
   /* .bottom-grid er FJERNET — Kommende bookinger og Drevet av deler ikke lenger container.
@@ -1648,7 +1645,7 @@
          Wrapper sec-h + periodevelger + rader som ÉN enhet; momentum-kortet under er egen host. -->
     <div id="attrKort">
     <p class="sec-h">Drevet av BarberHQ</p>
-    <p class="block-s">Klipp BarberHQ har hentet inn eller hentet tilbake.</p>
+    <p class="block-s">Klipp BarberHQ har hentet inn eller hentet tilbake. Ordinære bookinger telles ikke med.</p>
     <!-- Periodevelger turn 3: kompakt segmentert kontroll [2 uker][30 dager][3 mnd ▾]. 3. pille bærer
          nedtrekket (3/6/12 måneder) og viser aktivt valg forkortet («6 mnd ▾»). attrPeriod-state, ALDRI
          curPeriod. Verdier: 2uker / siste_maaned (=«30 dager») / siste_3mnd/6mnd/12mnd. Menyen er absolutt-
@@ -3451,34 +3448,18 @@ function diArmRad(navn, o){
   }
   return '<div class="di-row di-zero"><span class="di-arm">'+esc(navn)+'</span><span class="di-value">Ingen ennå</span></div>';
 }
-// Lojalitet-rad: primær = periodens innløsninger «N klipp · X kr» (MED kr, som andre armer) eller «Ingen
-// ennå» ved tom periode; ALLTID to beholdnings-sekundærlinjer under: «N kunder i programmet» / «N klipp
-// registrert». aktivert=false (loyalty_enabled) → «Sett opp» (blå, 1 linje). aktivert=true → alltid 3
-// linjer (58px), også ved 0/0 (som er en ANNEN tilstand enn «Sett opp»). Identisk Oversikt/Vekst.
-// ⚠ program.{klipp,kunder} er BEHOLDNING — aldri i total (backend summerer kun count/revenue).
-function diLojRad(loj){
-  var l=loj||{count:0,revenue:0}, p=(loj&&loj.program)||{klipp:0,kunder:0,aktivert:false};
-  if(!p.aktivert){
-    return '<div class="di-row"><span class="di-arm">Lojalitet</span><span class="di-value di-setup">Sett opp</span></div>';
-  }
-  var primaer=(l.count>0)
-    ? '<span class="di-loj-primaer">'+l.count+' klipp · '+krFmt(l.revenue||0)+'</span>'
-    : '<span class="di-loj-primaer di-tom">Ingen ennå</span>';
-  return '<div class="di-row di-loj"><span class="di-arm">Lojalitet</span>'
-    +'<span class="di-loj-val">'+primaer
-      +'<span class="di-loj-sek">'+(p.kunder||0)+' kunder i programmet</span>'
-      +'<span class="di-loj-sek">'+(p.klipp||0)+' klipp registrert</span>'
-    +'</span></div>';
-}
-// Fire armer i låst presedens + bunntekst som siste rad. ⚠ REKKEFØLGE + KATEGORIER SPEILET AV
-// renderAttribusjon() — HOLD DEM I SYNK. fotnoteKlasse: '' (Oversikt, pad 12 0 4) | 'di-fotnote-vekst'.
-function diRaderHtml(hi, fotnoteKlasse){
+// TRE armer i låst presedens. ⚠ REKKEFØLGE SPEILET AV renderAttribusjon() — HOLD DEM I SYNK.
+// Lojalitet er BEVISST IKKE en arm her (fjernet 14.09): de tre er HENDELSER produktet utløste,
+// mens lojalitet er en BEHOLDNING som modnes over ~9 måneder — en rad som står på «Ingen ennå»
+// nesten alltid lærer barbereren at panelet er tomt. Beholdningen dekkes av flisene (Samler /
+// Kan hente / Innløst) i lojalitet-seksjonen. hentetInn.lojalitet finnes fortsatt i API-et, men
+// vises ALDRI her, og inngår IKKE i total (backend summerer kun de tre armene).
+// (Bunntekst-raden fjernet 14.09 — flyttet til Vekst-undertittelen; Oversikt er en skanneflate uten forklaring.)
+function diRaderHtml(hi){
   return '<div class="di-rows">'
     +diArmRad('Verving', hi&&hi.vervet)
-    +diLojRad(hi&&hi.lojalitet)
     +diArmRad('Vinn tilbake', hi&&hi.vinnTilbake)
     +diArmRad('Rebooking', hi&&hi.rebooking)
-    +'<div class="di-fotnote'+(fotnoteKlasse?(' '+fotnoteKlasse):'')+'">Kun klipp BarberHQ har bidratt til. Ordinære bookinger telles ikke med.</div>'
   +'</div>';
 }
 // Oversikt: eyebrow + total («siste 30 dager» — panelet har ingen velger, da564bd) + rader.
@@ -3486,10 +3467,11 @@ function diHentetInnHtml(hi){
   var total=(hi&&hi.total)||{count:0,revenue:0};
   return '<div class="di-hentet"><div class="di-eyebrow">HENTET INN MED BARBERHQ</div>'
     +diTotalHtml(total.count, total.revenue, 'siste 30 dager', !((total.count||0)>0||(total.revenue||0)>0))
-    +diRaderHtml(hi, '')
+    +diRaderHtml(hi)
   +'</div>';
 }
-// På vei-blokk: kunder/datoer, ALDRI kroner. opts.basis=true → «På Basis får ingen…» + selg + CTA.
+// På vei-blokk: kunder/datoer, ALDRI kroner. opts.basis=true → «På Basis får ingen…»-noten (selg + CTA
+// bor nå i den låste «Med Vekst»-blokka OVER På vei, ikke her — så CTA-en ikke dupliseres).
 function diPaaVeiHtml(pv, opts){
   var rb=(pv&&pv.rebooking)||{naar_vindu_30d:0,med_samtykke:0};
   var wb=(pv&&pv.winback)||{foerste_passerer_60:null,passerer_innen_30d:0};
@@ -3507,13 +3489,25 @@ function diPaaVeiHtml(pv, opts){
       +'<div class="di-pv-date">'+dato+'</div>'
       +'<div class="di-pv-txt">første kunde passerer 60-dagersgrensen</div></div>';
   }
-  if(basis) h+='<div class="di-pv-hr"></div>'+basisVekstSellCta();
   return h+'</div>';
 }
-// Selg + CTA (Basis). Delt av Oversikt-panelet og Vekst-attribusjonskortet.
-function basisVekstSellCta(){
-  return '<div class="di-basis-sell">Vekst sender rebooking-SMS automatisk og gir deg en liste over kunder du kan vinne tilbake.</div>'
-    +'<button type="button" class="di-cta" data-di-oppgrader>Oppgrader til Vekst</button>'
+// Basis: tre låste armer (maskert: * klipp · **** kr, asterisker IKKE bullets → leses som maskert tekst,
+// 13px/600 som ekte verdier, hele raden 40 % via opacity). INGEN total, INGEN lås-ikon, INGEN plassholder
+// (fjernet 14.09) — radene bærer maskeringen alene. .di-basis-rows nuller total→rader-gapet (margin-top).
+function diBasisLaastRader(){
+  return '<div class="di-rows di-basis-rows">'
+    +'<div class="di-row di-basis-laast"><span class="di-arm">Verving</span><span class="di-value">* klipp · **** kr</span></div>'
+    +'<div class="di-row di-basis-laast"><span class="di-arm">Vinn tilbake</span><span class="di-value">* klipp · **** kr</span></div>'
+    +'<div class="di-row di-basis-laast"><span class="di-arm">Rebooking</span><span class="di-value">* klipp · **** kr</span></div>'
+  +'</div>';
+}
+// Forklaringssetning (begge flater). Knapp + pris er skilt ut fordi de KUN vises på Vekst-fanen.
+function diBasisForklaring(){
+  return '<div class="di-basis-sell">Vekst sender rebooking-SMS automatisk og gir deg en liste over kunder du kan vinne tilbake.</div>';
+}
+// Knapp + pris — KUN Vekst-fanen. På Oversikt bærer «På vei» flaten (det eneste ekte tallet); ingen CTA der.
+function diBasisCtaPris(){
+  return '<button type="button" class="di-cta" data-di-oppgrader>Oppgrader til Vekst</button>'
     +'<div class="di-cta-price">179 kr/mnd, ingen binding</div>';
 }
 function koblePaaVeiCta(host){ var b=host&&host.querySelector('[data-di-oppgrader]'); if(b)b.addEventListener('click',function(){ if(typeof aapneAbonnement==='function')aapneAbonnement(); }); }
@@ -3528,10 +3522,14 @@ async function renderDrivenBy(){
   if(!data){ wrap.innerHTML=''; if(seeAll)seeAll.hidden=true; return; } // feil/401 → tomt, ingen krasj
   var hi=data.hentetInn; // MANGLER for Basis (backend plan-shaper) — fail-trygt under
   if(!hi){
-    // BASIS: ingen «Hentet inn» i det hele tatt — kun På vei + selg + CTA.
+    // BASIS: tre låste armer + forklaring FØR «På vei» (urørt — sterkest på Basis, det eneste ekte tallet).
+    // INGEN total, INGEN CTA på Oversikt (knapp+pris bor kun på Vekst-fanen). Ingen tomrom der totalen sto.
     if(seeAll)seeAll.hidden=true;
-    wrap.innerHTML='<div class="di-card">'+diTitle()+diPaaVeiHtml(data.paaVei,{basis:true})+'</div>';
-    koblePaaVeiCta(wrap);
+    wrap.innerHTML='<div class="di-card">'+diTitle()
+      +'<div class="di-basis-blokk">'+diBasisLaastRader()+diBasisForklaring()+'</div>'
+      +'<div class="di-divider"></div>'
+      +diPaaVeiHtml(data.paaVei,{basis:true})
+    +'</div>';
     return;
   }
   // VEKST: Hentet inn + På vei.
@@ -4126,24 +4124,28 @@ async function initTrialNudge(){
 // Omsetningen er rabattert (price_nok minus discount_pct), ikke listepris.
 var attrPeriod="siste_maaned";   // v2-default (rullende 30 d) — matcher aria-selected på #attrPeriod
 // Vekst «Hvor kundene kommer fra» — KUN Hentet inn-radene (ingen «På vei» her; den er en
-// Oversikt-nudge). Ny shape: leser hentetInn.*, recovery→vinnTilbake, ny lojalitet-arm.
+// Oversikt-nudge). Leser hentetInn.*, recovery→vinnTilbake. Tre armer (lojalitet er IKKE en arm — se diRaderHtml).
 // ⚠ KATEGORIER + REKKEFØLGE SPEILET AV renderDrivenBy() — HOLD DEM I SYNK (delte di-*-byggere).
 async function renderAttribusjon(){
   var el=$("#attrRows"); if(!el)return;
+  var pk=document.getElementById('attrPeriod');
   var data=await api.attribution(attrPeriod);
   if(!data){ el.innerHTML='<p class="wb-empty">Kunne ikke hente tallene akkurat nå.</p>'; return; } // 401→redirigert; annen feil→ærlig melding
   var hi=data.hentetInn; // MANGLER for Basis (backend plan-shaper) — fail-trygt
   if(!hi){
-    // Basis: ingen ekte tall finnes (backend sender aldri hentetInn til Basis) → selg + CTA.
-    el.innerHTML='<div class="di-attr-basis">'+basisVekstSellCta()+'</div>';
+    // Basis: SKJUL periodevelgeren (ingenting å velge periode for) + tre låste armer + forklaring + CTA.
+    // INGEN total. Knapp+pris vises KUN her (Vekst-fanen), ikke på Oversikt. Backend sender aldri hentetInn til Basis.
+    if(pk)pk.hidden=true;
+    el.innerHTML=diBasisLaastRader()+diBasisForklaring()+diBasisCtaPris();
     koblePaaVeiCta(el);
     return;
   }
-  // Turn 3: total øverst (to tall + «denne perioden») + rammefrie rader + bunntekst som siste rad.
-  // Ingen egen «Totalt»-rad (total flyttet til topp). 0-tilstand vises naturlig (dempet total + «Ingen ennå»).
+  if(pk)pk.hidden=false;   // Vekst: velger synlig igjen (om en tidligere basis-render skjulte den)
+  // Turn 3: total øverst (to tall + «denne perioden») + rammefrie rader. Ingen «Totalt»-rad, ingen
+  // bunntekst (flyttet til undertittelen). 0-tilstand vises naturlig (dempet total + «Ingen ennå»).
   var total=hi.total||{count:0,revenue:0};
   el.innerHTML=diTotalHtml(total.count, total.revenue, 'denne perioden', !((total.count||0)>0||(total.revenue||0)>0))
-    +diRaderHtml(hi, 'di-fotnote-vekst');
+    +diRaderHtml(hi);
 }
 // #attrPeriod (turn 3): to piller (2 uker/30 dager) + «3 mnd ▾»-nedtrekk (3/6/12 måneder). 3. pille
 // viser aktivt lengre-valg forkortet (data-kort «6 mnd») + ▾. attrPeriod-state (ALDRI curPeriod).
