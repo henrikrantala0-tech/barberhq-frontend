@@ -62,6 +62,17 @@
   .segs button[aria-selected=true]{background:var(--ink);color:#fff}
   /* 44px trykkhøyde på periode-pillene — KUN #segs/#attrPeriod, ikke verdi-pillene (.segs-val). */
   #segs button,#attrPeriod button{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  /* «Lengre ▾»-nedtrekk i #attrPeriod. Toggle-knappen er en vanlig .segs button (arver pille-styling
+     + mobil-flex). Menyen er absolutt-posisjonert utenfor flex-flyten → forstyrrer ikke de tre segmentene. */
+  #attrPeriod{position:relative}
+  .attr-lengre-meny{position:absolute;top:100%;right:3px;margin-top:6px;z-index:30;background:var(--surface);
+    border:1px solid var(--line-2);border-radius:9px;padding:4px;min-width:184px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+  /* #attrPeriod-prefiks vinner spesifisitet over «#attrPeriod button»-regelen (linje 64) som ellers
+     tvinger inline-flex + justify-content:center på menyknappene. */
+  #attrPeriod .attr-lengre-meny button{display:block;width:100%;min-height:44px;text-align:left;justify-content:flex-start;
+    appearance:none;border:0;background:0;font:inherit;font-size:13px;font-weight:500;color:var(--ink-2);
+    padding:9px 12px;border-radius:6px;cursor:pointer;letter-spacing:-.01em}
+  #attrPeriod .attr-lengre-meny button:hover,#attrPeriod .attr-lengre-meny button[aria-selected=true]{background:var(--line);color:var(--ink)}
   .monthpick{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);font-weight:500}
   .monthpick select{font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink)}
   .rangelabel{font-size:13px;color:var(--mut);letter-spacing:-.01em;font-weight:500}
@@ -1625,12 +1636,19 @@
     <div id="attrKort">
     <p class="sec-h">Drevet av BarberHQ</p>
     <p class="block-s">Klipp BarberHQ hentet inn eller hentet tilbake.</p>
+    <!-- Perioder v2: [2 uker] [Siste måned] [Lengre ▾]. «Denne måneden» (maaned) fjernet.
+         Lengre-nedtrekket (siste_3mnd/6mnd/12mnd, rullende) speiler diagrammets månedsvelger, men
+         bruker attrPeriod-state — ALDRI curPeriod. Menyen er absolutt-posisjonert (utenfor flex-flyten),
+         så de tre pillene forblir tre like segmenter; #attrPeriod er position:relative for ankeret. -->
     <div class="segs" id="attrPeriod" role="group" aria-label="Periode for attribusjon">
-      <!-- Perioder v2 (kontrakt d9048ee): «uke» fjernet. siste_maaned = rullende 30 d (default),
-           maaned = kalendermåned. #segs på Oversikt er URØRT (uke-rekord/persentil er bærende der). -->
       <button type="button" data-p="2uker" aria-selected="false">Siste 2 uker</button>
       <button type="button" data-p="siste_maaned" aria-selected="true">Siste måned</button>
-      <button type="button" data-p="maaned" aria-selected="false">Denne måneden</button>
+      <button type="button" id="attrLengreBtn" data-lengre aria-haspopup="listbox" aria-expanded="false" aria-selected="false">Siste måneder ▾</button>
+      <div class="attr-lengre-meny" id="attrLengreMeny" role="listbox" aria-label="Lengre perioder" hidden>
+        <button type="button" role="option" data-p="siste_3mnd">Siste 3 måneder</button>
+        <button type="button" role="option" data-p="siste_6mnd">Siste 6 måneder</button>
+        <button type="button" role="option" data-p="siste_12mnd">Siste 12 måneder</button>
+      </div>
     </div>
     <div id="attrRows"><p class="wb-empty">Laster …</p></div>
     </div>
@@ -4113,14 +4131,38 @@ async function renderAttribusjon(){
   +'</div>'
   +'<p class="attr-note">Ikke alle klipp i perioden. Kunder som fant deg på egen hånd telles ikke med her.</p>';
 }
-document.querySelectorAll('#attrPeriod button').forEach(function(b){
-  b.addEventListener('click',function(){
-    if(attrPeriod===b.dataset.p)return;
-    attrPeriod=b.dataset.p;
-    document.querySelectorAll('#attrPeriod button').forEach(function(x){ x.setAttribute('aria-selected', x===b?'true':'false'); });
+// #attrPeriod: to piller (2uker/siste_maaned) + «Lengre ▾»-nedtrekk (siste_3mnd/6mnd/12mnd).
+// attrPeriod-state (ALDRI curPeriod). Meny-mønster som diagrammets månedsvelger, men inline pille.
+(function(){
+  var per=document.getElementById('attrPeriod'), lengreBtn=document.getElementById('attrLengreBtn'), meny=document.getElementById('attrLengreMeny');
+  if(!per||!lengreBtn||!meny)return;
+  var pills=[].slice.call(per.querySelectorAll(':scope > button[data-p]'));   // 2uker + siste_maaned (kun direkte barn)
+  var opts=[].slice.call(meny.querySelectorAll('button[data-p]'));            // Lengre-valgene
+  function lukkMeny(){ meny.hidden=true; lengreBtn.setAttribute('aria-expanded','false'); }
+  function velg(period, fraLengre){
+    if(attrPeriod===period){ lukkMeny(); return; }
+    attrPeriod=period;
+    pills.forEach(function(x){ x.setAttribute('aria-selected', x.dataset.p===period?'true':'false'); });
+    if(fraLengre){
+      lengreBtn.setAttribute('aria-selected','true');
+      var o=opts.filter(function(x){return x.dataset.p===period;})[0];
+      lengreBtn.textContent=(o?o.textContent:'Lengre')+' ▾';   // pillen viser aktivt valg
+      opts.forEach(function(x){ x.setAttribute('aria-selected', x.dataset.p===period?'true':'false'); });
+    }else{
+      lengreBtn.setAttribute('aria-selected','false'); lengreBtn.textContent='Siste måneder ▾';
+      opts.forEach(function(x){ x.setAttribute('aria-selected','false'); });
+    }
+    lukkMeny();
     renderAttribusjon();
-  });
-});
+  }
+  pills.forEach(function(b){ b.addEventListener('click',function(){ velg(b.dataset.p,false); }); });
+  opts.forEach(function(o){ o.addEventListener('click',function(){ velg(o.dataset.p,true); }); });
+  lengreBtn.addEventListener('click',function(e){ e.stopPropagation();
+    var apen=lengreBtn.getAttribute('aria-expanded')==='true';
+    meny.hidden=apen; lengreBtn.setAttribute('aria-expanded', apen?'false':'true'); });
+  document.addEventListener('click',function(e){ if(!meny.hidden && !meny.contains(e.target) && e.target!==lengreBtn) lukkMeny(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') lukkMeny(); });
+})();
 
 let imgs=[];
 let _activeSlot=null;
