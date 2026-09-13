@@ -911,6 +911,13 @@
   .di-basis-sell{font-size:12.5px;line-height:1.5;color:var(--mut);margin-top:16px}
   .di-cta{margin-top:14px;width:100%;min-height:46px;background:var(--ink);color:var(--bg);border:none;border-radius:8px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
   .di-cta-price{font-size:11.5px;line-height:1.45;color:var(--mut-2);margin-top:10px;text-align:center}
+  /* Vekst «Hvor kundene kommer fra»: di-radene i egen ramme (Oversikt-panelet gir padding via .di-hentet). */
+  .di-rows-boxed{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
+  .di-rows-boxed .di-row{padding:0 15px}
+  .di-rows-boxed .di-row:first-child{border-top:0}
+  .di-total{border-top:1px solid var(--line-2)}
+  .di-attr-basis{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:18px}
+  .di-attr-basis .di-basis-sell{margin-top:0}
   html[data-theme="dark"] body{background:#0a0a0a}
 /* ----- Tre-kolonns bunnrad ----- */
   /* .bottom-grid er FJERNET — Kommende bookinger og Drevet av deler ikke lenger container.
@@ -4098,51 +4105,33 @@ function visEksempelAttribusjon(el){
   el.innerHTML=eksempelRaderHtml(false);
   var kort=$("#attrKort"); if(kort)settSkjold(kort,{eksempel:true});
 }
+// Vekst «Hvor kundene kommer fra» — KUN Hentet inn-radene (ingen «På vei» her; den er en
+// Oversikt-nudge). Ny shape: leser hentetInn.*, recovery→vinnTilbake, ny lojalitet-arm.
+// ⚠ KATEGORIER + REKKEFØLGE SPEILET AV renderDrivenBy() — HOLD DEM I SYNK (delte di-*-byggere).
 async function renderAttribusjon(){
   var el=$("#attrRows"); if(!el)return;
-  // Basis: skjold + eksempeltall. INGEN API-kall (lekker aldri ekte tall til basis), ingen delta.
-  if(erBasis())return visEksempelAttribusjon(el);
-  var kortEl=$("#attrKort"); if(kortEl)fjernSkjold(kortEl); // ikke-basis → aldri skjold
   var data=await api.attribution(attrPeriod);
-  if(erBasis())return visEksempelAttribusjon(el); // billing kom under fetch → bytt til eksempel
   if(!data){ el.innerHTML='<p class="wb-empty">Kunne ikke hente tallene akkurat nå.</p>'; return; } // 401→redirigert; annen feil→ærlig melding
-  var ver=data.vervet||{count:0,revenue:0};
-  var rec=data.recovery||{count:0,revenue:0};
-  var reb=data.rebooking||{count:0,revenue:0};
-  // data.total er ENESTE kilde for «Totalt»-raden — aldri klient-sum. Mangler den → feilstate.
-  var total=data.total;
-  if(!total||total.revenue==null||total.count==null){
-    el.innerHTML='<p class="wb-empty">Kunne ikke hente tallene akkurat nå.</p>';
+  var hi=data.hentetInn; // MANGLER for Basis (backend plan-shaper) — fail-trygt
+  if(!hi){
+    // Basis: ingen ekte tall finnes (backend sender aldri hentetInn til Basis) → selg + CTA.
+    el.innerHTML='<div class="di-attr-basis">'+basisVekstSellCta()+'</div>';
+    koblePaaVeiCta(el);
     return;
   }
+  var total=hi.total||{count:0,revenue:0};
   if(total.count===0){
     el.innerHTML='<p class="wb-empty">Ingen tilskrevne klipp i denne perioden ennå.</p>';
     return;
   }
-  // ⚠ REKKEFØLGEN ER SPEILET AV renderDrivenBy() PÅ OVERSIKT — HOLD DEM I SYNK.
-  // Rebooking → Verving → Vinn tilbake, med samme farge per kategori begge steder.
-  // Sto tidligere i motsatt orden på de to flatene: samme tre farger, ulik rekkefølge,
-  // som er nøyaktig oppskriften på å lese feil rad ved rask skanning.
-  var rows=[
-    {name:"Rebooking",    o:reb, color:"var(--good)"}, // grønn #3ecf7e
-    {name:"Verving",      o:ver, color:"#e0844a"},     // oransje
-    {name:"Vinn tilbake", o:rec, color:"var(--info)"}, // blå #4d8bff
-  ];
-  // Totalen kommer fra backendens autoritative data.total (sjekket over), ikke klient-sum.
-  // Fortsatt ikke alle klipp i perioden: kategorien 'ny' (kundens første booking uten verving)
-  // klassifiseres og filtreres bort i backend før svaret. Derfor «Totalt» uten prosentandel.
-  var totCount=total.count;
-  var totRev=total.revenue;
-  el.innerHTML='<div class="drv-rows">'+rows.map(function(r){
-    return '<div class="drv-row2">'
-      +'<div class="drv-left"><span class="drv-dot" style="background:'+r.color+'"></span><span class="drv-nm">'+r.name+'</span></div>'
-      +'<div class="drv-right"><span class="drv-cuts">'+(r.o.count||0)+' klipp</span><span class="drv-val">'+krFmt(r.o.revenue||0)+'</span></div>'
-      +'</div>';
-  }).join("")
-    +'<div class="drv-row2 attr-total">'
-      +'<div class="drv-left"><span class="drv-nm">Totalt</span></div>'
-      +'<div class="drv-right"><span class="drv-cuts">'+totCount+' klipp</span><span class="drv-val">'+krFmt(totRev)+'</span></div>'
-    +'</div>'
+  // Totalen fra backendens autoritative hentetInn.total, aldri klient-sum. «ny»-kategorien er
+  // allerede filtrert bort i backend → «Totalt» er et utvalg, ikke en fordeling (attr-note).
+  el.innerHTML='<div class="di-rows di-rows-boxed">'
+    +diArmRad('Verving', hi.vervet)
+    +diLojRad(hi.lojalitet)
+    +diArmRad('Vinn tilbake', hi.vinnTilbake)
+    +diArmRad('Rebooking', hi.rebooking)
+    +'<div class="di-row di-total"><span class="di-arm">Totalt</span><span class="di-value">'+total.count+' klipp · '+krFmt(total.revenue)+'</span></div>'
   +'</div>'
   +'<p class="attr-note">Ikke alle klipp i perioden. Kunder som fant deg på egen hånd telles ikke med her.</p>';
 }
