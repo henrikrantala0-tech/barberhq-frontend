@@ -2341,7 +2341,7 @@
            avmeldt, kvote, ugyldig nummer) etterlater INGEN rad, derfor info-noten: en tom
            liste betyr ikke at ingen skulle fått SMS. Ingen leveringsstatus finnes (ingen
            status-kolonne/-prikker — det ville vært en påstand uten grunnlag). Kvote-varselet
-           gjelder KUN markedsførings-SMS; påminnelser/bekreftelser belaster ikke taket.
+           gjelder KUN markedsførings-SMS; påminnelser belaster ikke taket.
            [oversettelse: sv/da/en] -->
       <div class="acc" id="accSmsLogg">
         <button type="button" class="acc-head" aria-expanded="false">
@@ -3588,11 +3588,11 @@ async function loadSmsLogg(){
   renderSmsLogg(!!d.har_mer);
 }
 // Kvote-varsel KUN nær taket (>=80% av månedstaket). Gjelder markedsførings-SMS; påminnelser
-// og bekreftelser belaster IKKE taket (backend teller dem ikke inn), og teksten sier det.
+// belaster IKKE taket (backend teller dem ikke inn), og teksten sier det.
 function renderSmsKvote(f){
   var el=$("#smsKvote"); if(!el) return;
   if(f && f.monthly_cap>0 && f.barber_month>=Math.ceil(f.monthly_cap*0.8)){
-    el.innerHTML='<strong>'+f.barber_month+' av '+f.monthly_cap+'</strong> markedsførings-SMS brukt denne måneden. Påminnelser og bekreftelser teller ikke med i grensen.';
+    el.innerHTML='<strong>'+f.barber_month+' av '+f.monthly_cap+'</strong> markedsførings-SMS brukt denne måneden. Påminnelser teller ikke med i grensen.';
     el.style.display='';
   } else { el.style.display='none'; }
 }
