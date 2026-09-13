@@ -3222,7 +3222,7 @@ function renderWeekInsight(p){
   var wi=$("#weekInsight"); if(!wi) return;
   if(curPeriod!=="uke" || !p){ wi.hidden=true; return; } // 2uker/måned/historisk måned → skjul rent
   var wr=p.weekly_revenue||[], cur=p.current_week_revenue||0, best=p.best_week_revenue||0;
-  var beaten = best>0 && cur>=best;
+  var beaten = best>0 && cur>best;   // > (ikke >=) — matcher applyRekord (:3203) og produktets fasit i CLAUDE.md; en uke lik beste uke har ikke slått rekorden ennå
   // Persentil: andel ferdige uker med revenue < inneværende. Vis kun ≥6 uker & ≥50% & ikke rekord (redundant).
   var showPct=false, pct=0;
   if(wr.length>=6 && !beaten){
