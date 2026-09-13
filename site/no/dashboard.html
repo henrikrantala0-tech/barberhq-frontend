@@ -5438,7 +5438,7 @@ $("#loyalSett").addEventListener('click',async function(e){
   if(ja){
     ja.disabled=true; ja.textContent='Slår av …';
     var r=await api.saveSettings({loyalty_enabled:false});
-    if(erSettings403(r)){ visSettingsLaas($("#loyalSettErr")); return; }
+    if(erSettings403(r)){ ja.disabled=false; ja.textContent='Slå av likevel'; visSettingsLaas($("#loyalSettErr")); return; } // re-enable + tekst tilbake som søsken-grenene (5411/5426); ellers henger knappen på «Slår av …»
     if(r&&r.ok){ var w=$("#loyalOffWarn"); if(w)w.hidden=true; loadLoyalty(); }
     else { ja.disabled=false; ja.textContent='Slå av likevel'; showToast('Kunne ikke slå av. Prøv igjen.'); }
     return;
