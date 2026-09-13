@@ -3286,12 +3286,9 @@ function renderWeekInsight(p){
 }
 function krFmt(n){return (n||0).toLocaleString("no-NO")+" kr";} // "9 800 kr" (kr bak, no-NO tusenskille)
 
-/* ---- Vekst-skjold (Basis-visning) — deles av Oversikt «Drevet av» + Vekst-flatene ---- */
-// Eksempeltall bak skjoldet — KUN i attribusjonskortene, hardkodet i ÉN blokk. Ingen delta.
-var VEKST_EKSEMPEL={rebooking:{count:10,revenue:3900},vervet:{count:3,revenue:1150},
-  recovery:{count:5,revenue:1800},total:{count:18,revenue:6850}};
-// Lojalitet har BEVISST ingen eksempeltall bak skjoldet — kortet skjoldes som accordionene og viser
-// bare sin egen beskrivelse (ingenting å skimte). De to «Drevet av»-flatene beholder eksemplene over.
+/* ---- Vekst-skjold (Basis-visning) — deles av Vekst-flatene (handlings-lås) ---- */
+// (VEKST_EKSEMPEL + eksempel-hjelpere fjernet 14.09: «Drevet av»-panelet viser ikke lenger
+//  eksempeltall bak skjold for Basis — backend sender ingen hentetInn, og panelet viser CTA i stedet.)
 var SKJOLD_LAAS_SVG='<svg class="skjold-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>';
 // Skjold-klikk → Konto-fanen + åpne/scroll abonnementsseksjonen. Gjenbruker switchPanel (ingen ny fanebytte).
 function aapneAbonnement(){
@@ -3377,22 +3374,6 @@ function visSettingsLaas(errEl, prefix){
   errEl.hidden=false;
   var a=errEl.querySelector('a'); if(a)a.addEventListener('click',function(e){e.preventDefault();aapneAbonnement();});
 }
-// Eksempel-rader (delt drv-markup). hero=true → «Drevet av»-stil (hero-tall); ellers Vekst-stil
-// («Totalt»-rad + attr-note). Ingen delta i noen av dem. «Eksempel»-merket legges av settSkjold.
-function eksempelRaderHtml(hero){
-  var E=VEKST_EKSEMPEL;
-  var rows=[{name:"Rebooking",o:E.rebooking,color:"var(--good)"},{name:"Verving",o:E.vervet,color:"#e0844a"},{name:"Vinn tilbake",o:E.recovery,color:"var(--info)"}];
-  var rowsHtml=rows.map(function(r){return '<div class="drv-row2"><div class="drv-left"><span class="drv-dot" style="background:'+r.color+'"></span><span class="drv-nm">'+r.name+'</span></div><div class="drv-right"><span class="drv-cuts">'+r.o.count+' klipp</span><span class="drv-val">'+krFmt(r.o.revenue)+'</span></div></div>';}).join("");
-  if(hero){
-    return '<div class="drv-hero"><p class="drv-hero-lbl">Hentet inn med BarberHQ</p><p class="drv-hero-num">'+krFmt(E.total.revenue)+'</p></div>'
-      +'<div class="drv-rows">'+rowsHtml+'</div>'
-      +'<p class="drv-trust">Kun fullførte, betalte klipp. Estimert fra dine priser.</p>';
-  }
-  return '<div class="drv-rows">'+rowsHtml
-    +'<div class="drv-row2 attr-total"><div class="drv-left"><span class="drv-nm">Totalt</span></div><div class="drv-right"><span class="drv-cuts">'+E.total.count+' klipp</span><span class="drv-val">'+krFmt(E.total.revenue)+'</span></div></div>'
-    +'</div><p class="attr-note">Ikke alle klipp i perioden. Kunder som fant deg på egen hånd telles ikke med her.</p>';
-}
-function eksempelDrivenByHtml(){ return eksempelRaderHtml(true); }
 // Re-render skjoldede flater etter at billing (effective_plan) er lastet — flatene kan ha rendret
 // før _billing kom (erBasis var false → ekte/tom sti). Kalles fra loadBilling.
 function oppdaterSkjoldFlater(){
@@ -3409,16 +3390,6 @@ function oppdaterSkjoldFlater(){
   }
 }
 
-// «Drevet av BarberHQ» (Oversikt): hero-tall + delta + tre rader fra EKTE /attribution (count+revenue).
-// Henter SITT eget periode-tall — ikke stolpediagrammets total (diagram = alle klipp, panel = funksjons-klipp).
-// Basis-visning av «Drevet av»: eksempeltall + skjold. Synkron (ingen fetch) → kan aldri klobbes
-// av et sent await. Delt fast-path + post-await-fallback i renderDrivenBy mot billing-race.
-function visEksempelDrivenBy(wrap){
-  var lbl=$("#drivenByLabel"); if(lbl)lbl.textContent="Klipp BarberHQ hentet inn eller hentet tilbake.";
-  var sa=$("#drivenBySeeAll"); if(sa)sa.hidden=false; // «Se alt i Vekst» står, fører til (skjoldede) Vekst
-  wrap.innerHTML=eksempelDrivenByHtml();
-  settSkjold(wrap,{eksempel:true});
-}
 // ── «Drevet av BarberHQ» v2 — delte byggere (brukt av renderDrivenBy + renderAttribusjon) ──
 // Kontrakt (backend 46898fd+d9048ee): { paaVei, hentetInn? }. hentetInn MANGLER for Basis —
 // fravær = signalet, aldri en tom verdi. Alt leses via ?. / ||-guard → manglende nøkkel kaster aldri.
@@ -4100,11 +4071,6 @@ async function initTrialNudge(){
 // filtrerer den bort før den svarer. Derfor ingen prosentandeler her — kun absolutte tall.
 // Omsetningen er rabattert (price_nok minus discount_pct), ikke listepris.
 var attrPeriod="maaned";
-// Basis-visning av Vekst-attribusjonen: eksempeltall + skjold på #attrKort. Synkron.
-function visEksempelAttribusjon(el){
-  el.innerHTML=eksempelRaderHtml(false);
-  var kort=$("#attrKort"); if(kort)settSkjold(kort,{eksempel:true});
-}
 // Vekst «Hvor kundene kommer fra» — KUN Hentet inn-radene (ingen «På vei» her; den er en
 // Oversikt-nudge). Ny shape: leser hentetInn.*, recovery→vinnTilbake, ny lojalitet-arm.
 // ⚠ KATEGORIER + REKKEFØLGE SPEILET AV renderDrivenBy() — HOLD DEM I SYNK (delte di-*-byggere).
