@@ -3407,8 +3407,13 @@ function pvDato(iso){ // 'YYYY-MM-DD' → «14. sep»; null/ugyldig → null
 // Hentet inn-rad. o={count,revenue}. opts.av=true → «Av»-tilstand (40%): DØD KODE i dag — rebooking
 // KAN slås av (sms_rebooking_enabled), men /attribution bærer ingen på/av-status. Utløses aldri før
 // backend evt. legger et arm-flagg. Se rapport 14.09. aktiv m/tall = hvit, aktiv u/tall = dempet (55%).
-function diArmRad(navn, o, opts){
-  if(opts && opts.av){ return '<div class="di-row di-off"><span class="di-arm">'+esc(navn)+'</span><span class="di-value">Av</span></div>'; }
+function diArmRad(navn, o){
+  // Armer MED aktivert-nøkkel (rebooking = sms_rebooking_enabled): aktivert===false → «Av»-tilstand
+  // (40%), UAVHENGIG av om armen har tall. Verving + vinn-tilbake har ingen aktivert-nøkkel
+  // (undefined !== false) → går aldri av-veien.
+  if(o && o.aktivert===false){
+    return '<div class="di-row di-off"><span class="di-arm">'+esc(navn)+'</span><span class="di-value">Av</span></div>';
+  }
   var har=!!(o && o.count>0);
   return '<div class="di-row'+(har?'':' di-zero')+'"><span class="di-arm">'+esc(navn)+'</span>'
     +'<span class="di-value">'+(o?(o.count||0):0)+' klipp · '+krFmt(o?(o.revenue||0):0)+'</span></div>';
@@ -3417,12 +3422,17 @@ function diArmRad(navn, o, opts){
 // (blå) — matcher ny konto (2c). ⚠ Uten et loyalty_enabled-flagg i /attribution kan «Sett opp»
 // (ikke aktivert) og «uten deltakere» (aktivert, 0 opt-in) IKKE skilles — vi viser «Sett opp». Se rapport.
 function diLojRad(loj){
-  var p=(loj&&loj.program)||{klipp:0,kunder:0};
+  var p=(loj&&loj.program)||{klipp:0,kunder:0,aktivert:false};
   var etikett='<span class="di-loj-label"><span class="di-arm">Lojalitet</span><span class="di-loj-sub">totalt</span></span>';
-  if((p.kunder||0)>0){
-    return '<div class="di-row">'+etikett+'<span class="di-value">'+(p.klipp||0)+' klipp · '+(p.kunder||0)+' kunder i programmet</span></div>';
+  // aktivert (= loyalty_enabled) skiller «ikke aktivert» fra «aktivert, 0 kunder».
+  if(!p.aktivert){
+    return '<div class="di-row">'+etikett+'<span class="di-value di-setup">Sett opp</span></div>';
   }
-  return '<div class="di-row">'+etikett+'<span class="di-value di-setup">Sett opp</span></div>';
+  if((p.kunder||0)===0){
+    // aktivert, men ingen deltakere → dempet 0-rad (skilles fra «Sett opp»)
+    return '<div class="di-row di-zero">'+etikett+'<span class="di-value">0 klipp · 0 kunder i programmet</span></div>';
+  }
+  return '<div class="di-row">'+etikett+'<span class="di-value">'+(p.klipp||0)+' klipp · '+(p.kunder||0)+' kunder i programmet</span></div>';
 }
 // Hentet inn-blokk (kun Vekst): eyebrow + hovedtall + fire armer i låst presedens-rekkefølge.
 // ⚠ REKKEFØLGE + KATEGORIER SPEILET AV renderAttribusjon() — HOLD DEM I SYNK.
