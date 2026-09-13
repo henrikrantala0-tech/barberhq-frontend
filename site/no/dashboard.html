@@ -3966,7 +3966,14 @@ function renderMomentum(m){
 }
 async function loadMomentum(){
   // Bonus, ikke kjerne: feiler kallet, viser vi ingenting (ingen feilmelding, ingen tom boks).
-  try{ renderMomentum(await api.momentum()); }
+  // Gatet som søsknene (loadVerving/loadWinback/loadLoyalty): billingUkjent() FØR erBasis().
+  if(billingUkjent()){ return; }                    // plan ukjent → ikke hent; oppdaterSkjoldFlater kjører loadMomentum på nytt når billing lander. (Bonus-kort → ingen billing-feilmelding, bare skjult.)
+  if(erBasis()){ renderMomentum(null); return; }    // Basis: skjul kortet, INGEN fetch, INGEN ekte tall bak lås
+  try{
+    var m=await api.momentum();
+    if(erBasis()){ renderMomentum(null); return; }  // billing kom under fetch → ikke render ekte tall (som loadLoyalty)
+    renderMomentum(m);
+  }
   catch(e){ var c=$("#momentumCard"); if(c)c.hidden=true; }
 }
 // Knapp → åpne Verving-trekkspillet i samme fane og scroll dit.
