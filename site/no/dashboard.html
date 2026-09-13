@@ -3383,6 +3383,10 @@ function visEksempelDrivenBy(wrap){
 }
 async function renderDrivenBy(period){
   var wrap=$("#drivenBy"); if(!wrap)return;
+  // Plan må være kjent FØR henting: uten dette kan en Basis-konto rekke å hente ekte /attribution i
+  // oppstarts-race-et (erBasis() er false mens _billing===null). Samme vakt som loadMomentum (3da2f68):
+  // billingUkjent() FØRST, så erBasis(). oppdaterSkjoldFlater re-kjører renderDrivenBy når billing lander.
+  if(billingUkjent())return;
   // Basis: skjold + eksempeltall. INGEN API-kall (lekker aldri ekte tall til basis), ingen delta.
   if(erBasis())return visEksempelDrivenBy(wrap);
   fjernSkjold(wrap); // ikke-basis → aldri skjold (rydder .skjold-vert-klassen før ekte render)
