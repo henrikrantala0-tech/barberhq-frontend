@@ -4519,7 +4519,7 @@ $("#pauseModalList").addEventListener("change",e=>{const i=+e.target.dataset.pm;
   else if(e.target.dataset.pmf){hours[i].breaks=hours[i].breaks||[]; if(!hours[i].breaks[0])hours[i].breaks[0]={start:'',end:''}; hours[i].breaks[0][e.target.dataset.pmf]=e.target.value;}});
 $("#saveHours").addEventListener("click",async()=>{const btn=$("#saveHours");btn.disabled=true;btn.textContent="Lagrer …";$("#hoursErr").textContent="";
   const res=await api.saveHours(hours);btn.disabled=false;btn.textContent="Lagre arbeidstider";
-  if(res.ok){const s=$("#hoursSaved");s.classList.add("show");setTimeout(()=>s.classList.remove("show"),1800);oppdaterSjekkliste();/* åpen-dag-haken kan ha endret seg */}
+  if(res.ok){await loadArbeidstider();/* refetch: ufullstendige pauser (start uten slutt) droppes i payloaden (api.saveHours) men blir stående lokalt → speil backend, som saveSvc/savePay. Ellers viser pause-modalen en fantompause til full reload. */ const s=$("#hoursSaved");s.classList.add("show");setTimeout(()=>s.classList.remove("show"),1800);oppdaterSjekkliste();/* åpen-dag-haken kan ha endret seg */}
   else if(res.error){$("#hoursErr").textContent=res.error;}});   // 409 booking-kollisjon / 400 validering — ordrett
 
 $("#gcalBtn").addEventListener("click",async()=>{
