@@ -3418,9 +3418,9 @@ function diArmRad(navn, o){
   return '<div class="di-row'+(har?'':' di-zero')+'"><span class="di-arm">'+esc(navn)+'</span>'
     +'<span class="di-value">'+(o?(o.count||0):0)+' klipp · '+krFmt(o?(o.revenue||0):0)+'</span></div>';
 }
-// Lojalitet-rad: ALDRI kroner. program={klipp,kunder} (beholdning). kunder>0 → tall; ellers «Sett opp»
-// (blå) — matcher ny konto (2c). ⚠ Uten et loyalty_enabled-flagg i /attribution kan «Sett opp»
-// (ikke aktivert) og «uten deltakere» (aktivert, 0 opt-in) IKKE skilles — vi viser «Sett opp». Se rapport.
+// Lojalitet-rad: ALDRI kroner. program={klipp,kunder,aktivert}. aktivert (= loyalty_enabled, backend
+// 8a7c159) skiller tre tilstander: false → «Sett opp» (blå) · true+0 kunder → dempet «0 klipp · 0
+// kunder i programmet» · kunder>0 → normal rad. Kronene fra innløsninger ligger i totalen, ikke her.
 function diLojRad(loj){
   var p=(loj&&loj.program)||{klipp:0,kunder:0,aktivert:false};
   var etikett='<span class="di-loj-label"><span class="di-arm">Lojalitet</span><span class="di-loj-sub">totalt</span></span>';
