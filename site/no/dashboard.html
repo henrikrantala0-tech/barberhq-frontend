@@ -2918,7 +2918,7 @@ const $=s=>document.querySelector(s);
 function switchPanel(id){document.querySelector('.nav button[data-panel="'+id+'"]').click();}
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const pct=(a,b)=>b?Math.round(a/b*100):0;
-function esc(s){return(s||"").replace(/[&<>]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;"}[c]))}
+function esc(s){return(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
 
 let curPeriod="uke";
 
