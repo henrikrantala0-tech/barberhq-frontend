@@ -60,19 +60,27 @@
   .segs{display:inline-flex;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:3px}
   .segs button{appearance:none;border:0;background:0;font:inherit;font-size:12.5px;font-weight:500;color:var(--mut);padding:6px 13px;border-radius:6px;cursor:pointer;letter-spacing:-.01em}
   .segs button[aria-selected=true]{background:var(--ink);color:#fff}
-  /* 44px trykkhøyde på periode-pillene — KUN #segs/#attrPeriod, ikke verdi-pillene (.segs-val). */
-  #segs button,#attrPeriod button{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
-  /* «Lengre ▾»-nedtrekk i #attrPeriod. Toggle-knappen er en vanlig .segs button (arver pille-styling
-     + mobil-flex). Menyen er absolutt-posisjonert utenfor flex-flyten → forstyrrer ikke de tre segmentene. */
-  #attrPeriod{position:relative}
-  .attr-lengre-meny{position:absolute;top:100%;right:3px;margin-top:6px;z-index:30;background:var(--surface);
-    border:1px solid var(--line-2);border-radius:9px;padding:4px;min-width:184px;box-shadow:0 6px 20px rgba(0,0,0,.18)}
-  /* #attrPeriod-prefiks vinner spesifisitet over «#attrPeriod button»-regelen (linje 64) som ellers
-     tvinger inline-flex + justify-content:center på menyknappene. */
-  #attrPeriod .attr-lengre-meny button{display:block;width:100%;min-height:44px;text-align:left;justify-content:flex-start;
-    appearance:none;border:0;background:0;font:inherit;font-size:13px;font-weight:500;color:var(--ink-2);
-    padding:9px 12px;border-radius:6px;cursor:pointer;letter-spacing:-.01em}
-  #attrPeriod .attr-lengre-meny button:hover,#attrPeriod .attr-lengre-meny button[aria-selected=true]{background:var(--line);color:var(--ink)}
+  /* 44px trykkhøyde på #segs-pillene (Oversikt-diagram). */
+  #segs button{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
+  /* Vekst-fanens periodevelger (#attrPeriod, design turn 3) — kompakt segmentert kontroll.
+     Designets dark-hexer er tema-mappet (som resten av panelet) så den også virker i lys modus:
+     #0e0e0e→--bg, #242424→--line, aktiv → --ink (lys) / #2563eb (mørk, som #segs). Oversikt-panelet
+     har INGEN velger (frikoblet, siste_maaned — da564bd). */
+  #attrPeriod{position:relative;display:flex;gap:4px;height:42px;box-sizing:border-box;padding:3px;
+    background:var(--bg);border:1px solid var(--line);border-radius:10px}
+  #attrPeriod .perseg-btn{flex:1;border:none;border-radius:8px;background:transparent;font-family:inherit;
+    font-size:12.5px;font-weight:600;color:var(--mut);cursor:pointer;letter-spacing:-.01em;white-space:nowrap}
+  #attrPeriod .perseg-btn:hover{color:var(--ink)}
+  #attrPeriod .perseg-btn[aria-selected=true]{background:var(--ink);color:#fff}
+  html[data-theme="dark"] #attrPeriod .perseg-btn[aria-selected=true]{background:#2563eb;color:#fff}
+  .perseg-meny{position:absolute;top:100%;right:0;margin-top:6px;width:150px;z-index:30;background:var(--surface);
+    border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.55);padding:5px}
+  .perseg-meny button{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:38px;
+    padding:0 10px;border-radius:7px;appearance:none;border:0;background:0;font:inherit;font-size:12.5px;
+    font-weight:500;color:var(--ink-2);cursor:pointer;text-align:left}
+  .perseg-meny button:hover{background:var(--line)}
+  .perseg-meny button[aria-selected=true]{background:var(--line);color:var(--ink);font-weight:600}
+  .perseg-meny button[aria-selected=true]::after{content:"✓";color:var(--mut);font-weight:600}
   .monthpick{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);font-weight:500}
   .monthpick select{font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink)}
   .rangelabel{font-size:13px;color:var(--mut);letter-spacing:-.01em;font-weight:500}
@@ -893,21 +901,31 @@
      designets dark-hex #141414/#242424/#8a8a8a/#cfcfcf/#4d8bff = mørk-tema-verdiene). Ingen prikker. */
   .di-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
   .di-title{padding:18px 18px 0;font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
-  .di-hentet{padding:16px 18px 4px}
-  .di-eyebrow{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mut)}
-  .di-hero{font-size:36px;font-weight:800;letter-spacing:-.035em;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums;margin-top:11px}
-  .di-hero.di-hero-zero{color:var(--mut)}
-  .di-kr{font-weight:300;font-size:23px;color:var(--ink-2)}
-  .di-rows{margin-top:14px}
+  .di-hentet{padding:18px 18px 2px}
+  .di-eyebrow{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mut);margin-bottom:12px}
+  /* Totalblokka (turn 3): to stablede tall + periode-etikett. */
+  .di-total-klipp{font-size:30px;font-weight:800;letter-spacing:-.035em;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
+  .di-total-kr{font-size:34px;font-weight:800;letter-spacing:-.035em;line-height:1;margin-top:6px;color:var(--ink);font-variant-numeric:tabular-nums}
+  .di-kr{font-weight:300;font-size:22px;color:var(--ink-2)}
+  .di-total.di-tom .di-total-klipp,.di-total.di-tom .di-total-kr{color:var(--mut)}
+  .di-periode{font-size:12px;color:var(--mut);margin-top:8px}
+  .di-rows{margin-top:16px}
   .di-row{display:flex;align-items:center;justify-content:space-between;gap:14px;min-height:48px;border-top:1px solid var(--line)}
+  .di-row.di-loj{min-height:58px}   /* lojalitet: alltid 3 linjer (primær + 2 sekundær) */
   .di-arm{font-size:13.5px;font-weight:500;color:var(--ink)}
   .di-value{font-size:13px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
-  .di-row.di-zero .di-arm,.di-row.di-zero .di-value{color:var(--mut);font-weight:500}
+  .di-row.di-zero .di-arm,.di-row.di-zero .di-value{color:var(--mut);font-weight:500}  /* «Ingen ennå» ≈55% */
   .di-row.di-zero .di-value{font-size:12.5px}
-  .di-row.di-off .di-arm,.di-row.di-off .di-value{color:var(--mut-2)}   /* «Av» — DØD KODE (ingen kilde i /attribution) */
+  .di-row.di-off .di-arm,.di-row.di-off .di-value{color:var(--mut-2)}  /* «Av» ≈40% — skillbar fra «Ingen ennå» */
   .di-value.di-setup{color:var(--info);font-weight:600;font-size:13px}
-  .di-loj-label{display:flex;align-items:baseline;gap:7px;min-width:0}
-  .di-loj-sub{font-size:11.5px;color:var(--mut-2);font-weight:400}
+  /* Lojalitet-verdi: periode-primær + to beholdnings-sekundærlinjer. */
+  .di-loj-val{text-align:right}
+  .di-loj-primaer{display:block;font-size:13px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums}
+  .di-loj-primaer.di-tom{color:var(--mut);font-weight:500;font-size:12.5px}   /* «Ingen ennå» som primær */
+  .di-loj-sek{display:block;font-size:12px;color:var(--mut);margin-top:3px;font-variant-numeric:tabular-nums}
+  /* Bunntekst som siste rad i radgruppa (hårlinje over), ikke egen blokk. */
+  .di-fotnote{font-size:11.5px;line-height:1.45;color:var(--mut);border-top:1px solid var(--line);padding:12px 0 4px}
+  .di-fotnote.di-fotnote-vekst{padding:12px 0 0}
   .di-divider{height:1px;background:var(--line);margin-top:6px}
   .di-pv{padding:18px 18px 20px}
   .di-pv-eyebrow{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mut)}
@@ -922,11 +940,6 @@
   .di-basis-sell{font-size:12.5px;line-height:1.5;color:var(--mut);margin-top:16px}
   .di-cta{margin-top:14px;width:100%;min-height:46px;background:var(--ink);color:var(--bg);border:none;border-radius:8px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
   .di-cta-price{font-size:11.5px;line-height:1.45;color:var(--mut-2);margin-top:10px;text-align:center}
-  /* Vekst «Hvor kundene kommer fra»: di-radene i egen ramme (Oversikt-panelet gir padding via .di-hentet). */
-  .di-rows-boxed{border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
-  .di-rows-boxed .di-row{padding:0 15px}
-  .di-rows-boxed .di-row:first-child{border-top:0}
-  .di-total{border-top:1px solid var(--line-2)}
   .di-attr-basis{border:1px solid var(--line);border-radius:12px;background:var(--surface);padding:18px}
   .di-attr-basis .di-basis-sell{margin-top:0}
   html[data-theme="dark"] body{background:#0a0a0a}
@@ -1635,19 +1648,19 @@
          Wrapper sec-h + periodevelger + rader som ÉN enhet; momentum-kortet under er egen host. -->
     <div id="attrKort">
     <p class="sec-h">Drevet av BarberHQ</p>
-    <p class="block-s">Klipp BarberHQ hentet inn eller hentet tilbake.</p>
-    <!-- Perioder v2: [2 uker] [Siste måned] [Lengre ▾]. «Denne måneden» (maaned) fjernet.
-         Lengre-nedtrekket (siste_3mnd/6mnd/12mnd, rullende) speiler diagrammets månedsvelger, men
-         bruker attrPeriod-state — ALDRI curPeriod. Menyen er absolutt-posisjonert (utenfor flex-flyten),
-         så de tre pillene forblir tre like segmenter; #attrPeriod er position:relative for ankeret. -->
-    <div class="segs" id="attrPeriod" role="group" aria-label="Periode for attribusjon">
-      <button type="button" data-p="2uker" aria-selected="false">Siste 2 uker</button>
-      <button type="button" data-p="siste_maaned" aria-selected="true">Siste måned</button>
-      <button type="button" id="attrLengreBtn" data-lengre aria-haspopup="listbox" aria-expanded="false" aria-selected="false">Siste måneder ▾</button>
-      <div class="attr-lengre-meny" id="attrLengreMeny" role="listbox" aria-label="Lengre perioder" hidden>
-        <button type="button" role="option" data-p="siste_3mnd">Siste 3 måneder</button>
-        <button type="button" role="option" data-p="siste_6mnd">Siste 6 måneder</button>
-        <button type="button" role="option" data-p="siste_12mnd">Siste 12 måneder</button>
+    <p class="block-s">Klipp BarberHQ har hentet inn eller hentet tilbake.</p>
+    <!-- Periodevelger turn 3: kompakt segmentert kontroll [2 uker][30 dager][3 mnd ▾]. 3. pille bærer
+         nedtrekket (3/6/12 måneder) og viser aktivt valg forkortet («6 mnd ▾»). attrPeriod-state, ALDRI
+         curPeriod. Verdier: 2uker / siste_maaned (=«30 dager») / siste_3mnd/6mnd/12mnd. Menyen er absolutt-
+         posisjonert (utenfor flex-flyten). KUN her — Oversikt-panelet har ingen velger (da564bd). -->
+    <div id="attrPeriod" role="group" aria-label="Periode for attribusjon">
+      <button type="button" class="perseg-btn" data-p="2uker" aria-selected="false">2 uker</button>
+      <button type="button" class="perseg-btn" data-p="siste_maaned" aria-selected="true">30 dager</button>
+      <button type="button" class="perseg-btn" id="attrLengreBtn" data-lengre aria-haspopup="listbox" aria-expanded="false" aria-selected="false">3 mnd ▾</button>
+      <div class="perseg-meny" id="attrLengreMeny" role="listbox" aria-label="Lengre perioder" hidden>
+        <button type="button" role="option" data-p="siste_3mnd" data-kort="3 mnd">3 måneder</button>
+        <button type="button" role="option" data-p="siste_6mnd" data-kort="6 mnd">6 måneder</button>
+        <button type="button" role="option" data-p="siste_12mnd" data-kort="12 mnd">12 måneder</button>
       </div>
     </div>
     <div id="attrRows"><p class="wb-empty">Laster …</p></div>
@@ -3414,56 +3427,67 @@ function oppdaterSkjoldFlater(){
 // Kontrakt (backend 46898fd+d9048ee): { paaVei, hentetInn? }. hentetInn MANGLER for Basis —
 // fravær = signalet, aldri en tom verdi. Alt leses via ?. / ||-guard → manglende nøkkel kaster aldri.
 function diTitle(){ return '<div class="di-title">Drevet av BarberHQ</div>'; }
-function diHero(rev){ // hovedtall: «2 048» + dempet « kr»; 0 → dempet hele
-  return '<div class="di-hero'+((rev||0)>0?'':' di-hero-zero')+'">'+(rev||0).toLocaleString('no-NO')+'<span class="di-kr"> kr</span></div>';
+// Totalblokka (turn 3): to stablede tall «N klipp» + «X kr» + periode-etikett. tom → dempede tall.
+function diTotalHtml(count, revenue, periodeTekst, tom){
+  return '<div class="di-total'+(tom?' di-tom':'')+'">'
+    +'<div class="di-total-klipp">'+(count||0)+' klipp</div>'
+    +'<div class="di-total-kr">'+(revenue||0).toLocaleString('no-NO')+'<span class="di-kr"> kr</span></div>'
+    +'<div class="di-periode">'+esc(periodeTekst)+'</div></div>';
 }
 function pvDato(iso){ // 'YYYY-MM-DD' → «14. sep»; null/ugyldig → null
   if(!iso) return null;
   var d=new Date(iso+'T12:00:00'); if(isNaN(d.getTime())) return null;
   return d.toLocaleDateString('nb-NO',{day:'numeric',month:'short'}).replace(/\.$/,'');
 }
-// Hentet inn-rad. o={count,revenue}. opts.av=true → «Av»-tilstand (40%): DØD KODE i dag — rebooking
-// KAN slås av (sms_rebooking_enabled), men /attribution bærer ingen på/av-status. Utløses aldri før
-// backend evt. legger et arm-flagg. Se rapport 14.09. aktiv m/tall = hvit, aktiv u/tall = dempet (55%).
+// Arm-rad. count>0 → «N klipp · X kr» (hvit); count===0 → «Ingen ennå» (dempet ≈55%); aktivert===false
+// → «Av» (≈40%, UAVHENGIG av tall). Verving/vinn-tilbake har ingen aktivert-nøkkel → aldri av-veien.
 function diArmRad(navn, o){
-  // Armer MED aktivert-nøkkel (rebooking = sms_rebooking_enabled): aktivert===false → «Av»-tilstand
-  // (40%), UAVHENGIG av om armen har tall. Verving + vinn-tilbake har ingen aktivert-nøkkel
-  // (undefined !== false) → går aldri av-veien.
   if(o && o.aktivert===false){
     return '<div class="di-row di-off"><span class="di-arm">'+esc(navn)+'</span><span class="di-value">Av</span></div>';
   }
-  var har=!!(o && o.count>0);
-  return '<div class="di-row'+(har?'':' di-zero')+'"><span class="di-arm">'+esc(navn)+'</span>'
-    +'<span class="di-value">'+(o?(o.count||0):0)+' klipp · '+krFmt(o?(o.revenue||0):0)+'</span></div>';
+  if(o && o.count>0){
+    return '<div class="di-row"><span class="di-arm">'+esc(navn)+'</span>'
+      +'<span class="di-value">'+o.count+' klipp · '+krFmt(o.revenue||0)+'</span></div>';
+  }
+  return '<div class="di-row di-zero"><span class="di-arm">'+esc(navn)+'</span><span class="di-value">Ingen ennå</span></div>';
 }
-// Lojalitet-rad: ALDRI kroner. program={klipp,kunder,aktivert}. aktivert (= loyalty_enabled, backend
-// 8a7c159) skiller tre tilstander: false → «Sett opp» (blå) · true+0 kunder → dempet «0 klipp · 0
-// kunder i programmet» · kunder>0 → normal rad. Kronene fra innløsninger ligger i totalen, ikke her.
+// Lojalitet-rad: primær = periodens innløsninger «N klipp · X kr» (MED kr, som andre armer) eller «Ingen
+// ennå» ved tom periode; ALLTID to beholdnings-sekundærlinjer under: «N kunder i programmet» / «N klipp
+// registrert». aktivert=false (loyalty_enabled) → «Sett opp» (blå, 1 linje). aktivert=true → alltid 3
+// linjer (58px), også ved 0/0 (som er en ANNEN tilstand enn «Sett opp»). Identisk Oversikt/Vekst.
+// ⚠ program.{klipp,kunder} er BEHOLDNING — aldri i total (backend summerer kun count/revenue).
 function diLojRad(loj){
-  var p=(loj&&loj.program)||{klipp:0,kunder:0,aktivert:false};
-  var etikett='<span class="di-loj-label"><span class="di-arm">Lojalitet</span><span class="di-loj-sub">totalt</span></span>';
-  // aktivert (= loyalty_enabled) skiller «ikke aktivert» fra «aktivert, 0 kunder».
+  var l=loj||{count:0,revenue:0}, p=(loj&&loj.program)||{klipp:0,kunder:0,aktivert:false};
   if(!p.aktivert){
-    return '<div class="di-row">'+etikett+'<span class="di-value di-setup">Sett opp</span></div>';
+    return '<div class="di-row"><span class="di-arm">Lojalitet</span><span class="di-value di-setup">Sett opp</span></div>';
   }
-  if((p.kunder||0)===0){
-    // aktivert, men ingen deltakere → dempet 0-rad (skilles fra «Sett opp»)
-    return '<div class="di-row di-zero">'+etikett+'<span class="di-value">0 klipp · 0 kunder i programmet</span></div>';
-  }
-  return '<div class="di-row">'+etikett+'<span class="di-value">'+(p.klipp||0)+' klipp · '+(p.kunder||0)+' kunder i programmet</span></div>';
+  var primaer=(l.count>0)
+    ? '<span class="di-loj-primaer">'+l.count+' klipp · '+krFmt(l.revenue||0)+'</span>'
+    : '<span class="di-loj-primaer di-tom">Ingen ennå</span>';
+  return '<div class="di-row di-loj"><span class="di-arm">Lojalitet</span>'
+    +'<span class="di-loj-val">'+primaer
+      +'<span class="di-loj-sek">'+(p.kunder||0)+' kunder i programmet</span>'
+      +'<span class="di-loj-sek">'+(p.klipp||0)+' klipp registrert</span>'
+    +'</span></div>';
 }
-// Hentet inn-blokk (kun Vekst): eyebrow + hovedtall + fire armer i låst presedens-rekkefølge.
-// ⚠ REKKEFØLGE + KATEGORIER SPEILET AV renderAttribusjon() — HOLD DEM I SYNK.
+// Fire armer i låst presedens + bunntekst som siste rad. ⚠ REKKEFØLGE + KATEGORIER SPEILET AV
+// renderAttribusjon() — HOLD DEM I SYNK. fotnoteKlasse: '' (Oversikt, pad 12 0 4) | 'di-fotnote-vekst'.
+function diRaderHtml(hi, fotnoteKlasse){
+  return '<div class="di-rows">'
+    +diArmRad('Verving', hi&&hi.vervet)
+    +diLojRad(hi&&hi.lojalitet)
+    +diArmRad('Vinn tilbake', hi&&hi.vinnTilbake)
+    +diArmRad('Rebooking', hi&&hi.rebooking)
+    +'<div class="di-fotnote'+(fotnoteKlasse?(' '+fotnoteKlasse):'')+'">Kun klipp BarberHQ har bidratt til. Ordinære bookinger telles ikke med.</div>'
+  +'</div>';
+}
+// Oversikt: eyebrow + total («siste 30 dager» — panelet har ingen velger, da564bd) + rader.
 function diHentetInnHtml(hi){
   var total=(hi&&hi.total)||{count:0,revenue:0};
   return '<div class="di-hentet"><div class="di-eyebrow">HENTET INN MED BARBERHQ</div>'
-    +diHero(total.revenue)
-    +'<div class="di-rows">'
-      +diArmRad('Verving', hi&&hi.vervet)
-      +diLojRad(hi&&hi.lojalitet)
-      +diArmRad('Vinn tilbake', hi&&hi.vinnTilbake)
-      +diArmRad('Rebooking', hi&&hi.rebooking)
-    +'</div></div>';
+    +diTotalHtml(total.count, total.revenue, 'siste 30 dager', !((total.count||0)>0||(total.revenue||0)>0))
+    +diRaderHtml(hi, '')
+  +'</div>';
 }
 // På vei-blokk: kunder/datoer, ALDRI kroner. opts.basis=true → «På Basis får ingen…» + selg + CTA.
 function diPaaVeiHtml(pv, opts){
@@ -4115,24 +4139,14 @@ async function renderAttribusjon(){
     koblePaaVeiCta(el);
     return;
   }
+  // Turn 3: total øverst (to tall + «denne perioden») + rammefrie rader + bunntekst som siste rad.
+  // Ingen egen «Totalt»-rad (total flyttet til topp). 0-tilstand vises naturlig (dempet total + «Ingen ennå»).
   var total=hi.total||{count:0,revenue:0};
-  if(total.count===0){
-    el.innerHTML='<p class="wb-empty">Ingen tilskrevne klipp i denne perioden ennå.</p>';
-    return;
-  }
-  // Totalen fra backendens autoritative hentetInn.total, aldri klient-sum. «ny»-kategorien er
-  // allerede filtrert bort i backend → «Totalt» er et utvalg, ikke en fordeling (attr-note).
-  el.innerHTML='<div class="di-rows di-rows-boxed">'
-    +diArmRad('Verving', hi.vervet)
-    +diLojRad(hi.lojalitet)
-    +diArmRad('Vinn tilbake', hi.vinnTilbake)
-    +diArmRad('Rebooking', hi.rebooking)
-    +'<div class="di-row di-total"><span class="di-arm">Totalt</span><span class="di-value">'+total.count+' klipp · '+krFmt(total.revenue)+'</span></div>'
-  +'</div>'
-  +'<p class="attr-note">Ikke alle klipp i perioden. Kunder som fant deg på egen hånd telles ikke med her.</p>';
+  el.innerHTML=diTotalHtml(total.count, total.revenue, 'denne perioden', !((total.count||0)>0||(total.revenue||0)>0))
+    +diRaderHtml(hi, 'di-fotnote-vekst');
 }
-// #attrPeriod: to piller (2uker/siste_maaned) + «Lengre ▾»-nedtrekk (siste_3mnd/6mnd/12mnd).
-// attrPeriod-state (ALDRI curPeriod). Meny-mønster som diagrammets månedsvelger, men inline pille.
+// #attrPeriod (turn 3): to piller (2 uker/30 dager) + «3 mnd ▾»-nedtrekk (3/6/12 måneder). 3. pille
+// viser aktivt lengre-valg forkortet (data-kort «6 mnd») + ▾. attrPeriod-state (ALDRI curPeriod).
 (function(){
   var per=document.getElementById('attrPeriod'), lengreBtn=document.getElementById('attrLengreBtn'), meny=document.getElementById('attrLengreMeny');
   if(!per||!lengreBtn||!meny)return;
@@ -4146,10 +4160,10 @@ async function renderAttribusjon(){
     if(fraLengre){
       lengreBtn.setAttribute('aria-selected','true');
       var o=opts.filter(function(x){return x.dataset.p===period;})[0];
-      lengreBtn.textContent=(o?o.textContent:'Lengre')+' ▾';   // pillen viser aktivt valg
+      lengreBtn.textContent=((o&&o.dataset.kort)||'3 mnd')+' ▾';   // 3. pille viser aktivt valg forkortet
       opts.forEach(function(x){ x.setAttribute('aria-selected', x.dataset.p===period?'true':'false'); });
     }else{
-      lengreBtn.setAttribute('aria-selected','false'); lengreBtn.textContent='Siste måneder ▾';
+      lengreBtn.setAttribute('aria-selected','false'); lengreBtn.textContent='3 mnd ▾';   // default-label
       opts.forEach(function(x){ x.setAttribute('aria-selected','false'); });
     }
     lukkMeny();
