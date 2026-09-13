@@ -4018,8 +4018,9 @@ async function initTrialNudge(){
   if(dis!=null && Date.now() < dis + 5*86400000) return;                            // lukket → stille i 5 dager
   // «Brukt funksjonene?» — aldri nudge om noe han alt gjør.
   var loy=await api.loyalty();          if(loy && loy.enabled===true) return;
-  var refs=await api.referrals();       if(Array.isArray(refs) && refs.length>0) return;
-  try{ var attr=await api.attribution('uke'); if(attr && attr.verving && attr.verving.count>0) return; }catch(_){}
+  var refs=await api.referrals();       if(Array.isArray(refs) && refs.length>0) return; // #3 (all-time referrals) dekker verving-aktivitet
+  // Fjernet 13.09: en attr.verving.count>0-sjekk som ALDRI traff (nøkkelen fantes ikke i noen /attribution-shape).
+  // #3 over er riktig signal; ikke gjenoppliv en vindus-basert attribusjons-sjekk her. Se docs/trial-nudge-verving.md.
   el.hidden=false;
   if(!b.trial_nudge_shown_at){ try{ api.trialNudgeShown(); }catch(_){} }            // sett vist (server: kun hvis NULL)
 }
