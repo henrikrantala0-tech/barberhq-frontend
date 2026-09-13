@@ -4912,13 +4912,23 @@ $("#tog-rebook").addEventListener("change",function(){
   lagreSmsInnstilling({sms_rebooking_enabled:el.checked}, function(){ el.checked=forrige; syncRebookIntervall(); }, $("#rebookErr"), 'Rebooking');
 });
 document.querySelectorAll('#rebookPills button').forEach(function(b){
-  b.addEventListener('click',function(){
+  b.addEventListener('click',async function(){
     if(_settingsUkjent) return;        // ingen skriving, og ingen pille tennes på gjetning
     var forrigeEl=document.querySelector('#rebookPills button[aria-selected="true"]');
     var forrigeDays=forrigeEl?+forrigeEl.dataset.days:null;   // for rollback ved feil
     var days=+b.dataset.days;
+    var piller=document.querySelectorAll('#rebookPills button');
     setRebookPills(days);              // backend validerer 28/35/45; UI sender kun disse
-    lagreSmsInnstilling({rebooking_interval_days:days}, function(){ setRebookPills(forrigeDays); }, $("#rebookErr"), 'Rebooking');
+    // Synkron disable av ALLE piller FØR await (som #vervRecipient i af7fe16) → et andre klikk mens
+    // kallet er i lufta fyrer ikke → ingen A→B-race der to samtidige PUT-er lander i svar-rekkefølge
+    // i stedet for klikk-rekkefølge. rullTilbake (setRebookPills(forrigeDays)) ruller aria-selected
+    // TILBAKE til verdien før klikket ved feil — ikke bare gjør pillene klikkbare med feil tilstand stående.
+    piller.forEach(function(x){x.disabled=true;});
+    try{
+      await lagreSmsInnstilling({rebooking_interval_days:days}, function(){ setRebookPills(forrigeDays); }, $("#rebookErr"), 'Rebooking');
+    }finally{
+      piller.forEach(function(x){x.disabled=false;});   // re-enable i ALLE grener (finally, ikke success-grenen)
+    }
   });
 });
 
