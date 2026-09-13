@@ -4394,7 +4394,8 @@ $("#monthSel").addEventListener("change",async e=>{
   $("#stats").innerHTML=kpiCardsHtml(totalCount,totalRev); // samme to kort som pill-modus
   $("#rekordNote").textContent=""; // ingen uke-rekord på måneds-visning (/month leverer bevisst ingen)
   $("#weekInsight").hidden=true; // persentil + rekord-bar er inneværende-uke-konsepter → skjul på historisk måned
-  var dw=$("#drivenByWrap");if(dw)dw.hidden=true; // /attribution serverer kun uke|2uker|maaned → skjul på historisk måned
+  // (Fjernet 14.09: skjulte #drivenByWrap på historisk måned — levning fra før panelet ble frikoblet
+  //  fra curPeriod (da564bd). Panelet henter alltid siste_maaned og skal stå uavhengig av diagramvalget.)
   renderBarChart(monthDays,ym); // ym som period → egen sub-tekst, ingen tell-opp (chartEntered alt true)
 });
 const _slotPopup=document.getElementById('slotPopup');
