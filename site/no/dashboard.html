@@ -1626,9 +1626,11 @@
     <p class="sec-h">Drevet av BarberHQ</p>
     <p class="block-s">Klipp BarberHQ hentet inn eller hentet tilbake.</p>
     <div class="segs" id="attrPeriod" role="group" aria-label="Periode for attribusjon">
-      <button type="button" data-p="uke" aria-selected="false">Siste uke</button>
+      <!-- Perioder v2 (kontrakt d9048ee): «uke» fjernet. siste_maaned = rullende 30 d (default),
+           maaned = kalendermåned. #segs på Oversikt er URØRT (uke-rekord/persentil er bærende der). -->
       <button type="button" data-p="2uker" aria-selected="false">Siste 2 uker</button>
-      <button type="button" data-p="maaned" aria-selected="true">Denne måneden</button>
+      <button type="button" data-p="siste_maaned" aria-selected="true">Siste måned</button>
+      <button type="button" data-p="maaned" aria-selected="false">Denne måneden</button>
     </div>
     <div id="attrRows"><p class="wb-empty">Laster …</p></div>
     </div>
@@ -4070,7 +4072,7 @@ async function initTrialNudge(){
 // SUMMEN AV DE TRE ER IKKE ALLE KLIPP I PERIODEN. Backend klassifiserer også 'ny' og
 // filtrerer den bort før den svarer. Derfor ingen prosentandeler her — kun absolutte tall.
 // Omsetningen er rabattert (price_nok minus discount_pct), ikke listepris.
-var attrPeriod="maaned";
+var attrPeriod="siste_maaned";   // v2-default (rullende 30 d) — matcher aria-selected på #attrPeriod
 // Vekst «Hvor kundene kommer fra» — KUN Hentet inn-radene (ingen «På vei» her; den er en
 // Oversikt-nudge). Ny shape: leser hentetInn.*, recovery→vinnTilbake, ny lojalitet-arm.
 // ⚠ KATEGORIER + REKKEFØLGE SPEILET AV renderDrivenBy() — HOLD DEM I SYNK (delte di-*-byggere).
