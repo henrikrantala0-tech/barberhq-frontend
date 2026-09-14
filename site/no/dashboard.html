@@ -83,8 +83,6 @@
   .perseg-meny button:hover{background:var(--line)}
   .perseg-meny button[aria-selected=true]{background:var(--line);color:var(--ink);font-weight:600}
   .perseg-meny button[aria-selected=true]::after{content:"✓";color:var(--mut);font-weight:600}
-  .monthpick{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--ink-2);font-weight:500}
-  .monthpick select{font:inherit;font-size:13px;padding:7px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink)}
   .rangelabel{font-size:13px;color:var(--mut);letter-spacing:-.01em;font-weight:500}
 
   /* Stat row */
@@ -925,7 +923,10 @@
   .di-value{font-size:13px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;text-align:right}
   .di-row.di-zero .di-arm,.di-row.di-zero .di-value{color:var(--mut);font-weight:500}  /* «Ingen ennå» ≈55% */
   .di-row.di-zero .di-value{font-size:12.5px}
-  .di-row.di-off .di-arm,.di-row.di-off .di-value{color:var(--mut-2)}  /* «Av» ≈40% — skillbar fra «Ingen ennå» */
+  /* «SMS av»-badge på rebooking-raden når sms_rebooking_enabled=false: tallene vises normalt (opptjent
+     historikk), badgen viser at automatikken er av NÅ. Erstattet «Av»-maskeringen (14.09). ≈40 % blekk. */
+  .di-off-badge{display:inline-block;margin-left:8px;font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--mut-2);border:1px solid var(--line-2);border-radius:5px;padding:1px 6px;vertical-align:middle}
+  #drivenBy .di-card{cursor:pointer}   /* hele «Drevet av»-panelet er trykkbart → Vekst (indre lenker/CTA stopper propagering) */
   /* Basis: tre låste rader, INGEN total/lås-ikon (fjernet 14.09). opacity:.4 (IKKE rgba hvit — ville
      forsvunnet i lys modus) gir 40 % på tema-riktig blekk i begge moduser; maskert tekst bærer låsen.
      .di-basis-blokk = Oversikt-wrapper (18px sider som .di-hentet, INGEN 26px-topp totalen hadde).
@@ -1195,39 +1196,12 @@
   .kl-warn-act{display:flex;gap:16px;margin-top:9px;align-items:center}
   /* (.kl-off-ja/-nei styles er slått sammen med .kl-fjern-ja/-nei over — samme 44px-trykkflate.) */
 
-  /* ---- Flytmodell (Vekst) — port av mockup, repo-tokens + literal brand-tint (jf. .rpill.blue) ---- */
-  .flow{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:20px 20px 16px;margin-top:28px}
-  /* Tittelrad som toggle. Desktop: ser ut som før (chevron skjult, cursor default, flow-body alltid vist). */
-  .flow-head{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;background:none;border:0;padding:0;text-align:left;color:inherit;font:inherit;cursor:default}
-  .flow-chev{display:none;color:var(--mut-2);font-size:12px;line-height:1;transition:transform .2s;flex-shrink:0}
-  .flow-h{font-size:15px;font-weight:700;letter-spacing:-.01em;margin-bottom:4px}
-  .flow-sub{color:var(--mut);font-size:12.5px;line-height:1.5;margin-bottom:18px}
-  .flow-steps{display:grid;grid-template-columns:1fr 20px 1fr 20px 1fr 20px 1fr;gap:7px;align-items:stretch}
-  .flow-step{border-radius:11px;padding:13px 14px}
-  .fs-dag{font-size:10.5px;font-weight:700;letter-spacing:.09em;text-transform:uppercase;margin-bottom:8px}
-  .fs-t{font-size:14px;font-weight:600;display:flex;align-items:center;gap:7px;margin-bottom:3px;letter-spacing:-.01em}
-  .fs-d{font-size:12px;line-height:1.45}
-  .flow-step svg{width:16px;height:16px;flex-shrink:0}
-  .fs-null{background:var(--bg);border:1px solid var(--line-2)}
-  .fs-null .fs-dag{color:var(--mut)} .fs-null .fs-d{color:var(--mut)}
-  .fs-auto{background:rgba(62,207,126,.12)}
-  .fs-auto .fs-dag{color:rgba(62,207,126,.9)} .fs-auto .fs-t{color:#3ecf7e} .fs-auto .fs-d{color:rgba(62,207,126,.85)}
-  /* Lys modus: dempet grønn skrift for lesbarhet på lys grønn-tint (dark urørt) */
-  html[data-theme="light"] .fs-auto .fs-dag{color:#158a4e} html[data-theme="light"] .fs-auto .fs-t{color:#0f8a48} html[data-theme="light"] .fs-auto .fs-d{color:#1c9455}
-  .fs-du{background:rgba(77,139,255,.12)}
-  .fs-du .fs-dag{color:rgba(77,139,255,.9)} .fs-du .fs-t{color:#4d8bff} .fs-du .fs-d{color:rgba(77,139,255,.85)}
-  .flow-arrow{display:flex;align-items:center;justify-content:center;color:var(--mut-2);font-size:15px}
-  .flow-arrow .fa-down{display:none}
-  .flow-noshow{display:flex;align-items:center;gap:11px;margin-top:12px;border:1px dashed var(--line-2);border-radius:11px;padding:11px 13px}
-  .flow-noshow svg{width:18px;height:18px;color:#4d8bff;flex-shrink:0}
-  .flow-noshow p{font-size:12.5px;line-height:1.5;color:var(--ink-2)}
-  .flow-noshow strong{color:#4d8bff;font-weight:600}
   /* Tittelnivå 1 — sidetittel (.panel-h) og seksjonstittel (.sec-h).
      SAMME STØRRELSE, med vilje: de deler ÉN font-size-deklarasjon, så de kan ikke drifte fra
      hverandre. Skal størrelsen endres, endres den én gang under og treffer begge. Ikke splitt
      dem opp i to regler «for ryddighetens skyld» — da er drift bare et redigeringsuhell unna,
      og det var nettopp det som gjorde sidetittelen mindre enn seksjonene sine (13px mot 18px).
-     16px/800 er valgt mot innholdet i Vekst: .flow-h er 15px/700, .acc-title 14px/600. 1px
+     16px/800 er valgt mot innholdet i Vekst: .acc-title er 14px/600. 1px
      pluss et helt vektsteg skiller tittelen fra det tyngste innholdet under, og den holder seg
      under .brand (19px) så ingenting i fanen konkurrerer med logoen. .sec-h var 18px fram til
      08.08 — senket da sidetittelen ble løftet opp på samme nivå.
@@ -1242,24 +1216,6 @@
   .panel-h,.sec-h{font-size:16px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
   .panel-h{margin:0 0 3px}
   .sec-h{margin:34px 0 10px}
-  .flow-legend{display:flex;gap:18px;margin-top:14px;font-size:11.5px;color:var(--mut)}
-  .flow-legend span{display:flex;align-items:center;gap:7px}
-  .fl-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-  @media(max-width:640px){
-    .flow-steps{grid-template-columns:1fr}
-    .flow-arrow{padding:2px 0}
-    .flow-arrow .fa-right{display:none}
-    .flow-arrow .fa-down{display:block}
-  }
-  /* Mobil (<768px): sammenleggbar flyt — kollapset by default (kun tittelraden + chevron), toggle på
-     .flow-head. Desktop uendret (flow-body alltid vist, chevron skjult). Tilstand huskes ikke. Se JS-toggle. */
-  @media(max-width:767px){
-    .flow-head{cursor:pointer}
-    .flow-chev{display:block}
-    .flow.aapen .flow-chev{transform:rotate(180deg)}
-    .flow-body{display:none}
-    .flow.aapen .flow-body{display:block}
-  }
 
   /* ---- Accordion (Vekst) ---- */
   .acc-list{display:flex;flex-direction:column;gap:12px;margin-top:20px}
@@ -1562,14 +1518,16 @@
     <!-- 2. Periode-piller + KPI. Pillene styrer KPI/diagram/Drevet av (period-scope) og følger
          KPI hit — de sitter IKKE over Kommende, som ikke er periodefiltrert. -->
     <div class="periodbar">
+      <!-- Tredje pille er et nedtrekk (gjenbruker Veksts .perseg-meny): «Denne måneden» øverst + historiske
+           måneder (fillMonths → #maanedMeny). Pille-etiketten viser aktivt valg. «Tidligere: Velg måned»-raden
+           er fjernet (14.09) — månedene bor nå her. Egen state (curPeriod/ym), uavhengig av #attrPeriod i Vekst. -->
       <div class="perbar" id="segs" role="tablist">
         <button class="perbar-btn" role="tab" aria-selected="true" data-p="uke">Siste uke</button>
         <button class="perbar-btn" role="tab" aria-selected="false" data-p="2uker">Siste 2 uker</button>
-        <button class="perbar-btn" role="tab" aria-selected="false" data-p="maaned"><span class="pb-full">Denne måneden</span><span class="pb-kort">Denne mnd</span></button>
-      </div>
-      <div class="monthpick">
-        <span>Tidligere:</span>
-        <select id="monthSel"></select>
+        <button class="perbar-btn" id="maanedBtn" aria-haspopup="listbox" aria-expanded="false" aria-selected="false"><span class="pb-full">Denne måneden</span><span class="pb-kort">Denne mnd</span> ▾</button>
+        <div class="perseg-meny" id="maanedMeny" role="listbox" aria-label="Måneder" hidden>
+          <button type="button" role="option" data-ym="" aria-selected="false">Denne måneden</button>
+        </div>
       </div>
     </div>
     <p class="rangelabel" id="rangeLabel"></p>
@@ -1670,60 +1628,13 @@
       <p class="momentum-t">Nesten alle faste kundene dine har booket ny time. Nå er et godt tidspunkt å hente inn nye.</p>
       <button class="btn" id="momentumVerveBtn" type="button">Åpne verving</button>
     </div>
-    <!-- FLYTMODELL — «Slik henger det sammen» (over alle accordions, alltid åpen).
-         [oversettelse: sv/da/en] nye strenger: Kvelden før · Påminnelse · Automatisk · Booket via siden din · Du tar over.
-         (Den gamle acc-lead-en i Rebooking finnes ikke lenger — slått sammen med noten 06.08.) -->
-    <!-- «Automatikk» og «Personlig» er SEKSJONSTITLER (.sec-h, 18px) og deler Vekst i maskin
+    <!-- «Automatikk» og «Personlig» er SEKSJONSTITLER (.sec-h) og deler Vekst i maskin
          og menneske. De er med vilje større enn .block-h: en egen hovedtittel over dem («Slik
          fyller du stolen») og prikker foran ble prøvd og forkastet — i stedet for et tredje
          nivå ble de to hevet ett.
-         «Automatikk» framfor «SMS-funksjoner»: den står i opposisjon til «Personlig», og
-         flytmodellen under er ikke bare SMS. [oversettelse: sv/da/en] -->
+         «Automatikk» framfor «SMS-funksjoner»: den står i opposisjon til «Personlig».
+         (Flytmodellen «Slik henger det sammen» ble fjernet 14.09.) [oversettelse: sv/da/en] -->
     <p class="sec-h">Automatikk</p>
-    <div class="flow">
-      <!-- Mobil (<768px): sammenleggbar — kun tittelraden vises, resten bak flow-body. Desktop: alltid
-           åpen (chevron skjult, flow-body vist av CSS). Tilstand huskes ikke (per beslutning). -->
-      <button type="button" class="flow-head" aria-expanded="false">
-        <h3 class="flow-h">Slik henger det sammen</h3>
-        <span class="flow-chev" aria-hidden="true">&#9662;</span>
-      </button>
-      <div class="flow-body">
-      <p class="flow-sub">Automatikken tar de første ukene. Etter 60 dager er det din tur.</p>
-      <div class="flow-steps">
-        <div class="flow-step fs-auto">
-          <div class="fs-dag">Kvelden før</div>
-          <div class="fs-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 0 1-3.46 0"/></svg>Påminnelse</div>
-          <div class="fs-d">Automatisk</div>
-        </div>
-        <div class="flow-arrow"><span class="fa-right">&#8594;</span><span class="fa-down">&#8595;</span></div>
-        <div class="flow-step fs-null">
-          <div class="fs-dag">Dag 0</div>
-          <div class="fs-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="6" cy="6" r="3"/><circle cx="6" cy="18" r="3"/><line x1="20" y1="4" x2="8.12" y2="15.88"/><line x1="14.47" y1="14.48" x2="20" y2="20"/><line x1="8.12" y1="8.12" x2="12" y2="12"/></svg>Kunden klippes</div>
-          <div class="fs-d">Booket via siden din</div>
-        </div>
-        <div class="flow-arrow"><span class="fa-right">&#8594;</span><span class="fa-down">&#8595;</span></div>
-        <div class="flow-step fs-auto">
-          <div class="fs-dag">Dag 28–45</div>
-          <div class="fs-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15a2 2 0 0 1-2 2H7l-4 4V5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2z"/></svg>Rebooking</div>
-          <div class="fs-d">Automatisk</div>
-        </div>
-        <div class="flow-arrow"><span class="fa-right">&#8594;</span><span class="fa-down">&#8595;</span></div>
-        <div class="flow-step fs-du">
-          <div class="fs-dag">Dag 60+</div>
-          <div class="fs-t"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>Vinn tilbake</div>
-          <div class="fs-d">Du tar over</div>
-        </div>
-      </div>
-      <div class="flow-noshow">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/><line x1="10" y1="14" x2="14" y2="18"/><line x1="14" y1="14" x2="10" y2="18"/></svg>
-        <p>No-show? Hopper over hele løpet — rett inn i <strong>Vinn tilbake</strong> samme dag. Følg opp innen 1–3 dager.</p>
-      </div>
-      <div class="flow-legend">
-        <span><span class="fl-dot" style="background:#3ecf7e"></span>Automatikken jobber</span>
-        <span><span class="fl-dot" style="background:#4d8bff"></span>Din tur</span>
-      </div>
-      </div><!-- /flow-body -->
-    </div>
 
     <!-- ACCORDIONS: to lister, ikke én — maskin under «Automatikk», menneske under «Personlig».
          IDer på kontrollene er BEVART fra gammel struktur → loadSmsInnstillinger/loadVerving/loadWinback treffer som før. -->
@@ -3020,14 +2931,20 @@ function kpiCardsHtml(count,rev){
 }
 // Inneværende Oslo-måned ("YYYY-MM") — ekskluderes fra "Tidligere"-dropdownen (dekket av pill-en).
 function osloYm(){ return new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Oslo'}).format(new Date()).slice(0,7); }
-// Fyll #monthSel fra months_with_data (nyest øverst, ekskl. inneværende måned). Ingen tom måned kan velges.
+// Fyll #maanedMeny (tredje pilles nedtrekk): «Denne måneden» øverst + historiske måneder (nyest
+// øverst, ekskl. inneværende). Bevarer aktivt valg over re-fyll. Aktivt valg = null → ingen ✓ (rullende
+// pill er aktiv, ikke måned). Menyens fulle navn («august 2026»); pille-etiketten forkortes i velgeren.
 function fillMonths(months){
-  var sel=$("#monthSel"); if(!sel) return;
+  var meny=$("#maanedMeny"); if(!meny) return;
   var cur=osloYm();
+  var valgt=meny.querySelector('button[role=option][aria-selected="true"]');
+  var aktivYm=valgt?valgt.getAttribute('data-ym'):null;   // null = ingen måned aktiv
   var opts=(months||[]).filter(function(m){return m!==cur;}).slice().reverse(); // ASC → nyest øverst
-  var html='<option value="">Velg måned</option>';
-  for(var i=0;i<opts.length;i++){ var ym=opts[i]; html+='<option value="'+ym+'">'+MONTHS[+ym.slice(5,7)-1]+' '+ym.slice(0,4)+'</option>'; }
-  sel.innerHTML=html;
+  var html='<button type="button" role="option" data-ym=""'+(aktivYm===''?' aria-selected="true"':'')+'>Denne måneden</button>';
+  for(var i=0;i<opts.length;i++){ var ym=opts[i];
+    html+='<button type="button" role="option" data-ym="'+ym+'"'+(aktivYm===ym?' aria-selected="true"':'')+'>'+MONTHS[+ym.slice(5,7)-1]+' '+ym.slice(0,4)+'</button>';
+  }
+  meny.innerHTML=html;
 }
 
 async function loadOversikt(){
@@ -3437,17 +3354,18 @@ function pvDato(iso){ // 'YYYY-MM-DD' → «14. sep»; null/ugyldig → null
   var d=new Date(iso+'T12:00:00'); if(isNaN(d.getTime())) return null;
   return d.toLocaleDateString('nb-NO',{day:'numeric',month:'short'}).replace(/\.$/,'');
 }
-// Arm-rad. count>0 → «N klipp · X kr» (hvit); count===0 → «Ingen ennå» (dempet ≈55%); aktivert===false
-// → «Av» (≈40%, UAVHENGIG av tall). Verving/vinn-tilbake har ingen aktivert-nøkkel → aldri av-veien.
+// Arm-rad. count>0 → «N klipp · X kr» (hvit); count===0 → «Ingen ennå» (dempet ≈55%).
+// aktivert===false (KUN rebooking = sms_rebooking_enabled av): tallene vises som normalt — de er
+// OPPTJENT HISTORIKK — med en dempet «SMS av»-badge som viser at automatikken er av NÅ. Tallene
+// skjules ALDRI fordi bryteren er av (14.09) → synlige rader summerer alltid til vist total.
+// Verving/vinn-tilbake har ingen aktivert-nøkkel → aldri badge.
 function diArmRad(navn, o){
-  if(o && o.aktivert===false){
-    return '<div class="di-row di-off"><span class="di-arm">'+esc(navn)+'</span><span class="di-value">Av</span></div>';
-  }
+  var badge=(o && o.aktivert===false)?'<span class="di-off-badge">SMS av</span>':'';
   if(o && o.count>0){
     return '<div class="di-row"><span class="di-arm">'+esc(navn)+'</span>'
-      +'<span class="di-value">'+o.count+' klipp · '+krFmt(o.revenue||0)+'</span></div>';
+      +'<span class="di-value">'+o.count+' klipp · '+krFmt(o.revenue||0)+badge+'</span></div>';
   }
-  return '<div class="di-row di-zero"><span class="di-arm">'+esc(navn)+'</span><span class="di-value">Ingen ennå</span></div>';
+  return '<div class="di-row di-zero"><span class="di-arm">'+esc(navn)+'</span><span class="di-value">Ingen ennå'+badge+'</span></div>';
 }
 // TRE armer i låst presedens. ⚠ REKKEFØLGE SPEILET AV renderAttribusjon() — HOLD DEM I SYNK.
 // Lojalitet er BEVISST IKKE en arm her (fjernet 14.09): de tre er HENDELSER produktet utløste,
@@ -3530,6 +3448,14 @@ function koblePaaVeiCta(host){
 // egen periodevelger (design turn 2). Basis-signal = hentetInn mangler → kun På vei + CTA.
 async function renderDrivenBy(){
   var wrap=$("#drivenBy"); if(!wrap)return;
+  // Hele panelet trykkbart → Vekst (14.09). Delegert ÉN gang på #drivenBy (overlever innerHTML-rebuild).
+  // Indre interaktive elementer (Se lista i Vekst / Oppgrader-CTA) stopper via closest-sjekk, ikke propagering.
+  if(!wrap._navBound){ wrap._navBound=true;
+    wrap.addEventListener('click',function(e){
+      if(e.target.closest('[data-di-winback],[data-di-oppgrader]'))return;   // indre knapp/lenke → egen handling
+      switchPanel('vekst');
+    });
+  }
   if(billingUkjent())return; // behold vakt (e5aa245): ingen henting/render før planen er kjent
   var seeAll=$("#drivenBySeeAll");
   var data=await api.attribution('siste_maaned');
@@ -4082,23 +4008,6 @@ async function initTrialNudge(){
   var x=$("#tnClose"); if(x) x.addEventListener("click",function(){ var el=$("#trialNudge"); if(el)el.hidden=true; try{ api.trialNudgeDismiss(); }catch(_){} });
 })();
 
-/* ---- Flytmodell (Vekst): sammenleggbar på mobil (<768px), alltid åpen på desktop ---- */
-// CSS eier synligheten (flow-body vises alltid ≥768px, skjules by default <768px med mindre .aapen).
-// JS holder KUN klassen + aria-expanded i synk. Klikk toggler bare under 768px; på desktop er raden
-// ikke-interaktiv (cursor default) og aria står 'true'. Ingen tilstands-lagring (per beslutning).
-(function(){
-  var flow=document.querySelector('.flow'); if(!flow)return;
-  var head=flow.querySelector('.flow-head'); if(!head)return;
-  function erMobil(){ return window.innerWidth < 768; }
-  function sync(){ head.setAttribute('aria-expanded', (!erMobil()||flow.classList.contains('aapen'))?'true':'false'); }
-  head.addEventListener('click',function(){
-    if(!erMobil())return;               // desktop: alltid åpen, toggle er nulloperasjon
-    flow.classList.toggle('aapen'); sync();
-  });
-  window.addEventListener('resize',sync);
-  sync();                               // sett riktig aria ved last (desktop=true, mobil-lukket=false)
-})();
-
 /* ---- Attribusjon (Vekst): «Hvor kundene kommer fra» ---- */
 // Egen periode-state, bevisst skilt fra Oversiktens curPeriod: de to flatene skal kunne
 // stå på hver sin periode uten å dra hverandre med seg. Default 'maaned' — samme default
@@ -4367,9 +4276,6 @@ async function loadGoogleStatus(){
   }catch(e){ st.textContent="Kunne ikke sjekke status."; }
 }
 
-function buildMonthSelect(){
-  const sel=$("#monthSel"); if(sel) sel.innerHTML='<option value="">Velg måned</option>'; // placeholder; fillMonths() fyller ekte måneder etter /stats
-}
 
 /* ── Hash-router ──────────────────────────────────────────────────────────────
    Lesbare hash-navn (#oversikt/#vekst/#tjenester/#dinside/#konto) frikoblet fra de
@@ -4416,31 +4322,51 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   // ny verdi → hashchange, men anvendHash finner panelet alt aktivt og gjør ingenting.
   if(PANEL_TO_HASH[id])location.hash=PANEL_TO_HASH[id];
 }));
-document.querySelectorAll("#segs button").forEach(b=>b.addEventListener("click",()=>{
-  document.querySelectorAll("#segs button").forEach(x=>x.setAttribute("aria-selected","false"));
-  b.setAttribute("aria-selected","true");$("#monthSel").value="";curPeriod=b.dataset.p;loadOversikt();
-}));
-$("#monthSel").addEventListener("change",async e=>{
-  const ym=e.target.value;
-  if(!ym){ // tom → tilbake til pill-modus (aktiv pill re-renderer daily-slice + pill-KPI, rydder opp)
-    document.querySelector('#segs button[data-p="'+curPeriod+'"]').click();
-    return;
+// ── Oversikt periodevelger: to rullende piller (uke/2uker) + tredje pille = måneds-nedtrekk ──
+// Egen state (curPeriod / valgt ym), uavhengig av Veksts #attrPeriod (deler kun CSS). Rullende pill →
+// sliceDaily via loadOversikt. Meny «Denne måneden» = curPeriod 'maaned' (inneværende); historisk ym →
+// /stats/month (samme oppførsel som gamle #monthSel-handler). Kun ÉN aktiv om gangen → aldri to som ser
+// aktive ut: velgPill avmarkerer tredje pille + nullstiller meny; velgMaaned avmarkerer de rullende.
+(function(){
+  var segs=document.getElementById('segs');
+  var mBtn=document.getElementById('maanedBtn'), mMeny=document.getElementById('maanedMeny');
+  if(!segs||!mBtn||!mMeny)return;
+  var pills=[].slice.call(segs.querySelectorAll(':scope > button[data-p]'));   // uke, 2uker (IKKE maanedBtn — den har ingen data-p)
+  var DENNE='<span class="pb-full">Denne måneden</span><span class="pb-kort">Denne mnd</span> ▾';
+  function lukk(){ mMeny.hidden=true; mBtn.setAttribute('aria-expanded','false'); }
+  function menyValg(ym){ [].slice.call(mMeny.querySelectorAll('button[role=option]')).forEach(function(o){ o.setAttribute('aria-selected', o.getAttribute('data-ym')===ym?'true':'false'); }); }
+  function menyNullstill(){ [].slice.call(mMeny.querySelectorAll('button[role=option]')).forEach(function(o){ o.setAttribute('aria-selected','false'); }); }
+  function maanedKort(ym){ var m=MONTHS[+ym.slice(5,7)-1].slice(0,3); return m.charAt(0).toUpperCase()+m.slice(1)+' '+ym.slice(0,4); }  // «Aug 2026»
+  function velgPill(b){
+    pills.forEach(function(x){ x.setAttribute('aria-selected', x===b?'true':'false'); });
+    mBtn.innerHTML=DENNE; mBtn.setAttribute('aria-selected','false'); menyNullstill();
+    curPeriod=b.dataset.p; loadOversikt(); lukk();
   }
-  document.querySelectorAll("#segs button").forEach(x=>x.setAttribute("aria-selected","false")); // deaktiver pills visuelt
-  const resp=await api.statsMonth(ym);
-  if(!resp)return; // 401→redirigert, ellers feil: la valget stå, ingen krasj
-  const monthDays=sliceMonth(resp.days||[],ym);
-  const totalRev=monthDays.reduce(function(a,d){return a+d.kr;},0);
-  const totalCount=monthDays.reduce(function(a,d){return a+d.count;},0);
-  const [y,m]=ym.split("-");
-  $("#rangeLabel").textContent=`${MONTHS[+m-1]} ${y} — hele måneden`;
-  $("#stats").innerHTML=kpiCardsHtml(totalCount,totalRev); // samme to kort som pill-modus
-  $("#rekordNote").textContent=""; // ingen uke-rekord på måneds-visning (/month leverer bevisst ingen)
-  $("#weekInsight").hidden=true; // persentil + rekord-bar er inneværende-uke-konsepter → skjul på historisk måned
-  // (Fjernet 14.09: skjulte #drivenByWrap på historisk måned — levning fra før panelet ble frikoblet
-  //  fra curPeriod (da564bd). Panelet henter alltid siste_maaned og skal stå uavhengig av diagramvalget.)
-  renderBarChart(monthDays,ym); // ym som period → egen sub-tekst, ingen tell-opp (chartEntered alt true)
-});
+  async function velgMaaned(ym){
+    pills.forEach(function(x){ x.setAttribute('aria-selected','false'); });
+    mBtn.setAttribute('aria-selected','true'); menyValg(ym); lukk();
+    if(!ym){ mBtn.innerHTML=DENNE; curPeriod='maaned'; loadOversikt(); return; }   // inneværende måned = pill-modus 'maaned'
+    mBtn.textContent=maanedKort(ym)+' ▾';
+    var resp=await api.statsMonth(ym);
+    if(!resp)return;                        // 401→redirigert, ellers feil: la valget stå, ingen krasj
+    var monthDays=sliceMonth(resp.days||[],ym);
+    var totalRev=monthDays.reduce(function(a,d){return a+d.kr;},0);
+    var totalCount=monthDays.reduce(function(a,d){return a+d.count;},0);
+    var parts=ym.split("-");
+    $("#rangeLabel").textContent=MONTHS[+parts[1]-1]+" "+parts[0]+" — hele måneden";
+    $("#stats").innerHTML=kpiCardsHtml(totalCount,totalRev);   // samme to kort som pill-modus
+    $("#rekordNote").textContent="";        // ingen uke-rekord på måneds-visning
+    $("#weekInsight").hidden=true;           // persentil + rekord-bar er inneværende-uke → skjul
+    renderBarChart(monthDays,ym);            // rører IKKE #drivenByWrap eller Kommende (som før)
+  }
+  pills.forEach(function(b){ b.addEventListener('click',function(){ velgPill(b); }); });
+  mBtn.addEventListener('click',function(e){ e.stopPropagation();
+    var apen=mBtn.getAttribute('aria-expanded')==='true';
+    mMeny.hidden=apen; mBtn.setAttribute('aria-expanded', apen?'false':'true'); });
+  mMeny.addEventListener('click',function(e){ var o=e.target.closest('button[role=option]'); if(!o)return; velgMaaned(o.getAttribute('data-ym')); });
+  document.addEventListener('click',function(e){ if(!mMeny.hidden && !mMeny.contains(e.target) && !mBtn.contains(e.target)) lukk(); });
+  document.addEventListener('keydown',function(e){ if(e.key==='Escape') lukk(); });
+})();
 const _slotPopup=document.getElementById('slotPopup');
 function _closeSlotPopup(){_slotPopup.classList.remove('open');}
 document.addEventListener('click',e=>{if(!_slotPopup.contains(e.target))_closeSlotPopup();});
@@ -6810,7 +6736,6 @@ function applyDemoMode(){
 /* init */
 initTheme();
 var _bn=$("#barberName");if(_bn)_bn.textContent="";
-buildMonthSelect();
 initChartTouch(); // lag 2: koble pointer-events på #chartBars (én gang; overlever innerHTML-rebuild)
 loadProfil(); // fyller header-navn + profil-fane ved sideload
 loadOversikt();
