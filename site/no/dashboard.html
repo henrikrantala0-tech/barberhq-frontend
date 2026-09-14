@@ -292,9 +292,6 @@
   /* «Naviger vekk»-form: blå tekstlenke med pil → (fane-bytte ELLER åpne modal). Intern
      utvidelse bruker IKKE denne — den bruker .up-more (rammet boks). padding 13px 0 gir ≥44px
      trykkhøyde uten å bli en knapp visuelt. */
-  .see-all-btn{appearance:none;border:0;background:0;font:inherit;font-size:12.5px;font-weight:500;color:var(--info);padding:13px 0;cursor:pointer;letter-spacing:-.01em;display:block}
-  .see-all-btn[hidden]{display:none} /* klasse-display:block overstyrer ellers UA [hidden] → tvunget skjul */
-  .see-all-btn:hover{text-decoration:underline}
 
   /* ---- Morkt tema ---- */
   html[data-theme="dark"]{
@@ -1567,7 +1564,6 @@
            ikke som løs .block-h over. Ingen undertekst i panelet (design turn 2). Vekst-fanens
            attribusjonskort beholder sin egen sec-h + block-s. -->
       <div id="drivenBy"></div>
-      <button class="see-all-btn" id="drivenBySeeAll" onclick="switchPanel('vekst')">Se alt i Vekst →</button>
     </div>
   </section>
 
@@ -3461,14 +3457,12 @@ async function renderDrivenBy(){
     });
   }
   if(billingUkjent())return; // behold vakt (e5aa245): ingen henting/render før planen er kjent
-  var seeAll=$("#drivenBySeeAll");
   var data=await api.attribution('siste_maaned');
-  if(!data){ wrap.innerHTML=''; if(seeAll)seeAll.hidden=true; return; } // feil/401 → tomt, ingen krasj
+  if(!data){ wrap.innerHTML=''; return; } // feil/401 → tomt, ingen krasj
   var hi=data.hentetInn; // MANGLER for Basis (backend plan-shaper) — fail-trygt under
   if(!hi){
     // BASIS: tre låste armer + forklaring FØR «På vei» (urørt — sterkest på Basis, det eneste ekte tallet).
     // INGEN total, INGEN CTA på Oversikt (knapp+pris bor kun på Vekst-fanen). Ingen tomrom der totalen sto.
-    if(seeAll)seeAll.hidden=true;
     wrap.innerHTML='<div class="di-card">'+diTitle()
       +'<div class="di-basis-blokk">'+diBasisLaastRader()+diBasisForklaring()+'</div>'
       +'<div class="di-divider"></div>'
@@ -3478,7 +3472,6 @@ async function renderDrivenBy(){
     return;
   }
   // VEKST: Hentet inn + På vei.
-  if(seeAll)seeAll.hidden=false;
   wrap.innerHTML='<div class="di-card">'+diTitle()
     +diHentetInnHtml(hi)
     +'<div class="di-divider"></div>'
@@ -3563,7 +3556,7 @@ function timeOnly(iso){var d=new Date(iso);return String(d.getHours()).padStart(
 // Leveranselogg: KUN sendte SMS (backend omfang:'kun_leveranser'). Ingen leverings-
 // status finnes, så INGEN status-kolonne/-prikker — det ville vært en påstand uten
 // grunnlag. Cursor-paginert; «Vis flere» henter neste_cursor og LEGGER PÅ rader
-// (gjenbruker .see-all-btn, ikke en generell pagineringskomponent).
+// (gjenbruker .up-more, ikke en generell pagineringskomponent).
 var _smsRows=[]; var _smsCursor=null; var _smsLoaded=false;
 async function loadSmsLogg(){
   if(_smsLoaded) return;                       // last kun første side, ved første Konto-åpning
