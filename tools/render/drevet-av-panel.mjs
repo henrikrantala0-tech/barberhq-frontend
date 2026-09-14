@@ -28,14 +28,17 @@ const PORT = server.address().port;
 
 const bill = (plan) => ({ subscription_status:'active', plan, effective_plan:plan, effective_plan_grunn:'subscription',
   page_status:'live', days_left:99, trial_days_left:null, myk_periode:false, needs_attention:false });
+// paaVeiFull: winback N=3 (klare nå-tilstand). paaVeiDato: N=0 + dato (prognose). paaVeiNy: N=0 + null («Ingen ennå»).
 const paaVeiFull = { rebooking:{naar_vindu_30d:88,med_samtykke:7}, winback:{foerste_passerer_60:'2026-09-14',passerer_innen_30d:3}, lojalitet:{aktive_stampkort:4,ett_klipp_unna:1}, verving:{lenke_finnes:true} };
+const paaVeiDato = { rebooking:{naar_vindu_30d:12,med_samtykke:3}, winback:{foerste_passerer_60:'2026-09-25',passerer_innen_30d:0}, lojalitet:{aktive_stampkort:0,ett_klipp_unna:0}, verving:{lenke_finnes:true} };
 const paaVeiNy   = { rebooking:{naar_vindu_30d:0,med_samtykke:0}, winback:{foerste_passerer_60:null,passerer_innen_30d:0}, lojalitet:{aktive_stampkort:0,ett_klipp_unna:0}, verving:{lenke_finnes:true} };
 const hentetVekst = { period:'siste_maaned', total:{count:6,revenue:2048}, vervet:{count:0,revenue:0}, lojalitet:{count:0,revenue:0,program:{klipp:9,kunder:4,aktivert:true}}, vinnTilbake:{count:0,revenue:0}, rebooking:{count:6,revenue:2048,aktivert:true} };
 const hentetNy    = { period:'siste_maaned', total:{count:0,revenue:0}, vervet:{count:0,revenue:0}, lojalitet:{count:0,revenue:0,program:{klipp:0,kunder:0,aktivert:false}}, vinnTilbake:{count:0,revenue:0}, rebooking:{count:0,revenue:0,aktivert:true} };
 const STATES = {
-  vekst:   { plan:'vekst', attr:{ paaVei:paaVeiFull, hentetInn:hentetVekst } },
-  basis:   { plan:'basis', attr:{ paaVei:paaVeiFull } },                 // INGEN hentetInn
-  nykonto: { plan:'vekst', attr:{ paaVei:paaVeiNy,   hentetInn:hentetNy } },
+  vekst:       { plan:'vekst', attr:{ paaVei:paaVeiFull, hentetInn:hentetVekst } },   // winback N>0 → «N kunder er klare nå»
+  basis:       { plan:'basis', attr:{ paaVei:paaVeiFull } },                          // INGEN hentetInn
+  nykonto:     { plan:'vekst', attr:{ paaVei:paaVeiNy,   hentetInn:hentetNy } },      // winback null → «Ingen ennå»
+  datoprognose:{ plan:'vekst', attr:{ paaVei:paaVeiDato, hentetInn:hentetVekst } },   // winback N=0 + dato → «DD. mnd»
 };
 const stats = { daily:[], months_with_data:[], current_week_revenue:0, best_week_revenue:0, best_week_start:null, weekly_revenue:[] };
 
@@ -74,6 +77,11 @@ for (const flate of ['oversikt','vekst']) {
           harTreArmer:       armer.length===3 && armer[0]==='Verving' && armer[1]==='Vinn tilbake' && armer[2]==='Rebooking',
           harPaaVei:         /PÅ VEI/.test(t),
           harCta:            !!document.querySelector('[data-di-oppgrader]'),
+          // Vinn-tilbake-armen (kun i #drivenBy/På vei): N>0 = .di-pv-num, dato = .di-pv-date, null = .di-pv-tom.
+          wbArm: (function(){ var vt=el?[...el.querySelectorAll('.di-pv-block')].find(b=>/VINN TILBAKE/.test(b.innerText)):null;
+            if(!vt) return null;
+            return { num:!!vt.querySelector('.di-pv-num'), date:!!vt.querySelector('.di-pv-date'), tom:!!vt.querySelector('.di-pv-tom'),
+                     link:!!vt.querySelector('.di-pv-link'), tekst:vt.innerText.replace(/\n/g,' ') }; })(),
         };
       }, host);
       const node = await page.$(host); if (node && bredde===375) await node.screenshot({ path:`${OUT}/drevet-av-${flate}-${navn}-375.png` });
@@ -86,9 +94,18 @@ for (const flate of ['oversikt','vekst']) {
       if (navn==='vekst'  && flate==='oversikt') ok = ok && m.harHentetInn && m.harPaaVei && m.harTreArmer;
       if (navn==='vekst'  && flate==='vekst')    ok = ok && !m.harPaaVei && m.harTreArmer;   // rader, ingen På vei
       if (navn==='nykonto'&& flate==='oversikt') ok = ok && m.harHentetInn && m.harTreArmer;
-      rapport.push({ flate, tilstand:navn, bredde, hentetInn:m.harHentetInn?'ja':'nei', bunntekst:m.harBunntekst?'JA✗':'nei',
-        lojalitet:m.lojFinnes?'FINNES✗':'borte', armer:m.armer||'—', treArmer:m.harTreArmer?'ja':(navn==='basis'?'—':'NEI✗'),
-        paaVei:m.harPaaVei?'ja':'nei', cta:m.harCta?'ja':'nei', jsfeil: errs.length?errs.join('; ').slice(0,40):'ingen', ok: ok?'✓':'✗' });
+      if (navn==='datoprognose' && flate==='oversikt') ok = ok && m.harHentetInn && m.harPaaVei && m.harTreArmer;
+      if (navn==='datoprognose' && flate==='vekst')    ok = ok && !m.harPaaVei && m.harTreArmer;
+      // Vinn-tilbake-armens tre tilstander (kun På vei/oversikt): N>0=tall+lenke, dato=dato+lenke, null=«Ingen ennå» uten tall/dato/lenke.
+      if (flate==='oversikt'){
+        if (navn==='vekst')        ok = ok && m.wbArm && m.wbArm.num && !m.wbArm.date && !m.wbArm.tom && m.wbArm.link && /kunder å hente inn/.test(m.wbArm.tekst);
+        if (navn==='datoprognose') ok = ok && m.wbArm && m.wbArm.date && !m.wbArm.num && !m.wbArm.tom && m.wbArm.link && /passerer 60-dagersgrensen/.test(m.wbArm.tekst);
+        if (navn==='nykonto')      ok = ok && m.wbArm && m.wbArm.tom && !m.wbArm.num && !m.wbArm.date && !m.wbArm.link && /Ingen ennå/.test(m.wbArm.tekst);
+      }
+      var wbVis = (flate==='oversikt' && m.wbArm) ? (m.wbArm.num?'N>0':m.wbArm.date?'dato':m.wbArm.tom?'tom':'?')+(m.wbArm.link?'+lenke':'') : '—';
+      rapport.push({ flate, tilstand:navn, bredde, hentetInn:m.harHentetInn?'ja':'nei',
+        lojalitet:m.lojFinnes?'FINNES✗':'borte', treArmer:m.harTreArmer?'ja':(navn==='basis'?'—':'NEI✗'),
+        paaVei:m.harPaaVei?'ja':'nei', wbArm:wbVis, cta:m.harCta?'ja':'nei', jsfeil: errs.length?errs.join('; ').slice(0,40):'ingen', ok: ok?'✓':'✗' });
       await page.close();
     }
   }
@@ -97,6 +114,10 @@ console.table(rapport);
 const ok = rapport.every(r => r.ok==='✓');
 console.log('Basis uten hentetInn kaster ikke:', rapport.filter(r=>r.tilstand==='basis').every(r=>r.jsfeil==='ingen') ? 'ja ✓' : 'NEI ✗');
 console.log('Lojalitet ALDRI i panelet (alle flater):', rapport.every(r=>r.lojalitet==='borte') ? 'ja ✓' : 'NEI ✗');
+console.log('Vinn-tilbake-arm — N>0/dato/tom (oversikt):',
+  (rapport.find(r=>r.tilstand==='vekst'&&r.flate==='oversikt')||{}).wbArm==='N>0+lenke'
+  && (rapport.find(r=>r.tilstand==='datoprognose'&&r.flate==='oversikt')||{}).wbArm==='dato+lenke'
+  && (rapport.find(r=>r.tilstand==='nykonto'&&r.flate==='oversikt')||{}).wbArm==='tom' ? 'ja ✓':'NEI ✗');
 console.log('SAMLET:', ok ? 'GRØNT ✓' : 'NOE FEILER ✗');
 await browser.close(); server.close();
 process.exit(ok ? 0 : 1);

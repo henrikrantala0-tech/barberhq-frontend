@@ -60,20 +60,21 @@
   .segs{display:inline-flex;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:3px}
   .segs button{appearance:none;border:0;background:0;font:inherit;font-size:12.5px;font-weight:500;color:var(--mut);padding:6px 13px;border-radius:6px;cursor:pointer;letter-spacing:-.01em}
   .segs button[aria-selected=true]{background:var(--ink);color:#fff}
-  /* 44px trykkhøyde på #segs-pillene (Oversikt-diagram). */
-  #segs button{min-height:44px;display:inline-flex;align-items:center;justify-content:center}
   /* Vekst-fanens periodevelger (#attrPeriod, design turn 3) — kompakt segmentert kontroll.
      Designets dark-hexer er tema-mappet (som resten av panelet) så den også virker i lys modus:
      #0e0e0e→--bg, #242424→--line, aktiv → --ink (lys) / #2563eb (mørk, som #segs). Oversikt-panelet
      har INGEN velger (frikoblet, siste_maaned — da564bd). */
-  #attrPeriod{position:relative;display:flex;gap:4px;height:42px;box-sizing:border-box;padding:3px;
-    background:var(--bg);border:1px solid var(--line);border-radius:10px}
-  #attrPeriod[hidden]{display:none}   /* id-display:flex slår ellers UA [hidden] → må tvinges (Basis skjuler velgeren) */
-  #attrPeriod .perseg-btn{flex:1;border:none;border-radius:8px;background:transparent;font-family:inherit;
-    font-size:12.5px;font-weight:600;color:var(--mut);cursor:pointer;letter-spacing:-.01em;white-space:nowrap}
-  #attrPeriod .perseg-btn:hover{color:var(--ink)}
-  #attrPeriod .perseg-btn[aria-selected=true]{background:var(--ink);color:#fff}
-  html[data-theme="dark"] #attrPeriod .perseg-btn[aria-selected=true]{background:#2563eb;color:#fff}
+  /* DELT periodevelger — #segs (Oversikt) + #attrPeriod (Vekst). ÉN kilde, aldri drift. 40px alle bredder. */
+  .perbar{position:relative;display:flex;gap:3px;height:40px;box-sizing:border-box;padding:3px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
+  .perbar[hidden]{display:none}
+  #segs{width:100%}   /* #segs er flex-item i .periodbar (column) → må fylle bredden (#attrPeriod fyller #attrKort selv) */
+  .perbar-btn{flex:1;min-width:0;border:none;border-radius:8px;background:transparent;font-family:inherit;font-size:12px;font-weight:600;color:var(--mut);cursor:pointer;letter-spacing:-.01em;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center}
+  .perbar-btn:hover{color:var(--ink)}
+  .perbar-btn[aria-selected=true]{background:var(--ink);color:#fff}
+  html[data-theme="dark"] .perbar-btn[aria-selected=true]{background:#2563eb;color:#fff}
+  .pb-kort{display:none}
+  @media(max-width:360px){ .perbar-btn{font-size:11px;letter-spacing:-.02em} }
+  @media(max-width:340px){ .pb-full{display:none} .pb-kort{display:inline} }
   .perseg-meny{position:absolute;top:100%;right:0;margin-top:6px;width:150px;z-index:30;background:var(--surface);
     border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.55);padding:5px}
   .perseg-meny button{display:flex;align-items:center;justify-content:space-between;gap:8px;width:100%;min-height:38px;
@@ -113,8 +114,6 @@
        knappene trenger 296px, og innholdsbredden er viewport−48. Scopet med :not(.segs-val)
        fordi .segs er BASISKLASSEN for verdi-pillene (#rebookPills/#vervRecipient) også — de
        MÅ beholde wrap (#vervRecipient er 307px og kan ikke stå på én linje). */
-    .segs:not(.segs-val){display:flex;width:100%}
-    .segs:not(.segs-val) button{flex:1;text-align:center;padding:6px 4px;white-space:nowrap}
   }
   /* Under ~360px blir «Denne måneden» (13 tegn) for bred til å dele bredden i tre LIKE segmenter:
      min-content ~104px > 1/3 av (viewport−48), så flex-item-ens default min-width:auto lot den
@@ -122,7 +121,6 @@
      min-width:0 tvinger lik deling; mindre font + tettere spacing hindrer at nowrap-teksten da
      klippes. Gjelder BEGGE barene (#segs på Oversikt + #attrPeriod på Vekst) via delt selektor. */
   @media(max-width:360px){
-    .segs:not(.segs-val) button{min-width:0;font-size:11px;padding:6px 3px;letter-spacing:-.02em}
   }
   .src{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:15px 17px}
   .src .sn{font-size:12px;color:var(--mut);font-weight:500;letter-spacing:-.01em}
@@ -746,21 +744,31 @@
   .ideacard textarea{width:100%;font:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink);min-height:90px;resize:vertical}
   .ideacard textarea:focus{outline:none;border-color:var(--info)}
   .idea-err{display:none;color:#c0594a;font-size:13px;margin-top:8px;line-height:1.45}
-  .daygroup{border-bottom:1px solid var(--line)}
-  .daygroup:last-child{border-bottom:0}
-  .dayhead{font-size:11.5px;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--mut);padding:13px 18px 8px;background:var(--bg)}
   .row .when.t{min-width:52px;font-weight:700;color:var(--info);font-size:14px}
-  /* Kommende bookinger — dag-gruppert, kompakt/utvidet (accent-klokkeslett) */
-  .up-body{padding:14px 16px}
-  .up-day{margin:0 0 8px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
+  /* Kommende bookinger — rammefri scroll-beholder (14.09). Fast max-height → bunnraden halvt
+     avskåret = scroll-hinten (ingen gradient/skygge/pil/tekst). max-height, IKKE height → krymper til
+     innhold når lista er kort (f.eks. 1 booking). «Åpne kalender» står som fast rad UNDER (søsken,
+     IKKE sticky — sticky ville dekket den avskårne bunnraden). Dagsskillerne scroller MED innholdet. */
+  #upcomingList{background:none;border:none;padding:0;overflow-y:auto;-webkit-overflow-scrolling:touch;max-height:418px;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+  /* Permanent, tynn scrollbar — rammefri liste har ingen kant som antyder scroll; skal antyde, ikke dominere. */
+  #upcomingList::-webkit-scrollbar{width:4px}
+  #upcomingList::-webkit-scrollbar-thumb{background:var(--line);border-radius:2px}
+  #upcomingList::-webkit-scrollbar-track{background:transparent}
+  /* «Åpne kalender» — ekte knapp (navigasjon, IKKE handling → ikke blå, ingen pil). Søsken UNDER
+     beholderen (ikke sticky). ~12px over, 28px under → eneste signal om at lista slutter (ingen ramme). */
+  /* Kort-flate (var(--card) finnes ikke i temaet → --surface = kort-fargen), IKKE hvit (hvit er reservert
+     «Oppgrader til Vekst»). Leser som trykkbar flate mot panelets --bg, konkurrerer ikke med oppsalget. */
+  #calOpenUpcoming{display:block;width:100%;height:48px;margin:12px 0 28px;appearance:none;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;cursor:pointer}
+  #calOpenUpcoming:hover{background:var(--line)}   /* litt lysere flate (mørk: #242424 > surface; lys: subtil grå) */
+  .up-day{margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
   .up-day:not(:first-child){margin-top:14px}
-  .up-rows{display:flex;flex-direction:column;gap:8px}
-  .up-row{display:flex;align-items:center;gap:10px}
+  .up-row{display:flex;align-items:center;gap:10px;min-height:56px;border-top:1px solid var(--line)}
+  .up-row:first-of-type{border-top:none}   /* første rad uten hårlinje; øvrige skiller med hårlinje */
   .up-time{min-width:44px;font-size:13px;font-weight:600;color:var(--info);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
   .up-name{flex:1;font-size:14px;font-weight:500}
   .up-svc{font-size:12px;color:var(--mut)}
-  .up-empty{margin:0;font-size:12.5px;color:var(--mut-2)}
-  .up-scroll{max-height:210px;overflow-y:auto;padding-right:6px}
+  .up-empty{margin:0;padding:0 0 2px;font-size:12.5px;line-height:1.2;color:var(--mut)}   /* tom dag: dempet + minimal (~17px), IKKE 56px radhøyde */
+  @media (max-width:375px){ #upcomingList{max-height:362px} }
   /* «Intern utvidelse»-form (FASIT): rammet boks, full bredde, sentrert, chevron ▾/▴, dempet
      farge. Delt av Kommende bookinger, Siste bookinger, Verving og SMS-logg. padding 12px gir
      ≥44px trykkhøyde. */
@@ -934,6 +942,9 @@
   .di-pv-date{font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-top:8px;color:var(--ink)}
   .di-pv-txt{font-size:13px;line-height:1.45;color:var(--ink-2);margin-top:6px}
   .di-pv-consent{font-size:12.5px;line-height:1.45;color:var(--info);margin-top:6px;font-variant-numeric:tabular-nums}
+  .di-pv-link{display:inline-block;margin-top:8px;font-size:12.5px;font-weight:600;color:var(--info);cursor:pointer;letter-spacing:-.01em}  /* «Se lista i Vekst →» — samme blå/størrelse som consent-linja, hopper til #accWinback */
+  .di-pv-link:hover{text-decoration:underline}
+  .di-pv-txt.di-pv-tom{color:var(--mut)}   /* «Ingen ennå» ≈55% — dempet, ikke tom arm */
   .di-pv-hr{height:1px;background:var(--line);margin:18px 0}
   .di-basis-note{font-size:13px;line-height:1.45;font-weight:600;color:var(--ink);margin-top:8px}
   .di-basis-sell{font-size:12.5px;line-height:1.5;color:var(--mut);margin-top:16px}
@@ -945,7 +956,6 @@
      Ny Oversikt-rekkefølge er ren enkeltkolonne på alle bredder:
      Kommende → periode+KPI → diagram → Siste → Drevet av. */
   .ovs-upcoming{margin-bottom:14px}   /* Kommende (topp) → periodbar (+13px knapp-pad = ~27px) */
-  .ovs-block{margin-top:30px}          /* diagram → Siste bookinger */
   #drivenByWrap{margin-top:30px}       /* Siste bookinger → Drevet av (ny nabo, ny margin) */
   /* Crop-modal */
   .crop-modal{position:fixed;inset:0;z-index:400;background:rgba(10,10,10,.97);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px}
@@ -1045,7 +1055,9 @@
   .wb-name{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .wb-meta{font-size:12px;color:var(--mut);margin-top:3px;line-height:1.4}
   .wb-right{text-align:right;flex-shrink:0;max-width:54%}
-  .wb-phone{font-size:13px;font-weight:600;color:var(--info);cursor:pointer;user-select:all;letter-spacing:.01em}
+  /* Telefon i vinn-tilbake: tel:-lenke (mobil ringer på ett trykk). Blå/pointer; user-select:all = merk-for-kopi
+     på desktop; #wbList-handleren kopierer også på desktop (preventDefault der, mobil lar tel: ringe). Egen linje. */
+  .wb-phone{display:block;margin-top:2px;font-size:13px;font-weight:600;color:var(--info);cursor:pointer;user-select:all;letter-spacing:.01em;text-decoration:none}
   .wb-phone:hover{text-decoration:underline}
   .wb-days{font-size:11.5px;color:var(--mut);margin-top:3px}
   .wb-newdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4d8bff;margin-right:7px;vertical-align:middle} /* «Ny» no-show <3d */
@@ -1325,7 +1337,6 @@
   /* ---- Vinn-tilbake høyre-kontekst + toast ---- */
   .wb-ctx{font-size:11.5px;color:var(--mut);line-height:1.4}
   /* Nummeret er informasjon, ikke handling — derfor dempet og på egen linje. */
-  .wb-tel{display:block;margin-top:2px;font-size:11.5px;color:var(--mut-2);font-variant-numeric:tabular-nums}
   /* .wb-marked, .wb-undo-txt og .wb-skjul er FJERNET sammen med angre-mekanikken og
      handlingsknappene — Vinn tilbake er ren oversikt. */
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);background:#1a1a1a;color:#fff;font-size:13px;font-weight:500;padding:11px 18px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:500;letter-spacing:-.01em}
@@ -1544,18 +1555,17 @@
     <!-- 1. Kommende bookinger — løftet ut av .bottom-grid til topp. -->
     <div class="ovs-upcoming">
       <p class="block-h">Kommende bookinger</p>
-      <p class="block-s">Neste i køen.</p>
-      <div class="card" id="upcomingList"><div class="loading">Laster …</div></div>
-      <button class="see-all-btn" id="calOpenUpcoming">Åpne kalender →</button>
+      <div id="upcomingList"><div class="loading">Laster …</div></div>
+      <button id="calOpenUpcoming">Åpne kalender</button>
     </div>
 
     <!-- 2. Periode-piller + KPI. Pillene styrer KPI/diagram/Drevet av (period-scope) og følger
          KPI hit — de sitter IKKE over Kommende, som ikke er periodefiltrert. -->
     <div class="periodbar">
-      <div class="segs" id="segs" role="tablist">
-        <button role="tab" aria-selected="true" data-p="uke">Siste uke</button>
-        <button role="tab" aria-selected="false" data-p="2uker">Siste 2 uker</button>
-        <button role="tab" aria-selected="false" data-p="maaned">Denne måneden</button>
+      <div class="perbar" id="segs" role="tablist">
+        <button class="perbar-btn" role="tab" aria-selected="true" data-p="uke">Siste uke</button>
+        <button class="perbar-btn" role="tab" aria-selected="false" data-p="2uker">Siste 2 uker</button>
+        <button class="perbar-btn" role="tab" aria-selected="false" data-p="maaned"><span class="pb-full">Denne måneden</span><span class="pb-kort">Denne mnd</span></button>
       </div>
       <div class="monthpick">
         <span>Tidligere:</span>
@@ -1592,15 +1602,6 @@
       </div>
     </div>
 
-    <!-- 4. Full booking-liste (slått sammen fra Bookinger-fanen; no-show-marker via rowHTML2) -->
-    <div class="ovs-block">
-      <p class="block-h">Siste bookinger</p>
-      <div id="bookingList"><div class="loading">Laster …</div></div>
-      <!-- «Åpne kalender» er FJERNET her — samme modal finnes i Kommende bookinger over. -->
-      <!-- Nudge: ferske no-shows å følge opp — lever nå i Vekst › Vinn tilbake. Skjult når 0.
-           Form: .wb-nudge (venstrejustert, prikk) = MULIGHET/oppgave, ikke navigasjon-lenke. -->
-      <button class="wb-nudge" id="ovsWbNudge" onclick="switchPanel('vekst')" hidden></button>
-    </div>
 
     <!-- 5. Drevet av BarberHQ — løftet ut av .bottom-grid til bunn. -->
     <div id="drivenByWrap">
@@ -1650,10 +1651,10 @@
          nedtrekket (3/6/12 måneder) og viser aktivt valg forkortet («6 mnd ▾»). attrPeriod-state, ALDRI
          curPeriod. Verdier: 2uker / siste_maaned (=«30 dager») / siste_3mnd/6mnd/12mnd. Menyen er absolutt-
          posisjonert (utenfor flex-flyten). KUN her — Oversikt-panelet har ingen velger (da564bd). -->
-    <div id="attrPeriod" role="group" aria-label="Periode for attribusjon">
-      <button type="button" class="perseg-btn" data-p="2uker" aria-selected="false">2 uker</button>
-      <button type="button" class="perseg-btn" data-p="siste_maaned" aria-selected="true">30 dager</button>
-      <button type="button" class="perseg-btn" id="attrLengreBtn" data-lengre aria-haspopup="listbox" aria-expanded="false" aria-selected="false">3 mnd ▾</button>
+    <div id="attrPeriod" class="perbar" role="group" aria-label="Periode for attribusjon">
+      <button type="button" class="perbar-btn" data-p="2uker" aria-selected="false">2 uker</button>
+      <button type="button" class="perbar-btn" data-p="siste_maaned" aria-selected="true">30 dager</button>
+      <button type="button" class="perbar-btn" id="attrLengreBtn" data-lengre aria-haspopup="listbox" aria-expanded="false" aria-selected="false">3 mnd ▾</button>
       <div class="perseg-meny" id="attrLengreMeny" role="listbox" aria-label="Lengre perioder" hidden>
         <button type="button" role="option" data-p="siste_3mnd" data-kort="3 mnd">3 måneder</button>
         <button type="button" role="option" data-p="siste_6mnd" data-kort="6 mnd">6 måneder</button>
@@ -3483,12 +3484,21 @@ function diPaaVeiHtml(pv, opts){
       +'<div class="di-pv-consent">'+(rb.med_samtykke||0)+' av '+(rb.naar_vindu_30d||0)+' har SMS-samtykke i dag</div>'
       +(basis?'<div class="di-basis-note">På Basis får ingen av dem SMS.</div>':'')
     +'</div>';
-  var dato=pvDato(wb.foerste_passerer_60);
-  if(dato){
-    h+='<div class="di-pv-hr"></div><div class="di-pv-block"><div class="di-pv-sub">VINN TILBAKE</div>'
-      +'<div class="di-pv-date">'+dato+'</div>'
-      +'<div class="di-pv-txt">første kunde passerer 60-dagersgrensen</div></div>';
+  // Vinn tilbake — NÅTILSTAND FØRST (14.09): N klare nå (tall, som rebooking) → dato-prognose → «Ingen ennå».
+  var wbN=wb.passerer_innen_30d||0, wbDato=pvDato(wb.foerste_passerer_60);
+  h+='<div class="di-pv-hr"></div><div class="di-pv-block"><div class="di-pv-sub">VINN TILBAKE</div>';
+  if(wbN>0){                                 // tall RÅTT (ikke kappet), som rebooking-armen
+    h+='<div class="di-pv-num">'+wbN+'</div>'
+      +'<div class="di-pv-txt">'+(wbN===1?'kunde å hente inn':'kunder å hente inn')+'</div>'
+      +'<a class="di-pv-link" data-di-winback>Se lista i Vekst →</a>';
+  }else if(wbDato){                          // ingen klare ennå, men en passerer snart
+    h+='<div class="di-pv-date">'+wbDato+'</div>'
+      +'<div class="di-pv-txt">første kunde passerer 60-dagersgrensen</div>'
+      +'<a class="di-pv-link" data-di-winback>Se lista i Vekst →</a>';
+  }else{                                      // verken klare eller dato → dempet, ikke tom arm
+    h+='<div class="di-pv-txt di-pv-tom">Ingen ennå</div>';
   }
+  h+='</div>';
   return h+'</div>';
 }
 // Basis: tre låste armer (maskert: * klipp · **** kr, asterisker IKKE bullets → leses som maskert tekst,
@@ -3510,7 +3520,11 @@ function diBasisCtaPris(){
   return '<button type="button" class="di-cta" data-di-oppgrader>Oppgrader til Vekst</button>'
     +'<div class="di-cta-price">179 kr/mnd, ingen binding</div>';
 }
-function koblePaaVeiCta(host){ var b=host&&host.querySelector('[data-di-oppgrader]'); if(b)b.addEventListener('click',function(){ if(typeof aapneAbonnement==='function')aapneAbonnement(); }); }
+function koblePaaVeiCta(host){
+  if(!host)return;
+  var b=host.querySelector('[data-di-oppgrader]'); if(b)b.addEventListener('click',function(){ if(typeof aapneAbonnement==='function')aapneAbonnement(); });
+  var w=host.querySelector('[data-di-winback]'); if(w)w.addEventListener('click',function(){ if(typeof aapneVekstAkkordion==='function')aapneVekstAkkordion('#accWinback'); });
+}
 
 // «Drevet av BarberHQ» (Oversikt). Henter ALLTID siste_maaned (ny default) — panelet har ingen
 // egen periodevelger (design turn 2). Basis-signal = hentetInn mangler → kun På vei + CTA.
@@ -3530,6 +3544,7 @@ async function renderDrivenBy(){
       +'<div class="di-divider"></div>'
       +diPaaVeiHtml(data.paaVei,{basis:true})
     +'</div>';
+    koblePaaVeiCta(wrap);   // wirer «Se lista i Vekst →» (data-di-winback) i På vei
     return;
   }
   // VEKST: Hentet inn + På vei.
@@ -3539,16 +3554,23 @@ async function renderDrivenBy(){
     +'<div class="di-divider"></div>'
     +diPaaVeiHtml(data.paaVei,{basis:false})
   +'</div>';
+  koblePaaVeiCta(wrap);   // wirer «Se lista i Vekst →» (data-di-winback) i På vei
 }
 // Kommende bookinger: dag-gruppert. «I dag» + «I morgen» er faste ankere (alltid
-// synlig, også tomme). Dager lenger frem vises kun med bookinger, datert. Kompakt
-// viser bare ankerne; «Vis mer» åpner intern scroll t.o.m. booking-horisonten.
-var _upcoming=[]; var upcomingExpanded=false;
+// synlig, også tomme). Dager lenger frem vises datert. Rammefri scroll-beholder med fast
+// max-height (306 ≤375px / 418 desktop — nudget så bunnraden kappes ~50% på tett liste) = scroll-hinten;
+// «Åpne kalender» står som
+// fast rad UNDER beholderen (søsken, IKKE sticky — sticky ville dekket den avskårne raden).
+// Datamengde: maks 20 rader ELLER 7 dager frem, det som inntreffer først. (Toggle-modellen fjernet 14.09.)
+var _upcoming=[];
 async function loadUpcoming(){
   var b=await api.bookings();
   var now=Date.now();
+  var horisont=now+7*86400000;   // 7 dager frem
   _upcoming=b.filter(function(x){return new Date(x.start).getTime()>now && x.status!=='avlyst';})
-             .sort(function(a,c){return new Date(a.start)-new Date(c.start);});
+             .sort(function(a,c){return new Date(a.start)-new Date(c.start);})
+             .filter(function(x){return new Date(x.start).getTime()<=horisont;})   // behold start <= nå+7d
+             .slice(0,20);                                                          // så maks 20 rader
   renderUpcoming();
 }
 // Rabatt-flagg (spec 4): blå pill ved navnet når bookingen har referral_discount. Ingen pill uten feltet.
@@ -3565,8 +3587,11 @@ function discountPill(b){
 }
 function upRow(b){return '<div class="up-row" data-bk="'+b.id+'"><span class="up-time">'+timeOnly(b.start)+'</span>'
   +'<span class="up-name">'+esc(b.name)+discountPill(b)+'</span><span class="up-svc">'+esc(b.service||"")+'</span></div>';}
+// Flat struktur (ingen .up-rows-wrapper): dagsskillere (<p>) og rader (<div>) er søsken rett i
+// #upcomingList → radene ligger kontinuerlig med hårlinjer, og .up-row:first-of-type treffer første rad.
+// Dagsskillerne scroller MED innholdet (de ligger inni scroll-beholderen), ikke sticky.
 function upSection(label,items){
-  var body=items.length?'<div class="up-rows">'+items.map(upRow).join("")+'</div>'
+  var body=items.length?items.map(upRow).join("")
                        :'<p class="up-empty">Ingen bookinger</p>';
   return '<p class="up-day">'+label+'</p>'+body;
 }
@@ -3574,17 +3599,11 @@ function renderUpcoming(){
   var t=new Date();t.setHours(0,0,0,0);var today=t.getTime();var tomorrow=today+86400000;
   var byKey={};
   _upcoming.forEach(function(x){var k=new Date(x.start);k.setHours(0,0,0,0);k=k.getTime();(byKey[k]=byKey[k]||[]).push(x);});
-  var anchors=upSection("I dag",byKey[today]||[])+upSection("I morgen",byKey[tomorrow]||[]);
-  var futureKeys=Object.keys(byKey).map(Number).filter(function(k){return k>tomorrow;}).sort(function(a,c){return a-c;});
-  var el=$("#upcomingList");
-  if(!upcomingExpanded){
-    var more=futureKeys.length?'<button class="up-more" data-up-toggle>Vis mer <span class="chev"></span></button>':'';
-    el.innerHTML='<div class="up-body">'+anchors+more+'</div>';
-  }else{
-    var future=futureKeys.map(function(k){return upSection(dayHead(new Date(k)),byKey[k]);}).join("");
-    el.innerHTML='<div class="up-body"><div class="up-scroll">'+anchors+future+'</div>'
-      +'<button class="up-more" data-up-toggle>Vis mindre <span class="chev up"></span></button></div>';
-  }
+  // «I dag» + «I morgen» er faste ankere (alltid, også tomme). Dager lenger frem vises datert, kun med bookinger.
+  var html=upSection("I dag",byKey[today]||[])+upSection("I morgen",byKey[tomorrow]||[]);
+  Object.keys(byKey).map(Number).filter(function(k){return k>tomorrow;}).sort(function(a,c){return a-c;})
+    .forEach(function(k){ html+=upSection(dayHead(new Date(k)),byKey[k]); });
+  $("#upcomingList").innerHTML=html;
 }
 /* Beregn VISNINGS-status fra rå status + tid.
    Regel: passert tid + ikke eksplisitt no-show => "fullfort" automatisk.
@@ -3607,37 +3626,8 @@ function emptyHTML(t){return `<div class="empty"><i>○</i><p>${t}</p></div>`}
 // (f.eks. «TOR 17. JUL»). Gjelder både bakover og framover.
 function dayHead(d){var t=new Date();t.setHours(0,0,0,0);var dd=new Date(d);dd.setHours(0,0,0,0);var diff=Math.round((dd-t)/86400000);if(diff===0)return "I dag";if(diff===1)return "I morgen";if(diff===-1)return "I går";return DAYS[(dd.getDay()+6)%7].slice(0,3).toUpperCase()+" "+dd.getDate()+". "+MONTHS[dd.getMonth()].slice(0,3).toUpperCase();}
 function timeOnly(iso){var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
-function rowHTML2(b){if(b.status==='avlyst')return '<div class="row avlyst" data-bk="'+b.id+'"><div class="row-left"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+' <span class="svc">· '+esc(b.service||"")+'</span></div></div><div class="row-right"><span class="tag avlyst">Avbestilt</span></div></div>';var st=effectiveStatus(b);var c=st==="noshow"?"n":st==="fullfort"?"f":st==="venter"?"v":"b";var t=st==="noshow"?"Ikke fullført":st==="fullfort"?"Fullført":st==="venter"?"Venter":"Booket";var action="";
-  // No-show-knappen forblir i alle handlingsbare tilstander. .aktiv = allerede no-show \u2192 trykk
-  // angrer (delegasjonen toggler p\u00e5 .aktiv). Ingen egen undobtn lenger.
-  if(st==="noshow"||st==="venter"||st==="fullfort") action='<button class="noshowbtn'+(st==="noshow"?" aktiv":"")+'" data-id="'+b.id+'" title="'+(st==="noshow"?"Angre \u2013 marker som fullf\u00f8rt igjen":"Marker som no-show")+'"><span class="x">&times;</span> No-show</button>';
-  var rowClass=st==="noshow"?"row noshow":"row";
-  return '<div class="'+rowClass+'" data-bk="'+b.id+'"><div class="row-left"><div class="when t">'+timeOnly(b.start)+'</div><div class="name">'+esc(b.name)+discountPill(b)+' <span class="svc">\u00b7 '+esc(b.service||"")+'</span></div></div><div class="row-right">'+action+'<span class="tag '+c+'">'+t+'</span></div></div>';}
-// Siste bookinger: bakoverskuende logg (t.o.m. i dag, ingen framtidige — de bor i
-// Kommende). Default 2 dager (i går + i dag); «Vis mer» åpner hele 30-dagers-vinduet
-// som allerede finnes i responsen. Radstruktur (rowHTML2) med no-show-knapp beholdt.
-var _bookinger=[]; var bookingerExpanded=false;
-async function loadBookinger(){
-  var b=await api.bookings();
-  var endToday=new Date();endToday.setHours(23,59,59,999);var et=endToday.getTime();
-  _bookinger=b.filter(function(x){return new Date(x.start).getTime()<=et;})
-              .sort(function(a,c){return new Date(a.start)-new Date(c.start);});
-  renderBookinger();
-}
-function renderBookinger(){
-  var t=new Date();t.setHours(0,0,0,0);var today=t.getTime();
-  var yesterday=today-86400000;var floor30=today-29*86400000;
-  var floor=bookingerExpanded?floor30:yesterday;
-  var list=_bookinger.filter(function(x){var k=new Date(x.start);k.setHours(0,0,0,0);return k.getTime()>=floor;});
-  var hasOlder=_bookinger.some(function(x){var k=new Date(x.start);k.setHours(0,0,0,0);var kt=k.getTime();return kt<yesterday&&kt>=floor30;});
-  var el=$("#bookingList");
-  if(!list.length){el.innerHTML=emptyHTML("Ingen bookinger");return;}
-  var groups={},order=[];
-  list.forEach(function(x){var k=new Date(x.start);k.setHours(0,0,0,0);k=k.getTime();if(!groups[k]){groups[k]=[];order.push(k);}groups[k].push(x);});
-  var rows=order.sort(function(a,c){return c-a;}).map(function(k){return '<div class="daygroup"><div class="dayhead">'+dayHead(new Date(k))+'</div>'+groups[k].map(rowHTML2).join("")+'</div>';}).join("");
-  var more=hasOlder?'<button class="up-more" data-bk-toggle>'+(bookingerExpanded?'Vis mindre <span class="chev up"></span>':'Vis mer <span class="chev"></span>')+'</button>':'';
-  el.innerHTML='<div class="card">'+rows+'</div>'+more;
-}
+// «Siste bookinger» FJERNET fra Oversikt 14.09 — kalenderen eier historikk. rowHTML2/loadBookinger/
+// renderBookinger + #ovsWbNudge slettet med seksjonen (no-show-oppfølging lever i Vekst › Vinn tilbake).
 
 // ─── SMS-logg (Konto) ────────────────────────────────────────────────────────
 // Leveranselogg: KUN sendte SMS (backend omfang:'kun_leveranser'). Ingen leverings-
@@ -3727,10 +3717,7 @@ async function handleBookingStatus(btn,status){
   var nystatus=(status==='ikke_mott')?'ikke_mott':'fullfort';
   // Oppdater status i ALLE delte kilder (Siste, Kommende, kalenderen), så åpne flater
   // — inkludert detaljflaten og kalenderblokka — blir konsistente uten re-henting.
-  [_bookinger,_upcoming,CAL.alle].forEach(function(arr){var x=arr&&arr.find(function(y){return String(y.id)===String(id);});if(x)x.status=nystatus;});
-  var b=_bookinger.find(function(x){return String(x.id)===String(id);});
-  if(b&&rowEl) rowEl.outerHTML=rowHTML2(b);          // Siste-rad in-place, ny knapp arves av delegasjonen (som før)
-  else if(!b&&rowEl) loadBookinger();                // rad utenfor _bookinger (bør ikke skje)
+  [_upcoming,CAL.alle].forEach(function(arr){var x=arr&&arr.find(function(y){return String(y.id)===String(id);});if(x)x.status=nystatus;});
   if(CAL.open) renderGrid();                         // kalenderblokka får .noshow
   if(bkDetalj.openId===id) renderDetalj(id);         // detaljflatens tag + handlingsknapp bytter
   loadOversikt();                                    // penge-KPI/attribusjon reflekterer endringen
@@ -3741,8 +3728,6 @@ document.body.addEventListener("click",e=>{
   // Rad-klikk åpner detaljflaten. STÅR ETTER no-show/angre (som return-er først), så
   // knappene inne i raden aldri fanges av rad-klikket — de virker som før.
   const rowBk=e.target.closest("[data-bk]"); if(rowBk){openDetalj(rowBk.dataset.bk);return;}
-  if(e.target.closest("[data-up-toggle]")){upcomingExpanded=!upcomingExpanded;renderUpcoming();}
-  if(e.target.closest("[data-bk-toggle]")){bookingerExpanded=!bookingerExpanded;renderBookinger();}
   const sm=e.target.closest("[data-sms-more]"); if(sm){smsMer(sm);return;}
   const si=e.target.closest("[data-sms-info]"); if(si){const n=$("#smsInfo");if(n){n.hidden=!n.hidden;si.setAttribute("aria-expanded",String(!n.hidden));}return;}
 });
@@ -3771,7 +3756,7 @@ function calDayKey(iso){var d=new Date(iso);d.setHours(0,0,0,0);return d.getTime
 function calMin(iso){var d=new Date(iso);return d.getHours()*60+d.getMinutes();}
 function hmMin(s){if(s==null)return null;var p=String(s).split(':');var m=(+p[0])*60+(+p[1]);return isNaN(m)?null:m;}
 function calNesteKey(k,n){var d=new Date(k);d.setDate(d.getDate()+n);d.setHours(0,0,0,0);return d.getTime();}
-function finnBooking(id){var f=function(a){return (a||[]).find(function(x){return String(x.id)===String(id);});};return f(CAL.alle)||f(_upcoming)||f(_bookinger);}
+function finnBooking(id){var f=function(a){return (a||[]).find(function(x){return String(x.id)===String(id);});};return f(CAL.alle)||f(_upcoming);}
 
 async function calFetch(){
   var bs=await api.bookings();                    // 30 bakover + alle framtidige
@@ -4418,7 +4403,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
   $("#"+id).classList.add("active");
   if(window.__syncBunnNav)window.__syncBunnNav();   // speil aktiv fane i bunn-nav (mobil)
-  if(id==="oversikt"){loadOversikt();loadBookinger();}
+  if(id==="oversikt"){loadOversikt();}
   if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();loadLoyalty();}
   if(id==="tjenester"){loadTjenester();loadArbeidstider();}
   // «Din side» laster alle tre trekkspillene. loadProfil FØRST — den fyller Profil-feltene
@@ -5619,7 +5604,6 @@ async function loadWinback(){
 }
 function updateWbSignals(n){
   var badge=$("#wbBadge"); if(badge){ badge.textContent=n; badge.hidden=!(n>0); }
-  var nudge=$("#ovsWbNudge"); if(nudge){ nudge.innerHTML='<span class="wb-dot" aria-hidden="true"></span><span>'+n+' å følge opp i Vinn tilbake</span>'; nudge.hidden=!(n>0); }
 }
 function wbMonthDay(iso){ if(!iso)return'–'; var d=new Date(iso); return d.getDate()+'.&nbsp;'+MONTHS[d.getMonth()]; } // «14. juli»
 function wbNoShowCtx(c){                     // «no-show i dag» / «no-show i går» / «no-show 14. juli»
@@ -5646,7 +5630,7 @@ function wbRowsHtml(list){
         '<div class="wb-name">'+ny+esc(c.name||"–")+'</div>'+
         // Nummeret vises, men er IKKE en handling — den som vil ringe kan lese det.
         '<div class="wb-meta">'+(c.completed_count||0)+' klipp'+
-          (c.phone?'<span class="wb-tel">'+esc(c.phone)+'</span>':'')+'</div>'+
+          (c.phone?'<a class="wb-phone" href="tel:'+esc(c.phone)+'" data-tel="'+esc(c.phone)+'">'+esc(c.phone)+'</a>':'')+'</div>'+
       '</div>'+
       '<div class="wb-right"><div class="wb-ctx">'+ctx+'</div></div>'+
     '</div>';
@@ -5733,6 +5717,16 @@ function wbToggleEldre(){
 // api.winbackContacted er fjernet i samme slengen. Backend-ruta
 // POST /api/dashboard/winback/:id/contacted finnes fortsatt og er urørt; den har bare
 // ingen kaller igjen i frontend.
+// Telefon i Vinn tilbake: mobil ringer via tel:-lenken (la default gå). Desktop har ingen dialer →
+// preventDefault + kopier til utklippstavla (som lojalitet-lista). Delegert på #wbList (overlever re-render).
+(function(){ var el=$("#wbList"); if(!el)return;
+  el.addEventListener('click', async function(e){
+    var tel=e.target.closest('.wb-phone'); if(!tel)return;
+    if(window.matchMedia && window.matchMedia('(pointer: coarse)').matches) return; // mobil → tel: ringer
+    e.preventDefault();                                                             // desktop → kopier
+    var ok=await kopierTekst(tel.dataset.tel||''); if(ok)showToast('Nummer kopiert');
+  });
+})();
 
 /* ---- Tjenester ---- */
 let hoved=[{name:"Skinnfade",price:450,min:45},{name:"Klipp",price:300,min:30}];
@@ -6819,7 +6813,7 @@ var _bn=$("#barberName");if(_bn)_bn.textContent="";
 buildMonthSelect();
 initChartTouch(); // lag 2: koble pointer-events på #chartBars (én gang; overlever innerHTML-rebuild)
 loadProfil(); // fyller header-navn + profil-fane ved sideload
-loadOversikt();loadBookinger();
+loadOversikt();
 loadPayment(); // betalingsmetoder (Tjenester-fanen) fra innstillings-loaderen
 // Oversikt-nudgen (ferske no-shows) fylles av loadWinback — men FØRST etter at plan er kjent, så
 // erBasis()-guarden virker og basis ikke henter kundedata ved sideload (init-race lukket).
