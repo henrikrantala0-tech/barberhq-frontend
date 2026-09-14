@@ -2681,9 +2681,10 @@ const CONFIG={
 // body som string → Content-Type: application/json settes automatisk.
 // body som FormData → ingen Content-Type (browser setter multipart boundary).
 // raw401: slå AV auto-redirecten for dette ene kallet. Brukes kun av passordbytte, der 401
-// også betyr «feil nåværende passord» (code:'mangler_naavaerende_passord') — uten unntaket
-// ble barbereren kastet til innlogging idet han skrev feil gammelt passord, og det leser som
-// en feil i innloggingen. Flagget hører hjemme på kallstedet: apiFetch måtte ellers lest
+// betyr én av TO ting: manglende (code:'mangler_naavaerende_passord') ELLER feil
+// (code:'feil_naavaerende_passord') nåværende passord — begge skal vises inline, ikke redirecte.
+// Uten unntaket ble barbereren kastet til innlogging idet han skrev feil gammelt passord, og det
+// leser som en feil i innloggingen. Flagget hører hjemme på kallstedet: apiFetch måtte ellers lest
 // kroppen på hver eneste 401 og kjent til backend-koder den ikke har noe med å gjøre.
 // ⚠ Setter du raw401, må kallstedet SELV håndtere ekte sesjonsutløp.
 async function apiFetch(path,opts={}){
@@ -4696,10 +4697,10 @@ $("#savePw").addEventListener("click",async function(){
   }
   // FEIL GAMMELT PASSORD — bli i dashbordet. Uten denne grenen (og raw401 over) ville
   // barbereren blitt sendt til innlogging, som leser som en feil i innloggingen.
-  if(r.status===401&&d.code==='mangler_naavaerende_passord'){
-    err.textContent=d.error||'Du må oppgi nåværende passord';err.style.display='block';return;
+  if(r.status===401 && (d.code==='mangler_naavaerende_passord' || d.code==='feil_naavaerende_passord')){
+    err.textContent=d.error||'Feil nåværende passord';err.style.display='block';return;   // begge kodene → bli i dashbordet
   }
-  // EKTE sesjonsutløp. raw401 slo av auto-redirecten, så den må gjøres her.
+  // EKTE sesjonsutløp (ingen passord-kode). raw401 slo av auto-redirecten, så den må gjøres her.
   if(r.status===401){location.href='/no/logg-inn.html';return;}
   err.textContent=d.error||'Kunne ikke bytte passord. Prøv igjen.';err.style.display='block';
 });

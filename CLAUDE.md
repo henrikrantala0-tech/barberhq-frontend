@@ -872,16 +872,6 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
     Forvent omformuleringer: norsk er kortere enn svensk og dansk på flere av disse frasene.
 16. **buildPalette duplisert** (fyll.cjs ↔ site/no/palett.js) — se «Kjent teknisk gjeld» over.
     (Tidssone-via-market sto her også; den er løst — `barbers.timezone` er sannhetskilde.)
-17. **BUG (ufikset, funnet 14.09.2026) — «Bytt passord» kaster barbereren til innlogging ved FEIL
-    nåværende passord.** `site/no/dashboard.html:4706` special-caser KUN `code==='mangler_naavaerende_passord'`.
-    Backend `set-password` svarer 401 med en ANNEN kode `feil_naavaerende_passord` ved bcrypt-mismatch
-    (backend `src/routes/dashboard.js:210`; `mangler_` er `:203`). Feil-passord-koden faller derfor gjennom
-    til den generiske `if(r.status===401){location.href='/no/logg-inn.html'}` (`:4710`) → redirect til
-    innlogging i stedet for «Feil nåværende passord» inline — nøyaktig det grenen på `:4704` skulle hindre.
-    Rot-årsak: kommentaren på `:2688` antok at 401 alltid betyr `mangler_naavaerende_passord` (én kode),
-    men backend har to. **Foreslått fiks (1 linje):** utvid `:4706`-vilkåret til å fange begge kodene —
-    `d.code==='mangler_naavaerende_passord'||d.code==='feil_naavaerende_passord'` — `d.error` bærer allerede
-    riktig backend-tekst. (Linjenumre pr. `25faaa5`, kan ha driftet.)
 
 ### Hvor filer bor (plasseringsregler)
 - **Seksjonsutkast bor i `_utkast/`** — `din-side-seksjon.html`, `din-side__bilde.html`,
