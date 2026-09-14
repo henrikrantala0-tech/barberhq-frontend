@@ -2060,7 +2060,7 @@
           <button type="button" class="acc-head" aria-expanded="false">
             <span class="acc-htext">
               <span class="acc-title">Design</span>
-              <span class="acc-sub">Palett, bakgrunn, skrift og layout på bookingsiden din.</span>
+              <span class="acc-sub">Palett, bakgrunn, stil og layout på bookingsiden din.</span>
             </span>
             <span class="acc-chev">▾</span>
           </button>
@@ -2094,7 +2094,7 @@
               </div>
               <!-- Vises når valgt palett ikke støtter mørk (sand). Toggles av renderDesign. -->
               <p class="mode-hint" id="modeHint" hidden>Kun lys for denne paletten</p>
-              <p class="dlbl">Skrift</p>
+              <p class="dlbl">Stil</p>
               <div class="preset-grid" id="fontGrid"></div>
               <p class="dlbl">Layout</p>
               <div class="preset-grid" id="layoutGrid"></div>
@@ -5733,10 +5733,10 @@ $("#savePay").addEventListener('click',async function(){
 
 /* ---- Design (ferdige presets) ---- */
 const FONTS=[
-  {key:"fraunces",vibe:"Klassisk og elegant",name:"Fraunces",css:"'Fraunces', serif",w:600},
-  {key:"grotesk",vibe:"Moderne og markant",name:"Space Grotesk",css:"'Space Grotesk', sans-serif",w:600},
-  {key:"jakarta",vibe:"Ren og proff",name:"Plus Jakarta Sans",css:"'Plus Jakarta Sans', sans-serif",w:600},
-  {key:"bebas",vibe:"Kompakt og rå",name:"Bebas Neue",css:"'Bebas Neue',sans-serif",w:400}
+  {key:"fraunces",vibe:"Klassisk",name:"Fraunces",css:"'Fraunces', serif",w:600},
+  {key:"grotesk",vibe:"Signatur",name:"Space Grotesk",css:"'Space Grotesk', sans-serif",w:600},
+  {key:"jakarta",vibe:"Moderne",name:"Plus Jakarta Sans",css:"'Plus Jakarta Sans', sans-serif",w:600},
+  {key:"bebas",vibe:"Kraftig",name:"Bebas Neue",css:"'Bebas Neue',sans-serif",w:400}
 ];
 const LAYOUTS=[
   {key:"profil",t:"Profil",d:"Portrett + info"},
