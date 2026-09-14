@@ -610,6 +610,27 @@ palett-grid + layout-karusell `#layGrid` + preview-iframe) ble fjernet i skjemao
 på `layGrid/palGrid/preview-tjenester` nå. Render-testene måler `scrollWidth − viewport = 0` på
 320/402/1280. Ikke lenger en kjent overflow.
 
+### Dashboard — desktop-bredde + polish (funnet 14.09.2026, ikke fikset)
+1. **Dashbordet mangler desktop-bredde.** Hele dashbordet er én mobil-kolonne UTEN `max-width`, så
+   alt strekkes full-bleed på 1280. Tre symptomer, samme rot: (a) `justify-between`-rader får store
+   tomme midtpartier på brede skjermer — «Kommende bookinger» (navn ↔ tjeneste), «Drevet av»-radene
+   (arm ↔ verdi) og SMS-toggle-radene (tekst ↔ bryter); (b) periodepillene (`#segs`/`#attrPeriod`)
+   strekkes til tre enorme segmenter; (c) KPI-kort og diagrammer blir sparsomme (små tall i store,
+   halvtomme kort). **Foreslått fiks:** sentrert innholds-container med `max-width` på dashbord-panelene
+   KUN på desktop — bredden bestemmes av INNHOLDET, ikke et rundt tall. **Mobil skal være UENDRET**
+   (den er allerede stram; verifisert @375). Rører ingen låst design-beslutning — kun wrapper-bredde.
+   (Evt. senere, større: 2-kolonne på Oversikt for ekte desktop-følelse.)
+2. **«Klipp totalt 0» (Vekst) viser stort null for fersk barber.** Samme svakhet som ble løst på
+   «Drevet av»-panelet 14.09 (`diTotalHtml` skjuler tallblokka ved `count===0` → dempet linje
+   «Ingenting hentet inn ennå.»). Samme behandling bør gjelde «Klipp totalt» på Vekst: skjul det
+   store nullet, vis én dempet linje i stedet.
+3. **Enkelt-stolpe-diagram leser som en halv-tegnet graf.** «Kunder per måned» med kun ÉN måned
+   (ett stolpe i et vidt lerret) ser tomt/uferdig ut. Trenger en tom-/tynn-tilstand ved ≤1 måned med
+   data (dempet baseline eller hjelpetekst i stedet for én ensom stolpe).
+4. **Gap navn ↔ tjeneste i «Kommende bookinger» på mobil (LAV).** Synlig mellomrom mellom navn og
+   tjeneste-etikett også på 375. Mobil ble ellers målt som stram, så **DETTE MÅ VERIFISERES PÅ EKTE
+   TELEFON** før noe endres — ikke stol på headless-målingen alene her.
+
 ### Funnet i frontend, men SKAL FIKSES I BACKEND (barberhq-backend)
 Funnet ved å klone bookingmodulen inn i produktvisningen og måle klonen mot den publiserte
 sida. Ikke frontend-feil, og ikke rørt herfra — ÉN Code-sesjon per repo, så backend-endringene
