@@ -37,6 +37,13 @@
   *{margin:0;padding:0;box-sizing:border-box}
   body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased}
   .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
+  /* PROTOTYPE 14.09 (IKKE committet) — desktop: stram de fire enkeltkolonne-panelene (Oversikt, Vekst,
+     Tjenester, Konto) til 680px, VENSTREJUSTERT (flush under nav — deler venstrekant med header/nav).
+     #design (Din side) UNNTAS — 2-kolonne-gridet (.side-wrap/.design-preview) trenger bredden.
+     Kun ≥768 → mobil uendret. */
+  @media(min-width:768px){
+    #oversikt,#vekst,#tjenester,#abonnement{max-width:680px;margin-left:0;margin-right:auto}
+  }
 
   .top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid var(--line)}
   /* Butikknavn i headeren (der ordmerket sto) — 14px halvfet, brødtekst-/etikett-nivå (ned fra
