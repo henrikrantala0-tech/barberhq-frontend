@@ -2873,11 +2873,6 @@ const api={
     return await apiFetch('/api/dashboard/customers/'+encodeURIComponent(customerId)+'/loyalty',
       {method:'PUT',body:JSON.stringify({opt_in:!!optIn})});
   },
-  async rebookingCandidates(){ // GET /api/dashboard/rebooking → {enabled,interval_days,customers:[{customer_id,name,phone,last_visit_at,days_since,last_service}]}
-    const r=await apiFetch('/api/dashboard/rebooking');
-    if(!r||!r.ok)return null; // 403 fra Vekst-gaten (m.fl.) → null, ikke tom liste. Ingen kaller p.t., men kontrakten holdes lik de andre Vekst-listene.
-    return r.json();
-  },
   // GET /api/dashboard/customers/recent → {limit,customers:[{customer_id,name,phone,referral_code,last_visit_at,last_service}]}
   // Kunder etter siste FULLFØRTE klipp, nyeste først. Mater verve-lista.
   // limit=100 (ruta klemmer til maks 200): «Vis flere» skal kunne nå hele kundebasen for en
