@@ -14,3 +14,6 @@ live_preview_handoff/
 /*.mjs
 !/*.config.mjs
 /pw-screenshots/
+
+# Personlig agent-oppsett (ikke delt)
+.agents/
