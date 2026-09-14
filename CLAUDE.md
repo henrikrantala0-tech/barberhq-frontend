@@ -861,6 +861,28 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
     på ekte kundeside. Bevist via API, ikke UI-flyt ennå.
     (Pris-0-markøren som sto her er GJORT — `5fe012d`, se «Løst post-launch».)
 
+### Åpne tester (ikke kjørt ennå)
+- **Vervingsflyten ende-til-ende mot prod — LANSERINGSBLOKKER, aldri kjørt.** Krever prod-DB +
+  backend-sesjonen (én sesjon per repo): frontend driver UI-leddene, backend kjører verifiserings- og
+  opprydnings-SQL (Railway `.cjs` i `/app`). Plan (klar til kjøring når backend er ledig):
+  1. **Bekreft vekst-gate FØRST — ellers testes ingenting.** `settleBookingRewards` (`referralSettle.js:100`,
+     backend) gir `return null` hvis `effektivPlan !== 'vekst'` (trial teller som vekst). Sjekk:
+     `SELECT id,slug,subscription_status,plan,trial_start_at FROM barbers WHERE slug='<test>'`.
+  2. **Fem ledd med DB-effekt:** (a) *Vervelenke* — ingen skriving; lenka bærer verver A's
+     `customers.referral_code`. (b) *`?ref=`-booking* — ny kunde B med `customers.referred_by=A.id` + ny
+     `bookings`-rad (`reward_settled_at=NULL`). (c) *Fullført* — `bookings.status` ikke avlyst/no-show →
+     oppgjør. (d) *Reward* — `INSERT referral_rewards` (referrer=A, referred=B, `discount_pct`-snapshot,
+     recipient, status `utlost`/`brukt`, `brukt_ny_at`, `bonus_utlop_at=ends_at+32d`, `verver_bonus_gjelder`);
+     `ON CONFLICT (referred_customer_id)` idempotent; `bookings.discount_pct` snapshottet (`:176`). (e) *Pill* —
+     `GET /bookings.referral_discount` → `discountPill` i dashbordet.
+  3. **Oppgjøret må trigges MANUELT via «fullført».** Time-sweepen plukker kun `ends_at < now()−3t`
+     (`SETTLE_CUTOFF`), så en booking lagt LANGT FREM auto-oppgjøres aldri. Manuell PATCH
+     `/bookings/:id {status:'fullfort'}` → `settleBookingRewards` har INGEN grace-sjekk → settler straks.
+  4. **SMS av** (`sms_rebooking_enabled` + påminnelse) før testen, på igjen etter. Throwaway A+B.
+  5. **Opprydning i FK-rekkefølge:** `referral_rewards` → `bookings` → `customers`
+     (WHERE `barber_id='<test>'`), så `SELECT count(*)=0` på alle tre.
+- **Test full klikk-flyt med ekte klippbilde** — se «Data / backend-avhengig» punkt 10.
+
 ### Lav / polish
 - **WebAuthn-instruksjonsbanner + «App kommer»-banner** i dashboard.
 - **favicon.ico mangler** — 404 på alle sider (kosmetisk).
@@ -893,6 +915,13 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
     Forvent omformuleringer: norsk er kortere enn svensk og dansk på flere av disse frasene.
 16. **buildPalette duplisert** (fyll.cjs ↔ site/no/palett.js) — se «Kjent teknisk gjeld» over.
     (Tidssone-via-market sto her også; den er løst — `barbers.timezone` er sannhetskilde.)
+17. **`reward_settled_at` stemples UANSETT plan (verving-oppgjør) — «feil plan» og «ingenting skjedde»
+    ser like ut i `bookings`.** `settleBookingRewards` returnerer `null` for ikke-vekst, men kalleren
+    setter `reward_settled_at` likevel (`referralSettle.js:78–82/212`) — bevisst (ingen retroaktive
+    belønninger ved basis→vekst, og sweepen slipper å re-skanne). Konsekvens for TESTING/observability:
+    en satt `reward_settled_at` uten `referral_rewards`-rad kan bety enten «basis, ingen reward» ELLER
+    «vekst, men ingen verving på bookingen». Verifiser derfor ALLTID planen (SELECT over) FØR du tolker
+    et manglende reward som en bug. Backend-atferd; noteres her som gjeld/felle, ikke som frontend-fiks.
 
 ### Hvor filer bor (plasseringsregler)
 - **Seksjonsutkast bor i `_utkast/`** — `din-side-seksjon.html`, `din-side__bilde.html`,
