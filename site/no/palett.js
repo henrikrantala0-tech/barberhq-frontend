@@ -35,14 +35,17 @@
     oransje:  {lys:'#b54509',mork:'#e8590c'},
     sand:     {lys:'#38312a'},   // kun lys — mørk sand finnes ikke (se PALETTE_MODES)
   };
+  // Velger-paletter (barbervalg) — MÅ speile backend PALETTES (fyll.cjs). purple/oransje/minimal
+  // FJERNET 14.09 (velgerrydding); sand er INTERN (kun plakatgenerering) og står IKKE i velgeren.
+  // Rekkefølge: Gull, Street Mint, BarberHQ. «Din egen» appendes av customKortHtml() i dashboard.
+  // ⚠ krem = visningsnavn «Gull» · klassisk = «BarberHQ» — «BarberHQ» er IKKE relatert til stilen
+  //   «Klassisk» (font==='fraunces'). Nøklene (krem/mint/klassisk) er uendret; kun visning ryddet.
+  // Merk: PALETTE_DATA/MODES/ACCENT_TEXT beholder purple/oransje/minimal/sand som buildPalette-DATA
+  //   (fallback + sand-plakat + index.html-klonens buildPalette('oransje')-synkpunkt) — ikke i velgeren.
   var PALETTES_DISPLAY=[
-    {key:"mint",     t:"Street Mint",       d:"Friskt grønt",        sw:["#ffffff","#10b981","#0a0a0a"]},
-    {key:"klassisk", t:"BarberHQ",           d:"Sort/hvit + blå",     sw:["#0a0a0a","#ffffff","#0071e3"]},
-    {key:"purple",   t:"Modern Purple",     d:"Dyp lilla",                sw:["#ffffff","#6b3df0","#0a0a0a"]},
-    {key:"krem",     t:"Krem & Gull",       d:"Varm, klassisk",           sw:["#ffffff","#b08c32","#0a0a0a"]},
-    {key:"minimal",  t:"Minimalistisk",     d:"Svart, hvitt, grått", sw:["#ffffff","#86868b","#0a0a0a"]},
-    {key:"oransje",  t:"Burnt Orange",      d:"Brent oransje, sort",      sw:["#ffffff","#e8590c","#0a0a0a"]},
-    {key:"sand",     t:"Sand",              d:"Sand og varm sort",        sw:["#efe7d8","#38312a","#2a241e"]},
+    {key:"krem",     t:"Gull",        d:"Kullsort og varmt gull", sw:["#ffffff","#b08c32","#0a0a0a"]},
+    {key:"mint",     t:"Street Mint", d:"Friskt grønt",           sw:["#ffffff","#10b981","#0a0a0a"]},
+    {key:"klassisk", t:"BarberHQ",    d:"Sort/hvit + blå",        sw:["#0a0a0a","#ffffff","#0071e3"]},
   ];
   function hx(h){h=h.replace('#','');return[parseInt(h.slice(0,2),16),parseInt(h.slice(2,4),16),parseInt(h.slice(4,6),16)];}
   function lum(h){var v=hx(h);return(0.299*v[0]+0.587*v[1]+0.114*v[2])/255;}
