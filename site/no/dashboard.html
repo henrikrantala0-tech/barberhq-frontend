@@ -914,7 +914,7 @@
   .di-total-klipp{font-size:30px;font-weight:800;letter-spacing:-.035em;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
   .di-total-kr{font-size:34px;font-weight:800;letter-spacing:-.035em;line-height:1;margin-top:6px;color:var(--ink);font-variant-numeric:tabular-nums}
   .di-kr{font-weight:300;font-size:22px;color:var(--ink-2)}
-  .di-total.di-tom .di-total-klipp,.di-total.di-tom .di-total-kr{color:var(--mut)}
+  .di-tom-linje{font-size:13px;color:var(--mut);line-height:1.4}   /* total 0 → én dempet linje (14.09), ikke «0 klipp / 0 kr» */
   #attrRows .di-total{margin-top:26px}   /* #2: luft fra periodevelgeren til totalen (Vekst) */
   .di-periode{font-size:12px;color:var(--mut);margin-top:8px}
   .di-rows{margin-top:16px}
@@ -3342,10 +3342,14 @@ function oppdaterSkjoldFlater(){
 // Kontrakt (backend 46898fd+d9048ee): { paaVei, hentetInn? }. hentetInn MANGLER for Basis —
 // fravær = signalet, aldri en tom verdi. Alt leses via ?. / ||-guard → manglende nøkkel kaster aldri.
 function diTitle(){ return '<div class="di-title">Drevet av BarberHQ</div>'; }
-// Totalblokka (turn 3): to stablede tall «N klipp» + «X kr» + periode-etikett. tom → dempede tall.
-function diTotalHtml(count, revenue, periodeTekst, tom){
-  return '<div class="di-total'+(tom?' di-tom':'')+'">'
-    +'<div class="di-total-klipp">'+(count||0)+' klipp</div>'
+// Totalblokka (turn 3): to stablede tall «N klipp» + «X kr» + periode-etikett. total.count===0 →
+// erstattes av ÉN dempet linje (14.09) i stedet for «0 klipp / 0 kr» — så «På vei» dominerer på tom periode.
+function diTotalHtml(count, revenue, periodeTekst){
+  if((count||0)===0){
+    return '<div class="di-total"><div class="di-tom-linje">Ingenting hentet inn ennå.</div></div>';
+  }
+  return '<div class="di-total">'
+    +'<div class="di-total-klipp">'+count+' klipp</div>'
     +'<div class="di-total-kr">'+(revenue||0).toLocaleString('no-NO')+'<span class="di-kr"> kr</span></div>'
     +'<div class="di-periode">'+esc(periodeTekst)+'</div></div>';
 }
@@ -3385,7 +3389,7 @@ function diRaderHtml(hi){
 function diHentetInnHtml(hi){
   var total=(hi&&hi.total)||{count:0,revenue:0};
   return '<div class="di-hentet"><div class="di-eyebrow">HENTET INN MED BARBERHQ</div>'
-    +diTotalHtml(total.count, total.revenue, 'siste 30 dager', !((total.count||0)>0||(total.revenue||0)>0))
+    +diTotalHtml(total.count, total.revenue, 'siste 30 dager')
     +diRaderHtml(hi)
   +'</div>';
 }
@@ -4038,7 +4042,7 @@ async function renderAttribusjon(){
   // Turn 3: total øverst (to tall + «denne perioden») + rammefrie rader. Ingen «Totalt»-rad, ingen
   // bunntekst (flyttet til undertittelen). 0-tilstand vises naturlig (dempet total + «Ingen ennå»).
   var total=hi.total||{count:0,revenue:0};
-  el.innerHTML=diTotalHtml(total.count, total.revenue, 'denne perioden', !((total.count||0)>0||(total.revenue||0)>0))
+  el.innerHTML=diTotalHtml(total.count, total.revenue, 'denne perioden')
     +diRaderHtml(hi);
 }
 // #attrPeriod (turn 3): to piller (2 uker/30 dager) + «3 mnd ▾»-nedtrekk (3/6/12 måneder). 3. pille
