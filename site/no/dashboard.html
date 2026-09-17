@@ -449,11 +449,10 @@
   .dinside-cta-handling .btn{white-space:nowrap}
   .dinside-cta-note{font-size:11.5px;color:var(--mut);line-height:1.4;text-align:right}
   @media(max-width:520px){.dinside-cta-handling{align-items:stretch;flex:1 1 100%}.dinside-cta-handling .btn{justify-content:center}.dinside-cta-note{text-align:center}}
-  /* Live-tilstand på «Din side» (page_status==='live'): grønn statuslinje + kopierbar lenke
-     (feltet bygges av JS via byggKopierbartLenkefelt — .pub-field/.pub-copy fra lenkeblokka). */
-  .dinside-live{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:15px 17px;margin:0 0 22px}
-  .dinside-live-status{display:flex;align-items:center;gap:9px;font-size:14px;font-weight:700;color:var(--ink);margin-bottom:12px}
-  .dinside-live-status .live-dot{width:9px;height:9px;border-radius:50%;background:var(--good);flex:0 0 auto}
+  /* Live-tilstand på «Din side» (page_status==='live'): liten grønn prikk + «Live» i vanlig
+     tekstfarge — ingen bakgrunn/kant/hover. Kopiering skjer via lenka i toppen (#headerLenke). */
+  .dinside-live{display:flex;align-items:center;gap:8px;margin:0 0 22px;font-size:14px;font-weight:600;color:var(--ink)}
+  .live-dot{width:8px;height:8px;border-radius:50%;background:#3ecf7e;flex:0 0 auto}
   /* Miniatyr inne i et .preset-kort: temaets bakgrunn med «Aa» i temaets tekstfarge.
      Intern i .preset, som .swatches — ikke en ny komponent. */
   .theme-mini{display:flex;align-items:center;justify-content:center;height:62px;border-radius:7px;
@@ -655,6 +654,12 @@
   .pub-copy::before{content:"";position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);width:44px;height:44px}
   .pub-copy:hover{color:var(--ink);background:var(--surface)}
   .pub-copy.ok{color:var(--good)}   /* hake ved kopiert — grønn fra token */
+  /* Tydelig tekstlig «Kopiert»-kvittering (i tillegg til hake-ikonet) — vises ~1,5 s mens .ok står.
+     Under ikonet, høyrejustert så den ikke går utenfor skjermkanten på 320. Gjelder alle .pub-copy
+     (headerlenka, Konto-lenkeblokka, suksesskortet). */
+  .pub-copy.ok::after{content:"Kopiert";position:absolute;top:calc(100% + 5px);right:0;
+    background:var(--ink);color:var(--bg);font-size:11px;font-weight:600;letter-spacing:-.01em;
+    padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;z-index:5}
   .pub-note{font-size:12px;color:var(--mut);margin:8px 0 0;line-height:1.45}
   /* Avpubliser er med vilje dempet til en tekstlenke, ikke en knapp: den er sjelden og
      destruktiv-ish (tar sida ned), og skal ikke konkurrere visuelt med «Publiser siden». */
@@ -1994,7 +1999,7 @@
        forsvinner den når trekkspillet lukkes, og de to andre mister forhåndsvisningen sin. -->
   <section class="panel" id="design">
     <p class="panel-h">Din side</p>
-    <p class="block-s">Alt som former bookingsiden din. Endringer vises i forhåndsvisningen.</p>
+    <p class="block-s">Design siden din. Endringer vises i forhåndsvisningen.</p>
     <!-- Publiser-CTA: KUN i forhandsvist (styres av renderDinsideCta via _billing.page_status).
          Gjenbruker settSideStatus('live') — samme dispatch som Konto-knappens _kontoAksjon==='publiser'.
          Konto-knappen er urørt. -->
@@ -2009,11 +2014,11 @@
         <span class="dinside-cta-note">Prøveperioden på 30 dager starter når du publiserer.</span>
       </div>
     </div>
-    <!-- Live-tilstand: erstatter CTA-en når page_status==='live'. Grønn statuslinje + kopierbar
-         lenke — gjenbruker .pub-field/.pub-copy/kopierLenke fra Konto-lenkeblokka (settLenkeblokk). -->
+    <!-- Live-tilstand: erstatter CTA-en når page_status==='live'. Liten grønn prikk + «Live» i
+         vanlig tekstfarge (ingen bakgrunn/kant/hover). Kopiering skjer via den permanente
+         kopierbare lenka i headeren (#headerLenke/settHeaderLenke). -->
     <div class="dinside-live" id="dinsideLive" hidden>
-      <div class="dinside-live-status"><span class="live-dot"></span>Siden din er live</div>
-      <div id="dinsideLiveLenke"></div>
+      <span class="live-dot"></span>Live
     </div>
     <div class="side-wrap">
       <!-- data-single: ETT trekkspill åpent om gangen. Markøren er på lista, ikke global —
@@ -6249,17 +6254,8 @@ function renderDinsideCta(b){
   if(st==='forhandsvist'&&kanPublisere){
     cta.hidden=false; live.hidden=true;
   }else if(st==='live'){
-    cta.hidden=true;
-    // Grønn statuslinje + kopierbar lenke. Uten slug ennå (CONFIG.BARBER_SLUG ikke landet):
-    // vis statuslinja, tøm feltet — loadProfil re-renderer renderKonto når sluggen kommer.
-    var boks=$("#dinsideLiveLenke");
-    if(boks){
-      if(CONFIG.BARBER_SLUG){
-        var slug=CONFIG.BARBER_SLUG;
-        byggKopierbartLenkefelt(boks, CONFIG.SITE_BASE+'/'+slug, CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+slug);
-      }else{ boks.textContent=''; }
-    }
-    live.hidden=false;
+    // Live: skjul CTA, vis liten grønn prikk + «Live». Kopiering via headerlenka (settHeaderLenke).
+    cta.hidden=true; live.hidden=false;
   }else{ // draft / avslag / nedtatt / ukjent — ingen av dem
     cta.hidden=true; live.hidden=true;
   }
