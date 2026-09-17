@@ -2054,6 +2054,24 @@
           </div>
         </div>
 
+        <!-- Bilder — slot-visningen følger VALGT layout i Design-trekkspillet under.
+             Den koblingen (refreshSlots ved layout-bytte) er uendret av sammenslåingen. -->
+        <div class="acc" id="accBilder">
+          <button type="button" class="acc-head" aria-expanded="false">
+            <span class="acc-htext">
+              <span class="acc-title">Bilder</span>
+              <span class="acc-sub">Trykk på en boks for å laste opp bilde til den plassen.</span>
+            </span>
+            <span class="acc-chev">▾</span>
+          </button>
+          <div class="acc-body" hidden>
+            <p class="slot-hint" id="layoutHint"></p>
+            <input type="file" id="fileInput" accept="image/*" hidden>
+            <input type="file" id="replaceInput" accept="image/*" hidden>
+            <div id="bilderMount"><div class="loading">Laster …</div></div>
+          </div>
+        </div>
+
         <!-- Design — hver .acc-body beholder SIN EGEN savebar og sitt eget endepunkt.
              Tre knapper, tre PUT-er: /profile, /design, /images. Ikke slått sammen. -->
         <div class="acc" id="accDesign">
@@ -2100,24 +2118,6 @@
               <div class="preset-grid" id="layoutGrid"></div>
             </div>
             <div class="savebar"><button class="btn" id="saveDesign">Lagre design</button><span class="saved" id="designSaved">Lagret &#10003;</span></div>
-          </div>
-        </div>
-
-        <!-- Bilder — slot-visningen følger VALGT layout i Design-trekkspillet over.
-             Den koblingen (refreshSlots ved layout-bytte) er uendret av sammenslåingen. -->
-        <div class="acc" id="accBilder">
-          <button type="button" class="acc-head" aria-expanded="false">
-            <span class="acc-htext">
-              <span class="acc-title">Bilder</span>
-              <span class="acc-sub">Trykk på en boks for å laste opp bilde til den plassen.</span>
-            </span>
-            <span class="acc-chev">▾</span>
-          </button>
-          <div class="acc-body" hidden>
-            <p class="slot-hint" id="layoutHint"></p>
-            <input type="file" id="fileInput" accept="image/*" hidden>
-            <input type="file" id="replaceInput" accept="image/*" hidden>
-            <div id="bilderMount"><div class="loading">Laster …</div></div>
           </div>
         </div>
 
