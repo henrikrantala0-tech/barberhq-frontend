@@ -2494,12 +2494,23 @@
   .cal-axis{flex-shrink:0;width:46px;position:relative;padding-top:34px}  /* 34px = dayhead-høyde */
   .cal-hour{height:108px;position:relative}  /* 60min × 1.8px/min (PX_PER_MIN) — hold i synk */
   .cal-hour>span{position:absolute;top:-7px;right:8px;font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
+  /* Halvtimeetikett: samme plassering/format som timeetiketten (right:8px, tabular), men mindre
+     (9px vs 11px) og svakere (opacity .6) så timen leses først. top: 30min×1.8 − 7 = 47px. */
+  .cal-hour>.cal-half{top:47px;font-size:9px;opacity:.6}
   .cal-days{flex:1;display:flex;min-width:0}
   .cal-day{flex:1;min-width:0;border-left:1px solid var(--line);display:flex;flex-direction:column}
   .cal-dayhead{height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--ink-2);border-bottom:1px solid var(--line);gap:6px}
   .cal-dayhead.is-today{color:var(--info)}
   .cal-daybody{position:relative}   /* høyde settes inline = (yMax−yMin)×PX_PER_MIN; ingen flex-stretch */
   .cal-hourline{position:absolute;left:0;right:0;border-top:1px solid var(--line);pointer-events:none}
+  /* Halvtimeslinje: samme tidsrom-logikk som timelinja, men svakere (lavere opasitet). */
+  .cal-halfline{position:absolute;left:0;right:0;border-top:1px solid var(--line);opacity:.4;pointer-events:none}
+  /* Nå-strek (Google-stil): horisontal #4d8bff over hele kolonnen + prikk i venstre ende. Ligger
+     OVER blokkene (z-index + sist i DOM) så den alltid er synlig, men er 2px tynn og pointer-events:none
+     → skjuler ikke kundenavn og stjeler ingen trykk. Vises kun på i dag (Oslo), posisjon = minToPx(nå). */
+  .cal-now{position:absolute;left:0;right:0;height:0;border-top:2px solid #4d8bff;z-index:5;pointer-events:none}
+  .cal-now-dot{position:absolute;left:-1px;top:-4px;width:7px;height:7px;border-radius:50%;background:#4d8bff}
+  .cal-today[hidden]{display:none}
   /* Tjenestefarge via --blk (settes inline pr. blokk = tjenestens posisjon i sort-lista).
      Lys tint av fargen som bakgrunn; fargen på ramme + venstrestripe. Fallback var(--info)
      hvis --blk mangler; plain background-linje er fallback for nettlesere uten color-mix. */
@@ -3662,7 +3673,7 @@ document.body.addEventListener("click",e=>{
 // Rad-klikk (lister, data-bk) OG blokk-klikk (kalender, .cal-block[data-id]) → openDetalj(id).
 // No-show/angre i BEGGE flater gjenbruker .noshowbtn (toggler på .aktiv) → body-delegeringen over
 // (handleBookingStatus), som synker status til alle kilder + oppdaterer åpne flater.
-var CAL={open:false,built:false,dombuilt:false,active:0,alle:[],hours:[],svcIdx:{},minKey:0,maxKey:0};
+var CAL={open:false,built:false,dombuilt:false,active:0,alle:[],hours:[],svcIdx:{},minKey:0,maxKey:0,tick:null,viewKeys:null,viewY:null};
 var bkDetalj={openId:null};
 var PX_PER_MIN=1.8, CAL_HFALL=[480,1200]; // 08–20-ramme for ubundet åpen dag (NULL-tider). 1.8 → 15-min ≈ 27px (leselig navn)
 // Tjenestefarge = tjenestens POSISJON (0-basert) i hovedtjeneste-lista sortert på sort, slått opp
@@ -3680,6 +3691,18 @@ function svcFarge(serviceId){
 
 function calDayKey(iso){var d=new Date(iso);d.setHours(0,0,0,0);return d.getTime();}
 function calMin(iso){var d=new Date(iso);return d.getHours()*60+d.getMinutes();}
+// ÉN tid→px-funksjon delt av blokker, time-/halvtimeslinjer OG nå-streken — ingen dobbel matte som kan drifte.
+function minToPx(min,yMin){return (min-yMin)*PX_PER_MIN;}
+// ÉN tid→tekst for BÅDE heltime- og halvtimeetikettene (HH:MM). Hierarki via CSS, ikke via format.
+function fmtTid(min){return String(Math.floor(min/60)).padStart(2,'0')+':'+String(min%60).padStart(2,'0');}
+// «Nå» og «i dag» beregnes i BARBERENS tidssone (Europe/Oslo), ikke nettleserens/UTC. Speiler
+// osloYm-mønsteret som diagrammet allerede bruker. osloTodayKey() returnerer en lokal-midnatt-ms
+// (samme form som calDayKey) for Oslo-datoen, så den kan sammenlignes direkte mot CAL-nøklene.
+function osloTodayStr(){return new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Oslo'}).format(new Date());} // "YYYY-MM-DD"
+function osloTodayKey(){var s=osloTodayStr().split('-');var d=new Date(+s[0],+s[1]-1,+s[2]);d.setHours(0,0,0,0);return d.getTime();}
+function osloNowMin(){var p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Oslo',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date()).forEach(function(x){if(x.type==='hour')p.h=x.value;else if(x.type==='minute')p.m=x.value;});return (+p.h)*60+(+p.m);}
+// Topbar-tittel = valgt dato i klartekst («Fredag 18. sep»); «I dag» kun når valgt = Oslo-i dag.
+function calHeadText(key){if(key===osloTodayKey())return 'I dag';var d=new Date(key);return DAYS[(d.getDay()+6)%7]+' '+d.getDate()+'. '+MONTHS[d.getMonth()].slice(0,3);}
 function hmMin(s){if(s==null)return null;var p=String(s).split(':');var m=(+p[0])*60+(+p[1]);return isNaN(m)?null:m;}
 function calNesteKey(k,n){var d=new Date(k);d.setDate(d.getDate()+n);d.setHours(0,0,0,0);return d.getTime();}
 function finnBooking(id){var f=function(a){return (a||[]).find(function(x){return String(x.id)===String(id);});};return f(CAL.alle)||f(_upcoming);}
@@ -3726,7 +3749,7 @@ function blokkLayout(bs,yMin,yMax){
     if(oe<=os)oe=os+15;                                  // 0/negativ varighet → 15-min for overlapp-logikken
     var s=Math.max(os,yMin), e=Math.min(oe,yMax);        // KLIPPET spenn — KUN visning (top/høyde)
     if(e<=s)e=Math.min(s+15,yMax);
-    return{b:b,os:os,oe:oe,top:(s-yMin)*PX_PER_MIN,h:Math.max((e-s)*PX_PER_MIN,16)};
+    return{b:b,os:os,oe:oe,top:minToPx(s,yMin),h:Math.max((e-s)*PX_PER_MIN,16)};
   });
   // Overlapp + lane på ORIGINALE tider (os/oe), ikke klippede. Klipping mot arbeidstids-kanten
   // er kun visning og skal ALDRI skape falsk 2-deling — en utenfor-tid-booking klippet til
@@ -3747,7 +3770,7 @@ function byggCal(){
     +'<div class="cal-daystrip" id="calDaystrip"></div>'
     +'<div class="cal-grid"><div class="cal-scroll"><div class="cal-axis" id="calAxis"></div><div class="cal-days" id="calDays"></div></div></div>';
   $("#calClose").onclick=lukkKalender;
-  $("#calToday").onclick=function(){calGoto(calDayKey(new Date()));};
+  $("#calToday").onclick=function(){calGoto(osloTodayKey());};
   $("#calDateBtn").onclick=function(){toggleMonthpick();};
   $("#calDaystrip").addEventListener('click',function(e){var c=e.target.closest('.cal-chip');if(c)calGoto(Number(c.dataset.key));});
   ov.addEventListener('click',function(e){var bl=e.target.closest('.cal-block');if(bl)openDetalj(bl.dataset.id);});
@@ -3759,7 +3782,7 @@ function byggCal(){
   CAL.dombuilt=true;
 }
 function renderDaystrip(){
-  var strip=$("#calDaystrip"),html='',todayKey=calDayKey(new Date());
+  var strip=$("#calDaystrip"),html='',todayKey=osloTodayKey();
   // Rotårsak-fiks (mobil): strippen starter på I DAG (eller aktiv dag hvis den er tidligere — navigert
   // bakover / last-past), så i dag ligger HELT TIL VENSTRE med kommende dager til høyre. Uten dette ligger
   // 14 fortids-chips (CAL.minKey = i dag−14) foran og dytter i dag mot høyre. scrollIntoView() under kan
@@ -3772,14 +3795,19 @@ function renderDaystrip(){
   var act=strip.querySelector('.cal-chip.active');if(act)act.scrollIntoView({inline:'center',block:'nearest'});
 }
 function renderGrid(){
-  var keys=calVisibleKeys(),y=yAkse(keys),dayH=(y.max-y.min)*PX_PER_MIN,todayKey=calDayKey(new Date());
-  var ax='';for(var m=y.min;m<y.max;m+=60)ax+='<div class="cal-hour"><span>'+String(Math.floor(m/60)).padStart(2,'0')+'</span></div>';
+  var keys=calVisibleKeys(),y=yAkse(keys),dayH=(y.max-y.min)*PX_PER_MIN,todayKey=osloTodayKey();
+  CAL.viewKeys=keys;CAL.viewY=y;   // lagres for per-minutt-oppdatering av nå-streken (oppdaterNaaStrek)
+  // Time- + halvtimeetikett i SAMME løkke, fra samme y.min..y.max, SAMME format (fmtTid → HH:MM).
+  // Hierarki kun via CSS (heltime større/sterkere, halvtime mindre/svakere). Halvtimen sitter midt i
+  // cella; m+30<y.max i praksis alltid (60-steg), så ingen etikett lander på y.max — som halvlinjene.
+  var ax='';for(var m=y.min;m<y.max;m+=60)ax+='<div class="cal-hour"><span>'+fmtTid(m)+'</span>'+((m+30<y.max)?'<span class="cal-half">'+fmtTid(m+30)+'</span>':'')+'</div>';
   $("#calAxis").innerHTML=ax;
   var cols='';
   keys.forEach(function(k){
     var head='<div class="cal-dayhead'+(k===todayKey?' is-today':'')+'">'+dayHead(new Date(k))+'</div>',h=dagTimer(k);
     if(h.closed){cols+='<div class="cal-day closed" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px"><div class="cal-closed">Stengt</div></div></div>';return;}
-    var lines='';for(var mm=y.min;mm<y.max;mm+=60)lines+='<div class="cal-hourline" style="top:'+((mm-y.min)*PX_PER_MIN)+'px"></div>';
+    // Time- + halvtimeslinjer fra SAMME tidsrom (y.min..y.max) via minToPx — halvlinja svakere (.cal-halfline).
+    var lines='';for(var mm=y.min;mm<y.max;mm+=60){lines+='<div class="cal-hourline" style="top:'+minToPx(mm,y.min)+'px"></div>';var half=mm+30;if(half<y.max)lines+='<div class="cal-halfline" style="top:'+minToPx(half,y.min)+'px"></div>';}
     var bs=dagBookinger(k),blocks='';
     if(!bs.length)blocks='<div class="cal-empty">Ingen bookinger</div>';
     else blokkLayout(bs,y.min,y.max).forEach(function(o){
@@ -3793,8 +3821,27 @@ function renderGrid(){
     cols+='<div class="cal-day" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px">'+lines+blocks+'</div></div>';
   });
   $("#calDays").innerHTML=cols;
-  var db=$("#calDateBtn");if(db)db.textContent=dayHead(new Date(CAL.active))+' ▾';
+  var db=$("#calDateBtn");if(db)db.textContent=calHeadText(CAL.active)+' ▾';
+  var tb=$("#calToday");if(tb)tb.hidden=(CAL.active===osloTodayKey());   // «I dag» kun når valgt ≠ i dag
+  tegnNaaStrek(keys,y);
 }
+// Nå-strek: kun når i dag (Oslo) er blant synlige kolonner OG nå ligger innenfor vist tidsrom.
+function tegnNaaStrek(keys,y){
+  var nowMin=osloNowMin();
+  if(nowMin<y.min||nowMin>y.max)return;              // nå utenfor vist tidsrom → ingen strek, ingen feil
+  var idx=keys.indexOf(osloTodayKey());if(idx<0)return;
+  var col=$("#calDays").children[idx];if(!col)return;
+  var body=col.querySelector('.cal-daybody');if(!body)return;
+  var el=document.createElement('div');el.className='cal-now';el.style.top=minToPx(nowMin,y.min)+'px';
+  el.innerHTML='<span class="cal-now-dot"></span>';
+  body.appendChild(el);
+}
+function oppdaterNaaStrek(){   // per-minutt: fjern gammel strek, tegn på nytt fra lagret visning
+  [].forEach.call(document.querySelectorAll('.cal-now'),function(n){n.remove();});
+  if(CAL.viewKeys&&CAL.viewY)tegnNaaStrek(CAL.viewKeys,CAL.viewY);
+}
+function startNaaTikk(){stopNaaTikk();CAL.tick=setInterval(function(){if(!CAL.open){stopNaaTikk();return;}oppdaterNaaStrek();},60000);}
+function stopNaaTikk(){if(CAL.tick){clearInterval(CAL.tick);CAL.tick=null;}}
 function renderCal(){renderDaystrip();renderGrid();}
 function calGoto(key){CAL.active=Math.max(CAL.minKey,Math.min(CAL.maxKey,key));renderCal();}
 function calNext(){calGoto(calNesteKey(CAL.active,1));}
@@ -3807,7 +3854,7 @@ function toggleMonthpick(forceClose){var mp=$("#calMonthpick");if(!mp)return;
   if(mp.hidden){var d=new Date(CAL.active);mpYm={y:d.getFullYear(),m:d.getMonth()};renderMonthpick();mp.hidden=false;}else mp.hidden=true;}
 function renderMonthpick(){
   var mp=$("#calMonthpick"),y=mpYm.y,m=mpYm.m,startWd=(new Date(y,m,1).getDay()+6)%7,dim=new Date(y,m+1,0).getDate();
-  var todayKey=calDayKey(new Date());
+  var todayKey=osloTodayKey();
   var html='<div class="cal-mp-head"><button data-mp="-1">‹</button><span class="cal-mp-title">'+MONTHS[m]+' '+y+'</span><button data-mp="1">›</button></div><div class="cal-mp-grid">';
   ['M','T','O','T','F','L','S'].forEach(function(w){html+='<span class="cal-mp-wd">'+w+'</span>';});
   for(var i=0;i<startWd;i++)html+='<span></span>';
@@ -3821,15 +3868,16 @@ function renderMonthpick(){
 async function openKalender(mode){
   if(!CAL.built)await calFetch();
   if(!CAL.dombuilt)byggCal();
-  var todayKey=calDayKey(new Date());
+  var todayKey=osloTodayKey();
   if(mode==='last-past'){var last=null;CAL.alle.forEach(function(b){var k=calDayKey(b.start);if(k<todayKey&&(last==null||k>last))last=k;});CAL.active=(last!=null)?last:calNesteKey(todayKey,-1);}
   else if(typeof mode==='number')CAL.active=mode;
   else CAL.active=todayKey; // 'today'/default
   CAL.active=Math.max(CAL.minKey,Math.min(CAL.maxKey,CAL.active));
   renderCal();
   $("#calOverlay").hidden=false;CAL.open=true;document.body.style.overflow='hidden';$("#calOverlay").focus();
+  startNaaTikk();   // nå-strek oppdateres hvert minutt mens kalenderen er åpen
 }
-function lukkKalender(){$("#calOverlay").hidden=true;CAL.open=false;document.body.style.overflow='';toggleMonthpick(true);}
+function lukkKalender(){$("#calOverlay").hidden=true;CAL.open=false;document.body.style.overflow='';toggleMonthpick(true);stopNaaTikk();}
 
 // ── Delt detaljflate ──
 function openDetalj(id){renderDetalj(id);$("#bkDetailBackdrop").hidden=false;}
