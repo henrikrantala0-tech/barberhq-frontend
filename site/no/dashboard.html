@@ -35,7 +35,15 @@
     --violet:#7c4dd6;--sky:#2b93c9;
   }
   *{margin:0;padding:0;box-sizing:border-box}
-  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased}
+  /* Dashbordet ligger fast som en app: manipulation fjerner dobbelttrykk-zoom + 300ms-forsinkelsen
+     på HELE innholdet (touch-action snevres inn nedover treet, så barn som trenger pan-y/none
+     beholder det); overscroll-behavior-x:none dreper horisontal rubber-band/sveip-tilbake. */
+  html{overscroll-behavior-x:none}
+  body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased;overscroll-behavior-x:none;touch-action:manipulation}
+  /* ÉN grunnregel for alle skjemafelt i dashbordet: minst 16px. Under 16px zoomer iOS Safari inn
+     ved fokus, og den zoomede sida kan dras sidelengs. Kompakthet løses med BREDDE, aldri med
+     skrift under 16px. Ingen per-felt-font under dette — hold det slik. */
+  input,select,textarea{font-size:16px}
   .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
   /* PROTOTYPE 14.09 (IKKE committet) — desktop: stram de fire enkeltkolonne-panelene (Oversikt, Vekst,
      Tjenester, Konto) til 680px, VENSTREJUSTERT (flush under nav — deler venstrekant med header/nav).
@@ -215,7 +223,7 @@
   .day{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line)}
   .day:last-child{border-bottom:0}
   .dn{min-width:92px;font-weight:500;font-size:13px;letter-spacing:-.01em}
-  input[type=time]{font:inherit;font-size:13px;min-height:44px;padding:6px 8px;border:1px solid var(--line-2);border-radius:7px;background:var(--bg);color:var(--ink)}
+  input[type=time]{font:inherit;min-height:44px;padding:6px 8px;border:1px solid var(--line-2);border-radius:7px;background:var(--bg);color:var(--ink)}
   input[type=time]:disabled{opacity:.35}
   .to{color:var(--mut);font-size:12px}
   /* Pause: egen DEMPET linje UNDER dagraden, venstrejustert i linje med dagnavnet (samme
@@ -283,17 +291,18 @@
   @media(max-width:480px){
     .day{padding:10px 12px;gap:8px}
     .dn{min-width:68px;font-size:12.5px}
-    /* Kompakter tidsfeltene: cap bredde + skjul klokke-ikonet (native picker åpnes uansett
-       ved trykk på mobil) → dagsraden får plass på én linje. */
-    input[type=time]{padding:5px 5px;font-size:12px;width:76px}
+    /* Cap bredde + skjul klokke-ikonet (native picker åpnes uansett ved trykk på mobil) → dagsraden
+       får plass på én linje. Fonten holdes på 16px (iOS-zoom-gulv) — bredden bærer kompakteringen,
+       ikke skriftstørrelsen. */
+    input[type=time]{padding:6px 6px;width:96px}
     input[type=time]::-webkit-calendar-picker-indicator{display:none}
     .to{font-size:11.5px}
     .gcal{flex-wrap:wrap;gap:10px}
   }
   @media(max-width:360px){
-    .day{padding:9px 8px;gap:6px}
-    .dn{min-width:56px;font-size:12px;letter-spacing:0}
-    input[type=time]{padding:4px 3px;font-size:11.5px;width:62px}
+    .day{padding:9px 6px;gap:5px}
+    .dn{min-width:50px;font-size:12px;letter-spacing:0}
+    input[type=time]{padding:6px 4px;width:88px}
     .to{font-size:11px}
   }
   /* «Naviger vekk»-form: blå tekstlenke med pil → (fane-bytte ELLER åpne modal). Intern
@@ -367,7 +376,7 @@
   }
   .fld{margin-bottom:15px;max-width:440px}
   .fld label{display:block;font-size:12px;color:var(--mut);font-weight:500;margin-bottom:6px;letter-spacing:-.01em}
-  .fld input,.fld textarea{width:100%;font:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink)}
+  .fld input,.fld textarea{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink)}
   .fld textarea{min-height:74px;resize:vertical}
   .fld input:focus,.fld textarea:focus{outline:none;border-color:var(--info)}
   .fld-hint{font-size:11.5px;color:var(--mut);margin-top:6px;line-height:1.4;letter-spacing:-.01em}
@@ -378,12 +387,6 @@
   .fld-at{position:relative}
   .fld-at-sym{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mut);font-size:14px;font-weight:600;line-height:1;pointer-events:none}
   .fld-at input{padding-left:27px}
-  .svc-head2,.svc-row2{display:grid;grid-template-columns:1fr 104px 78px 36px;gap:9px;align-items:center}
-  .svc-head2{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;padding:0 2px 6px}
-  .svc-row2{padding:10px 0;border-bottom:1px solid var(--line)}
-  .svc-row2:last-of-type{border-bottom:0}
-  .svc-row2 input{font:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink)}
-  .svc-row2 input:focus{outline:none;border-color:var(--info)}
   .svc-group-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);margin:22px 0 4px}
   .svc-group-s{font-size:11.5px;color:var(--mut);margin-bottom:10px}
   /* Tjeneste-rad: INNHOLDSSTYRT brekking, ikke breakpoint. Navnefeltet får bredden fra sitt eget
@@ -396,7 +399,7 @@
   .svc-head-h,.svc-head-t{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;padding:0 2px 5px}
   .svc-row-h,.svc-row-t{padding:8px 0;border-bottom:1px solid var(--line)}
   .svc-row-h:last-of-type,.svc-row-t:last-of-type{border-bottom:0}
-  .svc-row-h input,.svc-row-t input{font:inherit;font-size:13.5px;min-height:44px;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink)}
+  .svc-row-h input,.svc-row-t input{font:inherit;min-height:44px;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink)}
   .svc-row-h input:focus,.svc-row-t input:focus{outline:none;border-color:var(--info)}
   /* Navnefeltet: basis fra size-attributtet, vokser for å fylle linja, kan krympe til gulvet.
      min-width 140 tvinger brekking på 320 (140 + tall-gruppa > rada) og holder feltet lesbart; på
@@ -407,8 +410,8 @@
   /* Faste, men strammet ~24px fra 96/66: pris rommer 4-sifret (1500), min. 3-sifret (120) uten klem.
      min-width:0 er PÅKREVD: number-inputs har stor min-content, og flex-defaulten min-width:auto
      gulver dem der (målt 201px) → tall-gruppa blåser opp og alt brekker. */
-  .svc-pris{flex:0 0 72px;min-width:0}
-  .svc-min{flex:0 0 50px;min-width:0}
+  .svc-pris{flex:0 0 78px;min-width:0}
+  .svc-min{flex:0 0 56px;min-width:0}
   /* Pris-0-markør: navngitt tjeneste uten pris → rød pris-kant + full-bredde «Sett pris»-linje
      under raden. Parallell til kundesidens prisTekst-vern; gå-live blokkeres uansett server-side.
      .svc-flag ligger som eget flex-barn (flex-basis:100%) → egen linje under tall-gruppa. */
@@ -423,7 +426,7 @@
   /* Betaling — rad = én betalingsmetode (tekstfelt + ×), samme uttrykk som tjeneste-radene */
   .pay-row{display:grid;grid-template-columns:1fr 34px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);max-width:440px}
   .pay-row:last-of-type{border-bottom:0}
-  .pay-row input{font:inherit;font-size:13.5px;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink);width:100%}
+  .pay-row input{font:inherit;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink);width:100%}
   .pay-row input:focus{outline:none;border-color:var(--info)}
   .svc-divider{height:1px;background:var(--line);margin:26px 0 0}
   .svc-err{font-size:12px;color:#c0392b;margin-top:8px;min-height:15px}
@@ -473,7 +476,7 @@
   .cpick-thumb{position:absolute;top:50%;width:22px;height:22px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none}
   .cpick-prev{width:44px;height:44px;border-radius:8px;border:1px solid var(--line-2);flex:0 0 auto;display:inline-block}
   .custom-fine{display:flex;gap:10px;align-items:center;max-width:340px}
-  .custom-hex{flex:1;min-width:0;font:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink)}
+  .custom-hex{flex:1;min-width:0;font:inherit;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink)}
   .custom-hex:focus{outline:none;border-color:var(--info)}
   .custom-hex.invalid{border-color:#c0594a}
   .custom-err{color:#c0594a;font-size:12.5px;margin-top:8px}
@@ -748,7 +751,7 @@
      ⚠ MÅ stå ETTER .ideacard: lik spesifisitet, så rekkefølgen avgjør. Sto først lenger
      opp i fila og ble overstyrt uten å si fra. */
   .ideacard-flat{margin-top:0;padding-top:0;border-top:0;max-width:none}
-  .ideacard textarea{width:100%;font:inherit;font-size:14px;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink);min-height:90px;resize:vertical}
+  .ideacard textarea{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink);min-height:90px;resize:vertical}
   .ideacard textarea:focus{outline:none;border-color:var(--info)}
   .idea-err{display:none;color:#c0594a;font-size:13px;margin-top:8px;line-height:1.45}
   .row .when.t{min-width:52px;font-weight:700;color:var(--info);font-size:14px}
@@ -1088,7 +1091,7 @@
   .sett-num-row{display:flex;align-items:center;gap:12px;padding:14px 0}
   .sett-num-row>label{font-size:13.5px;font-weight:500;letter-spacing:-.01em;flex:1}
   .sett-num-in{display:flex;align-items:center;gap:6px}
-  .sett-num-in input{width:64px;padding:7px 10px;border:1px solid var(--line-2);border-radius:8px;font:inherit;font-size:13px;background:var(--surface);color:var(--ink);text-align:right}
+  .sett-num-in input{width:72px;padding:7px 10px;border:1px solid var(--line-2);border-radius:8px;font:inherit;background:var(--surface);color:var(--ink);text-align:right}
   .sett-num-in input:focus{outline:2px solid var(--info);outline-offset:1px}
   .rpill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;letter-spacing:.01em;white-space:nowrap}
   .rpill.blue{background:rgba(77,139,255,.12);color:#4d8bff}
@@ -1161,7 +1164,7 @@
     #loyalSett .kl-selrow .kl-select{margin-left:0;width:100%}
   }
   /* Innstillinger: native select stylet mot .sett-num-in-inputen (samme ramme/høyde). */
-  .kl-select{appearance:none;padding:7px 30px 7px 11px;border:1px solid var(--line-2);border-radius:8px;font:inherit;font-size:13px;background:var(--surface);color:var(--ink);cursor:pointer;
+  .kl-select{appearance:none;padding:7px 30px 7px 11px;border:1px solid var(--line-2);border-radius:8px;font:inherit;background:var(--surface);color:var(--ink);cursor:pointer;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
   .kl-select:focus{outline:2px solid var(--info);outline-offset:1px}
   .kl-select{margin-left:auto}
