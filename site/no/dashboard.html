@@ -4433,7 +4433,31 @@ function _closeCropModal(){
   document.getElementById('cropImg').src='';
   document.getElementById('cropErr').textContent='';
 }
-function _openCropModal(imgSrc,imgId,slot){
+// Gjenopprett lagret utsnitt UTEN å røre crop-boksen. iPhone-modellen: boksen er fast (maks,
+// sentrert) og BILDET flyttes/zoomes bak den. setData ville krympet selve boksen — feil. I stedet
+// posisjoneres lerretet (bildet) med setCanvasData så det lagrede utsnittet fyller den faste boksen
+// nøyaktig: ratio = boks.width / cropRect.width; venstre/topp forskyves så original-punktet
+// (cropRect.x, cropRect.y) lander i boksens hjørne. Ugyldig cropRect (utenfor bildet / feil aspekt) →
+// ingen posisjonering: bildet står på min-zoom, hele bildet kan velges (som uten cropRect).
+function _gjenopprettUtsnitt(cropRect){
+  if(!_cropper||!cropRect) return;                                   // punkt 2: default (min-zoom, maks boks)
+  var cr=cropRect;
+  var num=['x','y','width','height'].every(function(k){return typeof cr[k]==='number'&&isFinite(cr[k]);});
+  if(!num||cr.width<=0||cr.height<=0) return;
+  var img=_cropper.getImageData(); var nw=img.naturalWidth, nh=img.naturalHeight;
+  var box=_cropper.getCropBoxData();
+  var innenfor = cr.x>=-1 && cr.y>=-1 && (cr.x+cr.width)<=nw+1 && (cr.y+cr.height)<=nh+1;
+  var boksAsp=box.width/box.height, crAsp=cr.width/cr.height;
+  var aspOk = Math.abs(crAsp-boksAsp) <= 0.02*boksAsp;               // samme aspekt som den faste boksen
+  if(!innenfor||!aspOk) return;                                      // ugyldig → punkt 2 fallback
+  var ratio=box.width/cr.width;
+  _cropper.setCanvasData({ left: box.left - cr.x*ratio, top: box.top - cr.y*ratio, width: nw*ratio, height: nh*ratio });
+}
+// Same-origin crop-kilde: fjern CONFIG.API_BASE så #cropImg lastes via Netlify-proxyen (/images/*
+// eller /api/*), ALDRI kryss-origin mot api.trybarberhq.com — ellers tainter getCroppedCanvas
+// (CLAUDE.md-guardrail). En allerede relativ URL passerer uendret.
+function _sameOrigin(u){return u&&u.indexOf(CONFIG.API_BASE)===0?u.slice(CONFIG.API_BASE.length):u;}
+function _openCropModal(imgId,slot,fallbackSrc){
   _activeImgId=imgId;
   const modal=document.getElementById('cropModal');
   const imgEl=document.getElementById('cropImg');
@@ -4441,6 +4465,12 @@ function _openCropModal(imgSrc,imgId,slot){
   document.getElementById('cropSave').disabled=false;
   if(_cropper){_cropper.destroy();_cropper=null;}
   const ratio=slot==='portrett'?1:slot==='hero'?9/19.5:3/4;
+  // Bevar original + re-crop fra original: last originalUrl når backend gir den (ny backend), ellers
+  // /images/raw/:id som før (gammel backend serverer det destruktivt beskårne bildet). cropRect (forrige
+  // utsnitt) finnes bare på ny backend; null ⇒ ikke kall setData, boksen åpner på min-zoom som før.
+  const rec=(imgs||[]).find(x=>String(x.id)===String(imgId));
+  const src=_sameOrigin((rec&&rec.originalUrl)||(rec&&rec.url)||fallbackSrc);
+  const cropRect=rec?(rec.cropRect||rec.crop_rect||null):null;
   // Badge: fast slott-format (samme rolle som plakatens aspekt-badge). Kun visning — ikke i cropData.
   const badge=document.getElementById('cropAspektBadge');
   if(badge) badge.textContent=slot==='portrett'?'Portrett 1:1':slot==='hero'?'Hero 9:19,5':'Galleri 3:4';
@@ -4452,9 +4482,10 @@ function _openCropModal(imgSrc,imgId,slot){
     // autoCropArea:1 = boksen så stor aspektet tillater. (viewMode:1 ville krympet boksen mot et lite
     // innpasset lerret ved et bredt bilde — boksen ville ikke fylt modalen.)
     _cropper=new Cropper(imgEl,{viewMode:3,dragMode:'move',aspectRatio:ratio,autoCropArea:1,
-      cropBoxMovable:false,cropBoxResizable:false,toggleDragModeOnDblclick:false,background:false,responsive:true});
+      cropBoxMovable:false,cropBoxResizable:false,toggleDragModeOnDblclick:false,background:false,responsive:true,
+      ready:function(){ _gjenopprettUtsnitt(cropRect); }});
   };
-  imgEl.src=imgSrc;
+  imgEl.src=src;
   modal.classList.add('open');
 }
 document.getElementById('cropCancel').addEventListener('click',_closeCropModal);
@@ -4465,10 +4496,16 @@ document.getElementById('cropSave').addEventListener('click',async()=>{
   saveBtn.disabled=true;
   errEl.textContent='';
   try{
+    // crop_rect = utsnittet i originalens piksler (Cropper.getData). Sendes ALLTID med op='crop' så ny
+    // backend kan lagre det + bevare originalen for re-crop; gammel backend ignorerer begge feltene og
+    // lagrer den ferdig-beskårne bloben som før → ingen regresjon.
+    const rect=_cropper.getData();
     const canvas=_cropper.getCroppedCanvas();
     const blob=await new Promise((res,rej)=>canvas.toBlob(b=>b?res(b):rej(new Error('toBlob feilet')),'image/jpeg',0.92));
-    const fd=new FormData();fd.append('image',blob,'crop.jpg');
+    const fd=new FormData();fd.append('image',blob,'crop.jpg');fd.append('op','crop');fd.append('crop_rect',JSON.stringify(rect));
     const r=await apiFetch('/api/dashboard/images/'+_activeImgId,{method:'PUT',body:fd});
+    // 413 = for stort. 415 (og annen feil): serverens egen melding ordrett («Bildeformatet støttes ikke …»).
+    if(r&&r.status===413){errEl.textContent='Bildet er for stort (maks 20 MB).';saveBtn.disabled=false;return;}
     if(!r||!r.ok){const d=await r?.json().catch(()=>{});errEl.textContent=d?.error||'Feil ved lagring. Prøv igjen.';saveBtn.disabled=false;return;}
     _closeCropModal();
     await bilderEndret();
@@ -4498,7 +4535,7 @@ $("#bilderMount").addEventListener("click",async e=>{
     const wrap=box.closest('.slot-wrap');
     const imgEl=box.querySelector('img');
     const id=wrap?.querySelector('.slot-menu-btn')?.dataset.id;
-    if(imgEl?.src&&id)_openCropModal(imgEl.src,id,box.dataset.slot||'galleri');
+    if(imgEl?.src&&id)_openCropModal(id,box.dataset.slot||'galleri',imgEl.src);
     return;
   }
   _activeSlot=box.dataset.slot;
@@ -4528,10 +4565,14 @@ document.getElementById('slotPopupEndre').addEventListener('click',()=>{
 $("#replaceInput").addEventListener('change',async e=>{
   const f=e.target.files[0];e.target.value='';
   if(!f||!_activeImgId)return;
-  const fd=new FormData();fd.append('image',f);
+  // op='replace': rå fil som før, INGEN crop_rect. Ny backend erstatter originalen (og nullstiller
+  // ev. lagret crop); gammel backend ignorerer op og lagrer den rå fila som før → ingen regresjon.
+  const fd=new FormData();fd.append('image',f);fd.append('op','replace');
   try{
     const r=await apiFetch('/api/dashboard/images/'+_activeImgId,{method:'PUT',body:fd});
     if(!r)return;
+    // 413 = for stort. 415: serverens egen melding ordrett («Bildeformatet støttes ikke. Prøv JPG eller PNG.»).
+    if(r.status===413){alert('Bildet er for stort (maks 20 MB).');return;}
     if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke erstatte bildet. Prøv igjen.');return;}
     await bilderEndret();
   }catch(err){
