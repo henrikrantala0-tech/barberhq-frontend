@@ -1,15 +1,17 @@
-// site/no/index.html — hero-videoens autoplay-fallback for in-app-nettlesere.
+// site/no/index.html — hero-videoen skal ALDRI vise eller reagere på iOS' native play-knapp.
 //
-// In-app-browsere (Google-appen, TikTok, iOS) avviser autoplay til første brukergest og tegner
-// en native play-knapp oppå videoen. Fiksen har fem deler; testen verifiserer dem alle:
-//   1. markup-attributter: autoplay muted loop playsinline webkit-playsinline preload poster
-//   2. JS: video.muted=true FØR play(); engangs-tap-fallback + visibilitychange
+// In-app-browsere (Google-appen, TikTok) og iOS Lavstrømmodus blokkerer autoplay og tegner en
+// native play-knapp oppå videoen. Beslutning (19.09): ren markup + CSS + poster som stillbilde-
+// fallback — INGEN JS-retry (ingen play()-kall på touch/visibilitychange, den gjorde videoen
+// trykkbar bakveien). Fiksen har fire deler; testen verifiserer dem alle:
+//   1. markup-attributter: autoplay muted loop playsinline webkit-playsinline
+//      disablepictureinpicture preload="auto" poster; INGEN controls
+//   2. pointer-events:none på .hero-video → hele videoen er utrykkbar (native knapp kan ikke aktiveres)
 //   3. poster satt til et ekte frame (images/hero-poster.jpg finnes og lastes 200)
-//   4. ::-webkit-media-controls-start-playback-button skjult
-//   5. INGEN pointer-events:none på videoen (det drepte tap-fallbacken)
-// Headless Chromium autoplayer muted video, så .paused skal være false uten gest her — det
-// bekrefter at play()-kjeden faktisk kjører. Den ekte in-app-oppførselen kan bare bekreftes på
-// enhet; dette fanger regresjoner i markup/CSS/JS.
+//   4. ::-webkit-media-controls-start-playback-button + ::-webkit-media-controls skjult
+// Headless Chromium autoplayer muted video, så .paused skal være false her — det bekrefter at
+// markupen faktisk lar videoen spille. Selve fraværet av den native knappen kan BARE bekreftes på
+// en ekte iOS-enhet (Chromium har aldri hatt knappen); denne testen fanger regresjoner i markup/CSS.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -41,14 +43,31 @@ for(const bredde of [320,375,1280]){
 
   const m=await page.evaluate(()=>{
     const v=document.querySelector('.hero-video');
-    const cs=getComputedStyle(v);
     const har=a=>v.hasAttribute(a);
+    // ATFERDSTEST, ikke CSS-speiling. MÅ probes i et HJØRNE, ikke i senter: innholdslaget
+    // (.hero-inner/.hero-dms, z-index 2) dekker videoens senter uansett, så et senter-treff
+    // ville vært grønt selv UTEN pointer-events:none. I øvre venstre hjørne er videoen det
+    // øverste elementet — der isolerer treffet faktisk videoens pointer-events.
+    const b=v.getBoundingClientRect();
+    const HX=b.left+8, HY=b.top+8;
+    const truffet=document.elementFromPoint(HX,HY);
+    const videoTarKlikk = truffet===v || v.contains(truffet);
+    // TENNER: bevis at hjørnepunktet ER et sted videoen ellers ville fanget klikket. Toggle
+    // pointer-events:auto midlertidig — DA skal videoen bli treff. Er den det ikke, prober vi
+    // feil punkt (dekket av noe annet) og testen er meningsløs → merk den ugyldig.
+    const forrige=v.style.pointerEvents;
+    v.style.pointerEvents='auto';
+    const medAuto=document.elementFromPoint(HX,HY);
+    v.style.pointerEvents=forrige;
+    const punktGyldig = medAuto===v || v.contains(medAuto);
     return {
       autoplay:har('autoplay'), muted_attr:har('muted'), loop:har('loop'),
       playsinline:har('playsinline'), webkit:har('webkit-playsinline'),
+      disablepip:har('disablepictureinpicture'),
       preload:v.getAttribute('preload'), controls:har('controls'),
       poster:v.getAttribute('poster'),
-      muted_prop:v.muted, paused:v.paused, pointerEvents:cs.pointerEvents,
+      muted_prop:v.muted, paused:v.paused,
+      videoTarKlikk, punktGyldig, truffet: truffet ? (truffet.className||truffet.tagName) : 'ingen',
       currentSrc:(v.currentSrc||'').split('/').pop(),
     };
   });
@@ -57,15 +76,16 @@ for(const bredde of [320,375,1280]){
 
   await page.locator('.hero').screenshot({path:`${OUT}/${bredde}-hero-video.png`});
 
-  const attrOk = m.autoplay&&m.muted_attr&&m.loop&&m.playsinline&&m.webkit&&m.preload==='auto'&&!m.controls&&!!m.poster;
+  const attrOk = m.autoplay&&m.muted_attr&&m.loop&&m.playsinline&&m.webkit&&m.disablepip&&m.preload==='auto'&&!m.controls&&!!m.poster;
   rapport.push({bredde,
     'attr komplett': attrOk?'✓':'✗',
     'webkit-playsinline': m.webkit?'✓':'✗ MANGLER',
+    'disablepictureinpicture': m.disablepip?'✓':'✗ MANGLER',
     'valgt kilde': m.currentSrc===ventet?`${m.currentSrc} ✓`:`${m.currentSrc} ✗ (ventet ${ventet})`,
     'poster': m.poster||'✗ MANGLER',
     'poster HTTP': posterStatus.code===200?'200 ✓':`${posterStatus.code} ✗`,
     'muted (prop)': m.muted_prop?'✓':'✗',
-    'pointer-events': m.pointerEvents==='none'?'none ✗ (dreper tap)':`${m.pointerEvents} ✓`,
+    'klikk gaar gjennom (hjorne)': !m.punktGyldig?`✗ ugyldig probe (video ikke eksponert)`:(m.videoTarKlikk?`✗ videoen fanger klikk`:`✓ (traff ${m.truffet})`),
     'spiller (paused=false)': m.paused?'✗ pauset':'✓',
     'controls': m.controls?'✗ har':'ingen ✓',
     jsfeil: errs.length?errs.join('; '):'ingen'});
