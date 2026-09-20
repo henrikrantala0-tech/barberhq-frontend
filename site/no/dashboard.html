@@ -5777,7 +5777,16 @@ $("#addHoved").addEventListener("click",()=>{hoved.push({name:"",price:0,min:30}
 $("#addTillegg").addEventListener("click",()=>{tillegg.push({name:"",price:0,min:0});renderSvc();});
 $("#hovedList").addEventListener("input",svcInput);
 $("#tilleggList").addEventListener("input",svcInput);
-function svcInput(e){const l=e.target.dataset.l,i=+e.target.dataset.i,f=e.target.dataset.f;if(f==null)return;const arr=l==="h"?hoved:tillegg;arr[i][f]=f==="name"?e.target.value:+e.target.value;if(f==="name")e.target.size=svcSize(e.target.value);
+function svcInput(e){const l=e.target.dataset.l,i=+e.target.dataset.i,f=e.target.dataset.f;if(f==null)return;const arr=l==="h"?hoved:tillegg;
+  if(f==="name"){arr[i].name=e.target.value;e.target.size=svcSize(e.target.value);}
+  else{
+    // Pris/varighet er heltall. valueAsNumber gir NaN ved tomt/ugyldig felt — bl.a. når type=number
+    // avviser et komma («45,5» → value="") — og da BEHOLDER vi forrige verdi i stedet for å nulle den
+    // stille (L1: norske brukere taster komma). Negativ verdi kan tastes forbi min="0" → klampes til 0
+    // (M2 som UX; backend avviser negativ fail-closed uansett). Round → heltall (kr/min har ingen desimal).
+    var v=e.target.valueAsNumber;
+    if(Number.isFinite(v))arr[i][f]=Math.max(0,Math.round(v));
+  }
   // Pris-0-markøren avhenger av BÅDE navn og pris → oppdater raden live uten re-render (bevarer fokus).
   if(f==="price"||f==="name"){var row=e.target.closest(".svc-row-h,.svc-row-t");if(row)markPris0(row,arr[i]);}
   validateSvc();}
