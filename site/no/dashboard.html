@@ -973,7 +973,7 @@
   /* Crop-modal */
   .crop-modal{position:fixed;inset:0;z-index:400;background:rgba(10,10,10,.97);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px}
   .crop-modal.open{display:flex}
-  .crop-modal-inner{width:100%;max-width:580px;display:flex;flex-direction:column;gap:14px}
+  .crop-modal-inner{width:100%;max-width:580px;display:flex;flex-direction:column;gap:14px;background:var(--surface);border:1px solid var(--line-2);border-radius:16px;padding:18px;box-shadow:0 20px 60px rgba(0,0,0,.4)}
   /* Fast-format-indikator (samme rolle som plakatens .pk-crop-aspekt): forklarer at boksen er låst til
      slottens format og at bildet flyttes/zoomes bak. */
   .crop-aspekt{display:flex;flex-direction:column;gap:3px}
@@ -987,7 +987,7 @@
   .crop-btn-save{padding:10px 22px;border-radius:8px;border:0;background:#4d8bff;color:#fff;font-size:14px;font-weight:500;cursor:pointer}
   .crop-btn-save:hover{background:#3a72e0}
   .crop-btn-save:disabled{opacity:.45;cursor:not-allowed}
-  .crop-err{font-size:13px;color:#e57373;min-height:18px;text-align:right}
+  .crop-err{font-size:13px;color:var(--bad);min-height:18px;text-align:left}
 
   /* Demo-banner */
   .demo-banner{display:none;padding:11px 20px;background:#fff8e1;border-bottom:2px solid #f59e0b;font-size:13.5px;font-weight:500;color:#78350f;text-align:center;line-height:1.4}
@@ -4430,7 +4430,7 @@ document.addEventListener('click',e=>{if(!_slotPopup.contains(e.target))_closeSl
 function _closeCropModal(){
   if(_cropper){_cropper.destroy();_cropper=null;}
   document.getElementById('cropModal').classList.remove('open');
-  document.getElementById('cropImg').src='';
+  var ci=document.getElementById('cropImg'); ci.onload=null; ci.onerror=null; ci.src=''; // nuller handlere før src='' → ingen spøkelses-onerror
   document.getElementById('cropErr').textContent='';
 }
 // Gjenopprett lagret utsnitt UTEN å røre crop-boksen. iPhone-modellen: boksen er fast (maks,
@@ -4461,6 +4461,7 @@ function _openCropModal(imgId,slot,fallbackSrc){
   _activeImgId=imgId;
   const modal=document.getElementById('cropModal');
   const imgEl=document.getElementById('cropImg');
+  imgEl.style.display=''; // nullstill ev. skjuling fra en tidligere onerror
   document.getElementById('cropErr').textContent='';
   document.getElementById('cropSave').disabled=false;
   if(_cropper){_cropper.destroy();_cropper=null;}
@@ -4484,6 +4485,14 @@ function _openCropModal(imgId,slot,fallbackSrc){
     _cropper=new Cropper(imgEl,{viewMode:3,dragMode:'move',aspectRatio:ratio,autoCropArea:1,
       cropBoxMovable:false,cropBoxResizable:false,toggleDragModeOnDblclick:false,background:false,responsive:true,
       ready:function(){ _gjenopprettUtsnitt(cropRect); }});
+  };
+  imgEl.onerror=function(){
+    // Blindvei-vakt: laster src ikke (404 for bilde uten original, R2-5xx, nettverksbrudd), fyrer
+    // onload aldri → Cropper initialiseres aldri, og «Lagre» ville vært en stille no-op på tom modal.
+    // Vis feil og lås knappen i stedet for å la barberen stirre på en tom flate.
+    imgEl.style.display='none'; // skjul det brukne bilde-ikonet + alt-teksten
+    var err=document.getElementById('cropErr'); if(err)err.textContent='Kunne ikke laste bildet. Lukk og prøv igjen, eller last opp på nytt.';
+    var save=document.getElementById('cropSave'); if(save)save.disabled=true;
   };
   imgEl.src=src;
   modal.classList.add('open');
