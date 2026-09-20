@@ -5769,8 +5769,8 @@ function svcSize(n){return Math.min(Math.max((n||'').length+1,6),28);}
 // Markør vises KUN for navngitte tjenester uten pris — blanke/navnløse rader filtreres uansett
 // bort ved lagring, så et rødt varsel der er bare støy.
 function svcMangler(s){return (s.name||'').trim()!=='' && !(Number(s.price)>0);}
-function hovedRow(s,i){var m=svcMangler(s);return '<div class="svc-row-h"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="h" data-i="'+i+'" data-f="name" placeholder="F.eks. Fade"><div class="svc-tall"><input class="svc-pris'+(m?' pris-0':'')+'" type="number" value="'+s.price+'" data-l="h" data-i="'+i+'" data-f="price" min="0"><input class="svc-min" type="number" value="'+s.min+'" data-l="h" data-i="'+i+'" data-f="min" min="1"><button class="svc-rm" data-l="h" data-i="'+i+'" aria-label="Fjern">&times;</button></div><span class="svc-flag"'+(m?'':' hidden')+'>Sett pris</span></div>';}
-function tilleggRow(s,i){var m=svcMangler(s);return '<div class="svc-row-t"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="t" data-i="'+i+'" data-f="name" placeholder="F.eks. Skjegg"><div class="svc-tall"><input class="svc-pris'+(m?' pris-0':'')+'" type="number" value="'+s.price+'" data-l="t" data-i="'+i+'" data-f="price" min="0"><input class="svc-min" type="number" value="'+s.min+'" data-l="t" data-i="'+i+'" data-f="min" min="0"><button class="svc-rm" data-l="t" data-i="'+i+'" aria-label="Fjern">&times;</button></div><span class="svc-flag"'+(m?'':' hidden')+'>Sett pris</span></div>';}
+function hovedRow(s,i){var m=svcMangler(s);return '<div class="svc-row-h"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="h" data-i="'+i+'" data-f="name" placeholder="F.eks. Fade"><div class="svc-tall"><input class="svc-pris'+(m?' pris-0':'')+'" type="text" inputmode="decimal" value="'+s.price+'" data-l="h" data-i="'+i+'" data-f="price"><input class="svc-min" type="number" value="'+s.min+'" data-l="h" data-i="'+i+'" data-f="min" min="1"><button class="svc-rm" data-l="h" data-i="'+i+'" aria-label="Fjern">&times;</button></div><span class="svc-flag"'+(m?'':' hidden')+'>Sett pris</span></div>';}
+function tilleggRow(s,i){var m=svcMangler(s);return '<div class="svc-row-t"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="t" data-i="'+i+'" data-f="name" placeholder="F.eks. Skjegg"><div class="svc-tall"><input class="svc-pris'+(m?' pris-0':'')+'" type="text" inputmode="decimal" value="'+s.price+'" data-l="t" data-i="'+i+'" data-f="price"><input class="svc-min" type="number" value="'+s.min+'" data-l="t" data-i="'+i+'" data-f="min" min="0"><button class="svc-rm" data-l="t" data-i="'+i+'" aria-label="Fjern">&times;</button></div><span class="svc-flag"'+(m?'':' hidden')+'>Sett pris</span></div>';}
 function renderSvc(){$("#hovedList").innerHTML=hoved.map(hovedRow).join("");$("#tilleggList").innerHTML=tillegg.map(tilleggRow).join("");validateSvc();}
 function validateSvc(){const harHoved=hoved.filter(s=>s.name.trim()).length>0;const btn=$("#saveSvc"),err=$("#svcErr");if(!harHoved){btn.disabled=true;err.textContent="Du må ha minst én hovedtjeneste før du kan lagre.";}else{btn.disabled=false;err.textContent="";}return harHoved;}
 async function loadTjenester(){
@@ -5788,13 +5788,20 @@ $("#hovedList").addEventListener("input",svcInput);
 $("#tilleggList").addEventListener("input",svcInput);
 function svcInput(e){const l=e.target.dataset.l,i=+e.target.dataset.i,f=e.target.dataset.f;if(f==null)return;const arr=l==="h"?hoved:tillegg;
   if(f==="name"){arr[i].name=e.target.value;e.target.size=svcSize(e.target.value);}
+  else if(f==="price"){
+    // Prisfeltet er type=text inputmode=decimal → JS ser råstrengen, også kommaet (type=number avviste
+    // det til value="" før JS så det). Norske brukere taster «45,5»: komma→punktum, rund til nærmeste
+    // hele krone (kr har ingen øre her → 45,5 blir 46). Klamp negativ→0 (backend avviser negativ
+    // fail-closed uansett). Tomt felt → 0 («Sett pris»-markøren er det SYNLIGE signalet, ikke et stille
+    // tilbakefall). Ugyldig råtekst («abc») → behold forrige verdi i stedet for å nulle den.
+    var raw=e.target.value.trim();
+    if(raw===""){arr[i].price=0;}
+    else{var n=parseFloat(raw.replace(/\s+/g,'').replace(',','.'));if(Number.isFinite(n))arr[i].price=Math.max(0,Math.round(n));}
+  }
   else{
-    // Pris/varighet er heltall. valueAsNumber gir NaN ved tomt/ugyldig felt — bl.a. når type=number
-    // avviser et komma («45,5» → value="") — og da BEHOLDER vi forrige verdi i stedet for å nulle den
-    // stille (L1: norske brukere taster komma). Negativ verdi kan tastes forbi min="0" → klampes til 0
-    // (M2 som UX; backend avviser negativ fail-closed uansett). Round → heltall (kr/min har ingen desimal).
+    // Varighet (.svc-min) er fortsatt type=number → valueAsNumber. NaN (tomt/ugyldig) → behold forrige.
     var v=e.target.valueAsNumber;
-    if(Number.isFinite(v))arr[i][f]=Math.max(0,Math.round(v));
+    if(Number.isFinite(v))arr[i].min=Math.max(0,Math.round(v));
   }
   // Pris-0-markøren avhenger av BÅDE navn og pris → oppdater raden live uten re-render (bevarer fokus).
   if(f==="price"||f==="name"){var row=e.target.closest(".svc-row-h,.svc-row-t");if(row)markPris0(row,arr[i]);}
