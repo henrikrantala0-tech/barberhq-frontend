@@ -402,8 +402,10 @@ Knappen setter `kampanjetype` (`verving`/`lojalitet`) for hele økten. Hele flat
 pushet er testrunde-fiksene (bug 3 / beslutning 4–7 / kamerarull / miniatyr-cachebuster / lys-gating).
 **Backend-kontrakt:** `GET/POST /api/dashboard/plakat/{preview,render}` + `GET /plakat/{layout,regler}`
 (`docs/08-kampanjeplakater.md` Del 8, backend-repo) — prod-verifisert 09.09.
-- **Skjerm 1 «Velg plakat»:** fem maler etter bildeantall — `mal1` «Uten bilde» (0) … `fire` «Fire
-  bilder» (2×2). `mal1`+`mal2` anbefalt (større, øverst), resten under «Flere maler». Tilgjengelighet
+- **Skjerm 1 «Velg plakat»:** TRE maler i editoren — `mal1` «Uten bilde» (0), `mal2` «Ett bilde» (1)
+  og `fire` «Fire bilder» (2×2, 4 bilder). Tre like kort, ingen anbefalt-tier, ingen «Flere maler».
+  (Backend utleder mal av bildeantall og støtter fortsatt FEM — `mal3`/`mal4` for 2/3 bilder — men
+  editoren er strammet inn og sender bare 0/1/4 bilder; `mal3`/`mal4` er fjernet fra picker.) Tilgjengelighet
   = antall galleri-bilder ≥ malens `antall`; låst kort → «Legg til bilde» → Din side. Lat-lastede
   miniatyrer (`GET /render?bredde=400&v=<utseendeVersjon>` — cache-buster fra `/regler.barber`, så
   PNG-en fornyes ved design-/profil-bytte); **låste kort henter aldri** (render-test: `renderKall == tilgjengelige`).
@@ -571,8 +573,8 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   med etikett «Mørk modus» + «Huskes i denne nettleseren». Headerens `.who` har kun barbernavnet.
   Underteksten sier eksplisitt at dette gjelder dashbordet, ikke kundesida — lys/mørk for
   bookingsida velges under Design, og de to ble blandet sammen så lenge knappen sto løs i headeren.
-  **`$("#themeBtn").addEventListener` har ingen null-sjekk** — flytter du knappen igjen, må den
-  finnes i DOM-en ved sideload, ellers kaster init.
+  **(Oppdatert:** tema-toggle er nå et kort-rutenett (`#themeGrid`, delegert klikk-lytter) i Konto —
+  den gamle enkelt-`#themeBtn`-knappen finnes ikke lenger, så null-sjekk-advarselen er ikke relevant.)
 - **«Bytt passord» i Konto → Innlogging er BYGGET (GJORT 26.08).** Trekkspillet har to tilstander
   styrt av `profile.hasPassword` (`settInnloggingTilstand`): `false` → «Sett et passord» (kun nytt-felt,
   sender `{password}`); `true` → «Bytt passord» (nåværende + nytt, sender `{current_password,password}`).

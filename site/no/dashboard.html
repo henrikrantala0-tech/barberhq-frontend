@@ -7146,7 +7146,7 @@ function settPlakatVersjon(v){
     g.sort(function(a,c){return (a.sort_order||0)-(c.sort_order||0);});
     return g;
   }
-  // Alle fem malene genereres fra START; galleriets bildeantall avgjør hvilke som er TILGJENGELIGE.
+  // Alle tre malene (MALER-arrayen under) genereres fra START; galleriets bildeantall avgjør hvilke som er TILGJENGELIGE.
   // Backend utleder mal av plasser.length (0→mal1, 1→mal2, 2→mal3, 3→mal4, 4→2×2), så frontend
   // sender bare N bilder. Tre maler tilbys — like store, ingen anbefalt-tier, ingen «Flere maler».
   // (To/Tre bilder = mal3/mal4 er fjernet fra editoren; backend støtter dem fortsatt, vi sender bare
