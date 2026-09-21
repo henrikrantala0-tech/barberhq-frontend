@@ -317,7 +317,7 @@ function svcRow(name,price,min){
     '<input class="svc-name" type="text" placeholder="Tjeneste" value="'+(name||'')+'">'+
     '<div class="svc-nums">'+
       '<label class="np">Pris (kr)<input class="svc-price" type="text" inputmode="decimal" placeholder="450" value="'+(price||'')+'"></label>'+
-      '<label class="np">Min<input class="svc-min" type="number" inputmode="numeric" min="0" placeholder="30" value="'+(min||'')+'"></label>'+
+      '<label class="np">Min<input class="svc-min" type="text" inputmode="decimal" placeholder="30" value="'+(min||'')+'"></label>'+
       '<button type="button" class="svc-rm" aria-label="Fjern tjeneste">&times;</button>'+
     '</div>';
   return div;
@@ -329,7 +329,7 @@ function collectServices(){
   var out=[], err=null;
   Array.prototype.forEach.call(svcList.querySelectorAll('.svc-row'),function(row){
     var nameEl=row.querySelector('.svc-name'), priceEl=row.querySelector('.svc-price'), minEl=row.querySelector('.svc-min');
-    priceEl.style.borderColor='#2a2a2a';
+    priceEl.style.borderColor='#2a2a2a'; minEl.style.borderColor='#2a2a2a';
     var name=nameEl.value.trim();
     if(!name) return; // tomme rader hoppes over
     // Pris: type=text inputmode=decimal → JS ser råstrengen, også kommaet (type=number avviste «45,5»
@@ -339,7 +339,12 @@ function collectServices(){
     var priceN=parseFloat(priceRaw.replace(/\s+/g,'').replace(',','.'));
     var price=Number.isFinite(priceN)?Math.max(0,Math.round(priceN)):NaN;
     if(!(price>0)){ priceEl.style.borderColor='#c0594a'; if(!err)err={el:priceEl}; return; }
-    var min=parseInt(minEl.value,10); if(!(min>0)) min=30;
+    // Varighet: samme komma-parsing som pris (L-12). Ugyldig/tom/≤0 → synlig rød feil, IKKE stille
+    // fallback til 30 (som skjulte at feltet var feil/uutfylt). Hovedtjeneste MÅ ha varighet.
+    var minRaw=minEl.value.trim();
+    var minN=parseFloat(minRaw.replace(/\s+/g,'').replace(',','.'));
+    var min=Number.isFinite(minN)?Math.max(0,Math.round(minN)):NaN;
+    if(!(min>0)){ minEl.style.borderColor='#c0594a'; if(!err)err={el:minEl}; return; }
     out.push({name:name, price:price, min:min});
   });
   return {list:out, err:err};

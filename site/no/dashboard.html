@@ -416,6 +416,7 @@
      under raden. Parallell til kundesidens prisTekst-vern; gå-live blokkeres uansett server-side.
      .svc-flag ligger som eget flex-barn (flex-basis:100%) → egen linje under tall-gruppa. */
   .svc-pris.pris-0{border-color:#c0594a}
+  .svc-min.min-0{border-color:#c0594a}
   .svc-flag{flex:1 0 100%;font-size:12px;color:#c0594a;margin:2px 0 0 2px;letter-spacing:-.01em}
   .svc-flag[hidden]{display:none}
   .svc-rm-h{flex:0 0 34px}   /* usynlig header-avstandsholder over slett-knappen */
@@ -5769,10 +5770,21 @@ function svcSize(n){return Math.min(Math.max((n||'').length+1,6),28);}
 // Markør vises KUN for navngitte tjenester uten pris — blanke/navnløse rader filtreres uansett
 // bort ved lagring, så et rødt varsel der er bare støy.
 function svcMangler(s){return (s.name||'').trim()!=='' && !(Number(s.price)>0);}
-function hovedRow(s,i){var m=svcMangler(s);return '<div class="svc-row-h"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="h" data-i="'+i+'" data-f="name" placeholder="F.eks. Fade"><div class="svc-tall"><input class="svc-pris'+(m?' pris-0':'')+'" type="text" inputmode="decimal" value="'+s.price+'" data-l="h" data-i="'+i+'" data-f="price"><input class="svc-min" type="number" value="'+s.min+'" data-l="h" data-i="'+i+'" data-f="min" min="1"><button class="svc-rm" data-l="h" data-i="'+i+'" aria-label="Fjern">&times;</button></div><span class="svc-flag"'+(m?'':' hidden')+'>Sett pris</span></div>';}
-function tilleggRow(s,i){var m=svcMangler(s);return '<div class="svc-row-t"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="t" data-i="'+i+'" data-f="name" placeholder="F.eks. Skjegg"><div class="svc-tall"><input class="svc-pris'+(m?' pris-0':'')+'" type="text" inputmode="decimal" value="'+s.price+'" data-l="t" data-i="'+i+'" data-f="price"><input class="svc-min" type="number" value="'+s.min+'" data-l="t" data-i="'+i+'" data-f="min" min="0"><button class="svc-rm" data-l="t" data-i="'+i+'" aria-label="Fjern">&times;</button></div><span class="svc-flag"'+(m?'':' hidden')+'>Sett pris</span></div>';}
+// Varighet kreves KUN for hovedtjenester (tillegg kan ha 0 min, f.eks. et produkt). L-12.
+function svcMinMangler(s){return (s.name||'').trim()!=='' && !(Number(s.min)>0);}
+function svcFlagTxt(mp,mm){return mp&&mm?'Sett pris og varighet':mp?'Sett pris':mm?'Sett varighet':'';}
+function hovedRow(s,i){var mp=svcMangler(s),mm=svcMinMangler(s),ft=svcFlagTxt(mp,mm);return '<div class="svc-row-h"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="h" data-i="'+i+'" data-f="name" placeholder="F.eks. Fade"><div class="svc-tall"><input class="svc-pris'+(mp?' pris-0':'')+'" type="text" inputmode="decimal" value="'+s.price+'" data-l="h" data-i="'+i+'" data-f="price"><input class="svc-min'+(mm?' min-0':'')+'" type="text" inputmode="decimal" value="'+s.min+'" data-l="h" data-i="'+i+'" data-f="min"><button class="svc-rm" data-l="h" data-i="'+i+'" aria-label="Fjern">&times;</button></div><span class="svc-flag"'+(ft?'':' hidden')+'>'+ft+'</span></div>';}
+function tilleggRow(s,i){var mp=svcMangler(s);return '<div class="svc-row-t"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="t" data-i="'+i+'" data-f="name" placeholder="F.eks. Skjegg"><div class="svc-tall"><input class="svc-pris'+(mp?' pris-0':'')+'" type="text" inputmode="decimal" value="'+s.price+'" data-l="t" data-i="'+i+'" data-f="price"><input class="svc-min" type="text" inputmode="decimal" value="'+s.min+'" data-l="t" data-i="'+i+'" data-f="min"><button class="svc-rm" data-l="t" data-i="'+i+'" aria-label="Fjern">&times;</button></div><span class="svc-flag"'+(mp?'':' hidden')+'>Sett pris</span></div>';}
 function renderSvc(){$("#hovedList").innerHTML=hoved.map(hovedRow).join("");$("#tilleggList").innerHTML=tillegg.map(tilleggRow).join("");validateSvc();}
-function validateSvc(){const harHoved=hoved.filter(s=>s.name.trim()).length>0;const btn=$("#saveSvc"),err=$("#svcErr");if(!harHoved){btn.disabled=true;err.textContent="Du må ha minst én hovedtjeneste før du kan lagre.";}else{btn.disabled=false;err.textContent="";}return harHoved;}
+function validateSvc(){
+  const named=hoved.filter(s=>s.name.trim());
+  const btn=$("#saveSvc"),err=$("#svcErr");
+  if(!named.length){btn.disabled=true;err.textContent="Du må ha minst én hovedtjeneste før du kan lagre.";return false;}
+  // Varighet er påkrevd for hovedtjenester (bestemmer slot-lengden). Manglende → blokkér lagring med
+  // synlig melding, ikke stille 30 (L-12). Pris-0 er fortsatt kun en myk markør, som før.
+  if(named.some(s=>!(Number(s.min)>0))){btn.disabled=true;err.textContent="Alle hovedtjenester må ha en varighet i minutter.";return false;}
+  btn.disabled=false;err.textContent="";return true;
+}
 async function loadTjenester(){
   const r=await apiFetch('/api/dashboard/services');
   if(!r){renderSvc();return;}
@@ -5799,14 +5811,23 @@ function svcInput(e){const l=e.target.dataset.l,i=+e.target.dataset.i,f=e.target
     else{var n=parseFloat(raw.replace(/\s+/g,'').replace(',','.'));if(Number.isFinite(n))arr[i].price=Math.max(0,Math.round(n));}
   }
   else{
-    // Varighet (.svc-min) er fortsatt type=number → valueAsNumber. NaN (tomt/ugyldig) → behold forrige.
-    var v=e.target.valueAsNumber;
-    if(Number.isFinite(v))arr[i].min=Math.max(0,Math.round(v));
+    // Varighet: samme komma-parsing som pris (L-12) — type=text ser råstrengen (type=number avviste
+    // «1,5» til value="" før JS så det). Tomt → 0 (fanges av markør/validering for hovedtjenester,
+    // ikke stille 30). Ugyldig råtekst → behold forrige verdi i stedet for å nulle den.
+    var raw=e.target.value.trim();
+    if(raw===""){arr[i].min=0;}
+    else{var n=parseFloat(raw.replace(/\s+/g,'').replace(',','.'));if(Number.isFinite(n))arr[i].min=Math.max(0,Math.round(n));}
   }
-  // Pris-0-markøren avhenger av BÅDE navn og pris → oppdater raden live uten re-render (bevarer fokus).
-  if(f==="price"||f==="name"){var row=e.target.closest(".svc-row-h,.svc-row-t");if(row)markPris0(row,arr[i]);}
+  // Markørene avhenger av navn+pris (og navn+varighet for hovedtjenester) → oppdater raden live uten
+  // re-render (bevarer fokus). isHoved styrer om varighet-markøren gjelder (tillegg krever ikke min).
+  if(f==="price"||f==="min"||f==="name"){var row=e.target.closest(".svc-row-h,.svc-row-t");if(row)markPris0(row,arr[i],l==="h");}
   validateSvc();}
-function markPris0(row,s){var m=svcMangler(s);var pris=row.querySelector(".svc-pris");if(pris)pris.classList.toggle("pris-0",m);var flag=row.querySelector(".svc-flag");if(flag)flag.hidden=!m;}
+function markPris0(row,s,isHoved){
+  var mp=svcMangler(s), mm=!!(isHoved&&svcMinMangler(s));
+  var pris=row.querySelector(".svc-pris");if(pris)pris.classList.toggle("pris-0",mp);
+  var min=row.querySelector(".svc-min");if(min)min.classList.toggle("min-0",mm);
+  var flag=row.querySelector(".svc-flag");if(flag){var ft=svcFlagTxt(mp,mm);flag.textContent=ft;flag.hidden=!ft;}
+}
 $("#hovedList").addEventListener("click",svcRemove);
 $("#tilleggList").addEventListener("click",svcRemove);
 function svcRemove(e){const b=e.target.closest(".svc-rm");if(!b)return;const l=b.dataset.l,i=+b.dataset.i;(l==="h"?hoved:tillegg).splice(i,1);renderSvc();}
