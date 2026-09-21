@@ -947,7 +947,9 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
     var død — mens UI-et så helt normalt ut, bare med tomme lister. Se `tools/render/README.md`.
     Input-robusthet + feilstater (komma-parsing i pris/varighet, arbeidstider-feilstate, nettverksfeil
     i Oversikt, L-3-esc) dekkes av `node tools/render/komma-og-feilstater.mjs` — 30 sjekker, exit 1 ved
-    regresjon.
+    regresjon. Kalender-tidssone + sommertid + midnatt-splitt (blokker/nå-strek skal havne likt i
+    Europe/Oslo og America/New_York, på vanlig dag / over midnatt / 25.10.2026 fall-back / 28.03.2027
+    spring-forward) dekkes av `node tools/render/kalender-tz-dst.mjs` (bruker page.clock for å fryse «nå»).
   - **Scratchpad — engangsundersøkelser.** Måler du én ting for å svare på ett spørsmål, og
     svaret er alt du trenger, hører scriptet hjemme i scratchpad-katalogen utenfor repoet.
     Samme for `demo_*.mjs` og løse `pw-screenshots/`.
