@@ -100,6 +100,10 @@ for(const c of CASE){
   await stubApi(page,()=>c.b);
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`,{waitUntil:'networkidle'});
   await page.$eval('button[data-panel="abonnement"]',b=>b.click());
+  // Billing-innholdet bor nå i trekkspillet #accAbonnement (.acc-body starter hidden). Statusen
+  // (#kontoStatus) leses uansett via textContent, men tekst/knapp/tall gates på offsetParent — de
+  // er offsetParent===null så lenge seksjonen er kollapset. Åpne den før vi måler synlighet.
+  await page.$eval('#accAbonnement .acc-head',b=>b.click());
   await page.waitForTimeout(900);
 
   const status = await T(page.$eval('#kontoStatus',e=>e.textContent));
@@ -137,6 +141,7 @@ for(const c of CASE){
   await stubApi(page,()=>startA,()=>putSvar);
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`,{waitUntil:'networkidle'});
   await page.$eval('button[data-panel="abonnement"]',b=>b.click());
+  await page.$eval('#accAbonnement .acc-head',b=>b.click());   // åpne trekkspillet — knapp/tall gates på offsetParent
   await page.waitForTimeout(800);
   const foer = await T(page.$eval('#kontoStatus',e=>e.textContent));
   await page.$eval('#kontoAksjon',b=>b.click());   // publiser → settSideStatus('live')

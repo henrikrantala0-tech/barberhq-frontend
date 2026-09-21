@@ -1,7 +1,7 @@
-// rebooking.aktivert-flagget i «Drevet av»-panelet + vakt at LOJALITET aldri vises.
-// Mot EKTE prod-shapes (13.09), men lojalitet fjernet som arm (14.09):
-//  - grand-barber: rebooking AV men M/TALL → «Av»-rad (di-off) selv om armen har kr.
-//  - ahmed-fadezz: rebooking PÅ (normal rad m/kr).
+// rebooking.aktivert-flagget i «Hvor kundene kommer fra»-panelet (Oversikt) + vakt at LOJALITET aldri vises.
+// Mot EKTE prod-shapes (13.09), lojalitet fjernet som arm (14.09), «SMS av»-badge fra samme omlegging:
+//  - grand-barber: rebooking AV men M/TALL → tallene BEHOLDES + dempet «SMS av»-badge (IKKE lenger «Av»/di-off).
+//  - ahmed-fadezz: rebooking PÅ (normal rad m/kr, ingen badge).
 //  - utan-deltakere: rebooking aktivert, 0 → «Ingen ennå».
 // Alle tre mock-ene BÆRER en lojalitet-node (count/revenue/program) — vakten vokter at panelet
 // IGNORERER den fullstendig: ingen «Lojalitet»-arm, ingen .di-setup, ingen «kunder i programmet».
@@ -43,12 +43,15 @@ const STATES = {
     vinnTilbake:{count:0,revenue:0}, rebooking:{count:0,revenue:0,aktivert:true} } },
 };
 const stats = { daily:[], months_with_data:[], current_week_revenue:0, best_week_revenue:0, best_week_start:null, weekly_revenue:[] };
-// Kun rebooking-arm vaktes nå. aktivert=false → «Av» (di-off) UAVHENGIG av tall; count>0 → «N klipp · X kr»;
-// count===0 (aktivert) → «Ingen ennå». Lojalitet: se lojFinnes-vakten (skal ALDRI finnes).
+// Kun rebooking-arm vaktes nå. ⚠ 14.09-omlegging (diArmRad): aktivert=false SKJULER IKKE lenger
+// tallene — de er opptjent historikk og vises som normalt, MED en dempet «SMS av»-badge (.di-off-badge)
+// som viser at automatikken er av NÅ. Så: count>0 m/aktivert=false → «N klipp · X kr» + «SMS av»-badge
+// (ikke «Av»/di-off); count>0 m/aktivert=true → «N klipp · X kr», INGEN badge; count===0 (aktivert) →
+// «Ingen ennå», ingen badge. Lojalitet: se lojFinnes-vakten (skal ALDRI finnes).
 const forvent = {
-  'grand-barber':  { value:'Av', off:true },
-  'ahmed-fadezz':  { inneholder:'klipp', off:false },
-  'utan-deltakere':{ value:'Ingen ennå', off:false },
+  'grand-barber':  { inneholder:'6 klipp · 2 048 kr', badge:true },   // aktivert=false → tall + «SMS av»
+  'ahmed-fadezz':  { inneholder:'klipp', badge:false },               // aktivert=true → tall, ingen badge
+  'utan-deltakere':{ value:'Ingen ennå', badge:false },              // count===0 → «Ingen ennå»
 };
 
 const browser = await chromium.launch();
@@ -74,7 +77,8 @@ for (const [navn, attr] of Object.entries(STATES)) {
       const finn = (arm) => { for (const r of document.querySelectorAll('#drivenBy .di-row')) {
         const a=r.querySelector('.di-arm'); if (!a || a.textContent.trim()!==arm) continue;
         const v=r.querySelector('.di-value');
-        return { value:v?v.textContent.trim():'', off:r.classList.contains('di-off') };
+        const b=v?v.querySelector('.di-off-badge'):null;   // «SMS av» = aktivert:false-signalet (14.09)
+        return { value:v?v.textContent.trim():'', badge:!!b, badgeTxt:b?b.textContent.trim():'' };
       } return null; };
       const armer = [...document.querySelectorAll('#drivenBy .di-row .di-arm')].map(a=>a.textContent.trim());
       // Lojalitet skal ALDRI finnes: ingen «Lojalitet»-arm, ingen .di-setup i panelet.
@@ -86,11 +90,13 @@ for (const [navn, attr] of Object.entries(STATES)) {
     const f = forvent[navn];
     const rb = rad.rebooking || {};
     let ok = errs.length===0 && rad.rebooking && !rad.lojFinnes;
-    if (f.value!=null)      ok = ok && rb.value===f.value;
-    if (f.inneholder)       ok = ok && (rb.value||'').includes(f.inneholder) && !/Av/.test(rb.value||'');
-    if (f.off!=null)        ok = ok && rb.off===f.off;
+    // toLocaleString('no-NO') bruker HARDT/smalt mellomrom som tusenskille → normaliser før sammenligning.
+    const norm = s => (s||'').replace(/[\s  ]+/g,' ').trim();
+    if (f.value!=null)      ok = ok && norm(rb.value)===norm(f.value);
+    if (f.inneholder)       ok = ok && norm(rb.value).includes(norm(f.inneholder));
+    if (f.badge!=null)      ok = ok && rb.badge===f.badge && (!f.badge || rb.badgeTxt==='SMS av');
     rapport.push({ konto:navn, bredde,
-      'rebooking': (rb.value||'(mangler)')+(rb.off?' [di-off]':''),
+      'rebooking': (rb.value||'(mangler)')+(rb.badge?' ['+rb.badgeTxt+']':''),
       'armer': rad.armer.join(','),
       'lojalitet': rad.lojFinnes?'FINNES✗':'borte',
       jsfeil: errs.length?errs.join('; ').slice(0,40):'ingen', ok: ok?'✓':'✗' });
@@ -99,7 +105,7 @@ for (const [navn, attr] of Object.entries(STATES)) {
 }
 console.table(rapport);
 const ok = rapport.every(r => r.ok==='✓');
-console.log('«Av» vises uavhengig av tall (grand-barber):', rapport.filter(r=>r.konto==='grand-barber').every(r=>/^Av \[di-off\]/.test(r.rebooking)) ? 'ja ✓':'NEI ✗');
+console.log('Tall BEHOLDES + «SMS av»-badge ved aktivert=false (grand-barber):', rapport.filter(r=>r.konto==='grand-barber').every(r=>/6 klipp · 2 048 kr.*\[SMS av\]/.test(r.rebooking.replace(/[\s  ]+/g,' '))) ? 'ja ✓':'NEI ✗');
 console.log('Lojalitet ALDRI i panelet (biter hvis raden kommer tilbake):', rapport.every(r=>r.lojalitet==='borte') ? 'ja ✓':'NEI ✗');
 console.log('Armer = kun Verving/Vinn tilbake/Gjenbesøk:', rapport.every(r=>r.armer==='Verving,Vinn tilbake,Gjenbesøk') ? 'ja ✓':'NEI ✗');
 console.log('SAMLET:', ok ? 'GRØNT ✓' : 'NOE FEILER ✗');
