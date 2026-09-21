@@ -60,15 +60,20 @@ for(const bredde of [320,MOBIL,1280]){
   // ikke tent, så tre gull-felt og bar-teksten meldte rødt på en klon som er riktig.
   // Et større tall ville bare flyttet grensa. Vi venter på TILSTANDEN i stedet: gradienten
   // på .pv-fill og bar-teksten satt er det siste animasjonen gjør.
+  // Rekord-gullet er sluttilstanden i den fokusdrevne sekvensen (~6s inn: kortet teller opp til
+  // 10 550 og rekord-baren fylles). ROTÅRSAK til at ventingen tidligere timet ut på 320: ringen har
+  // TRE .pv-dash-kloner, og bare ÉN bærer .pv-fill — «første synlige .pv-dash» traff en klon UTEN
+  // fill, så gull-tilstanden ble aldri lest (uansett timeout). Vi velger derfor den synlige klonen
+  // som FAKTISK har .pv-fill. 15s er rikelig margin over de ~6s (headless kaldstart på 320).
   await page.waitForFunction(()=>{
     const sec=document.getElementById('produkt');
-    const d=[...sec.querySelectorAll('.pv-dash')].find(x=>x.offsetParent!==null);
+    const d=[...sec.querySelectorAll('.pv-dash')].find(x=>x.offsetParent!==null&&x.querySelector('.pv-fill'));
     if(!d) return false;
     const fill=d.querySelector('.pv-fill'), txt=d.querySelector('.pv-witext');
     if(!fill||!txt) return false;
     return /240,\s*194,\s*75/.test(getComputedStyle(fill).backgroundImage)
         && txt.textContent.trim().length>0;
-  },null,{timeout:8000,polling:100});
+  },null,{timeout:15000,polling:100});
 
   const m=await page.evaluate(w=>{
     const sec=document.getElementById('produkt');
@@ -99,7 +104,7 @@ for(const bredde of [320,MOBIL,1280]){
       // samme klon i begge. Alt under måles på den SYNLIGE kopien — ellers teller vi
       // dobbelt og leser verdier fra en skjult DOM.
       ...(function(){
-        const synligDash=[...sec.querySelectorAll('.pv-dash')].find(d=>d.offsetParent!==null);
+        const synligDash=[...sec.querySelectorAll('.pv-dash')].find(d=>d.offsetParent!==null&&d.querySelector('.pv-fill'));
         const ramme = sec.querySelector('.pv-desk')?.offsetParent!==null ? 'browservindu'
                     : sec.querySelector('.pv-mob')?.offsetParent!==null ? 'telefon' : 'INGEN ✗';
         if(!synligDash) return {ramme,stolper:[],kpiFont:0};
@@ -135,9 +140,9 @@ for(const bredde of [320,MOBIL,1280]){
       })(),
       // Assertions 09.08: KPI-en «Rebooking» var oppdiktet og skal ikke finnes.
       rebookingKPI:[...sec.querySelectorAll('.pv-dash .stat .l')].some(e=>/rebooking/i.test(e.textContent)),
-      kpiOmsetning:(function(){const d=[...sec.querySelectorAll('.pv-dash')].find(x=>x.offsetParent!==null);
+      kpiOmsetning:(function(){const d=[...sec.querySelectorAll('.pv-dash')].find(x=>x.offsetParent!==null&&x.querySelector('.pv-fill'));
         return d?((d.querySelector('.pv-rev-n')||{}).textContent||'').replace(/\s/g,''):'';})(),
-      kpiKunder:(function(){const d=[...sec.querySelectorAll('.pv-dash')].find(x=>x.offsetParent!==null);
+      kpiKunder:(function(){const d=[...sec.querySelectorAll('.pv-dash')].find(x=>x.offsetParent!==null&&x.querySelector('.pv-fill'));
         return d?((d.querySelector('.pv-count')||{}).textContent||'').trim():'';})(),
       urlFelt:((sec.querySelector('.brw-url')||{}).textContent||'').trim(),
       // Windows-rekkefølge: kontrollene i høyre halvdel, lukk ytterst til høyre.
@@ -167,7 +172,7 @@ for(const bredde of [320,MOBIL,1280]){
       // Signaturen er kildens egen (dashboard.html .rekord-gull / .wi-fill.rekord /
       // .wi-text.rekord) — endres den der, må den endres her. SYNKPUNKT.
       gull:(function(){
-        const d=[...sec.querySelectorAll('.pv-dash')].find(x=>x.offsetParent!==null);
+        const d=[...sec.querySelectorAll('.pv-dash')].find(x=>x.offsetParent!==null&&x.querySelector('.pv-fill'));
         if(!d) return {kpi:'—',bar:'—',tekst:'—',dom:'—'};
         const rev=d.querySelector('.pv-rev'), fill=d.querySelector('.pv-fill'),
               txt=d.querySelector('.pv-witext');
@@ -201,7 +206,7 @@ for(const bredde of [320,MOBIL,1280]){
       // ikke at fargen er en bestemt verdi. Da overlever den at paletten byttes.
       tilstand:(function(){
         const bok=sec.querySelector('.pv-book'), ut={};
-        const dash=[...sec.querySelectorAll('.pv-dash')].find(x=>x.offsetParent!==null);
+        const dash=[...sec.querySelectorAll('.pv-dash')].find(x=>x.offsetParent!==null&&x.querySelector('.pv-fill'));
         const stat=dash&&dash.querySelector('.stat');
         ut.kpiKort = !stat ? 'MANGLER' : stat.offsetParent===null ? 'SKJULT'
           : /rgba\(0, 0, 0, 0\)/.test(getComputedStyle(stat).backgroundColor) ? 'GJENNOMSIKTIG'
@@ -847,11 +852,13 @@ for(const bredde of [320,MOBIL,1280]){
         .map(k=>k.dataset.i).join(',')||'ingen',
     };
   });
+  // Count-agnostisk: ringen kloner kortene (3 → 9 for uendelig løkke), så et hardkodet «3-kort»-
+  // mønster er stale. Intensjonen er at INGEN kort beholder transform/--dx etter resize — sjekk hvert.
   oppforsel.push({test:`resize 1280→${MOBIL}: ingen transform`,
-    resultat:etterResize.transform, ventet:'none|none|none',
-    ok:etterResize.transform==='none|none|none'?'✓':'✗'});
+    resultat:etterResize.transform, ventet:'alle none',
+    ok:etterResize.transform.split('|').every(t=>t==='none')?'✓':'✗'});
   oppforsel.push({test:`resize 1280→${MOBIL}: --dx ryddet`,
-    resultat:etterResize.dx, ventet:'-|-|-', ok:etterResize.dx==='-|-|-'?'✓':'✗'});
+    resultat:etterResize.dx, ventet:'alle -', ok:etterResize.dx.split('|').every(t=>t==='-')?'✓':'✗'});
   oppforsel.push({test:`resize 1280→${MOBIL}: alle tre synlige i sporet`,
     resultat:`usynlige: ${etterResize.usynlige}, utenfor: ${etterResize.utenforSporet}`,
     ventet:'ingen / ingen',
