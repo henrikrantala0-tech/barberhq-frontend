@@ -904,8 +904,8 @@
     .chartbars.scanning .cbar-col{transition:none}
     .rekord-puls{animation:none}
   }
-  /* ----- Drevet av BarberHQ ----- */
-  /* Drevet av BarberHQ — hero-tall + tre rader (pengeverdien BarberHQ hentet inn) */
+  /* ----- Hvor kundene kommer fra ----- */
+  /* Hvor kundene kommer fra — hero-tall + tre rader (pengeverdien BarberHQ hentet inn) */
   /* .drv-head + .drv-period er FJERNET — perioden bor nå i beskrivelsessetningen. */
   #drivenBy{margin-top:2px}
   .drv-hero{text-align:center;padding:22px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:16px}
@@ -932,7 +932,7 @@
   .drv-empty-mark{width:40px;height:40px;border-radius:50%;background:var(--good-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:20px;color:var(--good)}
   .drv-empty-h{margin:0 0 8px;font-size:16px;font-weight:600;color:var(--ink-2)}
   .drv-empty-p{margin:0 auto;max-width:280px;font-size:13px;color:var(--mut);line-height:1.55}
-  /* «Drevet av BarberHQ» v2 — Hentet inn + På vei. Farger fra tema-variablene (adapterer lys/mørk;
+  /* «Hvor kundene kommer fra» v2 — Hentet inn + På vei. Farger fra tema-variablene (adapterer lys/mørk;
      designets dark-hex #141414/#242424/#8a8a8a/#cfcfcf/#4d8bff = mørk-tema-verdiene). Ingen prikker. */
   .di-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
   .di-title{padding:18px 18px 0;font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
@@ -1237,9 +1237,9 @@
      ligge tett på sin .block-s; .sec-h deler opp innhold lenger nede og trenger luft over seg.
      .panel-h: de FEM sidetitlene (Vekst, Profil, Tjenester & tider, Design, Abonnement).
        Oversikt har ingen sidetittel — det panelet starter rett på periodevelgeren.
-     .sec-h:   Veksts TRE seksjoner «Drevet av BarberHQ», «Automatikk» og «Personlig».
+     .sec-h:   Veksts TRE seksjoner «Hvor kundene kommer fra», «Automatikk» og «Personlig».
      .block-h (13px) er blokknivået INNI dem — «Kunder per måned», «Kopier verve-lenke» osv.
-     ⚠ Oversiktens «Drevet av BarberHQ» er IKKE en .sec-h: den står i et panel-kort og beholder
+     ⚠ Oversiktens «Hvor kundene kommer fra» er IKKE en .sec-h: den står i et panel-kort og beholder
      .block-h. Samme tittel, to steder, to nivåer — fordi konteksten er ulik. */
   .panel-h,.sec-h{font-size:16px;font-weight:800;letter-spacing:-.02em;color:var(--ink)}
   .panel-h{margin:0 0 3px}
@@ -1589,9 +1589,9 @@
     </div>
 
 
-    <!-- 5. Drevet av BarberHQ — løftet ut av .bottom-grid til bunn. -->
+    <!-- 5. Hvor kundene kommer fra — løftet ut av .bottom-grid til bunn. -->
     <div id="drivenByWrap">
-      <!-- v2: tittelen «Drevet av BarberHQ» rendres NÅ inne i kortet (di-title) av renderDrivenBy,
+      <!-- v2: tittelen «Hvor kundene kommer fra» rendres NÅ inne i kortet (di-title) av renderDrivenBy,
            ikke som løs .block-h over. Ingen undertekst i panelet (design turn 2). Vekst-fanens
            attribusjonskort beholder sin egen sec-h + block-s. -->
       <div id="drivenBy"></div>
@@ -1617,21 +1617,21 @@
          filtrerer den bort i `WHERE kategori <> 'ny'`. Tallene her er altså et UTVALG,
          ikke en fordeling — presenter dem ALDRI som «X % av klippene».
          Omsetning er RABATTERT (price_nok minus discount_pct), ikke listepris.
-         Fargene matcher «Drevet av BarberHQ» på Oversikt med vilje: samme kategori =
+         Fargene matcher «Hvor kundene kommer fra» på Oversikt med vilje: samme kategori =
          samme farge på begge flater. [oversettelse: sv/da/en] -->
-    <!-- ⚠ Tittel + beskrivelse er DELT med «Drevet av BarberHQ» på Oversikt — hold dem i synk.
+    <!-- ⚠ Tittel + beskrivelse er DELT med «Hvor kundene kommer fra» på Oversikt — hold dem i synk.
          Eneste tilsiktede forskjell: Oversikt henger perioden på setningen («… — denne uka.»),
          fordi panelet der ikke har en periodevelger ved siden av seg. Her står velgeren rett
          under, så en periode i teksten ville bare dublet den. -->
     <!-- .sec-h, ikke .block-h: dette er Veksts FØRSTE seksjon, søsken til «Automatikk» og
-         «Personlig». ⚠ Gjelder KUN denne forekomsten. Oversiktens «Drevet av BarberHQ»
+         «Personlig». ⚠ Gjelder KUN denne forekomsten. Oversiktens «Hvor kundene kommer fra»
          (#drivenByWrap) står i et panel-kort og beholder .block-h — hever man den også,
          sprenger den kortet den ligger i. -->
     <!-- #attrKort er skjold-host for attribusjonen i basis (settSkjold i renderAttribusjon).
          Wrapper sec-h + periodevelger + rader som ÉN enhet; momentum-kortet under er egen host. -->
     <div id="attrKort">
-    <p class="sec-h">Drevet av BarberHQ</p>
-    <p class="block-s">Klipp BarberHQ har hentet inn eller hentet tilbake. Ordinære bookinger telles ikke med.</p>
+    <p class="sec-h">Hvor kundene kommer fra</p>
+    <p class="block-s">Verving og vinn tilbake er kunder BarberHQ har hentet inn. Gjenbesøk er faste kunder som har booket igjen.</p>
     <!-- Periodevelger turn 3: kompakt segmentert kontroll [2 uker][30 dager][3 mnd ▾]. 3. pille bærer
          nedtrekket (3/6/12 måneder) og viser aktivt valg forkortet («6 mnd ▾»). attrPeriod-state, ALDRI
          curPeriod. Verdier: 2uker / siste_maaned (=«30 dager») / siste_3mnd/6mnd/12mnd. Menyen er absolutt-
@@ -2766,7 +2766,7 @@ const api={
     const r=await apiFetch('/api/dashboard/momentum');
     if(!r||!r.ok)return null;
     return r.json(); },
-  // Ekte, session-basert attribusjon → {period,vervet,recovery,rebooking:{count,revenue}}. Mater «Drevet av BarberHQ» (Oversikt).
+  // Ekte, session-basert attribusjon → {period,vervet,recovery,rebooking:{count,revenue}}. Mater «Hvor kundene kommer fra» (Oversikt).
   async attribution(period){
     const r=await apiFetch('/api/dashboard/attribution?period='+encodeURIComponent(period));
     if(!r||!r.ok)return null; // 401→apiFetch redirigerte; annen feil→null (panel viser ingenting, ingen krasj)
@@ -3353,15 +3353,15 @@ function oppdaterSkjoldFlater(){
   }
 }
 
-// ── «Drevet av BarberHQ» v2 — delte byggere (brukt av renderDrivenBy + renderAttribusjon) ──
+// ── «Hvor kundene kommer fra» v2 — delte byggere (brukt av renderDrivenBy + renderAttribusjon) ──
 // Kontrakt (backend 46898fd+d9048ee): { paaVei, hentetInn? }. hentetInn MANGLER for Basis —
 // fravær = signalet, aldri en tom verdi. Alt leses via ?. / ||-guard → manglende nøkkel kaster aldri.
-function diTitle(){ return '<div class="di-title">Drevet av BarberHQ</div>'; }
+function diTitle(){ return '<div class="di-title">Hvor kundene kommer fra</div>'; }
 // Totalblokka (turn 3): to stablede tall «N klipp» + «X kr» + periode-etikett. total.count===0 →
 // erstattes av ÉN dempet linje (14.09) i stedet for «0 klipp / 0 kr» — så «På vei» dominerer på tom periode.
 function diTotalHtml(count, revenue, periodeTekst){
   if((count||0)===0){
-    return '<div class="di-total"><div class="di-tom-linje">Ingenting hentet inn ennå.</div></div>';
+    return '<div class="di-total"><div class="di-tom-linje">Ingen bookinger her ennå.</div></div>';
   }
   return '<div class="di-total">'
     +'<div class="di-total-klipp">'+count+' klipp</div>'
@@ -3397,13 +3397,13 @@ function diRaderHtml(hi){
   return '<div class="di-rows">'
     +diArmRad('Verving', hi&&hi.vervet)
     +diArmRad('Vinn tilbake', hi&&hi.vinnTilbake)
-    +diArmRad('Rebooking', hi&&hi.rebooking)
+    +diArmRad('Gjenbesøk', hi&&hi.rebooking)
   +'</div>';
 }
 // Oversikt: eyebrow + total («siste 30 dager» — panelet har ingen velger, da564bd) + rader.
 function diHentetInnHtml(hi){
   var total=(hi&&hi.total)||{count:0,revenue:0};
-  return '<div class="di-hentet"><div class="di-eyebrow">HENTET INN MED BARBERHQ</div>'
+  return '<div class="di-hentet"><div class="di-eyebrow">BOOKET VIA BARBERHQ</div>'
     +diTotalHtml(total.count, total.revenue, 'siste 30 dager')
     +diRaderHtml(hi)
   +'</div>';
@@ -3445,7 +3445,7 @@ function diBasisLaastRader(){
   return '<div class="di-rows di-basis-rows">'
     +'<div class="di-row di-basis-laast"><span class="di-arm">Verving</span><span class="di-value">* klipp · **** kr</span></div>'
     +'<div class="di-row di-basis-laast"><span class="di-arm">Vinn tilbake</span><span class="di-value">* klipp · **** kr</span></div>'
-    +'<div class="di-row di-basis-laast"><span class="di-arm">Rebooking</span><span class="di-value">* klipp · **** kr</span></div>'
+    +'<div class="di-row di-basis-laast"><span class="di-arm">Gjenbesøk</span><span class="di-value">* klipp · **** kr</span></div>'
   +'</div>';
 }
 // Forklaringssetning (begge flater). Knapp + pris er skilt ut fordi de KUN vises på Vekst-fanen.
@@ -3463,7 +3463,7 @@ function koblePaaVeiCta(host){
   var w=host.querySelector('[data-di-winback]'); if(w)w.addEventListener('click',function(){ if(typeof aapneVekstAkkordion==='function')aapneVekstAkkordion('#accWinback'); });
 }
 
-// «Drevet av BarberHQ» (Oversikt). Henter ALLTID siste_maaned (ny default) — panelet har ingen
+// «Hvor kundene kommer fra» (Oversikt). Henter ALLTID siste_maaned (ny default) — panelet har ingen
 // egen periodevelger (design turn 2). Basis-signal = hentetInn mangler → kun På vei + CTA.
 async function renderDrivenBy(){
   var wrap=$("#drivenBy"); if(!wrap)return;
@@ -3572,8 +3572,12 @@ function emptyHTML(t){return `<div class="empty"><i>○</i><p>${t}</p></div>`}
 
 // Delt dato-header for kommende + siste: relative ord nær i tid, ellers datert
 // (f.eks. «TOR 17. JUL»). Gjelder både bakover og framover.
-function dayHead(d){var t=new Date();t.setHours(0,0,0,0);var dd=new Date(d);dd.setHours(0,0,0,0);var diff=Math.round((dd-t)/86400000);if(diff===0)return "I dag";if(diff===1)return "I morgen";if(diff===-1)return "I går";return DAYS[(dd.getDay()+6)%7].slice(0,3).toUpperCase()+" "+dd.getDate()+". "+MONTHS[dd.getMonth()].slice(0,3).toUpperCase();}
-function timeOnly(iso){var d=new Date(iso);return String(d.getHours()).padStart(2,"0")+":"+String(d.getMinutes()).padStart(2,"0");}
+// Anker = Oslo-i dag (ikke nettleser-i dag), så «I dag/I morgen/I går» stemmer med kolonnen som
+// markeres som i dag (osloTodayKey). Kalles med dag-nøkler (Oslo-dato-midnatt); Math.round tåler
+// at et sommertid-døgn i nettleser-sona er 23/25t.
+function dayHead(d){var t=osloTodayKey();var dd=new Date(d);dd.setHours(0,0,0,0);var diff=Math.round((dd.getTime()-t)/86400000);if(diff===0)return "I dag";if(diff===1)return "I morgen";if(diff===-1)return "I går";return DAYS[(dd.getDay()+6)%7].slice(0,3).toUpperCase()+" "+dd.getDate()+". "+MONTHS[dd.getMonth()].slice(0,3).toUpperCase();}
+// Klokkeslett i Oslo-veggklokke (delt av kalenderblokker, Kommende-lista og detaljflaten).
+function timeOnly(iso){var p=osloParts(iso);return String(p.h).padStart(2,"0")+":"+String(p.mi).padStart(2,"0");}
 // «Siste bookinger» FJERNET fra Oversikt 14.09 — kalenderen eier historikk. rowHTML2/loadBookinger/
 // renderBookinger + #ovsWbNudge slettet med seksjonen (no-show-oppfølging lever i Vekst › Vinn tilbake).
 
@@ -3700,8 +3704,16 @@ function svcFarge(serviceId){
   return (i==null||i>=SVC_FARGER.length)?'var(--mut)':SVC_FARGER[i];
 }
 
-function calDayKey(iso){var d=new Date(iso);d.setHours(0,0,0,0);return d.getTime();}
-function calMin(iso){var d=new Date(iso);return d.getHours()*60+d.getMinutes();}
+// Alle booking-tider tolkes i BARBERENS tidssone (Europe/Oslo) via Intl — ALDRI nettleserens
+// getHours()/setHours() (kilden til H4/M-7: en barber med nettleser i annen sone fikk blokkene
+// plassert og bucketet på nettleser-tid, mens nå-strek/«i dag» sto på Oslo-tid → forskjøvet).
+// osloParts gir Oslo-veggklokka for et instant; Intl håndterer sommertid, så en 15:00-booking
+// havner på 15:00-linja også på overgangsdøgnene (M6). Samme mønster som osloNowMin/osloTodayKey.
+function osloParts(iso){var p={};new Intl.DateTimeFormat('en-GB',{timeZone:'Europe/Oslo',year:'numeric',month:'2-digit',day:'2-digit',hour:'2-digit',minute:'2-digit',hourCycle:'h23'}).formatToParts(new Date(iso)).forEach(function(x){if(x.type!=='literal')p[x.type]=x.value;});return{y:+p.year,mo:+p.month,d:+p.day,h:+p.hour,mi:+p.minute};}
+// Dag-nøkkel = Oslo-datoens lokal-midnatt-ms (samme form som osloTodayKey → direkte sammenlignbar).
+function calDayKey(iso){var p=osloParts(iso);return new Date(p.y,p.mo-1,p.d).getTime();}
+// Minutter siden Oslo-midnatt (veggklokke) → posisjon på tidsaksen, som selv er veggklokke.
+function calMin(iso){var p=osloParts(iso);return p.h*60+p.mi;}
 // ÉN tid→px-funksjon delt av blokker, time-/halvtimeslinjer OG nå-streken — ingen dobbel matte som kan drifte.
 function minToPx(min,yMin){return (min-yMin)*PX_PER_MIN;}
 // ÉN tid→tekst for BÅDE heltime- og halvtimeetikettene (HH:MM). Hierarki via CSS, ikke via format.
@@ -3898,7 +3910,7 @@ function renderDetalj(id){
   var st=effectiveStatus(b),tagC='b',tagT='Booket';
   if(b.status==='avlyst'){tagC='avlyst';tagT='Avbestilt';}
   else if(st==='noshow'){tagC='n';tagT='Ikke fullført';}else if(st==='fullfort'){tagC='f';tagT='Fullført';}else if(st==='venter'){tagC='v';tagT='Venter';}
-  var tid=dayHead(new Date(b.start))+' · '+timeOnly(b.start)+(b.end?'–'+timeOnly(b.end):'');
+  var tid=dayHead(new Date(calDayKey(b.start)))+' · '+timeOnly(b.start)+(b.end?'–'+timeOnly(b.end):'');
   // Tillegg: egen rad (ikke slått inn i Tjeneste), så hovedtjenesten — som styrer blokkfargen —
   // står ren. Robust mot både strenger og {name}-objekter. Raden vises kun når det finnes tillegg.
   var tillegg=(b.addons||[]).map(function(a){return typeof a==='string'?a:(a&&a.name)||'';}).filter(Boolean);
