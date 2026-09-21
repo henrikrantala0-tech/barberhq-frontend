@@ -3748,10 +3748,27 @@ async function calFetch(){
   CAL.minKey=calNesteKey(today,-14);
   CAL.maxKey=calNesteKey(today,(CONFIG.BOOKING_HORIZON||28));
   CAL.alle=(bs||[]).filter(function(b){return b.status!=='avlyst';})   // avlyste vises ikke (og telles ikke)
-                   .filter(function(b){var k=calDayKey(b.start);return k>=CAL.minKey&&k<=CAL.maxKey;});
+                   // Behold hvis START- ELLER SLUTT-dagen er i vinduet, så en booking som krysser
+                   // midnatt inn i en synlig dag ikke faller ut (halen splittes i dagSegmenter).
+                   .filter(function(b){var ks=calDayKey(b.start),ke=b.end?calDayKey(b.end):ks;return (ks>=CAL.minKey&&ks<=CAL.maxKey)||(ke>=CAL.minKey&&ke<=CAL.maxKey);});
   CAL.built=true;
 }
-function dagBookinger(key){return CAL.alle.filter(function(b){return calDayKey(b.start)===key;}).sort(function(a,c){return new Date(a.start)-new Date(c.start);});}
+// Del bookinger på Oslo-dagkant: en booking som krysser midnatt gir TO segmenter — startdagen fram
+// til 24:00 og neste dag fra 00:00 — begge med samme booking-id, så begge kan klikkes og åpner samme
+// detalj (H3/L-13). Hel mellomdag (svært sjelden for en frisør) fylles 00:00–24:00. Slutt nøyaktig
+// på midnatt gir INGEN hale (me>0-vakt). Sortert på segment-start.
+function dagSegmenter(key){
+  var out=[];
+  CAL.alle.forEach(function(b){
+    var ks=calDayKey(b.start), ms=calMin(b.start);
+    var hasEnd=!!b.end, ke=hasEnd?calDayKey(b.end):ks, me=hasEnd?calMin(b.end):ms;
+    if(!hasEnd||ke<=ks){ if(ks===key) out.push({b:b,segStart:ms,segEnd:me}); return; }   // samme dag
+    if(key===ks) out.push({b:b,segStart:ms,segEnd:1440,cont:'ned'});                       // startdag → 24:00
+    else if(key===ke){ if(me>0) out.push({b:b,segStart:0,segEnd:me,cont:'opp'}); }         // sluttdag 00:00 → slutt
+    else if(key>ks&&key<ke) out.push({b:b,segStart:0,segEnd:1440,cont:'begge'});           // hel mellomdag
+  });
+  return out.sort(function(a,c){return (a.segStart-c.segStart)||(new Date(a.b.start)-new Date(c.b.start));});
+}
 function dagTimer(key){   // → {closed} | {open,close} i minutter. getDay() 0=søn matcher /hours weekday.
   var row=CAL.hours.find(function(h){return Number(h.weekday)===new Date(key).getDay();});
   if(row&&row.is_closed)return{closed:true};
@@ -3766,13 +3783,14 @@ function yAkse(keys){  // [tidligste åpning, seneste stenging] blant synlige Å
   return{min:Math.floor(mn/60)*60,max:Math.ceil(mx/60)*60};
 }
 // Klipp mot dagkant (aldri negativ top, aldri utenfor .cal-daybody) + 2-deling ved overlapp.
-function blokkLayout(bs,yMin,yMax){
-  var out=bs.map(function(b){
-    var os=calMin(b.start), oe=calMin(b.end||b.start);
+// Tar SEGMENTER (fra dagSegmenter): {b,segStart,segEnd} i minutter siden Oslo-midnatt for DENNE dagen.
+function blokkLayout(segs,yMin,yMax){
+  var out=segs.map(function(sg){
+    var os=sg.segStart, oe=sg.segEnd;
     if(oe<=os)oe=os+15;                                  // 0/negativ varighet → 15-min for overlapp-logikken
     var s=Math.max(os,yMin), e=Math.min(oe,yMax);        // KLIPPET spenn — KUN visning (top/høyde)
     if(e<=s)e=Math.min(s+15,yMax);
-    return{b:b,os:os,oe:oe,top:minToPx(s,yMin),h:Math.max((e-s)*PX_PER_MIN,16)};
+    return{b:sg.b,seg:sg,os:os,oe:oe,top:minToPx(s,yMin),h:Math.max((e-s)*PX_PER_MIN,16)};
   });
   // Overlapp + lane på ORIGINALE tider (os/oe), ikke klippede. Klipping mot arbeidstids-kanten
   // er kun visning og skal ALDRI skape falsk 2-deling — en utenfor-tid-booking klippet til
@@ -3812,7 +3830,7 @@ function renderDaystrip(){
   // ikke redde det: renderCal() kjøres MENS overlayet er skjult (openKalender: render før hidden=false), så
   // den forankrer ikke — venstrekanten må være riktig i seg selv. Desktop (>760) viser hele vinduet som før.
   var start=(window.innerWidth<=760)?Math.max(CAL.minKey,Math.min(todayKey,CAL.active)):CAL.minKey;
-  for(var k=start;k<=CAL.maxKey;k=calNesteKey(k,1)){var d=new Date(k),n=dagBookinger(k).length;
+  for(var k=start;k<=CAL.maxKey;k=calNesteKey(k,1)){var d=new Date(k),n=dagSegmenter(k).length;
     html+='<button class="cal-chip'+(k===todayKey?' is-today':'')+(k===CAL.active?' active':'')+'" data-key="'+k+'"><span class="chip-wd">'+DAYS[(d.getDay()+6)%7].slice(0,3)+'</span><span class="chip-d">'+d.getDate()+'</span>'+(n?'<span class="chip-count">'+n+'</span>':'')+'</button>';}
   strip.innerHTML=html;
   var act=strip.querySelector('.cal-chip.active');if(act)act.scrollIntoView({inline:'center',block:'nearest'});
@@ -3831,9 +3849,9 @@ function renderGrid(){
     if(h.closed){cols+='<div class="cal-day closed" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px"><div class="cal-closed">Stengt</div></div></div>';return;}
     // Time- + halvtimeslinjer fra SAMME tidsrom (y.min..y.max) via minToPx — halvlinja svakere (.cal-halfline).
     var lines='';for(var mm=y.min;mm<y.max;mm+=60){lines+='<div class="cal-hourline" style="top:'+minToPx(mm,y.min)+'px"></div>';var half=mm+30;if(half<y.max)lines+='<div class="cal-halfline" style="top:'+minToPx(half,y.min)+'px"></div>';}
-    var bs=dagBookinger(k),blocks='';
-    if(!bs.length)blocks='<div class="cal-empty">Ingen bookinger</div>';
-    else blokkLayout(bs,y.min,y.max).forEach(function(o){
+    var segs=dagSegmenter(k),blocks='';
+    if(!segs.length)blocks='<div class="cal-empty">Ingen bookinger</div>';
+    else blokkLayout(segs,y.min,y.max).forEach(function(o){
       var ns=(effectiveStatus(o.b)==='noshow')?' noshow':'', svc=(o.h>=40)?'<span class="blk-svc">'+esc(o.b.service||'')+'</span>':'';
       // Start alltid; start–slutt kun når blokka er bred nok (ikke splittet av overlapp) — o.w er
       // bredde i % av kolonnen. >60 = i praksis full bredde → plass til «14:00–14:30». Smale,
