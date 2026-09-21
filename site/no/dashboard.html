@@ -5803,8 +5803,8 @@ function svcMangler(s){return (s.name||'').trim()!=='' && !(Number(s.price)>0);}
 // Varighet kreves KUN for hovedtjenester (tillegg kan ha 0 min, f.eks. et produkt). L-12.
 function svcMinMangler(s){return (s.name||'').trim()!=='' && !(Number(s.min)>0);}
 function svcFlagTxt(mp,mm){return mp&&mm?'Sett pris og varighet':mp?'Sett pris':mm?'Sett varighet':'';}
-function hovedRow(s,i){var mp=svcMangler(s),mm=svcMinMangler(s),ft=svcFlagTxt(mp,mm);return '<div class="svc-row-h"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="h" data-i="'+i+'" data-f="name" placeholder="F.eks. Fade"><div class="svc-tall"><input class="svc-pris'+(mp?' pris-0':'')+'" type="text" inputmode="decimal" value="'+s.price+'" data-l="h" data-i="'+i+'" data-f="price"><input class="svc-min'+(mm?' min-0':'')+'" type="text" inputmode="decimal" value="'+s.min+'" data-l="h" data-i="'+i+'" data-f="min"><button class="svc-rm" data-l="h" data-i="'+i+'" aria-label="Fjern">&times;</button></div><span class="svc-flag"'+(ft?'':' hidden')+'>'+ft+'</span></div>';}
-function tilleggRow(s,i){var mp=svcMangler(s);return '<div class="svc-row-t"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="t" data-i="'+i+'" data-f="name" placeholder="F.eks. Skjegg"><div class="svc-tall"><input class="svc-pris'+(mp?' pris-0':'')+'" type="text" inputmode="decimal" value="'+s.price+'" data-l="t" data-i="'+i+'" data-f="price"><input class="svc-min" type="text" inputmode="decimal" value="'+s.min+'" data-l="t" data-i="'+i+'" data-f="min"><button class="svc-rm" data-l="t" data-i="'+i+'" aria-label="Fjern">&times;</button></div><span class="svc-flag"'+(mp?'':' hidden')+'>Sett pris</span></div>';}
+function hovedRow(s,i){var mp=svcMangler(s),mm=svcMinMangler(s),ft=svcFlagTxt(mp,mm);return '<div class="svc-row-h"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="h" data-i="'+i+'" data-f="name" placeholder="F.eks. Fade"><div class="svc-tall"><input class="svc-pris'+(mp?' pris-0':'')+'" type="text" inputmode="decimal" value="'+esc(String(s.price))+'" data-l="h" data-i="'+i+'" data-f="price"><input class="svc-min'+(mm?' min-0':'')+'" type="text" inputmode="decimal" value="'+esc(String(s.min))+'" data-l="h" data-i="'+i+'" data-f="min"><button class="svc-rm" data-l="h" data-i="'+i+'" aria-label="Fjern">&times;</button></div><span class="svc-flag"'+(ft?'':' hidden')+'>'+ft+'</span></div>';}
+function tilleggRow(s,i){var mp=svcMangler(s);return '<div class="svc-row-t"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="t" data-i="'+i+'" data-f="name" placeholder="F.eks. Skjegg"><div class="svc-tall"><input class="svc-pris'+(mp?' pris-0':'')+'" type="text" inputmode="decimal" value="'+esc(String(s.price))+'" data-l="t" data-i="'+i+'" data-f="price"><input class="svc-min" type="text" inputmode="decimal" value="'+esc(String(s.min))+'" data-l="t" data-i="'+i+'" data-f="min"><button class="svc-rm" data-l="t" data-i="'+i+'" aria-label="Fjern">&times;</button></div><span class="svc-flag"'+(mp?'':' hidden')+'>Sett pris</span></div>';}
 function renderSvc(){$("#hovedList").innerHTML=hoved.map(hovedRow).join("");$("#tilleggList").innerHTML=tillegg.map(tilleggRow).join("");validateSvc();}
 function validateSvc(){
   const named=hoved.filter(s=>s.name.trim());
@@ -5820,8 +5820,11 @@ async function loadTjenester(){
   if(!r){renderSvc();return;}
   if(!r.ok){renderSvc();return;}
   const d=await r.json();
-  hoved=(d.hoved||[]).map(function(s){return{name:s.name,price:s.price,min:s.min};});
-  tillegg=(d.tillegg||[]).map(function(s){return{name:s.name,price:s.price,min:s.min};});
+  // L-3: tving pris/min til tall (fallback 0) allerede ved innlasting — en ikke-numerisk verdi fra
+  // backend kan ellers nå value="…"-attributtet uendret (attributt-injeksjon). esc() i radene er
+  // andrelinjeforsvar; Number()||0 kutter kilden.
+  hoved=(d.hoved||[]).map(function(s){return{name:s.name,price:Number(s.price)||0,min:Number(s.min)||0};});
+  tillegg=(d.tillegg||[]).map(function(s){return{name:s.name,price:Number(s.price)||0,min:Number(s.min)||0};});
   renderSvc();
 }
 $("#addHoved").addEventListener("click",()=>{hoved.push({name:"",price:0,min:30});renderSvc();});
