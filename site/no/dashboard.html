@@ -68,6 +68,21 @@
   .nav button[aria-selected=true]{color:var(--ink);border-bottom-color:var(--ink)}
 
   .panel{display:none;padding:26px 0 50px}
+  /* Desktop: .wrap gir panelene 1072px @1280, ~3,5× det enkeltkolonne-innholdet trenger →
+     justify-between-rader får stort tomt midtparti, KPI/diagram blir sparsomme. Stram til ~680px
+     sentrert (forankret i KPI-to-kort-raden). ALLE fem panelene får SAMME bredde så fanebytte ikke
+     hopper. #design beholder 2-kolonne-gridet: 680 − 281px preview − 30px gap = ~369px til
+     trekkspillene, rikelig. Mobil uendret (viewport < 680 → max-width uten effekt; margin:auto er
+     no-op ved full bredde). Fullskjerm-kalender (#calOverlay) og plakat-editor (#plakatOverlay) er
+     fixed overlays utenfor .wrap → uberørt.
+     Header/nav (.topband) strammes til SAMME innholdsbredde: .topband uten egen bakgrunn betyr at
+     .top/.nav-strekene ellers ville spent 1072px mens innholdet under står på 680 → frakoblet.
+     728 = 680 + 2×24 (.wrap-padding) → header-innhold = 680, sentrert på samme viewport-akse som
+     panelene, så streker og innhold flukter nøyaktig på alle bredder. */
+  @media(min-width:720px){
+    #oversikt,#vekst,#tjenester,#design,#abonnement{max-width:680px;margin-left:auto;margin-right:auto}
+    .topband>.wrap{max-width:728px}
+  }
   .panel.active{display:block}
 
   /* Period selector */
