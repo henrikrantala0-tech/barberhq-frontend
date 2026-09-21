@@ -2968,28 +2968,35 @@ function fillMonths(months){
 
 async function loadOversikt(){
   $("#rangeLabel").textContent=rangeText(curPeriod);
+  // M-8: api.statsDaily/bookings degraderer 4xx/5xx til tom akse selv, men en HARD nettverksfeil
+  // (offline/DNS) kaster gjennom apiFetch. Uten try/catch ville #stats bli stående på «Laster …».
+  // Speiler winback/verving/loyalty-loaderne: kast → synlig feil + «Prøv igjen».
+  try{
+    const payload=await api.statsDaily();
+    fillMonths(payload.months_with_data); // sync "Tidligere"-dropdown med ekte måneder
+    const days=sliceDaily(payload.daily||[],curPeriod);
+    const totalRev=days.reduce(function(a,d){return a+d.kr;},0);
+    const totalCount=days.reduce(function(a,d){return a+d.count;},0);
 
-  const payload=await api.statsDaily();
-  fillMonths(payload.months_with_data); // sync "Tidligere"-dropdown med ekte måneder
-  const days=sliceDaily(payload.daily||[],curPeriod);
-  const totalRev=days.reduce(function(a,d){return a+d.kr;},0);
-  const totalCount=days.reduce(function(a,d){return a+d.count;},0);
+    $("#stats").innerHTML=kpiCardsHtml(totalCount,totalRev);
 
-  $("#stats").innerHTML=kpiCardsHtml(totalCount,totalRev);
+    // lag 3: tell-opp begge KPI kun første render (leses FØR renderBarChart flipper chartEntered)
+    if(!chartEntered && !prefersReduced()){
+      $("#kpiCount").textContent="0"; $("#estRevValue").textContent="0"; // start på 0 (samme frame, ingen flash)
+      countUp($("#kpiCount"), totalCount, 600, false);
+      countUp($("#estRevValue"), totalRev, 600, true);
+    }
+    applyRekord(payload); // lag 4: fotnote + gull-tilstand (gull-klasse sameksisterer med tell-opp)
+    renderWeekInsight(payload); // batch 2: persentil + rekord-bar (tømmer #rekordNote hvis baren vises)
 
-  // lag 3: tell-opp begge KPI kun første render (leses FØR renderBarChart flipper chartEntered)
-  if(!chartEntered && !prefersReduced()){
-    $("#kpiCount").textContent="0"; $("#estRevValue").textContent="0"; // start på 0 (samme frame, ingen flash)
-    countUp($("#kpiCount"), totalCount, 600, false);
-    countUp($("#estRevValue"), totalRev, 600, true);
+    var dw=$("#drivenByWrap");if(dw)dw.hidden=false; // pill-modus: alltid synlig (skjules kun på historisk måned)
+    renderBarChart(days,curPeriod);
+    renderDrivenBy(); // panelet henter alltid siste_maaned selv — frikoblet fra #segs/curPeriod
+    loadUpcoming();
+  }catch(e){
+    feilMedRetry($("#stats"),'Klarte ikke å laste tallene.',loadOversikt);
+    loadUpcoming(); // egen feilhåndtering → setter #upcomingList til sin egen feilstate
   }
-  applyRekord(payload); // lag 4: fotnote + gull-tilstand (gull-klasse sameksisterer med tell-opp)
-  renderWeekInsight(payload); // batch 2: persentil + rekord-bar (tømmer #rekordNote hvis baren vises)
-
-  var dw=$("#drivenByWrap");if(dw)dw.hidden=false; // pill-modus: alltid synlig (skjules kun på historisk måned)
-  renderBarChart(days,curPeriod);
-  renderDrivenBy(); // panelet henter alltid siste_maaned selv — frikoblet fra #segs/curPeriod
-  loadUpcoming();
 }
 
 // Skjær daily[] til en tett dags-akse for valgt pill, null-fyll manglende dager.
@@ -3510,14 +3517,20 @@ async function renderDrivenBy(){
 // Datamengde: maks 20 rader ELLER 7 dager frem, det som inntreffer først. (Toggle-modellen fjernet 14.09.)
 var _upcoming=[];
 async function loadUpcoming(){
-  var b=await api.bookings();
-  var now=Date.now();
-  var horisont=now+7*86400000;   // 7 dager frem
-  _upcoming=b.filter(function(x){return new Date(x.start).getTime()>now && x.status!=='avlyst';})
-             .sort(function(a,c){return new Date(a.start)-new Date(c.start);})
-             .filter(function(x){return new Date(x.start).getTime()<=horisont;})   // behold start <= nå+7d
-             .slice(0,20);                                                          // så maks 20 rader
-  renderUpcoming();
+  // M-8: api.bookings degraderer 4xx/5xx til [] selv, men en hard nettverksfeil kaster gjennom
+  // apiFetch → uten try/catch ble #upcomingList stående på «Laster …». Kast → synlig feil + retry.
+  try{
+    var b=await api.bookings();
+    var now=Date.now();
+    var horisont=now+7*86400000;   // 7 dager frem
+    _upcoming=b.filter(function(x){return new Date(x.start).getTime()>now && x.status!=='avlyst';})
+               .sort(function(a,c){return new Date(a.start)-new Date(c.start);})
+               .filter(function(x){return new Date(x.start).getTime()<=horisont;})   // behold start <= nå+7d
+               .slice(0,20);                                                          // så maks 20 rader
+    renderUpcoming();
+  }catch(e){
+    feilMedRetry($("#upcomingList"),'Klarte ikke å laste bookinger.',loadUpcoming);
+  }
 }
 // Rabatt-flagg (spec 4): blå pill ved navnet når bookingen har referral_discount. Ingen pill uten feltet.
 function discountPill(b){
