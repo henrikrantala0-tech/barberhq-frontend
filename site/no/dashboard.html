@@ -2577,6 +2577,9 @@
   /* «Generer plakat» bor inne i Verving- og Lojalitet-trekkspillet (sekundær .btn-outline),
      ikke som egen primærknapp. .plakat-gen gir bare luft over knappen. */
   .plakat-gen{margin-top:18px}
+  /* Base .btn-outline (padding 9px) blir ~39px høy — under 44px touch-mål. Løft KUN plakat-gen-
+     knappene til 44px (scopet, rører ikke andre outline-knapper). Matcher touch-mål-jobben i f955de8. */
+  .plakat-gen .btn-outline{min-height:44px}
   .plakat-overlay{position:fixed;inset:0;z-index:1000;background:var(--bg);display:none;flex-direction:column}
   .plakat-overlay.open{display:flex}
   body.plakat-lock{overflow:hidden}
