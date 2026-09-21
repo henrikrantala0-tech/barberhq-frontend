@@ -2739,32 +2739,6 @@ const MONTHS=["januar","februar","mars","april","mai","juni","juli","august","se
 // denne grensen. Justeres når vi ser ekte tall — hold den HER, ikke spredt i logikken.
 const MOMENTUM_LAV_TERSKEL=0.20;
 
-
-const MOCK={
-  bookings:[
-    {id:"b0",start:"2026-06-01T10:00:00Z",name:"Eldre Booking",service:"Klipp",price:300,status:"fullfort"},
-    {id:"b1",start:"2026-06-12T11:00:00Z",name:"Henrik N",service:"Skinnfade",price:450,status:"fullfort"},
-    {id:"b2",start:"2026-06-17T11:00:00Z",name:"Ukjent",service:"Klipp",price:300,status:"noshow"},
-    {id:"b3",start:"2026-06-17T13:30:00Z",name:"Markus Lie",service:"Skinnfade",price:450,status:"fullfort"},
-    {id:"b4",start:"2026-06-18T10:30:00Z",name:"Adam Sø",service:"Klipp + skjegg",price:400,status:"fullfort"},
-    {id:"b5",start:"2026-06-19T09:00:00Z",name:"Jonas Berg",service:"Skinnfade",price:450,status:"booket"},
-    {id:"b6",start:"2026-06-19T10:30:00Z",name:"Filip Aas",service:"Klipp",price:300,status:"booket"},
-    {id:"b7",start:"2026-06-19T13:00:00Z",name:"Sander Vik",service:"Klipp + skjegg",price:400,status:"venter"},
-    {id:"b8",start:"2026-06-20T12:00:00Z",name:"Oliver Strand",service:"Skinnfade",price:450,status:"booket"},
-    {id:"b9",start:"2026-06-23T15:00:00Z",name:"Theo Haug",service:"Klipp",price:300,status:"booket"},
-    {id:"b10",start:"2026-06-27T10:00:00Z",name:"Lars Moe",service:"Skinnfade",price:450,status:"booket"},
-    {id:"b11",start:"2026-06-27T13:00:00Z",name:"Petter Ås",service:"Klipp",price:300,status:"booket"},
-    {id:"b12",start:"2026-06-28T11:00:00Z",name:"Kristian S",service:"Klipp + skjegg",price:400,status:"booket"},
-  ],
-  images:[],
-  hours:[
-    {day:0,on:true,start:"10:00",end:"18:00"},{day:1,on:true,start:"10:00",end:"18:00"},
-    {day:2,on:true,start:"10:00",end:"18:00"},{day:3,on:true,start:"10:00",end:"20:00"},
-    {day:4,on:true,start:"10:00",end:"18:00"},{day:5,on:true,start:"11:00",end:"16:00"},
-    {day:6,on:false,start:"10:00",end:"16:00"},
-  ],
-};
-
 const api={
   // Ekte, session-basert 90-dagers daily[] + months/rekord/klipp-total — Oversikt-diagram + Vekst-KPI/diagram.
   async statsDaily(){
@@ -4269,9 +4243,9 @@ function feilMedRetry(el,tekst,fn){
   var b=el.querySelector('.retry-lenke'); if(b)b.addEventListener('click',fn);
 }
 async function loadArbeidstider(){
-  // M-6: arbeidstider er redigerbare og re-lagres → en stille MOCK-fallback ved GET-feil kunne
-  // overskrive ekte tider ved neste «Lagre». Deaktivér lagring til en EKTE GET har lyktes; ved feil
-  // vis feilstate + «Prøv igjen», ALDRI mock.
+  // M-6: arbeidstider er redigerbare og re-lagres → en stille fallback til falske tider ved GET-feil
+  // kunne overskrive ekte tider ved neste «Lagre». Deaktivér lagring til en EKTE GET har lyktes; ved
+  // feil vis feilstate + «Prøv igjen», aldri oppdiktede tider.
   var btn=$("#saveHours"); if(btn)btn.disabled=true;
   var h=null;
   try{ h=await api.hours(); }catch(e){ h=null; }
