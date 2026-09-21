@@ -1,5 +1,5 @@
 // tools/render/attribusjon-kr.mjs — attribusjon med kroner på de to flatene:
-//   Oversikt «Drevet av BarberHQ» (renderDrivenBy) + Vekst «Hvor kundene kommer fra» (renderAttribusjon)
+//   Oversikt «Hvor kundene kommer fra» (renderDrivenBy) + Vekst «Hvor kundene kommer fra» (renderAttribusjon)
 //
 // Serverer site/ lokalt, stubber /api/**. Mock-attribusjonen returnerer den NYE backend-formen
 // { <kat>:{count,revenue}, total:{count,revenue} } (efaa553). Måler at kroner rendres, at total
@@ -65,7 +65,7 @@ const browser = await chromium.launch();
 const rad = [];
 
 for (const bredde of [320, 375]) {
-  // ── Oversikt: «Drevet av BarberHQ» ────────────────────────────────────────────────
+  // ── Oversikt: «Hvor kundene kommer fra» ────────────────────────────────────────────────
   {
     const page = await browser.newPage({ viewport:{ width:bredde, height:1100 }, deviceScaleFactor:2 });
     const errs = []; page.on('pageerror', e => errs.push(e.message));

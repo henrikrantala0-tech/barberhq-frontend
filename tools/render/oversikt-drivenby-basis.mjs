@@ -1,4 +1,4 @@
-// Oversikt → «Drevet av BarberHQ»: billingUkjent()-vakt i renderDrivenBy.
+// Oversikt → «Hvor kundene kommer fra»: billingUkjent()-vakt i renderDrivenBy.
 //
 // Bug som ble fikset: renderDrivenBy hadde kun erBasis()-sjekk, ingen billingUkjent()-vakt. Den
 // kjøres ved oppstart (loadOversikt) FØR loadBilling svarer, så i race-vinduet var _billing===null

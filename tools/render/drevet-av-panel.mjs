@@ -1,6 +1,6 @@
-// «Drevet av BarberHQ» v2 — panelet mot /attribution-shape ({paaVei, hentetInn?}).
+// «Hvor kundene kommer fra» v2 — panelet mot /attribution-shape ({paaVei, hentetInn?}).
 // Tre tilstander × Oversikt + Vekst × 320/375. Vokter:
-//  - Panelet har NØYAKTIG TRE armer: Verving, Vinn tilbake, Rebooking — i den rekkefølgen.
+//  - Panelet har NØYAKTIG TRE armer: Verving, Vinn tilbake, Gjenbesøk — i den rekkefølgen.
 //    LOJALITET er fjernet (14.09) og skal ALDRI finnes i panelet — vakten BITER hvis raden kommer tilbake
 //    (ingen «Lojalitet»-arm, ingen .di-setup, ingen «kunder i programmet»-linje).
 //  - Vekst m/data: Hentet inn (total) + tre armer + På vei (Oversikt) / rader (Vekst).
@@ -69,12 +69,12 @@ for (const flate of ['oversikt','vekst']) {
         const el = document.querySelector(h); const t = el ? el.innerText : '';
         const armer = el ? [...el.querySelectorAll('.di-row')].map(r => { const a=r.querySelector('.di-arm'); return a?a.textContent.trim():''; }).filter(Boolean) : [];
         return {
-          harHentetInn:      /HENTET INN MED BARBERHQ/.test(t),
+          harHentetInn:      /BOOKET VIA BARBERHQ/.test(t),
           harBunntekst:      /Kun klipp BarberHQ har bidratt til/.test(t),        // #4: skal være FALSE (flyttet til undertittel)
           // Lojalitet skal ALDRI finnes: ingen «Lojalitet»-arm, ingen .di-setup, ingen program-linje.
           lojFinnes:         armer.includes('Lojalitet') || /Lojalitet/.test(t) || /kunder i programmet|klipp registrert/.test(t) || !!(el && el.querySelector('.di-setup')),
           armer:             armer.join(','),
-          harTreArmer:       armer.length===3 && armer[0]==='Verving' && armer[1]==='Vinn tilbake' && armer[2]==='Rebooking',
+          harTreArmer:       armer.length===3 && armer[0]==='Verving' && armer[1]==='Vinn tilbake' && armer[2]==='Gjenbesøk',
           harPaaVei:         /PÅ VEI/.test(t),
           harCta:            !!document.querySelector('[data-di-oppgrader]'),
           // Vinn-tilbake-armen (kun i #drivenBy/På vei): N>0 = .di-pv-num, dato = .di-pv-date, null = .di-pv-tom.
