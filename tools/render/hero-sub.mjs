@@ -1,16 +1,14 @@
-// site/no/index.html — hero-underteksten og løftesetningen «Flere kunder, mer inntekt.»
+// site/no/index.html — hero-underteksten (.hero-sub) skal ikke flyte utenfor skjermen.
 //
-// Setningen er hele poenget med underteksten, og et linjebrekk midt i den gjør den til to
-// halve påstander. `white-space:nowrap` på `.hero-sub strong` holder den samlet — men nowrap
-// kan ikke krympe, så på smale skjermer er alternativet at den stikker UT av sida.
-// Testen måler begge sider av den avveiningen:
-//   - brekker <strong> (Range → én rect per linjeboks)?
-//   - stikker den, eller avsnittet, utenfor viewporten?
-// MERK: index.html har IKKE `body{overflow-x:hidden}` (det har priser.html), så
-// documentElement.scrollWidth er et gyldig signal her. Elementenes egne rect-er måles
-// likevel, av to grunner: scrollWidth er en side-global sum der en hvilken som helst annen
-// seksjon kan dominere, og legger noen på overflow-x:hidden senere, blir flagget blindt
-// uten at testen sier fra. `bodyOverflowX` rapporteres derfor sammen med tallet.
+// Historikk: testen målte tidligere en `<strong>`-løftesetning («Flere kunder, mer inntekt.»)
+// med `white-space:nowrap` og sjekket at den ikke brakk / ikke stakk ut. Den setningen er FJERNET
+// fra hero-copyen (underteksten er nå en vanlig, brytbar paragraf uten `<strong>`), så strong-/
+// nowrap-sjekkene er utdaterte. Testen guarder nå det som fortsatt gjelder: at `.hero-sub`-avsnittet
+// (og dermed hero-seksjonen) ikke skaper vannrett overflyt på noen bredde.
+// MERK: index.html har IKKE `body{overflow-x:hidden}`, så documentElement.scrollWidth er et gyldig
+// signal her. Avsnittets egne rect-er måles i tillegg — scrollWidth er en side-global sum der en
+// hvilken som helst annen seksjon kan dominere. `bodyOverflowX` rapporteres for å avsløre om noen
+// senere legger på overflow-x:hidden (som ville gjort scrollWidth-flagget blindt).
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -40,48 +38,42 @@ for(const bredde of [320,402,1280]){
 
   const m=await page.evaluate(vw=>{
     const p=document.querySelector('.hero-sub');
-    const st=p.querySelector('strong');
+    if(!p) return {mangler:true};
     const linjer=el=>{const r=document.createRange();r.selectNodeContents(el);
       return [...new Set([...r.getClientRects()].map(x=>Math.round(x.top)))].length;};
-    const rp=p.getBoundingClientRect(), rs=st.getBoundingClientRect();
+    const rp=p.getBoundingClientRect();
     return {
-      strongLinjer: linjer(st),
       subLinjer: linjer(p),
-      strongTekst: st.textContent.trim(),
-      strongBredde: Math.round(rs.width),
-      // Overflyt målt tre veier. p.scrollWidth>clientWidth fanger innhold som er bredere enn
-      // avsnittet; rect-ene fanger et avsnitt som selv er dyttet utenfor skjermen.
-      pOverflyt: Math.max(0, p.scrollWidth - p.clientWidth),
-      strongUtenfor: Math.round(Math.max(0, rs.right - vw, -rs.left)),
-      subUtenfor: Math.round(Math.max(0, rp.right - vw, -rp.left)),
+      subTekst: p.textContent.trim().slice(0,40),
       subBredde: Math.round(rp.width),
-      nowrap: getComputedStyle(st).whiteSpace,
-      // Sida skjuler overflyt vannrett; verdt å ha med for å vise at flagget er blindt her.
+      // Overflyt målt to veier: p.scrollWidth>clientWidth fanger innhold bredere enn avsnittet;
+      // rect-ene fanger et avsnitt som selv er dyttet utenfor skjermen.
+      pOverflyt: Math.max(0, p.scrollWidth - p.clientWidth),
+      subUtenfor: Math.round(Math.max(0, rp.right - vw, -rp.left)),
       docOverflyt: document.documentElement.scrollWidth - vw,
       bodyOverflowX: getComputedStyle(document.body).overflowX,
     };
   },bredde);
 
+  if(m.mangler){ rapport.push({bredde, feil:'.hero-sub mangler ✗', jsfeil:errs.length?errs.join('; '):'ingen'}); await page.close(); continue; }
   await page.locator('.hero-sub').screenshot({path:`${OUT}/${bredde}-hero-sub.png`});
 
   rapport.push({bredde,
-    'white-space': m.nowrap,
-    'strong-linjer': m.strongLinjer===1?'1 ✓ (samlet)':`${m.strongLinjer} ✗ BREKKER`,
-    'strong bredde': `${m.strongBredde}px`,
     'sub-linjer': m.subLinjer,
     'sub bredde': `${m.subBredde}px`,
     'overflyt i avsnitt': m.pOverflyt?`${m.pOverflyt}px ✗`:'0',
-    'strong utenfor skjerm': m.strongUtenfor?`${m.strongUtenfor}px ✗`:'0',
     'sub utenfor skjerm': m.subUtenfor?`${m.subUtenfor}px ✗`:'0',
-    'doc scrollWidth−vw': `${m.docOverflyt} (blind: overflow-x:${m.bodyOverflowX})`,
+    'doc scrollWidth−vw': `${m.docOverflyt} (overflow-x:${m.bodyOverflowX})`,
     jsfeil: errs.length?errs.join('; '):'ingen'});
   await page.close();
 }
 
 console.table(rapport);
-const brekker=rapport.some(r=>r['strong-linjer'].includes('✗'));
-const flyter=rapport.some(r=>r['overflyt i avsnitt']!=='0'||r['strong utenfor skjerm']!=='0'||r['sub utenfor skjerm']!=='0');
-console.log('\nløftet samlet på alle bredder:', brekker?'NEI ✗':'ja ✓');
-console.log('overflyt noe sted:            ', flyter?'JA ✗ — nowrap må vike for <br>':'nei ✓');
-console.log('jsfeil:                       ', rapport.some(r=>r.jsfeil!=='ingen')?'JA ✗':'ingen');
+const mangler=rapport.some(r=>r.feil);
+const flyter=rapport.some(r=>r['overflyt i avsnitt']!=='0'||r['sub utenfor skjerm']!=='0');
+const jsfeil=rapport.some(r=>r.jsfeil!=='ingen');
+console.log('\n.hero-sub finnes på alle bredder:', mangler?'NEI ✗':'ja ✓');
+console.log('ingen overflyt:                  ', flyter?'JA ✗':'nei ✓');
+console.log('jsfeil:                          ', jsfeil?'JA ✗':'ingen');
 await browser.close(); server.close();
+process.exit((mangler||flyter||jsfeil)?1:0);

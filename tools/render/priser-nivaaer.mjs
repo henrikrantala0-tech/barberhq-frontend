@@ -44,6 +44,18 @@ const rullGjennom=async page=>{
     document.documentElement.style.scrollBehavior=forrige;
   });
 };
+// Frys layouten før klikk: tving alle .reveal til .in og drep transitions/animasjoner, så CTA-en
+// står helt stille. Uten dette rakk ikke reveal-opacity-overgangen å settle → Playwright meldte
+// «element is not stable - retrying click» og timet ut. (Ustabil-klikk-fiks, ikke stale selektor.)
+const frysReveal=async page=>{
+  await page.evaluate(()=>{
+    document.querySelectorAll('.reveal').forEach(e=>e.classList.add('in'));
+    const s=document.createElement('style');
+    s.textContent='*,*::before,*::after{transition:none!important;animation:none!important}';
+    document.head.appendChild(s);
+  });
+  await page.waitForTimeout(60);
+};
 
 const browser=await chromium.launch();
 const rapport=[];
@@ -157,6 +169,7 @@ for(const bredde of [402,1280]){
     await page.goto(URL_PRISER,{waitUntil:'networkidle'});
     await rullGjennom(page);
     await page.waitForTimeout(900);
+    await frysReveal(page);   // CTA må stå stille før ekte klikk
     const tekst=(await page.textContent(sel)).trim();
     await page.click(sel);
     await page.waitForLoadState('networkidle');
