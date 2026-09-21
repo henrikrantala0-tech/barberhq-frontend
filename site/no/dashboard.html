@@ -2804,7 +2804,7 @@ const api={
   async images(){ const r=await apiFetch('/api/dashboard/images'); if(!r)return []; if(!r.ok)return []; return r.json(); },
   async hours(){
     const r=await apiFetch('/api/dashboard/hours');
-    if(!r||!r.ok)return MOCK.hours;
+    if(!r||!r.ok)return null;   // M-6: ALDRI mock på redigerbare data — null → feilstate i loadArbeidstider
     const data=await r.json();
     // Backend weekday: 0=søn, 1=man … 6=lør. UI day: 0=man … 6=søn.
     return [1,2,3,4,5,6,0].map(wd=>{
@@ -4248,9 +4248,26 @@ async function handleUpload(f,slot){
 }
 
 let hours=[];
-async function loadArbeidstider(){try{hours=await api.hours();}catch(e){hours=MOCK.hours;}
+// Delt feilstate: erstatt innholdet i el med en kort melding + «Prøv igjen» som re-kaller fn.
+// Brukes av redigerbare/kritiske flater der en stille tomtilstand ville løyet (M-6, M-8).
+function feilMedRetry(el,tekst,fn){
+  if(!el)return;
+  el.innerHTML='<div class="wb-empty">'+tekst+' <button type="button" class="retry-lenke">Prøv igjen</button></div>';
+  var b=el.querySelector('.retry-lenke'); if(b)b.addEventListener('click',fn);
+}
+async function loadArbeidstider(){
+  // M-6: arbeidstider er redigerbare og re-lagres → en stille MOCK-fallback ved GET-feil kunne
+  // overskrive ekte tider ved neste «Lagre». Deaktivér lagring til en EKTE GET har lyktes; ved feil
+  // vis feilstate + «Prøv igjen», ALDRI mock.
+  var btn=$("#saveHours"); if(btn)btn.disabled=true;
+  var h=null;
+  try{ h=await api.hours(); }catch(e){ h=null; }
+  if(!h){ feilMedRetry($("#hoursList"),'Klarte ikke å laste arbeidstidene.',loadArbeidstider); loadGoogleStatus(); return; }
+  hours=h;
+  if(btn)btn.disabled=false;
   renderHoursList();
-  loadGoogleStatus();}
+  loadGoogleStatus();
+}
 function pauseTekst(p){return 'Pause '+(p.start||'')+'–'+(p.end||'');}
 function harPause(h){return !!(h.on&&h.breaks&&h.breaks[0]&&h.breaks[0].start&&h.breaks[0].end);}
 // Dempet pause-tekst under dagraden — kun for åpen dag med komplett pause. Ellers ingenting.
