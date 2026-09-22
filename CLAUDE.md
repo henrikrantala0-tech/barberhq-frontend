@@ -610,22 +610,20 @@ palett-grid + layout-karusell `#layGrid` + preview-iframe) ble fjernet i skjemao
 på `layGrid/palGrid/preview-tjenester` nå. Render-testene måler `scrollWidth − viewport = 0` på
 320/402/1280. Ikke lenger en kjent overflow.
 
-### Dashboard — desktop-bredde + polish (funnet 14.09.2026, ikke fikset)
-1. **Dashbordets desktop-container er ~3,5× for bred (IKKE fraværende).** ⚠ Korrigert 14.09 mot måling:
-   `.wrap{max-width:1120px;padding:0 24px}` FINNES — én delt instans rundt alle fem paneler
-   (den `<div class="wrap">` rett før `<!-- OVERSIKT -->` / `#oversikt`) + en egen rundt header/nav i
-   `.topband` (se `.topband>.wrap` i CSS). Inner = 1072px @1280. Problemet er at
-   1072px er ~3,5× det enkeltkolonne-innholdet trenger. Målt reell innholdsbredde @1280: **bookingrad
-   279px** (tid 44 + navn 134 + tjeneste 81 + gaps), **«Drevet av»-rad 170px** (arm + verdi), **KPI to
-   kort 318px minimum** (shrink-to-content 116/186 + 16 gap; komfortabelt ~600–640). → `justify-between`-rader
-   får derfor **888–926px tomt midtparti** («Drevet av»-radene verst), pillene strekkes, KPI/diagram blir
-   sparsomme. **Foreslått fiks:** stram enkeltkolonne-panelene (`#oversikt`/`#vekst`) til `max-width`
-   **~680px** (forankret i KPI-to-kort-raden ~664, IKKE et rundt tall) KUN på desktop; **`#design` (Din
-   side) UNNTAS** — 2-kolonne-gridet (`.design-preview{grid-column:2;position:sticky}`) trenger bredden.
-   Header/nav (egen `.wrap` i `.topband`), bunn-nav (utenfor panel-`.wrap`, mobil-only) og modaler
-   (`position:fixed`) er upåvirket. **Mobil UENDRET** (@375 verifisert). Kun wrapper-bredde — ingen låst
-   beslutning berørt. ⚠ Restgap: «Drevet av»-radene (170px innhold) trenger et EKSTRA grep utover
-   containeren (kap `.di-rows` inner-bredde ~460px) for å tettes helt.
+### Dashboard — desktop-bredde + polish (desktop-bredde FIKSET 21.09 `b7882e80`, polish 2–4 åpen)
+1. **Dashbordets desktop-container var ~3,5× for bred — FIKSET (`b7882e80`, 21.09).** `.wrap`
+   (`.wrap{max-width:1120px…}`, én delt instans rundt alle fem paneler) ga inner 1072px @1280 — ~3,5×
+   det enkeltkolonne-innholdet trenger (målt @1280: bookingrad 279px, «Drevet av»-rad 170px, KPI to kort
+   ~318px min / ~600–640 komfortabelt → `justify-between`-rader fikk 888–926px tomt midtparti). Fiks:
+   `@media(min-width:720px){ #oversikt,#vekst,#tjenester,#design,#abonnement{max-width:680px;margin-left:auto;margin-right:auto} .topband>.wrap{max-width:728px} }`
+   — alle fem paneler **680px SENTRERT**, header strammet til 728 (=680+2×24 `.wrap`-padding) så streker
+   og innhold flukter på samme akse. **`#design` er INKLUDERT** — ombestemt fra det opprinnelige
+   «UNNTAS»-forslaget: 2-kolonne-gridet får 680 − 281 preview − 30 gap = ~369px til trekkspillene,
+   rikelig. Alle fem får SAMME bredde så fanebytte ikke hopper. Mobil uendret (viewport <720 → media
+   treffer ikke; `@375` verifisert). En eldre død prototype-blokk (venstrejustert, `min-width:768`,
+   `6e1d574a` 14.09) er ryddet ut — den var 100 % overstyrt av `b7882e80`. ⚠ Restgap: «Drevet av»-radene
+   (170px innhold) trenger fortsatt et EKSTRA grep utover containeren (kap `.di-rows` inner-bredde
+   ~460px) for å tettes helt.
 2. **«Klipp totalt 0» (Vekst) viser stort null for fersk barber.** Samme svakhet som ble løst på
    «Drevet av»-panelet 14.09 (`diTotalHtml` skjuler tallblokka ved `count===0` → dempet linje
    «Ingenting hentet inn ennå.»). Samme behandling bør gjelde «Klipp totalt» på Vekst: skjul det
