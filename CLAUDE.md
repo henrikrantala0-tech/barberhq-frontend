@@ -24,10 +24,6 @@ hele dashboard/winback-koden. Ikke rediger den; bør slettes/omdøpes. Se «flag
   **0 treff i alle tre**, mens no/ har 47 til sammen (16 / 33 / 1). Motsatt har sv/da/en
   fortsatt 10 treff hver på «Profil», fanen som er slått inn i «Din side» i no/. De tre
   må altså ikke bare oversettes — de må bygges om til fem-fane-strukturen.
-- **Metode for dashbord-oversettelse er ikke bestemt.** Her sto det at jobben gjøres via
-  `oversett_dash.py` i `backend-repo/verktøy`. Verifisert 12.08: scriptet finnes ikke i noen
-  av repoene, og backend-repoet har ingen `verktøy/`- eller `tools/`-mappe i det hele tatt.
-  Velg framgangsmåte når oversettelsesfasen faktisk starter.
 
 ### Land + tidssone i site/en/kom-i-gang.html (bygget 27.07, pushet 28.07)
 Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac98`:**
@@ -78,7 +74,7 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
 
 ## Låste beslutninger (ikke reåpne uten at Henrik ber om det)
 
-- **Pris:** to planer — **Basis 89 kr/mnd, Vekst 179 kr/mnd** (`PLAN_INFO` `:5502`, fail-closed;
+- **Pris:** to planer — **Basis 89 kr/mnd, Vekst 179 kr/mnd** (`PLAN_INFO`, fail-closed;
   ingen fast 249 eller 499-trapp lenger — verifisert mot kode 07.09). **30 dagers gratis prøveperiode**
   i alle markeder — bevisst og riktig, ikke en feil i koden. Her sto det «(trial_period_days: 30)», som
   bare er én av **tre** grener i `checkoutTrialParams` (backend `src/lib/trial.js`) — verifisert
@@ -333,6 +329,8 @@ chatten — 1/l og 0/O er uleselige i chatfonten og har forårsaket feil (05.07)
 
 Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historikk.
 
+**Referer med navn, ikke linjenummer — grep for å finne.**
+
 ### Innlogging + passord (frontend)
 - **`logg-inn.html` (snudd 26.08):** magisk lenke er PRIMÆR innlogging — e-postfelt + «Send meg innloggingslenke» synlig uten klikk (`POST /api/send-magic-link`, alltid samme kvittering, avslører ikke om e-post finnes). Passord er sekundært: «Logg inn med passord» folder ut passordfeltet (`POST /api/login`). Delt e-postfelt. Håndterer `?error=expired` over skjemaet. «Glemt passord?»-innrammingen er borte — magisk lenke er ikke lenger en avstikker.
 - **`opprett-passord.html`:** førstegangs passord-setting etter magisk-lenke-innlogging (`POST /api/dashboard/set-password`, min 8 tegn, felt-validering). Vis/skjul-øye på begge felt (gjenbrukt fra logg-inn). Fortsatt landingssida for magisk lenke + reset. **Dashboard redirecter IKKE lenger hit ved `hasPassword:false`** — redirecten i `loadProfil` er fjernet (26.08); en barber uten passord blir på dashbordet og setter det inline i Konto → Innlogging.
@@ -450,7 +448,7 @@ pushet er testrunde-fiksene (bug 3 / beslutning 4–7 / kamerarull / miniatyr-ca
   Barbereren bruker samme salong-foto på begge. Ikke «fiks» dette til per-kampanje uten at Henrik ber om det.
 - **Del 2 — kamerarull:** «Velg bilde» har en Kamerarull-flis (file input) → nedskalert base64 (jpeg)
   i cellen → POST-veien til preview/render. Nedskaleringen er **cellebevisst**: fullflate-celle
-  (bredde ≥ 60 % av lerretet) → 2160 px lengste kant, kvadrant → 1080 px (`dashboard.html:7041`).
+  (bredde ≥ 60 % av lerretet) → 2160 px lengste kant, kvadrant → 1080 px (se `maksKant`).
 - **Bakgrunn/palett arves — velges IKKE i editoren:** `bakgrunnFraBarber()` utleder bakgrunnen av
   barberens bookingside-palett/-modus (`hentDesign`): **sand-PALETT → background «beige»** (B4-synk 10.09:
   backend døpte om bakgrunnsverdien `'sand'` → `'beige'`, alias lever én release; palett-NAVNET er fortsatt
@@ -614,8 +612,9 @@ på `layGrid/palGrid/preview-tjenester` nå. Render-testene måler `scrollWidth 
 
 ### Dashboard — desktop-bredde + polish (funnet 14.09.2026, ikke fikset)
 1. **Dashbordets desktop-container er ~3,5× for bred (IKKE fraværende).** ⚠ Korrigert 14.09 mot måling:
-   `.wrap{max-width:1120px;padding:0 24px}` (`:39`) FINNES — én delt instans rundt alle fem paneler
-   (`:1491`) + en egen rundt header/nav i `.topband` (`:1432`). Inner = 1072px @1280. Problemet er at
+   `.wrap{max-width:1120px;padding:0 24px}` FINNES — én delt instans rundt alle fem paneler
+   (den `<div class="wrap">` rett før `<!-- OVERSIKT -->` / `#oversikt`) + en egen rundt header/nav i
+   `.topband` (se `.topband>.wrap` i CSS). Inner = 1072px @1280. Problemet er at
    1072px er ~3,5× det enkeltkolonne-innholdet trenger. Målt reell innholdsbredde @1280: **bookingrad
    279px** (tid 44 + navn 134 + tjeneste 81 + gaps), **«Drevet av»-rad 170px** (arm + verdi), **KPI to
    kort 318px minimum** (shrink-to-content 116/186 + 16 gap; komfortabelt ~600–640). → `justify-between`-rader
@@ -653,8 +652,8 @@ tas i backend-repoet.
 - **ÅPEN — `buildPalette` er duplisert i `fyll.cjs` og `site/no/palett.js`, og må holdes i synk
   manuelt.** Fortsatt to kopier (verifisert 12.08). Ingen delt kilde.
 
-- **ÅPEN — tredelt fane uten dekkende navn.** Fanen på `dashboard.html:1681` inneholder tjenester
-  med priser, Arbeidstider (`:1734`) og Google Calendar (`:1692`). Etiketten «Tjenester & tider»
+- **ÅPEN — tredelt fane uten dekkende navn.** Fanen (`<section class="panel" id="tjenester">`) inneholder
+  tjenester med priser, Arbeidstider (`#saveHours`) og Google Calendar (`#gcal`). Etiketten «Tjenester & tider»
   nevner ikke de to siste. Navnedriften mot panel-tittelen er rettet (`58e7e60`); selve
   navngivningen står åpen.
 
@@ -778,10 +777,10 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
 
 ### Løst før/ved lansering (ikke gjenoppdag)
 - **Stripe-billing + konverteringsflyt** — plan-velger Basis/Vekst, `startCheckout {plan}`,
-  checkout/portal i Konto. Pris fra `PLAN_INFO[b.plan]` (89 Basis / 179 Vekst, fail-closed — verifisert `:5502` 07.09). Live og
+  checkout/portal i Konto. Pris fra `PLAN_INFO[b.plan]` (89 Basis / 179 Vekst, fail-closed — verifisert mot `PLAN_INFO` 07.09). Live og
   prod-verifisert (`364e2c5`). `effective_plan` leses nå av `erBasis()` (Vekst-skjoldet / Basis-visning
   — skjuler Vekst-flatene bak lås + eksempeltall når `effective_plan==='basis'`); `effective_plan_grunn`
-  leses av `renderKonto` (`:5047`, billing-tilstandene). Ikke lenger «ligger klare, ubrukt».
+  leses av `renderKonto` (billing-tilstandene). Ikke lenger «ligger klare, ubrukt».
 - **«Gå live»-publisering** — barbereren publiserer selv fra Konto
   («Publiser og start gratis prøveperiode» → `PUT /api/dashboard/page-status`), eneste vei
   `forhandsvist → live`, skriver `trial_start_at` atomisk. Avpubliser er samme vei tilbake.
