@@ -278,6 +278,9 @@
      automatisk av nettleseren når brukeren klikker, så handleren må sette den tilbake. */
   .sw input:indeterminate + .sl{background:var(--line);cursor:default}
   .sw input:indeterminate + .sl:before{transform:translateX(8px);background:var(--mut);width:14px;height:14px;top:4px}
+  /* Handlingslåst rad (Basis): bryteren rendres AV (visBryter) + markeres tydelig ikke-interaktiv. */
+  .handlingslaas .sw{opacity:.55}
+  .handlingslaas .sw .sl{cursor:not-allowed}
 
   .btn{appearance:none;border:0;font:inherit;font-weight:600;font-size:13px;padding:10px 20px;border-radius:8px;cursor:pointer;background:var(--ink);color:#fff;letter-spacing:-.01em}
   .btn:active{transform:scale(.985)}
@@ -531,7 +534,7 @@
   /* Handlings-lås (funksjons-seksjoner på Basis): INGEN overlay — innholdet er lesbart. Liten
      «Vekst»-indikator i tittelen. Kontrollene disables (nettleseren dimmer dem). Se CLAUDE.md:
      måling = skjold, handling = lesbar + låsindikator. */
-  .laas-badge{display:inline-flex;align-items:center;gap:4px;padding:1px 8px;border-radius:99px;background:var(--line-2);color:var(--mut);font-size:10.5px;font-weight:600;letter-spacing:-.01em;flex-shrink:0}
+  .laas-badge{display:inline-flex;align-items:center;gap:4px;padding:2px 9px;border-radius:99px;background:var(--info-bg);color:var(--info);font-size:11px;font-weight:700;letter-spacing:-.01em;flex-shrink:0}
   .laas-badge .skjold-ic{width:11px;height:11px;color:currentColor;opacity:1;filter:none}
   /* «Prøv igjen» i billing-feil-noten (gatede Vekst-seksjoner) — lenke-knapp, ikke stille «Laster». */
   .retry-lenke{appearance:none;border:0;background:0;padding:0;color:var(--info);font:inherit;text-decoration:underline;text-underline-offset:2px;cursor:pointer}
@@ -3300,6 +3303,7 @@ function settHandlingsLaas(host){
     if(el.classList.contains('acc-head'))return;        // seksjonen skal kunne åpnes/lukkes og leses
     if(!el.disabled){ el.disabled=true; el.setAttribute('data-laas-disabled','1'); }
   });
+  host.querySelectorAll('input[type=checkbox]').forEach(visBryter);   // låst → deriv AV (dataset.verdi bevart)
   var titel=host.querySelector('.acc-title');
   if(titel && !titel.querySelector('.laas-badge')){
     var b=document.createElement('span'); b.className='laas-badge';
@@ -3311,6 +3315,7 @@ function fjernHandlingsLaas(host){
   if(!host)return;
   host.classList.remove('handlingslaas');
   host.querySelectorAll('[data-laas-disabled]').forEach(function(el){ el.disabled=false; el.removeAttribute('data-laas-disabled'); });
+  host.querySelectorAll('input[type=checkbox]').forEach(visBryter);   // ulåst → deriv lagret verdi tilbake
   var b=host.querySelector('.laas-badge'); if(b)b.remove();
 }
 // Basis: en funksjons-seksjons KUNDE-liste hentes aldri (ingen ekte tall) — vis en kort, lesbar
@@ -4923,8 +4928,8 @@ async function loadSmsInnstillinger(){
   // samme pass. Rekkefølgen betyr noe: .checked=true nullstiller ikke indeterminate, men
   // en klikk gjør det — se guarden i change-handleren.
   _settingsUkjent = !!s._hentFeilet;
-  settBryter($("#tog-paam"),   s.sms_paaminnelse_enabled);
-  settBryter($("#tog-rebook"), s.sms_rebooking_enabled);
+  settBryter($("#tog-paam"),   s.sms_paaminnelse_enabled, _settingsUkjent);
+  settBryter($("#tog-rebook"), s.sms_rebooking_enabled,   _settingsUkjent);
   setRebookPills(s.rebooking_interval_days);
   syncRebookIntervall();   // skjul intervallet hvis rebooking er av / ukjent
   // Feilmeldinga skrus av ved hvert vellykket kall, ikke bare på. Uten else-grenen ville
@@ -5005,10 +5010,19 @@ function setRebookPills(days){
 var _settingsUkjent = false;
 // Én bryter, tre tilstander. indeterminate MÅ settes etter checked: nettleseren rører ikke
 // indeterminate når vi setter checked programmatisk, men et brukerklikk nullstiller den.
-function settBryter(el, verdi){
+// visBryter: ENESTE sted som setter .checked. Avledet av lagret DB-verdi (dataset.verdi: '1'/'0'/'u')
+// OG låsestatus. Handlingslåst rad (Basis) → alltid AV. .checked leses ALDRI som fasit.
+function visBryter(el){
   if(!el)return;
-  el.checked = !_settingsUkjent && !!verdi;
-  el.indeterminate = _settingsUkjent;
+  var laast=!!el.closest('.handlingslaas');
+  el.checked       = el.dataset.verdi==='1' && !laast;
+  el.indeterminate = el.dataset.verdi==='u' && !laast;
+}
+// settBryter: ENESTE writer av dataset.verdi. ukjent (valgfri) → SMS-settingene sender _settingsUkjent.
+function settBryter(el, verdi, ukjent){
+  if(!el)return;
+  el.dataset.verdi = ukjent ? 'u' : (verdi ? '1':'0');
+  visBryter(el);
 }
 // Delt skrive-helper for SMS-bryterne + rebook-pillene. Tidligere var alle tre fire-and-forget
 // (saveSettings uten await/sjekk) → en feilet lagring så ut som suksess og rullet aldri tilbake.
@@ -5031,19 +5045,21 @@ function syncRebookIntervall(){
 }
 function bryterSkriv(el, felt, errEl){
   if(_settingsUkjent){          // klikket nullstilte indeterminate — sett den tilbake
-    el.checked=false; el.indeterminate=true;
+    el.dataset.verdi='u'; visBryter(el);
     return;
   }
-  var forrige=!el.checked;      // change har alt flippet bryteren; forrige = motsatt av nå
-  var p={}; p[felt]=el.checked;
-  lagreSmsInnstilling(p, function(){ el.checked=forrige; }, errEl);
+  var forrige=el.dataset.verdi;               // rull tilbake til FORRIGE lagrede, ikke .checked
+  el.dataset.verdi = el.checked ? '1':'0';    // brukerens valg (change har alt flippet .checked)
+  var p={}; p[felt]= el.dataset.verdi==='1';
+  lagreSmsInnstilling(p, function(){ el.dataset.verdi=forrige; visBryter(el); }, errEl);
 }
 $("#tog-paam").addEventListener("change",function(){bryterSkriv(this,'sms_paaminnelse_enabled', $("#paamErr"));});
 $("#tog-rebook").addEventListener("change",function(){
-  if(_settingsUkjent){ this.checked=false; this.indeterminate=true; return; }
-  var el=this, forrige=!el.checked;
+  if(_settingsUkjent){ this.dataset.verdi='u'; visBryter(this); return; }
+  var el=this, forrige=el.dataset.verdi;
+  el.dataset.verdi = el.checked ? '1':'0';
   syncRebookIntervall();          // speil pillenes synlighet mot den nye tilstanden straks
-  lagreSmsInnstilling({sms_rebooking_enabled:el.checked}, function(){ el.checked=forrige; syncRebookIntervall(); }, $("#rebookErr"), 'Rebooking');
+  lagreSmsInnstilling({sms_rebooking_enabled: el.dataset.verdi==='1'}, function(){ el.dataset.verdi=forrige; visBryter(el); syncRebookIntervall(); }, $("#rebookErr"), 'Rebooking');
 });
 document.querySelectorAll('#rebookPills button').forEach(function(b){
   b.addEventListener('click',async function(){
@@ -5391,8 +5407,8 @@ function renderLoyalSett(d){
     pct.value=valgtPct;
   }
   if(ter) ter.value = (d.threshold!=null? d.threshold : 10);
-  var tg=$("#tog-loyal"); if(tg) tg.checked=!!d.enabled;
-  var th=$("#tog-loyalHistory"); if(th) th.checked=!!d.count_history;
+  settBryter($("#tog-loyal"),        d.enabled);
+  settBryter($("#tog-loyalHistory"), d.count_history);
   settLoyalHistoryNote(!!d.count_history);
   var err=$("#loyalSettErr"); if(err) err.hidden=true;
   var warn=$("#loyalOffWarn"); if(warn) warn.hidden=true;
@@ -5552,17 +5568,19 @@ $("#tog-loyal").addEventListener('change',async function(){
   if(!this.checked){
     var t=(_loyal && _loyal.totals) || {}, ready=t.ready||0, samler=t.in_progress||0;
     if(ready>0 || samler>0){
-      this.checked=true;
+      visBryter(this);   // hold PÅ (dataset.verdi='1') til bekreftet — ingen .checked som fasit
       if(warn){ warn.hidden=false; warn.innerHTML='<p class="kl-warn-txt">'+loyalAvAdvarsel(ready,samler)+'</p>'
         +'<div class="kl-warn-act"><button class="kl-off-ja" type="button">Slå av likevel</button><button class="kl-off-nei" type="button">Avbryt</button></div>'; }
       return;
     }
   }
+  var forrige=this.dataset.verdi;
+  this.dataset.verdi = this.checked ? '1':'0';
   if(warn)warn.hidden=true;
-  var r=await api.saveSettings({loyalty_enabled:this.checked});
-  if(erSettings403(r)){ this.checked=!this.checked; visSettingsLaas(err); return; }
-  if(r&&r.ok){ if(err)err.hidden=true; loadLoyalty(); }   // av → skjul lister; på → vis
-  else { this.checked=!this.checked; if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} }
+  var r=await api.saveSettings({loyalty_enabled: this.dataset.verdi==='1'});
+  if(erSettings403(r)){ this.dataset.verdi=forrige; visBryter(this); visSettingsLaas(err); return; }
+  if(r&&r.ok){ if(err)err.hidden=true; loadLoyalty(); }   // av → skjul lister; på → vis  (loadLoyalty→settBryter refresher dataset.verdi)
+  else { this.dataset.verdi=forrige; visBryter(this); if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} }
 });
 // Delegasjon i innstillingene: av-bryter-advarsel + terskel/belønning-bekreftelse (før lagring).
 $("#loyalSett").addEventListener('click',async function(e){
@@ -5624,12 +5642,13 @@ $("#loyalPct").addEventListener('change',function(){
   loyalSettEndring('loyalty_pct', parseInt(this.value,10), this, (_loyal&&_loyal.pct!=null)?_loyal.pct:100);
 });
 $("#tog-loyalHistory").addEventListener('change',async function(){
-  var err=$("#loyalSettErr");
+  var err=$("#loyalSettErr"), forrige=this.dataset.verdi;
+  this.dataset.verdi = this.checked ? '1':'0';
   settLoyalHistoryNote(this.checked);   // speil togglen straks
-  var r=await api.saveSettings({loyalty_count_history:this.checked});
-  if(erSettings403(r)){ this.checked=!this.checked; settLoyalHistoryNote(this.checked); visSettingsLaas(err); return; }
+  var r=await api.saveSettings({loyalty_count_history: this.dataset.verdi==='1'});
+  if(erSettings403(r)){ this.dataset.verdi=forrige; visBryter(this); settLoyalHistoryNote(this.checked); visSettingsLaas(err); return; }
   if(r&&r.ok){ if(err)err.hidden=true; if(_loyal)_loyal.count_history=this.checked; }
-  else { this.checked=!this.checked; settLoyalHistoryNote(this.checked); if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} }
+  else { this.dataset.verdi=forrige; visBryter(this); settLoyalHistoryNote(this.checked); if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} }
 });
 
 /* ---- Accordion (Vekst + «Din side») — chevron + aria + skjul/vis body ---- */
