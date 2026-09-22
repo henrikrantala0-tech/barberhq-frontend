@@ -2162,12 +2162,12 @@
       <button class="slot-popup-btn" id="slotPopupEndre">Endre bilde</button>
     </div>
     <div class="ideacard">
-      <p class="block-h" style="margin-top:0">Ideer &amp; ønsker</p>
+      <p class="block-h" id="fbLbl-side" style="margin-top:0">Ideer &amp; ønsker</p>
       <p class="block-s">Har du en idé til en funksjon, eller ønsker en endring på siden, en ny farge eller layout? Send oss — vi leser alt.</p>
       <!-- Suffiks «-side»: samme boks finnes i Konto («-konto-ide»), og der ligger også en
            support-boks («-konto-support»). Alle tre deler bindFeedbackBoks(). Prefikset er
            «fb», ikke «idea» — feltene bærer nå både idé og support. -->
-      <textarea id="fbBox-side" placeholder="Skriv ønsket eller idéen din her"></textarea>
+      <textarea id="fbBox-side" aria-labelledby="fbLbl-side"></textarea>
       <div class="savebar"><button class="btn" id="fbSend-side">Send</button><span class="saved" id="fbSaved-side">Sendt &#10003;</span></div>
       <p class="idea-err" id="fbErr-side"></p>
     </div>
@@ -2448,20 +2448,20 @@
                ⚠ Backend krever name+email+topic+message for type 'support' (feedback.js) og
                beriker IKKE fra sesjonen slik 'idea' gjør. De tre første fylles fra profilen
                vi allerede har — se sendFeedback(). [oversettelse: sv/da/en] -->
-          <p class="block-h" style="margin-top:26px">Noe som ikke virker?</p>
+          <p class="block-h" id="fbLbl-konto-support" style="margin-top:26px">Noe som ikke virker?</p>
           <p class="block-s">Beskriv hva som skjer, så ser vi på det. Vi svarer på e-posten din.</p>
           <div class="ideacard ideacard-flat">
-            <textarea id="fbBox-konto-support" placeholder="Hva skjer, og hvor i dashbordet?"></textarea>
+            <textarea id="fbBox-konto-support" aria-labelledby="fbLbl-konto-support"></textarea>
             <div class="savebar"><button class="btn" id="fbSend-konto-support">Send</button><span class="saved" id="fbSaved-konto-support">Sendt &#10003;</span></div>
             <p class="idea-err" id="fbErr-konto-support"></p>
           </div>
 
           <!-- 3. ØNSKE — type:'idea'. Samme boks som på «Din side»; markupen er duplisert
                (to tekstfelt kan ikke være samme node), men handleren er det IKKE. -->
-          <p class="block-h" style="margin-top:26px">Ideer &amp; ønsker</p>
+          <p class="block-h" id="fbLbl-konto-ide" style="margin-top:26px">Ideer &amp; ønsker</p>
           <p class="block-s">Ønsker du en ny funksjon, farge eller layout? Send oss — vi leser alt.</p>
           <div class="ideacard ideacard-flat">
-            <textarea id="fbBox-konto-ide" placeholder="Skriv ønsket eller idéen din her"></textarea>
+            <textarea id="fbBox-konto-ide" aria-labelledby="fbLbl-konto-ide"></textarea>
             <div class="savebar"><button class="btn" id="fbSend-konto-ide">Send</button><span class="saved" id="fbSaved-konto-ide">Sendt &#10003;</span></div>
             <p class="idea-err" id="fbErr-konto-ide"></p>
           </div>
