@@ -3479,15 +3479,24 @@ async function renderDrivenBy(){
   if(billingUkjent())return; // behold vakt (e5aa245): ingen henting/render før planen er kjent
   var data=await api.attribution('siste_maaned');
   if(!data){ wrap.innerHTML=''; return; } // feil/401 → tomt, ingen krasj
-  var hi=data.hentetInn; // MANGLER for Basis (backend plan-shaper) — fail-trygt under
+  var hi=data.hentetInn; // MANGLER for Basis (backend plan-shaper)
   if(!hi){
-    // BASIS: tre låste armer + forklaring FØR «På vei» (urørt — sterkest på Basis, det eneste ekte tallet).
-    // INGEN total, INGEN CTA på Oversikt (knapp+pris bor kun på Vekst-fanen). Ingen tomrom der totalen sto.
-    wrap.innerHTML='<div class="di-card">'+diTitle()
-      +'<div class="di-basis-blokk">'+diBasisLaastRader()+diBasisForklaring()+'</div>'
-      +'<div class="di-divider"></div>'
-      +diPaaVeiHtml(data.paaVei,{basis:true})
-    +'</div>';
+    if(erBasis()){
+      // BASIS: tre låste armer + forklaring FØR «På vei» (sterkest på Basis, det eneste ekte tallet).
+      // INGEN total, INGEN CTA på Oversikt (knapp+pris bor kun på Vekst-fanen). Ingen tomrom der totalen sto.
+      wrap.innerHTML='<div class="di-card">'+diTitle()
+        +'<div class="di-basis-blokk">'+diBasisLaastRader()+diBasisForklaring()+'</div>'
+        +'<div class="di-divider"></div>'
+        +diPaaVeiHtml(data.paaVei,{basis:true})
+      +'</div>';
+    }else{
+      // Vekst/trial MEN hentetInn mangler → backend shape-drift. Vis «På vei» (ekte for begge planer)
+      // UTEN Basis-teaser/CTA — ærlig, aldri oppsalg. Logg avviket.
+      console.warn('[drevet-av] hentetInn mangler for ikke-Basis konto (effective_plan='+(_billing&&_billing.effective_plan)+', grunn='+(_billing&&_billing.effective_plan_grunn)+') — viser På vei uten oppsalg.');
+      wrap.innerHTML='<div class="di-card">'+diTitle()
+        +diPaaVeiHtml(data.paaVei,{basis:false})
+      +'</div>';
+    }
     koblePaaVeiCta(wrap);   // wirer «Se lista i Vekst →» (data-di-winback) i På vei
     return;
   }
@@ -4115,16 +4124,24 @@ var attrPeriod="siste_maaned";   // v2-default (rullende 30 d) — matcher aria-
 // ⚠ KATEGORIER + REKKEFØLGE SPEILET AV renderDrivenBy() — HOLD DEM I SYNK (delte di-*-byggere).
 async function renderAttribusjon(){
   var el=$("#attrRows"); if(!el)return;
+  if(billingUkjent())return;   // som renderDrivenBy: ingen henting/render før planen er kjent (unngår skjold-på-Vekst i race-vinduet)
   var pk=document.getElementById('attrPeriod');
   var data=await api.attribution(attrPeriod);
   if(!data){ el.innerHTML='<p class="wb-empty">Kunne ikke hente tallene akkurat nå.</p>'; return; } // 401→redirigert; annen feil→ærlig melding
-  var hi=data.hentetInn; // MANGLER for Basis (backend plan-shaper) — fail-trygt
+  var hi=data.hentetInn; // MANGLER for Basis (backend plan-shaper)
   if(!hi){
-    // Basis: SKJUL periodevelgeren (ingenting å velge periode for) + tre låste armer + forklaring + CTA.
-    // INGEN total. Knapp+pris vises KUN her (Vekst-fanen), ikke på Oversikt. Backend sender aldri hentetInn til Basis.
-    if(pk)pk.hidden=true;
-    el.innerHTML=diBasisLaastRader()+diBasisForklaring()+diBasisCtaPris();
-    koblePaaVeiCta(el);
+    if(erBasis()){
+      // Basis: SKJUL periodevelgeren + tre låste armer + forklaring + CTA. Backend sender aldri hentetInn til Basis.
+      if(pk)pk.hidden=true;
+      el.innerHTML=diBasisLaastRader()+diBasisForklaring()+diBasisCtaPris();
+      koblePaaVeiCta(el);
+    }else{
+      // Vekst/trial MEN hentetInn mangler → backend shape-drift, ALDRI oppsalg til en Vekst-kunde.
+      // Ærlig feiltilstand + logg (plan + shape-drift synlig i console).
+      console.warn('[attribusjon] hentetInn mangler for ikke-Basis konto (effective_plan='+(_billing&&_billing.effective_plan)+', grunn='+(_billing&&_billing.effective_plan_grunn)+') — viser feiltilstand, ikke oppsalg.');
+      if(pk)pk.hidden=false;
+      el.innerHTML='<p class="wb-empty">Kunne ikke hente tallene akkurat nå.</p>';
+    }
     return;
   }
   if(pk)pk.hidden=false;   // Vekst: velger synlig igjen (om en tidligere basis-render skjulte den)
