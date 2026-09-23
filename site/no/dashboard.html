@@ -110,6 +110,9 @@
 
   /* Stat row */
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:8px}
+  /* .stats har egen border/bakgrunn → en tom .stats ville vist en tom rammet boks. Skjul helt
+     når det ikke er data (Vekst-KPI, tom konto). [hidden] alene taper mot display:grid. */
+  .stats[hidden]{display:none}
   .stat{background:var(--surface);padding:18px 20px}
   .stat .l{font-size:11.5px;color:var(--mut);font-weight:500;letter-spacing:.02em;text-transform:uppercase;display:flex;align-items:center;gap:5px}
   /* Setningscase-variant (Vekst: «Kunder i snitt per måned») — de øvrige stat-etikettene er versaler. */
@@ -815,6 +818,8 @@
      fyller kolonnene allerede bredden (37/46px < taket), så flex:1 gir samme fordeling og
      justify-center er en no-op uten slakk. */
   .trend{display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:8px 0 0;border-bottom:1px solid var(--line);min-height:150px;width:100%}
+  /* Tom-tilstand (0 måneder med data): ingen akselinje under forklaringsteksten. */
+  .trend.tom{border-bottom:0;min-height:0;padding:0}
   /* Vekst måneds-diagram: Oversikts gradient-stolpe-mekanikk, men TRE diskrete tilstander (blå/grønn/gull) */
   /* flex:1 → kolonnene deler containerbredden likt, men max-width:96px kapper dem på desktop
      (170px-stolper ble for fete) — resten blir luft via .trend justify-center. .mbar under har
@@ -1601,7 +1606,7 @@
     <p class="panel-h">Vekst</p>
     <p class="block-s">Hvordan praksisen din vokser over tid.</p>
     <div class="stats" id="vekstStats"></div>
-    <p class="block-h" style="margin-top:28px">Kunder per måned</p>
+    <p class="block-h" style="margin-top:28px" id="vekstTrendH">Kunder per måned</p>
     <!-- Teksten settes av renderMonthChart — «Siste seks måneder» løy så lenge
          barbereren hadde færre enn seks måneder med data. [oversettelse: sv/da/en] -->
     <p class="block-s" id="trendSub">Siste seks måneder.</p>
@@ -3978,13 +3983,19 @@ function monthLbl(ym){ return MONTHS[(+String(ym).slice(5,7))-1] || ""; } // "20
 
 // KPI: snitt kunder/måned over MÅNEDER-MED-DATA (ikke fast 6) + all-time klipp-total. Ekte /stats.
 function renderVekstKpi(stats){
+  var wrap=$("#vekstStats"); if(!wrap)return;
   var months=(stats&&stats.months)||[];
+  var klipp=(stats&&stats.completed_all_time)||0;
+  // Tom konto: ingen fullførte klipp ennå (completed_all_time og months deler samme filter i
+  // backend, så klipp===0 ⇒ months===[]). Vis IKKE to store «0» — skjul hele stats-blokken; den
+  // forklarende tom-teksten bæres av diagrammet under (renderMonthChart). [oversettelse: sv/da/en]
+  if(klipp<=0){ wrap.innerHTML=''; wrap.hidden=true; return; }
+  wrap.hidden=false;
   var rec=stats&&stats.record_customers_month;
   var total=months.reduce(function(a,m){return a+(m.customers||0);},0);
   var avg=months.length?Math.round(total/months.length):0;
   var bestSub=rec?("Beste måned: "+monthLbl(rec.ym)+" med "+rec.customers):"Ingen data ennå"; // full måned, liten forbokstav (MONTHS)
-  var klipp=(stats&&stats.completed_all_time)||0;
-  $("#vekstStats").innerHTML=
+  wrap.innerHTML=
      '<div class="stat"><div class="l l-plain">Kunder i snitt per måned</div><div class="v info">'+avg+'</div><div class="sub mut">'+bestSub+'</div></div>'
     +'<div class="stat"><div class="l">Klipp totalt</div><div class="v info">'+klipp.toLocaleString("no-NO")+'</div><div class="sub mut">gjennom hele historikken</div></div>';
 }
@@ -3996,20 +4007,36 @@ function renderVekstKpi(stats){
 // matche på BÅDE ym og customers) overstyrer skalaen, med glød beholdt.
 // Den gamle 'green'-tilstanden («høyest i vinduet, men ikke rekord») er fjernet — skalaen
 // sier det av seg selv ved at den høyeste stolpen alltid treffer toppen av rampen.
+// YYYY-MM for et Date-objekt (barberens visning; completed-data er alltid fortid, se under).
+function ymKey(d){ return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0'); }
+
 function renderMonthChart(stats){
   var el=$("#trend"); if(!el)return;
-  var months=((stats&&stats.months)||[]).slice(-6); // siste 6 mnd, kronologisk (months[] er ASC)
-  // Undertittel følger FAKTISK antall måneder (etter slice, så maks 6). Ved 0 skjules
-  // den helt — diagrammet sier selv «Ingen måneder med data ennå», og «Siste 0 måneder»
-  // ville vært tull.
-  var sub=$("#trendSub");
-  if(sub){
-    sub.hidden=!months.length;
-    sub.textContent=months.length===1?"Denne måneden.":"Siste "+months.length+" måneder.";
+  var data=(stats&&stats.months)||[];         // months[] er ASC, KUN måneder med data (backend-filter)
+  var sub=$("#trendSub"), h1=$("#vekstTrendH");
+  // TOM KONFO (0 måneder med data): skjul diagram-overskrift + undertittel og vis én kort
+  // forklaring i stedet for en akse med bare tomrom. [oversettelse: sv/da/en]
+  if(!data.length){
+    if(h1)h1.hidden=true;
+    if(sub)sub.hidden=true;
+    el.classList.add('tom');
+    el.innerHTML='<div class="empty" style="border:0"><p>Her ser du kundene dine per måned når de første bookingene kommer.</p></div>';
+    return;
   }
-  if(!months.length){ el.innerHTML='<div class="empty" style="border:0"><p>Ingen måneder med data ennå</p></div>'; return; }
+  if(h1)h1.hidden=false;
+  el.classList.remove('tom');
+  // 1+ måneder: vis ALLTID siste 6 KALENDERmåneder (t.o.m. inneværende), null-fyll tomme.
+  // Ankeret er inneværende måned: completed_all_time teller kun fortid (ends_at < now), så ingen
+  // datamåned kan ligge i framtiden → all data mapper naturlig inn i vinduet.
+  var anchor=new Date();
+  var slots=[];
+  for(var i=5;i>=0;i--){ slots.push(ymKey(new Date(anchor.getFullYear(), anchor.getMonth()-i, 1))); }
+  var byYm={}; data.forEach(function(m){ byYm[m.ym]=m.customers||0; });
+  var months=slots.map(function(ym){ return { ym:ym, customers: byYm[ym]||0 }; });
+  if(sub){ sub.hidden=false; sub.textContent="Siste 6 måneder."; }
   var rec=stats&&stats.record_customers_month;
-  var max=Math.max.apply(null,months.map(function(m){return m.customers||0;}))||1;
+  // Y-akse-minimum (5): uten gulv fyller én kunde hele høyden (max=1) og ser ut som en rekordmåned.
+  var max=Math.max(Math.max.apply(null,months.map(function(m){return m.customers;})), 5);
   // Diagramhøyde dobles på brede viewports (≥900px): 120px-taket var for lavt på desktop, så
   // stolpene ble brede og flate og høydeforskjellen forsvant. Skalaen er NULLBASERT
   // (h = c/max * MAXH), så doblingen forstørrer den absolutte forskjellen proporsjonalt uten
@@ -4020,12 +4047,15 @@ function renderMonthChart(stats){
   var GULL={top:'#FFE08A',bot:'#F0C24B'};
   el.innerHTML=months.map(function(m){
     var c=m.customers||0;
+    // Tom måned: ingen stolpe (min-height:5px ville ellers gitt en falsk «1»-strek), ingen tall —
+    // bare månedsetiketten, så aksen står full uten å hevde aktivitet som ikke finnes.
+    if(c<=0){ return '<div class="mcol"><div class="mlbl">'+monthLbl(m.ym).slice(0,3)+'</div></div>'; }
     var isRecord = !!rec && m.ym===rec.ym && c===rec.customers; // EKTE rekord (ym+antall)
     var g=isRecord ? GULL : colorForRatio(c/max); // DELT med Oversikt — samme {top,bot}-form
-    var h=Math.max(Math.round(c/max*MAXH),5);
+    var hgt=Math.max(Math.round(c/max*MAXH),5);
     var gullCls=isRecord?' gull':'';
     return '<div class="mcol'+gullCls+'"><div class="mval'+(isRecord?' rekord-gull':'')+'">'+c+'</div>'
-      +'<div class="mbar'+gullCls+'" style="height:'+h+'px;--bar-top:'+g.top+';--bar-bot:'+g.bot+'"></div>'
+      +'<div class="mbar'+gullCls+'" style="height:'+hgt+'px;--bar-top:'+g.top+';--bar-bot:'+g.bot+'"></div>'
       +'<div class="mlbl">'+monthLbl(m.ym).slice(0,3)+'</div></div>';
   }).join("");
 }
