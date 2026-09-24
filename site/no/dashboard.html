@@ -75,6 +75,11 @@
   @media(min-width:720px){
     #oversikt,#vekst,#tjenester,#design,#abonnement{max-width:680px;margin-left:auto;margin-right:auto}
     .topband>.wrap{max-width:728px}
+    /* Restgap etter desktop-bredde-fiksen: «Drevet av»-radene (.di-row space-between) har bare
+       ~170px innhold, så på det 680px-kappede panelet sprer arm og verdi seg med ~470px void
+       imellom. Kapp .di-rows til 320px så arm venstre + verdi høyrejustert leses som én rad.
+       KUN 720+ — mobil (<720) er urørt (gapet er ~120px der, naturlig). */
+    #drivenBy .di-rows{max-width:320px}
   }
   .panel.active{display:block}
 
