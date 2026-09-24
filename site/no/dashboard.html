@@ -4035,6 +4035,11 @@ function renderMonthChart(stats){
   var months=slots.map(function(ym){ return { ym:ym, customers: byYm[ym]||0 }; });
   if(sub){ sub.hidden=false; sub.textContent="Siste 6 måneder."; }
   var rec=stats&&stats.record_customers_month;
+  // Gull-rekord dempes til det finnes MINST 2 måneder med data: med bare én måned er den
+  // trivielt «rekord» (backend rapporterer den som record_customers_month), og en gløende gull-
+  // stolpe overdriver en fersk konto. Med 1 måned → vanlig farge (colorForRatio). data[] er
+  // KUN måneder med data (før 6-mnd-padding), så data.length er det ekte antallet.
+  var allowRecord = data.length >= 2;
   // Y-akse-minimum (5): uten gulv fyller én kunde hele høyden (max=1) og ser ut som en rekordmåned.
   var max=Math.max(Math.max.apply(null,months.map(function(m){return m.customers;})), 5);
   // Diagramhøyde dobles på brede viewports (≥900px): 120px-taket var for lavt på desktop, så
@@ -4050,7 +4055,7 @@ function renderMonthChart(stats){
     // Tom måned: ingen stolpe (min-height:5px ville ellers gitt en falsk «1»-strek), ingen tall —
     // bare månedsetiketten, så aksen står full uten å hevde aktivitet som ikke finnes.
     if(c<=0){ return '<div class="mcol"><div class="mlbl">'+monthLbl(m.ym).slice(0,3)+'</div></div>'; }
-    var isRecord = !!rec && m.ym===rec.ym && c===rec.customers; // EKTE rekord (ym+antall)
+    var isRecord = allowRecord && !!rec && m.ym===rec.ym && c===rec.customers; // EKTE rekord (ym+antall), kun ved ≥2 mnd data
     var g=isRecord ? GULL : colorForRatio(c/max); // DELT med Oversikt — samme {top,bot}-form
     var hgt=Math.max(Math.round(c/max*MAXH),5);
     var gullCls=isRecord?' gull':'';
