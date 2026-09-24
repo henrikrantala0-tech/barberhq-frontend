@@ -3994,9 +3994,14 @@ function renderVekstKpi(stats){
   var rec=stats&&stats.record_customers_month;
   var total=months.reduce(function(a,m){return a+(m.customers||0);},0);
   var avg=months.length?Math.round(total/months.length):0;
-  var bestSub=rec?("Beste måned: "+monthLbl(rec.ym)+" med "+rec.customers):"Ingen data ennå"; // full måned, liten forbokstav (MONTHS)
+  // «Beste måned»-linja skjules til det finnes MINST 2 måneder med data — SAMME betingelse som
+  // gull-dempingen i renderMonthChart (data.length>=2). Med bare én måned ER snittet den måneden,
+  // så «Beste måned: X med N» gjentar bare snittet og hevder en rekord en fersk konto ikke har.
+  // Snitt + Klipp totalt vises som før. [oversettelse: sv/da/en]
+  var bestSub=(months.length>=2 && rec)?("Beste måned: "+monthLbl(rec.ym)+" med "+rec.customers):""; // full måned, liten forbokstav (MONTHS)
+  var snittSub=bestSub?('<div class="sub mut">'+bestSub+'</div>'):''; // tom .sub ville gitt et fantom-gap
   wrap.innerHTML=
-     '<div class="stat"><div class="l l-plain">Kunder i snitt per måned</div><div class="v info">'+avg+'</div><div class="sub mut">'+bestSub+'</div></div>'
+     '<div class="stat"><div class="l l-plain">Kunder i snitt per måned</div><div class="v info">'+avg+'</div>'+snittSub+'</div>'
     +'<div class="stat"><div class="l">Klipp totalt</div><div class="v info">'+klipp.toLocaleString("no-NO")+'</div><div class="sub mut">gjennom hele historikken</div></div>';
 }
 
