@@ -204,6 +204,15 @@
   .slot-hint:empty{display:none}
   .slots-lock-note{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:13px;color:var(--ink-2);line-height:1.45}
   #bilderMount.slots-locked .slot-section,#bilderMount.slots-locked .slot-direkte-msg{opacity:.5;pointer-events:none}
+  /* Showcase-uten-bilder-guard (Din side). Myk advarsel — blokkerer ALDRI lagring/sletting hardt,
+     gjør bare konsekvensen tydelig. Venstre aksent i solid hex (ikke rgba/opacity → overlever lys
+     modus, jf. palett-notatet). [oversettelse: sv/da/en] */
+  .showcase-guard{background:var(--surface);border:1px solid var(--line);border-left:3px solid #d98a3d;border-radius:8px;padding:11px 13px;margin-top:12px;font-size:13px;color:var(--ink-2);line-height:1.45}
+  .showcase-guard p{margin:0 0 10px}
+  .showcase-guard .sg-actions{display:flex;flex-wrap:wrap;gap:8px}
+  .showcase-guard button{appearance:none;border:1px solid var(--line-2);background:var(--bg);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;padding:8px 13px;border-radius:7px;cursor:pointer;min-height:38px}
+  .showcase-guard button.sg-primary{background:var(--info);border-color:var(--info);color:#fff}
+  .showcase-guard button.sg-danger{background:#c0594a;border-color:#c0594a;color:#fff}
   .slot-section{margin-bottom:22px}
   .slot-label{font-size:11px;font-weight:600;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
   .slot-portrett-wrap{display:flex;justify-content:center}
@@ -2099,6 +2108,16 @@
             <input type="file" id="fileInput" accept="image/*" hidden>
             <input type="file" id="replaceInput" accept="image/*" hidden>
             <div id="bilderMount"><div class="loading">Laster …</div></div>
+            <!-- Sletting av SISTE galleribilde mens layout er showcase: in-page bekreftelse (ikke
+                 confirm()-dialog). Fylles + vises av slotPopupFjern-handleren; «Slett likevel»
+                 fullfører, «Behold bildet» avbryter. Ingen automatisk layoutbytte. -->
+            <div class="showcase-guard" id="showcaseDelWarn" hidden>
+              <p>Showcase viser galleriet ditt. Dette er det siste bildet — sletter du det, står siden uten galleri. Legg til et nytt bilde, eller velg Direkte.</p>
+              <div class="sg-actions">
+                <button type="button" class="sg-danger" id="showcaseDelConfirm">Slett likevel</button>
+                <button type="button" id="showcaseDelCancel">Behold bildet</button>
+              </div>
+            </div>
           </div>
         </div>
 
@@ -2146,6 +2165,12 @@
               <div class="preset-grid" id="fontGrid"></div>
               <p class="dlbl">Layout</p>
               <div class="preset-grid" id="layoutGrid"></div>
+              <!-- Showcase valgt uten bilder: myk advarsel + snarvei til opplasting. Toggles av
+                   oppdaterShowcaseGuard() (kjøres fra refreshSlots ved layout-bytte + bildeendring). -->
+              <div class="showcase-guard" id="showcaseGuard" hidden>
+                <p>Showcase viser galleriet ditt. Legg til minst ett bilde, eller velg Direkte.</p>
+                <div class="sg-actions"><button type="button" class="sg-primary" id="showcaseGuardAdd">Legg til bilde</button></div>
+              </div>
             </div>
             <div class="savebar"><button class="btn" id="saveDesign">Lagre design</button><span class="saved" id="designSaved">Lagret &#10003;</span></div>
           </div>
@@ -4269,7 +4294,27 @@ const LAYOUT_HINT={
   showcase:'Showcase: opptil 10 bilder i galleriet',
   direkte:'Direkte: ingen bilder på siden'
 };
+// Antall galleribilder i den lastede bilde-arrayen (showcase bruker KUN galleri-slotten).
+function galleriAntall(){return imgs.filter(function(i){return i.slot==='galleri';}).length;}
+// Guard 1: vis showcase-uten-bilder-advarselen KUN når VALGT layout er showcase og galleriet er tomt.
+// Leser design.layout (valgt, ikke lagret) + imgs, så den følger både layout-bytte og bildeendring —
+// begge går gjennom refreshSlots(). Blokkerer aldri lagring; ren informasjon + snarvei.
+function oppdaterShowcaseGuard(){
+  var g=$("#showcaseGuard");if(!g)return;
+  g.hidden=!(design.layout==='showcase'&&galleriAntall()===0);
+}
+// «Legg til bilde»-snarveien: åpne Bilder-trekkspillet og scroll dit. Ingen auto-filvelger (mister
+// bruker-gesten etter accordion-toggle, og opplasting er uansett låst til LAGRET layout — slots-
+// lock-noten guider videre om showcase ennå ikke er lagret).
+function aapneBilderForShowcase(){
+  if(typeof _sjekkAapneAkk==='function')_sjekkAapneAkk('accBilder');
+  var acc=document.getElementById('accBilder');
+  if(acc)acc.scrollIntoView({behavior:'smooth',block:'start'});
+}
+(function(){var b=$("#showcaseGuardAdd");if(b)b.addEventListener('click',aapneBilderForShowcase);})();
+
 function refreshSlots(){
+  oppdaterShowcaseGuard();   // guard 1 følger layout/bilde-state — oppdater ved hvert kall (også null-layout → skjult)
   // Vet vi ikke hvilken layout barbereren har, sier vi INGENTING: ingen slot-bokser, ingen
   // layout-hjelpetekst, ingen bio-varsel. Alt tre er påstander om et valg vi ikke kjenner.
   // Tomt panel er ærlig; Direkte-farget panel er en gjetning som ser ut som et faktum.
@@ -4673,14 +4718,35 @@ $("#bilderMount").addEventListener("keydown",e=>{
   e.preventDefault();box.click();
 });
 
-document.getElementById('slotPopupFjern').addEventListener('click',async()=>{
-  _closeSlotPopup();
-  const id=_activeImgId;if(!id)return;
+// Selve slettingen — delt av normal-veien og «Slett likevel» i showcase-guarden.
+async function slettBilde(id){
   const r=await apiFetch('/api/dashboard/images/'+id,{method:'DELETE'});
   if(!r)return;
   if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke slette bildet. Prøv igjen.');return;}
   await bilderEndret();
+}
+var _showcaseDelId=null;
+function skjulShowcaseDelVarsel(){var w=$("#showcaseDelWarn");if(w)w.hidden=true;_showcaseDelId=null;}
+document.getElementById('slotPopupFjern').addEventListener('click',async()=>{
+  _closeSlotPopup();
+  const id=_activeImgId;if(!id)return;
+  skjulShowcaseDelVarsel(); // nullstill ev. tidligere varsel før ny vurdering
+  // Guard 2: sletter barbereren SISTE galleribildet mens LIVE-layouten (savedLayout) er showcase,
+  // bekreft i siden først (ikke confirm()-dialog). Popup-menyen åpnes bare når slots er ulåst
+  // (design.layout===savedLayout), så savedLayout='showcase' ⇔ valgt layout='showcase' her.
+  const gal=imgs.filter(i=>i.slot==='galleri');
+  if(savedLayout==='showcase'&&gal.length<=1&&gal.some(g=>String(g.id)===String(id))){
+    _showcaseDelId=id;
+    const w=$("#showcaseDelWarn");
+    if(w){w.hidden=false;w.scrollIntoView({behavior:'smooth',block:'center'});}
+    return;
+  }
+  await slettBilde(id);
 });
+(function(){
+  var c=$("#showcaseDelConfirm");if(c)c.addEventListener('click',async function(){var id=_showcaseDelId;skjulShowcaseDelVarsel();if(id)await slettBilde(id);});
+  var x=$("#showcaseDelCancel");if(x)x.addEventListener('click',skjulShowcaseDelVarsel);
+})();
 
 document.getElementById('slotPopupEndre').addEventListener('click',()=>{
   _closeSlotPopup();
