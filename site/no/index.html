@@ -824,6 +824,63 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 #produkt .cal-pop.k-b{border-color:#245c40} #produkt .cal-pop.k-b .cal-pop-t{color:#5fd99a}
 #produkt .cal-pop.k-c{border-color:#6b5620} #produkt .cal-pop.k-c .cal-pop-t{color:#e2bd5c}
 
+/* ===== KALENDER-SCENE (kort 0) ================================================
+   Godkjent frittstående scene fra produkt-klon/kalender/kalender-scene.html, bygget
+   inn som HTML-klon (INGEN iframe). .ks-*-prefikset beholdes; alt scopet under
+   #produkt .ks-cal så det ikke kolliderer med resten av sida. .pv-scale + --ph-s
+   (settTelefonSkala) skalerer scenens 320-design inn i iPhone-ramma — samme mønster
+   som booking-/dashbord-kortet. Innhold/farger/timing/rutenett er UENDRET fra scenen. */
+#produkt .ks-cal{position:relative;height:100%;overflow:hidden;background:#0a0a0a}
+#produkt .ks-cal .pv-scale{position:absolute;top:0;left:0}
+#produkt .ks-cal{--bg:#0a0a0a; --surface:#141414; --ink:#ffffff; --ink-2:#cfcfcf; --mut:#8a8a8a; --mut-2:#5f5f5f;
+    --line:#242424; --line-2:#363636;
+    --good:#3ecf7e; --info:#4d8bff; --warn:#f5d93a; --violet:#b18cf0; --sky:#5cc4f0;
+    --bad:#ff6b5e; --bad-bg:#2c1512;
+    --ks-ppm:1.8;}
+#produkt .ks-cal *{margin:0;padding:0;box-sizing:border-box}
+#produkt .ks-cal .ks-root{width:320px;max-width:100%;min-height:100%;margin:0 auto;background:var(--bg);color:var(--ink);
+    font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;position:relative;overflow:hidden;
+    display:flex;flex-direction:column}
+#produkt .ks-cal .ks-overlay{flex:1;display:flex;flex-direction:column}
+#produkt .ks-cal .ks-topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
+#produkt .ks-cal .ks-datebtn{border:1px solid var(--line-2);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:6px}
+#produkt .ks-cal .ks-close{margin-left:auto;border:0;background:var(--surface);color:var(--mut);width:36px;height:36px;border-radius:8px;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
+#produkt .ks-cal .ks-daystrip{display:flex;gap:7px;overflow-x:auto;padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0;scrollbar-width:none}
+#produkt .ks-cal .ks-daystrip::-webkit-scrollbar{display:none}
+#produkt .ks-cal .ks-chip{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:7px 11px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:46px;position:relative}
+#produkt .ks-cal .ks-chip-wd{font-size:10.5px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+#produkt .ks-cal .ks-chip-d{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.02em}
+#produkt .ks-cal .ks-chip-count{font-size:10px;color:var(--info);font-weight:600;line-height:1;min-height:11px}
+#produkt .ks-cal .ks-chip.is-today .ks-chip-d{color:var(--info)}
+#produkt .ks-cal .ks-chip.active{border-color:var(--ink);background:var(--ink)}
+#produkt .ks-cal .ks-chip.active .ks-chip-wd,#produkt .ks-cal .ks-chip.active .ks-chip-d,#produkt .ks-cal .ks-chip.active .ks-chip-count{color:var(--surface)}
+#produkt .ks-cal .ks-grid{flex:1;display:flex;overflow:hidden;min-height:0}
+#produkt .ks-cal .ks-scroll{flex:1;display:flex;overflow:hidden}
+#produkt .ks-cal .ks-axis{flex-shrink:0;width:46px;position:relative;padding-top:34px}
+#produkt .ks-cal .ks-hour{height:calc(60 * var(--ks-ppm) * 1px);position:relative}
+#produkt .ks-cal .ks-hour>span{position:absolute;top:-7px;right:8px;font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
+#produkt .ks-cal .ks-hour>.ks-half{top:47px;font-size:9px;opacity:.6}
+#produkt .ks-cal .ks-days{flex:1;display:flex;min-width:0}
+#produkt .ks-cal .ks-day{flex:1;min-width:0;border-left:1px solid var(--line);display:flex;flex-direction:column}
+#produkt .ks-cal .ks-dayhead{height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--ink-2);border-bottom:1px solid var(--line);gap:6px}
+#produkt .ks-cal .ks-dayhead.is-today{color:var(--info)}
+#produkt .ks-cal .ks-daybody{position:relative}
+#produkt .ks-cal .ks-hourline{position:absolute;left:0;right:0;border-top:1px solid var(--line);pointer-events:none}
+#produkt .ks-cal .ks-halfline{position:absolute;left:0;right:0;border-top:1px solid var(--line);opacity:.4;pointer-events:none}
+#produkt .ks-cal .ks-now{position:absolute;left:0;right:0;height:0;border-top:2px solid #4d8bff;z-index:5;pointer-events:none;opacity:0;transition:opacity .5s ease}
+#produkt .ks-cal .ks-now.ks-in{opacity:1}
+#produkt .ks-cal .ks-now-dot{position:absolute;left:-1px;top:-4px;width:7px;height:7px;border-radius:50%;background:#4d8bff}
+#produkt .ks-cal .ks-block{position:absolute;border-radius:6px;background:color-mix(in srgb, var(--ks-blk,var(--info)) 15%, var(--surface));
+    border:1px solid var(--ks-blk,var(--info));border-left:3px solid var(--ks-blk,var(--info));padding:3px 6px;overflow:hidden;box-sizing:border-box;
+    opacity:0;transform:translateY(10px) scale(.96);
+    transition:opacity .38s cubic-bezier(.2,.7,.2,1), transform .38s cubic-bezier(.2,.7,.2,1)}
+#produkt .ks-cal .ks-block.ks-in{opacity:1;transform:none}
+#produkt .ks-cal .ks-blk-top{display:flex;align-items:baseline;gap:5px}
+#produkt .ks-cal .ks-blk-name{flex:1;min-width:0;font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#produkt .ks-cal .ks-blk-time{flex:0 0 auto;font-size:10.5px;font-weight:400;color:var(--mut);line-height:1.2;font-variant-numeric:tabular-nums}
+#produkt .ks-cal .ks-blk-svc{display:block;font-size:10.5px;color:var(--mut);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(prefers-reduced-motion:reduce){#produkt .ks-cal .ks-block,#produkt .ks-cal .ks-now{transition:none}}
+
 /* ===== KLONET: bookingsida ====================================================
    Kilde: den publiserte /henrik-fades, hentet 9. august 2026 — cover-seksjon +
    booking-modul. CSS-en er valgt MASKINELT: hele sidas stilark lastes mot klon-markupen
@@ -1576,14 +1633,29 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 
       <div class="mock pv-phone pv-phoneframe" data-i="0" role="button" tabindex="0" aria-label="Kalender">
         <div class="iph"><i class="iph-btn la action"></i><i class="iph-btn la volup"></i><i class="iph-btn la voldn"></i><i class="iph-btn ra power"></i><div class="iph-screen">
-          <div class="pv-cal">
-            <div class="pv-cal-h"><div class="pv-cal-d">Torsdag 13.</div><div class="pv-cal-s"><b id="calCount">0</b> bookinger</div></div>
-            <!-- Tom fra start: dagen FYLLES mens man ser på. Sto det tre rader her og en
-                 fjerde poppet inn, var det ikke en dag som fylles — det var en liste med
-                 ett tillegg. -->
-            <div class="pv-cal-rows" id="calRows"></div>
-            <div class="cal-pop" id="calPop" aria-hidden="true"></div>
-          </div>
+          <!-- Kalender-kortet: godkjent scene (produkt-klon/kalender/kalender-scene.html) bygget inn
+               som HTML-klon. .ks-*-markup uendret; scenens byggeskript + start()/reset() lever i
+               karusell-scriptet (kalenderSceneBygg/kalenderScene). Ingen id-er → ingen kollisjon. -->
+          <div class="ks-cal"><div class="pv-scale">
+            <div class="ks-root">
+              <div class="ks-overlay">
+                <div class="ks-topbar">
+                  <button class="ks-datebtn" type="button"><span class="ks-datebtn-txt">I dag</span> ▾</button>
+                  <button class="ks-close" type="button" aria-label="Lukk">✕</button>
+                </div>
+                <div class="ks-daystrip"></div>
+                <div class="ks-grid"><div class="ks-scroll">
+                  <div class="ks-axis"></div>
+                  <div class="ks-days">
+                    <div class="ks-day is-today">
+                      <div class="ks-dayhead is-today">I dag</div>
+                      <div class="ks-daybody"></div>
+                    </div>
+                  </div>
+                </div></div>
+              </div>
+            </div>
+          </div></div>
         </div></div>
       </div>
 
@@ -2491,6 +2563,114 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   </div>
 </footer>
 
+<!-- ===== KALENDER-SCENE (kort 0): byggeskript fra den godkjente scenen
+     (produkt-klon/kalender/kalender-scene.html). Kjører FØR karusell-scriptet så
+     window.kalenderScene finnes når karusellen kobler start()/reset() til pv-mønsteret,
+     og så chrome er bygget FØR byggKloner() kloner kortet. Auto-start fjernet — karusellen
+     styrer avspillingen. Innhold/farger/timing/rutenett er UENDRET fra scenen. ===== -->
+<script>
+(function(){
+  "use strict";
+  var ROOT=document.querySelector('.ks-cal .ks-root');
+  if(!ROOT) return;
+  var q=function(sel){return ROOT.querySelector(sel);};
+  // ── Konstanter (klonet fra dashboardet) ──────────────────────────────────
+  var PX_PER_MIN=1.8, Y_MIN=720, Y_MAX=1200;                // 12:00 → 20:00 (fyller skjermen)
+  var NOW_MIN=13*60+47;                                      // nå-linja: 13:47 (i det tomme gapet)
+  var DAYS=["Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag","Søndag"];
+  var MONTHS=["januar","februar","mars","april","mai","juni","juli","august","september","oktober","november","desember"];
+  var SVC_FARGER=['var(--info)','var(--good)','#e0844a','var(--warn)','var(--violet)','var(--sky)'];
+  function svcColor(i){return (i==null||i>=SVC_FARGER.length)?'var(--mut)':SVC_FARGER[i];}
+  function pad(n){return String(n).padStart(2,'0');}
+  function fmtTid(min){return pad(Math.floor(min/60))+':'+pad(min%60);}
+  function minToPx(min){return (min-Y_MIN)*PX_PER_MIN;}
+  // ── Regissert data (ingen seed, ingen DB) ────────────────────────────────
+  var BOOKINGS=[
+    {name:'Jonas Berg',   service:'Saksklipp',  start:720, end:750, ci:0},
+    {name:'Emre Yilmaz',  service:'Skinfade',   start:750, end:780, ci:1},
+    {name:'Theo Nilsen',  service:'Barneklipp', start:780, end:810, ci:2},
+    {name:'Karim Haddad', service:'Skinfade',   start:840, end:870, ci:1},
+    {name:'Sindre Holm',  service:'Saksklipp',  start:870, end:900, ci:0}
+  ];
+  var ANDRE_DAGER_TALL=[6,4,7,3,5,2];                        // statiske tall på de påfølgende dagene
+  // ── Tempo ────────────────────────────────────────────────────────────────
+  var START_DELAY=550, POPP_INTERVAL=750;
+
+  function byggAkse(){
+    var ax='';for(var m=Y_MIN;m<Y_MAX;m+=60){ax+='<div class="ks-hour"><span>'+fmtTid(m)+'</span>'+((m+30<Y_MAX)?'<span class="ks-half">'+fmtTid(m+30)+'</span>':'')+'</div>';}
+    q('.ks-axis').innerHTML=ax;
+  }
+  function byggLinjer(body){
+    var lines='';for(var mm=Y_MIN;mm<Y_MAX;mm+=60){lines+='<div class="ks-hourline" style="top:'+minToPx(mm)+'px"></div>';var half=mm+30;if(half<Y_MAX)lines+='<div class="ks-halfline" style="top:'+minToPx(half)+'px"></div>';}
+    body.insertAdjacentHTML('afterbegin',lines);
+  }
+  function esc(s){return String(s).replace(/[&<>"]/g,function(c){return{'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[c];});}
+  function byggDagstripe(){
+    var strip=q('.ks-daystrip'),html='',today=new Date();today.setHours(0,0,0,0);
+    for(var i=0;i<7;i++){
+      var d=new Date(today);d.setDate(d.getDate()+i);
+      var erIdag=(i===0);
+      var wd=DAYS[(d.getDay()+6)%7].slice(0,3);
+      var count=erIdag?0:(ANDRE_DAGER_TALL[i-1]||0);
+      html+='<button class="ks-chip'+(erIdag?' is-today active':'')+'" type="button">'
+        +'<span class="ks-chip-wd">'+wd+'</span>'
+        +'<span class="ks-chip-d">'+d.getDate()+'</span>'
+        +'<span class="ks-chip-count"'+(erIdag?' data-today="1"':'')+'>'+(count||erIdag?count:'')+'</span></button>';
+    }
+    strip.innerHTML=html;
+    var dt=new Date();q('.ks-datebtn-txt').textContent=DAYS[(dt.getDay()+6)%7]+' '+dt.getDate()+'. '+MONTHS[dt.getMonth()].slice(0,3);
+  }
+  function byggBlokker(body){
+    BOOKINGS.forEach(function(b,idx){
+      var top=minToPx(b.start),h=(b.end-b.start)*PX_PER_MIN;
+      var tid=fmtTid(b.start)+'–'+fmtTid(b.end);
+      var el=document.createElement('div');
+      el.className='ks-block';el.dataset.idx=idx;
+      el.style.top=top+'px';el.style.height=h+'px';el.style.left='0';el.style.width='calc(100% - 3px)';
+      el.style.setProperty('--ks-blk',svcColor(b.ci));
+      el.innerHTML='<div class="ks-blk-top"><span class="ks-blk-name">'+esc(b.name)+'</span><span class="ks-blk-time">'+tid+'</span></div><span class="ks-blk-svc">'+esc(b.service)+'</span>';
+      body.appendChild(el);
+    });
+  }
+  function byggNaa(body){
+    if(NOW_MIN<Y_MIN||NOW_MIN>Y_MAX)return;
+    var el=document.createElement('div');el.className='ks-now';el.style.top=minToPx(NOW_MIN)+'px';
+    el.innerHTML='<span class="ks-now-dot"></span>';
+    body.appendChild(el);
+  }
+
+  var body=q('.ks-daybody');
+  var timers=[];
+  function clearTimers(){timers.forEach(clearTimeout);timers=[];}
+
+  function reset(){
+    clearTimers();
+    ROOT.querySelectorAll('.ks-block').forEach(function(el){el.classList.remove('ks-in');});
+    var tc=ROOT.querySelector('.ks-chip-count[data-today]');if(tc)tc.textContent='0';
+    var nn=ROOT.querySelector('.ks-now');if(nn)nn.classList.remove('ks-in');
+  }
+  function start(){
+    reset();
+    var tc=ROOT.querySelector('.ks-chip-count[data-today]');
+    var nn=ROOT.querySelector('.ks-now');
+    timers.push(setTimeout(function(){if(nn)nn.classList.add('ks-in');},200));
+    var blocks=ROOT.querySelectorAll('.ks-block');
+    var count=0;
+    blocks.forEach(function(el,i){
+      timers.push(setTimeout(function(){
+        el.classList.add('ks-in');
+        count++;if(tc)tc.textContent=String(count);
+      },START_DELAY+i*POPP_INTERVAL));
+    });
+  }
+
+  // ── Init: bygg tom kalender på «I dag» ──
+  byggAkse();byggDagstripe();byggLinjer(body);byggBlokker(body);byggNaa(body);
+  // Ekstern kontroll (karusellens pv-mønster kaller start()/reset() når kortet er aktivt/forlater).
+  window.kalenderScene={start:start,reset:reset};
+})();
+</script>
+
 <script>
 // sett true ved launch for å vise demo-preview
 var DEMO_ENABLED = false;
@@ -2620,8 +2800,8 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   function settTelefonSkala(){
     [].forEach.call(document.querySelectorAll('#scene .pv-phone'),function(kort){
       var skjerm=kort.querySelector('.iph-screen'), sc=kort.querySelector('.pv-scale');
-      // Kalenderkortet har ingen .pv-scale: .pv-cal er bygget i designsystemet og fyller
-      // skjermflaten i naturlig størrelse. Det skal ikke ha --ph-s, og hopper ut her.
+      // Alle tre telefonkortene har nå .pv-scale (kalenderen fikk den da scenen ble bygget
+      // inn som 320-design-klon, 25.09) — samme --ph-s-skalering som booking/dashbord.
       if(!skjerm||!sc)return;
       var b=skjerm.offsetWidth;
       if(!(b>0))return;
@@ -2723,72 +2903,16 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   //
   // Marcus 11:00 Klipp er samme booking som bookingkortet nettopp gjennomførte — samme
   // kunde, samme tjeneste, samme klokkeslett. De to kortene forteller én historie.
-  var KAL_BOOKINGER=[
-    {t:'09:00', n:'Jonas',  s:'Skinnfade',      k:'k-a'},
-    {t:'10:00', n:'Adam',   s:'Klipp + skjegg', k:'k-c'},
-    {t:'11:00', n:'Marcus', s:'Klipp',          k:'k-b'},
-    {t:'13:30', n:'Noah',   s:'Klipp',          k:'k-b'},
-    {t:'15:00', n:'Elias',  s:'Skinnfade',      k:'k-a'},
-  ];
-  // SEKVENSLENGDE = tid til kortet står stille i SLUTTILSTANDEN sin. Ikke rundetid:
-  // sekvensen løkker ikke lenger, den spilles én gang per fokus og blir stående.
-  var KAL_STEG=1100, KAL_SEKV=KAL_STEG*(KAL_BOOKINGER.length-1)+950;        // 5350ms
+  // Kalender-kortet (kort 0) er nå den godkjente scenen (window.kalenderScene), bygget inn
+  // som HTML-klon over. Den gamle KAL_BOOKINGER/leggTil-koreografien (fly-inn-popup) er borte —
+  // scenen eier sin egen popp-inn-animasjon (blokker toner + løftes inn). KAL_SEKV = dvelletid:
+  // scenen fyller ferdig (~3,9 s) + hold før auto-advance. tKalListe beholdes tom (stoppSekvenser
+  // rydder den fortsatt; scenens egne timere ryddes av kalenderScene.reset()).
+  var KAL_SEKV=5400;
   var tKalListe=[];
   function kalenderLoop(){
     if(REDUSERT) return;
-    var rows=document.getElementById('calRows'), pop=document.getElementById('calPop'),
-        teller=document.getElementById('calCount'), cal=rows&&rows.closest('.pv-cal');
-    if(!rows||!pop||!teller||!cal)return;
-    function T(fn,ms){ tKalListe.push(setTimeout(fn,ms)); }
-
-    function nullstill(){
-      rows.innerHTML=''; teller.textContent='0';
-      pop.className='cal-pop'; pop.style.transform=''; pop.innerHTML='';
-    }
-    // Skalaen mellom skjermpiksler og designpiksler. Transformen regnes i elementets EGET
-    // koordinatsystem, mens getBoundingClientRect gir skjermpiksler — uten delingen flyr
-    // kortet ~35% for langt.
-    function skala(){
-      var x=1,e=cal;
-      while(e&&e!==document.body){ var tr=getComputedStyle(e).transform;
-        if(tr&&tr!=='none') x*=parseFloat(tr.split(/[(,]/)[1])||1; e=e.parentElement; }
-      return x||1;
-    }
-    function leggTil(b,i){
-      // 1. Raden legges inn USYNLIG, så den har en ekte posisjon å fly mot.
-      var rad=document.createElement('div');
-      rad.className='crow rad '+b.k;
-      rad.innerHTML='<span class="crow-t">'+b.t+'</span><span class="crow-n">'+b.n+'</span>'+
-                    '<span class="crow-s">'+b.s+'</span>';
-      rows.appendChild(rad);
-      // 2. Popup-kortet spretter inn sentrert.
-      pop.className='cal-pop '+b.k;
-      pop.style.transform='';
-      pop.innerHTML='<div class="cal-pop-n">'+b.n+'</div>'+
-                    '<div class="cal-pop-s">'+b.s+'</div>'+
-                    '<div class="cal-pop-t">'+b.t+'</div>';
-      T(function(){ pop.classList.add('inn'); },20);
-      // 3. …og krymper inn i raden sin.
-      T(function(){
-        var sk=skala();
-        var rp=pop.getBoundingClientRect(), rr=rad.getBoundingClientRect();
-        var dx=((rr.left+rr.width/2)-(rp.left+rp.width/2))/sk;
-        var dy=((rr.top+rr.height/2)-(rp.top+rp.height/2))/sk;
-        pop.classList.add('fly');
-        pop.style.transform='translate(calc(-50% + '+Math.round(dx)+'px), calc(-50% + '+
-          Math.round(dy)+'px)) scale(.28)';
-        pop.style.opacity='0';
-      },560);
-      // 4. Raden tennes og telleren øker i det kortet lander.
-      T(function(){
-        rad.classList.add('inn');
-        teller.textContent=String(i+1);
-        pop.className='cal-pop'; pop.style.transform=''; pop.style.opacity='';
-      },900);
-    }
-
-    nullstill();
-    KAL_BOOKINGER.forEach(function(b,i){ T(function(){ leggTil(b,i); }, i*KAL_STEG); });
+    if(window.kalenderScene) window.kalenderScene.start();
   }
 
   // Bookingdemoen spiller HELE reisen: velg tid → åpne «Dine opplysninger» → skriv navn
@@ -3161,6 +3285,9 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     tKalListe.forEach(clearTimeout); tKalListe=[];
     tBook.forEach(clearTimeout); tBook=[];
     if(tDash!==null){ cancelAnimationFrame(tDash); tDash=null; }
+    // Kalender-scenen har egne timere (utenfor tKalListe) — nullstill den så den ikke fyller
+    // videre etter at kort 0 forlates, og starter forfra når kortet blir aktivt igjen.
+    if(window.kalenderScene) window.kalenderScene.reset();
   }
   // startSekvens spiller KUN av. Den nullstiller ikke dvelleklokka lenger — den gjorde to
   // ting samtidig, og da kunne ikke synlighetsobservatøren starte animasjonen på nytt uten
@@ -3254,14 +3381,13 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   // sveipet, er autoplay uansett død på mobil (brukerHarTatt), så manuelt hopp og
   // autoplay er tidseksklusive — ingen delt-tilstand-kappløp.
   var HOOK_KLASSER=['pv-rev','pv-count','pv-fill','pv-witext','pv-bar','rekord-note'];
+  // Sluttilstand for kalender-scenen: alle blokker inne + nå-linja inne + i-dag-tallet = 5.
+  // Virker på et hvilket som helst kort-node (original ved hopp ELLER peek-klon) via .ks-*-klasser
+  // — scenen har ingen id-er, så klonene (id-skrubbet) treffes likt.
   function frysKalender(k){
-    var rows=k.querySelector('.pv-cal-rows');
-    if(rows) rows.innerHTML=KAL_BOOKINGER.map(function(b){
-      return '<div class="crow rad '+b.k+' inn"><span class="crow-t">'+b.t+
-        '</span><span class="crow-n">'+b.n+'</span><span class="crow-s">'+b.s+'</span></div>';
-    }).join('');
-    var teller=k.querySelector('.pv-cal-s b'); if(teller) teller.textContent=String(KAL_BOOKINGER.length);
-    var pop=k.querySelector('.cal-pop'); if(pop){ pop.className='cal-pop'; pop.innerHTML=''; }
+    k.querySelectorAll('.ks-block').forEach(function(el){ el.classList.add('ks-in'); });
+    var nn=k.querySelector('.ks-now'); if(nn) nn.classList.add('ks-in');
+    var tc=k.querySelector('.ks-chip-count[data-today]'); if(tc) tc.textContent='5';
   }
   function frysDashbord(k){
     // Frys FØR skrubb: her er hook-klassene fortsatt på, så selektorene treffer. querySelectorAll
