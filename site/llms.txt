@@ -24,6 +24,7 @@ Kunden betaler barbereren direkte (Vipps eller kontant hos barbereren). BarberHQ
 ## Lenker
 - [Funksjoner](https://trybarberhq.com/no/funksjoner.html)
 - [Priser](https://trybarberhq.com/no/priser.html)
+- [Vanlige spørsmål](https://trybarberhq.com/no/vanlige-sporsmal.html)
 - [Kom i gang](https://trybarberhq.com/no/kom-i-gang.html)
 - [Support](https://trybarberhq.com/no/support.html)
 - [Vilkår og personvern](https://trybarberhq.com/no/vilkar.html)
