@@ -140,6 +140,11 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
   fra `raw.githubusercontent.com/google/fonts`.
 - **Valider base64/bilder** etter fil-endringer som rører bilder
   (PNG-sig `8950`, JPEG-sig `ffd8`).
+- **Nav-vakt før commit som rører nav eller footer:** kjør `node tools/check-nav.mjs`.
+  Nav + footer er kopiert inn i hver markedsside (ingen delt kilde uten byggesteg), så en
+  lenke lagt til noen sider og glemt andre gir stille drift (skjedde med «Vanlige spørsmål»).
+  Vakta feiler (exit 1) hvis `.nav-links`, `.nav-panel` eller footeren har ulike lenker
+  (tekst + href) på tvers av mal-sidene.
 - **asyncRoute på alle nye async ruter** — bruk `asyncRoute` fra
   `src/lib/asyncRoute.js` på alle nye async Express-ruter. Wrapper ruter
   unhandled rejections til error-middleware → 500-respons og logg, uten å ta
