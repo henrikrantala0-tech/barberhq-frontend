@@ -1,0 +1,29 @@
+# BarberHQ
+
+> BarberHQ er en bookingside for barbere i Norge. Barberen får sin egen side der kundene booker time selv, med automatisk rebooking, SMS-påminnelser, verving og lojalitetsprogram.
+
+BarberHQ er et verktøy for barbere og barbershops i Norge. Barberen får en egen bookingside – eget navn, egne farger, egne bilder – der kundene velger ledig time selv. Ingen meldinger fram og tilbake, og ingen markedsplass: kundene vises aldri side om side med konkurrentene, og kundelista er barberens egen.
+
+Kunden betaler barbereren direkte (Vipps eller kontant hos barbereren). BarberHQ tar ikke betalt per booking.
+
+## Funksjoner
+- Selvbooking på barberens egen side
+- Automatisk rebooking: SMS når det er tid for ny klipp, med lenke rett til bookingsiden
+- SMS-påminnelse kvelden før timen
+- Verving: kunder deler lenken sin, og begge får rabatt (barberen bestemmer prosenten)
+- Lojalitetsprogram: kundene samler klipp mot en belønning barberen bestemmer
+- Kalender: timene havner i BarberHQ-kalenderen, med valgfri kobling til Google Kalender
+- Galleri for å vise fram arbeidet
+- No-show-beskyttelse med depositum (under utvikling)
+
+## Pris
+- Basis: 89 kr/mnd
+- Vekst: 179 kr/mnd
+- Ingen binding, ingen gebyr per booking. 30 dager gratis fra du publiserer – uten betalingskort.
+
+## Lenker
+- [Funksjoner](https://trybarberhq.com/no/funksjoner.html)
+- [Priser](https://trybarberhq.com/no/priser.html)
+- [Kom i gang](https://trybarberhq.com/no/kom-i-gang.html)
+- [Support](https://trybarberhq.com/no/support.html)
+- [Vilkår og personvern](https://trybarberhq.com/no/vilkar.html)
