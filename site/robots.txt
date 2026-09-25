@@ -1,0 +1,11 @@
+User-agent: *
+Allow: /
+
+# Interne app-/skjema-sider — ikke søkeindeks
+Disallow: /no/dashboard.html
+Disallow: /no/dashboard
+Disallow: /no/logg-inn.html
+Disallow: /no/opprett-passord.html
+Disallow: /no/preview-tjenester.html
+
+Sitemap: https://trybarberhq.com/sitemap.xml

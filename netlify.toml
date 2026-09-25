@@ -11,6 +11,16 @@
 [build]
   publish = "site"
 
+# 0a. www → apex, 301, host-basert. Netlifys domene-config gjør allerede dette, men denne
+#     regelen gjør det EKSPLISITT og portabelt (uavhengig av UI-innstillinger). Host-spesifikk
+#     `from` → treffer KUN www-verten; apex-forespørsler hopper over den. Path bevares via :splat.
+#     Først, så www konsolideres til apex før øvrige path-regler. http→https gjør Netlify selv.
+[[redirects]]
+  from = "https://www.trybarberhq.com/*"
+  to = "https://trybarberhq.com/:splat"
+  status = 301
+  force = true
+
 # 0. Guards på interne stier — SEKUNDÆRT nett bak publish=site (defense-in-depth,
 #    fanger eksakt-case hvis publish-settingen noen gang skulle ryke). force = true
 #    evalueres før statisk fil-serving → 404. Lowercase `/claude.md` er den funksjonelle
@@ -49,11 +59,13 @@
 #    Språk-betinget ruting er FJERNET: Googlebot (uten norsk Accept-Language) traff før fallbacken
 #    /en/ — utdatert copy + noindex — og fikk den indeksert, så norske søk landet der oversatt.
 #    Nå går alle (inkl. bots) til /no/, som er kanonisk (se <link rel=canonical> i no/index.html).
-#    302 (ikke 301) bevisst: reversibelt når sv/da/en faktisk oversettes og språk-ruting skal tilbake.
+#    301 (permanent, SEO 25.09): roten ble rapportert som «noindex» i Search Console (arv fra da
+#    den språk-rutet til /en/). En 301 konsoliderer signaler til /no/ og dropper roten som egen
+#    indekserbar URL. Ren server-redirect — ingen HTML-side, ingen JS/meta-refresh serveres på /.
 [[redirects]]
   from = "/"
   to = "/no/"
-  status = 302
+  status = 301
 
 # 2. Bare språk-koder uten trailing slash → redirect til katalog.
 #    Hindrer at /no, /sv, /da, /en fanges av proxy-regelen under.
