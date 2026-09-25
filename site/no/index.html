@@ -1366,15 +1366,21 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 <style>
 /* Mer luft over seksjonen (problem-panel-oppussing): topp 45→72. */
 .problem-section{background:#0a0a0a;display:flex;justify-content:center;padding:72px 24px 44px}
-.problem-inner{max-width:1200px;width:100%;display:flex;flex-direction:column}
+.problem-inner{max-width:780px;width:100%;display:flex;flex-direction:column}
 .problem-head{max-width:620px}
-/* Seksjonstittel — SAMME størrelse/tracking som sidens øvrige titler. VENSTRESTILT MED VILJE
-   (.problem-inner ikke sentrert): tittel + intro + panel deler venstrekant. */
+/* Seksjonstittel — SAMME størrelse/tracking som sidens øvrige titler. Venstrestilt på mobil
+   (telefonvisning beholdes som før); SENTRERT kun på PC via @media(min-width:760px) under —
+   der deler tittel + intro + panel samme midtakse som #systemer/#utfall. */
 .problem-h2{color:#fff;font-size:clamp(21px,5vw,32px);font-weight:800;line-height:1.15;letter-spacing:-.03em;margin:0;
   font-family:'Inter',-apple-system,system-ui,sans-serif}
 /* Ingressen er mindre + smalere + mer dempet enn før, så den ikke konkurrerer visuelt med tittelen. */
 .problem-sub{color:#8c8c8c;font-size:14px;line-height:1.5;margin:14px 0 0;max-width:400px;
   font-family:'Inter',-apple-system,system-ui,sans-serif}
+/* Sentrering KUN på PC — mobil forblir venstrestilt (bevisst, etter Henriks beskjed 25.09). */
+@media(min-width:760px){
+  .problem-inner{align-items:center;text-align:center}
+  .problem-sub{margin-left:auto;margin-right:auto}
+}
 
 /* Ett samlet, rolig problem-panel (erstattet BÅDE kort-grid og hairline-liste-på-siden). Mørk flate,
    subtil kant, avrundet, god indre padding — premium, ikke hard card, ingen tung skygge. Radene skilles
@@ -1382,8 +1388,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 /* Lettere «ramme» enn kort: bakgrunn nesten lik siden (#0c0c0c), nesten usynlig kant (#161616),
    liten radius, tynn topp/bunn-padding — rolig ramme, ikke et tungt component-card. Hierarkiet kommer
    fra SPACING, ikke farge (mye mindre rødt). Rader skilles av svært subtile hairlines inni panelet. */
-.problem-panel{margin-top:64px;max-width:680px;background:#0c0c0c;border:1px solid #131313;border-radius:18px;
-  padding:4px 30px;font-family:'Inter',-apple-system,system-ui,sans-serif}
+.problem-panel{margin-top:64px;max-width:680px;width:100%;background:#0c0c0c;border:1px solid #131313;border-radius:18px;
+  padding:4px 30px;text-align:left;font-family:'Inter',-apple-system,system-ui,sans-serif}
 .prow{display:flex;gap:16px;align-items:baseline;padding:14px 0}
 .prow + .prow{border-top:1px solid #141414}
 /* Editorial nummer-markør (01–04) i stedet for prikk — dempet, dus rød (rødt kun som liten accent).
@@ -1560,8 +1566,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   <div class="problem-inner">
 
     <div class="problem-head">
-      <h2 class="problem-h2">Når bookingene lever i DM</h2>
-      <p class="problem-sub">Meldinger forsvinner. Avtaler glipper. Oversikten ryker.</p>
+      <h2 class="problem-h2">Det er alt rundt bookingen som skaper styr.</h2>
+      <p class="problem-sub">Meldinger, oppfølging, oversikt og glemte timer tar mer tid enn de burde.</p>
     </div>
 
     <div class="problem-panel">
