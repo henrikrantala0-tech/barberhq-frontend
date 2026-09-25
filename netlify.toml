@@ -216,3 +216,27 @@
   for = "/_utkast/*"
   [headers.values]
     X-Robots-Tag = "noindex"
+
+# 7. noindex på interne /no/-sider som ikke skal i søk (SEO 25.09). dashboard.html har
+#    ingen robots-meta, preview-tjenester.html er en intern iframe-fil («Grand Barber»).
+#    logg-inn/opprett-passord har allerede robots-meta i HTML-en. Header dekker begge former
+#    (med og uten .html) belte-og-seler.
+[[headers]]
+  for = "/no/dashboard.html"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/no/dashboard"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/no/preview-tjenester.html"
+  [headers.values]
+    X-Robots-Tag = "noindex"
+
+[[headers]]
+  for = "/no/preview-tjenester"
+  [headers.values]
+    X-Robots-Tag = "noindex"
