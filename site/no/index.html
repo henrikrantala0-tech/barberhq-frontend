@@ -756,7 +756,11 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 #produkt .mock.on .iph{box-shadow:0 0 0 calc(2px*var(--fscale)) #4d8bff,0 0 24px rgba(77,139,255,.45),0 40px 90px -30px rgba(0,0,0,.85)}
 
 #produkt .brw{background:linear-gradient(#141414,#141414) padding-box,linear-gradient(145deg,#cdd1d5 0%,#7f8288 20%,#46484b 52%,#7f8288 80%,#cdd1d5 100%) border-box;border:8px solid transparent;border-radius:24px;overflow:hidden;box-shadow:0 0 0 1px #e6eaee,0 40px 90px -30px rgba(0,0,0,.85),0 8px 24px rgba(0,0,0,.5)}
-#produkt .mock.on .brw{box-shadow:0 0 0 2px #4d8bff,0 0 24px rgba(77,139,255,.45),0 40px 90px -30px rgba(0,0,0,.85)}
+/* Aktiv-ring for desktop-utgaven: MÅ sitte på .dd-desktop (ytterste, uklippede rammeelement), IKKE
+   på .brw — .brw er sammenfallende med .pv-winclip{overflow:hidden}, som klipper 2px-ringen langs de
+   rette kantene så bare hjørnene overlevde. border-radius = frame-radius (24px) × --desk-s (skjerm-
+   radius, siden .dd-desktop er uskalert). Samme farge/tykkelse/glød som telefonenes .mock.on .iph. */
+#produkt .mock.on .dd-desktop{border-radius:calc(24px*var(--desk-s));box-shadow:0 0 0 2px #4d8bff,0 0 24px rgba(77,139,255,.45),0 40px 90px -30px rgba(0,0,0,.85)}
 #produkt .brw-bar{display:flex;align-items:center;gap:10px;padding:0 0 0 12px;background:#101010;border-bottom:1px solid #222}
 #produkt .brw-url{flex:1;font:12px/1 'Inter',system-ui,sans-serif;color:#8a8a8a;background:#1a1a1a;
   border-radius:7px;padding:7px 11px;margin:7px 0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
@@ -1229,7 +1233,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    browservindu i designbredde 780.) */
 
 #produkt .brw{background:linear-gradient(#141414,#141414) padding-box,linear-gradient(145deg,#cdd1d5 0%,#7f8288 20%,#46484b 52%,#7f8288 80%,#cdd1d5 100%) border-box;border:8px solid transparent;border-radius:24px;overflow:hidden;box-shadow:0 0 0 1px #e6eaee,0 40px 90px -30px rgba(0,0,0,.85),0 8px 24px rgba(0,0,0,.5)}
-#produkt .mock.on .brw{box-shadow:0 0 0 2px #4d8bff,0 0 24px rgba(77,139,255,.45),0 40px 90px -30px rgba(0,0,0,.85)}
+/* Aktiv-ring flyttet til #produkt .mock.on .dd-desktop (over) — se forklaring der. Duplikatet her
+   (klippet på .brw) er fjernet så det ikke gjenoppstår som hjørne-ring. */
 #produkt .brw-bar{display:flex;align-items:center;gap:14px;padding:0 0 0 16px;
   background:#101010;border-bottom:1px solid #222}
 #produkt .brw-url{flex:1;font:16px/1 'Inter',system-ui,sans-serif;color:#8a8a8a;background:#1a1a1a;
