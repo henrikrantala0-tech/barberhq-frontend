@@ -103,7 +103,6 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .hero-video::-webkit-media-controls{display:none!important}
 .hero::before{content:"";position:absolute;top:0;left:0;width:100%;height:calc(100% + 20px);background:linear-gradient(to bottom,rgba(10,10,10,.65) 0%,rgba(10,10,10,.45) 35%,rgba(10,10,10,.72) 65%,#0a0a0a 85%);z-index:1;pointer-events:none}
 /* Stablingen bor nå på .hero-inner (over), som er det eneste innholds-barnet. */
-.hero-eyebrow{display:block;font-size:16px;font-weight:600;letter-spacing:.12em;text-transform:uppercase;color:#9a9a9a;margin-bottom:30px}
 .hero h1{font-weight:800;line-height:1.1;letter-spacing:-.045em}
 /* To setninger i hver sin .h1-big (display:block) → alltid to linjer, «Flere kunder.» over
    «Mindre styr.». Størrelsen er redusert fra clamp(40px,7vw,82px), som dominerte resten av sida.
@@ -113,18 +112,20 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .hero h1 .h1-big{display:block;font-size:clamp(26px,8vw,56px);animation:heroIn 1.2s cubic-bezier(.22,.61,.36,1) both}
 @keyframes heroIn{from{opacity:0;transform:translateY(32px)}to{opacity:1;transform:translateY(0)}}
 .hero-sub{color:#b4b4b4;font-size:15px;line-height:1.6;max-width:560px;margin:36px auto 0}
-/* Innkommende DM-bobler i tomrommet mellom undertekst og CTA. I NORMAL FLYT (ikke absolutt) så
-   de aldri kan kollidere med .hero-sub over eller .hero-btns under — de skyver layouten i stedet.
-   margin-top:auto på BÅDE .hero-dms og .hero-btns splitter tomrommet 50/50 → gruppa sentreres i
-   voiden (lavere enn før), gap:24px sprer de to boblene. Systemfarger: #2a2a2a (bg), #333 (kant), #fff.
-   Slide-avstanden (24px) er STØRRE enn hero-inner sin sidepolstring på mobil (20px, ikke 32px som
-   desktop), så .dm-2 (flex-end) stakk 4px forbi viewporten mens dmInR lå i delay/fill → 4px vannrett
-   overflyt. overflow-x:clip klipper KUN denne dekor-boblen; ingen global overflow-x-maskering (jf. topplinja).
-   Timing: boble 1 glir inn 2s etter last, boble 2 1,5s etter den (delay 3,5s); fill-mode both → blir liggende. */
-.hero-dms{display:flex;flex-direction:column;gap:24px;width:100%;max-width:clamp(340px,40vw,540px);margin:auto auto 0;overflow-x:clip}
-.dm{position:relative;align-self:flex-start;max-width:82%;background:#2a2a2a;border:1px solid #333;color:#fff;font-size:clamp(14.5px,2.5vw,23px);line-height:1.35;padding:clamp(11px,1.2vw,16px) clamp(16px,1.8vw,26px);border-radius:18px 18px 18px 5px;text-align:left;opacity:1;transform:none}
+/* Innkommende DM-bobler mellom undertekst og CTA. I NORMAL FLYT (ikke absolutt) så de aldri kan
+   kollidere med .hero-sub over eller .hero-btns under — de skyver layouten. Rytmen er nå STYRT med
+   faste, vh-skalerte gap i stedet for margin-top:auto-split (som ga en død scroll-flate i midten):
+   sub→bobler = .hero-dms margin-top, bobler→CTA = .hero-btns margin-top. vh-leddet gjør at gapene
+   vokser proporsjonalt på høye telefoner (CTA holder seg lavt) og komprimeres på lave — clamp-taket
+   hindrer ekstremer. Slide-avstanden (24px, dmInL/R) kan stikke forbi hero-inner sin mobil-
+   sidepolstring (20px); overflow-x:clip klipper KUN denne dekor-boblen. Timing: boble 1 inn 2s, boble 2 3,5s. */
+.hero-dms{display:flex;flex-direction:column;gap:16px;width:100%;max-width:clamp(340px,40vw,540px);margin:clamp(80px,13vh,120px) auto 0;overflow-x:clip}
+/* Roligere, mer premium DM-bobler (mobil-hero-oppussing): mørkere bakgrunn (#141414), subtilere kant
+   (#262626), mindre skrift + mindre padding, roligere radius. Monokrom/dempet = IKKE iMessage/farget.
+   Halen beholdes (svakt) fordi den er DM-signalet — men den tones ned via fargene. Ingen skygge. */
+.dm{position:relative;align-self:flex-start;max-width:82%;background:#141414;border:1px solid #262626;color:#e8e8e8;font-size:clamp(13px,2.2vw,19px);line-height:1.35;padding:clamp(9px,1vw,13px) clamp(14px,1.5vw,18px);border-radius:14px 14px 14px 5px;text-align:left;opacity:1;transform:none}
 .dm-1{animation:dmInL .5s cubic-bezier(.22,.61,.36,1) 2s both}
-.dm-2{align-self:flex-end;border-radius:18px 18px 5px 18px;animation:dmInR .5s cubic-bezier(.22,.61,.36,1) 3.5s both}
+.dm-2{align-self:flex-end;border-radius:14px 14px 5px 14px;animation:dmInR .5s cubic-bezier(.22,.61,.36,1) 3.5s both}
 @keyframes dmInL{from{opacity:0;transform:translateX(-24px)}to{opacity:1;transform:none}}
 @keyframes dmInR{from{opacity:0;transform:translateX(24px)}to{opacity:1;transform:none}}
 @media(prefers-reduced-motion:reduce){.dm-1,.dm-2{animation:none;opacity:1;transform:none}}
@@ -132,11 +133,16 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    inn så kun kant-rammen vises. Toppkanten overlapper bobla (samme farge → ingen skjøt). em-basert →
    skalerer med font-clampen (14,5→23px). dm-1 innkommende (peker ned-venstre), dm-2 utgående (ned-høyre). */
 .dm-1::before,.dm-1::after,.dm-2::before,.dm-2::after{content:"";position:absolute;width:.64em;height:.5em;top:calc(100% - .22em)}
-.dm-1::before{left:.14em;background:#333;clip-path:polygon(0 0,100% 0,0 100%)}
-.dm-1::after{left:calc(.14em + 1px);top:calc(100% - .22em - 1px);width:calc(.64em - 2px);height:calc(.5em - 2px);background:#2a2a2a;clip-path:polygon(0 0,100% 0,0 100%)}
-.dm-2::before{right:.14em;background:#333;clip-path:polygon(0 0,100% 0,100% 100%)}
-.dm-2::after{right:calc(.14em + 1px);top:calc(100% - .22em - 1px);width:calc(.64em - 2px);height:calc(.5em - 2px);background:#2a2a2a;clip-path:polygon(0 0,100% 0,100% 100%)}
-.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:auto}
+.dm-1::before{left:.14em;background:#262626;clip-path:polygon(0 0,100% 0,0 100%)}
+.dm-1::after{left:calc(.14em + 1px);top:calc(100% - .22em - 1px);width:calc(.64em - 2px);height:calc(.5em - 2px);background:#141414;clip-path:polygon(0 0,100% 0,0 100%)}
+.dm-2::before{right:.14em;background:#262626;clip-path:polygon(0 0,100% 0,100% 100%)}
+.dm-2::after{right:calc(.14em + 1px);top:calc(100% - .22em - 1px);width:calc(.64em - 2px);height:calc(.5em - 2px);background:#141414;clip-path:polygon(0 0,100% 0,100% 100%)}
+/* Fast, vh-skalert gap bobler→CTA (var margin-top:auto → hele voiden samlet her). Holder CTA lavt
+   i heroen uten å ligge helt ved folden; resterende høyde faller under noten, ikke som midt-void. */
+.hero-btns{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-top:clamp(170px,28vh,220px)}
+/* Hero-CTA-uttrykk: mindre ekstrem pill (radius 13px), fast høyde 54px, ikke full bredde (inline-flex),
+   beholder brand-blå (.btn-fill). SCOPET til hero — footer-CTA (.final-cta .btn) og nav er urørt. */
+.hero-btns .btn-fill{border-radius:13px;height:54px;padding:0 32px}
 .btn{display:inline-flex;align-items:center;gap:9px;font-size:15px;font-weight:600;padding:15px 30px;border-radius:99px;text-decoration:none;transition:all .2s;cursor:pointer;border:0}
 .btn-fill{background:#2563eb;color:#fff}
 .btn-fill:hover{background:#1d4ed8}
@@ -145,19 +151,9 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .nav-cta:focus-visible,.btn-fill:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
 .btn-line{background:transparent;color:#fff;border:1px solid #2e2e2e}
 .btn-line:hover{border-color:#fff}
-/* align-items:flex-start, IKKE center: center sentrerer ikonet mot hele flex-boksen, og
-   den vokser når teksten brekker. På én linje traff det riktig; på to havnet ikonet 11px
-   for lavt, og feilen økte med hver ekstra linje — altså også ved lengre sv/da/en-tekst.
-   line-height:inherit gir ikonet samme boks-høyde som ÉN tekstlinje, så glyfen sentreres
-   i første linje uten en hardkodet offset som må rettes hvis linjehøyden endres. */
-.hero-note{color:#8c8c8c;font-size:13.5px;margin-top:12px;display:inline-flex;align-items:flex-start;gap:7px;align-self:center}
-.hero-note i{font-size:16px;color:#fff;line-height:inherit}
-/* Sekundær scroll-lenke — tekstlenke (ingen ramme/bakgrunn), dempet, chevron ned. Skal ikke
-   konkurrere med den blå knappen. Trykkflate ≥44px via min-height selv om teksten er 14px.
-   align-self:center fordi .hero-inner er flex-kolonne (ellers strekkes/venstrejusteres den). */
-.hero-see{align-self:center;display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:0 8px;margin-top:8px;color:#c8c8c8;font-size:14px;font-weight:500;text-decoration:none;transition:color .2s}
-.hero-see:hover{color:#fff}
-.hero-see svg{width:13px;height:13px;stroke:currentColor;stroke-width:2.2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+/* Liten, dempet mikrotekst under CTA. Ikonet er fjernet i hero-oppussingen — ren tekst leser
+   roligere/mer premium, og et «øye»-ikon gir ingen mening ved «Ingen betalingskort. Ingen binding». */
+.hero-note{color:#8c8c8c;font-size:13px;margin-top:14px;align-self:center}
 /* Anker-mål lander under sticky nav, ikke bak den */
 #produkt{scroll-margin-top:var(--nav-h)}
 
@@ -310,7 +306,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   .nav-burger{display:flex}
   .nav-cta,.nav-dash{padding:8px 14px;font-size:13px}
   .section{padding:64px 20px}
-  .hero{padding:24px 0 54px}   /* padding-top 54→24 (reclaim ~30px for 320-folden); bunn 54 uendret */
+  .hero{padding:48px 0 54px}   /* mer luft navbar↔overskrift (hero-oppussing). Eyebrow + «Se hvordan»-lenka
+                                  er fjernet, så toppen har rikelig plass til 48px uten å presse 320-folden. */
   .hero-inner{padding:0 20px}
   .feat-grid{grid-template-columns:1fr;max-width:420px}
   .plans{grid-template-columns:1fr;gap:28px;max-width:420px}
@@ -1469,9 +1466,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   })();
   </script>
   <div class="hero-inner">
-    <span class="hero-eyebrow">Bookingsystem for barberere</span>
     <h1><span class="h1-big">Flere kunder.</span><span class="h1-big">Mindre styr.</span></h1>
-    <p class="hero-sub">Ikke bare en bookingside — et helt system. Automatiske påminnelser, rebooking og full oversikt.</p>
+    <p class="hero-sub">Alt du trenger for å drive bookinger og få kundene tilbake.</p>
     <div class="hero-dms" aria-hidden="true">
       <span class="dm dm-1">Når har du ledig?</span>
       <span class="dm dm-2">Når kan du?</span>
@@ -1479,8 +1475,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     <div class="hero-btns">
       <a href="kom-i-gang.html" class="btn btn-fill" onclick="gtag('event','cta_klikk',{plassering:'hero'})">Start gratis i 30 dager</a>
     </div>
-    <div class="hero-note"><i class="ti ti-eye"></i>Du trenger ikke legge inn betalingskort for å prøve.</div>
-    <a href="#produkt" class="hero-see">Se hvordan det virker<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M6 9l6 6 6-6"/></svg></a>
+    <div class="hero-note">Ingen betalingskort. Ingen binding.</div>
   </div>
 </header>
 
