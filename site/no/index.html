@@ -16,7 +16,7 @@
 <link rel="canonical" href="https://trybarberhq.com/no/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.1.0/dist/tabler-icons.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -865,21 +865,21 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    Endres flyten — nytt endepunkt, ny betingelse, eller boksen fjernes — må klonen synkes.
    Teksten inne i boksen bruker barberens navn (${esc(shopName)} i modulen); her står
    «Grand Barber», klonens demobarber. ======================================== */
-#produkt .pv-book{--bg:#0a0a0a;--surface:#191919;--ink:#ffffff;--ink-soft:#989898; --accent:#e8590c;--accent-ink:#ffffff;--accent-text:#e8590c;--line:#313131; --fs-title:22px;--fs-section:16px;--fs-body:14px;--fs-small:13px;--fs-micro:11px;--fw-bold:700;--fw-medium:600;--fw-regular:400;--radius-card:13px;--radius-pill:99px;
+#produkt .pv-book{--bg:#ffffff;--surface:#f4f4f4;--ink:#0a0a0a;--ink-soft:#717171; --accent:#0071e3;--accent-ink:#ffffff;--accent-text:#0068d1;--line:#e2e2e2; --fs-hero:26px;--fs-title:22px;--fs-section:16px;--fs-body:14px;--fs-small:13px;--fs-micro:11px;--fw-bold:700;--fw-medium:600;--fw-regular:400;--radius-card:13px;--radius-pill:99px;--badge-bg:color-mix(in srgb,var(--ink) 8%,transparent);--badge-ink:var(--ink);
   position:relative;
   background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;
   line-height:1.5;height:100%;overflow:hidden}
-#produkt .pv-book{--bg: #0a0a0a; --surface: #191919; --ink: #ffffff; --ink-soft: #989898; --accent: #e8590c; --accent-ink: #ffffff; --accent-text: #e8590c; --line: #313131; --fs-title: 22px; --fs-section: 16px; --fs-body: 14px; --fs-small: 13px; --fs-micro: 11px; --fw-bold: 700; --fw-medium: 600; --fw-regular: 400; --radius-card: 13px; --radius-pill: 99px;}
+#produkt .pv-book{--bg: #ffffff; --surface: #f4f4f4; --ink: #0a0a0a; --ink-soft: #717171; --accent: #0071e3; --accent-ink: #ffffff; --accent-text: #0068d1; --line: #e2e2e2; --fs-hero: 26px; --fs-title: 22px; --fs-section: 16px; --fs-body: 14px; --fs-small: 13px; --fs-micro: 11px; --fw-bold: 700; --fw-medium: 600; --fw-regular: 400; --radius-card: 13px; --radius-pill: 99px; --badge-bg: color-mix(in srgb,var(--ink) 8%,transparent); --badge-ink: var(--ink);}
 #produkt .pv-book *{margin: 0px; padding: 0px; box-sizing: border-box;}
 #produkt .pv-book{text-size-adjust: 100%;}
 #produkt .pv-book{background: var(--bg); color: var(--ink); font-family: Inter, -apple-system, system-ui, sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased; min-height: 693px; overflow-x: hidden;}
-#produkt .pv-book .cover{min-height: 693px; display: flex; flex-direction: column; text-align: center; padding: 56px 0px 120px; transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s, filter 0.55s;}
+#produkt .pv-book .cover{position: relative; min-height: 693px; display: flex; flex-direction: column; text-align: center; padding: 56px 0px 0px; transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s, filter 0.55s;}
 #produkt .pv-book .cover.pushed{transform: scale(0.94); opacity: 0.5; filter: blur(2px);}
 #produkt .pv-book .cover > h1, #produkt .pv-book .cover > .sub, #produkt .pv-book .cover > .see, #produkt .pv-book .cover > .bio{margin-left: 28px; margin-right: 28px;}
-#produkt .pv-book .cover h1{font-family: "Plus Jakarta Sans", sans-serif; font-weight: 600; font-size: clamp(38px, 35.2px, 54px); letter-spacing: -0.03em; line-height: 1; color: var(--ink);}
+#produkt .pv-book .cover h1{font-family: "Bebas Neue", "Oswald", Impact, sans-serif; font-weight: 400; font-synthesis: none; font-size: 35.2px; letter-spacing: 0.05em; line-height: 1; color: var(--ink);}
 #produkt .pv-book .cover .sub{margin-top: 14px; font-size: var(--fs-small); letter-spacing: 0.1em; color: var(--ink-soft); text-transform: uppercase; font-weight: var(--fw-medium);}
 #produkt .pv-book .cover .bio{margin: 16px auto 0px; max-width: 340px; font-size: 15.5px; line-height: 1.55; color: var(--ink); opacity: 0.86; font-family: Inter, sans-serif;}
-#produkt .pv-book .cover-gallery{display: grid; grid-template-columns: repeat(2, 1fr); gap: 2px; width: 100%; margin: 34px 0px 0px; position: relative;}
+#produkt .pv-book .cover-gallery{display: grid; grid-template-columns: repeat(2, 1fr); gap: 0px; width: 100%; margin: 34px 0px 0px; position: relative; border-radius: 6px; overflow: hidden;}
 #produkt .pv-book .cover-gallery img{width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block;}
 #produkt .pv-book .cover-gallery::before{content: ""; position: absolute; top: 0px; left: 0px; right: 0px; height: 90px; z-index: 2; pointer-events: none; background: linear-gradient(to bottom,var(--bg),transparent);}
 #produkt .pv-book .cover-gallery::after{content: ""; position: absolute; bottom: 0px; left: 0px; right: 0px; height: 90px; z-index: 2; pointer-events: none; background: linear-gradient(to top,var(--bg),transparent);}
@@ -893,10 +893,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 #produkt .pv-book .sheet-inner{max-width: 480px; margin: 0px auto; padding: max(56px,env(safe-area-inset-top)) 24px 56px;}
 #produkt .pv-book .back-sheet{display: inline-flex; align-items: center; gap: 7px; background: none; border: 0px; cursor: pointer; color: var(--ink-soft); font-style: inherit; font-variant: inherit; font-stretch: inherit; line-height: inherit; font-family: inherit; font-optical-sizing: inherit; font-size-adjust: inherit; font-kerning: inherit; font-feature-settings: inherit; font-variation-settings: inherit; font-language-override: inherit; font-size: var(--fs-body); font-weight: var(--fw-medium); padding: 10px 0px; margin-bottom: 18px; transition: color 0.15s;}
 #produkt .pv-book .back-sheet:hover{color: var(--ink);}
-#produkt .pv-book .see-float{white-space: nowrap; position: fixed; left: 50%; transform: translateX(-50%); bottom: 52px; z-index: 15; display: inline-flex; align-items: center; justify-content: center; gap: 9px; background: color-mix(in srgb,var(--accent) 88%,transparent); backdrop-filter: blur(10px); color: var(--accent-ink); font-family: Inter, sans-serif; font-size: var(--fs-section); font-weight: var(--fw-medium); border: 0px; border-radius: var(--radius-pill); padding: 16px 40px; cursor: pointer; box-shadow: rgba(0, 0, 0, 0.55) 0px 12px 34px -10px; transition: opacity 0.15s, transform 0.15s;}
+#produkt .pv-book .see-float{white-space: nowrap; position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 15; display: inline-flex; align-items: center; justify-content: center; gap: 9px; background: color-mix(in srgb,var(--accent) 92%,transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: var(--accent-ink); font-family: Inter, sans-serif; font-size: var(--fs-section); font-weight: var(--fw-medium); border: 0px; border-radius: var(--radius-pill); padding: 15px 40px; cursor: pointer; box-shadow: rgba(0, 113, 227, 0.32) 0px 12px 34px -8px; transition: opacity 0.15s, transform 0.15s;}
 #produkt .pv-book .see-float:hover{transform: translateX(-50%) translateY(-2px);}
-#produkt .pv-book .cover-manage-link{position: fixed; left: 50%; transform: translateX(-50%); bottom: 20px; z-index: 15; white-space: nowrap; font-size: var(--fs-small); color: var(--ink-soft); text-decoration: underline 1px; text-underline-offset: 3px; transition: opacity 0.15s;}
-#produkt .pv-book .cover-manage-link:hover{color: var(--ink);}
 #produkt .pv-book .acc-wrap{}
 #produkt .pv-book .acc-section{border-bottom: 1px solid var(--line);}
 #produkt .pv-book .acc-section:first-child{border-top: 1px solid var(--line);}
@@ -994,13 +992,22 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 #produkt .pv-book .pay-note{font-size: var(--fs-micro); color: var(--ink-soft); text-align: center; margin-top: 10px; line-height: 1.4;}
 #produkt .pv-book .success-wrap{text-align: center; padding: 40px 20px;}
 #produkt .pv-book .success-ico{width: 64px; height: 64px; border-radius: 50%; background: rgb(62, 207, 126); display: flex; align-items: center; justify-content: center; margin: 0px auto 18px;}
-#produkt .pv-book .success-h{font-family: "Plus Jakarta Sans", sans-serif; font-size: var(--fs-title); font-weight: var(--fw-bold); margin-bottom: 6px; color: var(--ink);}
+#produkt .pv-book .success-h{font-family: "Bebas Neue", "Oswald", Impact, sans-serif; font-size: var(--fs-hero); font-weight: var(--fw-bold); letter-spacing: 0.02em; margin-bottom: 6px; color: var(--ink);}
 #produkt .pv-book .success-sub{font-size: var(--fs-small); color: var(--ink-soft); margin-bottom: 22px;}
 #produkt .pv-book .success-det{background: var(--surface); border: 1px solid var(--line); border-radius: var(--r,12px); padding: 14px 16px; text-align: left; margin-bottom: 18px;}
 #produkt .pv-book .det-row{display: flex; justify-content: space-between; align-items: flex-start; font-size: var(--fs-small); padding: 5px 0px; border-bottom: 1px solid var(--line);}
 #produkt .pv-book .det-row:last-child{border-bottom-width: medium; border-bottom-style: none; border-bottom-color: currentcolor; padding-bottom: 0px;}
 #produkt .pv-book .det-lbl{color: var(--ink-soft); flex-shrink: 0; margin-right: 10px;}
-#produkt .pv-book .det-val{font-weight: var(--fw-medium); text-align: right; color: var(--ink);}
+#produkt .pv-book .det-val{font-size: var(--fs-section); font-weight: var(--fw-medium); text-align: right; color: var(--ink);}
+#produkt .pv-book .det-row:first-child{padding-top: 0px;}
+#produkt .pv-book .conf-adr{display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-small); color: var(--ink-soft); text-decoration: none; margin: 0px 0px 10px;}
+#produkt .pv-book .conf-adr span{border-bottom: 1px solid var(--line);}
+#produkt .pv-book .conf-tel{display: flex; justify-content: center; align-items: center; gap: 5px; font-size: var(--fs-small); color: var(--ink-soft); text-decoration: none; margin: 0px 0px 10px;}
+#produkt .pv-book .conf-tel span{border-bottom: 1px solid var(--line);}
+#produkt .pv-book .manage-badge{position: absolute; top: 16px; right: 16px; z-index: 5; display: inline-flex; align-items: center; padding: 7px 14px; border-radius: var(--radius-pill); background: var(--badge-bg); color: var(--badge-ink); font-size: var(--fs-small); font-weight: var(--fw-medium); text-decoration: none; line-height: 1; white-space: nowrap; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);}
+#produkt .pv-book .social{display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 8px; align-self: center;}
+#produkt .pv-book .social-link{display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; color: var(--ink); transition: opacity 0.15s ease;}
+#produkt .pv-book .social-link:hover{opacity: 0.6;}
 #produkt .pv-book .manage-link-btn{display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-small); color: var(--ink-soft); cursor: pointer; background: none; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; padding: 4px 0px; font-family: Inter, sans-serif;}
 #produkt .pv-book .manage-mode #bk-book, #produkt .pv-book .manage-mode .bk-footer{display: none !important;}
 #produkt .pv-book .bk-card{background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r,12px); padding: 16px; margin: 0px 0px 12px;}
@@ -1037,12 +1044,10 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    hver side, altså 57 designpiksler skjevt, og høyre kant klippet. Målt mot fasiten:
    galleriet lå på 57..377 i stedet for 0..320. */
 #produkt .pv-book .pv-scale{position:absolute;top:0;left:0}
-#produkt .pv-book .see-float,
-#produkt .pv-book .cover-manage-link{position:absolute}
-/* .see-float er også fixed, og skal forankres til SKJERMEN. Da må skjermboksen finnes,
-   ellers er .pv-scale like høy som innholdet og knappen havner et vilkårlig sted nede i
-   cover-seksjonen. Høyden settes av settTelefonSkala() sammen med skalaen — de to hører
-   sammen og skal ikke kunne komme i utakt. */
+/* «Se tjenester» er nå en INLINE knapp nederst i cover (sticky→static i klonen), og
+   «Endre/avbestill» er flyttet til en .manage-badge absolutt-posisjonert i cover (som er
+   position:relative). Ingen av dem er lenger fixed, så den gamle absolute-forankringen
+   trengs ikke — snapshot-layouten (Kraftig/showcase) har knappen i dokumentflyten. */
 /* «Scroll» i en klon som ikke KAN scrolle. Ekte side har overflow-y:auto på det
    fixed arket, og modulen scroller til trinn 3 når det åpnes. Her er arket statisk inne
    i overflow:hidden, så trinn 3 ble klippet rett under samtykkeboksen: «Bekreft booking»
@@ -1056,18 +1061,18 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 @media (prefers-reduced-motion:reduce){#produkt .pv-book.vis-scroll .sheet{transition:none}}
 
 /* «Se tjenester» sentreres med translateX(-50%). Den generelle .pv-anim-btn.pv-press-
-   regelen setter transform:scale(.96) og ville SLETTET sentreringen — knappen hoppet til
-   venstre kant i det den ble trykket. Egen regel som beholder begge. */
+   regelen ville satt transform:scale(.96) og slettet sentreringen — egen regel beholder begge. */
 #produkt .pv-book .see-float.pv-press{transform:translateX(-50%) scale(.96)}
 
 /* Tilstandene styres av én klasse på .pv-book — samme klasser render-testen setter. */
 #produkt .pv-book.vis-sheet .cover,
-#produkt .pv-book.vis-sheet .see-float,
-#produkt .pv-book.vis-sheet .cover-manage-link{display:none}
+#produkt .pv-book.vis-sheet .see-float{display:none}
 #produkt .pv-book.vis-sheet .sheet{display:block}
 #produkt .pv-book .success-wrap{display:none}
+/* Success: skjul trinn-lista OG «Tilbake» (snapshot 6 har back-sheet display:none), men
+   BEHOLD «Bygget med BarberHQ»-footeren — den er synlig i bekreftelsen i snapshotet. */
 #produkt .pv-book.vis-success .acc-wrap,
-#produkt .pv-book.vis-success .bk-footer{display:none}
+#produkt .pv-book.vis-success .back-sheet{display:none}
 #produkt .pv-book.vis-success .success-wrap{display:block}
 
 /* ===== KLONET: dashbordets Oversikt-flate ====================================
@@ -1725,13 +1730,19 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
           <div class="pv-book" id="pvBook"><div class="pv-scale">
             <div class="pv-stage">
               <section class="cover">
+                <a class="manage-badge" href="#" onclick="return false">Endre / avbestill</a>
                 <h1>Grand Barber</h1>
-                <p class="sub">Fades &amp; klassiske klipp</p>
+                <p class="sub">Fades og skjeggtrim</p>
                 <a class="addr" href="#" onclick="return false">
                   <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  <span>Storgata 12, 0155 Oslo</span>
+                  <span>Storgata 33, 0184 Oslo</span>
                 </a>
-                <p class="bio">Presisjon i hvert klipp. Skarpe fades.</p>
+                <div class="social" aria-label="Sosiale medier">
+                  <a class="social-link" href="#" onclick="return false" aria-label="Instagram"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.72 3.72 0 0 1-1.38-.9 3.72 3.72 0 0 1-.9-1.38c-.16-.42-.36-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.17 8.8 2.16 12 2.16zm0 3.68a6.16 6.16 0 1 0 0 12.32 6.16 6.16 0 0 0 0-12.32zm0 10.16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.4-10.4a1.44 1.44 0 1 1-2.88 0 1.44 1.44 0 0 1 2.88 0z"/></svg></a>
+                  <a class="social-link" href="#" onclick="return false" aria-label="TikTok"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></a>
+                  <a class="social-link" href="#" onclick="return false" aria-label="Snapchat"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.39.839-1.213 1.168-.089.029-.209.075-.344.119-.45.135-1.139.36-1.333.81-.09.224-.061.524.12.868l.015.015c.06.136 1.526 3.475 4.791 4.014.255.044.435.27.42.509 0 .075-.015.149-.045.225-.24.569-1.273.988-3.146 1.271-.059.091-.12.375-.164.57-.029.179-.074.36-.134.553-.076.271-.27.405-.555.405h-.03c-.135 0-.313-.031-.538-.074-.36-.075-.765-.135-1.273-.135-.3 0-.599.015-.913.074-.6.104-1.123.464-1.723.884-.853.599-1.826 1.288-3.294 1.288-.06 0-.119-.015-.18-.015h-.149c-1.468 0-2.427-.675-3.279-1.288-.599-.42-1.107-.779-1.707-.884-.314-.045-.629-.074-.928-.074-.54 0-.958.089-1.272.149-.211.043-.391.074-.54.074-.374 0-.523-.224-.583-.42-.061-.192-.09-.389-.135-.567-.046-.181-.105-.494-.166-.57-1.918-.222-2.95-.642-3.189-1.226-.031-.063-.052-.15-.055-.225-.015-.243.165-.465.42-.509 3.264-.54 4.73-3.879 4.791-4.02l.016-.029c.18-.345.224-.645.119-.869-.195-.434-.884-.658-1.332-.809-.121-.029-.24-.074-.346-.119-1.107-.435-1.257-.93-1.197-1.273.09-.479.674-.793 1.168-.793.146 0 .27.029.383.074.42.194.789.3 1.104.3.234 0 .384-.06.465-.105l-.046-.569c-.098-1.626-.225-3.651.307-4.837C7.392 1.077 10.739.807 11.727.807l.419-.015h.06z"/></svg></a>
+                </div>
+                <p class="bio">Sitter i sentrum og har klippet siden 2019.</p>
                 <div class="cover-gallery">
                   <img src="images/produkt/galleri-1.webp" alt="">
                   <img src="images/produkt/galleri-2.webp" alt="">
@@ -1740,8 +1751,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
                 </div>
               </section>
               <button class="see-float" type="button">Se tjenester <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-              <a class="cover-manage-link" href="#" onclick="return false">Har du time? Endre eller avbestill</a>
-              <section class="sheet" aria-hidden="false"><div class="sheet-inner"><button class="back-sheet" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Tilbake</button><div class="acc-wrap"><div class="acc-section done"><div class="acc-hd"><span class="acc-n">1</span><span class="acc-t">Velg tjeneste</span><span class="acc-chk">&#10003;</span><span class="acc-sum">Klipp · 300 kr</span><button class="acc-endre" type="button">Endre</button></div><div class="acc-bd"><div class="acc-in"><div class="acc-content"><p class="bk-svc-lbl">Velg tjeneste</p><div><button class="svc-card" data-id="414103eb-eaa0-46c2-9d48-3d36cbdb231f" data-min="30" data-price="300" data-name="Klipp" type="button"><div class="svc-lft"><div class="svc-nm">Klipp</div><div class="svc-meta">30 min · 300 kr</div></div><span class="chk">◯</span></button><div class="addon-group" hidden><p class="addon-lbl">Legg til</p><button class="addon-row" data-id="8e8c8a48-1e9e-4606-ada3-d66eee920ed1" data-min="15" data-price="100" data-name="Skjeggtrim" type="button"><span class="addon-box"><span class="addon-tick" aria-hidden="true">✓</span></span><span class="addon-nm">Skjeggtrim</span><span class="addon-pr">+100 kr</span></button><button class="addon-row" data-id="b0e03131-5695-4adc-8a5c-f84c6da3b651" data-min="5" data-price="50" data-name="Vask" type="button"><span class="addon-box"><span class="addon-tick" aria-hidden="true">✓</span></span><span class="addon-nm">Vask</span><span class="addon-pr">+50 kr</span></button></div></div><button class="acc-next pv-anim-btn" type="button" disabled>Velg time</button><p class="slot-msg" style="text-align:left;padding:8px 0 0">Velg minst &eacute;n tjeneste for &aring; booke</p></div></div></div></div><div class="acc-section"><div class="acc-hd"><span class="acc-n">2</span><span class="acc-t">Dato og tid</span><span class="acc-chk">&#10003;</span><span class="acc-sum">tor 13. aug · 11:00</span><button class="acc-endre" type="button">Endre</button></div><div class="acc-bd open"><div class="acc-in"><div class="acc-content"><div class="full-card"><p class="full-card-msg"></p><button class="full-card-next" type="button" style="display:none"></button></div><div class="date-strip"></div><div class="date-strip"><button class="date-chip full" type="button"><span class="dc-wd">man</span><span class="dc-mo">aug</span><span class="dc-d">10</span><span class="dc-dot"></span><span class="dc-full">FULLT</span></button><button class="date-chip open" type="button"><span class="dc-wd">tir</span><span class="dc-mo">aug</span><span class="dc-d">11</span><span class="dc-dot"></span><span class="dc-full">FULLT</span></button><button class="date-chip open" type="button"><span class="dc-wd">ons</span><span class="dc-mo">aug</span><span class="dc-d">12</span><span class="dc-dot"></span><span class="dc-full">FULLT</span></button><button class="date-chip open pv-dag" type="button"><span class="dc-wd">tor</span><span class="dc-mo">aug</span><span class="dc-d">13</span><span class="dc-dot"></span><span class="dc-full">FULLT</span></button><button class="date-chip open" type="button"><span class="dc-wd">fre</span><span class="dc-mo">aug</span><span class="dc-d">14</span><span class="dc-dot"></span><span class="dc-full">FULLT</span></button><button class="date-chip open" type="button"><span class="dc-wd">lør</span><span class="dc-mo">aug</span><span class="dc-d">15</span><span class="dc-dot"></span><span class="dc-full">FULLT</span></button><button class="date-chip closed" type="button" disabled><span class="dc-wd">søn</span><span class="dc-mo">aug</span><span class="dc-d">16</span><span class="dc-dot"></span><span class="dc-full">FULLT</span></button></div><p class="slot-msg pv-slothint" style="display:none">Velg en dato for å se ledige tider</p><p class="slots-hdr pv-slotshdr">Ledige tider</p><div class="slots-grid"><button class="slot-btn" type="button">09:00</button><button class="slot-btn" type="button">09:30</button><button class="slot-btn" type="button">10:00</button><button class="slot-btn" type="button">10:30</button><button class="slot-btn pv-slot pv-anim-slot" type="button">11:00</button><button class="slot-btn" type="button">11:30</button><button class="slot-btn" type="button">12:00</button><button class="slot-btn" type="button">12:30</button><button class="slot-btn" type="button">13:00</button><button class="slot-btn" type="button">13:30</button><button class="slot-btn" type="button">14:00</button><button class="slot-btn" type="button">14:30</button><button class="slot-btn" type="button">15:00</button><button class="slot-btn" type="button">15:30</button><button class="slot-btn" type="button">16:00</button><button class="slot-btn" type="button">16:30</button></div><p class="slot-msg hidden"></p><button class="next2-btn pv-next2 pv-anim-btn" type="button">Til bekreftelse · 30 min · 300 kr</button></div></div></div></div><div class="acc-section locked"><div class="acc-hd"><span class="acc-n">3</span><span class="acc-t">Dine opplysninger</span><span class="acc-chk">&#10003;</span><span class="acc-sum"></span></div><div class="acc-bd"><div class="acc-in"><div class="acc-content"><div class="ref-slot"></div><div class="sum-box"><div class="sum-row"><span>Tjeneste</span><strong>Klipp</strong></div><div class="sum-row"><span>Tid</span><strong>torsdag 13. aug, 11:00</strong></div><div class="sum-row"><span>Total</span><strong>30 min · 300 kr</strong></div></div><div class="fld"><label for="cname">Navn</label><input type="text" placeholder="Fornavn Etternavn" autocomplete="name" enterkeyhint="next"></div><div class="fld"><label for="cphone">Telefon</label><input type="tel" placeholder="91 23 45 67" autocomplete="tel" inputmode="tel" enterkeyhint="done"></div><div class="consent-slot shown"><label class="consent-box"><input type="checkbox"><span class="consent-txt">Ja, send meg SMS fra Grand Barber om ny klipp og verve-bonuser. Meld av n&aring;r som helst.</span></label></div><p class="form-err"></p><button class="sub-btn pv-anim-btn" type="button">Bekreft booking</button><p class="pay-note">Ingen betaling n&aring; &mdash; du betaler hos barbereren.</p></div></div></div></div></div><div class="success-wrap"><div class="success-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><h2 class="success-h">Booking bekreftet!</h2><p class="success-sub">Vi gleder oss til å se deg.</p><div class="success-det"><div class="det-row"><span class="det-lbl">Navn</span><span class="det-val">Marcus</span></div><div class="det-row"><span class="det-lbl">Tjeneste</span><span class="det-val">Klipp</span></div><div class="det-row"><span class="det-lbl">Tid</span><span class="det-val">torsdag 13. aug, 11:00</span></div><div class="det-row"><span class="det-lbl">Total</span><span class="det-val">30 min · 300 kr</span></div></div><button class="manage-link-btn" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Endre/avbestill</button></div><p class="bk-footer" style="padding:0 0 4px">Bygget med <a href="https://trybarberhq.com">BarberHQ</a></p></div>
+              <section class="sheet" aria-hidden="false"><div class="sheet-inner"><button class="back-sheet" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Tilbake</button><div class="acc-wrap"><div class="acc-section done"><div class="acc-hd"><span class="acc-n">1</span><span class="acc-t">Velg tjeneste</span><span class="acc-chk">&#10003;</span><span class="acc-sum">Skinfade · 350 kr</span><button class="acc-endre" type="button">Endre</button></div><div class="acc-bd"><div class="acc-in"><div class="acc-content"><p class="bk-svc-lbl">Velg tjeneste</p><div><button class="svc-card" data-min="30" data-price="350" data-name="Skinfade" type="button"><div class="svc-lft"><div class="svc-nm">Skinfade</div><div class="svc-meta">30 min · 350 kr</div></div><span class="chk">◯</span></button><div class="addon-group" hidden><p class="addon-lbl">Legg til</p><button class="addon-row" data-min="15" data-price="150" data-name="Skjegg" type="button"><span class="addon-box"><span class="addon-tick" aria-hidden="true">✓</span></span><span class="addon-nm">Skjegg</span><span class="addon-pr">+15 min · +150 kr</span></button></div><button class="svc-card" data-min="30" data-price="399" data-name="Saksklipp" type="button"><div class="svc-lft"><div class="svc-nm">Saksklipp</div><div class="svc-meta">30 min · 399 kr</div></div><span class="chk">◯</span></button><button class="svc-card" data-min="30" data-price="300" data-name="BarneKlipp" type="button"><div class="svc-lft"><div class="svc-nm">BarneKlipp</div><div class="svc-meta">30 min · 300 kr</div></div><span class="chk">◯</span></button></div><button class="acc-next pv-anim-btn" type="button" disabled>Velg time</button><p class="slot-msg" style="text-align:left;padding:8px 0 0">Velg minst &eacute;n tjeneste for &aring; booke</p></div></div></div></div><div class="acc-section"><div class="acc-hd"><span class="acc-n">2</span><span class="acc-t">Dato og tid</span><span class="acc-chk">&#10003;</span><span class="acc-sum">fre 25. sep · 11:00</span><button class="acc-endre" type="button">Endre</button></div><div class="acc-bd open"><div class="acc-in"><div class="acc-content"><div class="full-card"><p class="full-card-msg"></p><button class="full-card-next" type="button" style="display:none"></button></div><div class="date-strip"><button class="date-chip today open pv-dag" type="button"><span class="dc-wd">fre</span><span class="dc-mo">sep</span><span class="dc-d">25</span><span class="dc-dot"></span></button><button class="date-chip closed" type="button" disabled><span class="dc-wd">lør</span><span class="dc-mo">sep</span><span class="dc-d">26</span><span class="dc-dot"></span></button><button class="date-chip open" type="button"><span class="dc-wd">søn</span><span class="dc-mo">sep</span><span class="dc-d">27</span><span class="dc-dot"></span></button><button class="date-chip open" type="button"><span class="dc-wd">man</span><span class="dc-mo">sep</span><span class="dc-d">28</span><span class="dc-dot"></span></button><button class="date-chip open" type="button"><span class="dc-wd">tir</span><span class="dc-mo">sep</span><span class="dc-d">29</span><span class="dc-dot"></span></button><button class="date-chip open" type="button"><span class="dc-wd">ons</span><span class="dc-mo">sep</span><span class="dc-d">30</span><span class="dc-dot"></span></button><button class="date-chip month-start open" type="button"><span class="dc-wd">tor</span><span class="dc-mo">okt</span><span class="dc-d">1</span><span class="dc-dot"></span></button><button class="date-chip open" type="button"><span class="dc-wd">fre</span><span class="dc-mo">okt</span><span class="dc-d">2</span><span class="dc-dot"></span></button><button class="date-chip closed" type="button" disabled><span class="dc-wd">lør</span><span class="dc-mo">okt</span><span class="dc-d">3</span><span class="dc-dot"></span></button></div><p class="slot-msg pv-slothint" style="display:none">Velg en dato for å se ledige tider</p><p class="slots-hdr pv-slotshdr">Ledige tider</p><div class="slots-grid"><button class="slot-btn pv-slot pv-anim-slot" type="button">11:00</button><button class="slot-btn" type="button">11:30</button><button class="slot-btn" type="button">13:30</button><button class="slot-btn" type="button">14:00</button><button class="slot-btn" type="button">14:30</button><button class="slot-btn" type="button">15:00</button><button class="slot-btn" type="button">15:30</button><button class="slot-btn" type="button">16:00</button><button class="slot-btn" type="button">16:30</button><button class="slot-btn" type="button">17:00</button><button class="slot-btn" type="button">17:30</button><button class="slot-btn" type="button">18:00</button><button class="slot-btn" type="button">18:30</button><button class="slot-btn" type="button">20:00</button><button class="slot-btn" type="button">20:30</button><button class="slot-btn" type="button">21:00</button><button class="slot-btn" type="button">22:30</button></div><p class="slot-msg hidden"></p><button class="next2-btn pv-next2 pv-anim-btn" type="button">Til bekreftelse · 30 min · 350 kr</button></div></div></div></div><div class="acc-section locked"><div class="acc-hd"><span class="acc-n">3</span><span class="acc-t">Dine opplysninger</span><span class="acc-chk">&#10003;</span><span class="acc-sum"></span></div><div class="acc-bd"><div class="acc-in"><div class="acc-content"><div class="ref-slot"></div><div class="sum-box"><div class="sum-row"><span>Tjeneste</span><strong>Skinfade</strong></div><div class="sum-row"><span>Tid</span><strong>fredag 25. sep, 11:00</strong></div><div class="sum-row"><span>Total</span><strong>30 min · 350 kr</strong></div></div><div class="fld"><label for="cname">Navn</label><input type="text" placeholder="Fornavn Etternavn" autocomplete="name" enterkeyhint="next"></div><div class="fld"><label for="cphone">Telefon</label><input type="tel" placeholder="91 23 45 67" autocomplete="tel" inputmode="tel" enterkeyhint="done"></div><div class="consent-slot"><label class="consent-box"><input type="checkbox"><span class="consent-txt">Ja, send meg SMS fra Grand Barber om ny klipp og verve-bonuser. Meld av n&aring;r som helst.</span></label></div><p class="form-err"></p><button class="sub-btn pv-anim-btn" type="button">Bekreft booking</button><p class="pay-note">Ingen betaling n&aring;. Du betaler med Vipps eller kontant hos barbereren.</p></div></div></div></div></div><div class="success-wrap"><div class="success-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><h2 class="success-h">Booking bekreftet!</h2><p class="success-sub">Vi gleder oss til å se deg hos Grand barber.</p><div class="success-det"><div class="det-row"><span class="det-lbl">Navn</span><span class="det-val">Marcus</span></div><div class="det-row"><span class="det-lbl">Tjeneste</span><span class="det-val">Skinfade</span></div><div class="det-row"><span class="det-lbl">Tid</span><span class="det-val">fredag 25. september, 11:00</span></div><div class="det-row"><span class="det-lbl">Total</span><span class="det-val">30 min · 350 kr</span></div></div><a class="conf-adr" href="#" onclick="return false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>Storgata 33, 0184 Oslo</span></a><a class="conf-tel" href="#" onclick="return false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>91 23 45 23</span></a><button class="manage-link-btn" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Endre/avbestill</button></div><p class="bk-footer" style="padding:0 0 4px">Bygget med <a href="https://trybarberhq.com">BarberHQ</a></p></div>
               </section>
             </div>
           </div>
@@ -2807,6 +2817,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
         seKnapp=b.querySelector('.see-float'),
         neste1=b.querySelector('.acc-next'),
         svc=b.querySelector('.svc-card'),
+        addon=b.querySelector('.addon-group'),
         dag=b.querySelector('.pv-dag'),
         hint=b.querySelector('.pv-slothint'),
         hdr=b.querySelector('.pv-slotshdr'),
@@ -2820,6 +2831,8 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
       b.style.setProperty('--pv-scroll','0px');
       slot.classList.remove('pv-on','sel');
       svc.classList.remove('sel'); neste1.disabled=true;
+      var chk0=svc.querySelector('.chk'); if(chk0) chk0.textContent='◯';
+      if(addon) addon.hidden=true;
       sek[0].classList.remove('done');
       sek[0].querySelector('.acc-bd').classList.add('open');
       sek[1].classList.add('locked');
@@ -2832,15 +2845,21 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     }
     // Skriver ett tegn av gangen. Hver timeout legges i tBook, så stoppMikro() rydder
     // dem når kortet går ut av syne midt i en setning.
+    // Synlig caret (│) i det aktive feltet mens det skrives — uten .focus(), som ville
+    // sprette opp tastaturet på ekte mobil. Caret-tegnet fjernes kort etter siste tegn,
+    // før neste felt/knapp — så feltet står rent når «Bekreft» trykkes.
     function skriv(felt, tekst, start, tegnMs){
       for(var i=1;i<=tekst.length;i++)
-        (function(n){ T(function(){ felt.value=tekst.slice(0,n); }, start+n*tegnMs); })(i);
+        (function(n){ T(function(){ felt.value=tekst.slice(0,n)+'│'; }, start+n*tegnMs); })(i);
+      T(function(){ felt.value=tekst; }, start+tekst.length*tegnMs+450);
       return start+tekst.length*tegnMs;
     }
     // Tjenestevalget: kortet hukes av, og «Velg time» blir klikkbar — akkurat som når
     // en kunde velger. Knappen ligger disabled i markupen, som i modulen.
     function velgTjeneste(på){
       svc.classList.toggle('sel',på);
+      var chk=svc.querySelector('.chk'); if(chk) chk.textContent = på ? '✓' : '◯';  // ring → hake ved valg
+      if(addon) addon.hidden=!på;      // «Legg til Skjegg» avdekkes ved valg, som i snapshot 3
       neste1.disabled=!på;
     }
     // Datosteget: ingen dato valgt ⇒ hjelpetekst framme, ingen tider, videre-knapp av.
@@ -2899,8 +2918,8 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     trykk(btn,6800);
     T(tilSkjemaet,7200);                                          // → dine opplysninger
     T(settScroll,7600);                    // etter trekkspillets 250ms, ikke før
-    skriv(navn,'Marcus',8000,110);         // 8000 →  8660
-    skriv(tlf,'900 00 000',9200,110);      // 9200 → 10300
+    skriv(navn,'Marcus',8000,50);          // 8000 → 8300 (caret vekk 8750)
+    skriv(tlf,'900 00 000',9200,50);       // 9200 → 9700 (caret vekk 10150)
     trykk(send,11000);
     T(function(){ b.classList.add('vis-success'); },11500);       // → bekreftelse
     // Ingen T(nullstill) og ingen ny runde her: kortet skal BLI stående på bekreftelsen.
