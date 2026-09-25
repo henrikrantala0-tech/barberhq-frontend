@@ -52,6 +52,17 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .nav-login{color:#fff!important}
 .nav-cta{background:#2563eb!important;color:#fff!important;font-weight:600!important;padding:10px 20px!important;border-radius:99px!important;margin-left:8px;transition:opacity .2s!important}
 .nav-cta:hover{background:#1d4ed8!important}
+.nav-right{display:flex;align-items:center;gap:14px}.nav-right a{text-decoration:none}
+.nav-burger{display:none;flex-direction:column;justify-content:center;gap:4px;width:32px;height:32px;background:none;border:none;cursor:pointer;padding:6px 4px}
+.nav-burger span{display:block;width:20px;height:2px;background:#fff;border-radius:2px;transition:transform .2s,opacity .2s}
+.nav.open .nav-burger span:nth-child(1){transform:translateY(6px) rotate(45deg)}
+.nav.open .nav-burger span:nth-child(2){opacity:0}
+.nav.open .nav-burger span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
+.nav-panel{max-height:0;overflow:hidden;background:rgba(10,10,10,.96);transition:max-height .25s ease}
+.nav.open .nav-panel{max-height:280px}
+.nav-panel a{display:block;padding:16px 24px;font-size:15px;color:#e0e0e0;text-decoration:none;border-bottom:1px solid #141414;transition:color .2s}
+.nav-panel a:last-child{border-bottom:none}
+.nav-panel a:hover{color:#fff}
 .btn{display:inline-flex;align-items:center;gap:9px;font-size:15px;font-weight:600;padding:15px 30px;border-radius:99px;text-decoration:none;transition:all .2s;cursor:pointer;border:0}
 .btn-fill{background:#2563eb;color:#fff}
 .btn-fill:hover{background:#1d4ed8}
@@ -89,7 +100,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .foot-social{display:flex;gap:9px}
 .foot-social a{width:36px;height:36px;border-radius:50%;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;transition:all .2s}
 .foot-social a:hover{background:#fff;color:#000;border-color:#fff}
-@media(max-width:760px){.nav-links a:not(.nav-cta){display:none}.foot-top{grid-template-columns:1fr;gap:40px;padding-bottom:42px}.foot-cols{grid-template-columns:1fr 1fr;gap:32px 24px}.foot-wrap{padding:56px 24px 32px}}
+@media(max-width:760px){.nav-links{display:none}.nav-burger{display:flex}.foot-top{grid-template-columns:1fr;gap:40px;padding-bottom:42px}.foot-cols{grid-template-columns:1fr 1fr;gap:32px 24px}.foot-wrap{padding:56px 24px 32px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}}
 </style>
 </head>
@@ -104,8 +115,18 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       <a href="vanlige-sporsmal.html">Vanlige spørsmål</a>
       <a href="support.html">Support</a>
       <a href="logg-inn.html" class="nav-login">Logg inn</a>
-      <a href="kom-i-gang.html" class="nav-cta">Prøv gratis</a>
     </div>
+    <div class="nav-right">
+      <a href="kom-i-gang.html" class="nav-cta">Prøv gratis</a>
+      <button class="nav-burger" id="nav-burger" aria-label="Meny"><span></span><span></span><span></span></button>
+    </div>
+  </div>
+  <div class="nav-panel" id="nav-panel">
+    <a href="funksjoner.html">Funksjoner</a>
+    <a href="priser.html">Priser</a>
+    <a href="vanlige-sporsmal.html">Vanlige spørsmål</a>
+    <a href="support.html">Support</a>
+    <a href="logg-inn.html">Logg inn</a>
   </div>
 </nav>
 
@@ -194,11 +215,11 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
         <a href="funksjoner.html">Funksjoner</a>
         <a href="priser.html">Priser</a>
         <a href="vanlige-sporsmal.html">Vanlige spørsmål</a>
+        <a href="index.html#alt-pa-ett-sted">Alt på ett sted</a>
         <a href="kom-i-gang.html">Kom i gang</a>
       </div>
       <div class="foot-col">
         <h5>Kontakt</h5>
-        <a href="support.html">Support</a>
         <a href="mailto:info@trybarberhq.com">info@trybarberhq.com</a>
         <a href="https://www.instagram.com/barberhq__/" target="_blank" rel="noopener">Instagram</a>
       </div>
@@ -335,6 +356,9 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 
 <script>
 var nav=document.getElementById('nav');
+var burger=document.getElementById('nav-burger');
+if(burger){burger.addEventListener('click',function(){nav.classList.toggle('open');});
+  document.querySelectorAll('#nav-panel a').forEach(function(a){a.addEventListener('click',function(){nav.classList.remove('open');});});}
 window.addEventListener('scroll',function(){nav.classList.toggle('scrolled',window.scrollY>10);});
 var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.12});
 document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
