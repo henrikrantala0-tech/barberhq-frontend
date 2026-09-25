@@ -17,3 +17,6 @@ live_preview_handoff/
 
 # Personlig agent-oppsett (ikke delt)
 .agents/
+
+# Netlify CLI lokal state (site-link, ikke del av kildekoden)
+.netlify/
