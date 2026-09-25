@@ -804,8 +804,12 @@
   .up-row{display:flex;align-items:center;gap:10px;min-height:56px;border-top:1px solid var(--line)}
   .up-row:first-of-type{border-top:none}   /* første rad uten hårlinje; øvrige skiller med hårlinje */
   .up-time{min-width:44px;font-size:13px;font-weight:600;color:var(--info);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
-  .up-name{flex:1;font-size:14px;font-weight:500}
-  .up-svc{font-size:12px;color:var(--mut)}
+  /* IKKE flex:1: det svellet navnet og skjøv tjenesten til høyre kant → stort tomrom mellom kort
+     navn og tjeneste (punkt 4). Uten grow ligger navn + tjeneste gruppert til venstre etter
+     klokkeslettet (rad-gap 10px imellom), tomrommet samles som luft til høyre. min-width:0 lar
+     et langt navn krympe i stedet for å dytte tjenesten ut av raden. */
+  .up-name{font-size:14px;font-weight:500;min-width:0}
+  .up-svc{font-size:12px;color:var(--mut);flex-shrink:0}
   .up-empty{margin:0;padding:0 0 2px;font-size:12.5px;line-height:1.2;color:var(--mut)}   /* tom dag: dempet + minimal (~17px), IKKE 56px radhøyde */
   @media (max-width:375px){ #upcomingList{max-height:362px} }
   /* «Intern utvidelse»-form (FASIT): rammet boks, full bredde, sentrert, chevron ▾/▴, dempet
