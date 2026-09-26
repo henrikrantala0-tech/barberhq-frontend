@@ -491,7 +491,9 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
 /* blå glow bak kalenderblokken — samme billige måte (radial-gradient div, kun opacity) */
 .ks-blk-glow{position:absolute;pointer-events:none;z-index:0;opacity:0;background:radial-gradient(ellipse at center,rgba(77,139,255,.5) 0%,rgba(77,139,255,.22) 42%,rgba(77,139,255,.06) 66%,transparent 80%)}
 .ks-inner{position:relative;z-index:1;width:100%;max-width:1180px;margin:0 auto;padding:0 40px;display:grid;grid-template-columns:190px 360px 1fr;align-items:center;gap:44px}
-.ks-h2{grid-column:1/-1;font-family:'Inter',sans-serif;font-weight:800;font-size:clamp(24px,3.4vw,38px);letter-spacing:-.03em;color:#fff;margin:0 0 4px}
+.ks-h2wrap{grid-column:1/-1;position:relative}
+.ks-h2{font-family:'Inter',sans-serif;font-weight:800;font-size:clamp(24px,3.4vw,38px);letter-spacing:-.03em;color:#fff;margin:0 0 4px}
+.ks-h2b{position:absolute;top:0;left:0;right:0;margin:0;text-align:center}
 .ks-nav{display:flex;flex-direction:column;gap:20px}
 .ks-step-btn{background:none;border:0;color:#5c5c5c;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;text-align:left;cursor:pointer;padding:1px 0}
 .ks-step-btn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:4px}
@@ -525,18 +527,30 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
 .ks-scene .ls-time{font-size:72px;font-weight:600;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;position:relative;z-index:2}
 .ks-scene .ls-date{font-size:17px;color:#c9c9d2;margin-top:6px;position:relative;z-index:2}
 .ks-scene .ls-banner{position:relative;z-index:2;margin:40px 14px 0;align-self:stretch;background:rgba(242,242,247,.94);backdrop-filter:blur(18px);border-radius:20px;padding:12px 14px;color:#0a0a0a;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);opacity:0}
-.ks-scene .ls-glow{position:absolute;top:160px;left:0;right:0;height:180px;background:radial-gradient(65% 100% at 50% 45%,rgba(62,207,126,.5),transparent 70%);opacity:0;pointer-events:none;z-index:1}
+/* Grønt lys bak SMS-varselet. Rot-årsak til den flate kuttingen: gradienten nådde ikke
+   transparent før elementets kant (radius > halv høyde). Nå er lyset MINDRE enn elementet
+   (transparent nås ~117×101px fra senter, godt innenfor 160×170px halv-dimensjon) → toner
+   helt ut i alle retninger, ingen synlig kant. Svakere (.24 vs .5) + mykere (lengre fall). */
+.ks-scene .ls-glow{position:absolute;top:70px;left:0;right:0;height:340px;opacity:0;pointer-events:none;z-index:1;
+  background:radial-gradient(ellipse 150px 130px at 50% 50%,rgba(62,207,126,.24) 0%,rgba(62,207,126,.1) 45%,rgba(62,207,126,0) 78%)}
+/* Låseskjerm: lommelykt (v.) + kamera (h.) + hjem-indikator. Skalert med .ls (320px designrom). */
+.ks-scene .ls-btn{position:absolute;bottom:40px;width:48px;height:48px;border-radius:50%;background:rgba(28,28,32,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:2}
+.ks-scene .ls-btn svg{width:24px;height:24px;display:block}
+.ks-scene .ls-tl{left:26px}
+.ks-scene .ls-cam{right:26px}
+.ks-scene .ls-home{position:absolute;bottom:9px;left:50%;transform:translateX(-50%);width:134px;height:5px;border-radius:3px;background:rgba(255,255,255,.85);z-index:2}
 .ks-scene .ls-app{display:flex;align-items:center;gap:7px;margin-bottom:5px}
 .ks-scene .ls-appicon{width:20px;height:20px;border-radius:5px;background:#0a0a0a;color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
 .ks-scene .ls-appicon b{color:#4d8bff}.ks-scene .ls-appname{font-size:12.5px;font-weight:700;flex:1}.ks-scene .ls-when{font-size:11.5px;color:#6b6b70}.ks-scene .ls-msg{font-size:13.5px;line-height:1.35;color:#111}
 /* ANIMERT (kun JS + ikke reduced-motion) */
 .ks-scene.ks-anim .ks-pin{height:calc(100vh - var(--nav-h,68px))}
 .ks-scene.ks-anim .ks-inner{height:100%;align-content:center}
-.ks-scene.ks-anim .ks-h2{position:absolute;top:7vh;left:50%;transform:translateX(-50%);white-space:nowrap;margin:0}
+.ks-scene.ks-anim .ks-h2wrap{position:absolute;top:7vh;left:50%;transform:translateX(-50%)}
+.ks-scene.ks-anim .ks-h2{white-space:nowrap;margin:0}
 .ks-scene.ks-anim .ks-text .ks-step{position:absolute;top:0;left:0}
 /* STATISK / reduced-motion / no-JS */
 .ks-scene:not(.ks-anim) .ks-inner{grid-template-columns:1fr;gap:24px;padding-top:48px;padding-bottom:48px}
-.ks-scene:not(.ks-anim) .ks-nav{display:none}
+.ks-scene:not(.ks-anim) .ks-nav,.ks-scene:not(.ks-anim) .ks-navwrap{display:none}
 .ks-scene:not(.ks-anim) .ks-text{display:flex;flex-direction:column;gap:22px;min-height:0}
 .ks-scene:not(.ks-anim) .hp-screen.s-cal,.ks-scene:not(.ks-anim) .hp-screen.s-sms{display:none}
 @media(min-width:900px){ .ks-scene:not(.ks-anim) .ks-inner{grid-template-columns:360px 1fr;align-items:start} }
@@ -546,13 +560,88 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
   .ks-inner{grid-template-columns:1fr;gap:14px;padding:0 16px;justify-items:center}
   .ks-scene.ks-anim .ks-pin{height:calc(100svh - var(--nav-h,68px))}
   .ks-scene.ks-anim .ks-inner{align-content:start;padding-top:14px}   /* overskrift med luft under nav, ikke sentrert-klemt */
-  .ks-scene.ks-anim .ks-nav{display:none}
-  .ks-scene.ks-anim .ks-h2{position:relative;top:auto;left:auto;transform:none;text-align:center;font-size:clamp(21px,5.6vw,28px)}
+  .ks-scene.ks-anim .ks-nav,.ks-scene.ks-anim .ks-navwrap{display:none}
+  .ks-scene.ks-anim .ks-h2wrap{position:relative;top:auto;left:auto;transform:none;text-align:center}
+  .ks-scene.ks-anim .ks-h2{font-size:clamp(21px,5.6vw,28px)}
+  .ks-scene.ks-anim .ks-h2b{font-size:clamp(21px,5.6vw,28px)}
   /* HØYDE-drevet telefon: krymper i korte in-app-vinduer (Instagram/TikTok) i stedet for å kuttes. */
   .ks-scene .phone{width:min(220px, calc((100svh - var(--nav-h,68px) - 188px) / 1.806))}
   .ks-scene.ks-anim .ks-text{width:100%}
   .ks-scene.ks-anim .ks-text .ks-step{left:0;right:0;width:100%;text-align:center;padding:0 16px}
   .ks-step p{max-width:none;margin:0 auto}
+}
+
+/* ==================== FÅ KUNDER TILBAKE — diagram-overlay (samme pin) ==================== */
+/* Diagrammene ligger over telefon-posisjonen i .ks-phonewrap. opacity:0 til overgangen. */
+.ks-scene .ks-phonewrap{position:relative}
+.ks-diagrams{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:440px;pointer-events:none;opacity:0;z-index:2}
+.ks-diagrams .dia{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);opacity:0}
+.ks-diagrams .dsvg{width:100%;height:auto;display:block;overflow:visible}
+.ks-diagrams .edge{stroke:#2b2b33;stroke-width:2;fill:none;stroke-linecap:round}
+.ks-diagrams .fill{stroke:#4d8bff;stroke-width:2;fill:none;stroke-linecap:round}
+.ks-diagrams .green{stroke:#3ecf7e;stroke-width:2;fill:none;stroke-linecap:round}
+.ks-diagrams .dot{fill:#4b4b54}.ks-diagrams .dot.on{fill:#4d8bff}
+.ks-diagrams .node{fill:#0f0f12;stroke:#3a3a42;stroke-width:2}.ks-diagrams .node.grn{stroke:#3ecf7e}
+.ks-diagrams .ntext{fill:#cfe0ff;font-family:'Inter';font-weight:600;font-size:17px;text-anchor:middle;dominant-baseline:central}
+.ks-diagrams .lab{fill:#8a8a90;font-family:'Inter';font-weight:500;font-size:12.5px;text-anchor:middle}
+.ks-diagrams .lab.on{fill:#e7e7ea}.ks-diagrams .lab.mut{fill:#5c5c64}.ks-diagrams .lab.blue{fill:#4d8bff;font-weight:600}.ks-diagrams .lab.grn{fill:#3ecf7e;font-weight:600}
+.ks-diagrams .ivlab{fill:#5c5c64;font-family:'Inter';font-weight:500;font-size:13px;text-anchor:middle}
+.ks-diagrams .ivlab.on{fill:#4d8bff;font-weight:700}
+.ks-diagrams .wkm circle{fill:#4b4b54}.ks-diagrams .wkm.on circle{fill:#e7e7ea}
+.ks-diagrams .wklab{fill:#7a7a82;font-family:'Inter';font-weight:500;font-size:11px;text-anchor:middle}
+.ks-diagrams .wkm.on .wklab{fill:#e7e7ea;font-weight:600}
+.ks-diagrams .bub rect{fill:#12233f;stroke:#4d8bff;stroke-width:1.4}
+.ks-diagrams .bub text{fill:#cfe0ff;font-family:'Inter';font-weight:500;font-size:11px}
+.ks-diagrams .bub .lnk{fill:#4d8bff}
+.ks-diagrams .arrow{stroke:#3ecf7e;stroke-width:2;fill:none;stroke-linecap:round;stroke-linejoin:round}
+.ks-diagrams .glowg{filter:drop-shadow(0 0 8px rgba(62,207,126,.85))}
+.ks-diagrams .hide{opacity:0}
+.ks-diagrams .badge rect{fill:#12233f;stroke:#4d8bff;stroke-width:1.1}
+.ks-diagrams .badge text{fill:#7fb0ff;font-family:'Inter';font-weight:600;font-size:11px;text-anchor:middle;dominant-baseline:central}
+.ks-diagrams .badge.grn rect{fill:#123021;stroke:#3ecf7e}.ks-diagrams .badge.grn text{fill:#63e0a2}
+.ks-diagrams .seg{fill:#141418;stroke:#33333b;stroke-width:1.2}.ks-diagrams .seg.on{fill:#12233f;stroke:#4d8bff}
+.ks-diagrams .segtx{fill:#8a8a90;font-family:'Inter';font-weight:600;font-size:12px;text-anchor:middle;dominant-baseline:central}.ks-diagrams .segtx.on{fill:#cfe0ff}
+.ks-diagrams .wbcard{background:#111114;border:1px solid #242429;border-radius:14px;overflow:hidden}
+.ks-diagrams .wbhead{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:#7a7a82;padding:14px 16px 8px}
+.ks-diagrams .wbrow{display:flex;align-items:center;gap:12px;padding:12px 16px;border-top:1px solid #1e1e23}
+.ks-diagrams .wbrow.slidein{background:rgba(77,139,255,.03)}
+.ks-diagrams .wbrow.active{background:rgba(77,139,255,.09)}
+.ks-diagrams .wbav{width:34px;height:34px;border-radius:50%;flex:0 0 auto;display:flex;align-items:center;justify-content:center;background:#1a1a1f;color:#b9c6dc;font-size:13px;font-weight:600}
+.ks-diagrams .wbrow.active .wbav{background:#12233f;color:#cfe0ff;box-shadow:0 0 0 1.5px #4d8bff inset}
+.ks-diagrams .wbinfo{flex:1;min-width:0}
+.ks-diagrams .wbname{font-size:14px;font-weight:500;color:#e7e7ea}
+.ks-diagrams .wbmeta{font-size:12px;color:#7a7a82;margin-top:2px}
+.ks-diagrams .wbnum{display:flex;align-items:center;gap:8px;font-size:13px;font-weight:600;color:#4d8bff;font-variant-numeric:tabular-nums}
+.ks-diagrams .wbphone{width:15px;height:15px;display:inline-block;color:#3a3a42}
+.ks-diagrams .wbphone svg{width:100%;height:100%;fill:currentColor}
+.ks-diagrams .wbrow.active .wbphone{color:#4d8bff;filter:drop-shadow(0 0 5px rgba(77,139,255,.7))}
+.ks-diagrams .lostampwrap{display:flex;flex-wrap:wrap;gap:8px;justify-content:center;max-width:459px;margin:0 auto}
+.ks-diagrams .lostamp{width:36px;height:36px;border-radius:50%;border:2px solid #3a3a42;display:flex;align-items:center;justify-content:center}
+.ks-diagrams .lostamp svg{width:18px;height:18px;opacity:0}
+.ks-diagrams .lostamp.on{border-color:#4d8bff;background:#4d8bff}.ks-diagrams .lostamp.on svg{opacity:1}
+.ks-diagrams .lostamp.tenth.on{border-color:#3ecf7e;background:#3ecf7e;box-shadow:0 0 13px rgba(62,207,126,.85)}
+.ks-diagrams .lorew{text-align:center;margin-top:22px;opacity:0}.ks-diagrams .lorew.on{opacity:1}
+.ks-diagrams .lorew .rk{font-size:12px;font-weight:700;letter-spacing:.05em;text-transform:uppercase;color:#3ecf7e}
+.ks-diagrams .lorew .rv{font-size:17px;font-weight:700;color:#e7e7ea;margin-top:6px}.ks-diagrams .lorew .rsub{font-size:13px;color:#7a7a82;margin-top:7px}
+.ks-diagrams .lometa{text-align:center;color:#7a7a82;font-size:13px;margin-top:14px}
+/* h2 + stegnav bytter til «Få kunder tilbake»-settet ved overgangen */
+.ks-navwrap{position:relative}
+.ks-nav2{position:absolute;top:0;left:0;opacity:0;pointer-events:none}
+.ks-scene.ks-anim .ks-h2.ks-h2b{opacity:0}
+/* Statisk / reduced-motion / no-JS: kun Kjernefunksjoner i scenen; «Få kunder tilbake»
+   dekkes av fallback-lista (#fkFallback). Skjul de animasjons-eide delene. */
+.ks-scene:not(.ks-anim) .ks-h2b,
+.ks-scene:not(.ks-anim) .ks-diagrams,
+.ks-scene:not(.ks-anim) .ks-step[data-step="3"],
+.ks-scene:not(.ks-anim) .ks-step[data-step="4"],
+.ks-scene:not(.ks-anim) .ks-step[data-step="5"],
+.ks-scene:not(.ks-anim) .ks-step[data-step="6"]{display:none}
+/* Mobil: diagrammene sentrert, samme bredde som telefon-sporet */
+@media(max-width:899px){
+  .ks-diagrams{width:min(340px,92vw)}
+}
+@media(max-width:359px){
+  .ks-diagrams .lostampwrap{max-width:225px}
 }
 
 </style>
@@ -629,12 +718,20 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
     <div class="ks-stage">
     <div class="ks-bg" id="ksBg"></div>
     <div class="ks-inner">
-      <h2 class="ks-h2" id="ksH2">Kjernefunksjoner</h2>
-      <nav class="ks-nav" aria-label="Steg">
-        <button class="ks-step-btn" type="button" data-step="0">Selvbooking</button>
-        <button class="ks-step-btn" type="button" data-step="1">Kalender</button>
-        <button class="ks-step-btn" type="button" data-step="2">SMS-påminnelse</button>
-      </nav>
+      <div class="ks-h2wrap"><h2 class="ks-h2" id="ksH2">Kjernefunksjoner</h2><h2 class="ks-h2 ks-h2b" id="ksH2b">Få kunder tilbake</h2></div>
+      <div class="ks-navwrap">
+        <nav class="ks-nav" id="ksNav1" aria-label="Steg">
+          <button class="ks-step-btn" type="button" data-step="0">Selvbooking</button>
+          <button class="ks-step-btn" type="button" data-step="1">Kalender</button>
+          <button class="ks-step-btn" type="button" data-step="2">SMS-påminnelse</button>
+        </nav>
+        <nav class="ks-nav ks-nav2" id="ksNav2" aria-label="Steg">
+          <button class="ks-step-btn" type="button" data-step2="0">Automatisk rebooking</button>
+          <button class="ks-step-btn" type="button" data-step2="1">Verving</button>
+          <button class="ks-step-btn" type="button" data-step2="2">Lojalitetsprogram</button>
+          <button class="ks-step-btn" type="button" data-step2="3">Vinn tilbake</button>
+        </nav>
+      </div>
       <div class="ks-phonewrap">
         <div class="phone" id="ksPhone">
   <div class="phone-screen"><div class="hp-screens">
@@ -656,6 +753,9 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
     <div class="hp-screen s-sms" id="ksSms"><div class="pv-scale"><div class="ls">
       <div class="ls-glow" id="ksLsGlow"></div><div class="ls-time" id="ksLsTime">20:14</div><div class="ls-date" id="ksLsDate">torsdag</div>
       <div class="ls-banner" id="ksLsBanner"><div class="ls-app"><span class="ls-appicon"><b>B</b></span><span class="ls-appname">BarberHQ</span><span class="ls-when">n&aring;</span></div><div class="ls-msg" id="ksLsMsg"></div></div>
+      <div class="ls-btn ls-tl" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M9 2h6l-1.2 4.2H10.2L9 2z"/><path d="M10.2 6.2h3.6v3.2l-.8 12.6h-2l-.8-12.6V6.2z"/><path d="M11.4 13h1.2"/></svg></div>
+      <div class="ls-btn ls-cam" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 8.5h3.2l1.6-2h8.4l1.6 2H21v10.5H3V8.5z"/><circle cx="12" cy="13.5" r="3.3"/></svg></div>
+      <div class="ls-home" aria-hidden="true"></div>
     </div></div></div>
   </div></div>
   <div class="phone-statusbar" id="ksStatus"><span class="sb-t">9:41</span><span class="sb-r"><svg class="sb-bars" viewBox="0 0 18 11" fill="currentColor"><rect x="0" y="8" width="3" height="3" rx="1"/><rect x="5" y="5.5" width="3" height="5.5" rx="1"/><rect x="10" y="3" width="3" height="8" rx="1"/><rect x="15" y="0" width="3" height="11" rx="1"/></svg><svg class="sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg><svg class="sb-batt" viewBox="0 0 25 13"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5" fill="currentColor"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9" fill="currentColor"/></svg></span></div>
@@ -663,19 +763,86 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
   <img class="phone-frame" width="1884" height="3402" decoding="async" srcset="ramme/iphone-ramme-720.webp 720w, ramme/iphone-ramme.webp 1884w" sizes="(max-width:899px) 232px, 340px" src="ramme/iphone-ramme.webp" alt="" aria-hidden="true">
 </div>
         <div class="ks-badge"><span class="kb-a" id="ksBadgeA">Kundens telefon</span><span class="kb-b" id="ksBadgeB">Din kalender</span></div>
+        <!-- Diagram-overlay for «Få kunder tilbake» (portert fra diag7-harness). opacity:0 til overgangen. -->
+        <div class="ks-diagrams" id="ksDiagrams" aria-hidden="true">
+
+          <!-- REBOOKING (forenklet: Klipp → intervallvelger → 35 dager + SMS → Ny booking) -->
+          <div class="dia" id="dReA">
+            <svg viewBox="0 0 480 200" class="dsvg" id="reAh">
+              <line class="edge" x1="54" y1="118" x2="440" y2="118"/>
+              <line class="fill" id="reAfill" x1="54" y1="118" x2="54" y2="118"/>
+              <line class="green hide" id="reAgr" x1="300" y1="118" x2="300" y2="118"/>
+              <g id="reAiv" class="hide">
+                <circle class="dot on" cx="128" cy="118" r="6"/>
+                <text class="lab blue" x="128" y="160" style="font-size:10.5px">Du velger intervall</text>
+                <text class="ivlab" id="h28" x="86" y="142">28</text><text class="ivlab" id="h35" x="106" y="142">35</text><text class="ivlab" id="h45" x="126" y="142">45</text><text class="ivlab" x="154" y="142" style="fill:#5c5c64">dager</text>
+              </g>
+              <g class="wkm hide" id="whk5"><circle cx="300" cy="118" r="6"/><text class="wklab" x="300" y="143">35 dager</text></g>
+              <g class="bub hide" id="reAsmsH"><rect x="196" y="14" width="208" height="70" rx="11"/><text x="208" y="36">Hei Marcus! Klar for ny time</text><text x="208" y="54">hos Grand Barber?</text><text class="lnk" x="208" y="73">trybarberhq.com/grand-barber</text></g>
+              <g class="arrow hide" id="reAlinkH"><path d="M412 118 h16"/><path d="M424 113 l5 5 -5 5"/></g>
+              <circle class="dot on" cx="54" cy="118" r="7"/><text class="lab on" x="54" y="143">Klipp</text>
+              <g id="reAn4"><circle class="node" cx="440" cy="118" r="13"/><g class="chk hide" id="reAchkH" transform="translate(440,118)"><svg x="-9" y="-9" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="#3ecf7e" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg></g></g>
+              <text class="lab hide" id="reAl4" x="440" y="171">Ny booking</text>
+            </svg>
+          </div>
+
+          <!-- VINN TILBAKE -->
+          <div class="dia" id="dWb"><div class="wbcard">
+            <div class="wbhead">Ikke vært her på en stund</div>
+            <div class="wbrow "><div class="wbav">J</div><div class="wbinfo"><div class="wbname">Jonas Berg</div><div class="wbmeta">sist her · 74 dager siden</div></div><div class="wbnum">912 •• •34<span class="wbphone"><svg viewBox="0 0 24 24"><path d="M6.6 11c1.3 2.6 3.5 4.8 6.1 6.1l2-2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1v3.1c0 .6-.4 1-1 1C10.5 21.7 2.4 13.6 2.4 3.5c0-.6.4-1 1-1h3.2c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1l-2 2z"/></svg></span></div></div>
+            <div class="wbrow "><div class="wbav">K</div><div class="wbinfo"><div class="wbname">Karim Haddad</div><div class="wbmeta">sist her · 88 dager siden</div></div><div class="wbnum">468 •• •07<span class="wbphone"><svg viewBox="0 0 24 24"><path d="M6.6 11c1.3 2.6 3.5 4.8 6.1 6.1l2-2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1v3.1c0 .6-.4 1-1 1C10.5 21.7 2.4 13.6 2.4 3.5c0-.6.4-1 1-1h3.2c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1l-2 2z"/></svg></span></div></div>
+            <div class="wbrow "><div class="wbav">E</div><div class="wbinfo"><div class="wbname">Emil Haugen</div><div class="wbmeta">sist her · 66 dager siden</div></div><div class="wbnum">905 •• •18<span class="wbphone"><svg viewBox="0 0 24 24"><path d="M6.6 11c1.3 2.6 3.5 4.8 6.1 6.1l2-2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1v3.1c0 .6-.4 1-1 1C10.5 21.7 2.4 13.6 2.4 3.5c0-.6.4-1 1-1h3.2c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1l-2 2z"/></svg></span></div></div>
+            <div id="wbNy"><div class="wbrow slidein"><div class="wbav">M</div><div class="wbinfo"><div class="wbname">Mathias Lund</div><div class="wbmeta">sist her · 61 dager siden</div></div><div class="wbnum">473 •• •92<span class="wbphone"><svg viewBox="0 0 24 24"><path d="M6.6 11c1.3 2.6 3.5 4.8 6.1 6.1l2-2c.3-.3.7-.4 1-.2 1.1.4 2.3.6 3.5.6.6 0 1 .4 1 1v3.1c0 .6-.4 1-1 1C10.5 21.7 2.4 13.6 2.4 3.5c0-.6.4-1 1-1h3.2c.6 0 1 .4 1 1 0 1.2.2 2.4.6 3.5.1.4 0 .8-.2 1l-2 2z"/></svg></span></div></div></div>
+          </div></div>
+
+          <!-- VERVING -->
+          <div class="dia" id="dVe"><svg viewBox="0 0 460 260" class="dsvg">
+            <line class="edge" x1="98" y1="150" x2="322" y2="150"/>
+            <line class="fill" id="veFill" x1="98" y1="150" x2="98" y2="150"/>
+            <circle class="dot on hide" id="veDot" cx="210" cy="150" r="6"/>
+            <g class="bub hide" id="veShare"><rect x="26" y="18" width="256" height="66" rx="11"/><text x="40" y="38" style="font-size:10.5px">Bruk lenken min hos Grand Barber,</text><text x="40" y="54" style="font-size:10.5px">så får vi begge 25 %:</text><text class="lnk" x="40" y="70" style="font-size:10.5px">trybarberhq.com/grand-barber?ref=K7WMP4</text></g>
+            <g class="badge hide" id="veMB"><rect x="42" y="104" width="56" height="22" rx="11"/><text x="70" y="116">−25 %</text></g>
+            <g class="badge hide" id="veEB"><rect x="322" y="104" width="56" height="22" rx="11"/><text x="350" y="116">−25 %</text></g>
+            <g><circle class="node on" cx="70" cy="150" r="26" style="stroke:#4d8bff"/><text class="ntext" x="70" y="150">M</text></g>
+            <text class="lab on" x="70" y="192">Marcus</text><text class="lab mut" id="veL1" x="70" y="210">Deler lenken</text>
+            <g id="veE"><circle class="node" cx="350" cy="150" r="26"/><text class="ntext" id="veEt" x="350" y="150" style="fill:#9a9aa2">E</text></g>
+            <text class="lab" id="veEL" x="350" y="192">Ny kunde</text><text class="lab mut hide" id="veL2" x="350" y="210">Booker første time</text>
+            <g class="bub hide" id="veBanner"><rect x="300" y="30" width="150" height="48" rx="10"/><text x="312" y="49" style="font-size:10px">Du er invitert — −25 %</text><text x="312" y="64" style="font-size:10px">velkomstrabatt</text></g>
+            <g id="veReward" class="hide">
+              <rect class="seg on" x="118" y="222" width="96" height="30" rx="8"/><text class="segtx on" x="166" y="238">Begge</text>
+              <rect class="seg" x="220" y="222" width="122" height="30" rx="8"/><text class="segtx" x="281" y="238">Kun ny kunde</text>
+              <text class="lab" x="230" y="270" style="font-size:12px;fill:#8a8a90">Velg rabatt i innstillinger</text>
+            </g>
+          </svg></div>
+
+          <!-- LOJALITET -->
+          <div class="dia" id="dLo">
+            <div class="lostampwrap" id="loStamps"></div>
+            <div class="lorew" id="loRew"><div class="rk">Belønning klar</div><div class="rv">75 % rabatt</div><div class="rsub">Velg antall klipp og rabatt i innstillinger</div></div>
+            <div class="lometa" id="loMeta"></div>
+          </div>
+
+
+        </div>
       </div>
       <div class="ks-text">
         <div class="ks-step" data-step="0"><h3>Selvbooking</h3><p>Kundene booker selv, døgnet rundt.</p></div>
         <div class="ks-step" data-step="1"><h3>Kalender</h3><p>Alle timene samlet på ett sted.</p></div>
         <div class="ks-step" data-step="2"><h3>SMS-påminnelse</h3><p>En SMS dagen før timen.</p></div>
+        <div class="ks-step" data-step="3"><h3>Automatisk rebooking</h3><p>Kunden får en SMS med lenke når det er tid for ny klipp.</p></div>
+        <div class="ks-step" data-step="4"><h3>Verving</h3><p>Kundene deler lenken sin. Du velger hvem som får rabatt.</p></div>
+        <div class="ks-step" data-step="5"><h3>Lojalitetsprogram</h3><p>Klippene teller automatisk mot en belønning du velger.</p></div>
+        <div class="ks-step" data-step="6"><h3>Vinn tilbake</h3><p>Kundene som ikke har vært innom på 60 dager, samlet i én liste.</p></div>
       </div>
     </div>
     </div>
   </div>
 </section>
 
-<!-- ===================== FÅ KUNDER TILBAKE ===================== -->
-<section class="fx-section">
+<!-- ===================== FÅ KUNDER TILBAKE =====================
+     Statisk fallback for reduced-motion / no-JS. Skjules når scroll-scenen bygges
+     (bygg() setter display:none) — da tar diagram-overlayet på #ksPin over. -->
+<section class="fx-section" id="fkFallback">
   <h2 class="fx-h2 reveal">Få kunder tilbake</h2>
   <div class="fn-list">
     <a class="fn-glow fn-lead reveal" href="index.html#sys-rebooking">
@@ -815,16 +982,21 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   $('ksLsDate').textContent=WDF[THU.getDay()]+' '+THU.getDate()+'. '+MOF[THU.getMonth()];
   $('ksLsMsg').textContent='Hei Marcus! Minner om timen din hos Grand Barber i morgen kl 11:00.';
 
+  // Lojalitet-stempler (portert fra diag7-harness) — bygges alltid, brukes kun i animert sti.
+  (function(){var w=$('loStamps');if(!w)return;for(var i=0;i<10;i++){var d=document.createElement('div');d.className='lostamp'+(i===9?' tenth':'');d.id='loS'+i;d.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';w.appendChild(d);}})();
+
   var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
   if(reduce||!window.gsap||!window.ScrollTrigger){return;}
   gsap.registerPlugin(ScrollTrigger); if(window.ScrollToPlugin)gsap.registerPlugin(ScrollToPlugin);
   ScrollTrigger.config({ignoreMobileResize:true});   // iOS-adresselinje (visualViewport-resize) skal IKKE trigge refresh
   var sec=$('kjernefunksjoner');sec.classList.add('ks-anim');
-  var phone=$('ksPhone'),navBtns=[].slice.call(document.querySelectorAll('.ks-step-btn'));
+  var phone=$('ksPhone'),navBtns=[].slice.call(document.querySelectorAll('#ksNav1 .ks-step-btn')),navBtns2=[].slice.call(document.querySelectorAll('#ksNav2 .ks-step-btn'));
   var ACC='#0071e3', DIM='#5c5c5c', WHITE='#ffffff';
   var stRef=null;
 
   function bygg(){
+   // Animert sti aktiv → skjul den statiske fallback-lista (diagram-overlayet tar over).
+   var fb=$('fkFallback'); if(fb)fb.style.display='none';
    // Mål FAKTISK nav-høyde (etter pill/logo-fiks) — aldri hardkod 68. Brukes i pin-start + CSS-var.
    var navEl=document.querySelector('.nav'); var navH=(navEl&&Math.round(navEl.getBoundingClientRect().height))||68;
    document.documentElement.style.setProperty('--nav-h', navH+'px');
@@ -838,6 +1010,77 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     gsap.set('#ksBadgeA',{opacity:1}); gsap.set('#ksBadgeB',{opacity:0}); gsap.set('#ksStatus',{opacity:1});
     gsap.set('#ksBlock',{opacity:0}); gsap.set('#ksBlkGlow',{opacity:0});
     if(isD){navBtns.forEach(function(b,ix){gsap.set(b,{color:ix===0?WHITE:DIM});});}
+
+    // ---- FÅ KUNDER TILBAKE: startilstander + drivere ----
+    gsap.set('#ksH2b',{opacity:0,y:0}); gsap.set('#ksNav2',{opacity:0});
+    gsap.set('.ks-step[data-step="3"],.ks-step[data-step="4"],.ks-step[data-step="5"],.ks-step[data-step="6"]',{opacity:0,y:0});
+    if(isD){navBtns2.forEach(function(b){gsap.set(b,{color:DIM});});}
+
+    // Lojalitet — egen liten TIDSbasert tidslinje (eneste unntak fra ren scrub).
+    var loStampEls=[];for(var _i=0;_i<10;_i++)loStampEls.push($('loS'+_i));
+    var loTl=gsap.timeline({paused:true});
+    loStampEls.forEach(function(s,ix){
+      loTl.fromTo(s,{scale:.6,opacity:0},{scale:1,opacity:1,duration:.2,ease:'back.out(1.9)',onStart:function(){s.classList.add('on');var lm=$('loMeta');if(lm)lm.textContent=(ix===9)?'':(ix+1)+' av 10 klipp';}}, ix*0.11);
+    });
+    loTl.to('#loRew',{opacity:1,duration:.3},'+=0.06');
+    function loReset(){loTl.pause(0);loStampEls.forEach(function(s){s.classList.remove('on');s.style.opacity=0;s.style.transform='scale(0.6)';});var lr=$('loRew');if(lr)lr.style.opacity=0;var lm=$('loMeta');if(lm)lm.textContent='0 av 10 klipp';}
+    var loActive=false;
+    function lojal(t){
+      if(t<167){ if(loActive){loReset();loActive=false;} return; }
+      if(!loActive){loReset();loTl.play(0);loActive=true;}
+      if(t>190){loTl.progress(1);loStampEls.forEach(function(s){s.classList.add('on');s.style.opacity=1;s.style.transform='scale(1)';});var lr=$('loRew');if(lr)lr.style.opacity=1;var lm=$('loMeta');if(lm)lm.textContent='';}
+    }
+
+    // diagramTick — REN funksjon av tidslinje-tid t (0..250). Scrub reverserer perfekt.
+    function cl01(x){return x<0?0:x>1?1:x;}
+    function sg(t,a,b){return cl01((t-a)/(b-a));}
+    function ez(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;}
+    function op(id,v){var el=$(id);if(el)el.style.opacity=v;}
+    function tg(id,n,on){var el=$(id);if(el)el.classList.toggle(n,!!on);}
+    function dTick(t){
+      var overlay=cl01(sg(t,100,108))*(1-sg(t,211,215));
+      var ov=$('ksDiagrams'); if(ov)ov.style.opacity=overlay;
+      if(overlay<=0)return;
+      op('dReA', cl01(sg(t,108,114))*(1-sg(t,138,143)));
+      op('dVe', cl01(sg(t,140,145))*(1-sg(t,165,170)));
+      op('dLo', cl01(sg(t,167,171))*(1-sg(t,188,192)));
+      op('dWb', cl01(sg(t,190,195))*(1-sg(t,211,215)));
+      // ---- REBOOKING (Klipp → intervallvelger → 35 dager + SMS → Ny booking) ----
+      op('reAiv', cl01(sg(t,110,113)));
+      var act=t<116?'28':t<119?'35':t<122?'45':'35';
+      tg('h28','on',act==='28');tg('h35','on',act==='35');tg('h45','on',act==='45');
+      var fH=t<122?54+(128-54)*ez(sg(t,111,122)):128+(300-128)*ez(sg(t,122,130));
+      var fe=$('reAfill');if(fe)fe.setAttribute('x2',Math.max(54,fH));
+      op('whk5', cl01(sg(t,126,130))); tg('whk5','on', t>=128);
+      op('reAsmsH', cl01(sg(t,128,132)));
+      var five=t>=132;
+      tg('reAgr','hide',!five);
+      if(five){var ge=$('reAgr');if(ge)ge.setAttribute('x2',300+(440-300)*ez(sg(t,132,137)));}
+      tg('reAlinkH','hide',!five);tg('reAchkH','hide',!five);
+      var n4e=$('reAn4');if(n4e){n4e.querySelector('.node').classList.toggle('grn',five);n4e.classList.toggle('glowg',five);}
+      op('reAl4',five?1:0);tg('reAl4','on',five);
+      // ---- VERVING ----
+      var vp=ez(sg(t,146,154));
+      var vf=$('veFill');if(vf)vf.setAttribute('x2',98+(322-98)*vp);
+      op('veDot', cl01(sg(t,146,148))*(1-sg(t,154,157)));
+      var vd=$('veDot');if(vd)vd.setAttribute('cx',98+(322-98)*vp);
+      op('veShare', cl01(sg(t,142,146))*(1-sg(t,152,156)));
+      var eOn=t>=154,vE=$('veE');
+      if(vE){var vn=vE.querySelector('.node');vn.classList.toggle('on',eOn);vn.style.stroke=eOn?'#4d8bff':'#3a3a42';}
+      var vet=$('veEt');if(vet)vet.style.fill=eOn?'#cfe0ff':'#9a9aa2';
+      tg('veEL','on',eOn);var vel=$('veEL');if(vel)vel.textContent=eOn?'Emre Yilmaz':'Ny kunde';
+      op('veL2', cl01(sg(t,154,158)));
+      var vl1=$('veL1');if(vl1)vl1.style.opacity=1-0.6*cl01(sg(t,148,154));
+      op('veBanner', cl01(sg(t,156,159))*(1-sg(t,161,164)));
+      op('veReward', cl01(sg(t,161,165)));
+      op('veMB', cl01(sg(t,160,164)));op('veEB', cl01(sg(t,160,164)));
+      var grn=t>=164;tg('veMB','grn',grn);tg('veEB','grn',grn);
+      // ---- VINN TILBAKE ----
+      var wbNy=$('wbNy'),nyRow=wbNy&&wbNy.querySelector('.wbrow');
+      if(nyRow){var np=cl01(sg(t,196,202));nyRow.style.opacity=np;nyRow.style.transform='translateY('+(12*(1-np))+'px)';var actw=t>=205;nyRow.classList.toggle('active',actw);nyRow.classList.toggle('slidein',!actw);}
+      // ---- desktop stegnav-highlight (Få kunder tilbake) ----
+      if(isD){var ai=t<140?0:t<167?1:t<190?2:3,inFK=t>=113;navBtns2.forEach(function(b,ix){b.style.color=(inFK&&ix===ai)?WHITE:DIM;});}
+    }
 
     var tl=gsap.timeline({defaults:{ease:'power2.inOut'}});   // eases på scrubbede tweens (ikke lineær)
     // GLOW toner inn saktere enn telefonen (0-24) og står stabil resten
@@ -876,12 +1119,28 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     tl.to(phone,{y:28,opacity:0,duration:8},92);
     tl.to('.ks-step[data-step="2"]',{y:-12,opacity:0,duration:8},92);
     tl.to('#ksBg',{opacity:.55,duration:8,ease:'sine.inOut'},92);
-    tl.set({},{},100);
+    tl.to('.ks-badge',{opacity:0,duration:8},92);
+    // ---- OVERGANG + FÅ KUNDER TILBAKE (100–215) ----
+    // Overgang: telefonen toner ut (92–100), tittelen skifter til «Få kunder tilbake»,
+    // rebooking-diagrammet toner inn. Ingen mellomillustrasjon.
+    tl.to('#ksH2',{y:-12,opacity:0,duration:7},100);
+    tl.fromTo('#ksH2b',{y:12,opacity:0},{y:0,opacity:1,duration:7},106);
+    if(isD){ tl.to('#ksNav1',{opacity:0,duration:6},100); tl.fromTo('#ksNav2',{opacity:0},{opacity:1,duration:6},106); }
+    // Fire nye stegtekster (inn y20→0, ut 0→-12), pauser per steg.
+    tl.fromTo('.ks-step[data-step="3"]',{y:20,opacity:0},{y:0,opacity:1,duration:7},110).to('.ks-step[data-step="3"]',{y:-12,opacity:0,duration:6},138);
+    tl.fromTo('.ks-step[data-step="4"]',{y:20,opacity:0},{y:0,opacity:1,duration:7},143).to('.ks-step[data-step="4"]',{y:-12,opacity:0,duration:6},165);
+    tl.fromTo('.ks-step[data-step="5"]',{y:20,opacity:0},{y:0,opacity:1,duration:7},170).to('.ks-step[data-step="5"]',{y:-12,opacity:0,duration:6},187);
+    tl.fromTo('.ks-step[data-step="6"]',{y:20,opacity:0},{y:0,opacity:1,duration:7},194);
+    tl.set({},{},215);
 
-    var dist=Math.round((isD?window.innerHeight:(window.visualViewport?window.visualViewport.height:window.innerHeight))*(isD?3.4:2.9));
-    var st=ScrollTrigger.create({trigger:sec,start:'top top+='+navH,end:'+='+dist,pin:'#ksPin',anticipatePin:1,scrub:true,animation:tl,invalidateOnRefresh:true});
-    stRef=st;
-    return function(){tl.kill();st.kill();gsap.set([phone,'.ks-step','#ksBook','#ksCal','#ksSms','#ksBlock','#ksBlkGlow','#ksBg','#ksNext2','#ksSlotHint','#ksSlotsHdr','#ksSlotsGrid','#ksStatus','#ksBadgeA','#ksBadgeB',friChip,slot11].concat(navBtns),{clearProps:'all'});};
+    // dist ×2,15 (7,31 desktop / 6,235 mobil): tweens 0–100 lander på nøyaktig samme scroll-offset
+    // som før → Kjernefunksjoner identisk. Kortere enn før (var ×2,5) etter at overgangs-
+    // illustrasjonen + ukemarkørene er fjernet. De nye stegene får tidslinje-rommet 100–215.
+    var dist=Math.round((isD?window.innerHeight:(window.visualViewport?window.visualViewport.height:window.innerHeight))*(isD?7.31:6.235));
+    function frame(self){var t=(self&&typeof self.progress==='number'?self.progress:tl.progress())*215;dTick(t);lojal(t);}
+    var st=ScrollTrigger.create({trigger:sec,start:'top top+='+navH,end:'+='+dist,pin:'#ksPin',anticipatePin:1,scrub:true,animation:tl,invalidateOnRefresh:true,onUpdate:frame,onRefresh:function(){frame();}});
+    stRef=st; frame();
+    return function(){tl.kill();st.kill();loTl.kill();loReset();gsap.set([phone,'.ks-step','#ksBook','#ksCal','#ksSms','#ksBlock','#ksBlkGlow','#ksBg','#ksNext2','#ksSlotHint','#ksSlotsHdr','#ksSlotsGrid','#ksStatus','#ksBadgeA','#ksBadgeB','#ksH2','#ksH2b','#ksNav1','#ksNav2','#ksDiagrams','.ks-badge',friChip,slot11].concat(navBtns).concat(navBtns2),{clearProps:'all'});};
    });
    ScrollTrigger.refresh();
   }
@@ -893,8 +1152,12 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   Promise.all(venter).then(bygg).catch(bygg);
   // Refresh KUN ved orienteringsendring (ikke visualViewport/adresselinje-resize).
   window.addEventListener('orientationchange',function(){setTimeout(function(){ScrollTrigger.refresh();},250);});
-  navBtns.forEach(function(b){b.addEventListener('click',function(){if(!stRef)return;var s=+b.dataset.step;var target=stRef.start+(stRef.end-stRef.start)*[0.20,0.53,0.83][s];
-    if(window.ScrollToPlugin)gsap.to(window,{scrollTo:target,duration:.5,ease:'power1.inOut'});else window.scrollTo(0,target);});});
+  function hoppTil(frac){if(!stRef)return;var target=stRef.start+(stRef.end-stRef.start)*frac;
+    if(window.ScrollToPlugin)gsap.to(window,{scrollTo:target,duration:.5,ease:'power1.inOut'});else window.scrollTo(0,target);}
+  // Kjernefunksjoner-nav: gamle fraksjoner /2,5 (rekkevidden er 2,5× lengre nå).
+  navBtns.forEach(function(b){b.addEventListener('click',function(){hoppTil([0.08,0.212,0.332][+b.dataset.step]);});});
+  // Få kunder tilbake-nav: fraksjoner av tidslinje-tid (t/250) midt i hvert steg.
+  navBtns2.forEach(function(b){b.addEventListener('click',function(){hoppTil([0.54,0.70,0.81,0.92][+b.dataset.step2]);});});
 })();
 </script>
 </body>
