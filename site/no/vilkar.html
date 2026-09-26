@@ -52,11 +52,12 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .nav.scrolled{border-bottom-color:#1f1f1f;background:rgba(10,10,10,.97)}
 .nav-wrap{max-width:1100px;margin:0 auto;padding:0 32px;height:68px;display:flex;align-items:center;justify-content:space-between}
 .logo{font-size:21px;font-weight:800;letter-spacing:-.03em;color:#fff;text-decoration:none}
+.nav .logo img{height:22px;width:auto;display:block}
 .nav-links{display:flex;align-items:center;gap:6px}
 .nav-links a{color:#bdbdbd;font-size:14.5px;font-weight:500;text-decoration:none;padding:8px 14px;border-radius:8px;transition:color .2s,background .2s}
 .nav-links a:hover{color:#fff;background:#161616}
 .nav-login{color:#fff!important}
-.nav-cta{background:#2563eb!important;color:#fff!important;font-weight:600!important;padding:10px 20px!important;border-radius:99px!important;margin-left:8px;transition:opacity .2s!important}
+.nav-cta{background:#2563eb!important;color:#fff!important;font-size:14px!important;font-weight:600!important;padding:9px 18px!important;border-radius:99px!important;margin-left:8px;white-space:nowrap!important;text-decoration:none;transition:opacity .2s!important}
 .nav-cta:hover{background:#1d4ed8!important}
 .nav-right{display:flex;align-items:center;gap:14px}.nav-right a{text-decoration:none}
 .nav-burger{display:none;flex-direction:column;justify-content:center;gap:4px;width:32px;height:32px;background:none;border:none;cursor:pointer;padding:6px 4px}
@@ -161,7 +162,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .foot-social{display:flex;gap:9px}
 .foot-social a{width:36px;height:36px;border-radius:50%;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;transition:all .2s}
 .foot-social a:hover{background:#fff;color:#000;border-color:#fff}
-@media(max-width:760px){.nav-links{display:none}.nav-burger{display:flex}.feat-grid{grid-template-columns:1fr 1fr}.steps{grid-template-columns:1fr 1fr}.foot-top{grid-template-columns:1fr;gap:40px;padding-bottom:42px}.foot-cols{grid-template-columns:1fr 1fr;gap:32px 24px}.foot-wrap{padding:56px 24px 32px}}
+@media(max-width:760px){.nav-links{display:none}.nav-burger{display:flex}.nav-wrap{padding:0 16px}.nav .logo img{height:19px}.feat-grid{grid-template-columns:1fr 1fr}.steps{grid-template-columns:1fr 1fr}.foot-top{grid-template-columns:1fr;gap:40px;padding-bottom:42px}.foot-cols{grid-template-columns:1fr 1fr;gap:32px 24px}.foot-wrap{padding:56px 24px 32px}}
 @media(max-width:560px){.feat-grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}}
 
@@ -193,7 +194,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 
 <nav class="nav" id="nav">
   <div class="nav-wrap">
-    <a href="index.html" class="logo">BarberHQ</a>
+    <a href="index.html" class="logo" aria-label="BarberHQ"><img src="logo/barberhq-ordmerke-mork-transparent.svg" alt="BarberHQ" width="107" height="22"></a>
     <div class="nav-links">
       <a href="funksjoner.html">Funksjoner</a>
       <a href="priser.html">Priser</a>
