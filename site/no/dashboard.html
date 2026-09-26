@@ -2799,6 +2799,22 @@ async function apiFetch(path,opts={}){
   return r;
 }
 
+// Felles lagre-request: gir ALLTID {ok:true,res} eller {ok:false,error:<melding for bruker>} —
+// aldri stille. Rot-årsak til den gamle arbeidstid-buggen var at et svar UTEN {error}-felt (f.eks.
+// 403 fra en middleware) ble degradert til bar {ok:false}, og handleren viste da ingenting.
+// Her får ikke-2xx uten {error} en generisk melding med statuskode, og en kastet fetch (nettverks-
+// feil) fanges. !r = 401-redirect (apiFetch har allerede sendt til logg-inn). «hva» = kort
+// substantiv i meldinga, f.eks. 'arbeidstidene'. Gjenbrukbar for framtidige lagre-kall.
+async function lagreRequest(path, payload, hva){
+  let r;
+  try{ r=await apiFetch(path,{method:'PUT',body:JSON.stringify(payload)}); }
+  catch(_){ return {ok:false, error:'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.'}; }
+  if(!r) return {ok:false};                                   // 401 → siden bytter til logg-inn
+  if(r.ok) return {ok:true, res:r};
+  const j=await r.json().catch(()=>null);
+  return {ok:false, error:(j&&j.error) || ('Kunne ikke lagre '+hva+' (feil '+r.status+'). Prøv igjen.')};
+}
+
 const DAYS=["Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag","Søndag"];
 const MONTHS=["januar","februar","mars","april","mai","juni","juli","august","september","oktober","november","desember"];
 
@@ -2861,11 +2877,9 @@ const api={
     // — barbereren møter ingen feil på en halvutfylt pause. weekday pr. pause (UI day → backend).
     const breaks=[];
     d.forEach(h=>{ if(!h.on)return; const p=h.breaks&&h.breaks[0]; if(p&&p.start&&p.end) breaks.push({weekday:(h.day+1)%7,start_time:p.start,end_time:p.end}); });
-    const r=await apiFetch('/api/dashboard/hours',{method:'PUT',body:JSON.stringify({days,breaks})});
-    if(!r)return{ok:false};                       // 401 → apiFetch har redirigert
-    if(r.ok)return{ok:true};
-    const j=await r.json().catch(()=>({}));
-    return{ok:false,error:j&&j.error};            // 409/400 → melding vises ordrett
+    // Via felles lagreRequest → aldri stille: 409/400 med {error} vises ordrett, øvrige ikke-2xx
+    // (f.eks. 403) får generisk melding m/statuskode, nettverksfeil fanges. Se lagreRequest.
+    return lagreRequest('/api/dashboard/hours', {days,breaks}, 'arbeidstidene');
   },
   async googleStatus(){
     const r=await apiFetch('/api/dashboard/google/status');
