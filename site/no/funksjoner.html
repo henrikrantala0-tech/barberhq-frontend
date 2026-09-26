@@ -478,18 +478,19 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
 .ks-scene *{transition:none!important;animation:none!important}   /* alt styres av scroll, aldri av tid */
 .ks-pin{position:relative;min-height:420px}
 .ks-stage{position:relative;width:100%;height:100%}   /* animert lag; #ksPin selv får ALDRI transform */
-/* HVIT glow — ett lag, mange stopp for mykt fall, INGEN filter:blur. Kun opacity/transform animeres. */
+/* HVIT glow — ferdig dithered bilde (glow-white.webp) i stedet for radial-gradient, så det ikke
+   blir fargetrinn/ringer (banding) på vanlige skjermer. Kun opacity/transform animeres. */
 .ks-bg{position:absolute;left:50%;top:50%;width:min(1180px,130%);height:min(1180px,124%);transform:translate(-50%,-50%);pointer-events:none;z-index:0;will-change:transform,opacity;
-  background:radial-gradient(circle at center,
-    rgba(255,255,255,.10) 0%,rgba(255,255,255,.093) 6%,rgba(255,255,255,.083) 12%,rgba(255,255,255,.072) 18%,
-    rgba(255,255,255,.061) 24%,rgba(255,255,255,.050) 30%,rgba(255,255,255,.040) 36%,rgba(255,255,255,.031) 42%,
-    rgba(255,255,255,.023) 49%,rgba(255,255,255,.016) 56%,rgba(255,255,255,.010) 64%,rgba(255,255,255,.005) 73%,
-    rgba(255,255,255,.002) 84%,rgba(255,255,255,0) 100%)}
-/* svært svak grå-støy over glowen → dither mot banding på mørk bakgrunn (statisk) */
-.ks-bg::after{content:'';position:absolute;inset:0;pointer-events:none;opacity:.04;background-size:130px 130px;
-  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='130' height='130'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='2' stitchTiles='stitch'/%3E%3CfeColorMatrix type='saturate' values='0'/%3E%3C/filter%3E%3Crect width='130' height='130' filter='url(%23n)'/%3E%3C/svg%3E")}
-/* blå glow bak kalenderblokken — samme billige måte (radial-gradient div, kun opacity) */
-.ks-blk-glow{position:absolute;pointer-events:none;z-index:0;opacity:0;background:radial-gradient(ellipse at center,rgba(77,139,255,.5) 0%,rgba(77,139,255,.22) 42%,rgba(77,139,255,.06) 66%,transparent 80%)}
+  background:url("images/glow-white.webp") center/100% 100% no-repeat}
+/* Sentrer glowen BAK TELEFONEN, ikke bak stagen. Telefonen ligger i kolonne 2 av gridet
+   (190px 360px 1fr, padding 40, gap 44) → senteret er fast 40+190+44+180 = 454px fra
+   .ks-inner sin venstre kant, uavhengig av 1fr-kolonnen. .ks-inner er sentrert i stagen
+   (max-width 1180), så venstrekanten er max(0,(100%−1180)/2). Uten dette sto glowen på
+   stage-senter (x640) mens telefonen står på x504 → glowen havnet nede til høyre.
+   Under 900px er gridet én sentrert kolonne, så basen left:50% gjelder. */
+@media(min-width:900px){.ks-bg{left:calc(max(0px,(100% - 1180px)/2) + 454px)}}
+/* blå glow bak kalenderblokken — samme dithered-bilde-løsning (glow-blue.webp) */
+.ks-blk-glow{position:absolute;pointer-events:none;z-index:0;opacity:0;background:url("images/glow-blue.webp") center/100% 100% no-repeat}
 .ks-inner{position:relative;z-index:1;width:100%;max-width:1180px;margin:0 auto;padding:0 40px;display:grid;grid-template-columns:190px 360px 1fr;align-items:center;gap:44px}
 .ks-h2wrap{grid-column:1/-1;position:relative}
 .ks-h2{font-family:'Inter',sans-serif;font-weight:800;font-size:clamp(24px,3.4vw,38px);letter-spacing:-.03em;color:#fff;margin:0 0 4px}
@@ -532,7 +533,7 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
    (transparent nås ~117×101px fra senter, godt innenfor 160×170px halv-dimensjon) → toner
    helt ut i alle retninger, ingen synlig kant. Svakere (.24 vs .5) + mykere (lengre fall). */
 .ks-scene .ls-glow{position:absolute;top:70px;left:0;right:0;height:340px;opacity:0;pointer-events:none;z-index:1;
-  background:radial-gradient(ellipse 150px 130px at 50% 50%,rgba(62,207,126,.24) 0%,rgba(62,207,126,.1) 45%,rgba(62,207,126,0) 78%)}
+  background:url("images/glow-green.webp") center/100% 100% no-repeat}
 /* Låseskjerm: lommelykt (v.) + kamera (h.) + hjem-indikator. Skalert med .ls (320px designrom). */
 .ks-scene .ls-btn{position:absolute;bottom:40px;width:48px;height:48px;border-radius:50%;background:rgba(28,28,32,.55);backdrop-filter:blur(6px);display:flex;align-items:center;justify-content:center;z-index:2}
 .ks-scene .ls-btn svg{width:24px;height:24px;display:block}
@@ -575,6 +576,9 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
 /* Diagrammene ligger over telefon-posisjonen i .ks-phonewrap. opacity:0 til overgangen. */
 .ks-scene .ks-phonewrap{position:relative}
 .ks-diagrams{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:440px;pointer-events:none;opacity:0;z-index:2}
+/* Desktop: høyre-forankret til telefonens høyre kant → samme luft til stegteksten som i
+   Kjernefunksjoner (var 4px for lojalitet/vinn tilbake, nå ≥54px). Klar av stegnavet til venstre. */
+@media(min-width:900px){.ks-diagrams{left:auto;right:10px;transform:translateY(-50%);width:380px}}
 .ks-diagrams .dia{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);opacity:0}
 .ks-diagrams .dsvg{width:100%;height:auto;display:block;overflow:visible}
 .ks-diagrams .edge{stroke:#2b2b33;stroke-width:2;fill:none;stroke-linecap:round}
@@ -643,6 +647,184 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
 @media(max-width:359px){
   .ks-diagrams .lostampwrap{max-width:225px}
 }
+
+/* ==================== DIN EGEN SIDE (scroll-scene, egen pin — overgang + Profil) ==================== */
+/* Samme svarte #0a0a0a som resten av sida — INGEN fargeovergang. Profil-kortet er også #0a0a0a
+   (går i ett med sida, ingen kant/skygge); kun input-feltene har --d-surface #141414 + kant så de
+   synes tydelig. Overgangen fra Vinn tilbake er lik de andre stegene: glir ut, tittel + Profil inn.
+   Kortfarge-token = dashboard.html:351 (--surface #141414), brukt kun på feltene. Mørk only. */
+.des-scene{position:relative;overflow-x:clip;background:#0a0a0a;display:none;margin-top:26vh;
+  --d-surface:#141414;--d-ink:#ffffff;--d-ink2:#cfcfcf;--d-mut:#8a8a8a;--d-line:#242424;--d-line2:#363636;--d-info:#4d8bff}
+.des-scene.des-anim{display:block}
+.des-scene *{transition:none!important;animation:none!important}
+.des-pin{position:relative;min-height:420px;z-index:1}
+.des-stage{position:relative;width:100%;height:100%}
+.des-inner{position:relative;z-index:1;width:100%;max-width:1200px;margin:0 auto;padding:0 40px;display:grid;grid-template-columns:170px 1fr;align-items:center;gap:36px}
+.des-h2{grid-column:1/-1;font-family:'Inter',sans-serif;font-weight:800;font-size:clamp(24px,3.4vw,38px);letter-spacing:-.03em;color:#fff;margin:0}
+.des-nav{display:flex;flex-direction:column;gap:20px}
+.des-step-btn{background:none;border:0;color:#fff;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;text-align:left;padding:1px 0;cursor:pointer}
+.des-main{min-width:0}
+.des-text{margin:0 0 18px}
+.des-step h3{font-family:'Inter',sans-serif;font-weight:800;font-size:clamp(22px,2.6vw,30px);letter-spacing:-.02em;color:#fff;margin:0 0 6px}
+.des-step p{color:#b4b4b4;font-size:16px;line-height:1.5;margin:0}
+.des-dashrow{display:grid;grid-template-columns:1fr 330px;gap:34px;align-items:center}
+/* Profil-kort — klonet .acc/.fld/.savebar (dashboard.html), sømløst mot kortfarge-bakgrunnen */
+.des-card{background:transparent;border:0;border-radius:12px;overflow:hidden;position:relative;height:min(66vh,540px)}
+.des-cardscroll{will-change:transform}
+.des-acc-head{padding:15px 3px 10px}
+.des-acc-title{font-size:18px;font-weight:700;color:var(--d-ink);letter-spacing:-.01em}
+.des-acc-sub{display:block;font-size:13px;color:var(--d-mut);margin-top:4px;line-height:1.5}
+.des-accbody{padding:4px 3px 8px}
+.des-fld{margin-bottom:15px;max-width:560px}
+.des-fld label{display:block;font-size:12px;color:var(--d-mut);font-weight:500;margin-bottom:6px;letter-spacing:-.01em}
+/* Felt i full dashbord-størrelse (border-box → min-height MÅ romme padding: 42px total, ikke 22).
+   Bakgrunn --d-surface #141414 + kant → tydelig synlig mot den svarte sida. Kun teksten animeres. */
+.des-in{width:100%;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--d-line2);border-radius:8px;background:var(--d-surface);color:var(--d-ink);min-height:42px;line-height:1.4;white-space:pre-wrap;word-break:break-word}
+.des-in.ta{min-height:76px}
+.des-in.typing::after{content:'';display:inline-block;width:1.5px;height:1em;background:var(--d-info);margin-left:1px;vertical-align:-2px}
+.des-fld-hint{font-size:11.5px;color:var(--d-mut);margin-top:6px;line-height:1.4;letter-spacing:-.01em}
+.des-fld-at{position:relative}
+.des-fld-at .sym{position:absolute;left:12px;top:11px;color:var(--d-mut);font-size:14px;font-weight:600;line-height:1.4;pointer-events:none}
+.des-fld-at .des-in{padding-left:26px}
+.des-savebar{display:flex;align-items:center;gap:13px;margin-top:16px}
+.des-btn{font:inherit;font-weight:600;font-size:14px;padding:10px 22px;border-radius:8px;background:#fff;color:#0a0a0a;border:0}
+.des-btn.hot{box-shadow:0 0 0 3px rgba(77,139,255,.55)}
+/* mykt inn/ut-fade på kortet (feltene glir inn/ut i kortfarge) */
+.des-card::before,.des-card::after{content:'';position:absolute;left:0;right:0;height:44px;z-index:2;pointer-events:none}
+.des-card::before{top:0;background:linear-gradient(to bottom,#0a0a0a,transparent)}
+.des-card::after{bottom:0;background:linear-gradient(to top,#0a0a0a,transparent)}
+/* Preview — EKTE skjermbilde (webp) av grand-barber, ikke levende iframe (statisk: ingen script,
+   ingen demo-besøk/statistikk, ikke klikkbar). Samme ramme/hjørner som dashbordets pvScreen. */
+.des-preview{align-self:center}
+.des-pv-frame{border:1px solid var(--d-line2);border-radius:24px;background:var(--d-surface);overflow:hidden;height:min(58vh,540px);aspect-ratio:281/562;width:auto;max-width:100%;margin:0 auto;position:relative}
+.des-pv-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.des-pv-cap{font-size:12px;color:var(--d-mut);text-align:center;margin-top:10px}
+/* ANIMERT */
+.des-scene.des-anim .des-pin{height:calc(100vh - var(--nav-h,68px))}
+.des-scene.des-anim .des-inner{height:100%;align-content:center}
+.des-scene.des-anim .des-h2{position:absolute;top:2vh;left:50%;transform:translateX(-50%);white-space:nowrap;margin:0}
+/* MOBIL — kort (fyll) og preview vises sekvensielt (får ikke plass samtidig i pinnet viewport) */
+@media(max-width:899px){
+  .des-inner{grid-template-columns:1fr;gap:12px;padding:0 16px}
+  .des-scene.des-anim .des-pin{height:calc(100svh - var(--nav-h,68px))}
+  .des-scene.des-anim .des-inner{align-content:start;padding-top:12px}
+  .des-nav{display:none}
+  .des-scene.des-anim .des-h2{position:relative;top:auto;left:auto;transform:none;text-align:center;font-size:clamp(21px,5.6vw,28px)}
+  .des-text{text-align:center;margin-bottom:12px}
+  .des-dashrow{grid-template-columns:1fr;gap:0}
+  .des-card{height:min(58svh,440px);max-width:420px;margin:0 auto}
+  .des-preview{margin:0 auto}
+  .des-pv-frame{height:min(52svh,360px);max-width:100%}
+}
+
+/* ==================== DIN EGEN SIDE — flersegment (Profil / Layout / Design) på samme pin ==================== */
+/* Nav-stegene til venstre: dempet default, aktivt steg settes hvitt av JS (samme mønster som FKT). */
+.des-nav{gap:18px}
+.des-step-btn{color:#5c5c5c}
+/* Segmentene overlapper i samme grid-celle og krysstoner via opacity — ingen layout-hopp mellom steg.
+   Main får full pinnet høyde så segmentene kan posisjonere seg vertikalt uavhengig. */
+.des-scene.des-anim .des-main{display:grid;height:calc(100vh - var(--nav-h,68px))}
+.des-seg{grid-area:1/1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.des-seg-off{pointer-events:none}
+/* Layout-segmentet toppforankres UNDER tittelen (stegteksten kolliderte med «Din egen side»). */
+@media(min-width:900px){#desSegLayout{justify-content:flex-start;padding-top:12vh}
+  #desSegDesign{justify-content:flex-start;padding-top:11vh}}
+/* ---- LAYOUT-segment: rad med fire ekte grand-barber-renders ---- */
+.des-layrow{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;align-items:start;max-width:820px;margin:0 auto;width:100%}
+.des-lay{opacity:0;will-change:transform,opacity}
+.des-lay-frame{border:1px solid var(--d-line2);border-radius:16px;background:var(--d-surface);overflow:hidden;aspect-ratio:281/562;width:100%;position:relative}
+.des-lay-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.des-lay-cap{font-size:13px;color:#cfcfcf;text-align:center;margin-top:11px;opacity:.4}
+.des-lay.is-on .des-lay-cap{opacity:1;font-weight:600;color:#fff}
+/* Mobil-merkelapp (kun mobil): navnet på den aktive layouten under den ene forhåndsvisningen. */
+.des-lay-tag{display:none}
+@media(max-width:899px){
+  .des-scene.des-anim .des-main{height:calc(100svh - var(--nav-h,68px))}
+  .des-seg .des-text{text-align:center;margin-bottom:12px}
+  /* Mobil: kun ÉN forhåndsvisning om gangen (krysstoner). Alle fire stables i samme celle. */
+  .des-layrow{display:grid;grid-template-columns:1fr;max-width:300px;margin:0 auto}
+  .des-lay{grid-area:1/1}
+  .des-lay-frame{height:min(52svh,360px);aspect-ratio:281/562;width:auto;margin:0 auto}
+  .des-lay-cap{display:none}
+  .des-lay-tag{display:block;text-align:center;margin-top:12px;font-size:14px;font-weight:600;color:#fff}
+}
+
+/* ==================== DESIGN-segment: klonet dashboard-kort (scopet dd-*) ==================== */
+.des-dcard{height:auto}
+.des-drow2{grid-template-columns:1fr 288px;align-items:center;gap:26px}
+.des-dcard .des-acc-head{padding:2px 3px 4px}
+.des-dcard .des-acc-title{font-size:16px}
+.des-dcard .des-acc-sub{margin-top:1px}
+.dd-ctl{position:relative}
+.dd-lbl{font-size:11px;color:var(--d-mut);font-weight:600;margin:7px 0 3px;letter-spacing:-.01em}
+.dd-focus{transition:none}
+.dd-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
+.dd-pal{position:relative}
+.dd-card{position:relative;text-align:left;border:1.5px solid var(--d-line2);border-radius:10px;padding:6px 10px;background:var(--d-surface);font:inherit;cursor:default;z-index:1}
+.dd-card.dd-on{border-color:var(--d-info)}
+.dd-pt{display:block;font-size:12.5px;font-weight:600;letter-spacing:-.01em;color:var(--d-ink)}
+.dd-pd{display:block;font-size:10.5px;color:var(--d-mut);margin-top:1px}
+.dd-sw{display:flex;gap:5px;margin-top:5px}
+.dd-sw i{width:13px;height:13px;border-radius:4px;border:1px solid rgba(127,127,127,.35);display:block}
+/* Felles valgramme — ETT element som glir mellom palett-kortene (transform), aldri to rammer. */
+.dd-frame{position:absolute;top:0;left:0;width:1px;height:1px;border:2px solid var(--d-info);border-radius:12px;
+  z-index:2;pointer-events:none;opacity:0;will-change:transform}
+/* Segmentert Lys/Mørk med glidende tommel */
+.dd-mode{position:relative;display:inline-flex;background:var(--d-surface);border:1px solid var(--d-line2);border-radius:9px;padding:3px}
+.dd-modethumb{position:absolute;top:3px;left:3px;height:calc(100% - 6px);border-radius:6px;background:#fff;z-index:0;pointer-events:none;will-change:transform}
+.dd-modebtn{position:relative;z-index:1;appearance:none;border:0;background:0;font:inherit;font-size:12.5px;font-weight:500;color:var(--d-mut);padding:6px 20px;border-radius:6px;cursor:default}
+.des-dcard .des-savebar{margin-top:11px}
+.dd-modebtn.dd-on{color:#0a0a0a}
+/* Fargevelger-panel — overlegg forankret under palett-gridet, skyver ALDRI kortet. */
+.dd-custom-panel{position:absolute;left:0;right:0;z-index:5;padding:14px;border:1.5px solid var(--d-info);border-radius:11px;
+  background:var(--d-surface);opacity:0;transform:translateY(-6px);pointer-events:none;will-change:transform,opacity}
+.dd-cpick{max-width:320px}
+.dd-sv{position:relative;width:100%;height:120px;border-radius:8px;border:1px solid var(--d-line2);
+  background:linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,hsl(0,100%,50%))}
+.dd-cursor{position:absolute;width:16px;height:16px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none;left:0;top:0;will-change:transform}
+.dd-hue{position:relative;width:100%;height:22px;margin-top:11px;border-radius:99px;background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
+.dd-huethumb{position:absolute;top:50%;left:0;width:20px;height:20px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none;will-change:transform}
+.dd-fine{display:flex;gap:10px;align-items:center;margin-top:12px;max-width:320px}
+.dd-prev{width:40px;height:40px;border-radius:8px;border:1px solid var(--d-line2);flex:0 0 auto;background:#000}
+.dd-hex{flex:1;min-width:0;font:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--d-line2);border-radius:8px;background:var(--d-surface);color:var(--d-ink);font-variant-numeric:tabular-nums}
+/* 4-lags forhåndsvisning — alle dekodet, krysstoner via opacity */
+.des-dpv{position:relative}
+.des-dpv-layer{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;display:block;opacity:0;will-change:opacity}
+@media(max-width:899px){
+  /* Mobil: forhåndsvisning øverst, kort under (kortet glir så aktiv del står synlig). */
+  .des-drow2{grid-template-columns:1fr;gap:0}
+  .des-drow2 .des-dpreview{order:-1;margin-bottom:12px}
+  .dd-grid{gap:8px}
+  /* Kortet i FULL størrelse, men bare et vindu er synlig — dd-ctl glir (translateY). */
+  #desSegDesign{justify-content:flex-start;padding-top:4px}
+  .des-dcard{position:relative;height:min(33svh,262px);overflow:hidden}
+  .des-dcard .dd-ctl{will-change:transform}
+  .des-dpv{height:min(37svh,250px)}
+  /* Kompakt fargevelger på mobil så SV + kulør + hex får plass i kortvinduet (også 320). */
+  .dd-custom-panel{padding:11px}
+  .dd-sv{height:100px}
+  .dd-hue{margin-top:8px;height:20px}
+  .dd-fine{margin-top:8px}
+  .dd-prev{width:36px;height:36px}
+  .dd-hex{padding:8px 10px;font-size:13px}
+}
+/* 390×600 og kortere: skaler ned FORHÅNDSVISNINGEN (ikke kortet) så fargevelgeren får plass. */
+@media(max-width:899px) and (max-height:660px){
+  .des-dpv{height:min(23svh,138px)}
+  .des-dcard{height:min(41svh,236px)}
+  .dd-sv{height:82px}
+  #desSegDesign .des-text{margin-bottom:6px}
+  .des-drow2 .des-dpreview{margin-bottom:6px}
+}
+/* Reduced-motion: ingen pin/scrub — vis Design-SLUTTILSTANDEN (rød, lys) statisk. Profil/Layout
+   skjules; fargevelger-panelet legges i flyt (ikke overlegg) så hele kortet leses. */
+.des-scene.des-reduced .des-pin,.des-scene.des-reduced .des-main{height:auto}
+.des-scene.des-reduced .des-h2{position:relative;top:auto;left:auto;transform:none;text-align:center;margin:0 0 22px}
+.des-scene.des-reduced #desSegProfil,.des-scene.des-reduced #desSegLayout{display:none}
+.des-scene.des-reduced #desSegDesign{padding-top:0}
+.des-scene.des-reduced .des-dcard{height:auto;overflow:visible}
+.des-scene.des-reduced .des-dcard .dd-ctl{transform:none!important}
+.des-scene.des-reduced .dd-custom-panel{position:static;opacity:1!important;transform:none!important;margin:8px 0 0;pointer-events:auto}
 
 </style>
 </head>
@@ -870,8 +1052,116 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
   </div>
 </section>
 
-<!-- ===================== DIN SIDE ===================== -->
-<section class="fx-section">
+<!-- ===================== DIN EGEN SIDE (scroll-scene, egen pin — overgang + Profil) ===================== -->
+<section class="des-scene" id="dineegenside" aria-label="Din egen side">
+  <div class="des-pin" id="desPin"><div class="des-stage"><div class="des-inner">
+    <h2 class="des-h2">Din egen side</h2>
+    <nav class="des-nav" aria-label="Steg">
+      <button class="des-step-btn" type="button" data-seg="0">Profil</button>
+      <button class="des-step-btn" type="button" data-seg="1">Layout</button>
+      <button class="des-step-btn" type="button" data-seg="2">Design</button>
+    </nav>
+    <div class="des-main">
+      <!-- SEGMENT 1: Profil (uendret) -->
+      <div class="des-seg" id="desSegProfil">
+      <div class="des-text"><div class="des-step"><p>Legg til info og sosiale medier på bookingsiden din.</p></div></div>
+      <div class="des-dashrow">
+        <div class="des-card" id="desCard"><div class="des-cardscroll" id="desCardScroll">
+          <div class="des-acc-head"><span class="des-acc-title">Profil</span><span class="des-acc-sub">Grunninfo som vises på bookingsiden din.</span></div>
+          <div class="des-accbody">
+            <div class="des-fld"><label>Navn på salongen</label><div class="des-in" data-v="Grand barber"></div></div>
+            <div class="des-fld"><label>Adresse</label><div class="des-in" data-v="Storgata 33, 0184 Oslo"></div><p class="des-fld-hint">Skriv full adresse (gate, nummer, postnr, by) så kunder finner frem i kart. Vil du ikke dele nøyaktig sted, skriv bare byen.</p></div>
+            <div class="des-fld"><label>Spesialitet</label><div class="des-in" data-v="Fades og skjeggtrim"></div></div>
+            <div class="des-fld"><label>Beskrivelse</label><div class="des-in ta" data-v="Sitter i sentrum og har klippet siden 2019."></div></div>
+            <div class="des-fld"><label>Instagram</label><div class="des-fld-at"><span class="sym">@</span><div class="des-in" data-v="barberhq__"></div></div></div>
+            <div class="des-fld"><label>TikTok</label><div class="des-fld-at"><span class="sym">@</span><div class="des-in" data-v="barber_hq_"></div></div></div>
+            <div class="des-fld"><label>Snapchat</label><div class="des-fld-at"><span class="sym">@</span><div class="des-in" data-v="barberhq_"></div></div></div>
+            <div class="des-fld"><label>Telefon</label><div class="des-in" data-v=""></div><p class="des-fld-hint">Kunden ser nummeret på bekreftelsen sin, ikke på selve bookingsiden.</p></div>
+            <div class="des-savebar"><button class="des-btn" id="desSaveBtn" type="button">Lagre profil</button></div>
+          </div>
+        </div></div>
+        <div class="des-preview" id="desPreview">
+          <div class="des-pv-frame"><img id="desPv" src="images/preview-grand-barber.webp" width="780" height="1560" alt="Forhåndsvisning av bookingsiden din" decoding="async" loading="lazy"></div>
+          <p class="des-pv-cap">Slik ser bookingsiden din ut.</p>
+        </div>
+      </div>
+      </div>
+      <!-- SEGMENT 2: Layout — fire ekte grand-barber-renders (Kraftig, mørk) -->
+      <div class="des-seg des-seg-off" id="desSegLayout">
+        <div class="des-text"><div class="des-step"><p>Hero, Profil, Direkte eller Showcase. Opptil 10 bilder i galleriet.</p></div></div>
+        <div class="des-layrow" id="desLayRow">
+          <div class="des-lay" data-idx="0"><div class="des-lay-frame"><img src="images/pv-hero-barberhq-mork.webp" width="780" height="1560" alt="Hero-layout" decoding="async" loading="lazy"></div><p class="des-lay-cap">Hero</p></div>
+          <div class="des-lay" data-idx="1"><div class="des-lay-frame"><img src="images/pv-profil-barberhq-mork.webp" width="780" height="1560" alt="Profil-layout" decoding="async" loading="lazy"></div><p class="des-lay-cap">Profil</p></div>
+          <div class="des-lay" data-idx="2"><div class="des-lay-frame"><img src="images/pv-direkte-barberhq-mork.webp" width="780" height="1560" alt="Direkte-layout" decoding="async" loading="lazy"></div><p class="des-lay-cap">Direkte</p></div>
+          <div class="des-lay" data-idx="3"><div class="des-lay-frame"><img src="images/pv-showcase-barberhq-mork.webp" width="780" height="1560" alt="Showcase-layout" decoding="async" loading="lazy"></div><p class="des-lay-cap">Showcase</p></div>
+        </div>
+        <p class="des-lay-tag" id="desLayTag">Hero</p>
+      </div>
+      <!-- SEGMENT 3: Design — klonet dashboard-kort (scopet) + Wispr-koreografi -->
+      <div class="des-seg des-seg-off" id="desSegDesign">
+        <div class="des-text"><div class="des-step"><p>Bytt palett, lys eller mørk, eller velg din egen farge blant 16&nbsp;777&nbsp;216.</p></div></div>
+        <div class="des-dashrow des-drow2">
+          <div class="des-card des-dcard" id="desDCard">
+            <div class="des-acc-head"><span class="des-acc-title">Design</span><span class="des-acc-sub">Palett, bakgrunn, stil og layout på bookingsiden din.</span></div>
+            <div class="dd-ctl">
+              <div class="dd-focus" data-focus="palett">
+                <p class="dd-lbl">Palett</p>
+                <div class="dd-grid dd-pal" id="ddPal">
+                  <span class="dd-frame" id="ddPalFrame" aria-hidden="true"></span>
+                  <button class="dd-card" data-idx="0" type="button"><span class="dd-pt">Gull</span><span class="dd-pd">Klassisk</span><span class="dd-sw"><i style="background:#ffffff"></i><i style="background:#b08c32"></i><i style="background:#0a0a0a"></i></span></button>
+                  <button class="dd-card" data-idx="1" type="button"><span class="dd-pt">Lime</span><span class="dd-pd">Signatur</span><span class="dd-sw"><i style="background:#ffffff"></i><i style="background:#d4ff3f"></i><i style="background:#0a0a0a"></i></span></button>
+                  <button class="dd-card" data-idx="2" type="button"><span class="dd-pt">BarberHQ</span><span class="dd-pd">Moderne</span><span class="dd-sw"><i style="background:#0a0a0a"></i><i style="background:#ffffff"></i><i style="background:#0071e3"></i></span></button>
+                  <button class="dd-card dd-cust" data-idx="3" type="button"><span class="dd-pt">Din egen</span><span class="dd-pd" id="ddCustSub">Egen aksentfarge</span><span class="dd-sw"><i style="background:#ffffff"></i><i id="ddCustSw" style="background:#e5484d"></i><i style="background:#0a0a0a"></i></span></button>
+                </div>
+              </div>
+              <!-- Fargevelger — forankret UNDER Din egen, overlegg (skyver ikke kortet). -->
+              <div class="dd-custom-panel" id="ddCustomPanel" aria-hidden="true">
+                <div class="dd-cpick">
+                  <div class="dd-sv" id="ddSV"><span class="dd-cursor" id="ddCursor"></span></div>
+                  <div class="dd-hue" id="ddHue"><span class="dd-huethumb" id="ddHueThumb"></span></div>
+                </div>
+                <div class="dd-fine"><span class="dd-prev" id="ddPrev"></span><span class="dd-hex" id="ddHex">#000000</span></div>
+              </div>
+              <div class="dd-focus" data-focus="bakgrunn">
+                <p class="dd-lbl">Bakgrunn</p>
+                <div class="dd-mode" id="ddMode"><span class="dd-modethumb" id="ddModeThumb" aria-hidden="true"></span><button class="dd-modebtn" data-m="lys" type="button">Lys</button><button class="dd-modebtn" data-m="mork" type="button">Mørk</button></div>
+              </div>
+              <div class="dd-focus" data-focus="ovrig">
+                <p class="dd-lbl">Stil</p>
+                <div class="dd-grid dd-stil">
+                  <button class="dd-card" type="button"><span class="dd-pt">Klassisk</span></button>
+                  <button class="dd-card" type="button"><span class="dd-pt">Signatur</span></button>
+                  <button class="dd-card" type="button"><span class="dd-pt">Moderne</span></button>
+                  <button class="dd-card dd-on" type="button"><span class="dd-pt">Kraftig</span></button>
+                </div>
+                <p class="dd-lbl">Layout</p>
+                <div class="dd-grid dd-lay">
+                  <button class="dd-card" type="button"><span class="dd-pt">Profil</span><span class="dd-pd">Portrett + info</span></button>
+                  <button class="dd-card dd-on" type="button"><span class="dd-pt">Showcase</span><span class="dd-pd">Galleri i front</span></button>
+                  <button class="dd-card" type="button"><span class="dd-pt">Hero</span><span class="dd-pd">Stort forsidebilde</span></button>
+                  <button class="dd-card" type="button"><span class="dd-pt">Direkte</span><span class="dd-pd">Rett til booking</span></button>
+                </div>
+              </div>
+              <div class="des-savebar"><button class="des-btn" id="desDSaveBtn" type="button">Lagre design</button></div>
+            </div>
+          </div>
+          <div class="des-preview des-dpreview">
+            <div class="des-pv-frame des-dpv">
+              <img class="des-dpv-layer" data-l="0" src="images/pv-showcase-barberhq-mork.webp" width="780" height="1560" alt="Bookingside — BarberHQ mørk" decoding="async">
+              <img class="des-dpv-layer" data-l="1" src="images/pv-showcase-lime-mork.webp" width="780" height="1560" alt="Bookingside — Lime mørk" decoding="async">
+              <img class="des-dpv-layer" data-l="2" src="images/pv-showcase-lime-lys.webp" width="780" height="1560" alt="Bookingside — Lime lys" decoding="async">
+              <img class="des-dpv-layer" data-l="3" src="images/pv-showcase-custom-lys.webp" width="780" height="1560" alt="Bookingside — Din egen rød, lys" decoding="async">
+            </div>
+            <p class="des-pv-cap" id="desDCap">Slik ser bookingsiden din ut.</p>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div></div></div>
+</section>
+
+<!-- ===================== DIN SIDE (statisk fallback for reduced-motion / no-JS) ===================== -->
+<section class="fx-section" id="dsFallback">
   <h2 class="fx-h2 reveal">Din side</h2>
   <div class="fn-list">
     <div class="fn-glow fn-lead reveal">
@@ -1038,13 +1328,17 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     function op(id,v){var el=$(id);if(el)el.style.opacity=v;}
     function tg(id,n,on){var el=$(id);if(el)el.classList.toggle(n,!!on);}
     function dTick(t){
-      var overlay=cl01(sg(t,100,108))*(1-sg(t,211,215));
+      // Vinn tilbake er SISTE steg, og steg-6-teksten fader ALDRI ut (i motsetning til steg
+      // 3-5, som fader tekst + diagram sammen). Overlayet skal derfor heller ikke fade ut på
+      // halen — ellers står teksten alene igjen («bare stegnavn og stegtekst») mens lista er
+      // borte i hvilepunktet før scenen unpinner. Lista blir stående til #ksPin scroller vekk.
+      var overlay=cl01(sg(t,100,108));
       var ov=$('ksDiagrams'); if(ov)ov.style.opacity=overlay;
       if(overlay<=0)return;
       op('dReA', cl01(sg(t,108,114))*(1-sg(t,138,143)));
       op('dVe', cl01(sg(t,140,145))*(1-sg(t,165,170)));
       op('dLo', cl01(sg(t,167,171))*(1-sg(t,188,192)));
-      op('dWb', cl01(sg(t,190,195))*(1-sg(t,211,215)));
+      op('dWb', cl01(sg(t,190,195)));
       // ---- REBOOKING (Klipp → intervallvelger → 35 dager + SMS → Ny booking) ----
       op('reAiv', cl01(sg(t,110,113)));
       var act=t<116?'28':t<119?'35':t<122?'45':'35';
@@ -1158,6 +1452,188 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   navBtns.forEach(function(b){b.addEventListener('click',function(){hoppTil([0.08,0.212,0.332][+b.dataset.step]);});});
   // Få kunder tilbake-nav: fraksjoner av tidslinje-tid (t/250) midt i hvert steg.
   navBtns2.forEach(function(b){b.addEventListener('click',function(){hoppTil([0.54,0.70,0.81,0.92][+b.dataset.step2]);});});
+})();
+</script>
+
+<script>
+/* ===================== DIN EGEN SIDE — egen scroll-scene (overgang + Profil) ===================== */
+(function(){
+  var $=function(id){return document.getElementById(id);};
+  var sec=$('dineegenside'); if(!sec)return;
+  var ins=[].slice.call(sec.querySelectorAll('.des-in'));
+  var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
+  if(!window.gsap||!window.ScrollTrigger){ ins.forEach(function(el){el.textContent=el.dataset.v;}); return; }
+  gsap.registerPlugin(ScrollTrigger);
+  var dsF=$('dsFallback'); if(dsF)dsF.style.display='none';
+  sec.classList.add('des-anim');
+  // T=200: Profil 0–100 (uendret math) · Layout 100–200. (Design legges til som 200+.)
+  // T=330: Profil 0–100 · Layout 100–200 · Design 200–330 (alt på SAMME pin).
+  var T=330, cardScroll=$('desCardScroll'), card=$('desCard'), saveBtn=$('desSaveBtn'),
+      h2=sec.querySelector('.des-h2'), prev=$('desPreview');
+  var segProfil=$('desSegProfil'), segLayout=$('desSegLayout'), segDesign=$('desSegDesign'),
+      navBtns=[].slice.call(sec.querySelectorAll('.des-step-btn')),
+      lays=[].slice.call(sec.querySelectorAll('#desLayRow .des-lay')), layTag=$('desLayTag');
+  var LAYNAMES=['Hero','Profil','Direkte','Showcase'];
+  // Design-segment-refs
+  var ddPalFrame=$('ddPalFrame'), ddModeThumb=$('ddModeThumb'), ddCustomPanel=$('ddCustomPanel'),
+      ddHueThumb=$('ddHueThumb'), ddCursor=$('ddCursor'), ddHex=$('ddHex'), ddPrev=$('ddPrev'),
+      ddCustSub=$('ddCustSub'), saveDBtn=$('desDSaveBtn'), ddCtl=sec.querySelector('#desSegDesign .dd-ctl'),
+      ddPalCards=[].slice.call(sec.querySelectorAll('#ddPal .dd-card')),
+      ddModeBtns=[].slice.call(sec.querySelectorAll('#ddMode .dd-modebtn')),
+      ddFocusPal=sec.querySelector('#desSegDesign [data-focus="palett"]'),
+      ddFocusBak=sec.querySelector('#desSegDesign [data-focus="bakgrunn"]'),
+      ddFocusOvr=sec.querySelector('#desSegDesign [data-focus="ovrig"]'),
+      ddLayers=[].slice.call(sec.querySelectorAll('.des-dpv-layer'));
+  // Målte posisjoner (leses ÉN gang etter last + ved refresh — aldri i onUpdate)
+  var P=[], MODE={lys:0,mork:0}, HUEW=0, SVW=0, SVH=0, BAKOFF=0, CUSTOFF=0;
+  var HEXSTR='#e5484d';
+  var desIsD=true;
+  function cl01(x){return x<0?0:x>1?1:x;}
+  function sg(t,a,b){return cl01((t-a)/(b-a));}
+  function ez(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;}   // power2.inOut
+  function lerp(a,b,p){return a+(b-a)*p;}
+  function segOff(el,op){if(!el)return;el.style.opacity=op;el.classList.toggle('des-seg-off',op<=0.01);}
+  var N=ins.length, F0=15, F1=82, span=(F1-F0)/N;
+  // ---- LAYOUT-segment: fire ekte renders. Desktop: kommer inn én etter én (opacity+y), sist
+  //      markert. Mobil: én om gangen, krysstoner. Ren funksjon av t → identisk fram/tilbake.
+  var REV=[[118,126],[130,138],[142,150],[154,162]]; // desktop reveal-vinduer
+  function layoutTick(t){
+    if(desIsD){
+      var active = t<130?0 : t<142?1 : t<154?2 : 3;    // sist inn = markert; ender på Showcase
+      lays.forEach(function(el,i){var p=cl01(sg(t,REV[i][0],REV[i][1]));
+        el.style.opacity=p; el.style.transform='translateY('+(20*(1-p))+'px)';
+        el.classList.toggle('is-on', i===active && p>0.5);});
+    } else {
+      // mobil: sekvensiell krysstoning mellom de fire (stablet i samme celle)
+      var op=[ 1-sg(t,124,132),
+               sg(t,124,132)*(1-sg(t,136,144)),
+               sg(t,136,144)*(1-sg(t,148,156)),
+               sg(t,148,156) ];
+      lays.forEach(function(el,i){el.style.opacity=op[i];el.style.transform='none';el.classList.remove('is-on');});
+      var cur = t<128?0 : t<140?1 : t<152?2 : 3;
+      if(layTag)layTag.textContent=LAYNAMES[cur];
+    }
+  }
+  function desTick(t){
+    if(h2)h2.style.opacity=cl01(sg(t,2,12));
+    // ---- segment-krysstoning (kun opacity) ----
+    segOff(segProfil, cl01(sg(t,6,16))*(1-sg(t,102,110)));
+    segOff(segLayout, cl01(sg(t,108,116))*(1-sg(t,200,208)));
+    segOff(segDesign, cl01(sg(t,204,212)));
+    // ---- venstre nav: aktivt steg hvitt (kun desktop; nav skjult på mobil) ----
+    if(desIsD){var aSeg=t<105?0:t<205?1:2;navBtns.forEach(function(b,i){b.style.color=(i===aSeg)?'#fff':'#5c5c5c';});}
+    // ---- PROFIL-fyll (uendret) ----
+    ins.forEach(function(el,i){var a=F0+i*span,b=a+span*0.82;var p=cl01(sg(t,a,b));var v=el.dataset.v||'';
+      el.textContent=v.slice(0,Math.round(p*v.length)); el.classList.toggle('typing', v.length>0&&p>0&&p<1);});
+    if(cardScroll&&card&&card.clientHeight>0){var maxShift=Math.max(0,cardScroll.scrollHeight-card.clientHeight);
+      cardScroll.style.transform='translateY('+(-maxShift*cl01(sg(t,F0,F1+8)))+'px)';}
+    if(saveBtn)saveBtn.classList.toggle('hot', t>=87 && t<102);
+    // mobil profil: kort under fyll, preview til slutt (kun i profil-segmentet, t<108)
+    if(!desIsD&&prev&&card){var toPrev=t>=84&&t<108; card.style.display=toPrev?'none':'block'; prev.style.display=toPrev?'block':'none';}
+    else if(prev&&card){card.style.display='block';prev.style.display='block';}
+    // ---- LAYOUT ----
+    layoutTick(t);
+    // ---- DESIGN ----
+    designTick(t);
+  }
+  // ===== DESIGN-segment (Wispr-koreografi) — ren funksjon av t, idempotent, ingen layout-lesing =====
+  // Takt-vinduer (absolutt t). Rytme per takt: 0–20% fokus · 20–50% valg · 50–70% preview · 70–100% pause.
+  var K1=[214,252], K2=[256,292], K3=[296,330];
+  function taktAct(t,K){ var f=sg(t,K[0],K[0]+0.2*(K[1]-K[0])); var pz=sg(t,K[0]+0.7*(K[1]-K[0]),K[1]); return cl01(f)*(1-cl01(pz)); }
+  function palPos(i){ return P[i]||{x:0,y:0}; }
+  function designTick(t){
+    if(t<200){ return; }                       // design-segmentet rører ingenting før sin tur
+    if(!P.length) return;                       // ikke målt ennå
+    // ---- Palett-valgramme: BarberHQ(2) → Lime(1) [K1] → Din egen(3) [K3]. Ett element, transform. ----
+    var fp;
+    if(t<221.6) fp=palPos(2);
+    else if(t<302.4){ var c=cl01(sg(t,221.6,233)); var a=palPos(2),b=palPos(1); fp={x:lerp(a.x,b.x,ez(c)),y:lerp(a.y,b.y,ez(c))}; }
+    else { var c3=cl01(sg(t,302.4,313)); var a3=palPos(1),b3=palPos(3); fp={x:lerp(a3.x,b3.x,ez(c3)),y:lerp(a3.y,b3.y,ez(c3))}; }
+    if(ddPalFrame){ // lite «trykk» når rammen lander på Lime (K1) / Din egen (K3)
+      var land=Math.max(cl01(sg(t,231,233))*(1-sg(t,233,236)), cl01(sg(t,311,313))*(1-sg(t,313,316)));
+      var s=1-0.02*Math.sin(land*Math.PI);
+      ddPalFrame.style.opacity=cl01(sg(t,206,212));
+      ddPalFrame.style.transform='translate('+fp.x+'px,'+fp.y+'px) scale('+s+')';
+    }
+    // ---- Bakgrunn-tommel: Mørk → Lys (transform) ----
+    var mc=cl01(sg(t,263.2,274));
+    if(ddModeThumb)ddModeThumb.style.transform='translateX('+lerp(MODE.mork,MODE.lys,ez(mc))+'px)';
+    if(ddModeBtns.length===2){ddModeBtns[0].classList.toggle('dd-on',mc>=0.5);ddModeBtns[1].classList.toggle('dd-on',mc<0.5);} // [lys,mork]
+    // ---- Fargevelger-panel (K3): åpner som overlegg, skyver ikke kortet ----
+    var open=cl01(sg(t,297,305));
+    if(ddCustomPanel){ddCustomPanel.style.opacity=open;ddCustomPanel.style.transform='translateY('+(-6*(1-open))+'px)';}
+    // kulør + SV-markør + hex glir/skrives mot #E5484D
+    var pc=cl01(sg(t,303,320));
+    if(ddHueThumb&&HUEW)ddHueThumb.style.transform='translate('+(lerp(0.58,0.985,ez(pc))*HUEW)+'px,-50%)';
+    if(ddCursor&&SVW){ // fra blålig default (høyt oppe, høyre) til rød (s.686,v.898)
+      var cx=lerp(0.96,0.686,ez(pc))*SVW, cy=lerp(0.12,0.102,ez(pc))*SVH;
+      ddCursor.style.transform='translate('+cx+'px,'+cy+'px)'; }
+    if(ddHex){var n=Math.round(pc*HEXSTR.length);ddHex.textContent=HEXSTR.slice(0,n)||'#';}
+    var custActive=t>=302.4;
+    if(ddPrev)ddPrev.style.background=custActive?HEXSTR:'#0071e3';
+    if(ddCustSub)ddCustSub.textContent=custActive?HEXSTR:'Egen aksentfarge';
+    // ---- Forhåndsvisning: 4 lag, krysston (a BarberHQ mørk → b Lime mørk → c Lime lys → d rød lys) ----
+    if(ddLayers.length===4){
+      ddLayers[0].style.opacity=1-sg(t,233,241);
+      ddLayers[1].style.opacity=sg(t,233,241)*(1-sg(t,274,282));
+      ddLayers[2].style.opacity=sg(t,274,282)*(1-sg(t,316,324));
+      ddLayers[3].style.opacity=sg(t,316,324);
+    }
+    // ---- Wispr-fokus: fokusert gruppe = 1, resten dempes rolig til 0.4, tilbake til 1 etter takten ----
+    var a1=taktAct(t,K1),a2=taktAct(t,K2),a3=taktAct(t,K3);
+    if(ddFocusPal)ddFocusPal.style.opacity=1-0.6*a2;                 // palett dempes kun under Bakgrunn-takten
+    if(ddFocusBak)ddFocusBak.style.opacity=1-0.6*Math.max(a1,a3);    // bakgrunn dempes under Palett/Din egen
+    if(ddFocusOvr)ddFocusOvr.style.opacity=1-0.6*Math.max(a1,a2,a3); // stil/layout aldri fokusert
+    // ---- MOBIL: kortet glir (translateY) så aktiv seksjon står synlig under forhåndsvisningen ----
+    if(!desIsD&&ddCtl){
+      var g;
+      if(t<258) g=0;                                                   // Palett (BarberHQ→Lime)
+      else if(t<298){ var gb=cl01(sg(t,258,266)); g=lerp(0,BAKOFF,ez(gb)); }   // → Bakgrunn
+      else { var gc=cl01(sg(t,298,306)); g=lerp(BAKOFF,CUSTOFF,ez(gc)); }       // → Din egen + panel
+      ddCtl.style.transform='translateY(-'+g+'px)';
+    } else if(ddCtl){ ddCtl.style.transform='none'; }
+    if(saveDBtn)saveDBtn.classList.toggle('hot', t>=325);
+  }
+  function measureDesign(){
+    if(!ddPalCards.length)return;
+    P=ddPalCards.map(function(c){return {x:c.offsetLeft,y:c.offsetTop};});
+    if(ddPalFrame&&ddPalCards[0]){ddPalFrame.style.width=ddPalCards[0].offsetWidth+'px';ddPalFrame.style.height=ddPalCards[0].offsetHeight+'px';}
+    if(ddModeBtns.length===2&&ddModeThumb){ddModeThumb.style.width=ddModeBtns[0].offsetWidth+'px';MODE={lys:ddModeBtns[0].offsetLeft,mork:ddModeBtns[1].offsetLeft};}
+    var hue=$('ddHue'); HUEW=hue?hue.clientWidth:0;
+    var sv=$('ddSV'); SVW=sv?sv.clientWidth:0; SVH=sv?sv.clientHeight:0;
+    var pal=$('ddPal'); if(ddCustomPanel&&pal)ddCustomPanel.style.top=(pal.offsetTop+pal.offsetHeight+10)+'px';
+    // mobil-glide-mål: bring aktiv seksjon opp under forhåndsvisningen
+    BAKOFF = ddFocusBak?Math.max(0,ddFocusBak.offsetTop-6):0;
+    // vis fargevelger-panelet (takt 3-fokus) med Din egen-kortet så vidt over
+    CUSTOFF = (ddCustomPanel&&pal)?Math.max(0,pal.offsetTop+pal.offsetHeight-8):0;
+  }
+  function desbygg(){
+    var navEl=document.querySelector('.nav'); var navH=(navEl&&Math.round(navEl.getBoundingClientRect().height))||68;
+    document.documentElement.style.setProperty('--nav-h',navH+'px');
+    gsap.matchMedia().add({desktop:'(min-width:900px)',mobile:'(max-width:899px)'},function(ctx){
+      desIsD=!!ctx.conditions.desktop;
+      // 9.9×/8.58×vh = samme scroll-per-enhet som Profil (3.0/100, 2.6/100) over 330 enheter.
+      var dist=Math.round((desIsD?window.innerHeight:(window.visualViewport?window.visualViewport.height:window.innerHeight))*(desIsD?9.9:8.58));
+      measureDesign();
+      function frame(self){var t=(self&&typeof self.progress==='number'?self.progress:0)*T;desTick(t);}
+      var st=ScrollTrigger.create({trigger:sec,start:'top top+='+navH,end:'+='+dist,pin:'#desPin',anticipatePin:1,scrub:true,invalidateOnRefresh:true,onUpdate:frame,onRefresh:function(){measureDesign();frame();}});
+      frame({progress:0});
+      return function(){st.kill();};
+    });
+    ScrollTrigger.refresh();
+  }
+  // Reduced-motion: ingen pin/scrub. Vis Design-sluttilstanden (rød, lys) statisk via desTick(T).
+  function desReduced(){
+    var navEl=document.querySelector('.nav'); var navH=(navEl&&Math.round(navEl.getBoundingClientRect().height))||68;
+    document.documentElement.style.setProperty('--nav-h',navH+'px');
+    desIsD=matchMedia('(min-width:900px)').matches;
+    sec.classList.add('des-reduced');
+    ins.forEach(function(el){el.textContent=el.dataset.v;});
+    measureDesign(); desTick(T);
+  }
+  var venter=[]; if(document.fonts&&document.fonts.ready)venter.push(document.fonts.ready);
+  Promise.all(venter).then(reduce?desReduced:desbygg).catch(reduce?desReduced:desbygg);
+  if(!reduce)window.addEventListener('orientationchange',function(){setTimeout(function(){ScrollTrigger.refresh();},250);});
 })();
 </script>
 </body>
