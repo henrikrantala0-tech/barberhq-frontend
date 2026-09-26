@@ -64,6 +64,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .nav.scrolled{border-bottom-color:#1f1f1f;background:rgba(10,10,10,.97)}
 .nav-wrap{max-width:1100px;margin:0 auto;padding:0 32px;height:68px;display:flex;align-items:center;justify-content:space-between}
 .logo{font-size:21px;font-weight:800;letter-spacing:-.03em;color:#fff;text-decoration:none}
+.nav .logo img{height:22px;width:auto;display:block}
 .nav-links{display:flex;align-items:center;gap:28px}
 .nav-links a{color:#c8c8c8;font-size:14px;font-weight:500;text-decoration:none;transition:color .2s}
 .nav-links a:hover{color:#fff}
@@ -319,6 +320,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   :root{--nav-h:59px}
   .nav-wrap{padding:0 16px;height:58px}
   .logo{font-size:18px}
+  .nav .logo img{height:19px}
   .nav-links{display:none}
   .nav-burger{display:flex}
   .nav-cta,.nav-dash{padding:8px 14px;font-size:13px}
@@ -1561,7 +1563,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 <!-- ===== NAV ===== -->
 <nav class="nav" id="nav">
   <div class="nav-wrap">
-    <a href="#top" class="logo">BarberHQ</a>
+    <a href="#top" class="logo" aria-label="BarberHQ"><img src="logo/barberhq-ordmerke-mork-transparent.svg" alt="BarberHQ" width="107" height="22"></a>
     <div class="nav-links">
       <a href="funksjoner.html">Funksjoner</a>
       <a href="priser.html">Priser</a>

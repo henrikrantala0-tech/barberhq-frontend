@@ -53,6 +53,13 @@
      ordmerkets 21px). flex-shrink:0 så NAVNET beholdes og bookinglenka trunkerer i stedet.
      white-space:nowrap: aldri to linjer. */
   .shopnavn{font-size:14px;font-weight:700;letter-spacing:-.01em;line-height:1.15;color:var(--ink);white-space:nowrap;flex-shrink:0}
+  /* Lite BarberHQ-ordmerke venstre for butikknavnet. Mode-styrt: lys-variant (svartblå) i lys
+     modus, mork-variant (hvit/blå) i mørk. Default (data-theme="dark") viser mork. */
+  .dash-brand{display:flex;align-items:center;gap:8px;min-width:0;flex-shrink:0}
+  .dash-logo{height:15px;width:auto;display:block;flex-shrink:0}
+  .dash-logo-lys{display:none}
+  html[data-theme="light"] .dash-logo-lys{display:block}
+  html[data-theme="light"] .dash-logo-mork{display:none}
   .brand{font-weight:800;font-size:19px;letter-spacing:-.03em}
   .brand .hq{font-weight:300}
   /* .who (stablet navn+lenke) er fjernet — headeren er nå én rad: .shopnavn + .header-lenke. */
@@ -1483,10 +1490,15 @@
 <div class="topband">
 <div class="wrap">
   <header class="top">
-    <!-- BarberHQ-ordmerket er fjernet (ren dekor, ingen lenke). Butikknavnet står nå der, i samme
-         størrelse — én RAD: navn til venstre, kopierbar bookinglenke (settHeaderLenke) til høyre.
-         Lenka trunkerer (midt-ellipse) før navnet; den skal aldri brekke til linje to. -->
-    <b class="shopnavn" id="barberName">Grand Barber</b>
+    <!-- Én RAD: lite BarberHQ-ordmerke + butikknavn til venstre, kopierbar bookinglenke
+         (settHeaderLenke) til høyre. Ordmerket er ren dekor (ingen lenke) — mode-styrt via CSS:
+         svartblå (lys-transparent) i lys modus, hvit/blå (mork-transparent) i mørk. Butikknavnet
+         (#barberName) står fortsatt der og skal aldri brekke til linje to. -->
+    <span class="dash-brand">
+      <img class="dash-logo dash-logo-lys" src="logo/barberhq-ordmerke-lys-transparent.svg" alt="BarberHQ">
+      <img class="dash-logo dash-logo-mork" src="logo/barberhq-ordmerke-mork-transparent.svg" alt="BarberHQ">
+      <b class="shopnavn" id="barberName">Grand Barber</b>
+    </span>
     <div class="header-lenke" id="headerLenke" hidden></div>
     <!-- Kun synlig i fokusmodus (body.fokus) — «X øverst til høyre» = avslutt fokus. -->
     <button class="fokus-x" id="fokusX" type="button" aria-label="Lukk fokusmodus og vis hele dashbordet">&times;</button>
