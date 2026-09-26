@@ -1473,6 +1473,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 </style>
 <style>
 .sys-section{background:#0a0a0a;display:flex;justify-content:center;padding:90px 24px}
+/* Ankermål for lenker fra funksjoner.html-kortene — sticky nav (68px) skal ikke dekke raden. */
+.sys-row[id]{scroll-margin-top:84px}
 .sys-inner{max-width:1200px;width:100%;display:flex;flex-direction:column;align-items:center;text-align:center}
 .sys-eyebrow{color:#8a8a8a;font-size:13px;letter-spacing:.22em;font-weight:600;margin-bottom:16px;font-family:'Inter',-apple-system,system-ui,sans-serif}
 .sys-h2{color:#fff;font-size:clamp(21px,6vw,44px);font-weight:800;line-height:1;letter-spacing:-.04em;margin:0;font-family:'Inter',-apple-system,system-ui,sans-serif}
@@ -1966,7 +1968,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     <div class="sys-acc">
 
       <!-- Rad 1: Rebooking -->
-      <div class="sys-row" data-open="false" data-anim="rebooking">
+      <div class="sys-row" id="sys-rebooking" data-open="false" data-anim="rebooking">
         <button class="sys-head" aria-expanded="false">
           <span class="sys-head-ico">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M21 2v6h-6M3 12a9 9 0 0 1 15-6.7L21 8M3 22v-6h6M21 12a9 9 0 0 1-15 6.7L3 16"/></svg>
@@ -2090,7 +2092,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       </div>
 
       <!-- Rad 2: Påminnelser -->
-      <div class="sys-row" data-open="false" data-anim="paaminnelse">
+      <div class="sys-row" id="sys-paaminnelse" data-open="false" data-anim="paaminnelse">
         <button class="sys-head" aria-expanded="false">
           <span class="sys-head-ico">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 9-3 9h18s-3-2-3-9M13.73 21a2 2 0 0 1-3.46 0"/></svg>
@@ -2200,7 +2202,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       </div>
 
       <!-- Rad 3: Verving -->
-      <div class="sys-row" data-open="false" data-anim="verving">
+      <div class="sys-row" id="sys-verving" data-open="false" data-anim="verving">
         <button class="sys-head" aria-expanded="false">
           <span class="sys-head-ico">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM22 21v-2a4 4 0 0 0-3-3.87M16 3.13a4 4 0 0 1 0 7.75"/></svg>
@@ -2365,7 +2367,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       </div>
 
       <!-- Rad 4: Vinn tilbake -->
-      <div class="sys-row" data-open="false" data-anim="vinntilbake">
+      <div class="sys-row" id="sys-vinn-tilbake" data-open="false" data-anim="vinntilbake">
         <button class="sys-head" aria-expanded="false">
           <span class="sys-head-ico">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M3 10h11a4 4 0 0 1 0 8h-3M7 6l-4 4 4 4"/></svg>
@@ -2495,7 +2497,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       <!-- Rad 5: Lojalitetsprogram — STATISK bekreftelsesskjerm i samme telefonramme som de fire andre
            radene. Speiler #bk-success (booking-module.cjs:966-983): lojalitetsraden «N av M» + «Fullt kort
            gir …». Ingen animasjon (data-anim="lojalitet" uten handler). «7 av 10» = ren illustrasjon. -->
-      <div class="sys-row" data-open="false" data-anim="lojalitet">
+      <div class="sys-row" id="sys-lojalitet" data-open="false" data-anim="lojalitet">
         <button class="sys-head" aria-expanded="false">
           <span class="sys-head-ico">
             <svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="8" width="18" height="4" rx="1"/><path d="M12 8v13M20 12v7a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2v-7M7.5 8a2.5 2.5 0 0 1 0-5C10 3 12 5.5 12 8c0-2.5 2-5 4.5-5a2.5 2.5 0 0 1 0 5"/></svg>
