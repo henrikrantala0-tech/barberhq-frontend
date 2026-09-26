@@ -4804,9 +4804,26 @@ $("#replaceInput").addEventListener('change',async e=>{
 });
 
 $("#fileInput").addEventListener("change",e=>{handleUpload(e.target.files[0],_activeSlot);e.target.value="";});
-$("#hoursList").addEventListener("change",e=>{const i=+e.target.dataset.i; if(isNaN(i))return;
-  if(e.target.type==="checkbox"){hours[i].on=e.target.checked; renderHoursList();}
-  else if(e.target.dataset.f){hours[i][e.target.dataset.f]=e.target.value; renderHoursList();}});   // ny åpningstid → flytt ev. sentrert pause-tekst
+// «input» (ikke «change») + ALDRI innerHTML mens brukeren skriver. Rot-årsak til at 10:00 ikke
+// kunne tastes: change fyrte så snart tidsfeltet var gyldig («01:00» etter «1»), og renderHoursList()
+// erstattet hele lista (innerHTML) → det fokuserte feltet ble byttet ut og fokus forsvant. Nå
+// oppdateres kun state ved tid-endring; av/på-bryteren oppdaterer BARE sin egen rad (aktivert/
+// deaktivert + pause-tekst), aldri det fokuserte feltet.
+$("#hoursList").addEventListener("input",e=>{const i=+e.target.dataset.i; if(isNaN(i))return;
+  if(e.target.type==="checkbox"){
+    hours[i].on=e.target.checked;
+    const wrap=e.target.closest('.day-wrap');
+    if(wrap){
+      wrap.querySelectorAll('.day input[type="time"]').forEach(inp=>{inp.disabled=!hours[i].on;});
+      const ex=wrap.querySelector('.pause-under');
+      if(harPause(hours[i])){ if(!ex) wrap.insertAdjacentHTML('beforeend',pauseUnderHTML(hours[i])); }
+      else if(ex){ ex.remove(); }
+    }
+    const pb=$("#pauseBtn"); if(pb)pb.textContent=hours.some(harPause)?'Endre pauser':'Legg til pause';
+    centerPauseTexts();
+  }
+  else if(e.target.dataset.f){ hours[i][e.target.dataset.f]=e.target.value; }   // kun state — ingen re-render (bevarer fokus)
+});
 // Pause-modal: knapp åpner; avkryssing pr. dag legger til/fjerner pause; felt redigerer.
 // Ingen egen lagring — «Ferdig»/lukk re-rendrer hovedvisningen, «Lagre arbeidstider» persisterer.
 $("#pauseBtn").addEventListener("click",openPauseModal);
