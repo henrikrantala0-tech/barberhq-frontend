@@ -615,7 +615,7 @@ palett-grid + layout-karusell `#layGrid` + preview-iframe) ble fjernet i skjemao
 på `layGrid/palGrid/preview-tjenester` nå. Render-testene måler `scrollWidth − viewport = 0` på
 320/402/1280. Ikke lenger en kjent overflow.
 
-### Dashboard — desktop-bredde + polish (desktop-bredde FIKSET 21.09 `b7882e80`, polish 2–4 åpen)
+### Dashboard — desktop-bredde + polish (desktop-bredde FIKSET 21.09 `b7882e80`, polish 3–4 åpen)
 1. **Dashbordets desktop-container var ~3,5× for bred — FIKSET (`b7882e80`, 21.09).** `.wrap`
    (`.wrap{max-width:1120px…}`, én delt instans rundt alle fem paneler) ga inner 1072px @1280 — ~3,5×
    det enkeltkolonne-innholdet trenger (målt @1280: bookingrad 279px, «Drevet av»-rad 170px, KPI to kort
@@ -629,10 +629,14 @@ på `layGrid/palGrid/preview-tjenester` nå. Render-testene måler `scrollWidth 
    `6e1d574a` 14.09) er ryddet ut — den var 100 % overstyrt av `b7882e80`. ⚠ Restgap: «Drevet av»-radene
    (170px innhold) trenger fortsatt et EKSTRA grep utover containeren (kap `.di-rows` inner-bredde
    ~460px) for å tettes helt.
-2. **«Klipp totalt 0» (Vekst) viser stort null for fersk barber.** Samme svakhet som ble løst på
-   «Drevet av»-panelet 14.09 (`diTotalHtml` skjuler tallblokka ved `count===0` → dempet linje
-   «Ingenting hentet inn ennå.»). Samme behandling bør gjelde «Klipp totalt» på Vekst: skjul det
-   store nullet, vis én dempet linje i stedet.
+2. **«Klipp totalt 0» (Vekst) — FIKSET (`ac09064`, 23.09).** `renderVekstKpi` guarder nå
+   `if(klipp<=0){ wrap.innerHTML=''; wrap.hidden=true; return; }` (`dashboard.html`, `#vekstStats`) —
+   hele KPI-blokka (både «Kunder i snitt per måned» og «Klipp totalt») skjules når
+   `completed_all_time<=0`, så det store nullet vises aldri. Tom-teksten bæres av diagrammet under
+   (`renderMonthChart`). Merk: løsningen SKJULER hele blokka (litt annerledes enn «Drevet av», som
+   viser én dempet linje via `diTotalHtml`), men målet — vekk med det store nullet for fersk barber —
+   er nådd. Selve verdien 0 er korrekt: `completed_all_time` teller `ends_at<now()` +
+   `status NOT IN ('avlyst','ikke_mott')` (all-time), så 0 = genuint ingen passerte klipp ennå.
 3. **Enkelt-stolpe-diagram leser som en halv-tegnet graf.** «Kunder per måned» med kun ÉN måned
    (ett stolpe i et vidt lerret) ser tomt/uferdig ut. Trenger en tom-/tynn-tilstand ved ≤1 måned med
    data (dempet baseline eller hjelpetekst i stedet for én ensom stolpe).
