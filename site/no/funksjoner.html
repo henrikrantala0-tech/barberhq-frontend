@@ -700,9 +700,10 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
   .des-scene.des-anim .des-pin{height:calc(100svh - var(--nav-h,68px))}
   .des-scene.des-anim .des-inner{align-content:start;padding-top:12px}
   .des-nav{display:none}
-  /* Profil sitter tett under tittelen (som tittel→innhold i Kjernefunksjoner), ikke vertikalt
-     sentrert i den høye pinnen — ellers blir det for mye luft mellom «Din egen side» og skjemaet. */
-  #desSegProfil{justify-content:flex-start;padding-top:6px}
+  /* ALLE steg: stegteksten står rett under tittelen (som tittel→innhold i Kjernefunksjoner), ikke
+     vertikalt sentrert i den høye pinnen — så teksten ligger på samme sted og ikke hopper mellom steg.
+     Høyere spesifisitet enn base-regelen .des-seg{justify-content:center} (som står lenger ned). */
+  .des-scene.des-anim .des-seg{justify-content:flex-start;padding-top:8px;position:relative}
   .des-scene.des-anim .des-h2{position:relative;top:auto;left:auto;transform:none;text-align:center;font-size:clamp(21px,5.6vw,28px)}
   .des-text{text-align:center;margin-bottom:12px}
   .des-dashrow{grid-template-columns:1fr;gap:0}
@@ -736,13 +737,15 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
   .des-scene.des-anim .des-main{height:calc(100svh - var(--nav-h,68px))}
   .des-seg .des-text{text-align:center;margin-bottom:12px}
   /* Mobil: skrå transportbånd. Alle fire stables i samme celle; JS gir hver sin posisjon på banen
-     (nedre høyre → senter → øvre venstre). Mindre kort så 2–2,5 er synlige samtidig. */
-  .des-layrow{display:grid;grid-template-columns:1fr;max-width:300px;margin:0 auto}
+     (nedre høyre → senter → øvre venstre). Kortbanen sentreres i plassen under stegteksten (margin:auto);
+     større kort → ca. 2 synlige samtidig. */
+  .des-layrow{display:grid;grid-template-columns:1fr;max-width:320px;margin:0 auto;width:100%;flex:1;align-content:center}
   .des-lay{grid-area:1/1;z-index:1}
-  .des-lay-frame{height:min(40svh,300px);aspect-ratio:281/562;width:auto;margin:0 auto}
-  .des-lay-cap{display:none}
-  /* Navnet på fokus-kortet — ligger OVER kortene (z-index) som tittel/stegtekst. */
-  .des-lay-tag{display:block;text-align:center;margin-top:12px;font-size:14px;font-weight:600;color:#fff;position:relative;z-index:6}
+  .des-lay-frame{height:min(48svh,380px);aspect-ratio:281/562;width:auto;margin:0 auto}
+  /* Layoutnavnet FØLGER hvert kort: står rett UNDER kortets ramme (inne i .des-lay, glir med i banen),
+     aldri oppå bildet. Full opacity/hvit på mobil. */
+  .des-lay-cap{display:block;opacity:1;color:#fff;font-weight:600;font-size:14px;margin-top:10px}
+  .des-lay-tag{display:none}
 }
 
 /* ==================== DESIGN-segment: klonet dashboard-kort (scopet dd-*) ==================== */
@@ -791,8 +794,9 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
   .des-drow2{grid-template-columns:1fr;gap:0}
   .des-drow2 .des-dpreview{order:-1;margin-bottom:12px}
   .dd-grid{gap:8px}
-  /* Kortet i FULL størrelse, men bare et vindu er synlig — dd-ctl glir (translateY). */
-  #desSegDesign{justify-content:flex-start;padding-top:4px}
+  /* Kortet i FULL størrelse, men bare et vindu er synlig — dd-ctl glir (translateY). #desSegDesign
+     arver justify-content:flex-start + padding-top:8px fra .des-seg → stegteksten står på samme sted
+     som i Profil/Layout. */
   .des-dcard{position:relative;height:min(33svh,262px);overflow:hidden}
   .des-dcard .dd-ctl{will-change:transform}
   .des-dpv{height:min(37svh,250px)}
@@ -1507,7 +1511,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     } else {
       // per-kort forskyvning langs banen: s=+1 ⇒ nede-høyre (delvis synlig), s=+2 helt utenfor;
       // s=-1 ⇒ oppe-venstre (delvis), s=-2 helt utenfor.
-      var vw=window.innerWidth||375, DX=vw*0.56, DY=LR*0.27;
+      var vw=window.innerWidth||375, DX=vw*0.66, DY=LR*0.32;
       lays.forEach(function(el,i){
         var s=(CENm[i]-t)/16;                        // +1 nede-høyre · 0 senter · -1 oppe-venstre
         if(i===3 && t>=CENm[3]) s=0;                 // Showcase blir stående i senter
