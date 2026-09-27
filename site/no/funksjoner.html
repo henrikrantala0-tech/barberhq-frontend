@@ -537,21 +537,21 @@ html{overflow-x:clip}
 .ks-scene *{transition:none!important;animation:none!important}   /* alt styres av scroll, aldri av tid */
 .ks-pin{position:relative;min-height:420px}
 .ks-stage{position:relative;width:100%;height:100%}   /* animert lag; #ksPin selv får ALDRI transform */
-/* BØLGE-BAKGRUNNSLYS (.sglow) — forbehandlet gråtonebilde (bolge-lys.webp): mørkeste = 10 (#0a0a0a),
-   lyseste ~26, alle fire kanter tonet mykt til NØYAKTIG 10, triangulær dither → ingen ringer, ingen
-   synlig bildekant. Opakt (bakgrunn bakt inn, ingen alfa). To lag av samme bilde med LIGHTEN-blend
-   glir i litt ulikt tempo (scrubbet translate) → rolig flyt. ⚠ KUN transform + opacity — ingen scale,
-   ingen filter. Ligger bak telefonen/diagrammet, sentrert. SAMME i Kjernefunksjoner/Få kunder tilbake
-   og Din egen side (hero har INGEN glød). */
-.sglow{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;aspect-ratio:1;isolation:isolate}
-.sglow .wave{position:absolute;left:50%;top:50%;width:118%;height:118%;transform:translate(-50%,-50%);object-fit:cover;pointer-events:none;will-change:transform}   /* default-sentrering (reduced-motion/no-JS); GSAP overstyrer med xPercent/yPercent + drift ellers */
+/* BØLGE-BAKGRUNNSLYS (.sglow) — forbehandlet bølgebilde (bolge-{35,45,55}.webp): mørkeste=10 (#0a0a0a),
+   lyseste=35/45/55 (variant via ?glod, standard 45), triangulær dither → ingen ringer. BølgeFORMEN er
+   bevart (bånd i midten, mørkt over/under). Horisontalt FLISBAR (speilvend-skjøt: venstre=høyre) — hvert
+   lag er en strip med to fliser side ved side, som glir sømløst. Vises STØRRE enn seksjonen (155%) så
+   kantene ligger utenfor synsfeltet (+ seksjonens overflow-x:clip); kun topp/bunn er tonet ~6%. To lag
+   med LIGHTEN-blend glir ulikt tempo + motsatt retning → formen bølger, ikke bare glir. ⚠ KUN transform +
+   opacity — ingen scale, ingen filter. Bak telefonen/diagrammet. Kjernefunksjoner/Få kunder tilbake +
+   Din egen side (hero har INGEN glød). */
+.sglow{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:min(1600px,155vw);aspect-ratio:2/1;overflow:hidden;pointer-events:none;z-index:0;isolation:isolate}
+.sglow .wave{position:absolute;top:0;left:0;height:100%;width:200%;display:flex;will-change:transform}   /* strip = to fliser (200%) → glir sømløst innafor container-klippingen */
+.sglow .wave img{flex:0 0 50%;width:50%;height:100%;object-fit:cover;display:block;pointer-events:none}
 .sglow .wave.w2{mix-blend-mode:lighten}
-.ks-bg{width:min(760px,86vw);will-change:opacity}
-.des-glow{width:min(820px,90vw);top:50%}
-@media(max-width:899px){
-  .ks-bg{width:min(560px,150vw)}
-  .des-glow{width:min(560px,145vw)}
-}
+.ks-bg{will-change:opacity}
+.des-glow{top:50%}
+@media(max-width:899px){ .sglow{width:min(920px,172vw)} }
 /* Blå/grønn glød (inne i telefonen) beholder webp + maske, men støyen dempes til nesten usynlig. */
 .ks-blk-glow::after,.ks-scene .ls-glow::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:url("images/noise.png") 0 0 repeat;background-size:128px 128px;mix-blend-mode:overlay;opacity:.05}
@@ -1000,8 +1000,8 @@ html{overflow-x:clip}
   <div class="ks-pin" id="ksPin">
     <div class="ks-stage">
     <div class="ks-bg sglow" id="ksBg">
-      <img class="wave w1" src="bolge-lys.webp" srcset="bolge-lys-640.webp 640w, bolge-lys.webp 1080w" sizes="(max-width:899px) 560px, 760px" width="1080" height="1080" alt="" aria-hidden="true" decoding="async">
-      <img class="wave w2" src="bolge-lys.webp" srcset="bolge-lys-640.webp 640w, bolge-lys.webp 1080w" sizes="(max-width:899px) 560px, 760px" width="1080" height="1080" alt="" aria-hidden="true" decoding="async">
+      <div class="wave w1"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" aria-hidden="true" decoding="async"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" aria-hidden="true" decoding="async"></div>
+      <div class="wave w2"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" aria-hidden="true" decoding="async"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" aria-hidden="true" decoding="async"></div>
     </div>
     <div class="ks-inner">
       <div class="ks-h2wrap"><h2 class="ks-h2" id="ksH2">Kjernefunksjoner</h2><h2 class="ks-h2 ks-h2b" id="ksH2b">Få kunder tilbake</h2></div>
@@ -1160,7 +1160,7 @@ html{overflow-x:clip}
 
 <!-- ===================== DIN EGEN SIDE (scroll-scene, egen pin — overgang + Profil) ===================== -->
 <section class="des-scene" id="dineegenside" aria-label="Din egen side">
-  <div class="des-pin" id="desPin"><div class="des-stage"><div class="sglow des-glow" aria-hidden="true"><img class="wave w1" src="bolge-lys.webp" srcset="bolge-lys-640.webp 640w, bolge-lys.webp 1080w" sizes="(max-width:899px) 560px, 820px" width="1080" height="1080" alt="" decoding="async" loading="lazy"><img class="wave w2" src="bolge-lys.webp" srcset="bolge-lys-640.webp 640w, bolge-lys.webp 1080w" sizes="(max-width:899px) 560px, 820px" width="1080" height="1080" alt="" decoding="async" loading="lazy"></div><div class="des-inner">
+  <div class="des-pin" id="desPin"><div class="des-stage"><div class="sglow des-glow" aria-hidden="true"><div class="wave w1"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" decoding="async" loading="lazy"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" decoding="async" loading="lazy"></div><div class="wave w2"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" decoding="async" loading="lazy"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" decoding="async" loading="lazy"></div></div><div class="des-inner">
     <h2 class="des-h2">Din egen side</h2>
     <nav class="des-nav" aria-label="Steg">
       <button class="des-step-btn" type="button" data-seg="0">Profil</button>
@@ -1381,6 +1381,10 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   // Lojalitet-stempler (portert fra diag7-harness) — bygges alltid, brukes kun i animert sti.
   (function(){var w=$('loStamps');if(!w)return;for(var i=0;i<10;i++){var d=document.createElement('div');d.className='lostamp'+(i===9?' tenth':'');d.id='loS'+i;d.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';w.appendChild(d);}})();
 
+  // ?glod=35|45|55 velger glød-styrke (standard 45). Bytter bølgebildene (default 45 i markup).
+  (function(){var g=(new URLSearchParams(location.search).get('glod')||'45');if(g!=='35'&&g!=='55')g='45';
+    if(g!=='45')document.querySelectorAll('.wtile').forEach(function(im){im.src='bolge-'+g+'.webp';im.srcset='bolge-'+g+'-m.webp 860w, bolge-'+g+'.webp 1500w';});})();
+
   var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
   if(reduce||!window.gsap||!window.ScrollTrigger){return;}
   gsap.registerPlugin(ScrollTrigger); if(window.ScrollToPlugin)gsap.registerPlugin(ScrollToPlugin);
@@ -1418,7 +1422,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     gsap.set('#ksBook',{xPercent:0}); gsap.set('#ksCal',{xPercent:100}); gsap.set('#ksSms',{opacity:0});
     if(ksHeroEl)gsap.set('#ksHero',{xPercent:0});   // #ksHero (hero-kalender) synlig ved t=0; driveren glir den ut under reisen
     gsap.set(phone,{opacity:1,y:0}); gsap.set('#ksBg',{opacity:0});   // telefonen ER til stede fra t=0 (kom fra hero)
-    gsap.set('#ksBg .wave',{xPercent:-50,yPercent:-50});   // sentrer bølgelagene (GSAP eier transform; drift legges på som x/y)
+    gsap.set('#ksBg .w1',{xPercent:0,yPercent:0}); gsap.set('#ksBg .w2',{xPercent:-46,yPercent:0});   // strip-startposisjoner (dekker container; drift via tidslinja)
     gsap.set('.ks-step',{opacity:0,y:0}); gsap.set('.ks-step[data-step="0"]',{opacity:1,y:0});
     gsap.set('#ksSlotsHdr',{opacity:0}); gsap.set('#ksSlotsGrid',{opacity:0}); gsap.set('#ksNext2',{opacity:0}); gsap.set('#ksSlotHint',{opacity:1});
     gsap.set('#ksBadgeA',{opacity:0}); gsap.set('#ksBadgeB',{opacity:0}); gsap.set('#ksStatus',{opacity:1,color:'#0a0a0a'});   // badge skjult under reisen; status mørk (booking-baseline)
@@ -1505,8 +1509,10 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     // GLOW toner inn saktere enn telefonen (0-24) og står stabil resten
     tl.fromTo('#ksBg',{opacity:0},{opacity:1,duration:24,ease:'sine.out'},0);   // KUN opacity på selve laget
     // Bølgen flyter rolig gjennom scenen: to lag glir sideveis + litt opp i ulikt tempo (scrubbet, lineært).
-    tl.fromTo('#ksBg .w1',{x:18,y:24},{x:-18,y:-24,duration:207,ease:'none'},0);
-    tl.fromTo('#ksBg .w2',{x:-14,y:20},{x:22,y:-26,duration:207,ease:'none'},0);
+    // Bølgen reiser tydelig sideveis (~én flis) gjennom hele scenen + svak opp-ned. Strip = 200% container,
+    // så xPercent ∈ [-50,0] dekker alltid. w2 motsatt retning + annet tempo → lighten-interferens (former bølger).
+    tl.fromTo('#ksBg .w1',{xPercent:0,yPercent:-2},{xPercent:-50,yPercent:2,duration:207,ease:'none'},0);
+    tl.fromTo('#ksBg .w2',{xPercent:-46,yPercent:2},{xPercent:-4,yPercent:-3,duration:207,ease:'none'},0);
     // DEL B: telefonen har ALLEREDE reist inn via J-kroken (hero-telefonen) og landet på ks-plassen.
     // Her er den bare til stede fra t=0 — ingen egen innkomst (reise-telefonen krysstoner over til denne
     // ved landing = sømløst bytte). Tittelen kommer inn rundt den 0-8 (rett etter landing).
@@ -1767,8 +1773,8 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     if(h2)h2.style.opacity=1;
     // Bølgelyset glir rolig sideveis + litt opp gjennom scenen (to lag, ulikt tempo). Scrubbet, kun transform.
     var wp=t/T;
-    gsap.set('.des-glow .w1',{xPercent:-50,yPercent:-50,x:16-32*wp,y:22-44*wp});
-    gsap.set('.des-glow .w2',{xPercent:-50,yPercent:-50,x:-12+34*wp,y:18-40*wp});
+    gsap.set('.des-glow .w1',{xPercent:-50*wp, yPercent:-2+4*wp});
+    gsap.set('.des-glow .w2',{xPercent:-46+42*wp, yPercent:2-5*wp});
     // ---- segment-krysstoning (kun opacity). Profil er synlig fra start (ingen fade-inn ved pin) så
     //      hele seksjonen scroller inn som en enhet; fader kun UT mot Layout. ----
     segOff(segProfil, 1-sg(t,102,110));
