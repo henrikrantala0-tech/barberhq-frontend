@@ -264,13 +264,11 @@ html{overflow-x:clip}
    på én linje og dashbord-proporsjoner. Reduced-motion-heroen (unscoped .hv-screen i #heroViz) er urørt. */
 .ks-scene .hv-screen{position:absolute;top:0;left:0;inset:auto;width:390px;height:848px;
   transform:scale(calc(67.728cqw / 390px));transform-origin:top left}   /* 848 = 390 / (skjerm-sideforhold 0.46) → fyller skjermen eksakt */
-.ks-scene .hv-screen .hv-di{display:none}   /* ks .phone-di er notchen */
-.ks-scene .hv-screen .hv-sb{padding:16px 32px 10px}
-.ks-scene .hv-screen .hv-sb-t{font-size:15px}
-.ks-scene .hv-screen .hv-sb-r{gap:6px}
-.ks-scene .hv-screen .hv-sb-bars{width:18px}
-.ks-scene .hv-screen .hv-sb-wifi{width:17px}
-.ks-scene .hv-screen .hv-sb-batt{width:25px}
+/* Statuslinja + notch ligger IKKE i det skalerte kalenderinnholdet (ble uskarpt). Den skarpe,
+   telefon-nivå #ksStatus + .phone-di brukes på ALLE skjermer. Skjul de skalerte hero-kopiene, og gi
+   kalenderen toppklaring så #ksStatus (hvit på mørk kalender) ikke overlapper datolinja. */
+.ks-scene .hv-screen .hv-di,.ks-scene .hv-screen .hv-sb{display:none}
+.ks-scene .hv-cal{padding-top:52px}
 @media(min-width:900px){ .hero-viz{max-width:560px;padding:56px 20px 0} }
 
 .ks-scene .ks-cal{position:relative;height:100%;overflow:hidden;background:#0a0a0a}
@@ -541,21 +539,19 @@ html{overflow-x:clip}
 /* HVIT glow — ferdig dithered bilde (glow-white.webp) i stedet for radial-gradient, så det ikke
    blir fargetrinn/ringer (banding) på vanlige skjermer. Kun opacity/transform animeres. */
 .ks-bg{position:absolute;left:50%;top:50%;width:min(1180px,130%);height:min(1180px,124%);transform:translate(-50%,-50%);pointer-events:none;z-index:0;will-change:transform,opacity;
-  background:url("images/glow-white.webp") center/100% 100% no-repeat}
-/* Sentrer glowen BAK TELEFONEN, ikke bak stagen. Telefonen ligger i kolonne 2 av gridet
-   (190px 360px 1fr, padding 40, gap 44) → senteret er fast 40+190+44+180 = 454px fra
-   .ks-inner sin venstre kant, uavhengig av 1fr-kolonnen. .ks-inner er sentrert i stagen
-   (max-width 1180), så venstrekanten er max(0,(100%−1180)/2). Uten dette sto glowen på
-   stage-senter (x640) mens telefonen står på x504 → glowen havnet nede til høyre.
-   Under 900px er gridet én sentrert kolonne, så basen left:50% gjelder. */
-@media(min-width:900px){.ks-bg{left:calc(max(0px,(100% - 1180px)/2) + 454px)}}
+  background:url("images/glow-white.webp") center/100% 100% no-repeat;
+  -webkit-mask:radial-gradient(closest-side,#000 48%,transparent 100%);mask:radial-gradient(closest-side,#000 48%,transparent 100%)}   /* fader til HELT transparent godt innenfor boksen → ingen rektangulær kant (vertikale streker) */
+/* Glowen ligger bak telefonen. Telefonen står nå NØYAKTIG midt på siden (symmetrisk grid
+   1fr 360px 1fr) = stage-senter = viewport-senter, så basens left:50% treffer allerede riktig.
+   (Den gamle +454px-forskyvningen gjaldt da telefonen sto i kol 2 av 190px 360px 1fr, venstre
+   for senter — nå fjernet.) */
 /* ⚠ Banding-fiks (robust): WebP-glødene er LOSSY → dither-støyen komprimeres bort og båndene kommer
    tilbake, uavhengig av oppløsning. Løsning: eget støylag — 128×128 TAPSFRI PNG flislagt 1:1
    (background-size = teksturstørrelsen, ALDRI skalert), maskert av selve glødformen så støyen kun
    ligger der gløden er. Per-piksel-variasjonen dithrer båndene uansett hvor stor gløden blir. */
 .ks-bg::after,.ks-blk-glow::after,.ks-scene .ls-glow::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:url("images/noise.png") 0 0 repeat;background-size:128px 128px;mix-blend-mode:overlay;opacity:.55}
-.ks-bg::after{-webkit-mask:url("images/glow-white.webp") center/100% 100% no-repeat;mask:url("images/glow-white.webp") center/100% 100% no-repeat}
+.ks-bg::after{-webkit-mask:radial-gradient(closest-side,#000 48%,transparent 100%);mask:radial-gradient(closest-side,#000 48%,transparent 100%)}   /* SAMME radielle maske som gløden → verken glød eller støy har synlig boks-kant */
 .ks-blk-glow::after{-webkit-mask:url("images/glow-blue.webp") center/100% 100% no-repeat;mask:url("images/glow-blue.webp") center/100% 100% no-repeat}
 .ks-scene .ls-glow::after{-webkit-mask:url("images/glow-green.webp") center/100% 100% no-repeat;mask:url("images/glow-green.webp") center/100% 100% no-repeat}
 /* blå glow bak kalenderblokken — samme dithered-bilde-løsning (glow-blue.webp) */
@@ -640,6 +636,12 @@ html{overflow-x:clip}
   .ks-scene.ks-anim .ks-h2wrap{top:18px}
   .ks-scene.ks-anim .ks-inner{padding-top:64px}   /* skyv (sentrerte) telefonrekka ned under tittelen på korte vinduer */
   .ks-phone-slot{width:min(340px, calc((100vh - var(--nav-h,68px) - 160px) / 1.806))}
+  /* SYMMETRI: telefonen (kol 2) skal stå NØYAKTIG midt på siden, samme x-senter som den sentrerte
+     tittelen. Symmetriske sidekolonner → telefonsenteret = .ks-inner-senteret. Stegnav nær telefonens
+     venstre kant, stegtekst nær høyre kant. */
+  .ks-scene.ks-anim .ks-inner{grid-template-columns:1fr 360px 1fr}
+  .ks-scene.ks-anim .ks-navwrap{justify-self:end}
+  .ks-scene.ks-anim .ks-text{justify-self:start}
 }
 /* MOBIL — ingen stegnav/fremdrift; kun h2, telefon, merkelapp, sentrert tekst */
 @media(max-width:899px){
@@ -664,7 +666,7 @@ html{overflow-x:clip}
 .ks-diagrams{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:440px;pointer-events:none;opacity:0;z-index:2}
 /* Desktop: høyre-forankret til telefonens høyre kant → samme luft til stegteksten som i
    Kjernefunksjoner (var 4px for lojalitet/vinn tilbake, nå ≥54px). Klar av stegnavet til venstre. */
-@media(min-width:900px){.ks-diagrams{left:auto;right:10px;transform:translateY(-50%);width:380px}}
+@media(min-width:900px){.ks-diagrams{left:50%;transform:translate(-50%,-50%);width:380px}}   /* diagram sentrert på telefonplassen = midt på siden, som tittelen */
 .ks-diagrams .dia{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);opacity:0}
 .ks-diagrams .dsvg{width:100%;height:auto;display:block;overflow:visible}
 .ks-diagrams .edge{stroke:#2b2b33;stroke-width:2;fill:none;stroke-linecap:round}
@@ -745,7 +747,7 @@ html{overflow-x:clip}
 .des-scene *{transition:none!important;animation:none!important}
 .des-pin{position:relative;min-height:420px;z-index:1}
 .des-stage{position:relative;width:100%;height:100%}
-.des-inner{position:relative;z-index:1;width:100%;max-width:1200px;margin:0 auto;padding:0 40px;display:grid;grid-template-columns:170px 1fr;align-items:center;gap:36px}
+.des-inner{position:relative;z-index:1;width:100%;max-width:1200px;margin:0 auto;padding:0 40px;display:grid;grid-template-columns:170px 1fr 170px;align-items:center;gap:36px}   /* symmetrisk: hovedinnhold (kol 2) sentrert = samme x-senter som tittelen; nav kol 1, tom spacer kol 3 */
 .des-h2{grid-column:1/-1;font-family:'Inter',sans-serif;font-weight:800;font-size:clamp(24px,3.4vw,38px);letter-spacing:-.03em;color:#fff;margin:0;z-index:6}
 .des-nav{display:flex;flex-direction:column;gap:20px}
 .des-step-btn{background:none;border:0;color:#fff;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;text-align:left;padding:1px 0;cursor:pointer}
@@ -1342,14 +1344,14 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   // #ksCal (steg 2) = SAMME rike full-dags-kalender som hero: 10:00–15:00, 10 bookinger, datostripe med
   // antall. Gjenbruker ks-cal-strukturen (320-design + pv-scale, definert høyde). Blokkene er synlige (.ks-in).
   (function(){
-    var RSTART=600,REND=900,PPM=1.8,WDU=['SØN','MAN','TIR','ONS','TOR','FRE','LØR'],
+    var RSTART=600,REND=1080,PPM=1.8,WDU=['SØN','MAN','TIR','ONS','TOR','FRE','LØR'],
         RSVC={Skinfade:'#4d8bff',Saksklipp:'#3ecf7e',BarneKlipp:'#e0844a'},RDEMO={0:0,1:5,2:4,3:6,4:7,5:8,6:9},
-        RBOOK=[{n:'Mehmet D.',s:'Skinfade',a:600,b:625},{n:'Khaled N.',s:'Saksklipp',a:625,b:650},{n:'Mahmoud S.',s:'BarneKlipp',a:650,b:675},{n:'Ali F.',s:'Skinfade',a:675,b:700},{n:'Ahmed O.',s:'Skinfade',a:720,b:750},{n:'Henrik M.',s:'Saksklipp',a:750,b:780},{n:'Nabil D.',s:'BarneKlipp',a:780,b:810},{n:'Jonas B.',s:'Skinfade',a:810,b:840},{n:'Usman M.',s:'Saksklipp',a:840,b:870},{n:'Emre Y.',s:'BarneKlipp',a:870,b:900}];
+        RBOOK=[{n:'Mehmet D.',s:'Skinfade',a:600,b:625},{n:'Khaled N.',s:'Saksklipp',a:625,b:650},{n:'Mahmoud S.',s:'BarneKlipp',a:650,b:675},{n:'Ali F.',s:'Skinfade',a:675,b:700},{n:'Ahmed O.',s:'Skinfade',a:720,b:750},{n:'Henrik M.',s:'Saksklipp',a:750,b:780},{n:'Nabil D.',s:'BarneKlipp',a:780,b:810},{n:'Jonas B.',s:'Skinfade',a:810,b:840},{n:'Usman M.',s:'Saksklipp',a:840,b:870},{n:'Emre Y.',s:'BarneKlipp',a:870,b:900},{n:'Yusuf K.',s:'Skinfade',a:900,b:925},{n:'Omar T.',s:'Saksklipp',a:930,b:960},{n:'Bilal R.',s:'BarneKlipp',a:960,b:985},{n:'Sami H.',s:'Skinfade',a:990,b:1020}];
     function rp(n){return(n<10?'0':'')+n;} function rhhmm(m){return Math.floor(m/60)+':'+rp(m%60);}
     $('ksCalDateBtn').textContent=WD[FRI.getDay()]+' '+FRI.getDate()+'. '+MO[FRI.getMonth()];
     $('ksCalDayhead').textContent=WDU[FRI.getDay()]+' '+FRI.getDate()+'. '+MO[FRI.getMonth()].toUpperCase();
     var cs=$('ksCalStrip');cs.innerHTML='';
-    for(var j=-1;j<=5;j++){var d=new Date(FRI);d.setDate(FRI.getDate()+j);var isSel=(j===0),cnt=(d.getDay()===0?0:(isSel?10:RDEMO[d.getDay()]));
+    for(var j=-1;j<=5;j++){var d=new Date(FRI);d.setDate(FRI.getDate()+j);var isSel=(j===0),cnt=(d.getDay()===0?0:(isSel?14:RDEMO[d.getDay()]));
       var c=document.createElement('div');c.className='ks-chip'+(isSel?' active is-today':'');
       c.innerHTML='<span class="ks-chip-wd">'+WDU[d.getDay()]+'</span><span class="ks-chip-d">'+d.getDate()+'</span><span class="ks-chip-count">'+(cnt||'')+'</span>';cs.appendChild(c);}
     var ax=$('ksCalAxis');ax.innerHTML='';for(var m=RSTART;m<REND;m+=60){var e=document.createElement('div');e.className='ks-hour';e.style.height=(60*PPM)+'px';e.innerHTML='<span>'+rhhmm(m)+'</span>'+((m+30<REND)?'<span class="ks-half">'+rhhmm(m+30)+'</span>':'');ax.appendChild(e);}
@@ -1403,7 +1405,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     gsap.set(phone,{opacity:1,y:0}); gsap.set('#ksBg',{opacity:0,scale:.94});   // telefonen ER til stede fra t=0 (kom fra hero)
     gsap.set('.ks-step',{opacity:0,y:0}); gsap.set('.ks-step[data-step="0"]',{opacity:1,y:0});
     gsap.set('#ksSlotsHdr',{opacity:0}); gsap.set('#ksSlotsGrid',{opacity:0}); gsap.set('#ksNext2',{opacity:0}); gsap.set('#ksSlotHint',{opacity:1});
-    gsap.set('#ksBadgeA',{opacity:0}); gsap.set('#ksBadgeB',{opacity:0}); gsap.set('#ksStatus',{opacity:1});   // badge skjult under reisen, fader inn ved landing
+    gsap.set('#ksBadgeA',{opacity:0}); gsap.set('#ksBadgeB',{opacity:0}); gsap.set('#ksStatus',{opacity:1,color:'#0a0a0a'});   // badge skjult under reisen; status mørk (booking-baseline)
     gsap.set('#ksNav1',{opacity:0});   // stegnav skjult under reisen (desktop), fader inn ved landing
     gsap.set('#ksBlock',{opacity:0}); gsap.set('#ksBlkGlow',{opacity:0});
     if(isD){navBtns.forEach(function(b,ix){gsap.set(b,{color:ix===0?WHITE:DIM});});}
@@ -1504,6 +1506,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     tl.to('.ks-step[data-step="0"]',{y:-12,opacity:0,duration:6},40);
     tl.fromTo('.ks-step[data-step="1"]',{y:20,opacity:0},{y:0,opacity:1,duration:7},44);
     tl.to('#ksBook',{xPercent:-100,duration:8},41).fromTo('#ksCal',{xPercent:100},{xPercent:0,duration:8},41);
+    // (#ksStatus-fargen drives av statusTick(t) i frame() — scrubbet ren funksjon, ikke .to-tween.)
     tl.to('#ksBadgeA',{opacity:0,duration:5},42).to('#ksBadgeB',{opacity:1,duration:5},43);
     if(isD){tl.to(navBtns[0],{color:DIM,duration:5},40).to(navBtns[1],{color:WHITE,duration:5},43);}
     tl.to(phone,{y:-6,duration:8,ease:'sine.inOut'},41).to(phone,{y:0,duration:8,ease:'sine.inOut'},49);
@@ -1515,7 +1518,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     tl.fromTo('.ks-step[data-step="2"]',{y:20,opacity:0},{y:0,opacity:1,duration:7},68);
     tl.to('#ksCal',{xPercent:-100,duration:8},65).to('#ksSms',{opacity:1,duration:8,ease:'sine.inOut'},65);
     tl.to('#ksBadgeB',{opacity:0,duration:5},65).to('#ksBadgeA',{opacity:1,duration:5},66);
-    tl.to('#ksStatus',{opacity:0,duration:5},65);
+    /* #ksStatus BLIR VÆRENDE hvit på låseskjermen (mørk) — ingen opacity-fade lenger (var: fadet ut). */
     if(isD){tl.to(navBtns[1],{color:DIM,duration:5},64).to(navBtns[2],{color:WHITE,duration:5},67);}
     tl.to(phone,{y:-6,duration:8,ease:'sine.inOut'},65).to(phone,{y:0,duration:8,ease:'sine.inOut'},73);
     // STEG 3 (74-85): varsel glir OPP inn under klokka (scrubbet, ingen sprett). PAUSE ~86-92.
@@ -1546,7 +1549,10 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     // dist ×2,07-ekvivalent (7,038 desktop / 6,003 mobil): tweens 0–100 lander på nøyaktig samme
     // scroll-offset som før → Kjernefunksjoner identisk. De nye stegene får tidslinje-rommet 100–207.
     var dist=Math.round((isD?window.innerHeight:(window.visualViewport?window.visualViewport.height:window.innerHeight))*(isD?7.038:6.003));
-    function frame(self){var t=(self&&typeof self.progress==='number'?self.progress:tl.progress())*207;dTick(t);lojal(t);}
+    // Statuslinje-farge som ren funksjon av tidslinje-tid: mørk (booking) → hvit (mørk kalender) over t41–47,
+    // blir hvit på kalender + SMS. Scrubbet i frame() (som dTick) → ingen GSAP-capture-timing-feil.
+    function statusTick(t){var w=(t-41)/6;w=w<0?0:w>1?1:w;var g=Math.round(10+245*w);gsap.set('#ksStatus',{color:'rgb('+g+','+g+','+g+')'});}
+    function frame(self){var t=(self&&typeof self.progress==='number'?self.progress:tl.progress())*207;dTick(t);lojal(t);statusTick(t);}
     var st=ScrollTrigger.create({trigger:sec,start:'top top+='+navH,end:'+='+dist,pin:'#ksPin',anticipatePin:1,scrub:true,animation:tl,invalidateOnRefresh:true,onUpdate:frame,onRefresh:function(){frame();}});
     stRef=st; frame();
 
@@ -1613,10 +1619,16 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
           cy=bez(syc, syc+D*0.42, ey+D, ey, e);
           mix=sstep(1/3,2/3,e);   // skjermglid over rotasjon 120°–240°
         }
-        gsap.set(phoneTravel,{x:cx-g.baseW/2,y:cy-g.baseH/2,scale:scale,rotation:rot,force3D:true});
-        // Skjermbytte = ren xPercent-glid, klippet av skjermkanten (ingen opacity-krysstoning).
-        gsap.set('#ksHero',{xPercent:-100*mix});
-        gsap.set('#ksBook',{xPercent:100*(1-mix)});
+        gsap.set(phoneTravel,{x:cx-g.baseW/2,y:cy-g.baseH/2,scale:scale,rotation:rot,force3D:true});   // ALLTID (posisjonerer den fixed telefonen, også ved resize/refresh)
+        // Skjermer + status settes KUN opp til landing (sy<=ksStart). Etter landing eier tidslinja dem
+        // (skjerm-xPercent-tweens + statusTick) — vanntett skille, ingen race mot reise-driveren.
+        if(sy<=g.ksStart){
+          // Skjermbytte = ren xPercent-glid, klippet av skjermkanten (ingen opacity-krysstoning).
+          gsap.set('#ksHero',{xPercent:-100*mix});
+          gsap.set('#ksBook',{xPercent:100*(1-mix)});
+          // Statuslinja (telefon-nivå, skarp) bytter farge i takt: hvit på mørk kalender → mørk på lys booking.
+          var gL=Math.round(255-245*mix); gsap.set('#ksStatus',{color:'rgb('+gL+','+gL+','+gL+')'});
+        }
       }
       measureTravel();
       travelST=ScrollTrigger.create({start:0,end:function(){return st.start;},scrub:true,invalidateOnRefresh:true,
@@ -1876,15 +1888,18 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
   var C={info:'#4d8bff',good:'#3ecf7e',orange:'#e0844a'}; // SVC-farger (dashboard.html:3777)
 
-  // ---- KALENDER inni telefonen: grand-barbers tetteste dag, 10:00–15:00 fyller skjermen ----
-  var START=600,END=900;
+  // ---- KALENDER inni telefonen: grand-barbers tetteste dag. END utvidet til 18:00 så daybody FYLLER
+  //      hele den 390-design-skalerte skjermflaten (overflow klipper nederst). Bookinger 10:00–17:00. ----
+  var START=600,END=1080;
   var SVC={Skinfade:C.info,Saksklipp:C.good,BarneKlipp:C.orange};
   var BOOK=[
     {n:'Mehmet D.',s:'Skinfade',a:600,b:625},{n:'Khaled N.',s:'Saksklipp',a:625,b:650},
     {n:'Mahmoud S.',s:'BarneKlipp',a:650,b:675},{n:'Ali F.',s:'Skinfade',a:675,b:700},
     {n:'Ahmed O.',s:'Skinfade',a:720,b:750},{n:'Henrik M.',s:'Saksklipp',a:750,b:780},
     {n:'Nabil D.',s:'BarneKlipp',a:780,b:810},{n:'Jonas B.',s:'Skinfade',a:810,b:840},
-    {n:'Usman M.',s:'Saksklipp',a:840,b:870},{n:'Emre Y.',s:'BarneKlipp',a:870,b:900}
+    {n:'Usman M.',s:'Saksklipp',a:840,b:870},{n:'Emre Y.',s:'BarneKlipp',a:870,b:900},
+    {n:'Yusuf K.',s:'Skinfade',a:900,b:925},{n:'Omar T.',s:'Saksklipp',a:930,b:960},
+    {n:'Bilal R.',s:'BarneKlipp',a:960,b:985},{n:'Sami H.',s:'Skinfade',a:990,b:1020}
   ];
   function pad(n){return (n<10?'0':'')+n;}
   function hhmm(m){return Math.floor(m/60)+':'+pad(m%60);}
@@ -1899,7 +1914,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     $('hvcDate').innerHTML=DAYSF[sel.getDay()]+' '+sel.getDate()+'. '+MON[sel.getMonth()]+' &#9662;';
     $('hvcHead').textContent=DAYSS[sel.getDay()]+' '+sel.getDate()+'. '+MON[sel.getMonth()].toUpperCase();
     var sh='';for(var i=-1;i<=5;i++){var d=new Date(sel);d.setDate(sel.getDate()+i);
-      var isSel=(i===0), cnt=(d.getDay()===0?0:(isSel?10:DEMO[d.getDay()]));
+      var isSel=(i===0), cnt=(d.getDay()===0?0:(isSel?14:DEMO[d.getDay()]));
       sh+='<button class="cal-chip'+(isSel?' active':'')+'" type="button"><span class="chip-wd">'+DAYSS[d.getDay()]+'</span><span class="chip-d">'+d.getDate()+'</span><span class="chip-count">'+(cnt||'')+'</span></button>';}
     $('hvcStrip').innerHTML=sh;
     var ax='';for(var m=START;m<END;m+=60)ax+='<div class="cal-hour" style="height:'+(60*PPM)+'px"><span>'+hhmm(m)+'</span>'+((m+30<END)?'<span class="cal-half">'+hhmm(m+30)+'</span>':'')+'</div>';
