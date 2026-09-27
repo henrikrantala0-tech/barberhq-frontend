@@ -1471,22 +1471,40 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   function lerp(a,b,p){return a+(b-a)*p;}
   function segOff(el,op){if(!el)return;el.style.opacity=op;el.classList.toggle('des-seg-off',op<=0.01);}
   var N=ins.length, F0=15, F1=82, span=(F1-F0)/N;
-  // ---- LAYOUT-segment: fire ekte renders. Desktop: kommer inn én etter én (opacity+y), sist
-  //      markert. Mobil: én om gangen, krysstoner. Ren funksjon av t → identisk fram/tilbake.
-  var REV=[[118,126],[130,138],[142,150],[154,162]]; // desktop reveal-vinduer
+  // ---- LAYOUT-segment: fire ekte renders. Wispr Flow-inspirert: kortene starter spredt og lett
+  //      skråstilte, og glir + roterer rolig på plass til den rette raden (0°) — hvert i litt ulikt
+  //      tempo (staggered vinduer) så de lander forskjøvet, ikke samtidig. Showcase lander sist og
+  //      markeres. Ren funksjon av t → identisk fram/tilbake, ingen snap. Kun transform (translate+
+  //      rotate) + opacity; navnet ligger inne i .des-lay og følger kortet. ez = power2.inOut gir
+  //      synlig spredning i starten og rolig landing på slutten.
+  // Startposisjoner (relativt hvert korts endeplass i raden): Hero oppe-venstre, Profil/Direkte
+  // lavere i midten, Showcase nede-høyre. Hver sin lille rotasjon (-8°..+8°).
+  var LSTART=[{x:-48,y:-118,r:-8},{x:34,y:88,r:5},{x:-32,y:104,r:-6},{x:56,y:132,r:8}];
+  var LWIN=[[117,157],[124,166],[131,175],[139,185]]; // per-kort gli-vinduer (staggered start+slutt)
+  // mobil: ett kort om gangen (tall telefonrender blir uleselig som 2×2 i 390×600) — men hvert kort
+  // kommer inn med SAMME skrå gli-bevegelse før neste krysstoner inn.
+  var LSTARTM=[{x:-30,y:66,r:-7},{x:34,y:66,r:6},{x:-34,y:66,r:-6},{x:30,y:66,r:7}];
+  var LINM=[[116,128],[124,136],[136,148],[148,160]]; // per-kort gli-inn-vinduer (mobil)
   function layoutTick(t){
     if(desIsD){
-      var active = t<130?0 : t<142?1 : t<154?2 : 3;    // sist inn = markert; ender på Showcase
-      lays.forEach(function(el,i){var p=cl01(sg(t,REV[i][0],REV[i][1]));
-        el.style.opacity=p; el.style.transform='translateY('+(20*(1-p))+'px)';
-        el.classList.toggle('is-on', i===active && p>0.5);});
+      lays.forEach(function(el,i){
+        var w=LWIN[i], p=ez(cl01(sg(t,w[0],w[1]))), s=LSTART[i], k=1-p;
+        el.style.opacity=cl01(sg(t,w[0],w[0]+(w[1]-w[0])*0.20));   // dukker opp mens den fortsatt er spredt
+        el.style.transform='translate('+(s.x*k)+'px,'+(s.y*k)+'px) rotate('+(s.r*k)+'deg)';
+        el.classList.toggle('is-on', i===3 && t>=183);            // Showcase markeres når den har landet
+      });
     } else {
-      // mobil: sekvensiell krysstoning mellom de fire (stablet i samme celle)
+      // mobil: krysstoning mellom de fire (stablet i samme celle) + skrå gli-inn per kort
       var op=[ 1-sg(t,124,132),
                sg(t,124,132)*(1-sg(t,136,144)),
                sg(t,136,144)*(1-sg(t,148,156)),
                sg(t,148,156) ];
-      lays.forEach(function(el,i){el.style.opacity=op[i];el.style.transform='none';el.classList.remove('is-on');});
+      lays.forEach(function(el,i){
+        var w=LINM[i], q=ez(cl01(sg(t,w[0],w[1]))), s=LSTARTM[i], k=1-q;
+        el.style.opacity=op[i];
+        el.style.transform='translate('+(s.x*k)+'px,'+(s.y*k)+'px) rotate('+(s.r*k)+'deg)';
+        el.classList.remove('is-on');
+      });
       var cur = t<128?0 : t<140?1 : t<152?2 : 3;
       if(layTag)layTag.textContent=LAYNAMES[cur];
     }
