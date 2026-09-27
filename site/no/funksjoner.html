@@ -258,6 +258,19 @@ html{overflow-x:clip}
 .hv-cal .cal-block .blk-name{flex:1;min-width:0;font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .hv-cal .cal-block .blk-time{flex:0 0 auto;font-size:10.5px;font-weight:400;color:var(--mut);line-height:1.2;font-variant-numeric:tabular-nums}
 .hv-cal .cal-block .blk-svc{display:block;font-size:10.5px;color:var(--mut);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* SINGLE-PHONE (steg 2): når hero-kalenderen ligger i #ksPhone (#ksHero), legges HELE skjermen ut i
+   ekte telefonbredde (390 CSS-px) og skaleres ned til skjermen (skjermbredde = 67.728cqw → scale
+   67.728cqw/390) — samme prinsipp som de andre skjermene. Da får «Mandag 28. sep ▾» + «I dag» plass
+   på én linje og dashbord-proporsjoner. Reduced-motion-heroen (unscoped .hv-screen i #heroViz) er urørt. */
+.ks-scene .hv-screen{position:absolute;top:0;left:0;inset:auto;width:390px;height:848px;
+  transform:scale(calc(67.728cqw / 390px));transform-origin:top left}   /* 848 = 390 / (skjerm-sideforhold 0.46) → fyller skjermen eksakt */
+.ks-scene .hv-screen .hv-di{display:none}   /* ks .phone-di er notchen */
+.ks-scene .hv-screen .hv-sb{padding:16px 32px 10px}
+.ks-scene .hv-screen .hv-sb-t{font-size:15px}
+.ks-scene .hv-screen .hv-sb-r{gap:6px}
+.ks-scene .hv-screen .hv-sb-bars{width:18px}
+.ks-scene .hv-screen .hv-sb-wifi{width:17px}
+.ks-scene .hv-screen .hv-sb-batt{width:25px}
 @media(min-width:900px){ .hero-viz{max-width:560px;padding:56px 20px 0} }
 
 .ks-scene .ks-cal{position:relative;height:100%;overflow:hidden;background:#0a0a0a}
@@ -268,7 +281,7 @@ html{overflow-x:clip}
     --bad:#ff6b5e; --bad-bg:#2c1512;
     --ks-ppm:1.8;}
 .ks-scene .ks-cal *{margin:0;padding:0;box-sizing:border-box}
-.ks-scene .ks-cal .ks-root{width:320px;max-width:100%;min-height:100%;margin:0 auto;background:var(--bg);color:var(--ink);
+.ks-scene .ks-cal .ks-root{width:390px;max-width:100%;min-height:100%;margin:0 auto;background:var(--bg);color:var(--ink);
     font-family:'Inter',system-ui,sans-serif;-webkit-font-smoothing:antialiased;position:relative;overflow:hidden;
     display:flex;flex-direction:column}
 .ks-scene .ks-cal .ks-overlay{flex:1;display:flex;flex-direction:column}
@@ -536,6 +549,15 @@ html{overflow-x:clip}
    stage-senter (x640) mens telefonen står på x504 → glowen havnet nede til høyre.
    Under 900px er gridet én sentrert kolonne, så basen left:50% gjelder. */
 @media(min-width:900px){.ks-bg{left:calc(max(0px,(100% - 1180px)/2) + 454px)}}
+/* ⚠ Banding-fiks (robust): WebP-glødene er LOSSY → dither-støyen komprimeres bort og båndene kommer
+   tilbake, uavhengig av oppløsning. Løsning: eget støylag — 128×128 TAPSFRI PNG flislagt 1:1
+   (background-size = teksturstørrelsen, ALDRI skalert), maskert av selve glødformen så støyen kun
+   ligger der gløden er. Per-piksel-variasjonen dithrer båndene uansett hvor stor gløden blir. */
+.ks-bg::after,.ks-blk-glow::after,.ks-scene .ls-glow::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:url("images/noise.png") 0 0 repeat;background-size:128px 128px;mix-blend-mode:overlay;opacity:.55}
+.ks-bg::after{-webkit-mask:url("images/glow-white.webp") center/100% 100% no-repeat;mask:url("images/glow-white.webp") center/100% 100% no-repeat}
+.ks-blk-glow::after{-webkit-mask:url("images/glow-blue.webp") center/100% 100% no-repeat;mask:url("images/glow-blue.webp") center/100% 100% no-repeat}
+.ks-scene .ls-glow::after{-webkit-mask:url("images/glow-green.webp") center/100% 100% no-repeat;mask:url("images/glow-green.webp") center/100% 100% no-repeat}
 /* blå glow bak kalenderblokken — samme dithered-bilde-løsning (glow-blue.webp) */
 .ks-blk-glow{position:absolute;pointer-events:none;z-index:0;opacity:0;background:url("images/glow-blue.webp") center/100% 100% no-repeat}
 .ks-inner{position:relative;z-index:1;width:100%;max-width:1180px;margin:0 auto;padding:0 40px;display:grid;grid-template-columns:190px 360px 1fr;align-items:center;gap:44px}
@@ -570,13 +592,17 @@ html{overflow-x:clip}
 .ks-scene .phone-statusbar .sb-r{display:flex;align-items:center;gap:1.3cqw}
 .ks-scene .phone-statusbar .sb-bars{width:4cqw}.ks-scene .phone-statusbar .sb-wifi{width:3.8cqw}.ks-scene .phone-statusbar .sb-batt{width:5.6cqw}
 .ks-scene .pv-scale{transform-origin:top left;width:320px;transform:scale(calc(67.728cqw / 320px))}
-.ks-scene .ks-cal .pv-scale{position:absolute;top:0;left:0}
+/* Kalenderen legges ut i EKTE telefonbredde (390 CSS-px) og skaleres ned til skjermen (skjermbredde/390),
+   ellers blir dashbord-skriftene for store i den smale skjermen. Booking beholder 320-design. */
+.ks-scene .ks-cal .pv-scale{position:absolute;top:0;left:0;width:390px;transform:scale(calc(67.728cqw / 390px))}
 .ks-scene .pv-book{position:relative;min-height:700px;height:700px;background:var(--bg);overflow:hidden}
 .ks-scene .pv-book .sheet{display:block;position:static;inset:auto;transform:none;background:var(--bg);height:auto}
 .ks-scene .pv-book .sheet-inner{max-width:none;margin:0;padding:52px 18px 24px}
-.ks-scene .ks-cal{height:700px}.ks-scene .ks-cal .ks-root{min-height:700px;height:700px;padding-top:46px}
+.ks-scene .ks-cal{height:853px}.ks-scene .ks-cal .ks-root{min-height:853px;height:853px;padding-top:56px}   /* 390-design skjermhøyde (390*700/320) + status-klaring */
 .ks-scene .ks-block{left:6px;right:6px;padding:5px 8px;overflow:hidden;opacity:0}
 .ks-scene .ls{position:relative;width:320px;height:700px;background:radial-gradient(120% 80% at 50% 0%,#141826 0%,#0a0a10 55%,#050509 100%);color:#fff;display:flex;flex-direction:column;align-items:center;padding-top:82px;overflow:hidden}
+/* Låseskjermens radiale gradient kan også bande → samme støylag (1:1, over gradienten, under innholdet z≥1). */
+.ks-scene .ls::before{content:"";position:absolute;inset:0;z-index:0;pointer-events:none;background:url("images/noise.png") 0 0/128px 128px repeat;mix-blend-mode:overlay;opacity:.5}
 .ks-scene .ls-time{font-size:72px;font-weight:600;letter-spacing:-.02em;line-height:1;font-variant-numeric:tabular-nums;position:relative;z-index:2}
 .ks-scene .ls-date{font-size:17px;color:#c9c9d2;margin-top:6px;position:relative;z-index:2}
 .ks-scene .ls-banner{position:relative;z-index:2;margin:40px 14px 0;align-self:stretch;background:rgba(242,242,247,.94);backdrop-filter:blur(18px);border-radius:20px;padding:12px 14px;color:#0a0a0a;box-shadow:0 12px 30px -10px rgba(0,0,0,.5);opacity:0}
@@ -607,6 +633,14 @@ html{overflow-x:clip}
 .ks-scene:not(.ks-anim) .ks-text{display:flex;flex-direction:column;gap:22px;min-height:0}
 .ks-scene:not(.ks-anim) .hp-screen.s-hero,.ks-scene:not(.ks-anim) .hp-screen.s-cal,.ks-scene:not(.ks-anim) .hp-screen.s-sms{display:none}
 @media(min-width:900px){ .ks-scene:not(.ks-anim) .ks-inner{grid-template-columns:360px 1fr;align-items:start} }
+/* Desktop: «Kjernefunksjoner»-tittelen skal ALLTID stå helt over telefonen med luft. Tittelen løftes til
+   toppen (var 7vh → overlappet telefonen på korte vinduer), og telefonen får mer vertikal reserve (−160)
+   så den — selv sentrert — lander under tittelen på 1280×720 OG 1440×900. */
+@media(min-width:900px){
+  .ks-scene.ks-anim .ks-h2wrap{top:18px}
+  .ks-scene.ks-anim .ks-inner{padding-top:64px}   /* skyv (sentrerte) telefonrekka ned under tittelen på korte vinduer */
+  .ks-phone-slot{width:min(340px, calc((100vh - var(--nav-h,68px) - 160px) / 1.806))}
+}
 /* MOBIL — ingen stegnav/fremdrift; kun h2, telefon, merkelapp, sentrert tekst */
 @media(max-width:899px){
   /* IKKE text-align:center på .ks-inner — det arves inn i telefonskjermene. Kun stegteksten sentreres. */
