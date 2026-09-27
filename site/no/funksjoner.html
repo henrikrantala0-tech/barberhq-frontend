@@ -537,20 +537,30 @@ html{overflow-x:clip}
 .ks-scene *{transition:none!important;animation:none!important}   /* alt styres av scroll, aldri av tid */
 .ks-pin{position:relative;min-height:420px}
 .ks-stage{position:relative;width:100%;height:100%}   /* animert lag; #ksPin selv får ALDRI transform */
-/* SVAK, MYK HVIT GLØD (.sglow) — ren hvit CSS-gradient (ingen webp, ingen grå/blåtone), stor radius,
-   langt jevnt fall helt til transparent. Topper på ~luminans 20 i midten (alpha .025 over #0a0a0a) —
-   man skal bare så vidt ane den. Radial-maske → aldri rektangulær boks-kant. Nesten usynlig støy
-   (opacity .03, MASKERT likt som gløden) dithrer bort ev. ringer uten synlig korn utenfor gløden.
-   SAMME glød i hero, Kjernefunksjoner/Få kunder tilbake og Din egen side. */
-.sglow{pointer-events:none;z-index:0;
-  background:radial-gradient(closest-side, rgba(255,255,255,.025), rgba(255,255,255,0));
-  -webkit-mask:radial-gradient(closest-side,#000,transparent);mask:radial-gradient(closest-side,#000,transparent)}
-.sglow::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:url("images/noise.png") 0 0/128px 128px repeat;mix-blend-mode:overlay;opacity:.03;
-  -webkit-mask:radial-gradient(closest-side,#000,transparent);mask:radial-gradient(closest-side,#000,transparent)}
-.ks-bg{position:absolute;left:50%;top:50%;width:min(1180px,130%);height:min(1180px,124%);transform:translate(-50%,-50%);will-change:transform,opacity}
-.hero-glow{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,150vw);height:min(680px,150vw)}
-.des-glow{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(1000px,150vw);height:min(760px,150vw);z-index:0}
+/* MYK HVIT GLØD (.sglow) — bygget av to hvite ELLIPSER med filter:blur (IKKE gradient/webp), så
+   det er browserens blur som lager fallet → ingen diskrete fargenivåer/ringer, ingen boks-kant.
+   Ren hvit. Topper på ~luminans 24-26 på #0a0a0a. ⚠ KUN opacity animeres (aldri scale/blur) — blur
+   er tungt å tegne, men opacity komposittes billig på et ferdig-blurret lag. Litt over midten av
+   telefonen/diagrammet. SAMME glød i Kjernefunksjoner/Få kunder tilbake og Din egen side (hero har INGEN). */
+.sglow{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);pointer-events:none;z-index:0;aspect-ratio:1;isolation:isolate}
+.sglow::before,.sglow::after{content:"";position:absolute;border-radius:50%;transform:translateZ(0)}
+.sglow::before{inset:12%;background:rgba(255,255,255,.022);filter:blur(115px);-webkit-filter:blur(115px)}   /* stor, veldig myk base */
+.sglow::after{inset:27%;background:rgba(255,255,255,.038);filter:blur(75px);-webkit-filter:blur(75px)}        /* lysere kjerne */
+.ks-bg{width:min(700px,82vw);top:46%;will-change:opacity}
+.des-glow{width:min(720px,86vw);top:48%}
+/* Svakt støylag som dithrer bort 8-bit-ringene i det myke fallet. FULLT-SPENN-støy (feTurbulence 0–255)
+   med OVERLAY-blend → symmetrisk (lyser IKKE opp gløden, mean 128 = nøytral i overlay) men gir nok
+   utslag på de mørke tonene til å bryte 1-nivås-båndene. Maskert til gløden (radial) → ingen korn
+   utenfor. Følger forelderens opacity-animasjon. */
+.sg-noise{position:absolute;inset:0;z-index:1;pointer-events:none;opacity:.025;mix-blend-mode:overlay;
+  background:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='200' height='200'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='.9' numOctaves='3' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E") 0 0/200px 200px repeat;
+  -webkit-mask:radial-gradient(closest-side,#000 25%,transparent 62%);mask:radial-gradient(closest-side,#000 25%,transparent 62%)}
+@media(max-width:899px){
+  .ks-bg{width:min(520px,135vw)}
+  .des-glow{width:min(520px,130vw)}
+  .sglow::before{inset:16%;filter:blur(85px);-webkit-filter:blur(85px)}
+  .sglow::after{inset:30%;filter:blur(58px);-webkit-filter:blur(58px)}
+}
 /* Blå/grønn glød (inne i telefonen) beholder webp + maske, men støyen dempes til nesten usynlig. */
 .ks-blk-glow::after,.ks-scene .ls-glow::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:url("images/noise.png") 0 0 repeat;background-size:128px 128px;mix-blend-mode:overlay;opacity:.05}
@@ -972,7 +982,6 @@ html{overflow-x:clip}
 <!-- Hero-visual: kalender INNI iPhone-rammen (samme ramme som bookingtelefonen) + tallkort med kuttede
      stolper. Statuslinje + Dynamic Island som Kjernefunksjoner. Bygges av JS. -->
 <div class="hero-viz reveal" id="heroViz">
-  <div class="sglow hero-glow" aria-hidden="true"></div>
   <div class="fx-phone">
     <div class="pv-phoneframe"><div class="iph">
       <i class="iph-btn la action"></i><i class="iph-btn la volup"></i><i class="iph-btn la voldn"></i><i class="iph-btn ra power"></i>
@@ -999,7 +1008,7 @@ html{overflow-x:clip}
 <section class="ks-scene" id="kjernefunksjoner" aria-label="Kjernefunksjoner">
   <div class="ks-pin" id="ksPin">
     <div class="ks-stage">
-    <div class="ks-bg sglow" id="ksBg"></div>
+    <div class="ks-bg sglow" id="ksBg"><div class="sg-noise"></div></div>
     <div class="ks-inner">
       <div class="ks-h2wrap"><h2 class="ks-h2" id="ksH2">Kjernefunksjoner</h2><h2 class="ks-h2 ks-h2b" id="ksH2b">Få kunder tilbake</h2></div>
       <div class="ks-navwrap">
@@ -1157,7 +1166,7 @@ html{overflow-x:clip}
 
 <!-- ===================== DIN EGEN SIDE (scroll-scene, egen pin — overgang + Profil) ===================== -->
 <section class="des-scene" id="dineegenside" aria-label="Din egen side">
-  <div class="des-pin" id="desPin"><div class="des-stage"><div class="sglow des-glow" aria-hidden="true"></div><div class="des-inner">
+  <div class="des-pin" id="desPin"><div class="des-stage"><div class="sglow des-glow" aria-hidden="true"><div class="sg-noise"></div></div><div class="des-inner">
     <h2 class="des-h2">Din egen side</h2>
     <nav class="des-nav" aria-label="Steg">
       <button class="des-step-btn" type="button" data-seg="0">Profil</button>
@@ -1414,7 +1423,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     // Startilstander — GSAP eier ALLE skjermtransformer. Telefonen animeres via egne barn, ALDRI #ksPin.
     gsap.set('#ksBook',{xPercent:0}); gsap.set('#ksCal',{xPercent:100}); gsap.set('#ksSms',{opacity:0});
     if(ksHeroEl)gsap.set('#ksHero',{xPercent:0});   // #ksHero (hero-kalender) synlig ved t=0; driveren glir den ut under reisen
-    gsap.set(phone,{opacity:1,y:0}); gsap.set('#ksBg',{opacity:0,scale:.94});   // telefonen ER til stede fra t=0 (kom fra hero)
+    gsap.set(phone,{opacity:1,y:0}); gsap.set('#ksBg',{opacity:0});   // telefonen ER til stede fra t=0 (kom fra hero); glød KUN opacity (blur er tungt — aldri scale)
     gsap.set('.ks-step',{opacity:0,y:0}); gsap.set('.ks-step[data-step="0"]',{opacity:1,y:0});
     gsap.set('#ksSlotsHdr',{opacity:0}); gsap.set('#ksSlotsGrid',{opacity:0}); gsap.set('#ksNext2',{opacity:0}); gsap.set('#ksSlotHint',{opacity:1});
     gsap.set('#ksBadgeA',{opacity:0}); gsap.set('#ksBadgeB',{opacity:0}); gsap.set('#ksStatus',{opacity:1,color:'#0a0a0a'});   // badge skjult under reisen; status mørk (booking-baseline)
@@ -1499,7 +1508,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
 
     var tl=gsap.timeline({defaults:{ease:'power2.inOut'}});   // eases på scrubbede tweens (ikke lineær)
     // GLOW toner inn saktere enn telefonen (0-24) og står stabil resten
-    tl.fromTo('#ksBg',{opacity:0,scale:.94},{opacity:1,scale:1,duration:24,ease:'sine.out'},0);
+    tl.fromTo('#ksBg',{opacity:0},{opacity:1,duration:24,ease:'sine.out'},0);   // KUN opacity (scale fjernet — blur re-tegnes ellers hver frame)
     // DEL B: telefonen har ALLEREDE reist inn via J-kroken (hero-telefonen) og landet på ks-plassen.
     // Her er den bare til stede fra t=0 — ingen egen innkomst (reise-telefonen krysstoner over til denne
     // ved landing = sømløst bytte). Tittelen kommer inn rundt den 0-8 (rett etter landing).
