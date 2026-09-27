@@ -218,41 +218,38 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
 .hv-sb-r{display:flex;align-items:center;gap:1.3cqw}
 .hv-sb-r svg{fill:#fff;display:block}
 .hv-sb-bars{width:4cqw}.hv-sb-wifi{width:3.8cqw}.hv-sb-batt{width:5.6cqw}
-.hv-cal{flex:1;min-height:0;display:flex;padding:6px 9px 8px 0;overflow:hidden;position:relative}
-.hvc-axis{flex:0 0 38px;position:relative}
-.hvc-hour{position:relative}
-.hvc-hour>span{position:absolute;top:-7px;right:8px;font-size:10.5px;color:var(--hv-mut);font-variant-numeric:tabular-nums}
-.hvc-body{flex:1;position:relative;min-width:0}
-.hvc-line{position:absolute;left:0;right:9px;border-top:1px solid var(--hv-line);pointer-events:none}
-.hvc-block{position:absolute;left:1px;right:9px;border-radius:6px;padding:3px 8px;overflow:hidden;box-sizing:border-box;
-  background:color-mix(in srgb,var(--blk,var(--hv-info)) 15%,var(--hv-surface));
-  border:1px solid var(--blk,var(--hv-info));border-left:3px solid var(--blk,var(--hv-info))}
-.hvc-block .bt{display:flex;align-items:baseline;gap:5px}
-.hvc-block .bn{flex:1;min-width:0;font-size:11px;font-weight:600;color:#fff;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.hvc-block .btm{flex:0 0 auto;font-size:10px;color:var(--hv-mut);line-height:1.2;font-variant-numeric:tabular-nums}
-.hvc-block .bs{display:block;font-size:10px;color:var(--hv-mut);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-top:1px}
-/* Tallkort (dashbordets .stat-stil) med stolper. Bunnen av kortet KLIPPER stolpene. */
-.hv-card{max-width:440px;margin:30px auto 0;background:var(--hv-surface);border:1px solid var(--hv-line);
-  border-radius:16px;overflow:clip;position:relative}
-.hv-kpis{display:flex;gap:28px;padding:22px 22px 0}
-.hv-kpi{flex:1;min-width:0}
-.hv-kpi-l{font-size:11.5px;color:var(--hv-mut);font-weight:500;letter-spacing:.02em;text-transform:uppercase}
-.hv-kpi-v{font-size:clamp(30px,8.5vw,42px);font-weight:800;letter-spacing:-.04em;line-height:1;margin-top:8px;font-variant-numeric:tabular-nums;white-space:nowrap}
-.hv-kpi-v.info{color:var(--hv-info)}
-.hv-kpi-v.rev{color:var(--hv-good)}
-.hv-kpi-v .u{font-size:.42em;font-weight:300;color:var(--hv-mut);letter-spacing:0;margin-left:2px}
-/* Stolper: stikker opp fra kortets nedre kant, ALLTID kuttet i bunnen (kortets overflow:clip). */
-.hv-barsclip{position:relative;height:132px;margin-top:20px}
-.hv-bars{position:absolute;left:0;right:0;bottom:-72px;height:204px;display:flex;align-items:flex-end;gap:12px;padding:0 22px}
-.hv-barcol{flex:1;display:flex;align-items:flex-end;min-width:0;height:100%}
-.hv-bar{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--bt,#4d8bff),var(--bb,#3a4560));transform-origin:bottom;will-change:transform}
-.hv-bar.gull{filter:drop-shadow(0 0 2px rgba(255,224,138,.9)) drop-shadow(0 0 8px rgba(240,194,75,.55)) drop-shadow(0 0 16px rgba(240,194,75,.28))}
-@media(min-width:900px){
-  .hero-viz{max-width:560px;padding:56px 20px 0}
-  .hv-card{max-width:480px}
-  .hv-barsclip{height:180px}
-  .hv-bars{bottom:-96px;height:276px}
-}
+/* Kalenderen inni telefonen — klonet fra dashbordets .cal-* (dashboard.html:2536–2601), scopet til .hv-cal. */
+.hv-cal{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;position:relative;
+  --bg:#0a0a0a;--surface:#141414;--ink:#fff;--ink-2:#cfcfcf;--mut:#8a8a8a;--mut-2:#5f5f5f;--line:#242424;--line-2:#363636;--info:#4d8bff}
+.hv-cal .cal-topbar{display:flex;align-items:center;gap:8px;padding:9px 13px;border-bottom:1px solid var(--line);flex-shrink:0}
+.hv-cal .cal-datebtn{border:1px solid var(--line-2);background:var(--surface);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;padding:6px 11px;border-radius:8px;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:5px}
+.hv-cal .cal-today{border:0;background:0;color:var(--info);font:inherit;font-size:12px;font-weight:600;padding:6px 2px}
+.hv-cal .cal-close{margin-left:auto;border:0;background:var(--surface);color:var(--mut);width:28px;height:28px;border-radius:7px;font-size:15px;line-height:1;display:flex;align-items:center;justify-content:center}
+.hv-cal .cal-daystrip{display:flex;gap:6px;overflow:hidden;padding:9px 13px;border-bottom:1px solid var(--line);flex-shrink:0}
+.hv-cal .cal-chip{border:1px solid var(--line);background:var(--surface);border-radius:10px;padding:6px 9px;flex-shrink:0;display:flex;flex-direction:column;align-items:center;gap:1px;min-width:42px}
+.hv-cal .cal-chip .chip-wd{font-size:10px;color:var(--mut);font-weight:600;text-transform:uppercase;letter-spacing:.02em}
+.hv-cal .cal-chip .chip-d{font-size:14px;font-weight:700;color:var(--ink);letter-spacing:-.02em;line-height:1.1}
+.hv-cal .cal-chip .chip-count{font-size:9.5px;color:var(--info);font-weight:600;line-height:1;min-height:10px}
+.hv-cal .cal-chip.active{border-color:var(--ink);background:var(--ink)}
+.hv-cal .cal-chip.active .chip-wd,.hv-cal .cal-chip.active .chip-d,.hv-cal .cal-chip.active .chip-count{color:var(--surface)}
+.hv-cal .cal-grid{flex:1;display:flex;overflow:hidden;min-height:0}
+.hv-cal .cal-scroll{flex:1;display:flex;overflow:hidden}
+.hv-cal .cal-axis{flex-shrink:0;width:42px;position:relative;padding-top:30px}
+.hv-cal .cal-hour{position:relative}
+.hv-cal .cal-hour>span{position:absolute;top:-7px;right:8px;font-size:11px;color:var(--mut);font-variant-numeric:tabular-nums}
+.hv-cal .cal-hour>.cal-half{top:47px;font-size:9px;opacity:.6}
+.hv-cal .cal-days{flex:1;display:flex;min-width:0}
+.hv-cal .cal-day{flex:1;min-width:0;display:flex;flex-direction:column}
+.hv-cal .cal-dayhead{height:30px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:11.5px;font-weight:600;color:var(--ink-2);border-bottom:1px solid var(--line)}
+.hv-cal .cal-daybody{position:relative}
+.hv-cal .cal-hourline{position:absolute;left:0;right:0;border-top:1px solid var(--line);pointer-events:none}
+.hv-cal .cal-halfline{position:absolute;left:0;right:0;border-top:1px solid var(--line);opacity:.4;pointer-events:none}
+.hv-cal .cal-block{position:absolute;border-radius:6px;background:color-mix(in srgb,var(--blk,var(--info)) 15%,var(--surface));border:1px solid var(--blk,var(--info));border-left:3px solid var(--blk,var(--info));padding:3px 7px;overflow:hidden;box-sizing:border-box}
+.hv-cal .cal-block .blk-top{display:flex;align-items:baseline;gap:5px}
+.hv-cal .cal-block .blk-name{flex:1;min-width:0;font-size:11.5px;font-weight:600;color:var(--ink);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.hv-cal .cal-block .blk-time{flex:0 0 auto;font-size:10.5px;font-weight:400;color:var(--mut);line-height:1.2;font-variant-numeric:tabular-nums}
+.hv-cal .cal-block .blk-svc{display:block;font-size:10.5px;color:var(--mut);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+@media(min-width:900px){ .hero-viz{max-width:560px;padding:56px 20px 0} }
 
 .ks-scene .ks-cal{position:relative;height:100%;overflow:hidden;background:#0a0a0a}
 .ks-scene .ks-cal .pv-scale{position:absolute;top:0;left:0}
@@ -925,17 +922,14 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
             <svg class="hv-sb-wifi" viewBox="0 0 17 13" fill="currentColor"><path d="M8.5 2C5.4 2 2.6 3.2.5 5.2l1.4 1.4C3.6 4.9 5.9 3.9 8.5 3.9s4.9 1 6.6 2.7l1.4-1.4C14.4 3.2 11.6 2 8.5 2z"/><path d="M8.5 6.1c-1.9 0-3.6.7-4.9 2l1.4 1.4c1-1 2.2-1.5 3.5-1.5s2.6.6 3.5 1.5l1.4-1.4c-1.3-1.2-3-2-4.9-2z"/><circle cx="8.5" cy="11.5" r="1.5"/></svg>
             <svg class="hv-sb-batt" viewBox="0 0 25 13" fill="currentColor"><rect x="0.5" y="0.5" width="21" height="12" rx="3" fill="none" stroke="currentColor" stroke-width="1.2"/><rect x="2" y="2" width="18" height="9" rx="1.5"/><rect x="22.5" y="4" width="1.8" height="5" rx="0.9"/></svg>
           </span></div>
-          <div class="hv-cal"><div class="hvc-axis" id="hvcAxis"></div><div class="hvc-body" id="hvcBody"></div></div>
+          <div class="hv-cal">
+            <div class="cal-topbar"><button class="cal-datebtn" id="hvcDate" type="button"></button><button class="cal-today" type="button">I dag</button><button class="cal-close" type="button" aria-label="Lukk">&#10005;</button></div>
+            <div class="cal-daystrip" id="hvcStrip"></div>
+            <div class="cal-grid"><div class="cal-scroll"><div class="cal-axis" id="hvcAxis"></div><div class="cal-days"><div class="cal-day"><div class="cal-dayhead" id="hvcHead"></div><div class="cal-daybody" id="hvcBody"></div></div></div></div></div>
+          </div>
         </div>
       </div>
     </div></div>
-  </div>
-  <div class="hv-card">
-    <div class="hv-kpis">
-      <div class="hv-kpi"><div class="hv-kpi-l">Kunder</div><div class="hv-kpi-v info" id="hvKunder">46</div></div>
-      <div class="hv-kpi"><div class="hv-kpi-l">Estimert omsetning</div><div class="hv-kpi-v rev"><span id="hvRev">16 100</span><span class="u"> kr</span></div></div>
-    </div>
-    <div class="hv-barsclip"><div class="hv-bars" id="hvBars"></div></div>
   </div>
 </div>
 
@@ -1714,17 +1708,6 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   var $=function(id){return document.getElementById(id);};
   var viz=$('heroViz'); if(!viz)return;
   var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
-  function cl01(x){return x<0?0:x>1?1:x;}
-  // colorForRatio — portert fra dashboard.html:3106 (blågrå #3A4560 → blå #4D8BFF → grønn #3ECF7E)
-  function colorForRatio(r){ r=cl01(r); if(!(r>0))r=0;
-    var A0=[58,69,96],A5=[77,139,255],A1=[62,207,126];
-    function lp(a,b,t){return a+(b-a)*t;}
-    function mix(c,d,t){return [Math.round(lp(c[0],d[0],t)),Math.round(lp(c[1],d[1],t)),Math.round(lp(c[2],d[2],t))];}
-    var c=r<=0.5?mix(A0,A5,r/0.5):mix(A5,A1,(r-0.5)/0.5);
-    var top=mix(c,[255,255,255],0.22), bot=mix(c,[0,0,0],0.20);
-    return {top:'rgb('+top.join(',')+')',bot:'rgb('+bot.join(',')+')'};
-  }
-  var GULL={top:'#FFE08A',bot:'#F0C24B'}; // Oversikts rekord-gull (dashboard.html:4119)
   var C={info:'#4d8bff',good:'#3ecf7e',orange:'#e0844a'}; // SVC-farger (dashboard.html:3777)
 
   // ---- KALENDER inni telefonen: grand-barbers tetteste dag, 10:00–15:00 fyller skjermen ----
@@ -1737,58 +1720,32 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     {n:'Nabil D.',s:'BarneKlipp',a:780,b:810},{n:'Jonas B.',s:'Skinfade',a:810,b:840},
     {n:'Usman M.',s:'Saksklipp',a:840,b:870},{n:'Emre Y.',s:'BarneKlipp',a:870,b:900}
   ];
-  function hhmm(m){var h=Math.floor(m/60),mm=m%60;return h+':'+(mm<10?'0':'')+mm;}
-  var axis=$('hvcAxis'),body=$('hvcBody');
+  function pad(n){return (n<10?'0':'')+n;}
+  function hhmm(m){return Math.floor(m/60)+':'+pad(m%60);}
+  var DAYSF=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'];
+  var DAYSS=['SØN','MAN','TIR','ONS','TOR','FRE','LØR'];
+  var MON=['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'];
+  var DEMO={0:0,1:5,2:4,3:6,4:7,5:8,6:9}; // realistiske demo-antall per ukedag (søndag stengt)
+  var PPM=1.8; // px/min — dashbordets PX_PER_MIN, lesbare blokker (dashboard.html:2568)
+  // Datoene regnes ved VISNING (aldri utdaterte). Valgt dag = neste hverdag (man–lør) fra i dag.
   function buildCal(){
-    var bodyH=body.clientHeight; if(bodyH<40)return false;   // 10–15 fyller telefonskjermen
-    axis.innerHTML=''; body.innerHTML='';
-    var PPM=bodyH/(END-START);
-    for(var h=START;h<=END;h+=60){var top=(h-START)*PPM;
-      var e=document.createElement('div');e.className='hvc-hour';e.style.position='absolute';e.style.top=top+'px';
-      e.innerHTML='<span>'+(h/60)+'</span>';axis.appendChild(e);
-      if(h<END){var l=document.createElement('div');l.className='hvc-line';l.style.top=top+'px';body.appendChild(l);}}
-    BOOK.forEach(function(bk){var el=document.createElement('div');el.className='hvc-block';
-      el.style.top=((bk.a-START)*PPM)+'px';el.style.height=((bk.b-bk.a)*PPM)+'px';
-      el.style.setProperty('--blk',SVC[bk.s]);
-      el.innerHTML='<div class="bt"><span class="bn">'+bk.n+'</span><span class="btm">'+hhmm(bk.a)+'</span></div><span class="bs">'+bk.s+'</span>';
-      body.appendChild(el);});
+    var sel=new Date(); while(sel.getDay()===0) sel.setDate(sel.getDate()+1);
+    $('hvcDate').innerHTML=DAYSF[sel.getDay()]+' '+sel.getDate()+'. '+MON[sel.getMonth()]+' &#9662;';
+    $('hvcHead').textContent=DAYSS[sel.getDay()]+' '+sel.getDate()+'. '+MON[sel.getMonth()].toUpperCase();
+    var sh='';for(var i=-1;i<=5;i++){var d=new Date(sel);d.setDate(sel.getDate()+i);
+      var isSel=(i===0), cnt=(d.getDay()===0?0:(isSel?10:DEMO[d.getDay()]));
+      sh+='<button class="cal-chip'+(isSel?' active':'')+'" type="button"><span class="chip-wd">'+DAYSS[d.getDay()]+'</span><span class="chip-d">'+d.getDate()+'</span><span class="chip-count">'+(cnt||'')+'</span></button>';}
+    $('hvcStrip').innerHTML=sh;
+    var ax='';for(var m=START;m<END;m+=60)ax+='<div class="cal-hour" style="height:'+(60*PPM)+'px"><span>'+hhmm(m)+'</span>'+((m+30<END)?'<span class="cal-half">'+hhmm(m+30)+'</span>':'')+'</div>';
+    $('hvcAxis').innerHTML=ax;
+    var lines='';for(var mm=START;mm<END;mm+=60){lines+='<div class="cal-hourline" style="top:'+((mm-START)*PPM)+'px"></div>';var hf=mm+30;if(hf<END)lines+='<div class="cal-halfline" style="top:'+((hf-START)*PPM)+'px"></div>';}
+    var blocks='';BOOK.forEach(function(bk){
+      blocks+='<div class="cal-block" style="top:'+((bk.a-START)*PPM)+'px;height:'+((bk.b-bk.a)*PPM)+'px;--blk:'+SVC[bk.s]+'"><div class="blk-top"><span class="blk-name">'+bk.n+'</span><span class="blk-time">'+hhmm(bk.a)+'–'+hhmm(bk.b)+'</span></div><span class="blk-svc">'+bk.s+'</span></div>';});
+    var body=$('hvcBody'); body.style.height=((END-START)*PPM)+'px'; body.innerHTML=lines+blocks;
     return true;
   }
-
-  // ---- STOLPER: uke man–søn. Man–fre STATISKE [8,9,9,10,10] (ferdig vokst); lør(12)=gull vokser på
-  //      scroll; søn tom. Bunnen ALLTID kuttet av kortets nedre kant (.hv-card overflow:clip). ----
-  var VALS=[8,9,9,10,10,12,0],GOLD=5,MAXV=12;
-  var barsWrap=$('hvBars'),BARMAXH=(window.innerWidth>=900)?276:204;
-  var goldBar=null;
-  VALS.forEach(function(v,i){var col=document.createElement('div');col.className='hv-barcol';
-    var bar=document.createElement('div');bar.className='hv-bar'+(i===GOLD?' gull':'');
-    bar.style.height=(v<=0?0:Math.round(v/MAXV*BARMAXH))+'px';
-    var g=(i===GOLD)?GULL:colorForRatio(v/MAXV);
-    bar.style.setProperty('--bt',g.top);bar.style.setProperty('--bb',g.bot);
-    if(i<5)bar.style.transform='scaleY(1)';                 // man–fre statiske, ferdig vokst
-    else if(i===GOLD){goldBar=bar;bar.style.transform='scaleY(0)';} // lør vokser på scroll
-    else bar.style.transform='scaleY(0)';                   // søn tom
-    col.appendChild(bar);barsWrap.appendChild(col);});
-
-  // ---- Scrub: KUN lørdag vokser + tall teller 46→58 / 16 100→20 300 kr (hardt mellomrom som dashbordet) ----
-  var kEl=$('hvKunder'),rEl=$('hvRev');
-  function eo(x){return 1-Math.pow(1-x,3);}
-  function frame(p){
-    if(goldBar)goldBar.style.transform='scaleY('+eo(cl01(p))+')';
-    var kunder=46+Math.round(cl01(p)*12);
-    kEl.textContent=kunder.toLocaleString('no-NO');
-    rEl.textContent=(kunder*350).toLocaleString('no-NO');
-  }
-  function build(){
-    if(!buildCal()){requestAnimationFrame(build);return;} // vent til telefonskjermen er lagt ut
-    if(reduce||!window.gsap||!window.ScrollTrigger){frame(1);return;}
-    gsap.registerPlugin(ScrollTrigger);
-    frame(0);
-    // Scrub når tallkortet kommer i syne: lørdag vokser + tallene teller. Ferdig når kortet er inne;
-    // deretter scroller hero videre inn i Kjernefunksjoner (ingen tom strekning).
-    ScrollTrigger.create({trigger:'.hv-card',start:'top bottom',end:'bottom bottom',scrub:true,invalidateOnRefresh:true,
-      onUpdate:function(self){frame(self.progress);},onRefresh:function(self){buildCal();frame(self?self.progress:0);}});
-  }
+  // Kalenderen er statisk — bygg én gang. (Del B: pin-sammenslåing + tilbakespoling kommer senere.)
+  function build(){ buildCal(); }
   var w=[]; if(document.fonts&&document.fonts.ready)w.push(document.fonts.ready);
   Promise.all(w).then(build).catch(build);
   var rt; window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(buildCal,200);});
