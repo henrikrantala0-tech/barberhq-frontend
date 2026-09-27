@@ -219,6 +219,17 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
 .hv-sb-r{display:flex;align-items:center;gap:1.3cqw}
 .hv-sb-r svg{fill:#fff;display:block}
 .hv-sb-bars{width:4cqw}.hv-sb-wifi{width:3.8cqw}.hv-sb-batt{width:5.6cqw}
+/* Del B: Selvbooking-skjerm i hero-telefonen. Krysstones inn (kalender→booking) rundt 180° i J-krok-
+   reisen. Klones fra #ksBook ved kjøretid; gjenbruker .fx-phone .pv-book/.pv-scale (over). z:7 dekker
+   statuslinje+Dynamic Island når den er synlig (ks-telefonen har sin egen mørke statuslinje ved landing). */
+.hv-book{position:absolute;inset:0;overflow:hidden;background:#fff;opacity:0;z-index:7}
+/* Klonen får ks-scene-klassen så hele booking-ARKET (sheet/accordion/datostripe/slots) styles av
+   .ks-scene .pv-book. Men SKALAEN må følge hero-skjermen (90.88cqw), ikke ks-telefonen (67.728cqw) —
+   3-klassers selektor slår .ks-scene .pv-scale (2 klasser) uansett kilderekkefølge. */
+.fx-phone .hv-book{background:#fff}
+.fx-phone .hv-book .pv-scale{position:absolute;top:0;left:0;width:320px;transform-origin:top left;transform:scale(calc(90.88cqw / 320px))}
+/* Fixed reise-telefon skal ALDRI gi horisontal scroll når J-kroken svinger ut til høyre. */
+html{overflow-x:clip}
 /* Kalenderen inni telefonen — klonet fra dashbordets .cal-* (dashboard.html:2536–2601), scopet til .hv-cal. */
 .hv-cal{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;position:relative;
   --bg:#0a0a0a;--surface:#141414;--ink:#fff;--ink-2:#cfcfcf;--mut:#8a8a8a;--mut-2:#5f5f5f;--line:#242424;--line-2:#363636;--info:#4d8bff}
@@ -1311,6 +1322,18 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   var ACC='#0071e3', DIM='#5c5c5c', WHITE='#ffffff';
   var stRef=null;
 
+  // ---- DEL B: bygg Selvbooking-skjermen inn i hero-telefonen (klon av #ksBook, id-er strippet) ----
+  (function(){
+    var hs=document.querySelector('#heroViz .hv-screen'), kb=$('ksBook');
+    if(!hs||!kb||hs.querySelector('.hv-book'))return;
+    var pv=kb.querySelector('.pv-book');if(!pv)return;
+    var clone=pv.cloneNode(true);
+    clone.querySelectorAll('[id]').forEach(function(el){el.removeAttribute('id');});
+    clone.removeAttribute('id');
+    var host=document.createElement('div');host.className='hv-book ks-scene';host.appendChild(clone);
+    hs.appendChild(host);
+  })();
+
   function bygg(){
    // Animert sti aktiv → skjul den statiske fallback-lista (diagram-overlayet tar over).
    var fb=$('fkFallback'); if(fb)fb.style.display='none';
@@ -1406,9 +1429,11 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     var tl=gsap.timeline({defaults:{ease:'power2.inOut'}});   // eases på scrubbede tweens (ikke lineær)
     // GLOW toner inn saktere enn telefonen (0-24) og står stabil resten
     tl.fromTo('#ksBg',{opacity:0,scale:.94},{opacity:1,scale:1,duration:24,ease:'sine.out'},0);
-    // INTRO 0-12: telefon inn y 28→0, scale .985→1, opacity. Ingen sideveis, ingen rotasjon.
+    // DEL B: telefonen har ALLEREDE reist inn via J-kroken (hero-telefonen) og landet på ks-plassen.
+    // Her er den bare til stede fra t=0 — ingen egen innkomst (reise-telefonen krysstoner over til denne
+    // ved landing = sømløst bytte). Tittelen kommer inn rundt den 0-8 (rett etter landing).
     tl.fromTo('#ksH2',{y:22,opacity:0},{y:0,opacity:1,duration:8},0);
-    tl.fromTo(phone,{y:28,scale:.985,opacity:0},{y:0,scale:1,opacity:1,duration:12},0);
+    tl.set(phone,{y:0,scale:1,opacity:1},0);
     // STEG 1: tekst inn (y 20→0), så bookingmarkeringer. PAUSE ~36-40.
     tl.fromTo('.ks-step[data-step="0"]',{y:20,opacity:0},{y:0,opacity:1,duration:7},8);
     tl.to('#ksSlotHint',{opacity:0,duration:4},16).to('#ksSlotsHdr',{opacity:1,duration:4},16).to('#ksSlotsGrid',{opacity:1,duration:4},16);
@@ -1464,7 +1489,76 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     function frame(self){var t=(self&&typeof self.progress==='number'?self.progress:tl.progress())*207;dTick(t);lojal(t);}
     var st=ScrollTrigger.create({trigger:sec,start:'top top+='+navH,end:'+='+dist,pin:'#ksPin',anticipatePin:1,scrub:true,animation:tl,invalidateOnRefresh:true,onUpdate:frame,onRefresh:function(){frame();}});
     stRef=st; frame();
-    return function(){tl.kill();st.kill();loTl.kill();loReset();gsap.set([phone,'.ks-step','#ksBook','#ksCal','#ksSms','#ksBlock','#ksBlkGlow','#ksBg','#ksNext2','#ksSlotHint','#ksSlotsHdr','#ksSlotsGrid','#ksStatus','#ksBadgeA','#ksBadgeB','#ksH2','#ksH2b','#ksNav1','#ksNav2','#ksDiagrams','.ks-badge',friChip,slot11].concat(navBtns).concat(navBtns2),{clearProps:'all'});};
+
+    // ================= DEL B: hero-telefonen reiser J-kroken ned til ks-plassen =================
+    // Én scrubbet driver over [0, ks-pin-start]. Hero-telefonen (.pv-phoneframe) gjøres position:fixed
+    // og posisjoneres som en REN funksjon av scrollY: før heroStart sporer den flyten (scroller opp med
+    // sida), fra heroStart svinger den J-kroken (ut høyre, ned, rundt, opp i midten), krymper/vokser til
+    // ks-telefonens EKSAKTE mål, snurrer 0→360° flatt (eased inn/ut), og krysstoner kalender→Selvbooking
+    // ved 180°. Landingen måles fra #ksPhone sin pinnede geometri → sømløst hardt bytte til ks-telefonen.
+    var heroFrame=document.querySelector('#heroViz .pv-phoneframe'),heroVizEl=$('heroViz'),
+        heroScreen=document.querySelector('#heroViz .iph-screen'),
+        hvCal=document.querySelector('#heroViz .hv-cal'),hvBook=document.querySelector('#heroViz .hv-book'),
+        hvSb=document.querySelector('#heroViz .hv-sb'),hvDi=document.querySelector('#heroViz .hv-di'),
+        ksScreen=phone.querySelector('.phone-screen'),ksWrap=phone.parentNode;   // .ks-phonewrap
+    var travelST=null;
+    if(heroFrame&&heroVizEl&&heroScreen&&ksScreen){
+      heroVizEl.classList.add('in');
+      heroVizEl.style.minHeight=Math.round(heroVizEl.getBoundingClientRect().height)+'px';   // reserver flyt-høyde
+      var pr0=heroFrame.getBoundingClientRect(),hsc0=heroScreen.getBoundingClientRect();
+      var restW=pr0.width,restH=pr0.height,phoneDocTop=pr0.top+(window.scrollY||0),
+          heroFcx=pr0.left+pr0.width/2,heroFcy=pr0.top+pr0.height/2;
+      // Hero- og ks-telefonen har ULIK bezel-ratio (skjerm 90.88% vs 67.728% av rammen) OG ulikt
+      // sideforhold — å matche RAMMENE bommer vertikalt. Vi lander SKJERMEN (der bookingen bor) på ks-
+      // skjermen og krysstoner de siste %-ene, så bezel-forskjellen løses opp mens booking-innholdet står
+      // pikseljustert gjennom byttet. dsx/dsy = skjerm-senter relativt ramme-senter (skaleres med telefonen).
+      var dsx=(hsc0.left+hsc0.width/2)-heroFcx,dsy=(hsc0.top+hsc0.height/2)-heroFcy,heroScreenW=hsc0.width;
+      gsap.set(heroFrame,{position:'fixed',left:0,top:0,margin:0,zIndex:40,transformOrigin:'50% 50%',willChange:'transform'});
+      // ks-SKJERMENS pinnede senter: fixed-pinning fryser der den sto ved pin-start (= docTop − pin-start-scroll).
+      function measureLand(){var kr=ksScreen.getBoundingClientRect();var docTop=kr.top+(window.scrollY||0);return {cx:kr.left+kr.width/2,cy:(docTop+kr.height/2)-st.start,w:kr.width};}
+      var land=measureLand();
+      var endScale=land.w/heroScreenW,heroStart=Math.max(0,phoneDocTop-navH),ksStart=st.start;
+      function ez2(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;}
+      function clab(x,a,b){return x<a?a:x>b?b:x;}
+      function smooth(a,b,x){var t=clab((x-a)/(b-a),0,1);return t*t*(3-2*t);}
+      function bez(a,b,c,d,t){var u=1-t;return u*u*u*a+3*u*u*t*b+3*u*t*t*c+t*t*t*d;}
+      function drive(){
+        var sY=window.scrollY||window.pageYOffset||0,vw=window.innerWidth,vh=window.innerHeight,cx,cy,s,r,bookOp,cf;
+        if(sY<=heroStart){cx=heroFcx;cy=(phoneDocTop-sY)+restH/2;s=1;r=0;bookOp=0;cf=0;}
+        else{
+          var p=clab((sY-heroStart)/Math.max(1,ksStart-heroStart),0,1);
+          // POSE fullføres ved p=0.88 (landet + ferdig snurret), så KRYSSTONINGEN (p 0.90→1) skjer med
+          // begge telefoner PIKSELJUSTERT → ren oppløsning, ingen dobbel-/spøkelseskant midt i byttet.
+          var e=ez2(clab(p/0.88,0,1));
+          s=1+(endScale-1)*e;
+          var ecx=land.cx-dsx*endScale,ecy=land.cy-dsy*endScale;   // ramme-senter slik at skjerm-senter=ks
+          var scx=heroFcx,scy=navH+restH/2;
+          var R=vw*(isD?0.30:0.50),D=vh*(isD?0.52:0.62);          // J-krok: ut høyre, ned, rundt, opp midten
+          cx=bez(scx,scx+R,ecx+R*0.85,ecx,e);
+          cy=bez(scy,scy+D*0.42,ecy+D,ecy,e);
+          // Hardt bytte i EKSAKT landing (p=1): ks-telefonen holdes skjult til den er pinnet og skjerm-
+          // justert (Δ0), så ingen dobbel-/spøkelseskant. (Krysstoning ga spøkelse fordi ks-telefonen
+          // fortsatt reiser opp i flyten før pin.) Skjerm/booking er pikseljustert gjennom byttet.
+          r=360*e;bookOp=smooth(0.40,0.60,e);cf=(p>=0.999)?1:0;
+        }
+        gsap.set(heroFrame,{x:cx-restW/2,y:cy-restH/2,scale:s,rotation:r,opacity:1-cf});
+        if(hvBook)hvBook.style.opacity=bookOp;if(hvCal)hvCal.style.opacity=1-bookOp;
+        if(hvSb)hvSb.style.opacity=1-bookOp;if(hvDi)hvDi.style.opacity=1-bookOp;
+        // ks-telefonen (+ badge) toner inn via .ks-phonewrap (tl rører den ALDRI) → sømløst bytte fra reise-telefonen
+        if(ksWrap)ksWrap.style.opacity=cf;
+      }
+      travelST=ScrollTrigger.create({start:0,end:function(){return st.start;},scrub:true,invalidateOnRefresh:true,
+        onUpdate:drive,onRefresh:function(){land=measureLand();endScale=land.w/heroScreenW;ksStart=st.start;drive();}});
+      drive();
+    }
+
+    return function(){
+      if(travelST)travelST.kill();
+      if(heroFrame)gsap.set(heroFrame,{clearProps:'all'});
+      if(heroVizEl)heroVizEl.style.minHeight='';
+      if(ksWrap)ksWrap.style.opacity='';
+      [hvBook,hvCal,hvSb,hvDi].forEach(function(el){if(el)el.style.opacity='';});
+      tl.kill();st.kill();loTl.kill();loReset();gsap.set([phone,'.ks-step','#ksBook','#ksCal','#ksSms','#ksBlock','#ksBlkGlow','#ksBg','#ksNext2','#ksSlotHint','#ksSlotsHdr','#ksSlotsGrid','#ksStatus','#ksBadgeA','#ksBadgeB','#ksH2','#ksH2b','#ksNav1','#ksNav2','#ksDiagrams','.ks-badge',friChip,slot11].concat(navBtns).concat(navBtns2),{clearProps:'all'});};
    });
    ScrollTrigger.refresh();
   }
