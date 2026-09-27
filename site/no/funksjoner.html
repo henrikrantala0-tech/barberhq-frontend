@@ -168,20 +168,10 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
 
 /* ---- VARIANT B: kompakte kort, 2 kol desktop / 1 mobil, lav høyde ---- */
 
-/* Kommer senere — nedtonet, ute av hovedlista. */
-.fx-later{max-width:920px;margin:20px auto 0;padding:4px 32px 4px}
-.fx-later-card{background:#0b0b0b;border:1px dashed #232323;border-radius:16px;padding:20px 22px;display:flex;align-items:center;gap:15px;opacity:.7}
-.fx-later-ico{color:#5a5a5a;font-size:20px;line-height:1;flex-shrink:0}
-.fx-later .fn-body{flex:1}
-.fx-later h3{font-family:'Inter',sans-serif;font-size:15px;font-weight:700;color:#cfcfcf;margin-bottom:2px}
-.fx-later p{color:#8a8a8a;font-size:13.5px;line-height:1.4;margin:0}
-.fx-later .later-tag{font-size:11px;letter-spacing:.14em;font-weight:600;color:#5f5f5f;flex-shrink:0}
-
 .final-cta{text-align:center;padding:90px 32px 90px}
 .final-cta h2{font-family:'Inter',-apple-system,system-ui,sans-serif;font-size:clamp(30px,5.5vw,50px);font-weight:800;line-height:1.04;letter-spacing:-.04em;margin-bottom:18px}
 .final-cta p{color:#9a9a9a;font-size:17px;line-height:1.55;max-width:420px;margin:0 auto 34px}
 .final-cta .btn{font-size:16px;padding:16px 38px}
-.final-cta .final-note{color:#8c8c8c;font-size:13.5px;margin-top:20px}
 
 .foot{border-top:1px solid #1f1f1f;background:#0a0a0a}
 .foot-wrap{max-width:1100px;margin:0 auto;padding:72px 32px 36px}
@@ -1099,7 +1089,7 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
       </div>
       <!-- SEGMENT 3: Design — klonet dashboard-kort (scopet) + Wispr-koreografi -->
       <div class="des-seg des-seg-off" id="desSegDesign">
-        <div class="des-text"><div class="des-step"><p>Bytt palett, lys eller mørk, eller velg din egen farge blant 16&nbsp;777&nbsp;216.</p></div></div>
+        <div class="des-text"><div class="des-step"><p>Velg mellom 16&nbsp;777&nbsp;216 farger, eller bytt palett og lys/mørk.</p></div></div>
         <div class="des-dashrow des-drow2">
           <div class="des-card des-dcard" id="desDCard">
             <div class="des-acc-head"><span class="des-acc-title">Design</span><span class="des-acc-sub">Palett, bakgrunn, stil og layout på bookingsiden din.</span></div>
@@ -1177,24 +1167,11 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
   </div>
 </section>
 
-<!-- ===================== KOMMER SENERE ===================== -->
-<div class="fx-later reveal">
-  <div class="fx-later-card">
-    <i class="fx-later-ico ti ti-cash"></i>
-    <div class="fn-body">
-      <h3>No-show-beskyttelse</h3>
-      <p>Depositum ved booking.</p>
-    </div>
-    <span class="later-tag">KOMMER SENERE</span>
-  </div>
-</div>
-
-<section class="final-cta">
-  <div class="reveal">
-    <h2>Klar til å fylle stolen?</h2>
-    <p>Vi setter opp siden din. Du publiserer når du er fornøyd — 30 dager gratis.</p>
-    <a href="kom-i-gang.html" class="btn btn-fill">Prøv gratis</a>
-    <div class="final-note">Ingen binding</div>
+<section class="final-cta" id="finalCta">
+  <div class="final-cta-inner" id="finalCtaInner">
+    <h2>Klar for din egen side?</h2>
+    <p>30 dager gratis. Ingen binding.</p>
+    <a href="kom-i-gang.html" class="btn btn-fill">Kom i gang</a>
   </div>
 </section>
 
@@ -1528,8 +1505,9 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     if(cardScroll&&card&&card.clientHeight>0){var maxShift=Math.max(0,cardScroll.scrollHeight-card.clientHeight);
       cardScroll.style.transform='translateY('+(-maxShift*cl01(sg(t,F0,F1+8)))+'px)';}
     if(saveBtn)saveBtn.classList.toggle('hot', t>=87 && t<102);
-    // mobil profil: kort under fyll, preview til slutt (kun i profil-segmentet, t<108)
-    if(!desIsD&&prev&&card){var toPrev=t>=84&&t<108; card.style.display=toPrev?'none':'block'; prev.style.display=toPrev?'block':'none';}
+    // mobil: forhåndsvisningen droppet — Layout-steget viser bookingsidene. Profil-kortet står
+    // synlig hele profil-segmentet og glir rett over i Layout. Desktop beholder preview ved siden.
+    if(!desIsD&&prev&&card){card.style.display='block';prev.style.display='none';}
     else if(prev&&card){card.style.display='block';prev.style.display='block';}
     // ---- LAYOUT ----
     layoutTick(t);
@@ -1607,19 +1585,30 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     // vis fargevelger-panelet (takt 3-fokus) med Din egen-kortet så vidt over
     CUSTOFF = (ddCustomPanel&&pal)?Math.max(0,pal.offsetTop+pal.offsetHeight-8):0;
   }
+  // Avslutnings-CTA: glir opp (y 40→0 + opacity) scrubbet når den kommer i syne etter siste steg,
+  // og står helt stille når den er på plass. (Reduced-motion/no-JS: statisk synlig via CSS.)
+  function setupCta(){
+    var cta=$('finalCtaInner'); if(!cta)return;
+    gsap.fromTo(cta,{y:40,opacity:0},{y:0,opacity:1,ease:'none',
+      scrollTrigger:{trigger:'#finalCta',start:'top bottom',end:'top 65%',scrub:true}});
+  }
   function desbygg(){
     var navEl=document.querySelector('.nav'); var navH=(navEl&&Math.round(navEl.getBoundingClientRect().height))||68;
     document.documentElement.style.setProperty('--nav-h',navH+'px');
     gsap.matchMedia().add({desktop:'(min-width:900px)',mobile:'(max-width:899px)'},function(ctx){
       desIsD=!!ctx.conditions.desktop;
-      // 9.9×/8.58×vh = samme scroll-per-enhet som Profil (3.0/100, 2.6/100) over 330 enheter.
-      var dist=Math.round((desIsD?window.innerHeight:(window.visualViewport?window.visualViewport.height:window.innerHeight))*(desIsD?9.9:8.58));
+      // desktop 9.9×vh. Mobil kortet ned fra 8.58× til 7.9× etter at Profil-forhåndsvisningen ble
+      // fjernet (ett færre beat på mobil) — desktop uendret.
+      var dist=Math.round((desIsD?window.innerHeight:(window.visualViewport?window.visualViewport.height:window.innerHeight))*(desIsD?9.9:7.9));
       measureDesign();
       function frame(self){var t=(self&&typeof self.progress==='number'?self.progress:0)*T;desTick(t);}
       var st=ScrollTrigger.create({trigger:sec,start:'top top+='+navH,end:'+='+dist,pin:'#desPin',anticipatePin:1,scrub:true,invalidateOnRefresh:true,onUpdate:frame,onRefresh:function(){measureDesign();frame();}});
       frame({progress:0});
       return function(){st.kill();};
     });
+    // CTA-triggeren opprettes ETTER pinnen (i DOM-rekkefølge) så pin-spaceren er lagt ut når
+    // CTA-ens start/end regnes — ellers havner CTA-en for høyt på sida.
+    setupCta();
     ScrollTrigger.refresh();
   }
   // Reduced-motion: ingen pin/scrub. Vis Design-sluttilstanden (rød, lys) statisk via desTick(T).
