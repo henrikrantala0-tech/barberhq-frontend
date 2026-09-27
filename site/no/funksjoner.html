@@ -89,6 +89,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    cqw (samme cqw-triks som .iph --fscale), så den fyller skjermen på alle bredder uten
    settTelefonSkala(). Den animerte .sheet er utelatt — kun forsida (cover) vises. */
 .fx-hero-visual{display:flex;justify-content:center;padding:48px 20px 0}
+.fx-phone{display:flex;justify-content:center}   /* midtstill selve telefonkroppen (.pv-phoneframe), ikke .hero-viz-boksen */
 .fx-phone .pv-phoneframe{width:min(290px,84vw);container-type:inline-size}
 .iph{
   --fscale:calc(100cqw / 702px);
@@ -211,7 +212,7 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
   max-width:520px;margin:0 auto;padding:48px 20px 0;position:relative}
 /* Skjerm-innhold i .iph-screen: Dynamic Island + statuslinje + kalender som fyller resten (cqw/fscale
    arves fra .iph/.pv-phoneframe, samme som Kjernefunksjoner-telefonen). */
-.hv-screen{position:absolute;inset:0;display:flex;flex-direction:column;background:#0a0a0a;overflow:hidden}
+.hv-screen{position:absolute;inset:0;display:flex;flex-direction:column;background:#0a0a0a;overflow:hidden;border-radius:inherit}   /* arv .iph-screen sin runde klippekant → firkantet svart bg lekker aldri forbi hjørnet */
 .hv-di{position:absolute;left:50%;top:3.2cqw;transform:translateX(-50%);width:23cqw;height:6.6cqw;border-radius:3.3cqw;background:#000;z-index:6}
 .hv-sb{flex:0 0 auto;display:flex;align-items:center;justify-content:space-between;padding:3.4cqw 6cqw 1.4cqw;color:#fff;position:relative;z-index:5}
 .hv-sb-t{font-size:3.4cqw;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
