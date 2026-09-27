@@ -11,6 +11,7 @@
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="format-detection" content="telephone=no">
 <title>Funksjoner – BarberHQ</title>
   <link rel="canonical" href="https://trybarberhq.com/no/funksjoner.html">
   <meta property="og:type" content="website">
@@ -536,22 +537,23 @@ html{overflow-x:clip}
 .ks-scene *{transition:none!important;animation:none!important}   /* alt styres av scroll, aldri av tid */
 .ks-pin{position:relative;min-height:420px}
 .ks-stage{position:relative;width:100%;height:100%}   /* animert lag; #ksPin selv får ALDRI transform */
-/* HVIT glow — ferdig dithered bilde (glow-white.webp) i stedet for radial-gradient, så det ikke
-   blir fargetrinn/ringer (banding) på vanlige skjermer. Kun opacity/transform animeres. */
-.ks-bg{position:absolute;left:50%;top:50%;width:min(1180px,130%);height:min(1180px,124%);transform:translate(-50%,-50%);pointer-events:none;z-index:0;will-change:transform,opacity;
-  background:url("images/glow-white.webp") center/100% 100% no-repeat;
-  -webkit-mask:radial-gradient(closest-side,#000 48%,transparent 100%);mask:radial-gradient(closest-side,#000 48%,transparent 100%)}   /* fader til HELT transparent godt innenfor boksen → ingen rektangulær kant (vertikale streker) */
-/* Glowen ligger bak telefonen. Telefonen står nå NØYAKTIG midt på siden (symmetrisk grid
-   1fr 360px 1fr) = stage-senter = viewport-senter, så basens left:50% treffer allerede riktig.
-   (Den gamle +454px-forskyvningen gjaldt da telefonen sto i kol 2 av 190px 360px 1fr, venstre
-   for senter — nå fjernet.) */
-/* ⚠ Banding-fiks (robust): WebP-glødene er LOSSY → dither-støyen komprimeres bort og båndene kommer
-   tilbake, uavhengig av oppløsning. Løsning: eget støylag — 128×128 TAPSFRI PNG flislagt 1:1
-   (background-size = teksturstørrelsen, ALDRI skalert), maskert av selve glødformen så støyen kun
-   ligger der gløden er. Per-piksel-variasjonen dithrer båndene uansett hvor stor gløden blir. */
-.ks-bg::after,.ks-blk-glow::after,.ks-scene .ls-glow::after{content:"";position:absolute;inset:0;pointer-events:none;
-  background:url("images/noise.png") 0 0 repeat;background-size:128px 128px;mix-blend-mode:overlay;opacity:.55}
-.ks-bg::after{-webkit-mask:radial-gradient(closest-side,#000 48%,transparent 100%);mask:radial-gradient(closest-side,#000 48%,transparent 100%)}   /* SAMME radielle maske som gløden → verken glød eller støy har synlig boks-kant */
+/* SVAK, MYK HVIT GLØD (.sglow) — ren hvit CSS-gradient (ingen webp, ingen grå/blåtone), stor radius,
+   langt jevnt fall helt til transparent. Topper på ~luminans 20 i midten (alpha .025 over #0a0a0a) —
+   man skal bare så vidt ane den. Radial-maske → aldri rektangulær boks-kant. Nesten usynlig støy
+   (opacity .03, MASKERT likt som gløden) dithrer bort ev. ringer uten synlig korn utenfor gløden.
+   SAMME glød i hero, Kjernefunksjoner/Få kunder tilbake og Din egen side. */
+.sglow{pointer-events:none;z-index:0;
+  background:radial-gradient(closest-side, rgba(255,255,255,.025), rgba(255,255,255,0));
+  -webkit-mask:radial-gradient(closest-side,#000,transparent);mask:radial-gradient(closest-side,#000,transparent)}
+.sglow::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:url("images/noise.png") 0 0/128px 128px repeat;mix-blend-mode:overlay;opacity:.03;
+  -webkit-mask:radial-gradient(closest-side,#000,transparent);mask:radial-gradient(closest-side,#000,transparent)}
+.ks-bg{position:absolute;left:50%;top:50%;width:min(1180px,130%);height:min(1180px,124%);transform:translate(-50%,-50%);will-change:transform,opacity}
+.hero-glow{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,150vw);height:min(680px,150vw)}
+.des-glow{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(1000px,150vw);height:min(760px,150vw);z-index:0}
+/* Blå/grønn glød (inne i telefonen) beholder webp + maske, men støyen dempes til nesten usynlig. */
+.ks-blk-glow::after,.ks-scene .ls-glow::after{content:"";position:absolute;inset:0;pointer-events:none;
+  background:url("images/noise.png") 0 0 repeat;background-size:128px 128px;mix-blend-mode:overlay;opacity:.05}
 .ks-blk-glow::after{-webkit-mask:url("images/glow-blue.webp") center/100% 100% no-repeat;mask:url("images/glow-blue.webp") center/100% 100% no-repeat}
 .ks-scene .ls-glow::after{-webkit-mask:url("images/glow-green.webp") center/100% 100% no-repeat;mask:url("images/glow-green.webp") center/100% 100% no-repeat}
 /* blå glow bak kalenderblokken — samme dithered-bilde-løsning (glow-blue.webp) */
@@ -640,8 +642,12 @@ html{overflow-x:clip}
      tittelen. Symmetriske sidekolonner → telefonsenteret = .ks-inner-senteret. Stegnav nær telefonens
      venstre kant, stegtekst nær høyre kant. */
   .ks-scene.ks-anim .ks-inner{grid-template-columns:1fr 360px 1fr}
-  .ks-scene.ks-anim .ks-navwrap{justify-self:end}
-  .ks-scene.ks-anim .ks-text{justify-self:start}
+  /* Sidekolonnene er 1fr (symmetriske → telefon sentrert), men nav/tekst krympet til innhold
+     (nav til nav1-bredden siden nav2 er absolutt; tekst til 0 siden stegene er absolutte). Gi dem
+     eksplisitt bredde nær telefonen: stegnavn på ÉN linje, stegtekst 2–3 linjer. */
+  .ks-scene.ks-anim .ks-navwrap{justify-self:end;width:190px}
+  .ks-scene.ks-anim .ks-text{justify-self:start;width:322px}
+  .ks-scene.ks-anim #ksNav1,.ks-scene.ks-anim #ksNav2{width:190px}
 }
 /* MOBIL — ingen stegnav/fremdrift; kun h2, telefon, merkelapp, sentrert tekst */
 @media(max-width:899px){
@@ -897,6 +903,11 @@ html{overflow-x:clip}
      som i Profil/Layout. */
   .des-dcard{position:relative;height:min(33svh,262px);overflow:hidden}
   .des-dcard .dd-ctl{will-change:transform}
+  /* Headeren («Design» + undertittel) er et OPAKT, fast toppfelt over det glidende dd-ctl-innholdet.
+     Uten dette glir palettkortene (BarberHQ/Din egen) opp BAK den gjennomsiktige headeren og synes
+     gjennom teksten (overlapp på iPhone). Opak bg + z over dd-card (z1)/kort-fade (z2) → palettene
+     glir rent bak headeren i alle scrollposisjoner. */
+  .des-dcard .des-acc-head{position:relative;z-index:3;background:#0a0a0a;box-shadow:0 6px 6px -4px #0a0a0a}
   .des-dpv{height:min(37svh,250px)}
   /* Kompakt fargevelger på mobil så SV + kulør + hex får plass i kortvinduet (også 320). */
   .dd-custom-panel{padding:11px}
@@ -961,6 +972,7 @@ html{overflow-x:clip}
 <!-- Hero-visual: kalender INNI iPhone-rammen (samme ramme som bookingtelefonen) + tallkort med kuttede
      stolper. Statuslinje + Dynamic Island som Kjernefunksjoner. Bygges av JS. -->
 <div class="hero-viz reveal" id="heroViz">
+  <div class="sglow hero-glow" aria-hidden="true"></div>
   <div class="fx-phone">
     <div class="pv-phoneframe"><div class="iph">
       <i class="iph-btn la action"></i><i class="iph-btn la volup"></i><i class="iph-btn la voldn"></i><i class="iph-btn ra power"></i>
@@ -987,7 +999,7 @@ html{overflow-x:clip}
 <section class="ks-scene" id="kjernefunksjoner" aria-label="Kjernefunksjoner">
   <div class="ks-pin" id="ksPin">
     <div class="ks-stage">
-    <div class="ks-bg" id="ksBg"></div>
+    <div class="ks-bg sglow" id="ksBg"></div>
     <div class="ks-inner">
       <div class="ks-h2wrap"><h2 class="ks-h2" id="ksH2">Kjernefunksjoner</h2><h2 class="ks-h2 ks-h2b" id="ksH2b">Få kunder tilbake</h2></div>
       <div class="ks-navwrap">
@@ -1145,7 +1157,7 @@ html{overflow-x:clip}
 
 <!-- ===================== DIN EGEN SIDE (scroll-scene, egen pin — overgang + Profil) ===================== -->
 <section class="des-scene" id="dineegenside" aria-label="Din egen side">
-  <div class="des-pin" id="desPin"><div class="des-stage"><div class="des-inner">
+  <div class="des-pin" id="desPin"><div class="des-stage"><div class="sglow des-glow" aria-hidden="true"></div><div class="des-inner">
     <h2 class="des-h2">Din egen side</h2>
     <nav class="des-nav" aria-label="Steg">
       <button class="des-step-btn" type="button" data-seg="0">Profil</button>
