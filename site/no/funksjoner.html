@@ -98,7 +98,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
   width:calc(702px*var(--fscale)); height:calc(1451px*var(--fscale));
   padding:calc(32px*var(--fscale)); border-radius:calc(128px*var(--fscale));
   background:linear-gradient(145deg,var(--ti-hi) 0%,var(--ti-mid) 20%,var(--ti-lo) 52%,var(--ti-mid) 80%,var(--ti-hi) 100%);
-  box-shadow:0 0 0 calc(1px*var(--fscale)) #e6eaee,0 40px 90px -30px rgba(0,0,0,.85),0 8px 24px rgba(0,0,0,.5)}
+  box-shadow:0 0 0 calc(1px*var(--fscale)) #e6eaee}   /* mørk drop-shadow fjernet (#6) — kun den lyse 1px-ringen igjen */
 .iph::before{content:"";position:absolute;inset:calc(10px*var(--fscale));
   border-radius:calc(118px*var(--fscale));background:#050505;
   box-shadow:inset 0 0 0 calc(1.5px*var(--fscale)) var(--edge-dark)}
@@ -1301,12 +1301,25 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   var friChip=strip.querySelector('.date-chip');
   ['11:00','11:30','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00'].forEach(function(t){var b=document.createElement('button');b.type='button';b.className='slot-btn';b.textContent=t;if(t==='11:00')b.id='ksSlot11';$('ksSlotsGrid').appendChild(b);});
   var slot11=$('ksSlot11');
-  $('ksCalDateBtn').textContent=WD[FRI.getDay()]+' '+FRI.getDate()+'. '+MO[FRI.getMonth()];$('ksCalDayhead').textContent=WD[FRI.getDay()];
-  var cs=$('ksCalStrip');for(var j=-1;j<4;j++){var d=new Date(FRI);d.setDate(d.getDate()+j);var c=document.createElement('div');c.className='ks-chip'+(j===0?' active is-today':'');c.innerHTML='<span class="ks-chip-wd">'+WD[d.getDay()]+'</span><span class="ks-chip-d">'+d.getDate()+'</span><span class="ks-chip-count"></span>';cs.appendChild(c);}
-  var HRS=[9,10,11,12,13,14],PPM=1.8,ax=$('ksCalAxis');HRS.forEach(function(h){var e=document.createElement('div');e.className='ks-hour';e.style.height=(60*PPM)+'px';e.innerHTML='<span>'+h+'</span>';ax.appendChild(e);});
-  var body=$('ksCalBody');body.style.height=(HRS.length*60*PPM)+'px';body.style.position='relative';HRS.forEach(function(h,ix){var l=document.createElement('div');l.className='ks-hourline';l.style.top=(ix*60*PPM)+'px';body.appendChild(l);});
-  var blk=document.createElement('div');blk.className='ks-block';blk.id='ksBlock';blk.style.top=((11-9)*60*PPM)+'px';blk.style.height=(30*PPM)+'px';blk.innerHTML='<div class="ks-blk-top"><span class="ks-blk-name">Marcus</span><span class="ks-blk-time">11:00</span></div><span class="ks-blk-svc">Skinfade</span>';body.appendChild(blk);
-  var bglow=document.createElement('div');bglow.className='ks-blk-glow';bglow.id='ksBlkGlow';var _bt=(11-9)*60*PPM,_bh=30*PPM;bglow.style.left='-18px';bglow.style.right='-18px';bglow.style.top=(_bt-16)+'px';bglow.style.height=(_bh+32)+'px';body.insertBefore(bglow,blk);
+  // #ksCal (steg 2) = SAMME rike full-dags-kalender som hero: 10:00–15:00, 10 bookinger, datostripe med
+  // antall. Gjenbruker ks-cal-strukturen (320-design + pv-scale, definert høyde). Blokkene er synlige (.ks-in).
+  (function(){
+    var RSTART=600,REND=900,PPM=1.8,WDU=['SØN','MAN','TIR','ONS','TOR','FRE','LØR'],
+        RSVC={Skinfade:'#4d8bff',Saksklipp:'#3ecf7e',BarneKlipp:'#e0844a'},RDEMO={0:0,1:5,2:4,3:6,4:7,5:8,6:9},
+        RBOOK=[{n:'Mehmet D.',s:'Skinfade',a:600,b:625},{n:'Khaled N.',s:'Saksklipp',a:625,b:650},{n:'Mahmoud S.',s:'BarneKlipp',a:650,b:675},{n:'Ali F.',s:'Skinfade',a:675,b:700},{n:'Ahmed O.',s:'Skinfade',a:720,b:750},{n:'Henrik M.',s:'Saksklipp',a:750,b:780},{n:'Nabil D.',s:'BarneKlipp',a:780,b:810},{n:'Jonas B.',s:'Skinfade',a:810,b:840},{n:'Usman M.',s:'Saksklipp',a:840,b:870},{n:'Emre Y.',s:'BarneKlipp',a:870,b:900}];
+    function rp(n){return(n<10?'0':'')+n;} function rhhmm(m){return Math.floor(m/60)+':'+rp(m%60);}
+    $('ksCalDateBtn').textContent=WD[FRI.getDay()]+' '+FRI.getDate()+'. '+MO[FRI.getMonth()];
+    $('ksCalDayhead').textContent=WDU[FRI.getDay()]+' '+FRI.getDate()+'. '+MO[FRI.getMonth()].toUpperCase();
+    var cs=$('ksCalStrip');cs.innerHTML='';
+    for(var j=-1;j<=5;j++){var d=new Date(FRI);d.setDate(FRI.getDate()+j);var isSel=(j===0),cnt=(d.getDay()===0?0:(isSel?10:RDEMO[d.getDay()]));
+      var c=document.createElement('div');c.className='ks-chip'+(isSel?' active is-today':'');
+      c.innerHTML='<span class="ks-chip-wd">'+WDU[d.getDay()]+'</span><span class="ks-chip-d">'+d.getDate()+'</span><span class="ks-chip-count">'+(cnt||'')+'</span>';cs.appendChild(c);}
+    var ax=$('ksCalAxis');ax.innerHTML='';for(var m=RSTART;m<REND;m+=60){var e=document.createElement('div');e.className='ks-hour';e.style.height=(60*PPM)+'px';e.innerHTML='<span>'+rhhmm(m)+'</span>'+((m+30<REND)?'<span class="ks-half">'+rhhmm(m+30)+'</span>':'');ax.appendChild(e);}
+    var body=$('ksCalBody');body.innerHTML='';body.style.height=((REND-RSTART)*PPM)+'px';body.style.position='relative';
+    for(var mm=RSTART;mm<REND;mm+=60){var l=document.createElement('div');l.className='ks-hourline';l.style.top=((mm-RSTART)*PPM)+'px';body.appendChild(l);var hf=mm+30;if(hf<REND){var hl=document.createElement('div');hl.className='ks-halfline';hl.style.top=((hf-RSTART)*PPM)+'px';body.appendChild(hl);}}
+    RBOOK.forEach(function(bk){var d=document.createElement('div');d.className='ks-block ks-in';d.style.top=((bk.a-RSTART)*PPM)+'px';d.style.height=((bk.b-bk.a)*PPM)+'px';d.style.setProperty('--ks-blk',RSVC[bk.s]);
+      d.innerHTML='<div class="ks-blk-top"><span class="ks-blk-name">'+bk.n+'</span><span class="ks-blk-time">'+rhhmm(bk.a)+'</span></div><span class="ks-blk-svc">'+bk.s+'</span>';body.appendChild(d);});
+  })();
   $('ksLsDate').textContent=WDF[THU.getDay()]+' '+THU.getDate()+'. '+MOF[THU.getMonth()];
   $('ksLsMsg').textContent='Hei Marcus! Minner om timen din hos Grand Barber i morgen kl 11:00.';
 
