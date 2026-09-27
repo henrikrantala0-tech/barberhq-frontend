@@ -643,18 +643,19 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
    (går i ett med sida, ingen kant/skygge); kun input-feltene har --d-surface #141414 + kant så de
    synes tydelig. Overgangen fra Vinn tilbake er lik de andre stegene: glir ut, tittel + Profil inn.
    Kortfarge-token = dashboard.html:351 (--surface #141414), brukt kun på feltene. Mørk only. */
-.des-scene{position:relative;overflow-x:clip;background:#0a0a0a;display:none;margin-top:8vh;
+.des-scene{position:relative;overflow-x:clip;background:#0a0a0a;display:none;margin-top:12vh;
   --d-surface:#141414;--d-ink:#ffffff;--d-ink2:#cfcfcf;--d-mut:#8a8a8a;--d-line:#242424;--d-line2:#363636;--d-info:#4d8bff}
 .des-scene.des-anim{display:block}
 .des-scene *{transition:none!important;animation:none!important}
 .des-pin{position:relative;min-height:420px;z-index:1}
 .des-stage{position:relative;width:100%;height:100%}
 .des-inner{position:relative;z-index:1;width:100%;max-width:1200px;margin:0 auto;padding:0 40px;display:grid;grid-template-columns:170px 1fr;align-items:center;gap:36px}
-.des-h2{grid-column:1/-1;font-family:'Inter',sans-serif;font-weight:800;font-size:clamp(24px,3.4vw,38px);letter-spacing:-.03em;color:#fff;margin:0}
+.des-h2{grid-column:1/-1;font-family:'Inter',sans-serif;font-weight:800;font-size:clamp(24px,3.4vw,38px);letter-spacing:-.03em;color:#fff;margin:0;z-index:6}
 .des-nav{display:flex;flex-direction:column;gap:20px}
 .des-step-btn{background:none;border:0;color:#fff;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;text-align:left;padding:1px 0;cursor:pointer}
 .des-main{min-width:0}
-.des-text{margin:0 0 18px}
+/* Tittel + stegtekst ligger OVER kortene (z-index) — layout-kortene glir bak dem mot hjørnet. */
+.des-text{margin:0 0 18px;position:relative;z-index:6}
 .des-step h3{font-family:'Inter',sans-serif;font-weight:800;font-size:clamp(22px,2.6vw,30px);letter-spacing:-.02em;color:#fff;margin:0 0 6px}
 .des-step p{color:#b4b4b4;font-size:16px;line-height:1.5;margin:0}
 .des-dashrow{display:grid;grid-template-columns:1fr 330px;gap:34px;align-items:center}
@@ -699,6 +700,9 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
   .des-scene.des-anim .des-pin{height:calc(100svh - var(--nav-h,68px))}
   .des-scene.des-anim .des-inner{align-content:start;padding-top:12px}
   .des-nav{display:none}
+  /* Profil sitter tett under tittelen (som tittel→innhold i Kjernefunksjoner), ikke vertikalt
+     sentrert i den høye pinnen — ellers blir det for mye luft mellom «Din egen side» og skjemaet. */
+  #desSegProfil{justify-content:flex-start;padding-top:6px}
   .des-scene.des-anim .des-h2{position:relative;top:auto;left:auto;transform:none;text-align:center;font-size:clamp(21px,5.6vw,28px)}
   .des-text{text-align:center;margin-bottom:12px}
   .des-dashrow{grid-template-columns:1fr;gap:0}
@@ -731,12 +735,14 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
 @media(max-width:899px){
   .des-scene.des-anim .des-main{height:calc(100svh - var(--nav-h,68px))}
   .des-seg .des-text{text-align:center;margin-bottom:12px}
-  /* Mobil: kun ÉN forhåndsvisning om gangen (krysstoner). Alle fire stables i samme celle. */
+  /* Mobil: skrå transportbånd. Alle fire stables i samme celle; JS gir hver sin posisjon på banen
+     (nedre høyre → senter → øvre venstre). Mindre kort så 2–2,5 er synlige samtidig. */
   .des-layrow{display:grid;grid-template-columns:1fr;max-width:300px;margin:0 auto}
-  .des-lay{grid-area:1/1}
-  .des-lay-frame{height:min(52svh,360px);aspect-ratio:281/562;width:auto;margin:0 auto}
+  .des-lay{grid-area:1/1;z-index:1}
+  .des-lay-frame{height:min(40svh,300px);aspect-ratio:281/562;width:auto;margin:0 auto}
   .des-lay-cap{display:none}
-  .des-lay-tag{display:block;text-align:center;margin-top:12px;font-size:14px;font-weight:600;color:#fff}
+  /* Navnet på fokus-kortet — ligger OVER kortene (z-index) som tittel/stegtekst. */
+  .des-lay-tag{display:block;text-align:center;margin-top:12px;font-size:14px;font-weight:600;color:#fff;position:relative;z-index:6}
 }
 
 /* ==================== DESIGN-segment: klonet dashboard-kort (scopet dd-*) ==================== */
@@ -1482,12 +1488,13 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   //      ez = power2.inOut. LR (reise-avstand) = én viewporthøyde → start garantert under kanten.
   var LSTART=[{x:-48,r:-8},{x:34,r:5},{x:-32,r:-6},{x:56,r:8}]; // x-drift + egen rotasjon per kort
   var LWIN=[[117,157],[124,166],[131,175],[139,185]]; // per-kort gli-vinduer (staggered start+slutt)
-  // mobil: vertikalt transportbånd, ett kort i syne om gangen, INGEN krysstoning. Kortene ligger med
-  // fast avstand (STRIDE) på et bånd som glir LINEÆRT opp: når ett er i senter glir det ut oppover
-  // mens det neste kommer rett bak nedenfra (tett overlevering, ikke stort tomrom). Hvert kort er
-  // skråstilt mens det er under, rett i senter. Siste (Showcase) stopper i senter og blir stående.
-  var LSTARTM=[{x:-26,r:-7},{x:30,r:6},{x:-30,r:-6},{x:26,r:7}];
-  var CEN=[126,144,162,180]; // sentertider (jevnt fordelt, 18 enheter mellom)
+  // mobil: SKRÅ transportbånd — kortene glir inn fra nedre HØYRE hjørne (utenfor kanten), gjennom
+  // senter, og ut øvre VENSTRE hjørne. 2–2,5 kort synlige samtidig (tett stride). Ren transform,
+  // ingen opacity. Kortene glir BAK tittel + stegtekst (høyere z-index). Skråstilt på vei inn, rett
+  // i senter. Siste (Showcase) stopper i senter. CENm er lagt sent nok til at Hero er utenfor kanten
+  // mens segmentet toner inn (108–116) → ingen synlig inntoning på kortet.
+  var LTILT=[-7,6,-6,7];       // per-kort skråstilling
+  var CENm=[134,150,166,182];  // sentertider (16 enheter mellom; Hero utenfor kanten under fade-inn 108–116)
   function layoutTick(t){
     var LR = (desIsD?window.innerHeight:(window.visualViewport?window.visualViewport.height:window.innerHeight)) || 800;
     if(desIsD){
@@ -1498,17 +1505,18 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
         el.classList.toggle('is-on', i===3 && t>=183);            // Showcase markeres når den har landet
       });
     } else {
-      var STRIDE = LR*0.82;   // avstand mellom kort på båndet — nok til å skjule naboene i senter
+      // per-kort forskyvning langs banen: s=+1 ⇒ nede-høyre (delvis synlig), s=+2 helt utenfor;
+      // s=-1 ⇒ oppe-venstre (delvis), s=-2 helt utenfor.
+      var vw=window.innerWidth||375, DX=vw*0.56, DY=LR*0.27;
       lays.forEach(function(el,i){
-        var s=LSTARTM[i];
-        var u = (CEN[i]-t)/18;                     // 0 i senter, +1 ett kort under, -1 ett kort over
-        if(i===3 && t>=CEN[3]) u=0;                // Showcase stopper i senter og blir stående
-        var below = cl01(u);                       // 0..1 hvor «under senter» kortet er (for tilt/x)
+        var s=(CENm[i]-t)/16;                        // +1 nede-høyre · 0 senter · -1 oppe-venstre
+        if(i===3 && t>=CENm[3]) s=0;                 // Showcase blir stående i senter
+        var tilt=LTILT[i]*cl01(s);                   // skråstilt på vei inn (nede-høyre), rett i senter
         el.style.opacity=1;
-        el.style.transform='translate('+(s.x*below)+'px,'+(STRIDE*u)+'px) rotate('+(s.r*below)+'deg)';
+        el.style.transform='translate('+(DX*s)+'px,'+(DY*s)+'px) rotate('+tilt+'deg)';
         el.classList.remove('is-on');
       });
-      var cur = t<135?0 : t<153?1 : t<171?2 : 3;   // navnet følger kortet som er i syne
+      var cur = t<142?0 : t<158?1 : t<174?2 : 3;     // navnet følger kortet i fokus (nærmest senter)
       if(layTag)layTag.textContent=LAYNAMES[cur];
     }
   }
