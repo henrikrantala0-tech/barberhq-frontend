@@ -1412,6 +1412,9 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
    subtile hairlines INNI boksen. Ingen gradient/inner-shadow/glow. Én kilde — endre her, ikke to steder. */
 .panel-box{max-width:680px;width:100%;background:#0c0c0c;border:1px solid #131313;border-radius:18px;
   padding:4px 30px;text-align:left;font-family:'Inter',-apple-system,system-ui,sans-serif}
+/* Render-variant (toggles i Playwright, ikke i markup ennå): 1px svak topp-kant-highlight.
+   Ren border-farge — IKKE inner shadow/glow. */
+.panel-box.edge-hl{border-top-color:rgba(255,255,255,.07)}
 .problem-panel{margin-top:64px}
 .prow{display:flex;gap:16px;align-items:baseline;padding:14px 0}
 .prow + .prow{border-top:1px solid #141414}
@@ -1489,16 +1492,23 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .sys-acc{margin-top:48px;display:flex;flex-direction:column}
 .sys-row{overflow:hidden}
 .sys-row + .sys-row{border-top:1px solid #141414}
-.sys-head{width:100%;background:none;border:0;cursor:pointer;display:flex;align-items:center;gap:16px;padding:22px 24px;text-align:left;font-family:inherit}
-.sys-head-ico{flex-shrink:0;width:46px;height:46px;border-radius:12px;background:#161616;border:1px solid #232323;display:flex;align-items:center;justify-content:center;color:#4d8bff}
-.sys-head-txt{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
-.sys-head-t{color:#fff;font-size:18px;font-weight:700;letter-spacing:-.02em}
-.sys-head-d{color:#8f8f8f;font-size:14px;line-height:1.4}
-.sys-chevron{flex-shrink:0;color:#777;transition:transform .25s ease,color .2s}
-.sys-row[data-open="true"] .sys-chevron{transform:rotate(180deg);color:#fff}
+/* Rad-hode som grid: ikon · tittel · chevron på RAD 1, beskrivelse på RAD 2.
+   Beskrivelsen flukter med TITTELEN (kolonne 2), ikke med ikonet — akkurat som problem-panelet
+   der teksten flukter med tittelen, ikke nummeret — og strekker helt ut til høyre kant (2/-1),
+   så chevron-kolonnen ikke klemmer den. .sys-head-txt løses opp med display:contents så tittel +
+   beskrivelse blir direkte grid-barn (ingen markup-endring). */
+.sys-head{width:100%;background:none;border:0;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;column-gap:16px;row-gap:5px;align-items:center;padding:20px 0;text-align:left;font-family:inherit}
+.sys-head-txt{display:contents}
+.sys-head-ico{grid-column:1;grid-row:1;width:46px;height:46px;border-radius:12px;background:#161616;border:1px solid #232323;display:flex;align-items:center;justify-content:center;color:#4d8bff}
+.sys-head-t{grid-column:2;grid-row:1;min-width:0;color:#fff;font-size:18px;font-weight:700;letter-spacing:-.02em;transition:color .2s}
+.sys-chevron{grid-column:3;grid-row:1;color:#777;transition:transform .25s ease,color .2s}
+.sys-head-d{grid-column:2/-1;grid-row:2;color:#8f8f8f;font-size:14px;line-height:1.4}
+/* Aksent: blå kun på den ÅPNE raden (tittel + chevron). Ikonene er alltid blå (egen regel over). */
+.sys-row[data-open="true"] .sys-head-t{color:#4d8bff}
+.sys-row[data-open="true"] .sys-chevron{transform:rotate(180deg);color:#4d8bff}
 .sys-panel{max-height:0;overflow:hidden;transition:max-height .4s ease}
 .sys-row[data-open="true"] .sys-panel{max-height:760px}
-.sys-panel-in{padding:10px 24px 34px;display:flex;justify-content:center}
+.sys-panel-in{padding:10px 0 34px;display:flex;justify-content:center}
 /* Rad 5: Lojalitetsprogram — STATISK bekreftelsesskjerm i SAMME .iph-telefonramme som de fire andre
    radene (klassen «rbdemo lojdemo» arver ramme + statuslinje). data-anim="lojalitet" har ingen handler
    → ingen animasjon, kun åpne/lukke. Speiler #bk-success i booking-module.cjs:966-983: grønn hake,
@@ -1518,7 +1528,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .lojdemo .loj-loy-top{display:flex;justify-content:space-between;align-items:flex-start}
 .lojdemo .loj-loy-top .loj-val{color:#4d8bff;font-weight:700}
 .lojdemo .loj-loy-sub{text-align:right;font-size:11px;color:#8f8f8f;margin-top:4px}
-@media(max-width:560px){.sys-section{padding:64px 22px}.sys-head{padding:18px 18px}.sys-head-d{font-size:13px}}
+/* Mobil: mindre ikonboks + tettere gap gir beskrivelsen mer bredde (rad 2). */
+@media(max-width:560px){.sys-section{padding:64px 22px}.sys-head{padding:18px 0;column-gap:12px}.sys-head-ico{width:35px;height:35px;border-radius:10px}.sys-head-d{font-size:13px}}
 </style>
 <script type="application/ld+json">
 {
