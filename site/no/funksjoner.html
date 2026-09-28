@@ -537,21 +537,31 @@ html{overflow-x:clip}
 .ks-scene *{transition:none!important;animation:none!important}   /* alt styres av scroll, aldri av tid */
 .ks-pin{position:relative;min-height:420px}
 .ks-stage{position:relative;width:100%;height:100%}   /* animert lag; #ksPin selv får ALDRI transform */
-/* BØLGE-BAKGRUNNSLYS (.sglow) — forbehandlet bølgebilde (bolge-{35,45,55}.webp): mørkeste=10 (#0a0a0a),
-   lyseste=35/45/55 (variant via ?glod, standard 45), triangulær dither → ingen ringer. BølgeFORMEN er
-   bevart (bånd i midten, mørkt over/under). Horisontalt FLISBAR (speilvend-skjøt: venstre=høyre) — hvert
-   lag er en strip med to fliser side ved side, som glir sømløst. Vises STØRRE enn seksjonen (155%) så
-   kantene ligger utenfor synsfeltet (+ seksjonens overflow-x:clip); kun topp/bunn er tonet ~6%. To lag
-   med LIGHTEN-blend glir ulikt tempo + motsatt retning → formen bølger, ikke bare glir. ⚠ KUN transform +
-   opacity — ingen scale, ingen filter. Bak telefonen/diagrammet. Kjernefunksjoner/Få kunder tilbake +
-   Din egen side (hero har INGEN glød). */
-.sglow{position:absolute;left:50%;top:46%;transform:translate(-50%,-50%);width:min(1600px,155vw);aspect-ratio:2/1;overflow:hidden;pointer-events:none;z-index:0;isolation:isolate}
-.sglow .wave{position:absolute;top:0;left:0;height:100%;width:200%;display:flex;will-change:transform}   /* strip = to fliser (200%) → glir sømløst innafor container-klippingen */
-.sglow .wave img{flex:0 0 50%;width:50%;height:100%;object-fit:cover;display:block;pointer-events:none}
-.sglow .wave.w2{mix-blend-mode:lighten}
-.ks-bg{will-change:opacity}
-.des-glow{top:50%}
-@media(max-width:899px){ .sglow{width:min(920px,172vw)} }
+/* BAKGRUNNSLYS (#ksBg) — statisk rund radial-glow bak telefonen i Kjernefunksjoner-scenen.
+   FORANKRET til telefon-slotten (#ksPhoneSlot > #ksBg, sentrert på telefonens footprint) — ikke gjettet
+   viewport-matte. Da sitter glowen bak telefonen uansett layout (desktop sentrert vs mobil topp-justert)
+   og uansett hvor reise-telefonen lander. Aksentblå #4d8bff, lav opasitet. INGEN scroll-drift — kun
+   opacity-fade (inn ved entré, ut ved overgangen til «Få kunder tilbake» så den scenen blir ren).
+   STØRRELSEN skaleres mot viewport-bredden (92vw, cap 680px), IKKE mot slotten, så gradienten er HELT
+   transparent lenge før 320px-kanten — glowen kuttes aldri (kun overflow-x:clip på seksjonen, ved
+   viewport-kant der glowen alt er 0). Få kunder tilbake + Din egen side har INGEN glow (hero heller ikke).
+   RING-FIKS (rot-årsak): lineært fall til 0 ga en brå knekk i stigningen som leses som en sirkelkant.
+   Nå EASET fall (stigning → 0 ved kanten, ~smoothstep) + `farthest-side` så alfa faktisk når 0 på
+   elementkanten (ikke bare i hjørnet), sluttfarge rgba(...,0), interpolering `in oklab`. Det easede
+   8-stopps oklab-fallet er jevnt uten banding (verifisert 3× crop + pikselprofil), så INGEN dither trengs.
+   Et tidligere feTurbulence-::after med mix-blend-mode:overlay ble FJERNET: overlay på mørk bakgrunn
+   MØRKNER der støyen er < 0.5, og ga en svakt mørkere ring i falloff-regionen (ring-snitt dippet under
+   bakgrunnsverdien). Blå glow over #0a0a0a skal bare kunne lysne — derfor ingen blend-lag her. */
+#ksBg{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:min(680px,92vw);height:min(680px,92vw);pointer-events:none;z-index:0;will-change:opacity;
+  background:radial-gradient(circle farthest-side in oklab,
+    rgba(77,139,255,.30) 0%,
+    rgba(77,139,255,.24) 18%,
+    rgba(77,139,255,.15) 36%,
+    rgba(77,139,255,.08) 52%,
+    rgba(77,139,255,.035) 66%,
+    rgba(77,139,255,.012) 80%,
+    rgba(77,139,255,.003) 90%,
+    rgba(77,139,255,0) 100%)}
 /* Blå/grønn glød (inne i telefonen) beholder webp + maske, men støyen dempes til nesten usynlig. */
 .ks-blk-glow::after,.ks-scene .ls-glow::after{content:"";position:absolute;inset:0;pointer-events:none;
   background:url("images/noise.png") 0 0 repeat;background-size:128px 128px;mix-blend-mode:overlay;opacity:.05}
@@ -999,10 +1009,6 @@ html{overflow-x:clip}
 <section class="ks-scene" id="kjernefunksjoner" aria-label="Kjernefunksjoner">
   <div class="ks-pin" id="ksPin">
     <div class="ks-stage">
-    <div class="ks-bg sglow" id="ksBg">
-      <div class="wave w1"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" aria-hidden="true" decoding="async"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" aria-hidden="true" decoding="async"></div>
-      <div class="wave w2"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" aria-hidden="true" decoding="async"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" aria-hidden="true" decoding="async"></div>
-    </div>
     <div class="ks-inner">
       <div class="ks-h2wrap"><h2 class="ks-h2" id="ksH2">Kjernefunksjoner</h2><h2 class="ks-h2 ks-h2b" id="ksH2b">Få kunder tilbake</h2></div>
       <div class="ks-navwrap">
@@ -1019,7 +1025,7 @@ html{overflow-x:clip}
         </nav>
       </div>
       <div class="ks-phonewrap">
-        <div class="ks-phone-slot" id="ksPhoneSlot"><div class="ks-phone-travel" id="ksPhoneTravel">
+        <div class="ks-phone-slot" id="ksPhoneSlot"><div class="ks-bg" id="ksBg" aria-hidden="true"></div><div class="ks-phone-travel" id="ksPhoneTravel">
         <div class="phone" id="ksPhone">
   <div class="phone-screen"><div class="hp-screens">
     <div class="hp-screen s-book" id="ksBook"><div class="pv-book vis-sheet"><div class="pv-scale"><section class="sheet"><div class="sheet-inner"><div class="acc-wrap">
@@ -1122,8 +1128,8 @@ html{overflow-x:clip}
         <div class="ks-step" data-step="5"><h3>Lojalitetsprogram</h3><p>Klippene teller automatisk mot en belønning du velger.</p></div>
         <div class="ks-step" data-step="6"><h3>Vinn tilbake</h3><p>Kundene som ikke har vært innom på 60 dager, samlet i én liste.</p></div>
       </div>
-    </div>
-    </div>
+    </div><!-- /.ks-inner -->
+    </div><!-- /.ks-stage (åpnes uten inline-lukking; .ks-inner nestes bevisst inni som animert lag) -->
   </div>
 </section>
 
@@ -1160,7 +1166,7 @@ html{overflow-x:clip}
 
 <!-- ===================== DIN EGEN SIDE (scroll-scene, egen pin — overgang + Profil) ===================== -->
 <section class="des-scene" id="dineegenside" aria-label="Din egen side">
-  <div class="des-pin" id="desPin"><div class="des-stage"><div class="sglow des-glow" aria-hidden="true"><div class="wave w1"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" decoding="async" loading="lazy"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" decoding="async" loading="lazy"></div><div class="wave w2"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" decoding="async" loading="lazy"><img class="wtile" src="bolge-45.webp" srcset="bolge-45-m.webp 860w, bolge-45.webp 1500w" sizes="(max-width:899px) 920px, 1600px" width="1500" height="750" alt="" decoding="async" loading="lazy"></div></div><div class="des-inner">
+  <div class="des-pin" id="desPin"><div class="des-stage"><div class="des-inner">
     <h2 class="des-h2">Din egen side</h2>
     <nav class="des-nav" aria-label="Steg">
       <button class="des-step-btn" type="button" data-seg="0">Profil</button>
@@ -1381,9 +1387,6 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   // Lojalitet-stempler (portert fra diag7-harness) — bygges alltid, brukes kun i animert sti.
   (function(){var w=$('loStamps');if(!w)return;for(var i=0;i<10;i++){var d=document.createElement('div');d.className='lostamp'+(i===9?' tenth':'');d.id='loS'+i;d.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';w.appendChild(d);}})();
 
-  // ?glod=35|45|55 velger glød-styrke (standard 45). Bytter bølgebildene (default 45 i markup).
-  (function(){var g=(new URLSearchParams(location.search).get('glod')||'45');if(g!=='35'&&g!=='55')g='45';
-    if(g!=='45')document.querySelectorAll('.wtile').forEach(function(im){im.src='bolge-'+g+'.webp';im.srcset='bolge-'+g+'-m.webp 860w, bolge-'+g+'.webp 1500w';});})();
 
   var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
   if(reduce||!window.gsap||!window.ScrollTrigger){return;}
@@ -1422,7 +1425,6 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     gsap.set('#ksBook',{xPercent:0}); gsap.set('#ksCal',{xPercent:100}); gsap.set('#ksSms',{opacity:0});
     if(ksHeroEl)gsap.set('#ksHero',{xPercent:0});   // #ksHero (hero-kalender) synlig ved t=0; driveren glir den ut under reisen
     gsap.set(phone,{opacity:1,y:0}); gsap.set('#ksBg',{opacity:0});   // telefonen ER til stede fra t=0 (kom fra hero)
-    gsap.set('#ksBg .w1',{xPercent:0,yPercent:0}); gsap.set('#ksBg .w2',{xPercent:-46,yPercent:0});   // strip-startposisjoner (dekker container; drift via tidslinja)
     gsap.set('.ks-step',{opacity:0,y:0}); gsap.set('.ks-step[data-step="0"]',{opacity:1,y:0});
     gsap.set('#ksSlotsHdr',{opacity:0}); gsap.set('#ksSlotsGrid',{opacity:0}); gsap.set('#ksNext2',{opacity:0}); gsap.set('#ksSlotHint',{opacity:1});
     gsap.set('#ksBadgeA',{opacity:0}); gsap.set('#ksBadgeB',{opacity:0}); gsap.set('#ksStatus',{opacity:1,color:'#0a0a0a'});   // badge skjult under reisen; status mørk (booking-baseline)
@@ -1506,13 +1508,10 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     }
 
     var tl=gsap.timeline({defaults:{ease:'power2.inOut'}});   // eases på scrubbede tweens (ikke lineær)
-    // GLOW toner inn saktere enn telefonen (0-24) og står stabil resten
-    tl.fromTo('#ksBg',{opacity:0},{opacity:1,duration:24,ease:'sine.out'},0);   // KUN opacity på selve laget
-    // Bølgen flyter rolig gjennom scenen: to lag glir sideveis + litt opp i ulikt tempo (scrubbet, lineært).
-    // Bølgen reiser tydelig sideveis (~én flis) gjennom hele scenen + svak opp-ned. Strip = 200% container,
-    // så xPercent ∈ [-50,0] dekker alltid. w2 motsatt retning + annet tempo → lighten-interferens (former bølger).
-    tl.fromTo('#ksBg .w1',{xPercent:0,yPercent:-2},{xPercent:-50,yPercent:2,duration:207,ease:'none'},0);
-    tl.fromTo('#ksBg .w2',{xPercent:-46,yPercent:2},{xPercent:-4,yPercent:-3,duration:207,ease:'none'},0);
+    // GLOW (statisk rund radial-glow bak telefonen) toner inn saktere enn telefonen (0-24) og står stabil
+    // til fase-overgangen. KUN opacity — ingen scroll-drift. Fader UT ved t92 (se under) så «Få kunder
+    // tilbake» blir ren uten glow.
+    tl.fromTo('#ksBg',{opacity:0},{opacity:1,duration:24,ease:'sine.out'},0);
     // DEL B: telefonen har ALLEREDE reist inn via J-kroken (hero-telefonen) og landet på ks-plassen.
     // Her er den bare til stede fra t=0 — ingen egen innkomst (reise-telefonen krysstoner over til denne
     // ved landing = sømløst bytte). Tittelen kommer inn rundt den 0-8 (rett etter landing).
@@ -1552,7 +1551,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     // UTGANG 92-100: telefon ut (y 0→28, opacity→0), tekst ut. Glow står nesten stabil (svak demping).
     tl.to(phone,{y:28,opacity:0,duration:8},92);
     tl.to('.ks-step[data-step="2"]',{y:-12,opacity:0,duration:8},92);
-    tl.to('#ksBg',{opacity:.55,duration:8,ease:'sine.inOut'},92);
+    tl.to('#ksBg',{opacity:0,duration:8,ease:'sine.inOut'},92);   // glow fader HELT ut → «Få kunder tilbake» uten glow
     tl.to('.ks-badge',{opacity:0,duration:8},92);
     // ---- OVERGANG + FÅ KUNDER TILBAKE (100–215) ----
     // Overgang: telefonen toner ut (92–100), tittelen skifter til «Få kunder tilbake»,
@@ -1666,7 +1665,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
       if(phoneTravel){phoneTravel.classList.remove('is-travelling');gsap.set(phoneTravel,{clearProps:'all'});
         if(phoneSlot)phoneSlot.appendChild(phoneTravel);}   // tilbake i sloten (statisk plass) før ev. ny matchMedia-oppbygging
       gsap.set(['#ksHero','#ksBook'],{clearProps:'all'});
-      tl.kill();st.kill();loTl.kill();loReset();gsap.set([phone,'.ks-step','#ksBook','#ksCal','#ksSms','#ksBlock','#ksBlkGlow','#ksBg','#ksBg .wave','#ksNext2','#ksSlotHint','#ksSlotsHdr','#ksSlotsGrid','#ksStatus','#ksBadgeA','#ksBadgeB','#ksH2','#ksH2b','#ksNav1','#ksNav2','#ksDiagrams','.ks-badge',friChip,slot11].concat(navBtns).concat(navBtns2),{clearProps:'all'});};
+      tl.kill();st.kill();loTl.kill();loReset();gsap.set([phone,'.ks-step','#ksBook','#ksCal','#ksSms','#ksBlock','#ksBlkGlow','#ksBg','#ksNext2','#ksSlotHint','#ksSlotsHdr','#ksSlotsGrid','#ksStatus','#ksBadgeA','#ksBadgeB','#ksH2','#ksH2b','#ksNav1','#ksNav2','#ksDiagrams','.ks-badge',friChip,slot11].concat(navBtns).concat(navBtns2),{clearProps:'all'});};
    });
    ScrollTrigger.refresh();
   }
@@ -1771,10 +1770,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     // FØR pinnen. Da kommer «Din egen side» inn nesten med én gang Vinn tilbake er ferdig, i stedet
     // for at hele reisen (~pin-høyden) er svart mens tittelen venter på å fade inn ved pin.
     if(h2)h2.style.opacity=1;
-    // Bølgelyset glir rolig sideveis + litt opp gjennom scenen (to lag, ulikt tempo). Scrubbet, kun transform.
-    var wp=t/T;
-    gsap.set('.des-glow .w1',{xPercent:-50*wp, yPercent:-2+4*wp});
-    gsap.set('.des-glow .w2',{xPercent:-46+42*wp, yPercent:2-5*wp});
+    // Din egen side har INGEN glow (bølgelaget fjernet).
     // ---- segment-krysstoning (kun opacity). Profil er synlig fra start (ingen fade-inn ved pin) så
     //      hele seksjonen scroller inn som en enhet; fader kun UT mot Layout. ----
     segOff(segProfil, 1-sg(t,102,110));
