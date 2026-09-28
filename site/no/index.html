@@ -1507,7 +1507,9 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
    der teksten flukter med tittelen, ikke nummeret — og strekker helt ut til høyre kant (2/-1),
    så chevron-kolonnen ikke klemmer den. .sys-head-txt løses opp med display:contents så tittel +
    beskrivelse blir direkte grid-barn (ingen markup-endring). */
-.sys-head{width:100%;background:none;border:0;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;column-gap:16px;row-gap:5px;align-items:center;padding:20px 0;text-align:left;font-family:inherit}
+/* border-radius matcher .panel-box (18px) så :focus-visible-ringen følger de runde hjørnene
+   i stedet for å tegne firkantede hjørner mot den avrundede boksen. Ingen synlig effekt uten fokus. */
+.sys-head{width:100%;background:none;border:0;cursor:pointer;display:grid;grid-template-columns:auto 1fr auto;column-gap:16px;row-gap:5px;align-items:center;padding:20px 0;text-align:left;font-family:inherit;border-radius:18px}
 .sys-head-txt{display:contents}
 .sys-head-ico{grid-column:1;grid-row:1;width:46px;height:46px;border-radius:12px;background:#161616;border:1px solid #232323;display:flex;align-items:center;justify-content:center;color:#4d8bff}
 .sys-head-t{grid-column:2;grid-row:1;min-width:0;color:#fff;font-size:18px;font-weight:700;letter-spacing:-.02em;transition:color .2s}
@@ -1539,7 +1541,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .lojdemo .loj-loy-top .loj-val{color:#4d8bff;font-weight:700}
 .lojdemo .loj-loy-sub{text-align:right;font-size:11px;color:#8f8f8f;margin-top:4px}
 /* Mobil: mindre ikonboks + tettere gap gir beskrivelsen mer bredde (rad 2). */
-@media(max-width:560px){.sys-section{padding:64px 22px}.sys-head{padding:18px 0;column-gap:12px}.sys-head-ico{width:35px;height:35px;border-radius:10px}.sys-head-d{font-size:13px}}
+@media(max-width:560px){.sys-section{padding:64px 22px}.sys-head{padding:18px 0;column-gap:12px;border-radius:16px}.sys-head-ico{width:35px;height:35px;border-radius:10px}.sys-head-d{font-size:13px}}
 </style>
 <script type="application/ld+json">
 {
