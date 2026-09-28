@@ -145,6 +145,13 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
   lenke lagt til noen sider og glemt andre gir stille drift (skjedde med «Vanlige spørsmål»).
   Vakta feiler (exit 1) hvis `.nav-links`, `.nav-panel` eller footeren har ulike lenker
   (tekst + href) på tvers av mal-sidene.
+- **Aldri `scroll-behavior:smooth` på sider med ScrollTrigger.** Det knekker `refresh()`-målingen:
+  ScrollTrigger setter `scrollTop=0` for å måle, men smooth animerer scrollen i stedet for å hoppe,
+  så målingen skjer mens scrollen står midt i scenen → trigger-start blir negativ og pinnen låser seg
+  (stuck pin ved topp, tittel/nav ligger oppå hero). Utløses av resize / DevTools / zoom / rotasjon
+  midt i scenen. Fjernet i `site/no/funksjoner.html` (`a09f09d`). Smooth anker-scroll gjøres via GSAP
+  ScrollToPlugin, ikke CSS. **⚠ Ved portering av ks-scenen (ScrollTrigger) til sv/da/en: slett
+  `html{scroll-behavior:smooth}` der også** — kommentaren i no/-fila følger ikke med i oversettelsen.
 - **asyncRoute på alle nye async ruter** — bruk `asyncRoute` fra
   `src/lib/asyncRoute.js` på alle nye async Express-ruter. Wrapper ruter
   unhandled rejections til error-middleware → 500-respons og logg, uten å ta
