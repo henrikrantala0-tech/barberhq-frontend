@@ -48,6 +48,10 @@ a{text-decoration:none;color:inherit}
 .field input:focus{border-color:#4d8bff}
 .field input::placeholder{color:#555}
 
+/* Tastaturfokus: ÉN synlig blå ring for ALLE interaktive elementer (lenker, knapper, tabindex).
+   Kun :focus-visible → ingen ring ved museklikk. Inputs beholder sin egen synlige fokus via border. */
+a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
+
 /* Passord-wrapper med øye-ikon */
 .pw-wrap{position:relative}
 .pw-wrap input{padding-right:44px}

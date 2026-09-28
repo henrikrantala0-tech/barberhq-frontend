@@ -54,7 +54,10 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .btn-fill:hover{background:#1d4ed8}
 .nav-cta:active{background:#1e40af!important}
 .btn-fill:active{background:#1e40af}
-.nav-cta:focus-visible,.btn-fill:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
+/* Tastaturfokus: ÉN synlig blå ring for ALLE interaktive elementer (lenker, knapper, tabindex).
+   Erstatter de gamle per-element-reglene. Kun :focus-visible → ingen ring ved museklikk.
+   Inputs/select beholder sin egen synlige fokus via border. */
+a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
 
 .ob{max-width:560px;margin:36px auto 0;padding:0 24px}
 .ob-card{background:#0e0e0e;border:1px solid #1f1f1f;border-radius:20px;padding:38px 34px}
