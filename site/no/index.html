@@ -174,7 +174,11 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .btn-fill:hover{background:#1d4ed8}
 .nav-cta:active{background:#1e40af!important}
 .btn-fill:active{background:#1e40af}
-.nav-cta:focus-visible,.btn-fill:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
+/* Tastaturfokus: ÉN synlig blå ring for ALLE interaktive elementer (lenker, knapper, tabindex) —
+   samme blå som CTA-ene. Kun :focus-visible, så ringen vises ikke ved museklikk. Erstatter den
+   usynlige UA-ringen (mørk på mørk) på bl.a. accordion-radene (.sys-head). Én regel, ikke per element.
+   .mock beholder sin egen større offset (regel lenger ned, samme spesifisitet → vinner på kilderekkefølge). */
+a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
 .btn-line{background:transparent;color:#fff;border:1px solid #2e2e2e}
 .btn-line:hover{border-color:#fff}
 /* Liten, dempet mikrotekst under CTA. Ikonet er fjernet i hero-oppussingen — ren tekst leser
@@ -1494,7 +1498,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 /* .sys-acc er nå ÉN samlet boks (.panel-box gir ramme/bredde/padding) — ikke lenger 5 løse kort.
    Radene skilles av subtile hairlines, som i problem-panelet. */
 .sys-acc{margin-top:48px;display:flex;flex-direction:column}
-.sys-row{overflow:hidden}
+/* Ingen overflow:hidden på raden — den klippet den fokuserte .sys-head-knappens outline (fokusring).
+   Accordion-kollapsen håndteres av .sys-panel{max-height:0;overflow:hidden}, ikke av raden. */
 .sys-row + .sys-row{border-top:1px solid #141414}
 /* Rad-hode som grid: ikon · tittel · chevron på RAD 1, beskrivelse på RAD 2.
    Beskrivelsen flukter med TITTELEN (kolonne 2), ikke med ikonet — akkurat som problem-panelet
