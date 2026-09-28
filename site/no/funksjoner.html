@@ -1363,6 +1363,33 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js"></script>
 <script>
+/* FELLES PIN-INIT — deterministisk OPPRETTELSESREKKEFØLGE for ALLE pinnede scener på sida.
+   Hver scene registrerer kun sin byggefunksjon (aldri egen await/refresh). Init-en venter ÉN gang på
+   alle forutsetninger (fonter + ramme-bildet), bygger scenene SYNKRONT i DOM-rekkefølge (ks → des) og
+   kjører så ÉN ScrollTrigger.refresh(). Da kan ingen scene måle sin pin-start før en tidligere scenes
+   pin-spacer er lagt ut — racet som ga ks/des-overlapp under treg bilde-lasting. allSettled: et bilde
+   som feiler (404) stopper ikke byggingen.
+   ⚠ Nye pinnede scener (plakat-generatoren kommer) legges inn HER i DOM-rekkefølge via PinInit.register,
+   ALDRI med egen await eller egen refresh, og aldri med egen ScrollTrigger utenfor sin registrerte bygg. */
+window.PinInit=(function(){
+  var scener=[];
+  return {
+    register:function(fn){ if(typeof fn==='function')scener.push(fn); },
+    run:function(){
+      if(!window.gsap||!window.ScrollTrigger)return;
+      var frame=document.querySelector('.ks-scene .phone-frame');
+      var vent=[];
+      if(document.fonts&&document.fonts.ready)vent.push(document.fonts.ready);
+      if(frame&&frame.decode)vent.push(frame.decode());
+      Promise.allSettled(vent).then(function(){
+        for(var i=0;i<scener.length;i++){ try{ scener[i](); }catch(e){} }   // bygg i DOM-rekkefølge
+        window.ScrollTrigger.refresh();                                       // ÉN felles refresh til slutt
+      });
+    }
+  };
+})();
+</script>
+<script>
 (function(){
   var $=function(id){return document.getElementById(id);};
   var WD=['søn','man','tir','ons','tor','fre','lør'],WDF=['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
@@ -1679,14 +1706,9 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
       gsap.set(['#ksHero','#ksBook'],{clearProps:'all'});
       tl.kill();st.kill();loTl.kill();loReset();gsap.set([phone,'.ks-step','#ksBook','#ksCal','#ksSms','#ksBlock','#ksBlkGlow','#ksBg','#ksNext2','#ksSlotHint','#ksSlotsHdr','#ksSlotsGrid','#ksStatus','#ksBadgeA','#ksBadgeB','#ksH2','#ksH2b','#ksNav1','#ksNav2','#ksDiagrams','.ks-badge',friChip,slot11].concat(navBtns).concat(navBtns2),{clearProps:'all'});};
    });
-   ScrollTrigger.refresh();
   }
-  // DEKOD kritiske bilder (rammebildet) + fonter FØR ST settes opp/refreshes → riktige mål, ingen decode-jank.
-  var frameImg=document.querySelector('.ks-scene .phone-frame');
-  var venter=[];
-  if(frameImg&&frameImg.decode)venter.push(frameImg.decode().catch(function(){}));
-  if(document.fonts&&document.fonts.ready)venter.push(document.fonts.ready);
-  Promise.all(venter).then(bygg).catch(bygg);
+  // Registrer scenen til den felles pin-init-en (bygges i DOM-rekkefølge, ÉN refresh — se PinInit øverst).
+  if(window.PinInit)PinInit.register(bygg);
   // Refresh KUN ved orienteringsendring (ikke visualViewport/adresselinje-resize).
   window.addEventListener('orientationchange',function(){setTimeout(function(){ScrollTrigger.refresh();},250);});
   function hoppTil(frac){if(!stRef)return;var target=stRef.start+(stRef.end-stRef.start)*frac;
@@ -1900,7 +1922,6 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     // CTA-triggeren opprettes ETTER pinnen (i DOM-rekkefølge) så pin-spaceren er lagt ut når
     // CTA-ens start/end regnes — ellers havner CTA-en for høyt på sida.
     setupCta();
-    ScrollTrigger.refresh();
   }
   // Reduced-motion: ingen pin/scrub. Vis Design-sluttilstanden (rød, lys) statisk via desTick(T).
   function desReduced(){
@@ -1911,8 +1932,8 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     ins.forEach(function(el){el.textContent=el.dataset.v;});
     measureDesign(); desTick(T);
   }
-  var venter=[]; if(document.fonts&&document.fonts.ready)venter.push(document.fonts.ready);
-  Promise.all(venter).then(reduce?desReduced:desbygg).catch(reduce?desReduced:desbygg);
+  // Registrer scenen til den felles pin-init-en (bygges etter ks, i DOM-rekkefølge — se PinInit øverst).
+  if(window.PinInit)PinInit.register(reduce?desReduced:desbygg);
   if(!reduce)window.addEventListener('orientationchange',function(){setTimeout(function(){ScrollTrigger.refresh();},250);});
 })();
 </script>
@@ -1968,6 +1989,12 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   Promise.all(w).then(build).catch(build);
   var rt; window.addEventListener('resize',function(){clearTimeout(rt);rt=setTimeout(buildCal,200);});
 })();
+</script>
+
+<script>
+/* Kjør den felles pin-init-en ÉN gang — etter at ALLE pinnede scener (ks + des over) er registrert.
+   Nye pinnede scener må registreres FØR denne linja; ingen scene bygger på egen hånd. */
+window.PinInit&&PinInit.run();
 </script>
 </body>
 </html>
