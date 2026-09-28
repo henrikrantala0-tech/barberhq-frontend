@@ -37,7 +37,9 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.1.0/dist/tabler-icons.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
+/* IKKE bruk scroll-behavior:smooth på sider med ScrollTrigger: refresh() setter scrollTop=0 for å måle,
+   men smooth animerer scrollen i stedet for å hoppe → målingen skjer midt i scenen, trigger-start blir
+   negativ, og pinnen låser seg (stuck pin). Smooth anker-scroll gjøres via GSAP ScrollToPlugin i stedet. */
 body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;color:#fff;line-height:1.6;overflow-x:hidden}
 .wrap{max-width:1100px;margin:0 auto;padding:0 32px}
 .eyebrow{color:#7a7a7a;font-size:12px;letter-spacing:.2em;font-weight:600}
