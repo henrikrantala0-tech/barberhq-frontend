@@ -641,6 +641,10 @@ html{overflow-x:clip}
 .ks-scene:not(.ks-anim) .ks-nav,.ks-scene:not(.ks-anim) .ks-navwrap{display:none}
 .ks-scene:not(.ks-anim) .ks-text{display:flex;flex-direction:column;gap:22px;min-height:0}
 .ks-scene:not(.ks-anim) .hp-screen.s-hero,.ks-scene:not(.ks-anim) .hp-screen.s-cal,.ks-scene:not(.ks-anim) .hp-screen.s-sms{display:none}
+/* Statisk: kun booking-skjermen vises, så bare «Kundens telefon»-merkelappen. #ksBadgeB («Din kalender»)
+   er absolutt-stablet oppå #ksBadgeA og krysstones kun av tidslinja — uten den (reduced-motion/no-JS)
+   ville begge stått oppå hverandre. Skjul den andre her. */
+.ks-scene:not(.ks-anim) #ksBadgeB{display:none}
 @media(min-width:900px){ .ks-scene:not(.ks-anim) .ks-inner{grid-template-columns:360px 1fr;align-items:start} }
 /* Desktop: «Kjernefunksjoner»-tittelen skal ALLTID stå helt over telefonen med luft. Tittelen løftes til
    toppen (var 7vh → overlappet telefonen på korte vinduer), og telefonen får mer vertikal reserve (−160)
