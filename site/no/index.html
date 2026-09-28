@@ -1407,8 +1407,12 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 /* Lettere «ramme» enn kort: bakgrunn nesten lik siden (#0c0c0c), nesten usynlig kant (#161616),
    liten radius, tynn topp/bunn-padding — rolig ramme, ikke et tungt component-card. Hierarkiet kommer
    fra SPACING, ikke farge (mye mindre rødt). Rader skilles av svært subtile hairlines inni panelet. */
-.problem-panel{margin-top:64px;max-width:680px;width:100%;background:#0c0c0c;border:1px solid #131313;border-radius:18px;
+/* DELT panel-ramme: problem-seksjonen OG #systemer bruker SAMME boks (radius, kant, bakgrunn,
+   horisontal padding, maks-bredde). Problem-panelets bredde er fasit (680px). Rader skilles av
+   subtile hairlines INNI boksen. Ingen gradient/inner-shadow/glow. Én kilde — endre her, ikke to steder. */
+.panel-box{max-width:680px;width:100%;background:#0c0c0c;border:1px solid #131313;border-radius:18px;
   padding:4px 30px;text-align:left;font-family:'Inter',-apple-system,system-ui,sans-serif}
+.problem-panel{margin-top:64px}
 .prow{display:flex;gap:16px;align-items:baseline;padding:14px 0}
 .prow + .prow{border-top:1px solid #141414}
 /* Editorial nummer-markør (01–04) i stedet for prikk — dempet, dus rød (rødt kun som liten accent).
@@ -1419,7 +1423,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .prow-p{color:#8a8a8a;font-size:14px;line-height:1.5;margin:4px 0 0}
 @media(max-width:560px){
   .problem-section{padding:64px 22px 40px}
-  .problem-panel{margin-top:56px;padding:2px 22px;border-radius:16px}
+  .panel-box{padding:2px 22px;border-radius:16px}
+  .problem-panel{margin-top:56px}
   .prow{padding:13px 0;gap:14px}
   .prow-num{min-width:18px;font-size:11px}
   .prow-t{font-size:15px}
@@ -1479,9 +1484,11 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .sys-eyebrow{color:#8a8a8a;font-size:13px;letter-spacing:.22em;font-weight:600;margin-bottom:16px;font-family:'Inter',-apple-system,system-ui,sans-serif}
 .sys-h2{color:#fff;font-size:clamp(21px,6vw,44px);font-weight:800;line-height:1;letter-spacing:-.04em;margin:0;font-family:'Inter',-apple-system,system-ui,sans-serif}
 .sys-sub{color:#b4b4b4;font-size:17px;line-height:1.6;max-width:560px;margin:20px auto 0;font-family:'Inter',-apple-system,system-ui,sans-serif}
-.sys-acc{margin-top:48px;width:100%;max-width:780px;display:flex;flex-direction:column;gap:14px;font-family:'Inter',-apple-system,system-ui,sans-serif}
-.sys-row{background:#0e0e0e;border:1px solid #1d1d1d;border-radius:16px;overflow:hidden;transition:border-color .2s}
-.sys-row[data-open="true"]{border-color:#2a2a2a}
+/* .sys-acc er nå ÉN samlet boks (.panel-box gir ramme/bredde/padding) — ikke lenger 5 løse kort.
+   Radene skilles av subtile hairlines, som i problem-panelet. */
+.sys-acc{margin-top:48px;display:flex;flex-direction:column}
+.sys-row{overflow:hidden}
+.sys-row + .sys-row{border-top:1px solid #141414}
 .sys-head{width:100%;background:none;border:0;cursor:pointer;display:flex;align-items:center;gap:16px;padding:22px 24px;text-align:left;font-family:inherit}
 .sys-head-ico{flex-shrink:0;width:46px;height:46px;border-radius:12px;background:#161616;border:1px solid #232323;display:flex;align-items:center;justify-content:center;color:#4d8bff}
 .sys-head-txt{flex:1;display:flex;flex-direction:column;gap:3px;min-width:0}
@@ -1639,7 +1646,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
       <p class="problem-sub">Meldinger, oppfølging, oversikt og glemte timer tar mer tid enn de burde.</p>
     </div>
 
-    <div class="problem-panel">
+    <div class="problem-panel panel-box">
       <div class="prow">
         <span class="prow-num" aria-hidden="true">01</span>
         <div class="prow-body">
@@ -1965,7 +1972,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
     <h2 class="sys-h2">Bygd for å fylle stolen.</h2>
     <p class="sys-sub">Fem systemer som henter inn nye kunder og får de gamle tilbake. Trykk for å se hvordan.</p>
 
-    <div class="sys-acc">
+    <div class="sys-acc panel-box">
 
       <!-- Rad 1: Rebooking -->
       <div class="sys-row" id="sys-rebooking" data-open="false" data-anim="rebooking">
@@ -3912,26 +3919,42 @@ if('IntersectionObserver' in window){
 window.playVinntilbake=play;window.resetVinntilbake=reset;
 })();
 
-/* accordion-trigger */
+/* accordion-trigger — ett samlet panel, ÉN åpen rad om gangen. */
 (function(){
-  document.querySelectorAll('.sys-row').forEach(function(row){
+  var rows=document.querySelectorAll('.sys-row');
+  function reset(which){
+    if(which==='paaminnelse')window.resetPaaminnelse();
+    if(which==='rebooking')window.resetRebooking();
+    if(which==='verving')window.resetVerving();
+    if(which==='vinntilbake')window.resetVinntilbake();
+  }
+  function play(which){
+    if(which==='paaminnelse'){window.resetPaaminnelse();window.playPaaminnelse();}
+    if(which==='rebooking'){window.resetRebooking();window.playRebooking();}
+    if(which==='verving'){window.resetVerving();window.playVerving();}
+    if(which==='vinntilbake'){window.resetVinntilbake();window.playVinntilbake();}
+  }
+  function lukk(row){
+    if(row.getAttribute('data-open')!=='true')return;
+    row.setAttribute('data-open','false');
+    row.querySelector('.sys-head').setAttribute('aria-expanded','false');
+    reset(row.getAttribute('data-anim'));
+  }
+  rows.forEach(function(row){
     var head=row.querySelector('.sys-head');
     var which=row.getAttribute('data-anim');
     head.addEventListener('click',function(){
-      var open=row.getAttribute('data-open')==='true';
-      var nowOpen=!open;
-      row.setAttribute('data-open',String(nowOpen));
-      head.setAttribute('aria-expanded',String(nowOpen));
+      var nowOpen=row.getAttribute('data-open')!=='true';
       if(nowOpen){
-        if(which==='paaminnelse'){window.resetPaaminnelse();window.playPaaminnelse();}
-        if(which==='rebooking'){window.resetRebooking();window.playRebooking();}
-        if(which==='verving'){window.resetVerving();window.playVerving();}
-        if(which==='vinntilbake'){window.resetVinntilbake();window.playVinntilbake();}
+        // Én åpen rad om gangen: lukk alle andre først.
+        rows.forEach(function(other){ if(other!==row) lukk(other); });
+        row.setAttribute('data-open','true');
+        head.setAttribute('aria-expanded','true');
+        play(which);
       }else{
-        if(which==='paaminnelse')window.resetPaaminnelse();
-        if(which==='rebooking')window.resetRebooking();
-        if(which==='verving')window.resetVerving();
-        if(which==='vinntilbake')window.resetVinntilbake();
+        row.setAttribute('data-open','false');
+        head.setAttribute('aria-expanded','false');
+        reset(which);
       }
     });
   });
