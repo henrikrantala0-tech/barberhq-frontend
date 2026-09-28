@@ -656,9 +656,15 @@ html{overflow-x:clip}
   /* Sidekolonnene er 1fr (symmetriske → telefon sentrert), men nav/tekst krympet til innhold
      (nav til nav1-bredden siden nav2 er absolutt; tekst til 0 siden stegene er absolutte). Gi dem
      eksplisitt bredde nær telefonen: stegnavn på ÉN linje, stegtekst 2–3 linjer. */
-  .ks-scene.ks-anim .ks-navwrap{justify-self:end;width:190px}
-  .ks-scene.ks-anim .ks-text{justify-self:start;width:322px}
-  .ks-scene.ks-anim #ksNav1,.ks-scene.ks-anim #ksNav2{width:190px}
+  /* Bredden kappes mot kolonnen (width:100% = 1fr-sporet, max-width = ønsket bredde), ALDRI fast bredde
+     bredere enn sporet — ellers spiller stegteksten (322px) forbi høyre viewport-kant på smale desktop-
+     bredder (~900–1080) og klippes av overflow-x:clip. På brede vinduer treffer max-width og alt er som før. */
+  .ks-scene.ks-anim .ks-navwrap{justify-self:end;width:100%;max-width:190px}
+  .ks-scene.ks-anim .ks-text{justify-self:start;width:100%;max-width:322px}
+  /* Stegene er absolutt-stablet (left:0). Uten right:0 shrink-to-fit-er de mot innhold og kan bli bredere
+     enn .ks-text → 11px inn i padding ved 900px. right:0 binder dem til kolonnebredden så teksten wrapper. */
+  .ks-scene.ks-anim .ks-text .ks-step{right:0}
+  .ks-scene.ks-anim #ksNav1,.ks-scene.ks-anim #ksNav2{width:100%;max-width:190px}
 }
 /* MOBIL — ingen stegnav/fremdrift; kun h2, telefon, merkelapp, sentrert tekst */
 @media(max-width:899px){
