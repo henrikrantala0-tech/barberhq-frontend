@@ -112,6 +112,9 @@
   html[data-theme="dark"] .perbar-btn[aria-selected=true]{background:#2563eb;color:#fff}
   .pb-kort{display:none}
   @media(max-width:360px){ .perbar-btn{font-size:11px;letter-spacing:-.02em} }
+  /* Touch-mål ≥44px på mobil: periodebaren var fast 40px høy (perbar-btn ~32px) — under 44px-minimum.
+     Slipp fast høyde og gi hver pille min-height:44px på mobil (desktop beholder 40px, muspeker). */
+  @media(max-width:719px){ .perbar{height:auto} .perbar-btn{min-height:44px} }
   @media(max-width:340px){ .pb-full{display:none} .pb-kort{display:inline} }
   .perseg-meny{position:absolute;top:100%;right:0;margin-top:6px;width:150px;z-index:30;background:var(--surface);
     border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.55);padding:5px}
@@ -319,6 +322,9 @@
   .btn-outline:disabled{opacity:.4;cursor:default}
   .btn-outline:disabled:hover{border-color:var(--line-2)}
   .btn-outline.connected{color:var(--good);border-color:var(--good-bg);background:var(--good-bg)}
+  /* Touch-mål ≥44px på mobil: base-knappene (padding ga ~39px) løftes til 44px min-høyde. Kun mobil
+     (desktop uendret, muspeker). min-height vokser bare korte knapper → ingen bredde-/flyt-endring. */
+  @media(max-width:719px){ .btn,.btn-outline,.addbtn,.pause-btn{min-height:44px} }
   .gcal{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:26px;padding:18px 20px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
   /* Tredje tilstand: tilkoblet, men skriving når ikke fram (scope_ok:false).
      Ser annerledes ut enn både «tilkoblet» og «ikke tilkoblet» — ellers drukner den.
