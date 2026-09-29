@@ -107,12 +107,16 @@ const MAAL = `(sel) => {
   const overlay = !!(host.querySelector(':scope > .skjold'));
   const badge = !!host.querySelector('.laas-badge');
   const merke = !!host.querySelector('.eksempel-merke');
+  // Basis-måling skjermes nå med MASKERTE rader (diBasisLaastRader → .di-basis-laast, «* klipp · **** kr»),
+  // ikke lenger en .skjold-overlay. momentum skjules helt på Basis (loadMomentum → renderMomentum(null)).
+  const maskert = !!host.querySelector('.di-basis-laast');
+  const vises = host.offsetParent !== null;
   const accHead = host.querySelector('.acc-head');
   const accHeadDisabled = accHead ? accHead.disabled : null;
   // Handlings-kontroller: input/select/button UTENOM .acc-head og .skjold.
   const ctrls = [...host.querySelectorAll('input,select,button')].filter(b => !b.closest('.skjold') && !b.classList.contains('acc-head'));
   const alleDisabled = ctrls.length ? ctrls.every(b => b.disabled) : null;
-  return { finnes:true, overlay, badge, merke, accHeadDisabled, ctrls:ctrls.length, alleDisabled };
+  return { finnes:true, overlay, badge, merke, maskert, vises, accHeadDisabled, ctrls:ctrls.length, alleDisabled };
 }`;
 
 async function aapneAcc(page, host){ await page.evaluate((s)=>{ const a=document.querySelector(s); const h=a&&a.querySelector('.acc-head'); if(h&&h.getAttribute('aria-expanded')!=='true')h.click(); }, host); }
@@ -177,11 +181,14 @@ const funk = rad.filter(r=>r.type==='funksjon' && r.finnes);
 const mal  = rad.filter(r=>r.type==='maaling'  && r.finnes);
 const okBasisFunk = funk.filter(r=>r.variant==='basis').every(r => !r.overlay && r.badge && (r.alleDisabled===true||r.ctrls===0) && r.accHeadDisabled!==true);
 const okVekstFunk = funk.filter(r=>r.variant!=='basis').every(r => !r.overlay && !r.badge && (r.alleDisabled===false||r.ctrls===0));
-const okBasisMal  = mal.filter(r=>r.variant==='basis').every(r => r.overlay);
+// Basis-måling skal ALDRI vise ekte tall: drivenBy/attribusjon maskeres (.di-basis-laast),
+// momentum skjules (ikke synlig). Godkjent = maskert ELLER ikke synlig. (Tidligere sjekket .skjold-
+// overlay — foreldet etter at basis-skjermingen gikk over til maskerte rader.)
+const okBasisMal  = mal.filter(r=>r.variant==='basis').every(r => r.maskert || !r.vises);
 const okVekstMal  = mal.filter(r=>r.variant!=='basis').every(r => !r.overlay);
 console.log('\nFunksjons-seksjoner Basis (badge + ingen overlay + kontroller disabled + acc-head åpnbar):', okBasisFunk?'JA':'NEI');
 console.log('Funksjons-seksjoner Vekst/Trial (ingen badge, ingen overlay, kontroller enabled):', okVekstFunk?'JA':'NEI');
-console.log('Måling Basis (overlay beholdt):', okBasisMal?'JA':'NEI', '| Måling Vekst/Trial (ingen overlay):', okVekstMal?'JA':'NEI');
+console.log('Måling Basis (maskert/skjult — ingen ekte tall):', okBasisMal?'JA':'NEI', '| Måling Vekst/Trial (ingen overlay):', okVekstMal?'JA':'NEI');
 console.log('JS-feil totalt:', rad.filter(r=>r.jsfeil!=='ingen').length);
 
 // ── TOGGLE-BEVIS (Vekst): rebooking-bryter + intervall-piller lagrer FAKTISK ────
