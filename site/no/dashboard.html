@@ -3567,7 +3567,10 @@ async function renderDrivenBy(){
   if(billingUkjent())return; // behold vakt (e5aa245): ingen henting/render før planen er kjent
   var data=await api.attribution('siste_maaned');
   if(!data){ wrap.innerHTML=''; return; } // feil/401 → tomt, ingen krasj
-  var hi=data.hentetInn; // MANGLER for Basis (backend plan-shaper)
+  // Forsvar-i-dybden: Basis skal ALDRI vise ekte hentetInn-tall. Backend gater (dashboard.js: !krevVekst),
+  // men skulle den regresjonen svikte og sende hentetInn til en Basis-konto, ignorerer vi det her og
+  // faller til den maskerte Basis-grenen (diBasisLaastRader). Vekst/trial (erBasis=false) uendret.
+  var hi = erBasis() ? null : data.hentetInn; // MANGLER for Basis (backend plan-shaper) + frontend-vakt
   if(!hi){
     if(erBasis()){
       // BASIS: tre låste armer + forklaring FØR «På vei» (sterkest på Basis, det eneste ekte tallet).
@@ -4251,7 +4254,10 @@ async function renderAttribusjon(){
   var pk=document.getElementById('attrPeriod');
   var data=await api.attribution(attrPeriod);
   if(!data){ el.innerHTML='<p class="wb-empty">Kunne ikke hente tallene akkurat nå.</p>'; return; } // 401→redirigert; annen feil→ærlig melding
-  var hi=data.hentetInn; // MANGLER for Basis (backend plan-shaper)
+  // Forsvar-i-dybden: Basis skal ALDRI vise ekte hentetInn-tall. Backend gater (dashboard.js: !krevVekst),
+  // men skulle den regresjonen svikte og sende hentetInn til en Basis-konto, ignorerer vi det her og
+  // faller til den maskerte Basis-grenen (diBasisLaastRader). Vekst/trial (erBasis=false) uendret.
+  var hi = erBasis() ? null : data.hentetInn; // MANGLER for Basis (backend plan-shaper) + frontend-vakt
   if(!hi){
     if(erBasis()){
       // Basis: SKJUL periodevelgeren + tre låste armer + forklaring + CTA. Backend sender aldri hentetInn til Basis.
