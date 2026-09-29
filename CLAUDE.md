@@ -138,6 +138,17 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
 - **Render før deploy** når det gjelder visuelle endringer. Playwright
   (Chromium, `device_scale_factor=2`). Fonter (Fraunces/Inter variable TTF)
   fra `raw.githubusercontent.com/google/fonts`.
+- **⚠ Playwright-tester og drafter skal ALDRI sende skjema eller skrivende kall (POST/PUT/PATCH/
+  DELETE) mot prod-API-et (`api.trybarberhq.com`).** Bruk `page.route`-mock. Brent oss: autofyll-
+  diagnosen (`booking-inspect.mjs`) drev den LIVE grand-barber-bookingsida uten mock og klikket seg
+  gjennom wizarden → **opprettet en ekte ordre i prod**. Regler: (1) mock et **catch-all** —
+  `await page.route('**/api/**', …)` — ikke bare det ene endepunktet, og fulfill/abort eksplisitt;
+  (2) **gjelder også kall etter en suksess-redirect** (mocket `/api/onboarding`-suksess redirecter til
+  `/no/dashboard.html`, som da fyrer umockede kryss-origin GET-er mot prod → CORS/500); (3) skal du bare
+  teste innsendingen, hindre selve redirecten (mock uten `slug`, eller stub `window.location`) så
+  dashbordet aldri lastes; (4) verifiser at INGEN request går til `api.trybarberhq.com`. Leser er også
+  helst mock; **skriv er absolutt forbudt.** Draft (`--no-build`) serverer statiske filer, men JS-en
+  der treffer samme prod-API — samme regel gjelder når du klikker rundt i en draft.
 - **Valider base64/bilder** etter fil-endringer som rører bilder
   (PNG-sig `8950`, JPEG-sig `ffd8`).
 - **Nav-vakt før commit som rører nav eller footer:** kjør `node tools/check-nav.mjs`.
