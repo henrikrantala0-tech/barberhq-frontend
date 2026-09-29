@@ -43,6 +43,11 @@
      beholder det); overscroll-behavior-x:none dreper horisontal rubber-band/sveip-tilbake. */
   html{overscroll-behavior-x:none}
   body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased;overscroll-behavior-x:none;touch-action:manipulation}
+  /* Generell fokusring — SAMME som markedssidene (#4d8bff, 2px, offset 2px), literal (ikke var(--info),
+     som er #1456a8 i lys modus). Kun :focus-visible → ingen ring ved museklikk. Dashbordet hadde bare
+     spredte per-element-regler; knapper/lenker/faner/piller manglet konsistent ring. De eksisterende
+     per-element-reglene (.acc-head/.skjold/.info-i m.fl.) er mer spesifikke og beholder sine egne offset. */
+  a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
   /* ÉN grunnregel for alle skjemafelt i dashbordet: minst 16px. Under 16px zoomer iOS Safari inn
      ved fokus, og den zoomede sida kan dras sidelengs. Kompakthet løses med BREDDE, aldri med
      skrift under 16px. Ingen per-felt-font under dette — hold det slik. */
