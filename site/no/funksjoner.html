@@ -591,6 +591,16 @@ html{overflow-x:clip}
 .ks-phone-slot{position:relative;width:min(340px, calc((100vh - var(--nav-h,68px) - 46px) / 1.806));aspect-ratio:1884/3402;flex:0 0 auto}
 .ks-phone-travel{position:absolute;inset:0;width:100%;height:100%;transform-origin:50% 50%}
 .ks-phone-travel.is-travelling{position:fixed;inset:auto;left:0;top:0;z-index:40;pointer-events:none;will-change:transform,opacity}   /* z:40 < nav z:50 */
+/* Alt.1 fase 1: telefonen ligger i dokumentflyt (absolutt i .ks-scene, IKKE fixed) → nettleseren
+   scroller den nativt, ingen JS-posisjonsskriv per tick. Barn av seksjonen (sec), posisjonert via
+   gsap x/y (translate fra left/top:0) — samme transform-basis som is-travelling, kun position:absolute
+   i stedet for fixed. Ved heroStart byttes klassen til is-travelling (ett handoff, rect-matchet). */
+.ks-phone-travel.is-docked{position:absolute;inset:auto;left:0;top:0;z-index:40;pointer-events:none}   /* z:40 < nav z:50 · (a): INGEN will-change/transform → ikke lag-promotert i scrolleren (bevarer iOS hele-side-scroll-hurtigbane) */
+/* (a): nøytraliser lag-promotering INNE i den dokkede telefonen. will-change:transform på .phone/.hp-screen
+   er ufarlig i en fixed-wrapper (main, utenfor scrollen), men blir et compositor-lag INNE i side-scrollen når
+   wrapperen er absolutt i flyten → iOS faller av hele-side-scroll-hurtigbanen og hele siden lagger. Layerne
+   trengs kun i fixed J-krok-fasen (is-travelling), ikke i følge-fasen. */
+.ks-phone-travel.is-docked .phone,.ks-phone-travel.is-docked .hp-screen{will-change:auto}
 .ks-scene .phone{position:relative;width:100%;height:100%;aspect-ratio:1884/3402;container-type:inline-size;will-change:transform}
 .ks-scene .phone-frame{position:absolute;inset:0;width:100%;height:100%;z-index:3;pointer-events:none;display:block}
 /* Skjermenes rot isoleres fra scenen rundt: aldri arv av tekstjustering/font fra .ks-inner. */
@@ -1645,7 +1655,10 @@ window.PinInit=(function(){
       // inne i .ks-scene (transform-fri, og bevarer all .ks-scene-scopet telefon-CSS) → ekte viewport-fixed.
       // Slot-boksen blir stående i #ksPin og reserverer grid-cella.
       sec.appendChild(phoneTravel);
-      phoneTravel.classList.add('is-travelling');
+      // Alt.1: START i dokumentflyt (is-docked → position:absolute i sec → nativ scroll i fase 1).
+      // is-travelling (fixed) settes FØRST ved handoff (heroStart), aldri i fase 1.
+      phoneTravel.classList.add('is-docked');
+      var mode=null;   // 'docked' = fase 1 (nativt scroll, INGEN per-tick posisjonsskriv) · 'travel' = fase 2 (fixed + scrub J-krok)
       var g={};
       function cl01(x){return x<0?0:x>1?1:x;}
       function smoother(x){x=cl01(x);return x*x*x*(x*(x*6-15)+10);}   // smootherstep: 0-deriv i begge ender → myk start/landing
@@ -1674,24 +1687,51 @@ window.PinInit=(function(){
            vw:document.documentElement.clientWidth,
            vh:(window.visualViewport?window.visualViewport.height:window.innerHeight)};
       }
+      // FASE 1 (dokket): plasser telefonen så den EKSAKT overlapper hero-plassholderen, i sec-relative
+      // koordinater (position:absolute i sec). Nettleseren scroller sec+telefon nativt → ingen JS-følging.
+      // Kjøres KUN ved dokk-inngang og refresh/resize, ALDRI per scroll-tick.
+      function applyDock(){
+        if(!g.baseW)return;
+        var heroRect=heroPlaceholder.getBoundingClientRect(), secRect=sec.getBoundingClientRect();
+        // (a): INGEN transform i følge-fasen → telefonen er ren, ikke-lag-promotert sideinnhold (iOS beholder
+        // hele-side-scroll-hurtigbanen). Plasser + skaler med left/top + width/height (hero-px), sec-relative,
+        // så boksen overlapper hero-plassholderen EKSAKT. clearProps:transform fjerner ev. rest fra fixed-fasen.
+        gsap.set(phoneTravel,{clearProps:'transform'});
+        gsap.set(phoneTravel,{ left:((heroRect.left-secRect.left))+'px', top:((heroRect.top-secRect.top))+'px',
+                               width:heroRect.width+'px', height:heroRect.height+'px' });
+        // Skjerm/status-baseline = fase-2 e=0 / mix=0 (hero-kalender synlig, booking av høyre, status hvit).
+        gsap.set('#ksHero',{xPercent:0}); gsap.set('#ksBook',{xPercent:100}); gsap.set('#ksStatus',{color:'rgb(255,255,255)'});
+      }
+      function dockEnter(){ if(mode==='docked')return; mode='docked';
+        phoneTravel.classList.remove('is-travelling'); phoneTravel.classList.add('is-docked'); applyDock(); }
+      function travelEnter(){ if(mode==='travel')return; mode='travel';
+        phoneTravel.classList.remove('is-docked'); phoneTravel.classList.add('is-travelling');
+        gsap.set(phoneTravel,{clearProps:'left,top'});                 // fjern dokk-inline left/top → fixed bruker CSS left/top:0 + gsap x/y
+        gsap.set(phoneTravel,{width:g.baseW,height:g.baseH}); }
+      // (a): dødbånd rundt heroStart. dock→travel skjer VED heroStart (sømløs handoff nedover, p starter ~0);
+      // travel→dock først når man er godt UNDER (heroStart − DEADBAND) → absolute↔fixed flipper ikke frem og
+      // tilbake når iOS-momentum vibrerer scrollen rundt grensen (hver flip = layout + layer-rebygg = jank).
+      var DEADBAND=6;
       function renderTravel(){
         if(!g.baseW)return;
-        var sy=window.scrollY||window.pageYOffset||0, cx,cy,scale,rot,mix;
-        if(sy<=g.heroStart){
-          // Før reisen: den fixed telefonen ligger visuelt der hero-plassholderen står i flyten.
-          cx=g.sourceCx; cy=(g.sourceDocTop-sy)+g.sourceH/2; scale=g.sourceScale; rot=0; mix=0;
-        }else{
-          var p=cl01((sy-g.heroStart)/Math.max(1,g.ksStart-g.heroStart));
-          var e=smoother(p);
-          scale=lerp(g.sourceScale,1,e);   // hero-størrelse → NØYAKTIG slot-størrelse
-          rot=360*e;                        // flat snurr, myk inn/ut via e
-          var sx=g.sourceCx, syc=navH+g.sourceH/2, ex=g.targetCx, ey=g.targetCy;
-          var R=g.vw*(isD?0.40:0.50), D=g.vh*(isD?0.42:0.62);   // J-krok-utslag; skaleres etter viewport (desktop: tydeligere høyre-krok, mindre bunn-dykk)
-          cx=bez(sx, sx+R, ex+R*0.85, ex, e);   // ÉN jevn kubisk bezier — ingen knekker
-          cy=bez(syc, syc+D*0.42, ey+D, ey, e);
-          mix=sstep(1/3,2/3,e);   // skjermglid over rotasjon 120°–240°
-        }
-        gsap.set(phoneTravel,{x:cx-g.baseW/2,y:cy-g.baseH/2,scale:scale,rotation:rot,force3D:true});   // ALLTID (posisjonerer den fixed telefonen, også ved resize/refresh)
+        var sy=window.scrollY||window.pageYOffset||0;
+        if(mode===null){ if(sy>g.heroStart) travelEnter(); else dockEnter(); }
+        else if(mode==='docked'){ if(sy>g.heroStart) travelEnter(); }          // sømløs ned ved heroStart
+        else { if(sy < g.heroStart-DEADBAND) dockEnter(); }                     // hysterese opp
+        // FASE 1: telefonen følger innholdet via NATIV scroll (dokket, absolutt i sec). Ingen posisjonsskriv per tick.
+        if(mode==='docked') return;
+        // FASE 2 (fixed): J-kroken som FØR — ren scrub-transform (funksjon av progress, ikke rå scrollY).
+        var cx,cy,scale,rot,mix;
+        var p=cl01((sy-g.heroStart)/Math.max(1,g.ksStart-g.heroStart));
+        var e=smoother(p);
+        scale=lerp(g.sourceScale,1,e);   // hero-størrelse → NØYAKTIG slot-størrelse
+        rot=360*e;                        // flat snurr, myk inn/ut via e
+        var sx=g.sourceCx, syc=navH+g.sourceH/2, ex=g.targetCx, ey=g.targetCy;
+        var R=g.vw*(isD?0.40:0.50), D=g.vh*(isD?0.42:0.62);   // J-krok-utslag; skaleres etter viewport (desktop: tydeligere høyre-krok, mindre bunn-dykk)
+        cx=bez(sx, sx+R, ex+R*0.85, ex, e);   // ÉN jevn kubisk bezier — ingen knekker
+        cy=bez(syc, syc+D*0.42, ey+D, ey, e);
+        mix=sstep(1/3,2/3,e);   // skjermglid over rotasjon 120°–240°
+        gsap.set(phoneTravel,{x:cx-g.baseW/2,y:cy-g.baseH/2,scale:scale,rotation:rot,force3D:true});
         // Skjermer + status settes KUN opp til landing (sy<=ksStart). Etter landing eier tidslinja dem
         // (skjerm-xPercent-tweens + statusTick) — vanntett skille, ingen race mot reise-driveren.
         if(sy<=g.ksStart){
@@ -1704,13 +1744,13 @@ window.PinInit=(function(){
       }
       measureTravel();
       travelST=ScrollTrigger.create({start:0,end:function(){return st.start;},scrub:true,invalidateOnRefresh:true,
-        onUpdate:renderTravel, onRefresh:function(){measureTravel();renderTravel();}});
+        onUpdate:renderTravel, onRefresh:function(){measureTravel();mode=null;renderTravel();}});   // mode=null → tving re-dokk/-travel + reposisjonering etter resize/refresh (dokk ellers idempotent)
       renderTravel();
     }
 
     return function(){
       if(travelST)travelST.kill();
-      if(phoneTravel){phoneTravel.classList.remove('is-travelling');gsap.set(phoneTravel,{clearProps:'all'});
+      if(phoneTravel){phoneTravel.classList.remove('is-travelling');phoneTravel.classList.remove('is-docked');gsap.set(phoneTravel,{clearProps:'all'});
         if(phoneSlot)phoneSlot.appendChild(phoneTravel);}   // tilbake i sloten (statisk plass) før ev. ny matchMedia-oppbygging
       gsap.set(['#ksHero','#ksBook'],{clearProps:'all'});
       tl.kill();st.kill();loTl.kill();loReset();gsap.set([phone,'.ks-step','#ksBook','#ksCal','#ksSms','#ksBlock','#ksBlkGlow','#ksBg','#ksNext2','#ksSlotHint','#ksSlotsHdr','#ksSlotsGrid','#ksStatus','#ksBadgeA','#ksBadgeB','#ksH2','#ksH2b','#ksNav1','#ksNav2','#ksDiagrams','.ks-badge',friChip,slot11].concat(navBtns).concat(navBtns2),{clearProps:'all'});};
