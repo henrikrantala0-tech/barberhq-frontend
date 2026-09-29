@@ -187,6 +187,15 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .sw-toggle input:checked~.sw-knob{transform:translate(17px,-50%)}
 
 .ob-err{color:#c0594a;font-size:13px;margin-top:8px}
+/* Obligatorisk vilkårs-aksept før innsending. Ekte native checkbox (tastatur: Tab + Space),
+   brand-blå via accent-color, egen :focus-visible-ring (den globale regelen på linje ~60 dekker
+   ikke input). Lenkene er interaktivt innhold i <label> → klikk på dem navigerer, toggler IKKE. */
+.consent-row{display:flex;align-items:flex-start;gap:10px;margin-top:18px}
+.consent-row input{flex:0 0 auto;width:18px;height:18px;margin:1px 0 0;accent-color:#4d8bff;cursor:pointer}
+.consent-row input:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
+.consent-row label{font-size:14.5px;line-height:1.5;cursor:pointer}
+.consent-row a{color:#4d8bff;text-decoration:underline}
+.consent-row a:hover{text-decoration:none}
 </style>
 </head>
 <body>
@@ -238,6 +247,13 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
       <p class="ob-err" id="hrsErr"></p>
     </div>
 
+    <!-- Obligatorisk vilkårs-aksept. Lenkene peker til vilkar.html (topp = vilkår) og
+         #personvern-ankeret. target=_blank så barberen ikke mister utfylt skjema. -->
+    <div class="consent-row">
+      <input type="checkbox" id="vilkarChk" name="vilkar_akseptert">
+      <label for="vilkarChk">Jeg godtar <a href="/no/vilkar.html" target="_blank" rel="noopener">vilkårene</a> og <a href="/no/vilkar.html#personvern" target="_blank" rel="noopener">personvernerkl&aelig;ringen</a>.</label>
+    </div>
+    <p class="ob-err" id="vilkarErr" role="alert"></p>
     <button type="button" class="btn btn-fill ob-submit" id="finalBtn" onclick="submitFinal()">Fullf&oslash;r &#10003;</button>
     <!-- Innsendingsfeil (timeout / nettverk): inline .ob-err, knappen resettes → prøv på nytt
          i samme skjema. Erstatter alert(). -->
@@ -441,6 +457,15 @@ async function submitFinal(){
     return;
   }
 
+  // 3) Vilkår + personvern må godtas (obligatorisk før innsending)
+  var vilkarChk=document.getElementById('vilkarChk'), vilkarErr=document.getElementById('vilkarErr');
+  if(vilkarErr) vilkarErr.textContent='';
+  if(vilkarChk && !vilkarChk.checked){
+    if(vilkarErr) vilkarErr.textContent='Du må godta vilkårene og personvernerklæringen for å fortsette.';
+    vilkarChk.scrollIntoView({behavior:'smooth',block:'center'}); vilkarChk.focus();
+    return;
+  }
+
   var btn=document.getElementById('finalBtn');
   var old=btn.innerHTML; btn.disabled=true; btn.classList.add('building');
   btn.innerHTML='<span class="btn-spinner" aria-hidden="true"></span>Bygger siden din…';
@@ -457,6 +482,7 @@ async function submitFinal(){
     fd.append('lang',PAGE_LANG);fd.append('market',L2M[PAGE_LANG]||'NO');
     fd.append('services',JSON.stringify(svc.list));
     fd.append('hours',JSON.stringify(hrs.list));
+    fd.append('vilkar_akseptert','true');   // obligatorisk aksept — validert over, blokkerer submit uten avkrysning
     files.forEach(function(f){fd.append('images',f);});
     if(favIndex>=0) fd.append('favoritt',favIndex); // rå filindeks i files[] (= append-rekkefølgen)
     var res=await fetch(API_BASE+'/api/onboarding',{method:'POST',body:fd,credentials:'include',signal:ctrl.signal});
