@@ -313,6 +313,11 @@
   .btn:active{transform:scale(.985)}
   .btn-outline{appearance:none;font:inherit;font-weight:600;font-size:13px;padding:9px 18px;border-radius:8px;cursor:pointer;background:var(--surface);color:var(--ink);border:1px solid var(--line-2);letter-spacing:-.01em}
   .btn-outline:hover{border-color:var(--ink)}
+  /* Låst/inaktiv sekundærknapp dempes som .btn:disabled — ellers ser en handlingslåst (Basis) eller
+     travel («Lagrer …») .btn-outline fullt aktiv ut. Editorens egne .pk-*-varianter beholder sine
+     spesifikke :disabled-regler (høyere/lik spesifisitet, står lenger ned). */
+  .btn-outline:disabled{opacity:.4;cursor:default}
+  .btn-outline:disabled:hover{border-color:var(--line-2)}
   .btn-outline.connected{color:var(--good);border-color:var(--good-bg);background:var(--good-bg)}
   .gcal{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:26px;padding:18px 20px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
   /* Tredje tilstand: tilkoblet, men skriving når ikke fram (scope_ok:false).
@@ -1834,14 +1839,18 @@
           <div class="seg-line">
             <span class="seg-lead">Hvem får rabatt?</span>
             <div class="segs segs-val" id="vervRecipient" role="group" aria-label="Hvem får rabatt">
-              <button type="button" data-r="begge" aria-selected="false">Begge</button>
+              <!-- aria-selected på «Begge» = backend-default (schema.sql referral_reward_recipient
+                   DEFAULT 'begge'). Vises på Basis (loadVerving hopper av før setVervRecipient);
+                   Vekst overskriver via setVervRecipient. -->
+              <button type="button" data-r="begge" aria-selected="true">Begge</button>
               <button type="button" data-r="ny" aria-selected="false">Kun ny kunde</button>
             </div>
           </div>
           <div class="seg-line">
             <label class="seg-lead" for="vervPct">Rabatt</label>
             <div class="sett-num-in">
-              <input type="number" id="vervPct" min="5" max="50" step="1" value="20">
+<!-- value = backend-default (schema.sql referral_discount_pct DEFAULT 15, migr. 050 20→15). Basis viser denne; Vekst overskriver fra /settings. -->
+              <input type="number" id="vervPct" min="5" max="50" step="1" value="15">
               <span class="seg-unit">%</span>
             </div>
           </div>
@@ -5516,10 +5525,10 @@ async function loadLoyalty(){
   // Basis: handlings-lås av skjoldVekstFlater (lesbar + indikator) — INGEN fetch, INGEN eksempeltall.
   // Lekker aldri ekte tall til basis. Oversikt-lista får en lesbar lås-note i stedet for «Laster …».
   if(billingUkjent()){ if(_billingFeilet) visBillingFeil($("#loyalOversikt")); return; }   // delt billing-gate: billing-feil → synlig feil+retry, ikke stille «Laster»
-  if(erBasis()){ basisLaasListe($("#loyalOversikt")); return; }
+  if(erBasis()){ basisLaasListe($("#loyalOversikt")); renderLoyalBasisPreview(); return; } // Basis: statisk låst forhåndsvisning (Alt. A), INGEN fetch
   try{
     _loyal=await api.loyalty();          // null = 403/feil → renderLoyalOversikt(null) viser feilstate (alt på plass)
-    if(erBasis())return;   // billing kom under fetch → ikke render (skjoldVekstFlater skjolder kortet)
+    if(erBasis()){ basisLaasListe($("#loyalOversikt")); renderLoyalBasisPreview(); return; } // billing kom under fetch → forkast _loyal, vis statisk låst preview (aldri ekte tall)
     renderLoyalSett(_loyal);
     renderLoyalOversikt(_loyal);
     // «Legg til»-flaten kun når programmet er PÅ. Kandidatene er d.eligible fra SAMME rute
@@ -5591,6 +5600,24 @@ function renderLoyalSett(d){
   var err=$("#loyalSettErr"); if(err) err.hidden=true;
   var warn=$("#loyalOffWarn"); if(warn) warn.hidden=true;
   var sw=$("#loyalSaveWarn"); if(sw) sw.hidden=true; _loyalPending=null;
+}
+// Basis (Alternativ A): statisk, LÅST forhåndsvisning av lojalitets-innstillingene — INGEN fetch,
+// INGEN ekte data. Viser #loyalSett + #loyalLeggTilWrap (Generer plakat) med backend-defaults fra
+// schema.sql, deretter settHandlingsLaas som deaktiverer alt (parallelt med Verving, som viser
+// innstillingene sine statisk fra markup). Verdiene er hardkodede defaults, ikke barberens.
+// Speiler renderLoyalSett sin option-bygging så preview og ekte visning ikke drifter.
+function renderLoyalBasisPreview(){
+  var sett=$("#loyalSett"); if(sett) sett.hidden=false;
+  var ter=$("#loyalThreshold"), pct=$("#loyalPct");
+  if(ter && !ter.options.length){ for(var i=5;i<=20;i++){ var o=document.createElement('option'); o.value=i; o.textContent=i+' klipp'; ter.appendChild(o); } }
+  if(pct && !pct.options.length){ LOYAL_PCT_VALG.forEach(function(p){ var op=document.createElement('option'); op.value=p; op.textContent=belonningTekst(p); pct.appendChild(op); }); }
+  if(ter) ter.value=10;    // schema.sql: loyalty_threshold NOT NULL DEFAULT 10
+  if(pct) pct.value=100;   // schema.sql: loyalty_pct NOT NULL DEFAULT 100 (Gratis klipp)
+  settBryter($("#tog-loyal"),        false);   // loyalty_enabled       DEFAULT false
+  settBryter($("#tog-loyalHistory"), false);   // loyalty_count_history DEFAULT false
+  settLoyalHistoryNote(false);
+  var wrap=$("#loyalLeggTilWrap"); if(wrap) wrap.hidden=false;   // Generer plakat synlig — låses under
+  settHandlingsLaas($("#accLoyal"));   // deaktiver de nettopp viste kontrollene (idempotent, ordre-uavhengig av skjoldVekstFlater)
 }
 // Del 1 — deltakerliste: pitch/«Slå på» (av) · totaler + deltakere (på). Ingen falsk påstand ved 0.
 function renderLoyalOversikt(d){
