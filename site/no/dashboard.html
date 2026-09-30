@@ -1923,6 +1923,18 @@
         </div>
       </div>
 
+      <!-- «Lag story»-generator (ledige timer). ÅPEN ØY: tilgjengelig på BÅDE Basis og Vekst
+           (story-endepunktene svarer 200 uten krevVekst — session-auth, kun barberens egne tider).
+           Ligger BEVISST utenfor skjoldVekstFlater-lista (#accRebook/#accWinback/#accVerv/#accLoyal),
+           og bruker .gen-card (ikke .acc), så den låses ALDRI på Basis. -->
+      <div class="gen-card" id="accStory">
+        <div class="gen-card-h">
+          <span class="gen-card-title">Del ledige timer</span>
+          <span class="gen-card-sub">Lag en story til Instagram eller TikTok med de ledige timene dine de neste dagene.</span>
+        </div>
+        <button type="button" class="btn-outline gen-card-btn" id="storyOpen">Lag story</button>
+      </div>
+
     </div>
   </section>
 
@@ -1967,6 +1979,24 @@
       <button class="plakat-x" id="plakatX" type="button" aria-label="Lukk">×</button>
     </div>
     <div class="plakat-scroll" id="plakatScroll"></div>
+  </div>
+
+  <!-- ===== «Lag story» — ledige timer-story, fullskjerm-editor ===== -->
+  <div class="story-overlay" id="storyOverlay" role="dialog" aria-modal="true" aria-label="Lag story">
+    <div class="plakat-top">
+      <span class="plakat-tittel">Lag story</span>
+      <button class="plakat-x" id="storyX" type="button" aria-label="Lukk">×</button>
+    </div>
+    <div class="story-layout">
+      <div class="story-prev-col">
+        <div class="story-prev">
+          <iframe class="story-frame" id="storyFrame" title="Forhåndsvisning av story" scrolling="no" tabindex="-1"></iframe>
+          <div class="story-prev-laster" id="storyLaster"><span class="pk-spinner"></span></div>
+          <div class="story-prev-feil" id="storyFeil"></div>
+        </div>
+      </div>
+      <div class="story-kontroller" id="storyKontroller"></div>
+    </div>
   </div>
 
   <!-- PROFIL-panelet er FJERNET 08.08 — innholdet bor nå som trekkspill i #design («Din side»). -->
@@ -2624,6 +2654,40 @@
   /* Base .btn-outline (padding 9px) blir ~39px høy — under 44px touch-mål. Løft KUN plakat-gen-
      knappene til 44px (scopet, rører ikke andre outline-knapper). Matcher touch-mål-jobben i f955de8. */
   .plakat-gen .btn-outline{min-height:44px}
+  /* ===== «Lag story»-generator (ledige timer) ===== */
+  /* Åpent generatorkort i Vekst — .gen-card (ikke .acc), står utenfor skjoldVekstFlater → aldri låst. */
+  .gen-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px;margin-top:14px}
+  .gen-card-h{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
+  .gen-card-title{font-size:15px;font-weight:600;color:var(--ink)}
+  .gen-card-sub{font-size:13px;color:var(--mut);line-height:1.45}
+  .gen-card .gen-card-btn{min-height:44px;width:100%;justify-content:center}
+  /* Fullskjerm-editor (samme idiom som .plakat-overlay) */
+  .story-overlay{position:fixed;inset:0;z-index:1000;background:var(--bg);display:none;flex-direction:column}
+  .story-overlay.vis{display:flex}
+  body.story-open{overflow:hidden}
+  .story-layout{flex:1;overflow-y:auto;display:flex;flex-direction:column;gap:22px;padding:18px;width:100%;max-width:1000px;margin:0 auto;align-items:center}
+  .story-prev-col{flex:0 0 auto}
+  .story-prev{position:relative;width:270px;aspect-ratio:9/16;overflow:hidden;border-radius:16px;background:#000;border:1px solid var(--line)}
+  .story-frame{position:absolute;top:0;left:0;width:1080px;height:1920px;border:0;transform-origin:0 0;background:#000}
+  .story-prev-laster{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;background:var(--surface)}
+  .story-prev-feil{position:absolute;inset:0;display:none;align-items:center;justify-content:center;text-align:center;padding:20px;color:var(--mut);font-size:14px;line-height:1.5}
+  .story-kontroller{flex:1;display:flex;flex-direction:column;gap:16px;width:100%;max-width:420px}
+  .story-block{display:flex;flex-direction:column;gap:10px}
+  /* .pk-label arves fra plakat (flex:0 0 96px = bredde i rad). I kolonne-blokka blir det HØYDE → nøytraliser. */
+  .story-block .pk-label{flex:0 0 auto}
+  /* Antall dager: knapper 4–10 på én rad, lik bredde. .pk-seg gir valgt-markering (.on). */
+  .story-dager-row{display:flex;gap:6px}
+  .story-dager-row .pk-seg{flex:1;text-align:center;padding:9px 0}
+  /* Lenke: to gjensidig utelukkende avkrysninger (.pk-check). Hjelpetekst innrykket under «Book her ↓». */
+  .story-lenke{display:flex;flex-direction:column;gap:10px}
+  .story-lenke .pk-check{margin-top:0}
+  .story-hjelp{font-size:12.5px;color:var(--mut);line-height:1.4;margin:0 0 0 28px}
+  .story-status{font-size:13px;color:var(--mut);margin:0}
+  .story-kontroller .pk-actions{margin-top:6px}
+  @media(min-width:768px){
+    .story-layout{flex-direction:row;align-items:flex-start;justify-content:center;gap:40px;padding:32px 28px}
+    .story-prev{width:300px}
+  }
   .plakat-overlay{position:fixed;inset:0;z-index:1000;background:var(--bg);display:none;flex-direction:column}
   .plakat-overlay.open{display:flex}
   body.plakat-lock{overflow:hidden}
@@ -8097,6 +8161,155 @@ function settPlakatVersjon(v){
       Promise.all([hentBilder(),hentDesign(),hentRegler()]).then(render); }
   }
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', plakatInit); else plakatInit();
+})();
+</script>
+<script>
+/* ===== «Lag story» — ledige timer-story-generator (Basis + Vekst) =====
+   Selvstendig editor (mønster fra plakat-editoren, egne funksjoner for å ikke røre plakat-IIFE-en).
+   Endepunkter GET /api/dashboard/story/ledige-timer/{preview,render}. Preview via iframe.src (GET) —
+   bevarer backendens CSP-nonce for fit-scriptet (srcdoc ville mistet CSP-headeren). Tilgjengelig på
+   BÅDE Basis og Vekst (kortet ligger utenfor Vekst-låsen; endepunktene svarer 200 for Basis). */
+(function(){
+  var BASE='/api/dashboard/story/ledige-timer';
+  var ov, frame, prev, laster, feil, kontr, statusLinje;
+  var st={ dager:4, lenke:'av' };   // tjeneste velges av backend (første hoved); ingen service_id fra frontend
+  var _t=null;
+  var ER_IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&(navigator.maxTouchPoints||0)>1);
+  function el(id){ return document.getElementById(id); }
+  function q(){ return 'dager='+st.dager+'&lenke='+encodeURIComponent(st.lenke); }
+
+  // Story-HTML er fast 1080×1920 → skalér iframen ned til previewbredden (transform, visuelt).
+  function skalerFrame(){ if(!frame||!prev) return; var w=prev.clientWidth; if(w>0) frame.style.transform='scale('+(w/1080)+')'; }
+
+  function visLaster(på){ if(laster) laster.style.display=på?'flex':'none'; }
+  function visFeil(t){ visLaster(false); if(feil){ feil.textContent=t; feil.style.display='flex'; } }
+  function lastPreview(){
+    if(!frame) return;
+    if(feil) feil.style.display='none'; visLaster(true);
+    if(statusLinje){ statusLinje.hidden=true; statusLinje.textContent=''; } // vent på ny melding fra iframen
+    frame.onload=function(){ visLaster(false); if(ER_IOS) forberedDel(); };
+    frame.src=BASE+'/preview?'+q();
+  }
+  function planlegg(){ clearTimeout(_t); _t=setTimeout(lastPreview,250); } // debounce ~250ms
+
+  // postMessage fra story-iframen: {type:'ledige-timer-story', shownDays, totalDays}. Robust på tvers av
+  // origin (Netlify-proxy i prod = same-origin; lokal dev = kryss-origin — postMessage funker begge).
+  // «X av Y» vises KUN når shownDays < totalDays (totalDays = dager med innhold, stengte gir aldri linje).
+  window.addEventListener('message', function(ev){
+    if(!frame || ev.source!==frame.contentWindow) return;
+    var d=ev.data; if(!d || d.type!=='ledige-timer-story' || !statusLinje) return;
+    var s=d.shownDays, t=d.totalDays;
+    if(typeof s==='number' && typeof t==='number' && s<t){
+      statusLinje.textContent=s+' av '+t+' dager fikk plass'; statusLinje.hidden=false;
+    } else { statusLinje.hidden=true; statusLinje.textContent=''; }
+  });
+
+  function lagAvkryss(label, sjekket){
+    var row=document.createElement('label'); row.className='pk-check';
+    var cb=document.createElement('input'); cb.type='checkbox'; cb.checked=!!sjekket;
+    var t=document.createElement('span'); t.textContent=label;
+    row.appendChild(cb); row.appendChild(t); return { row:row, input:cb };
+  }
+
+  function byggKontroller(){
+    kontr.innerHTML='';
+    // Antall dager — knapper 4–10 (standard 4), .pk-seg med valgt-markering
+    var dBlk=document.createElement('div'); dBlk.className='story-block';
+    var dLbl=document.createElement('span'); dLbl.className='pk-label'; dLbl.textContent='Antall dager'; dBlk.appendChild(dLbl);
+    var dRow=document.createElement('div'); dRow.className='story-dager-row';
+    [4,5,6,7,8,9,10].forEach(function(n){
+      var b=document.createElement('button'); b.type='button'; b.className='pk-seg'+(st.dager===n?' on':''); b.textContent=String(n);
+      b.addEventListener('click',function(){ st.dager=n; [].forEach.call(dRow.children,function(x){x.classList.toggle('on',x===b);}); planlegg(); });
+      dRow.appendChild(b);
+    });
+    dBlk.appendChild(dRow); kontr.appendChild(dBlk);
+
+    // Lenke — to gjensidig utelukkende avkrysninger. Ingen krysset = ingen lenke (av). Hjelpetekst
+    // (dempet) rett under «Book her ↓», synlig kun når den er krysset.
+    var lBlk=document.createElement('div'); lBlk.className='story-block';
+    var lLbl=document.createElement('span'); lLbl.className='pk-label'; lLbl.textContent='Lenke'; lBlk.appendChild(lLbl);
+    var lCol=document.createElement('div'); lCol.className='story-lenke';
+    var cbS=lagAvkryss('Book her ↓', st.lenke==='sticker');
+    var cbB=lagAvkryss('Book via lenken i bio', st.lenke==='bio');
+    var hj=document.createElement('p'); hj.className='story-hjelp'; hj.textContent='Legg til klikkbar lenke selv'; hj.hidden=(st.lenke!=='sticker');
+    cbS.input.addEventListener('change',function(){
+      if(cbS.input.checked){ st.lenke='sticker'; cbB.input.checked=false; } else { st.lenke='av'; }
+      hj.hidden=(st.lenke!=='sticker'); planlegg();
+    });
+    cbB.input.addEventListener('change',function(){
+      if(cbB.input.checked){ st.lenke='bio'; cbS.input.checked=false; } else { st.lenke='av'; }
+      hj.hidden=(st.lenke!=='sticker'); planlegg();
+    });
+    lCol.appendChild(cbS.row); lCol.appendChild(hj); lCol.appendChild(cbB.row);
+    lBlk.appendChild(lCol); kontr.appendChild(lBlk);
+
+    // «X av Y dager fikk plass» (fra postMessage)
+    statusLinje=document.createElement('p'); statusLinje.className='story-status'; statusLinje.hidden=true; kontr.appendChild(statusLinje);
+
+    // Last ned / Del
+    var handl=document.createElement('div'); handl.className='pk-actions';
+    var ned=document.createElement('button'); ned.type='button'; ned.className='btn-outline'; ned.textContent=ER_IOS?'Lagre bilde':'Last ned';
+    ned.addEventListener('click',function(){ ER_IOS ? delEllerLagre(ned) : lastNed(ned); });
+    handl.appendChild(ned);
+    if(!ER_IOS){ var del=document.createElement('button'); del.type='button'; del.className='btn-outline pk-del'; del.textContent='Del'; del.addEventListener('click',function(){ delEllerLagre(del); }); handl.appendChild(del); }
+    kontr.appendChild(handl);
+  }
+
+  // ---- toast + nedlasting/del (kompakt; GET-render; iOS-synkron share som plakaten) ----
+  var _toastEl=null,_toastT=null;
+  function toast(tekst,ok){ if(_toastEl){_toastEl.remove();_toastEl=null;}
+    var t=document.createElement('div'); t.className='pk-toast'; t.setAttribute('role','status'); t.setAttribute('aria-live','polite');
+    if(ok) t.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';
+    var s=document.createElement('span'); s.textContent=tekst; t.appendChild(s); document.body.appendChild(t); _toastEl=t;
+    requestAnimationFrame(function(){ t.classList.add('inn'); });
+    clearTimeout(_toastT); _toastT=setTimeout(function(){ t.classList.remove('inn'); setTimeout(function(){ if(t===_toastEl)_toastEl=null; t.remove(); },220); },2200);
+  }
+  function laster0(btn,tekst){ if(!btn)return; if(btn.dataset.orig==null)btn.dataset.orig=btn.textContent; btn.disabled=true; btn.textContent=tekst; }
+  function laster1(btn){ if(!btn)return; btn.disabled=false; if(btn.dataset.orig!=null){ btn.textContent=btn.dataset.orig; delete btn.dataset.orig; } }
+  async function hentBlob(){ var r=await apiFetch(BASE+'/render?'+q(),{sameOrigin:true}); if(!r||!r.ok) throw 0; return await r.blob(); }
+  // iOS-forhåndsblob: share() må kalles SYNKRONT i trykket (await før spiser aktivering). Hold en fersk
+  // blob klar etter hver preview. Nøkkel = query, så et parameterbytte gir ny blob.
+  var _del={sig:null,blob:null,pending:false};
+  function forberedDel(){ if(!ER_IOS) return; var sig=q(); if(_del.sig===sig&&(_del.blob||_del.pending))return;
+    _del={sig:sig,blob:null,pending:true};
+    hentBlob().then(function(b){ if(_del.sig===sig){_del.blob=b;_del.pending=false;} }).catch(function(){ if(_del.sig===sig)_del.pending=false; }); }
+  function ferskBlob(){ return (_del.blob&&_del.sig===q())?_del.blob:null; }
+  function shareBlob(blob,suksess,btn,lastetekst){
+    var fil=new File([blob],'ledige-timer.png',{type:'image/png'});
+    if(!(navigator.share && (!navigator.canShare||navigator.canShare({files:[fil]})))){ toast('Deling støttes ikke på denne enheten.',false); return; }
+    if(btn) laster0(btn,lastetekst);
+    navigator.share({files:[fil]}).then(function(){ toast(suksess,true); }).catch(function(e){ if(e&&e.name!=='AbortError') toast('Kunne ikke dele. Prøv igjen.',false); }).finally(function(){ laster1(btn); });
+  }
+  function delEllerLagre(btn){
+    var suksess=ER_IOS?'Lagret':'Delt', lastetekst=ER_IOS?'Lagrer…':'Deler…';
+    if(ER_IOS){ var b=ferskBlob(); if(b){ shareBlob(b,suksess,btn,lastetekst); } else { forberedDel(); toast('Klargjør bildet – trykk igjen om et øyeblikk.',false); } return; }
+    var fersk=ferskBlob(); if(fersk){ shareBlob(fersk,suksess,btn,lastetekst); return; }
+    laster0(btn,lastetekst);
+    hentBlob().then(function(b){ shareBlob(b,suksess,btn,lastetekst); }).catch(function(){ laster1(btn); toast('Kunne ikke dele. Prøv igjen.',false); });
+  }
+  async function lastNed(btn){ laster0(btn,'Laster ned …');
+    try{ var b=ferskBlob()||await hentBlob(); var u=URL.createObjectURL(b); var a=document.createElement('a'); a.href=u; a.download='ledige-timer.png'; document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(u);},1000); toast('Lastet ned',true); }
+    catch(e){ toast('Kunne ikke laste ned. Prøv igjen.',false); } finally{ laster1(btn); } }
+
+  // ---- åpne/lukke ----
+  function aapne(){
+    if(!ov) return;
+    document.body.classList.add('story-open'); ov.classList.add('vis');
+    byggKontroller();
+    requestAnimationFrame(skalerFrame);
+    lastPreview();   // vis storyen umiddelbart med standardvalg (4 dager, lenke av; backend velger tjeneste)
+  }
+  function lukk(){ if(!ov)return; ov.classList.remove('vis'); document.body.classList.remove('story-open'); clearTimeout(_t); if(frame) frame.removeAttribute('src'); }
+
+  function init(){
+    ov=el('storyOverlay'); if(!ov) return;
+    frame=el('storyFrame'); prev=ov.querySelector('.story-prev'); laster=el('storyLaster'); feil=el('storyFeil'); kontr=el('storyKontroller');
+    var b=el('storyOpen'); if(b) b.addEventListener('click', aapne);
+    var x=el('storyX'); if(x) x.addEventListener('click', lukk);
+    window.addEventListener('resize', function(){ if(ov.classList.contains('vis')) skalerFrame(); });
+    document.addEventListener('keydown', function(e){ if(e.key==='Escape' && ov.classList.contains('vis')) lukk(); });
+  }
+  if(document.readyState==='loading') document.addEventListener('DOMContentLoaded', init); else init();
 })();
 </script>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
