@@ -18,8 +18,9 @@ const PNG1=Buffer.from('iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR4
 const billing = plan => JSON.stringify({subscription_status:'active',plan,effective_plan:plan,effective_plan_grunn:'subscription',needs_attention:false,page_status:'live',days_left:null,trial_start_at:null});
 const services = JSON.stringify({hoved:[{id:'11111111-1111-1111-1111-111111111111',name:'Herreklipp',price:400,min:30,sort:0}],tillegg:[]});
 function previewHtml(dager,lenke){
-  const shown=Math.min(dager,7), total=dager, rows=[];
-  for(let i=0;i<shown;i++) rows.push(`<div class="d"><span class="dh">Dag ${i+1}</span><span>10:00–17:30</span></div>`);
+  // STANDARD som ekte data: alle dagene får plass (shownDays === totalDays) → ingen «X av Y»-linje.
+  const total=dager, rows=[];
+  for(let i=0;i<total;i++) rows.push(`<div class="d"><span class="dh">Dag ${i+1}</span><span>10:00–17:30</span></div>`);
   const lk = lenke==='sticker' ? `<div class="lk">Book her ↓</div><div class="stk"></div>` : lenke==='bio' ? `<div class="lk">Book via lenken i bio</div>` : '';
   return `<!DOCTYPE html><html lang="no"><head><meta charset="utf-8"><style>
     *{box-sizing:border-box;margin:0}html,body{width:1080px;height:1920px}
@@ -30,7 +31,7 @@ function previewHtml(dager,lenke){
   </style></head><body>
     <div class="t">Ledige timer</div><div class="n">Demo Barber</div>
     ${rows.join('')}${lk}
-    <script>window.parent.postMessage({type:'ledige-timer-story',shownDays:${shown},totalDays:${total}},'*');<\/script>
+    <script>window.parent.postMessage({type:'ledige-timer-story',shownDays:${total},totalDays:${total}},'*');<\/script>
   </body></html>`;
 }
 async function mock(page, plan){
@@ -83,16 +84,22 @@ for(const plan of ['basis','vekst']){
   await shot(page,`${plan}-${bredde}-bio`);
   // uncheck bio → ingen lenke (av)
   await kryssLenke(page,'Book via lenken i bio');
-  // 10 dager → «X av Y» (mock: 7 av 10)
+  // 10 dager → STANDARD: alle får plass (mock 10/10) → INGEN «X av Y»-linje (som ekte data)
   await klikkDager(page,10); await page.waitForTimeout(600);
-  const statusTekst=await page.evaluate(()=>{const s=document.querySelector('.story-status');return s&&!s.hidden?s.textContent:'';});
+  const status10=await page.evaluate(()=>{const s=document.querySelector('.story-status');return s&&!s.hidden?s.textContent:'';});
   await shot(page,`${plan}-${bredde}-10dager`);
+  // TESTTILFELLE (ikke standardvisning): simuler at iframen melder 7 av 10 → linja SKAL vises
+  const fr=page.frames().find(f=>/story\/ledige-timer\/preview/.test(f.url()));
+  if(fr) await fr.evaluate(()=>window.parent.postMessage({type:'ledige-timer-story',shownDays:7,totalDays:10},'*'));
+  await page.waitForTimeout(250);
+  const statusCut=await page.evaluate(()=>{const s=document.querySelector('.story-status');return s&&!s.hidden?s.textContent:'';});
+  await shot(page,`${plan}-${bredde}-xavy-test`);
   await klikkDager(page,4);
-  rad.push({plan,bredde,kortSynlig,kortLaast,...m0,hjelpBookher,bioHjelp:eks.hjelp,bookherAvVedBio:eks.bookherAv,bioPa:eks.bioPa,statusTekst,overflow:m0.scrollW-bredde,jsfeil:errs.length?errs.join('|'):'ingen'});
+  rad.push({plan,bredde,kortSynlig,kortLaast,...m0,hjelpBookher,bioHjelp:eks.hjelp,bookherAvVedBio:eks.bookherAv,bioPa:eks.bioPa,status10,statusCut,overflow:m0.scrollW-bredde,jsfeil:errs.length?errs.join('|'):'ingen'});
   await page.close();
  }
 }
-console.table(rad.map(r=>({plan:r.plan,b:r.bredde,kort:r.kortSynlig&&!r.kortLaast?'åpen':'LÅST/skjult',ed:r.editorApen,dKn:r.dagerKnapper,dValgt:r.dagerValgt,slider:r.ingenSlider?'nei':'JA(!)',select:r.ingenSelect?'nei':'JA(!)',bokser:r.lenkeBokser,bookher:r.hjelpBookher,bioEks:r.bookherAvVedBio,status:r.statusTekst||'—',ovf:r.overflow,js:r.jsfeil})));
+console.table(rad.map(r=>({plan:r.plan,b:r.bredde,kort:r.kortSynlig&&!r.kortLaast?'åpen':'LÅST/skjult',ed:r.editorApen,dKn:r.dagerKnapper,dValgt:r.dagerValgt,slider:r.ingenSlider?'nei':'JA(!)',select:r.ingenSelect?'nei':'JA(!)',bokser:r.lenkeBokser,bookher:r.hjelpBookher,bioEks:r.bookherAvVedBio,std10:r.status10===''?'tom ✓':r.status10,testCut:r.statusCut||'—',ovf:r.overflow,js:r.jsfeil})));
 const feil=[];
 for(const r of rad){
   if(!r.kortSynlig||r.kortLaast) feil.push(`${r.plan}/${r.bredde}: story-kort ikke åpen`);
@@ -107,7 +114,8 @@ for(const r of rad){
   if(r.bioHjelp!==true) feil.push(`${r.plan}/${r.bredde}: hjelp synlig ved bio`);
   if(r.bookherAvVedBio!==true) feil.push(`${r.plan}/${r.bredde}: «Book her» fortsatt krysset ved bio (ikke gjensidig utelukkende)`);
   if(r.bioPa!==true) feil.push(`${r.plan}/${r.bredde}: bio ikke krysset etter klikk`);
-  if(r.statusTekst!=='7 av 10 dager fikk plass') feil.push(`${r.plan}/${r.bredde}: «X av Y» = «${r.statusTekst}»`);
+  if(r.status10!=='') feil.push(`${r.plan}/${r.bredde}: standard 10 dager viser «X av Y» («${r.status10}») — skal være tom`);
+  if(r.statusCut!=='7 av 10 dager fikk plass') feil.push(`${r.plan}/${r.bredde}: testtilfelle «X av Y» = «${r.statusCut}» (ventet «7 av 10 dager fikk plass»)`);
   if(r.overflow>0) feil.push(`${r.plan}/${r.bredde}: overflow=${r.overflow}`);
   if(r.jsfeil!=='ingen') feil.push(`${r.plan}/${r.bredde}: JS-feil ${r.jsfeil}`);
 }
