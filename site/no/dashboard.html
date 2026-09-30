@@ -402,32 +402,13 @@
       padding-bottom:env(safe-area-inset-bottom)}   /* hjemindikator-plass (krever viewport-fit=cover) */
     .bunn-nav-rad{display:flex;width:100%;max-width:480px;margin:0 auto}
     .tab{flex:1;min-height:48px;height:56px;display:flex;flex-direction:column;align-items:center;
-      justify-content:center;gap:3px;appearance:none;border:0;background:0;color:var(--mut);cursor:pointer;padding:0}
+      justify-content:center;gap:3px;appearance:none;border:0;background:0;color:var(--mut);cursor:pointer;padding:0;position:relative}
     .tab[aria-current="page"]{color:#4d8bff;--ac:currentColor}
     .tab-lbl{max-width:100%;font-size:10.5px;font-weight:600;line-height:1.15;letter-spacing:-.01em;
       white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    #kontoBunnDot{position:absolute;top:9px;left:calc(50% + 9px);margin:0}
   }
-  /* Desktop: alle fem knapper i raden, Mer-knapp skjult */
-  .nav-mer-wrap{display:none}
-  /* Mobil (≤719): ALLE fem faner ligger i dropdownen. Nav-raden viser bare toggelen, til
-     venstre (der Oversikt sto). Toggelen bærer aktiv fanes navn (updateToggle) og står alltid
-     .aktiv. Konto bærer varselprikken; ligger den skjult i menyen speiler toggelen den
-     (oppdaterMerPrikk → #merDot). Hver fane har class="nav-mer" → JS flytter dem inn i menyen på
-     mobil og tilbake i raden på desktop.
-     Historikk: her lå en 3-synlige+toggel-bredde-kabal (marg 16 osv). Utgått — ingen faner står
-     lenger i raden, så det finnes ingen plass å måle. Toggelen ankrer fra venstre, ikke høyre. */
-  @media(max-width:719px){
-    button.nav-mer{display:none}
-    .nav-mer-wrap{display:block;position:relative;align-self:center;flex-shrink:0}
-    .nav-mer-toggle{appearance:none;border:0;background:0;font:inherit;font-size:13px;font-weight:500;color:var(--mut);padding:14px 2px;cursor:pointer;white-space:nowrap;border-bottom:2px solid transparent;margin-bottom:-1px;letter-spacing:-.01em}
-    .nav-mer-toggle:hover{color:var(--ink-2)}
-    .nav-mer-toggle.aktiv{color:var(--ink);border-bottom-color:var(--ink)}
-    .nav-mer-meny{position:fixed;background:var(--bg);border:1px solid var(--line);border-radius:10px;min-width:190px;z-index:1000;padding:6px;box-shadow:0 4px 16px rgba(0,0,0,.14);flex-direction:column;gap:2px}
-    .nav-mer-meny:not([hidden]){display:flex}
-    .nav .nav-mer-meny button{display:block;width:100%;text-align:left;font-size:14px;font-weight:500;color:var(--ink-2);padding:11px 14px;border-radius:7px;border:0;background:0;cursor:pointer;white-space:nowrap;border-bottom:none;margin-right:0;margin-bottom:0;letter-spacing:-.01em}
-    .nav .nav-mer-meny button:hover{background:var(--surface);color:var(--ink)}
-    .nav .nav-mer-meny button[aria-selected=true]{color:var(--ink);font-weight:600;background:var(--surface)}
-  }
+  /* Mobil-nav: bunn-navet (≤719px, se .bunn-nav over) erstattet den gamle «Mer»-dropdownen. */
   .fld{margin-bottom:15px;max-width:440px}
   .fld label{display:block;font-size:12px;color:var(--mut);font-weight:500;margin-bottom:6px;letter-spacing:-.01em}
   .fld input,.fld textarea{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink)}
@@ -1522,29 +1503,22 @@
   </header>
 
   <nav class="nav" role="tablist">
-    <!-- ALLE fem faner har class="nav-mer": på mobil flytter JS dem inn i dropdownen, på
-         desktop står de i raden som før. Rekkefølgen i DOM = rekkefølgen i menyen. -->
-    <button role="tab" aria-selected="true" data-panel="oversikt" class="nav-mer">Oversikt</button>
-    <button role="tab" aria-selected="false" data-panel="vekst" class="nav-mer">Vekst</button>
-    <button role="tab" aria-selected="false" data-panel="tjenester" class="nav-mer">Tjenester &amp; tider</button>
+    <!-- Desktop-faneraden. På mobil (≤719px) er hele .nav display:none og bunn-navet (nederst
+         i body) overtar; knappene blir stående skjult i DOM så switchPanel() kan klikke dem. -->
+    <button role="tab" aria-selected="true" data-panel="oversikt">Oversikt</button>
+    <button role="tab" aria-selected="false" data-panel="vekst">Vekst</button>
+    <button role="tab" aria-selected="false" data-panel="tjenester">Tjenester &amp; tider</button>
     <!-- data-panel="design" er BEVART selv om fanen heter «Din side» — Profil-fanen ble slått
          INN her 08.08, og id-en #design henger sammen med loadDesign(), oppdaterPreview() og
          hele design-koden. Samme resonnement som «Konto»/#abonnement under. Ikke døp om id-en. -->
-    <button role="tab" aria-selected="false" data-panel="design" class="nav-mer">Din side</button>
+    <button role="tab" aria-selected="false" data-panel="design">Din side</button>
     <!-- data-panel="abonnement" er BEVART med vilje selv om fanen heter «Konto» —
          id-en henger sammen med #abonnement, switchPanel('abonnement') (:2376) og
          billing-koden. Bare etiketten er byttet. -->
-    <!-- Konto ligger i «Mer» på mobil, og bærer varselprikken. En prikk inne i en lukket meny
-         er usynlig (målt 0×0 på 320/375), så toggelen speiler den — se oppdaterMerPrikk().
-         BEGGE vises samtidig, og prikken i menyen forsvinner IKKE når menyen åpnes: et
-         varsel om at siden snart tas ned skal ikke kunne forsvinne fordi noen kikket på det.
-         Den slukkes kun når needs_attention blir false. -->
-    <button role="tab" aria-selected="false" data-panel="abonnement" class="nav-mer">Konto<span class="nav-dot" id="kontoDot" hidden></span></button>
-    <div class="nav-mer-wrap">
-      <!-- #merDot koster 12px bredde (toggel 42 → 54). Det er regnet inn i marg-valget under. -->
-      <button type="button" class="nav-mer-toggle" aria-expanded="false" aria-haspopup="true"><span id="merLabel">Mer</span><span class="nav-dot" id="merDot" hidden></span> <span class="mer-caret">▾</span></button>
-      <div class="nav-mer-meny" role="menu" hidden></div>
-    </div>
+    <!-- #kontoDot = varselprikk (needs_attention) på DESKTOP-fanen. På mobil bærer bunn-navets
+         Konto-fane prikken (#kontoBunnDot). Begge settes i renderBilling og slukkes kun når
+         needs_attention blir false — et nedtakingsvarsel skal ikke forsvinne fordi noen kikket. -->
+    <button role="tab" aria-selected="false" data-panel="abonnement">Konto<span class="nav-dot" id="kontoDot" hidden></span></button>
   </nav>
 </div>
 </div>
@@ -6609,11 +6583,11 @@ function renderKonto(b){
   settLenkeblokk(b);
   // Prikkene følger needs_attention fra serveren — ALDRI «har besøkt fanen». Blir feltet
   // false ved neste /billing/status, forsvinner de av seg selv.
-  // TO prikker, samme kilde: nav-knappen (finn fanen) og trekkspill-headeren (finn
-  // seksjonen når data-single har lukket den). Aldri ute av synk — de settes her sammen.
+  // TRE prikker, samme kilde (needs_attention): desktop-nav (#kontoDot), bunn-navets Konto-fane
+  // på mobil (#kontoBunnDot) og trekkspill-headeren (#kontoAccDot). Aldri ute av synk — settes her.
   if(dot)dot.hidden=!b.needs_attention;
   const accDot=$("#kontoAccDot"); if(accDot)accDot.hidden=!b.needs_attention;
-  oppdaterMerPrikk(); // Konto ligger bak «Mer» på mobil — toggelen må speile prikken
+  const bunnDot=$("#kontoBunnDot"); if(bunnDot)bunnDot.hidden=!b.needs_attention;
   renderDinsideCta(b); // publiser-CTA på «Din side» følger page_status — forsvinner ved publisering
 }
 // Publiser-CTA på «Din side»: synlig KUN i forhandsvist. Kalles fra renderKonto (hver
@@ -7172,109 +7146,6 @@ loadBilling().then(applyBillingReturn).finally(function(){ loadWinback(); initTr
 hentSjekklisteData(); // «Fullfør siden»-guide: hent haker (images/services/hours/profile) ved sideload
 anvendHash(); // åpne panelet fra location.hash (ukjent/tom → standardpanel). Stripe-retur over
               // kjører async etterpå og kan overstyre til Konto — det er tilsiktet.
-
-/* ---- Varselprikk på «Mer»-toggelen ---- */
-// GENERELL REGEL, ikke hardkodet mot Konto: har EN AV knappene som havner bak «Mer» en
-// synlig prikk, får toggelen prikk. En ny fane trenger bare class="nav-mer" og en
-// <span class="nav-dot"> for å bli med — ingen endring her.
-//
-// Spør DOM-en direkte i stedet for å lukke over `merBtns` i Mer-meny-modulen: funksjonen
-// kalles også fra renderKonto(), som ligger utenfor den closuren. Én regel, to kallsteder —
-// ikke to kopier av samme telling.
-//
-// Toggelens prikk SLUKKES IKKE når menyen åpnes. Da ville et varsel om at siden snart tas
-// ned kunne forsvinne uten at noe var gjort med det. Begge prikkene henger på samme kilde
-// (needs_attention) og slukkes samtidig når den blir false.
-//
-// På desktop er toggelen selv display:none, så prikken der er uansett usynlig; regelen
-// trenger derfor ingen bredde-sjekk.
-function oppdaterMerPrikk(){
-  var t=document.querySelector('#merDot'); if(!t)return;
-  var noen=!!document.querySelector('.nav button.nav-mer .nav-dot:not([hidden])');
-  t.hidden=!noen;
-}
-
-/* ---- Mer-meny (mobil nav) ---- */
-(function(){
-  var navEl=document.querySelector('nav.nav');
-  var menyEl=document.querySelector('.nav-mer-meny');
-  var toggleEl=document.querySelector('.nav-mer-toggle');
-  var merBtns=Array.from(document.querySelectorAll('.nav button.nav-mer'));
-
-  // Beregn stabile ankerpunkter FØR noen knapper flyttes
-  function firstStableAfter(btn){
-    var n=btn.nextSibling;
-    while(n){
-      if(n.nodeType===1&&!n.classList.contains('nav-mer'))return n;
-      n=n.nextSibling;
-    }
-    return null;
-  }
-  var anchors=merBtns.map(firstStableAfter);
-
-  function moveToMeny(){merBtns.forEach(function(b){menyEl.appendChild(b);});}
-  function moveToNav(){merBtns.forEach(function(b,i){navEl.insertBefore(b,anchors[i]);});}
-
-  var mq=window.matchMedia('(max-width:719px)');
-  // oppdaterMerPrikk ETTER flyttingen: en knapp som havner i menyen tar prikken sin med seg
-  // inn i noe lukket, og toggelen må da overta varselet. Dette er det ANDRE kallstedet —
-  // det første er renderKonto(), som slår prikken av/på. Uten begge er den bare riktig
-  // halvparten av tiden: rett etter et statusbytte, eller rett etter en breddeendring.
-  function applyLayout(e){if(e.matches)moveToMeny();else moveToNav();oppdaterMerPrikk();}
-  mq.addEventListener('change',applyLayout);
-  applyLayout(mq);
-
-  // Åpne/lukke meny — position:fixed beregnet fra toggle-knappens viewport-posisjon
-  // (unngår klipping av nav overflow-x:auto)
-  // Toggelen står nå til VENSTRE i raden, så menyen ankres fra venstre (box.left). Ankret man
-  // fortsatt fra høyre ville 190px-menyen strukket seg forbi venstre skjermkant på 320.
-  function positionerMeny(){
-    var box=toggleEl.getBoundingClientRect();
-    menyEl.style.top=(box.bottom+1)+'px';
-    menyEl.style.left=box.left+'px';
-    menyEl.style.right='auto';
-  }
-  toggleEl.addEventListener('click',function(e){
-    e.stopPropagation();
-    var open=!menyEl.hidden;
-    if(!open)positionerMeny();
-    menyEl.hidden=open;
-    toggleEl.setAttribute('aria-expanded',String(!open));
-  });
-  document.addEventListener('click',function(){
-    if(!menyEl.hidden){menyEl.hidden=true;toggleEl.setAttribute('aria-expanded','false');}
-  });
-  menyEl.addEventListener('click',function(e){e.stopPropagation();});
-
-  // Oppdater toggle-label og aktiv-klasse.
-  // ⚠ Skriver til #merLabel, IKKE til toggleEl.innerHTML. Den gamle varianten bygget hele
-  // knappen på nytt ved hvert kall og slettet alt annet inni den. Behold denne formen —
-  // legger noen en indikator i toggelen senere, overlever den et etikettbytte.
-  var labelEl=document.querySelector('#merLabel');
-  function updateToggle(){
-    var activeBtn=merBtns.find(function(b){return b.getAttribute('aria-selected')==='true';});
-    // textContent på knappen tar med prikkens (tomme) span — trim holder, men vi leser
-    // .acc-title-fri tekst her uansett siden nav-knappene kun har tekst + ev. prikk.
-    if(labelEl)labelEl.textContent=activeBtn?activeBtn.textContent.trim():'Mer';
-    toggleEl.classList.toggle('aktiv',!!activeBtn);
-  }
-
-  // Lukk meny og oppdater toggle når en Mer-fane klikkes
-  merBtns.forEach(function(b){
-    b.addEventListener('click',function(){
-      menyEl.hidden=true;
-      toggleEl.setAttribute('aria-expanded','false');
-      updateToggle();
-    });
-  });
-
-  // Oppdater toggle når en synlig fane klikkes (oversikt/bookinger/tjenester)
-  navEl.addEventListener('click',function(e){
-    if(e.target.dataset&&e.target.dataset.panel)updateToggle();
-  });
-
-  updateToggle();
-})();
 
 /* ---- Bunn-nav (mobil) — erstatter dropdown. Faner kaller switchPanel (klikker den skjulte
    topp-nav-knappen), og aria-current synkes fra aktivt panel via nav.nav-klikk (bubbler også
@@ -8237,7 +8108,7 @@ function settPlakatVersjon(v){
     <button class="tab" type="button" role="tab" data-panel="vekst"><svg class="nav-ico" aria-hidden="true"><use href="#ic-vekst"></use></svg><span class="tab-lbl">Vekst</span></button>
     <button class="tab" type="button" role="tab" data-panel="tjenester"><svg class="nav-ico" aria-hidden="true"><use href="#ic-tjenester"></use></svg><span class="tab-lbl">Tjenester</span></button>
     <button class="tab" type="button" role="tab" data-panel="design"><svg class="nav-ico" aria-hidden="true"><use href="#ic-dinside"></use></svg><span class="tab-lbl">Din side</span></button>
-    <button class="tab" type="button" role="tab" data-panel="abonnement"><svg class="nav-ico" aria-hidden="true"><use href="#ic-konto"></use></svg><span class="tab-lbl">Konto</span></button>
+    <button class="tab" type="button" role="tab" data-panel="abonnement"><svg class="nav-ico" aria-hidden="true"><use href="#ic-konto"></use></svg><span class="tab-lbl">Konto</span><span class="nav-dot" id="kontoBunnDot" hidden></span></button>
   </div>
 </nav>
 </body>

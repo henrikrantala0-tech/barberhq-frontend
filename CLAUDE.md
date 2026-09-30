@@ -361,7 +361,7 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
 ### Dashboard + kundeside
 - **Design-fane:** live forhåndsvisning via `GET /api/dashboard/preview?layout&palette&font&mode` — full **server-render** av barberens EKTE side (`byggSideFraBarber → fill → booking-module.cjs`; `preview:true` hopper over /days+/slots og åpner sheet). Samme kilde som publisert side = ingen drift. `dashboard.html` setter kun `srcdoc` (cache per param-kombo, synlig `previewError` ved feil); ingen klient-fyll. Endepunktet `console.warn`-er på ufylt `{{PLACEHOLDER}}` — erstattet den gamle stille slutt-wipen (`replace(/{{[A-Z_]+}}/g,'')`) som skjulte at booking-modulen (all aksentfarge) aldri ble injisert → helt svart/hvit preview i ~4 mnd (rot-årsak: FASE B `6d06a8d` flyttet booking-UI inn i `{{BOOKING_MODULE}}` som wipen slettet). Layout-kort som ren tekst.
 - **Preview 11.07:** booking-sheet auto-open fjernet (`booking-module.cjs`) — preview viser forside først, som live. Tomme forside-felt viser dempede plassholdere i preview (`(spesialitet)`/`(adresse)`/`(bio)` + grå bilde-bokser via delt `{{PH_CSS}}`); live kollapser som før. (Layout-preview-«buggen» var browser-cache, ikke kode.)
-- **Mobil-nav (≤719px):** ALLE fem faner ligger i én dropdown — ingen står permanent i raden. Nav-raden viser bare toggelen til venstre (der Oversikt sto), med aktiv fanes navn + caret (f.eks. «Oversikt ▾»), alltid `.aktiv` (ink + understrek). Trykk → meny med alle fem, aktiv uthevet. Erstattet det gamle 3-synlige+«Mer»-oppsettet (Oversikt/Vekst/Din side sto, Tjenester/Konto skjult) — den asymmetriske splitten så tilfeldig ut. Desktop viser fortsatt alle fem i raden. Mobil Design-layout: preview sentrert, rekkefølge valg → preview → Lagre, 2-kolonne kort, breakpoint 700px.
+- **Mobil-nav (≤719px):** en **bunn-nav** (`.bunn-nav`, sticky nederst, fem ikon+etikett-faner) er navigasjonen. Hele topp-navet (`.nav`) står `display:none` på mobil, men de fem knappene blir stående skjult i DOM så `switchPanel()` fortsatt kan klikke dem. Desktop viser fortsatt alle fem i topp-raden. **Den gamle «Mer»-dropdownen (`#merDot`/`.nav-mer-toggle`/`.nav-mer-meny`/`oppdaterMerPrikk`) er FJERNET** (bunn-nav-prikk-branchen) — ikke gjenoppdag den som mobil-nav. Mobil Design-layout: preview sentrert, rekkefølge valg → preview → Lagre, 2-kolonne kort, breakpoint 700px.
 - **Google Kalender-blokka har TRE tilstander** (Tjenester & tider), ikke to. Den tredje er
   `connected && scope_ok===false` fra `GET /api/dashboard/google/status`: tilkoblet, men skriving når
   ikke fram — enten manglende scope eller en 403 backend har flagget. Rød ramme (`.gcal-warn`) +
@@ -603,13 +603,14 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   `code='mangler_naavaerende_passord'` (blir i dashbordet ved feil gammelt passord). Vis/skjul-øye på
   begge felt (bindToggle-mønsteret fra opprett-passord). Etter setting bytter seksjonen til «Bytt
   passord» uten reload.
-- **Mobil-nav:** ALLE fem faner ligger i dropdownen — hver knapp har `class="nav-mer"`, og JS
-  flytter dem inn i menyen på mobil, tilbake i raden på desktop. Toggelen står til venstre og bærer
-  aktiv fanes navn (`updateToggle` → `#merLabel`); den er alltid `.aktiv`. Menyen ankres fra
-  venstre (`positionerMeny` bruker `box.left`, ikke `box.right`), ellers ville 190px-menyen strukket
-  seg forbi venstre skjermkant på 320. Konto bærer fortsatt varselprikken, og toggelen speiler den
-  (`oppdaterMerPrikk` → `#merDot`). Verifisert 320/375/390: fem faner i menyen, `nav overflow = 0`,
-  etikett følger aktiv fane, klikk bytter panel + lukker meny.
+- **Mobil-nav:** **bunn-nav** (`.bunn-nav`, `role="tablist"`, fem `.tab[data-panel]`) er
+  navigasjonen på ≤719px; topp-navet er `display:none` (knappene blir skjult i DOM så
+  `switchPanel()` treffer dem). `__syncBunnNav()` speiler aktiv fane (`aria-current`) fra det
+  sentrale klikk-handleret. **Varselprikk:** desktop-Konto bærer `#kontoDot`, bunn-navets Konto-fane
+  bærer `#kontoBunnDot`, og abonnement-trekkspillet `#kontoAccDot` — alle tre settes fra
+  `b.needs_attention` i `renderBilling` (samme kilde, aldri ute av synk). **Den gamle «Mer»-dropdownen
+  (`#merDot`/`oppdaterMerPrikk`/`.nav-mer-*`) er FJERNET** — render-test `tools/render/nav-prikk.mjs`
+  asserterer prikk kun ved `needs_attention`, på riktig flate per bredde, og at «Mer»-rester = 0.
 - **`loadSmsInnstillinger()` hører til VEKST, ikke Konto.** Het `loadInnstillinger()` da SMS-
   knottene bodde i en egen fane; omdøpt 06.08 så navnet ikke lokker noen til å lete i Konto.
 - **Fanene er hardkodet tre steder som må holdes i synk:** nav-knapp (`data-panel`), `<section
