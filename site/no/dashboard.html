@@ -7645,6 +7645,7 @@ function settPlakatVersjon(v){
   var PREVIEW_BASE='/api/dashboard/plakat';
   var CANVAS={'4:5':{w:1080,h:1350}, '9:16':{w:1080,h:1920}};
   var _preT=null, _palett=null, _mode=null, _layout=null, _regler=null;
+  var _previewSeq=0;   // H3: monoton teller — kun SISTE lastPreview-kall får skrive srcdoc/feil/laster.
 
   async function hentDesign(){
     if(_palett) return;
@@ -8075,6 +8076,11 @@ function settPlakatVersjon(v){
   async function lastPreview(){
     var p=finn(PS.valgtId); if(!p) return;
     var frame=document.getElementById('plakatFrame'); if(!frame) return;
+    // H3: sekvensvakt — «siste forespørsel vinner». Format-bytte (oppdaterLayout().then(planleggPreview))
+    // kan overlappe et slider-drevet kall → to /preview i flukt. Uten vakt skriver den som FULLFØRER sist
+    // (kan være en treg ELDRE respons) srcdoc → utdatert preview. Teller opp per kall; etter hvert await
+    // sjekkes seq===_previewSeq før noen UI-effekt. Samme mønster som _delCache.sig.
+    var seq=++_previewSeq;
     visPrevFeil(''); visLaster(true);
     // POST når en plass bærer base64 (kamerarull), GET ellers. Svaret skrives som srcdoc (same-origin, arver
     // dashboardets fravær av CSP — se CSP-notatet over) i stedet for frame.src, siden en iframe ikke kan
@@ -8083,15 +8089,17 @@ function settPlakatVersjon(v){
       var r = harBase64(p)
         ? await apiFetch(PREVIEW_BASE+'/preview', {sameOrigin:true, method:'POST', body:JSON.stringify(plakatState(p))})
         : await apiFetch(PREVIEW_BASE+'/preview?'+plakatQuery(p), {sameOrigin:true});
+      if(seq!==_previewSeq) return;        // et nyere kall har overtatt → forkast dette svaret stille
       if(!r){ visLaster(false); return; } // 401 → apiFetch redirigerte til login (ikke stå fast på «Prøv igjen»)
       // Nøytral feil uansett årsak (403/400/5xx) — knappen er utilgjengelig for Basis, så en «krever Vekst»-
       // melding ville vært feil budskap. En tom iframe uten forklaring er verre.
       if(!r.ok){ visPrevFeil('Kunne ikke vise forhåndsvisningen akkurat nå. Prøv igjen.'); return; }
       var html=await r.text();
+      if(seq!==_previewSeq) return;        // svaret ankom, men et nyere kall vant kappløpet → ikke skriv srcdoc
       frame.onload=function(){ visLaster(false); };
       frame.removeAttribute('src'); frame.srcdoc=html;
       if(ER_IOS) forberedDelBlob(p); // hold del/lagre-blob klar → synkron share på første trykk
-    }catch(e){ visPrevFeil('Kunne ikke vise forhåndsvisningen akkurat nå. Prøv igjen.'); }
+    }catch(e){ if(seq===_previewSeq) visPrevFeil('Kunne ikke vise forhåndsvisningen akkurat nå. Prøv igjen.'); }
   }
   function planleggPreview(){ clearTimeout(_preT); _preT=setTimeout(lastPreview,250); } // debounce (slider spammer ikke)
 
