@@ -565,9 +565,14 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   `applyBillingReturn()` på `?live=1` / `?avbrutt=1` — tvinger fram Konto-fanen, viser kvitterings-
   banner og stripper query-en med `replaceState`. Betaling ≠ publisering: «Gå live» er separat.
 - **Basis-visning (Vekst-skjold).** Barbereren på Basis-plan ser Vekst-flatene låst i stedet for
-  ekte data. Trigges KUN av `erBasis()` = `_billing.effective_plan==='basis'` (backendens autoritative
-  «hva gjelder nå» — ALDRI `b.plan`, som er NULL i trial → ville låst prøvekunder ute). Trial/Vekst =
-  uendret dashbord. Skjold-komponent (`settSkjold`/`fjernSkjold`): halvgjennomsiktig lås + «Se abonnement»
+  ekte data. **FAIL-CLOSED (M10):** `erBasis()` = `!(_billing && effective_plan==='vekst')` — skjold
+  med mindre billing er BEKREFTET Vekst. Alt annet (`_billing===null` før lasting, manglende felt,
+  billing-feil, `'basis'`) → skjoldet. `effective_plan` er backendens autoritative «hva gjelder nå»;
+  ALDRI `b.plan` (NULL i trial). Trial gir `effective_plan==='vekst'` → prøvekunder låses IKKE ute.
+  ⚠ Dette er snudd fra den gamle fail-OPEN-varianten (skjold kun ved eksplisitt `'basis'`), som ga et
+  kort ULÅST glimt av Vekst-flatene før billing landet. `billingUkjent`-gaten hindrer uansett FETCH før
+  planen er kjent; fail-closed gjør SKJOLDET default-på til `oppdaterSkjoldFlater` (etter `loadBilling`)
+  åpner ved bekreftet Vekst. Skjold-komponent (`settSkjold`/`fjernSkjold`): halvgjennomsiktig lås + «Se abonnement»
   (klikk → `switchPanel('abonnement')` + scroll `#accAbonnement`), innhold under `pointer-events:none`
   + inputs disabled.
   **⚠ TO ULIKE LÅSE-MEKANISMER — fast regel: MÅLING = skjold, HANDLING = lesbar + låsindikator** (13.09):

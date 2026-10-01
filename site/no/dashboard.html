@@ -6593,11 +6593,14 @@ $("#saveDesign").addEventListener("click",function(){
 // ⚠ null !== 0. `typeof x === 'number'` slår sammen «ikke startet» og «utløpt» til samme
 // gren — to helt ulike tilstander (A mot C/D). Sjekk === null og === 0 hver for seg.
 var _billing=null;
-// Vekst-skjoldet trigges KUN av effective_plan==='basis' — backendens autoritative «hva gjelder
-// nå», ikke b.plan. b.plan er NULL for en barber i prøveperiode (trial_vindu → Vekst), så leser
-// vi den, låser vi de eneste live-kundene ute mens de prøver. Eksplisitt 'basis' → skjold; alt
-// annet (inkl. _billing===null før lasting, manglende felt, 'vekst') → INGEN skjold, ingen eksempeltall.
-function erBasis(){ return !!(_billing && String(_billing.effective_plan).toLowerCase()==='basis'); }
+// M10 FAIL-CLOSED: Vekst-innhold vises KUN når billing er BEKREFTET Vekst (effective_plan==='vekst').
+// Alt annet — _billing===null (før lasting), manglende felt, billing-feil, ELLER 'basis' — skjoldes.
+// effective_plan er backendens autoritative «hva gjelder nå»: trial_vindu gir 'vekst' (prøvekunder
+// låses derfor IKKE ute), basis gir 'basis'. Før var dette fail-OPEN (skjold kun ved eksplisitt 'basis'),
+// som ga et kort ULÅST glimt av Vekst-flatene før billing landet. Nå er default skjoldet (trygg retning):
+// billingUkjent-gaten hindrer uansett FETCH før planen er kjent; dette gjør SKJOLDET default-på til
+// oppdaterSkjoldFlater (etter loadBilling) re-evaluerer og åpner ved bekreftet Vekst.
+function erBasis(){ return !(_billing && String(_billing.effective_plan).toLowerCase()==='vekst'); }
 // ── Billing-gate for kundedata-loaderne (ROT-ÅRSAK) ─────────────────────────────────────────────
 // Ekte kundedata (winback/verving/lojalitet) skal ALDRI fetches før planen er kjent. Ellers henter
 // race-vinduet — deep-link #vekst fyrer vekst-loaderne i anvendHash FØR /billing/status svarer —
