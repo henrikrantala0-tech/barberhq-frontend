@@ -49,7 +49,10 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .nav.scrolled{border-bottom-color:#1f1f1f;background:rgba(10,10,10,.97)}
 .nav-wrap{max-width:1100px;margin:0 auto;padding:0 32px;height:68px;display:flex;align-items:center;justify-content:space-between}
 .logo{font-size:21px;font-weight:800;letter-spacing:-.03em;color:#fff;text-decoration:none}
-.btn{display:inline-flex;align-items:center;gap:9px;font-size:15px;font-weight:600;padding:15px 30px;border-radius:99px;text-decoration:none;transition:background-color .2s,border-color .2s,color .2s,opacity .2s;cursor:pointer;border:0}
+/* font-family:inherit — <button> arver IKKE font fra body (UA gir «MS Shell Dlg»/Arial → serif-aktig
+   på noen systemer). Inputene har font:inherit (under); .btn manglet det, så <button class="btn">
+   (Neste/Fullfør/obError) rendret i UA-font mens <a class="btn"> arvet Inter. */
+.btn{display:inline-flex;align-items:center;gap:9px;font-family:inherit;font-size:15px;font-weight:600;padding:15px 30px;border-radius:99px;text-decoration:none;transition:background-color .2s,border-color .2s,color .2s,opacity .2s;cursor:pointer;border:0}
 .btn-fill{background:#2563eb;color:#fff}
 .btn-fill:hover{background:#1d4ed8}
 .nav-cta:active{background:#1e40af!important}
@@ -187,15 +190,10 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .sw-toggle input:checked~.sw-knob{transform:translate(17px,-50%)}
 
 .ob-err{color:#c0594a;font-size:13px;margin-top:8px}
-/* Obligatorisk vilkårs-aksept før innsending. Ekte native checkbox (tastatur: Tab + Space),
-   brand-blå via accent-color, egen :focus-visible-ring (den globale regelen på linje ~60 dekker
-   ikke input). Lenkene er interaktivt innhold i <label> → klikk på dem navigerer, toggler IKKE. */
-.consent-row{display:flex;align-items:flex-start;gap:10px;margin-top:18px}
-.consent-row input{flex:0 0 auto;width:18px;height:18px;margin:1px 0 0;accent-color:#4d8bff;cursor:pointer}
-.consent-row input:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
-.consent-row label{font-size:14.5px;line-height:1.5;cursor:pointer}
-.consent-row a{color:#4d8bff;text-decoration:underline}
-.consent-row a:hover{text-decoration:none}
+/* Fin-print-aksept rett under Fullfør-knappen (clickwrap, erstattet avkrysningsboksen). */
+.consent-note{font-size:13px;line-height:1.5;color:#9a9a9a;text-align:center;margin-top:12px}
+.consent-note a{color:#4d8bff;text-decoration:underline}
+.consent-note a:hover{text-decoration:none}
 </style>
 </head>
 <body>
@@ -247,14 +245,12 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
       <p class="ob-err" id="hrsErr"></p>
     </div>
 
-    <!-- Obligatorisk vilkårs-aksept. Lenkene peker til vilkar.html (topp = vilkår) og
-         #personvern-ankeret. target=_blank så barberen ikke mister utfylt skjema. -->
-    <div class="consent-row">
-      <input type="checkbox" id="vilkarChk" name="vilkar_akseptert">
-      <label for="vilkarChk">Jeg godtar <a href="/no/vilkar.html" target="_blank" rel="noopener">vilkårene</a> og <a href="/no/vilkar.html#personvern" target="_blank" rel="noopener">personvernerkl&aelig;ringen</a>.</label>
-    </div>
-    <p class="ob-err" id="vilkarErr" role="alert"></p>
     <button type="button" class="btn btn-fill ob-submit" id="finalBtn" onclick="submitFinal()">Fullf&oslash;r &#10003;</button>
+    <!-- Clickwrap-aksept: å trykke «Fullfør» ER aksepten (ingen avkrysning). Backend krever fortsatt
+         feltet vilkar_akseptert='true' (sendes alltid i submitFinal) og stempler vilkar_versjon +
+         vilkar_akseptert_at server-side ved innsending — uendret kontrakt. Lenkene peker til vilkar.html
+         (topp = vilkår) og #personvern-ankeret; target=_blank så barberen ikke mister utfylt skjema. -->
+    <p class="consent-note">Ved å trykke Fullf&oslash;r godtar du <a href="/no/vilkar.html" target="_blank" rel="noopener">vilk&aring;rene</a> og bekrefter at du har lest <a href="/no/vilkar.html#personvern" target="_blank" rel="noopener">personvernerkl&aelig;ringen</a>.</p>
     <!-- Innsendingsfeil (timeout / nettverk): inline .ob-err, knappen resettes → prøv på nytt
          i samme skjema. Erstatter alert(). -->
     <p class="ob-err" id="submitErr" role="alert" style="text-align:center;margin-top:12px"></p>
@@ -460,14 +456,9 @@ async function submitFinal(){
     return;
   }
 
-  // 3) Vilkår + personvern må godtas (obligatorisk før innsending)
-  var vilkarChk=document.getElementById('vilkarChk'), vilkarErr=document.getElementById('vilkarErr');
-  if(vilkarErr) vilkarErr.textContent='';
-  if(vilkarChk && !vilkarChk.checked){
-    if(vilkarErr) vilkarErr.textContent='Du må godta vilkårene og personvernerklæringen for å fortsette.';
-    vilkarChk.scrollIntoView({behavior:'smooth',block:'center'}); vilkarChk.focus();
-    return;
-  }
+  // 3) Vilkår/personvern: clickwrap — å trykke «Fullfør» ER aksepten (jf. consent-note under knappen).
+  // Ingen egen avkrysning å validere lenger. vilkar_akseptert='true' sendes uansett (under); backend
+  // stempler versjon + tidspunkt server-side. Kontrakten mot backend er uendret.
 
   var btn=document.getElementById('finalBtn');
   var old=btn.innerHTML; btn.disabled=true; btn.classList.add('building');
@@ -485,7 +476,7 @@ async function submitFinal(){
     fd.append('lang',PAGE_LANG);fd.append('market',L2M[PAGE_LANG]||'NO');
     fd.append('services',JSON.stringify(svc.list));
     fd.append('hours',JSON.stringify(hrs.list));
-    fd.append('vilkar_akseptert','true');   // obligatorisk aksept — validert over, blokkerer submit uten avkrysning
+    fd.append('vilkar_akseptert','true');   // clickwrap: å trykke «Fullfør» ER aksepten (se consent-note). Backend krever feltet + stempler vilkar_versjon/-akseptert_at server-side.
     files.forEach(function(f){fd.append('images',f);});
     if(favIndex>=0) fd.append('favoritt',favIndex); // rå filindeks i files[] (= append-rekkefølgen)
     var res=await fetch(API_BASE+'/api/onboarding',{method:'POST',body:fd,credentials:'include',signal:ctrl.signal});
