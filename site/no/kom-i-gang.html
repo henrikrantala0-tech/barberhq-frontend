@@ -282,9 +282,12 @@ var SUBMIT_ERR={
   nett:    'Noe gikk galt. Prøv igjen — eller send oss en e-post på info@trybarberhq.com.',
   // FORSLAG (avventer copy-godkjenning) — 200 uten slug/status (bygget kastet) + parse-feil:
   byggfeil:  'Noe gikk galt da siden din skulle opprettes. Kontakt oss på info@trybarberhq.com, så ordner vi det.',
-  // 409-fallback: backend sender egen melding, brukes kun om den mangler. Matcher backendens nye
+  // 409-fallback: backend sender egen tekst i { error }, brukes kun om den mangler. Matcher backendens
   // tekst som peker mot innlogging (409-grenen viser Logg inn-lenka, magisk lenke om passord mangler):
-  duplikat:  'Denne e-posten er allerede registrert. Prøv å logge inn — har du ikke passord, be om magisk lenke.'
+  duplikat:  'Denne e-posten er allerede registrert. Prøv å logge inn — har du ikke passord, be om magisk lenke.',
+  // 429-fallback: rate-limit er MIDLERTIDIG. Ingen «prøv igjen nå» — be dem vente. Backendens egen
+  // { error }-tekst (ofte med antall minutter) vises når den finnes; dette er bare nødteksten.
+  rate:      'For mange forsøk på kort tid. Vent noen minutter før du sender skjemaet på nytt.'
 };
 var step1={};
 
@@ -489,17 +492,31 @@ async function submitFinal(){
     clearTimeout(timer); // svar mottatt — la ikke timeren fyre på et allerede-lest svar
     // Timing: hele bildeopplastingen skjer INNI denne POST-en (multipart), ikke som eget steg.
     console.log('[onboarding-timing] POST /api/onboarding (upload+bygg): '+Math.round(performance.now()-_tSubmit)+' ms · '+files.length+' bilder');
-    // 409: onboarding er IKKE idempotent — dedup-indeksen (orders.contact_email) svarer 409, og
-    // det finnes ingen id/slug/sesjon å gjenopprette med. En retry gir bare nytt 409, så INGEN
-    // «prøv igjen». Veien videre er innlogging: e-posten er allerede registrert. Derfor samme
-    // Logg inn-lenke som email_taken (visObError(..., true)). Vis backend-meldingen som den er.
-    if(res.status===409){
-      var d409=null; try{ d409=JSON.parse(await res.text()); }catch(e){}
-      visObError((d409 && d409.melding) || SUBMIT_ERR.duplikat, true);
+    // H6: ÉN felles non-2xx-håndtering. Backend sender feiltekst i { error } (409, 429, m.fl.) — les
+    // DEN (ikke .melding, som ikke finnes → ga alltid fallback) og vis den. SUBMIT_ERR brukes KUN når
+    // body mangler error eller ikke er JSON. Kroppen leses én gang her.
+    if(!res.ok){
+      var eBody=null; try{ eBody=JSON.parse(await res.text()); }catch(e){}
+      var serverFeil=(eBody && typeof eBody.error==='string' && eBody.error.trim()) ? eBody.error : null;
+      if(res.status===409){
+        // Onboarding er IKKE idempotent — dedup-indeksen (orders.contact_email) svarer 409, og det finnes
+        // ingen id/slug/sesjon å gjenopprette med. En retry gir bare nytt 409 → INGEN «prøv igjen».
+        // Terminal obError-skjerm med Logg inn-lenke (som email_taken). Vis backend-teksten.
+        visObError(serverFeil || SUBMIT_ERR.duplikat, true);
+        return;
+      }
+      // 429/5xx er retry-bare → tilbakestill knappen så skjemaet kan brukes igjen.
+      btn.disabled=false; btn.classList.remove('building'); btn.innerHTML=old;
+      if(res.status===429){
+        // Rate-limit er MIDLERTIDIG. Vis backendens tekst (ofte med ventetid) — IKKE «prøv igjen nå».
+        visSubmitFeil(serverFeil || SUBMIT_ERR.rate);
+        return;
+      }
+      // Andre non-2xx (5xx o.l.): transient. Server-tekst om den finnes, ellers generisk nett/prøv-igjen.
+      console.error('onboarding: server svarte '+res.status, serverFeil||'(ingen body.error)');
+      visSubmitFeil(serverFeil || SUBMIT_ERR.nett);
       return;
     }
-    // Andre non-2xx (5xx o.l.) er transiente → catch → inline .ob-err, «prøv igjen» i skjemaet.
-    if(!res.ok)throw new Error('server svarte '+res.status);
     // 200: ok:true kommer ALLTID (også når bygget kastet). slug er ENESTE pålitelige suksess-
     // signal, og bygget er SYNKRONT — manglende slug betyr feil NÅ, ikke «kommer snart».
     var raw='', data=null, parseOk=true;
