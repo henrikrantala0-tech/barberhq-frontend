@@ -4417,6 +4417,7 @@ async function initTrialNudge(){
 // filtrerer den bort før den svarer. Derfor ingen prosentandeler her — kun absolutte tall.
 // Omsetningen er rabattert (price_nok minus discount_pct), ikke listepris.
 var attrPeriod="siste_maaned";   // v2-default (rullende 30 d) — matcher aria-selected på #attrPeriod
+var _attrSeq=0;                  // M6: sekvensteller — rask periodebytte → siste kall vinner (som H3 plakat-preview)
 // Vekst «Hvor kundene kommer fra» — KUN Hentet inn-radene (ingen «På vei» her; den er en
 // Oversikt-nudge). Leser hentetInn.*, recovery→vinnTilbake. Tre armer (lojalitet er IKKE en arm — se diRaderHtml).
 // ⚠ KATEGORIER + REKKEFØLGE SPEILET AV renderDrivenBy() — HOLD DEM I SYNK (delte di-*-byggere).
@@ -4424,7 +4425,9 @@ async function renderAttribusjon(){
   var el=$("#attrRows"); if(!el)return;
   if(billingUkjent())return;   // som renderDrivenBy: ingen henting/render før planen er kjent (unngår skjold-på-Vekst i race-vinduet)
   var pk=document.getElementById('attrPeriod');
+  var seq=++_attrSeq;   // M6: sekvensvakt — kun det siste periodevalget får skrive #attrRows
   var data=await api.attribution(attrPeriod);
+  if(seq!==_attrSeq) return;   // et nyere periodevalg har overtatt mens kallet var i lufta → forkast (muligens trege) svaret
   if(!data){ el.innerHTML='<p class="wb-empty">Kunne ikke hente tallene akkurat nå.</p>'; return; } // 401→redirigert; annen feil→ærlig melding
   // Forsvar-i-dybden: Basis skal ALDRI vise ekte hentetInn-tall. Backend gater (dashboard.js: !krevVekst),
   // men skulle den regresjonen svikte og sende hentetInn til en Basis-konto, ignorerer vi det her og
