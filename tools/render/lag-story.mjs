@@ -67,6 +67,7 @@ async function mock(page, plan, tilgjengelige=7){
     if(p.endsWith('/story/ledige-timer/data'))    return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({tjenester:1,valgt_dager:parseInt(u.searchParams.get('dager')||'4',10),tilgjengelige_dager:tilgjengelige,undertekst:'denne uka',oppdatert:'Oppdatert tor 14:30',dager:[]})});
     if(p.endsWith('/story/ledige-timer/preview')) return route.fulfill({status:200,contentType:'text/html; charset=utf-8',body:previewHtml(parseInt(u.searchParams.get('dager')||'4',10), u.searchParams.get('lenke')||'av')});
     if(p.endsWith('/story/ledige-timer/render'))  return route.fulfill({status:200,contentType:'image/png',body:PNG1});
+    if(p==='/api/dashboard/ledige')               return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify({antall:5,vis_banner:true})});   // → Oversikt-knappen vises
     route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(/images|bookings|recent|services|hours|stats|attribution|winback|referrals|loyalty/.test(p)?[]:{})});});
 }
 const klikkDager = async (page,n)=>{ await page.locator('.story-dager-row .pk-seg',{hasText:new RegExp('^'+n+'$')}).click(); await page.waitForTimeout(180); };

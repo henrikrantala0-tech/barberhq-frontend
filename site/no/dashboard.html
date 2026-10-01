@@ -813,7 +813,11 @@
   #calOpenUpcoming:hover{background:var(--line)}   /* litt lysere flate (mørk: #242424 > surface; lys: subtil grå) */
   /* Fast «Lag story»-inngang på Oversikt (under Kommende bookinger). Full-bredde, åpner SAMME generator-
      modal (#storyOverlay) som Vekst-kortet, i posisjon over Oversikt. Tall-linja kommer i Commit 2. */
+  /* Tall-linje over «Lag story»-knappen (Commit 2): «Du har N ledige timer i dag/i morgen». Skjult (hidden) til /ledige svarer med antall>0. */
+  .ovs-story-linje{margin:0 0 8px;font-size:13px;font-weight:500;color:var(--ink-2);letter-spacing:-.01em}
+  .ovs-story-linje[hidden]{display:none}
   #storyOpenOversikt{display:block;width:100%;height:48px;margin:0 0 28px;appearance:none;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;cursor:pointer}
+  #storyOpenOversikt[hidden]{display:none}   /* author display:block ellers slår UA [hidden] → vakt mot vis-alltid */
   #storyOpenOversikt:hover{border-color:var(--ink)}
   .up-day{margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
   .up-day:not(:first-child){margin-top:14px}
@@ -1585,9 +1589,12 @@
 
     <!-- Fast inngang til «Lag story»-generatoren (ÉN komponent — SAMME #storyOverlay som Vekst-kortet,
          ingen kopi). Åpner som modal OVER Oversikt; lukking returnerer hit (ingen fane-bytte). Tilgjengelig
-         på Basis + Vekst (generatoren låses aldri). Tall-linja «Du har N ledige timer i dag/i morgen»
-         kommer i Commit 2 når backend gir slot-antall fra samme kilde som bookingsiden. -->
-    <button type="button" id="storyOpenOversikt">Lag story med ledige timer</button>
+         på Basis + Vekst (generatoren låses aldri).
+         Knapp OG tall-linje vises KUN når /ledige gir vis_banner=true for i dag eller i morgen (begge
+         skjult som standard). Tekst «Du har N ledige timer i dag/i morgen» (antall fra /ledige). Begge
+         false / 404 / feil → verken knapp eller linje (stille). Vekst-kortet er uberørt, alltid synlig. -->
+    <p class="ovs-story-linje" id="storyLedigeLinje" hidden></p>
+    <button type="button" id="storyOpenOversikt" hidden>Lag story med ledige timer</button>
 
     <!-- 2. Periode-piller + KPI. Pillene styrer KPI/diagram/Drevet av (period-scope) og følger
          KPI hit — de sitter IKKE over Kommende, som ikke er periodefiltrert. -->
@@ -2622,6 +2629,12 @@
   .cal-dayhead{height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--ink-2);border-bottom:1px solid var(--line);gap:6px}
   .cal-dayhead.is-today{color:var(--info)}
   .cal-daybody{position:relative}   /* høyde settes inline = (yMax−yMin)×PX_PER_MIN; ingen flex-stretch */
+  /* «Lag story»-banner øverst i dagen (Commit 2) — fast plassering mellom dag-header og tidsgrid, ALDRI
+     i en tidsluke (påvirker ikke trykk på blokker). Vises kun når /ledige gir vis_banner=true. */
+  .cal-story-banner{flex-shrink:0;display:flex;align-items:stretch;gap:1px;border-bottom:1px solid var(--line);background:var(--info-bg,rgba(47,128,237,.1))}
+  .cal-story-cta{flex:1;min-width:0;appearance:none;border:0;background:transparent;cursor:pointer;font-family:inherit;font-size:11.5px;font-weight:600;color:var(--info);letter-spacing:-.01em;padding:7px 8px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .cal-story-x{flex:0 0 auto;appearance:none;border:0;background:transparent;cursor:pointer;color:var(--mut);font-size:15px;line-height:1;padding:0 9px}
+  .cal-story-x:hover{color:var(--ink)}
   .cal-hourline{position:absolute;left:0;right:0;border-top:1px solid var(--line);pointer-events:none}
   /* Halvtimeslinje: samme tidsrom-logikk som timelinja, men svakere (lavere opasitet). */
   .cal-halfline{position:absolute;left:0;right:0;border-top:1px solid var(--line);opacity:.4;pointer-events:none}
@@ -3101,7 +3114,48 @@ function fillMonths(months){
   meny.innerHTML=html;
 }
 
+// ── «Ledige timer»-tall (Commit 2): delt kilde GET /api/dashboard/ledige?dato → {antall, vis_banner}.
+//    404/feil → null → linje/banner skjules STILLE (ingen feilmelding til barberen). INGEN regel-logikk
+//    her — vis_banner OG frekvensvernet avgjøres BACKEND-side. Cacher kun vellykkede svar per dato (session).
+var _ledigeCache={};
+async function hentLedigeDag(dato){
+  if(_ledigeCache[dato]) return _ledigeCache[dato];
+  try{ var r=await apiFetch('/api/dashboard/ledige?dato='+encodeURIComponent(dato)); if(r&&r.ok){ var d=await r.json(); if(d&&typeof d.antall==='number'){ _ledigeCache[dato]=d; return d; } } }catch(e){}
+  return null;   // ikke cachet → prøver igjen senere (f.eks. når ruta går live)
+}
+// Frekvensvern bor i backend. Når knapp/banner FAKTISK vises: POST /vist {dato} ÉN gang per dato (dedup,
+// ikke per render) → backend flipper vis_banner for uke-syklusen. Vi invaliderer cachen så det andre
+// stedet (Oversikt vs kalender) re-henter og ser false → vises maks ÉTT sted. «×»: POST /skjul {dato} +
+// optimistisk false lokalt (ingen re-visning økten ut). Alt fire-and-forget; 404/feil ignoreres stille.
+var _vistPostet={};
+function meldVist(dato){ if(!dato||_vistPostet[dato]) return; _vistPostet[dato]=true;
+  try{ apiFetch('/api/dashboard/ledige/vist',{method:'POST',body:JSON.stringify({dato:dato})}).catch(function(){}); }catch(e){}
+  delete _ledigeCache[dato]; }
+function meldSkjul(dato){ if(!dato) return;
+  try{ apiFetch('/api/dashboard/ledige/skjul',{method:'POST',body:JSON.stringify({dato:dato})}).catch(function(){}); }catch(e){}
+  _ledigeCache[dato]={antall:0,vis_banner:false}; }
+// Etter VELLYKKET deling/nedlasting av en story (ikke ved avbrutt deling): sterkeste frekvensvern-signalet
+// — barberen LAGET faktisk en story. Gjelder generatoren uansett inngang (Oversikt/kalender/Vekst), så
+// den henges på hqDel-knappen (opts.onSuksess), ikke per inngang. Fire-and-forget; 404/feil ignoreres.
+function meldLaget(){ try{ apiFetch('/api/dashboard/ledige/laget',{method:'POST'}).catch(function(){}); }catch(e){} }
+function ledigTekst(n){ return n===1 ? '1 ledig time' : n+' ledige timer'; }
+// Oversikt: KNAPP + tall-linje vises kun når /ledige gir vis_banner=true for i dag eller i morgen
+// (i dag prioritert). Ellers (begge false / 404 / feil) skjules begge stille. Tekst-antall fra /ledige.
+async function loadStoryLedigeLinje(){
+  var linje=$("#storyLedigeLinje"), knapp=$("#storyOpenOversikt"); if(!linje||!knapp) return;
+  function skjul(){ linje.hidden=true; linje.textContent=''; knapp.hidden=true; }
+  function vis(d,naar,dato){ linje.textContent='Du har '+ledigTekst(d.antall)+' '+naar; linje.hidden=false; knapp.hidden=false; meldVist(dato); }
+  var tz='Europe/Oslo';
+  var iDag=new Date().toLocaleDateString('en-CA',{timeZone:tz});
+  var m=new Date(iDag+'T12:00:00Z'); m.setUTCDate(m.getUTCDate()+1); var iMorgen=m.toISOString().slice(0,10);
+  var d0=await hentLedigeDag(iDag);
+  if(d0&&d0.vis_banner){ vis(d0,'i dag',iDag); return; }
+  var d1=await hentLedigeDag(iMorgen);
+  if(d1&&d1.vis_banner){ vis(d1,'i morgen',iMorgen); return; }
+  skjul();
+}
 async function loadOversikt(){
+  loadStoryLedigeLinje();   // uavhengig av stats (fire-and-forget; skjuler seg selv ved 404/feil)
   $("#rangeLabel").textContent=rangeText(curPeriod);
   // M-8: api.statsDaily/bookings degraderer 4xx/5xx til tom akse selv, men en HARD nettverksfeil
   // (offline/DNS) kaster gjennom apiFetch. Uten try/catch ville #stats bli stående på «Laster …».
@@ -4025,9 +4079,40 @@ function renderGrid(){
     cols+='<div class="cal-day" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px">'+lines+blocks+'</div></div>';
   });
   $("#calDays").innerHTML=cols;
+  oppdaterKalenderBannere(keys);   // Commit 2: «Lag story»-banner øverst i dagen når /ledige gir vis_banner
   var db=$("#calDateBtn");if(db)db.textContent=calHeadText(CAL.active)+' ▾';
   var tb=$("#calToday");if(tb)tb.hidden=(CAL.active===osloTodayKey());   // «I dag» kun når valgt ≠ i dag
   tegnNaaStrek(keys,y);
+}
+// «Lag story»-banner (Commit 2): per synlig dag, ØVERST i dagen (mellom header og tidsgrid — aldri i en
+// tidsluke). Vises kun når /ledige gir vis_banner=true. Når det faktisk vises → meldVist(k) (backend-
+// frekvensvern, dedup per dato; invaliderer cachen → Oversikt vs kalender viser maks ÉTT sted). «×» →
+// meldSkjul(k) (INGEN localStorage; regelen bor i backend). Åpner samme generator (window.aapneStory)
+// der man er; kalenderen blir stående under (z-index 1000 > 500).
+// Kalender-nøkkelen er local-midnight-timestamp av OSLO-datoen (osloTodayKey/calNesteKey: new Date(y,mo-1,d)).
+// Local-gettere round-tripper derfor til Oslo-datoen → samme YYYY-MM-DD som Oversiktens en-CA/Oslo-streng
+// (samme cache/dedup-nøkkel på tvers av Oversikt↔kalender, uansett nettleser-tz). IKKE toLocaleDateString(Oslo)
+// på nøkkelen — den er allerede lokal-midnatt, ikke et vilkårlig tidspunkt.
+function keyTilDato(k){ var d=new Date(k); return d.getFullYear()+'-'+String(d.getMonth()+1).padStart(2,'0')+'-'+String(d.getDate()).padStart(2,'0'); }
+async function oppdaterKalenderBannere(keys){
+  for(var i=0;i<keys.length;i++){ (function(k){
+    var dato=keyTilDato(k);
+    var dag=document.querySelector('.cal-day[data-key="'+k+'"]'); if(!dag) return;
+    var gammel=dag.querySelector('.cal-story-banner'); if(gammel) gammel.remove();
+    hentLedigeDag(dato).then(function(d){
+      if(!d||!d.vis_banner) return;
+      var naa=document.querySelector('.cal-day[data-key="'+k+'"]'); if(!naa||naa.querySelector('.cal-story-banner')) return; // kan ha re-rendret i mellomtiden
+      var b=document.createElement('div'); b.className='cal-story-banner';
+      var cta=document.createElement('button'); cta.type='button'; cta.className='cal-story-cta'; cta.textContent=ledigTekst(d.antall)+' · Lag story';
+      cta.addEventListener('click',function(){ if(window.aapneStory) window.aapneStory(); });
+      var x=document.createElement('button'); x.type='button'; x.className='cal-story-x'; x.setAttribute('aria-label','Skjul'); x.textContent='×';
+      x.addEventListener('click',function(){ meldSkjul(dato); b.remove(); });
+      b.appendChild(cta); b.appendChild(x);
+      var head=naa.querySelector('.cal-dayhead');
+      if(head) head.insertAdjacentElement('afterend', b); else naa.insertBefore(b, naa.firstChild);
+      meldVist(dato);   // faktisk vist → meld til backend (dedup per dato; invaliderer cachen)
+    });
+  })(keys[i]); }
 }
 // Nå-strek: kun når i dag (Oslo) er blant synlige kolonner OG nå ligger innenfor vist tidsrom.
 function tegnNaaStrek(keys,y){
@@ -8148,14 +8233,15 @@ window.hqDel = (function(){
       var u=URL.createObjectURL(b),a=document.createElement('a'); a.href=u; a.download=o.filnavn||'bilde.png';
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(u);},1000);
       o.toast(o.nedSuksess||'Lastet ned',true);
+      if(o.onSuksess) o.onSuksess();   // vellykket nedlasting → onSuksess (story: meldLaget)
     }).catch(function(){ o.toast('Kunne ikke laste ned. Prøv igjen.',false); }).finally(function(){ laster1(btn); });
   }
   // Feilet deling (ikke avbrutt): fall tilbake til nedlasting KUN der den virker; på iOS ærlig feiltoast.
   function delFeil(btn,o){ if(nedlastingTrygg) lastNed(btn,o); else o.toast('Kunne ikke dele. Prøv igjen.',false); }
   function share(file,btn,o){
     laster0(btn,'Deler …');
-    navigator.share({files:[file]}).then(function(){ laster1(btn); o.toast(o.delSuksess||'Delt',true); })
-      .catch(function(e){ laster1(btn); if(e&&e.name==='AbortError') return;  /* bruker avbrøt → ingenting */ delFeil(btn,o); });
+    navigator.share({files:[file]}).then(function(){ laster1(btn); o.toast(o.delSuksess||'Delt',true); if(o.onSuksess) o.onSuksess(); })  // vellykket deling → onSuksess
+      .catch(function(e){ laster1(btn); if(e&&e.name==='AbortError') return;  /* bruker avbrøt → ingen onSuksess */ delFeil(btn,o); });
   }
   function handling(btn,o){
     if(!kanDele) return lastNed(btn,o);                         // ikke del-bar (typisk PC) → nedlasting (trygg der)
@@ -8168,7 +8254,7 @@ window.hqDel = (function(){
   }
   return {
     kanDele:kanDele,
-    // Konfigurer ÉN knapp. o={getBlob():Promise<Blob>, filnavn, toast(tekst,ok), ferskBlob?():Blob|null, forberedDel?():void, delSuksess?, nedSuksess?}
+    // Konfigurer ÉN knapp. o={getBlob():Promise<Blob>, filnavn, toast(tekst,ok), ferskBlob?():Blob|null, forberedDel?():void, onSuksess?():void (etter vellykket del/nedlasting, ikke ved avbrutt), delSuksess?, nedSuksess?}
     settKnapp:function(btn,o){ btn.textContent=kanDele?'Del':'Last ned'; btn.onclick=function(){ handling(btn,o); }; }
   };
 })();
@@ -8290,7 +8376,7 @@ window.hqDel = (function(){
     // ÉN knapp (delt hqDel): «Del» hvis enheten kan dele filer, ellers «Last ned». iOS: ferskBlob → synkron share.
     var handl=document.createElement('div'); handl.className='pk-actions';
     var delKnapp=document.createElement('button'); delKnapp.type='button'; delKnapp.className='btn-outline';
-    hqDel.settKnapp(delKnapp, { getBlob:hentBlob, ferskBlob:ferskBlob, forberedDel:forberedDel, filnavn:'ledige-timer.png', toast:toast });
+    hqDel.settKnapp(delKnapp, { getBlob:hentBlob, ferskBlob:ferskBlob, forberedDel:forberedDel, filnavn:'ledige-timer.png', toast:toast, onSuksess:meldLaget });
     handl.appendChild(delKnapp);
     kontr.appendChild(handl);
   }
