@@ -811,6 +811,10 @@
      «Oppgrader til Vekst»). Leser som trykkbar flate mot panelets --bg, konkurrerer ikke med oppsalget. */
   #calOpenUpcoming{display:block;width:100%;height:48px;margin:12px 0 28px;appearance:none;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;cursor:pointer}
   #calOpenUpcoming:hover{background:var(--line)}   /* litt lysere flate (mørk: #242424 > surface; lys: subtil grå) */
+  /* Fast «Lag story»-inngang på Oversikt (under Kommende bookinger). Full-bredde, åpner SAMME generator-
+     modal (#storyOverlay) som Vekst-kortet, i posisjon over Oversikt. Tall-linja kommer i Commit 2. */
+  #storyOpenOversikt{display:block;width:100%;height:48px;margin:0 0 28px;appearance:none;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;cursor:pointer}
+  #storyOpenOversikt:hover{border-color:var(--ink)}
   .up-day{margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
   .up-day:not(:first-child){margin-top:14px}
   .up-row{display:flex;align-items:center;gap:10px;min-height:56px;border-top:1px solid var(--line)}
@@ -1578,6 +1582,12 @@
       <div id="upcomingList"><div class="loading">Laster …</div></div>
       <button id="calOpenUpcoming">Åpne kalender</button>
     </div>
+
+    <!-- Fast inngang til «Lag story»-generatoren (ÉN komponent — SAMME #storyOverlay som Vekst-kortet,
+         ingen kopi). Åpner som modal OVER Oversikt; lukking returnerer hit (ingen fane-bytte). Tilgjengelig
+         på Basis + Vekst (generatoren låses aldri). Tall-linja «Du har N ledige timer i dag/i morgen»
+         kommer i Commit 2 når backend gir slot-antall fra samme kilde som bookingsiden. -->
+    <button type="button" id="storyOpenOversikt">Lag story med ledige timer</button>
 
     <!-- 2. Periode-piller + KPI. Pillene styrer KPI/diagram/Drevet av (period-scope) og følger
          KPI hit — de sitter IKKE over Kommende, som ikke er periodefiltrert. -->
@@ -2687,7 +2697,7 @@
   .story-block{display:flex;flex-direction:column;gap:10px}
   /* .pk-label arves fra plakat (flex:0 0 96px = bredde i rad). I kolonne-blokka blir det HØYDE → nøytraliser. */
   .story-block .pk-label{flex:0 0 auto}
-  /* Antall dager: knapper 4–10 på én rad, lik bredde. .pk-seg gir valgt-markering (.on). */
+  /* Antall dager: knapper 4–7 på én rad, lik bredde. .pk-seg gir valgt-markering (.on). */
   .story-dager-row{display:flex;gap:6px}
   .story-dager-row .pk-seg{flex:1;text-align:center;padding:9px 0}
   /* Lenke: to gjensidig utelukkende avkrysninger (.pk-check). Hjelpetekst innrykket under «Book her ↓». */
@@ -8178,14 +8188,25 @@ function settPlakatVersjon(v){
 <script>
 /* ===== «Lag story» — ledige timer-story-generator (Basis + Vekst) =====
    Selvstendig editor (mønster fra plakat-editoren, egne funksjoner for å ikke røre plakat-IIFE-en).
-   Endepunkter GET /api/dashboard/story/ledige-timer/{preview,render}. Preview via iframe.src (GET) —
-   bevarer backendens CSP-nonce for fit-scriptet (srcdoc ville mistet CSP-headeren). Tilgjengelig på
-   BÅDE Basis og Vekst (kortet ligger utenfor Vekst-låsen; endepunktene svarer 200 for Basis). */
+   Endepunkter GET /api/dashboard/story/ledige-timer/{data,preview,render}. Preview via iframe.src (GET,
+   ÉN gang per åpning) — bevarer backendens CSP-nonce for fit-scriptet (srcdoc ville mistet CSP-headeren).
+   KONTRAKT (SAK 1): previewen lastes ÉN gang; dag-/lenkebytte skjer KLIENTSIDE ved postMessage til
+   iframen — {type:'ledige-timer-set', dager:N, lenke:X}, målrettet backend-origin (location.origin, via
+   Netlify-proxyen same-origin), ALDRI '*'. INGEN reload, INGEN nettverkskall ved bytte. /data hentes ÉN
+   gang ved åpning for å kappe dag-velgeren til min(7, tilgjengelige_dager). «Last ned» → /render?dager&lenke.
+   Tilgjengelig på BÅDE Basis og Vekst (kortet ligger utenfor Vekst-låsen; endepunktene svarer 200 for Basis). */
 (function(){
   var BASE='/api/dashboard/story/ledige-timer';
   var ov, frame, prev, laster, feil, kontr, statusLinje;
   var st={ dager:4, lenke:'av' };   // tjeneste velges av backend (første hoved); ingen service_id fra frontend
-  var _t=null;
+  var MAKS_DAGER=7;                 // velgeren går 4–7 (backend henter maks 7 åpne dager; 8–10 fjernet)
+  var _t=null, _maks=MAKS_DAGER;    // _maks = min(MAKS_DAGER, tilgjengelige_dager) fra /data — kapper dag-velgeren
+  // Preview lastes via relativ BASE → iframen er SAME-ORIGIN med dashbordet (Netlify-proxyen serverer
+  // Lastes ÉN gang per åpning: full-vindu-HTML (alle åpne dager opp til 7 + alle lenke-varianter i DOM).
+  // Backend setter initialt utsnitt via ?dager&lenke; videre bytte skjer klientside (sendApply).
+  // backend på samme origin i prod). postMessage til iframen målrettes derfor til location.origin, ALDRI
+  // '*' (så en melding aldri lekker til uventet innhold-origin). Lokal dev: dashbordet + API er også samme origin.
+  var STORY_ORIGIN=location.origin;
   var ER_IOS=/iP(hone|od|ad)/.test(navigator.userAgent)||(navigator.platform==='MacIntel'&&(navigator.maxTouchPoints||0)>1);
   function el(id){ return document.getElementById(id); }
   function q(){ return 'dager='+st.dager+'&lenke='+encodeURIComponent(st.lenke); }
@@ -8199,10 +8220,28 @@ function settPlakatVersjon(v){
     if(!frame) return;
     if(feil) feil.style.display='none'; visLaster(true);
     if(statusLinje){ statusLinje.hidden=true; statusLinje.textContent=''; } // vent på ny melding fra iframen
-    frame.onload=function(){ visLaster(false); if(ER_IOS) forberedDel(); };
+    frame.onload=function(){ visLaster(false); sendApply(); };   // sendApply dekker race: bytter brukeren før load, rettes utsnittet her
     frame.src=BASE+'/preview?'+q();
   }
-  function planlegg(){ clearTimeout(_t); _t=setTimeout(lastPreview,250); } // debounce ~250ms
+  // Dag-/lenkebytte = REN KLIENTSIDE: be iframen vise valgt utsnitt ({type:'ledige-timer-set', dager, lenke},
+  // målrettet STORY_ORIGIN). INGEN reload, INGEN nettverkskall, ingen spinner. iframen melder
+  // «shownDays/totalDays» tilbake via message-lytteren under. (iOS del-blob klargjøres debouncet i
+  // bakgrunnen via /render — blokkerer aldri.)
+  function sendApply(){
+    if(frame && frame.contentWindow){ try{ frame.contentWindow.postMessage({type:'ledige-timer-set', dager:st.dager, lenke:st.lenke}, STORY_ORIGIN); }catch(e){} }
+    planleggDel();
+  }
+  function planleggDel(){ if(!ER_IOS) return; clearTimeout(_t); _t=setTimeout(forberedDel,400); }
+
+  // /data hentes ÉN gang ved kort-åpning. tilgjengelige_dager (nytt kontrakt-felt, erstatter gamle dager_vist)
+  // kapper dag-velgeren til min(MAKS_DAGER, …) så barbereren aldri kan be om flere dager enn det finnes åpne
+  // dager for. Feil/0/manglende → fall til MAKS_DAGER (vis hele 4–7-spennet). Returnerer promise med antallet.
+  function hentMaksDager(){
+    return apiFetch(BASE+'/data?dager='+st.dager,{sameOrigin:true}).then(function(r){
+      if(!r||!r.ok) return MAKS_DAGER;
+      return r.json().then(function(d){ var t=Number(d&&d.tilgjengelige_dager); return (t>0)?t:MAKS_DAGER; });
+    }).catch(function(){ return MAKS_DAGER; });
+  }
 
   // postMessage fra story-iframen: {type:'ledige-timer-story', shownDays, totalDays}. Robust på tvers av
   // origin (Netlify-proxy i prod = same-origin; lokal dev = kryss-origin — postMessage funker begge).
@@ -8225,13 +8264,15 @@ function settPlakatVersjon(v){
 
   function byggKontroller(){
     kontr.innerHTML='';
-    // Antall dager — knapper 4–10 (standard 4), .pk-seg med valgt-markering
+    // Antall dager — knapper 4..min(MAKS_DAGER, tilgjengelige_dager) (standard 4), .pk-seg med valgt-markering.
+    // _maks settes av /data ved åpning; default MAKS_DAGER (7) til svaret er inne.
     var dBlk=document.createElement('div'); dBlk.className='story-block';
     var dLbl=document.createElement('span'); dLbl.className='pk-label'; dLbl.textContent='Antall dager'; dBlk.appendChild(dLbl);
     var dRow=document.createElement('div'); dRow.className='story-dager-row';
-    [4,5,6,7,8,9,10].forEach(function(n){
+    var dager=[]; for(var dn=4; dn<=Math.max(4,Math.min(MAKS_DAGER,_maks)); dn++) dager.push(dn);
+    dager.forEach(function(n){
       var b=document.createElement('button'); b.type='button'; b.className='pk-seg'+(st.dager===n?' on':''); b.textContent=String(n);
-      b.addEventListener('click',function(){ st.dager=n; [].forEach.call(dRow.children,function(x){x.classList.toggle('on',x===b);}); planlegg(); });
+      b.addEventListener('click',function(){ st.dager=n; [].forEach.call(dRow.children,function(x){x.classList.toggle('on',x===b);}); sendApply(); });
       dRow.appendChild(b);
     });
     dBlk.appendChild(dRow); kontr.appendChild(dBlk);
@@ -8246,11 +8287,11 @@ function settPlakatVersjon(v){
     var hj=document.createElement('p'); hj.className='story-hjelp'; hj.textContent='Legg til klikkbar lenke selv'; hj.hidden=(st.lenke!=='sticker');
     cbS.input.addEventListener('change',function(){
       if(cbS.input.checked){ st.lenke='sticker'; cbB.input.checked=false; } else { st.lenke='av'; }
-      hj.hidden=(st.lenke!=='sticker'); planlegg();
+      hj.hidden=(st.lenke!=='sticker'); sendApply();
     });
     cbB.input.addEventListener('change',function(){
       if(cbB.input.checked){ st.lenke='bio'; cbS.input.checked=false; } else { st.lenke='av'; }
-      hj.hidden=(st.lenke!=='sticker'); planlegg();
+      hj.hidden=(st.lenke!=='sticker'); sendApply();
     });
     lCol.appendChild(cbS.row); lCol.appendChild(hj); lCol.appendChild(cbB.row);
     lBlk.appendChild(lCol); kontr.appendChild(lBlk);
@@ -8307,16 +8348,26 @@ function settPlakatVersjon(v){
   function aapne(){
     if(!ov) return;
     document.body.classList.add('story-open'); ov.classList.add('vis');
-    byggKontroller();
-    requestAnimationFrame(skalerFrame);
-    lastPreview();   // vis storyen umiddelbart med standardvalg (4 dager, lenke av; backend velger tjeneste)
+    visLaster(true);                    // spinner mens /data henter tilgjengelige_dager (ÉN gang)
+    hentMaksDager().then(function(m){
+      _maks=Math.max(4,Math.min(MAKS_DAGER,m));
+      if(st.dager>_maks) st.dager=_maks; // klamp hvis forrige valg > tilgjengelige dager nå
+      byggKontroller();                 // dag-velger kappet til _maks
+      requestAnimationFrame(skalerFrame);
+      lastPreview();                    // preview ÉN gang (4 dager/valgt, lenke av; backend velger tjeneste)
+    });
   }
   function lukk(){ if(!ov)return; ov.classList.remove('vis'); document.body.classList.remove('story-open'); clearTimeout(_t); if(frame) frame.removeAttribute('src'); }
 
   function init(){
     ov=el('storyOverlay'); if(!ov) return;
     frame=el('storyFrame'); prev=ov.querySelector('.story-prev'); laster=el('storyLaster'); feil=el('storyFeil'); kontr=el('storyKontroller');
-    var b=el('storyOpen'); if(b) b.addEventListener('click', aapne);
+    // ÉN generator, flere innganger (ingen kopi): Vekst-kortet (#storyOpen) + Oversikt-knappen
+    // (#storyOpenOversikt) åpner SAMME aapne. Eksponert globalt så dynamiske innganger (kalender-
+    // banneret i Commit 2) kan åpne den uten duplisering. aapne overlegger gjeldende fane (z-index 1000)
+    // og endrer ALDRI aktivt panel → lukking returnerer dit brukeren var (Oversikt/kalender/Vekst).
+    [el('storyOpen'), el('storyOpenOversikt')].forEach(function(b){ if(b) b.addEventListener('click', aapne); });
+    window.aapneStory = aapne;
     var x=el('storyX'); if(x) x.addEventListener('click', lukk);
     window.addEventListener('resize', function(){ if(ov.classList.contains('vis')) skalerFrame(); });
     document.addEventListener('keydown', function(e){ if(e.key==='Escape' && ov.classList.contains('vis')) lukk(); });
