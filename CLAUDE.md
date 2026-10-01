@@ -894,25 +894,6 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
     (Pris-0-markøren som sto her er GJORT — `5fe012d`, se «Løst post-launch».)
 
 ### Åpne tester (ikke kjørt ennå)
-- **Vervingsflyten ende-til-ende mot prod — LANSERINGSBLOKKER, aldri kjørt.** Krever prod-DB +
-  backend-sesjonen (én sesjon per repo): frontend driver UI-leddene, backend kjører verifiserings- og
-  opprydnings-SQL (Railway `.cjs` i `/app`). Plan (klar til kjøring når backend er ledig):
-  1. **Bekreft vekst-gate FØRST — ellers testes ingenting.** `settleBookingRewards` (`referralSettle.js:100`,
-     backend) gir `return null` hvis `effektivPlan !== 'vekst'` (trial teller som vekst). Sjekk:
-     `SELECT id,slug,subscription_status,plan,trial_start_at FROM barbers WHERE slug='<test>'`.
-  2. **Fem ledd med DB-effekt:** (a) *Vervelenke* — ingen skriving; lenka bærer verver A's
-     `customers.referral_code`. (b) *`?ref=`-booking* — ny kunde B med `customers.referred_by=A.id` + ny
-     `bookings`-rad (`reward_settled_at=NULL`). (c) *Fullført* — `bookings.status` ikke avlyst/no-show →
-     oppgjør. (d) *Reward* — `INSERT referral_rewards` (referrer=A, referred=B, `discount_pct`-snapshot,
-     recipient, status `utlost`/`brukt`, `brukt_ny_at`, `bonus_utlop_at=ends_at+32d`, `verver_bonus_gjelder`);
-     `ON CONFLICT (referred_customer_id)` idempotent; `bookings.discount_pct` snapshottet (`:176`). (e) *Pill* —
-     `GET /bookings.referral_discount` → `discountPill` i dashbordet.
-  3. **Oppgjøret må trigges MANUELT via «fullført».** Time-sweepen plukker kun `ends_at < now()−3t`
-     (`SETTLE_CUTOFF`), så en booking lagt LANGT FREM auto-oppgjøres aldri. Manuell PATCH
-     `/bookings/:id {status:'fullfort'}` → `settleBookingRewards` har INGEN grace-sjekk → settler straks.
-  4. **SMS av** (`sms_rebooking_enabled` + påminnelse) før testen, på igjen etter. Throwaway A+B.
-  5. **Opprydning i FK-rekkefølge:** `referral_rewards` → `bookings` → `customers`
-     (WHERE `barber_id='<test>'`), så `SELECT count(*)=0` på alle tre.
 - **Test full klikk-flyt med ekte klippbilde** — se «Data / backend-avhengig» punkt 10.
 
 ### Lav / polish
