@@ -8400,7 +8400,11 @@ window.hqDel = (function(){
     var dBlk=document.createElement('div'); dBlk.className='story-block';
     var dLbl=document.createElement('span'); dLbl.className='pk-label'; dLbl.textContent='Antall dager'; dBlk.appendChild(dLbl);
     var dRow=document.createElement('div'); dRow.className='story-dager-row';
-    var dager=[]; for(var dn=4; dn<=Math.max(4,Math.min(MAKS_DAGER,_maks)); dn++) dager.push(dn);
+    // Velgeren viser KUN gyldige valg: 4..min(7,tilgjengelige) normalt, men har barbereren færre enn 4
+    // åpne dager faller nedre grense til tilgjengelige_dager (hi) → ett valg = N, aldri «4» der det bare
+    // finnes 1–3. Ett er alltid valgt (st.dager klampes til [lo,hi] i aapne). (M1)
+    var hi=Math.max(1,Math.min(MAKS_DAGER,_maks)), lo=Math.min(4,hi);
+    var dager=[]; for(var dn=lo; dn<=hi; dn++) dager.push(dn);
     dager.forEach(function(n){
       var b=document.createElement('button'); b.type='button'; b.className='pk-seg'+(st.dager===n?' on':''); b.textContent=String(n);
       b.addEventListener('click',function(){ st.dager=n; [].forEach.call(dRow.children,function(x){x.classList.toggle('on',x===b);}); sendApply(); });
@@ -8464,8 +8468,9 @@ window.hqDel = (function(){
     document.body.classList.add('story-open'); ov.classList.add('vis');
     visLaster(true);                    // spinner mens /data henter tilgjengelige_dager (ÉN gang)
     hentMaksDager().then(function(m){
-      _maks=Math.max(4,Math.min(MAKS_DAGER,m));
-      if(st.dager>_maks) st.dager=_maks; // klamp hvis forrige valg > tilgjengelige dager nå
+      _maks=Math.max(1,Math.min(MAKS_DAGER,m));   // M1: gulv 1 (ikke 4) → virker med 1–3 åpne dager
+      var lo=Math.min(4,_maks);
+      st.dager=Math.min(_maks, Math.max(lo, st.dager)); // klamp inn i [lo,_maks] så ett valg alltid er markert
       byggKontroller();                 // dag-velger kappet til _maks
       requestAnimationFrame(skalerFrame);
       lastPreview();                    // preview ÉN gang (4 dager/valgt, lenke av; backend velger tjeneste)
