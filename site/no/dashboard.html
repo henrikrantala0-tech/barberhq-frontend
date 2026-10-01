@@ -8273,7 +8273,7 @@ window.hqDel = (function(){
     return (f?Promise.resolve(f):o.getBlob()).then(function(b){
       var u=URL.createObjectURL(b),a=document.createElement('a'); a.href=u; a.download=o.filnavn||'bilde.png';
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(function(){URL.revokeObjectURL(u);},1000);
-      o.toast(o.nedSuksess||'Lastet ned',true);
+      o.toast(o.nedSuksess||'Lagret',true);
       if(o.onSuksess) o.onSuksess();   // vellykket nedlasting → onSuksess (story: meldLaget)
     }).catch(function(){ o.toast('Kunne ikke laste ned. Prøv igjen.',false); }).finally(function(){ laster1(btn); });
   }
