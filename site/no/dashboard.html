@@ -961,7 +961,11 @@
   /* «Hvor kundene kommer fra» v2 — Hentet inn + På vei. Farger fra tema-variablene (adapterer lys/mørk;
      designets dark-hex #141414/#242424/#8a8a8a/#cfcfcf/#4d8bff = mørk-tema-verdiene). Ingen prikker. */
   .di-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
-  .di-title{padding:18px 18px 0;font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+  /* .ovs-h = DELT seksjonsoverskrift på Oversikt (ÉN kilde for størrelse/vekt/linjehøyde). Brukes av
+     både «Kommende bookinger» og driven-by-kortets «Hentet inn av BarberHQ» (.di-title). Egen klasse,
+     ikke .block-h (13px) — så «Omsetning»/«Betaling» m.fl. ikke endres. */
+  .ovs-h{font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
+  .di-title{padding:18px 18px 0}   /* kort-tittel = .ovs-h (typografi) + kort-padding */
   .di-hentet{padding:26px 18px 2px}   /* #2: 26px topp gir luft over totalen (Oversikt) */
   .di-eyebrow{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mut);margin-bottom:12px}
   /* Totalblokka (turn 3): to stablede tall + periode-etikett. */
@@ -1562,7 +1566,10 @@
 
     <!-- 1. Kommende bookinger — løftet ut av .bottom-grid til topp. -->
     <div class="ovs-upcoming">
-      <p class="block-h">Kommende bookinger</p>
+      <!-- .ovs-h = DELT seksjonsoverskrift på Oversikt: samme typografi (15px/700) som driven-by-kortets
+           «Hentet inn av BarberHQ» (.di-title). IKKE .block-h (13px, brukt av «Omsetning» m.fl. — urørt).
+           Egen bunn-margin til lista; ovs-h har ingen margin selv (di-title bruker padding i kort-kontekst). -->
+      <p class="ovs-h" style="margin:0 0 8px">Kommende bookinger</p>
       <div id="upcomingList"><div class="loading">Laster …</div></div>
       <button id="calOpenUpcoming">Åpne kalender</button>
     </div>
@@ -3483,7 +3490,7 @@ function oppdaterSkjoldFlater(){
 // ── «Hvor kundene kommer fra» v2 — delte byggere (brukt av renderDrivenBy + renderAttribusjon) ──
 // Kontrakt (backend 46898fd+d9048ee): { paaVei, hentetInn? }. hentetInn MANGLER for Basis —
 // fravær = signalet, aldri en tom verdi. Alt leses via ?. / ||-guard → manglende nøkkel kaster aldri.
-function diTitle(){ return '<div class="di-title">Hentet inn av BarberHQ</div>'; }
+function diTitle(){ return '<div class="di-title ovs-h">Hentet inn av BarberHQ</div>'; }
 // Totalblokka (turn 3): to stablede tall «N klipp» + «X kr» + periode-etikett. total.count===0 →
 // erstattes av ÉN dempet linje (14.09) i stedet for «0 klipp / 0 kr» — så «På vei» dominerer på tom periode.
 function diTotalHtml(count, revenue, periodeTekst){
