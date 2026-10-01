@@ -56,12 +56,17 @@
 
   .top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid var(--line)}
   /* Butikknavn i headeren (der ordmerket sto) — 14px halvfet, brødtekst-/etikett-nivå (ned fra
-     ordmerkets 21px). flex-shrink:0 så NAVNET beholdes og bookinglenka trunkerer i stedet.
-     white-space:nowrap: aldri to linjer. */
-  .shopnavn{font-size:14px;font-weight:700;letter-spacing:-.01em;line-height:1.15;color:var(--ink);white-space:nowrap;flex-shrink:0}
+     ordmerkets 21px). white-space:nowrap: aldri to linjer. For NORMALE navn er det rikelig plass og
+     bookinglenka trunkerer først (den krymper). Men et patologisk langt salongnavn med flex-shrink:0
+     dyttet før forbi viewporten (H5: 31-tegns navn = 62px horisontal overflow @320 → hele dashbordet
+     kunne swipes sidelengs). Derfor: min-width:0 + overflow/ellipsis så navnet KRYMPER og avkortes
+     med «…» i stedet for å sprenge raden. Voktet av tools/render/overflow-mobil.mjs (langt navn). */
+  .shopnavn{font-size:14px;font-weight:700;letter-spacing:-.01em;line-height:1.15;color:var(--ink);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
   /* Lite BarberHQ-ordmerke venstre for butikknavnet. Mode-styrt: lys-variant (svartblå) i lys
-     modus, mork-variant (hvit/blå) i mørk. Default (data-theme="dark") viser mork. */
-  .dash-brand{display:flex;align-items:center;gap:8px;min-width:0;flex-shrink:0}
+     modus, mork-variant (hvit/blå) i mørk. Default (data-theme="dark") viser mork.
+     min-width:0 (ikke flex-shrink:0) så blokka kan gi etter og la navnet avkortes; selve logoen
+     er beskyttet av sin egen flex-shrink:0 (.dash-logo) og krymper aldri. */
+  .dash-brand{display:flex;align-items:center;gap:8px;min-width:0}
   .dash-logo{height:15px;width:auto;display:block;flex-shrink:0}
   .dash-logo-lys{display:none}
   html[data-theme="light"] .dash-logo-lys{display:block}

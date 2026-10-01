@@ -21,7 +21,9 @@ const PANELS=['oversikt','vekst','tjenester','design','abonnement'];
 
 // ── Mock-data nok til at hver fane rendrer EKTE innhold (ikke bare tomtilstand) ──
 const billing = JSON.stringify({subscription_status:'active',plan:'vekst',effective_plan:'vekst',effective_plan_grunn:'subscription',needs_attention:false,page_status:'live',days_left:null,trial_start_at:null});
-const profile = JSON.stringify({hasPassword:true,name:'Henrik Rantala',shop:'Grand Barber Oslo',email:'henrik@grandbarber.no',slug:'grand-barber',tagline:'Fades & classic cuts',bio:'Skarpe fades, rene linjer.',address:'Storgata 12, 0155 Oslo',contact_phone:'91234567'});
+// Bevisst LANGT salongnavn (31 tegn) — stresser headeren (H5: #barberName uten ellipsis ga 62px
+// horisontal overflow @320). Med fiksen skal navnet avkortes med «…», ikke sprenge raden.
+const profile = JSON.stringify({hasPassword:true,name:'Henrik Rantala',shop:'Oslo Barbershop & Herrefrisør AS',email:'henrik@grandbarber.no',slug:'grand-barber',tagline:'Fades & classic cuts',bio:'Skarpe fades, rene linjer.',address:'Storgata 12, 0155 Oslo',contact_phone:'91234567'});
 const services = JSON.stringify({hoved:[{id:'s1',name:'Herreklipp',price:400,min:30,sort:0},{id:'s2',name:'Skjeggtrim og forming',price:250,min:20,sort:1}],tillegg:[{id:'s3',name:'Hårvask',price:100,min:10,sort:0}]});
 // hours: RÅ backend-shape (weekday 0=søn…6=lør). Alle sju åpne; mandag med pause (verste rad-innhold).
 const hours = JSON.stringify([0,1,2,3,4,5,6].map(wd=>({weekday:wd,is_closed:false,open_time:'09:00',close_time:'17:00',breaks: wd===1?[{start_time:'11:30',end_time:'12:00'}]:[]})));
@@ -64,9 +66,12 @@ const DETECT = (W)=>{
     if(el.classList.length) s+='.'+[...el.classList].slice(0,3).join('.');
     if(el.getAttribute&&el.getAttribute('type')) s+='[type='+el.getAttribute('type')+']';
     return s; };
+  // Skann BÅDE headeren (.topband, utenfor panelet — der #barberName/H5 bor) OG det aktive panelet.
+  // Skjulte paneler er display:none → getClientRects().length 0 → hoppes over uansett.
+  const header=document.querySelector('.topband');
   const panel=document.querySelector('.panel.active');
-  const scope=panel||document.body;
-  const els=scope.querySelectorAll('*');
+  const scopes=[header,panel].filter(Boolean); if(!scopes.length) scopes.push(document.body);
+  const els=[]; for(const s of scopes) els.push(...s.querySelectorAll('*'));
   for(const el of els){
     const rects=el.getClientRects(); if(!rects.length) continue;
     const r=el.getBoundingClientRect();
