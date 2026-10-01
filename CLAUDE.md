@@ -823,8 +823,14 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
 - **Full mobil-gjennomgang av dashbordet** — kjørt (0 brukne flater); funn fikset (periodepiller
   `9ee04ca`, pris-0 `5fe012d`). Verktøy: `tools/render/mobil-gjennomgang.mjs`.
 - **Bunn-nav på mobil** — BYGGET (`75a7386`), innhold klarer baren (`4abe4a1`). Ikke lenger «vurder».
-- **Like periode-piller på 320** — `9ee04ca`: `#segs` (Oversikt) + `#attrPeriod` (Vekst),
-  `.segs:not(.segs-val){display:flex;width:100%}` + `button{flex:1}` → 88/88/88.
+- **Like periode-piller på 320** — `#segs` (Oversikt) + `#attrPeriod` (Vekst) står på ÉN linje,
+  like segmenter, uten klipp/overflow (målt 320–430). **Mekanismen er `.perbar`/`.perbar-btn`**
+  (`.perbar{display:flex}` + `.perbar-btn{flex:1;min-width:0;white-space:nowrap}`), IKKE lenger
+  `.segs:not(.segs-val)` — `9ee04ca` brukte den klassen, men markupen ble siden bygget om til `.perbar`,
+  og `.segs` bærer nå BARE verdi-pillene (`#rebookPills`/`#vervRecipient`, som skal wrappe). ⚠ Den gamle
+  teksten her påsto `.segs:not(.segs-val){display:flex;width:100%}` + `button{flex:1}` — død beskrivelse,
+  rettet. Voktet av `tools/render/periodepiller.mjs` (`rader===1` @320/360/375/390; sveiper KUN direkte-barn
+  `.perbar-btn` — den skjulte `.perseg-meny`-dropdownen i baren ga ellers falsk «brekker til to linjer»).
 - **Pris-0-markør i tjeneste-lista** — `5fe012d`: rød kant + «Sett pris».
 - **Kalender-dagvelger på mobil starter på i dag** — `7d76c8c` (rotårsak i rekkevidden, ikke scroll-hack).
 
