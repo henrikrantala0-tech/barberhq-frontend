@@ -2907,6 +2907,21 @@ async function lagreRequest(path, payload, hva){
   return {ok:false, error:(j&&j.error) || ('Kunne ikke lagre '+hva+' (feil '+r.status+'). Prøv igjen.')};
 }
 
+// Felles knapp-/sikkerhetsnett for lagre- og opplastingshandlere (H2). Samme form som settSideStatus,
+// men med finally i stedet for duplisert reset. ROT-ÅRSAK til at lagre-knapper hang på «Lagrer …»:
+// apiFetch KASTER ved nettverks-reject, og handlerne resatte knappen først på linja ETTER await — som
+// da aldri kjørte. Her settes knappen (valgfri) til «Lagrer …» og gjenopprettes ALLTID i finally, og
+// en kastet feil vises som synlig melding i stedet for en død knapp / stum opplasting. arbeid() eier
+// selve kallet + suksess-logikken (og sine egne !ok-meldinger for server-feil med tekst).
+// ÉN felles form for alle lagre-knapper — ikke fire ulike try/catch.
+async function medLagreKnapp(arbeid, {btn=null, feil='Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.'}={}){
+  const orig = btn ? btn.textContent : '';
+  if(btn){ btn.disabled=true; btn.textContent='Lagrer …'; }
+  try{ await arbeid(); }
+  catch(_){ alert(feil); }
+  finally{ if(btn){ btn.disabled=false; btn.textContent=orig; } }
+}
+
 const DAYS=["Mandag","Tirsdag","Onsdag","Torsdag","Fredag","Lørdag","Søndag"];
 const MONTHS=["januar","februar","mars","april","mai","juni","juli","august","september","oktober","november","desember"];
 
@@ -4585,11 +4600,15 @@ function slotGalleri(g){
 
 async function handleUpload(f,slot){
   if(!f||!f.type.startsWith("image/"))return;
-  const fd=new FormData();fd.append("image",f);if(slot)fd.append("slot",slot);
-  const r=await apiFetch('/api/dashboard/images',{method:'POST',body:fd});
-  if(!r)return;
-  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke laste opp bilde. Prøv igjen.');return;}
-  await bilderEndret();
+  // Ingen knapp (trigges av file-input), men samme sikkerhetsnett: uten dette feilet en opplasting
+  // STUMT ved nettverks-reject (apiFetch kaster, bilderEndret kjører aldri, ingen melding).
+  await medLagreKnapp(async()=>{
+    const fd=new FormData();fd.append("image",f);if(slot)fd.append("slot",slot);
+    const r=await apiFetch('/api/dashboard/images',{method:'POST',body:fd});
+    if(!r)return;
+    if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke laste opp bilde. Prøv igjen.');return;}
+    await bilderEndret();
+  }, {feil:'Kunne ikke laste opp bilde. Prøv igjen.'});
 }
 
 let hours=[];
@@ -6266,19 +6285,19 @@ function markPris0(row,s,isHoved){
 $("#hovedList").addEventListener("click",svcRemove);
 $("#tilleggList").addEventListener("click",svcRemove);
 function svcRemove(e){const b=e.target.closest(".svc-rm");if(!b)return;const l=b.dataset.l,i=+b.dataset.i;(l==="h"?hoved:tillegg).splice(i,1);renderSvc();}
-$("#saveSvc").addEventListener("click",async function(){
+$("#saveSvc").addEventListener("click",function(){
   if(!validateSvc())return;
-  const btn=$("#saveSvc");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
-  const r=await apiFetch('/api/dashboard/services',{method:'PUT',body:JSON.stringify({
-    hoved:   hoved.filter(s=>s.name.trim()),
-    tillegg: tillegg.filter(s=>s.name.trim()),
-  })});
-  btn.disabled=false;btn.textContent=orig;
-  if(!r)return;
-  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre tjenester. Prøv igjen.');return;}
-  await loadTjenester(); // refetch: tomme (ufiltrerte) rader forsvinner lokalt + backend-normalisering (min/pris/rekkefølge) speiles. Samme mønster som loyalty/design.
-  savedFlash("#svcSaved");
-  oppdaterSjekkliste(); // tjeneste-haken (≥1 med pris) kan ha endret seg
+  medLagreKnapp(async()=>{
+    const r=await apiFetch('/api/dashboard/services',{method:'PUT',body:JSON.stringify({
+      hoved:   hoved.filter(s=>s.name.trim()),
+      tillegg: tillegg.filter(s=>s.name.trim()),
+    })});
+    if(!r)return;
+    if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre tjenester. Prøv igjen.');return;}
+    await loadTjenester(); // refetch: tomme (ufiltrerte) rader forsvinner lokalt + backend-normalisering (min/pris/rekkefølge) speiles. Samme mønster som loyalty/design.
+    savedFlash("#svcSaved");
+    oppdaterSjekkliste(); // tjeneste-haken (≥1 med pris) kan ha endret seg
+  }, {btn:$("#saveSvc"), feil:'Kunne ikke lagre tjenester. Prøv igjen.'});
 });
 
 /* ---- Betaling (valgfri): rader = betalingsmetoder. Lastes fra innstillings-loaderen ved init. ---- */
@@ -6298,15 +6317,15 @@ $("#addPay").addEventListener('click',function(){
   payMethods.push('');renderPay();
   var inputs=$("#payList").querySelectorAll('input');if(inputs.length)inputs[inputs.length-1].focus();
 });
-$("#savePay").addEventListener('click',async function(){
-  var btn=$("#savePay"),orig=btn.textContent;btn.disabled=true;btn.textContent='Lagrer …';
+$("#savePay").addEventListener('click',function(){
   var methods=payMethods.map(function(m){return (m||'').trim();}).filter(function(m){return m;}); // trimmet, ikke-tom, radrekkefølge
-  var r=await apiFetch('/api/dashboard/payment-methods',{method:'PUT',body:JSON.stringify({methods:methods})});
-  btn.disabled=false;btn.textContent=orig;
-  if(!r)return;
-  if(!r.ok){var d=await r.json().catch(function(){});alert((d&&d.error)||'Kunne ikke lagre betaling. Prøv igjen.');return;}
-  await loadPayment(); // refetch: tomme rader forsvinner lokalt + backend speiles (samme som loadTjenester over)
-  savedFlash("#paySaved");
+  medLagreKnapp(async function(){
+    var r=await apiFetch('/api/dashboard/payment-methods',{method:'PUT',body:JSON.stringify({methods:methods})});
+    if(!r)return;
+    if(!r.ok){var d=await r.json().catch(function(){});alert((d&&d.error)||'Kunne ikke lagre betaling. Prøv igjen.');return;}
+    await loadPayment(); // refetch: tomme rader forsvinner lokalt + backend speiles (samme som loadTjenester over)
+    savedFlash("#paySaved");
+  }, {btn:$("#savePay"), feil:'Kunne ikke lagre betaling. Prøv igjen.'});
 });
 
 /* ---- Design (ferdige presets) ---- */
@@ -6488,30 +6507,31 @@ $("#design").addEventListener("click",function(e){
   }
   renderDesign();if(b.dataset.grid==="layout")refreshSlots();});
 $("#modePick").addEventListener("click",function(e){var b=e.target.closest(".modebtn");if(!b||b.disabled)return;var m=(window.modeneFor?window.modeneFor(design.palette):['lys','mork']);if(m.indexOf(b.dataset.mode)===-1)return;design.mode=b.dataset.mode;renderDesign();});
-$("#saveDesign").addEventListener("click",async function(){
+$("#saveDesign").addEventListener("click",function(){
   // Uten alle fire ville PUT-en skrevet null over det barbereren faktisk har lagret fra før.
   if(!designKjent()){alert('Fikk ikke hentet designinnstillingene dine. Last siden på nytt før du lagrer.');return;}
-  const btn=$("#saveDesign");const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
   // accent+name sendes KUN ved custom. For innebygde paletter utelates de → backend COALESCE
   // bevarer barberens egen palett selv om han prøver en annen.
   const body={palette:design.palette,font:design.font,layout:design.layout,mode:design.mode};
   if(design.palette==='custom'){
     // Klient-validering av hex (backend gir 400 uansett, men brukeren skal slippe å vente på kallet).
+    // Gjøres FØR medLagreKnapp — ingen knapp er satt i gang ennå, så ingenting å nullstille.
     const norm=normHex($("#customHex")?$("#customHex").value:design.customAccent);
-    if(!norm){const er=$("#customErr");if(er)er.hidden=false;const hf=$("#customHex");if(hf){hf.classList.add("invalid");hf.focus();}btn.disabled=false;btn.textContent=orig;return;}
+    if(!norm){const er=$("#customErr");if(er)er.hidden=false;const hf=$("#customHex");if(hf){hf.classList.add("invalid");hf.focus();}return;}
     design.customAccent=norm;
     body.accent=norm;
     // Ingen name sendes — paletten heter «Din egen». Backend-kolonnen står ubrukt.
   }
-  const r=await apiFetch('/api/dashboard/design',{method:'PUT',body:JSON.stringify(body)});
-  btn.disabled=false;btn.textContent=orig;
-  if(!r)return;
-  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre design. Prøv igjen.');return;}
-  savedLayout=design.layout;savedFlash("#designSaved");
-  // bilderEndret (ikke loadBilder): savedLayout ble nettopp oppdatert, så slot-låsen skal
-  // åpnes (slotsLaast leser savedLayout) OG preview-cachen tømmes. Backend sletter IKKE bilder
-  // ved layout-bytte (dashboard.js:379) — re-hentingen holder bare slot-visning + cache i synk.
-  await bilderEndret(); // re-hent bilder + lås opp slots + tøm preview-cache
+  medLagreKnapp(async()=>{
+    const r=await apiFetch('/api/dashboard/design',{method:'PUT',body:JSON.stringify(body)});
+    if(!r)return;
+    if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre design. Prøv igjen.');return;}
+    savedLayout=design.layout;savedFlash("#designSaved");
+    // bilderEndret (ikke loadBilder): savedLayout ble nettopp oppdatert, så slot-låsen skal
+    // åpnes (slotsLaast leser savedLayout) OG preview-cachen tømmes. Backend sletter IKKE bilder
+    // ved layout-bytte (dashboard.js:379) — re-hentingen holder bare slot-visning + cache i synk.
+    await bilderEndret(); // re-hent bilder + lås opp slots + tøm preview-cache
+  }, {btn:$("#saveDesign"), feil:'Kunne ikke lagre design. Prøv igjen.'});
 });
 
 /* ---- Konto: abonnement + publisering, ÉN blokk (ekte, aldri mock) ---- */
