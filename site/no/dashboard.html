@@ -5272,31 +5272,34 @@ async function lagreProfil(knappSel, flashSel){
     return;
   }
   if(shopErr) shopErr.hidden=true;
-  const btn=$(knappSel);const orig=btn.textContent;btn.disabled=true;btn.textContent="Lagrer …";
-  const r=await apiFetch('/api/dashboard/profile',{method:'PUT',body:JSON.stringify({
-    name:    $("#pf-name").value,
-    shop:    $("#pf-shop").value,
-    address: $("#pf-address").value,
-    tagline: $("#pf-tagline").value,
-    bio:     $("#pf-bio").value,
-  })});
-  // Sosiale handles lagres via PUT /settings (backend-kontrakt: normalizeHandle strippar @/URL/domene,
-  // tom streng nullstiller kolonnen → ikonet forsvinner fra bookingsiden). Samme «Lagre profil»-knapp.
-  const rs=await api.saveSettings({
-    instagram:     $("#pf-instagram").value,
-    tiktok:        $("#pf-tiktok").value,
-    snapchat:      $("#pf-snapchat").value,
-    contact_phone: $("#pf-phone").value,
-  });
-  btn.disabled=false;btn.textContent=orig;
-  if(!r)return;
-  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre. Prøv igjen.');return;}
-  if(rs&&!rs.ok){const d=await rs.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre sosiale lenker. Prøv igjen.');return;}
-  const displayName=$("#pf-shop").value.trim()||$("#pf-name").value.trim()||"";
-  CONFIG.BARBER_NAME=displayName;var el=$("#barberName");if(el)el.textContent=displayName;
-  savedFlash(flashSel);
-  invaliderPreview(); // tagline/bio/adresse står i preview-HTML-en (navn gjør IKKE — identitetsfelt)
-  oppdaterSjekkliste(); // profil-haken (bio/spesialitet/adresse) kan ha endret seg
+  // M7: felles knapp-/sikkerhetsnett (medLagreKnapp, som saveSvc/savePay/saveDesign) — en nettverks-
+  // reject hang før knappen på «Lagrer …». To writes (profil + sosiale handles); feiler ÉN, vises det
+  // som FEIL og flash/«Lagret» kjører ALDRI. Profil først: feiler den, prøver vi ikke sosiale.
+  medLagreKnapp(async function(){
+    const r=await apiFetch('/api/dashboard/profile',{method:'PUT',body:JSON.stringify({
+      name:    $("#pf-name").value,
+      shop:    $("#pf-shop").value,
+      address: $("#pf-address").value,
+      tagline: $("#pf-tagline").value,
+      bio:     $("#pf-bio").value,
+    })});
+    if(!r)return;
+    if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre. Prøv igjen.');return;}
+    // Sosiale handles lagres via PUT /settings (backend-kontrakt: normalizeHandle strippar @/URL/domene,
+    // tom streng nullstiller kolonnen → ikonet forsvinner fra bookingsiden). Samme «Lagre profil»-knapp.
+    const rs=await api.saveSettings({
+      instagram:     $("#pf-instagram").value,
+      tiktok:        $("#pf-tiktok").value,
+      snapchat:      $("#pf-snapchat").value,
+      contact_phone: $("#pf-phone").value,
+    });
+    if(rs&&!rs.ok){const d=await rs.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre sosiale lenker. Prøv igjen.');return;}
+    const displayName=$("#pf-shop").value.trim()||$("#pf-name").value.trim()||"";
+    CONFIG.BARBER_NAME=displayName;var el=$("#barberName");if(el)el.textContent=displayName;
+    savedFlash(flashSel);
+    invaliderPreview(); // tagline/bio/adresse står i preview-HTML-en (navn gjør IKKE — identitetsfelt)
+    oppdaterSjekkliste(); // profil-haken (bio/spesialitet/adresse) kan ha endret seg
+  }, {btn:$(knappSel), feil:'Kunne ikke lagre. Prøv igjen.'});
 }
 $("#saveProfil").addEventListener("click",function(){lagreProfil("#saveProfil","#profilSaved");});
 $("#saveNavn").addEventListener("click",function(){lagreProfil("#saveNavn","#navnSaved");});
