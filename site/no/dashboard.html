@@ -8414,20 +8414,24 @@ window.hqDel = (function(){
     kontr.innerHTML='';
     // Antall dager — knapper 4..min(MAKS_DAGER, tilgjengelige_dager) (standard 4), .pk-seg med valgt-markering.
     // _maks settes av /data ved åpning; default MAKS_DAGER (7) til svaret er inne.
-    var dBlk=document.createElement('div'); dBlk.className='story-block';
-    var dLbl=document.createElement('span'); dLbl.className='pk-label'; dLbl.textContent='Antall dager'; dBlk.appendChild(dLbl);
-    var dRow=document.createElement('div'); dRow.className='story-dager-row';
-    // Velgeren viser KUN gyldige valg: 4..min(7,tilgjengelige) normalt, men har barbereren færre enn 4
-    // åpne dager faller nedre grense til tilgjengelige_dager (hi) → ett valg = N, aldri «4» der det bare
-    // finnes 1–3. Ett er alltid valgt (st.dager klampes til [lo,hi] i aapne). (M1)
+    // Antall dager — gyldige valg: 4..min(7,tilgjengelige) normalt; har barbereren færre enn 4 åpne dager
+    // faller nedre grense til tilgjengelige_dager (hi) → ett valg = N, aldri «4» der det bare finnes 1–3.
+    // Ett er alltid valgt (st.dager klampes til [lo,hi] i aapne). (M1)
     var hi=Math.max(1,Math.min(MAKS_DAGER,_maks)), lo=Math.min(4,hi);
     var dager=[]; for(var dn=lo; dn<=hi; dn++) dager.push(dn);
-    dager.forEach(function(n){
-      var b=document.createElement('button'); b.type='button'; b.className='pk-seg'+(st.dager===n?' on':''); b.textContent=String(n);
-      b.addEventListener('click',function(){ st.dager=n; [].forEach.call(dRow.children,function(x){x.classList.toggle('on',x===b);}); sendApply(); });
-      dRow.appendChild(b);
-    });
-    dBlk.appendChild(dRow); kontr.appendChild(dBlk);
+    // M1-tillegg: bare ÉN gyldig verdi (1–3 åpne dager) → ingenting å velge → skjul «Antall dager» HELT.
+    // st.dager ER allerede den verdien, så preview/render bruker riktig antall uten en død én-knapps-velger.
+    if(dager.length>1){
+      var dBlk=document.createElement('div'); dBlk.className='story-block';
+      var dLbl=document.createElement('span'); dLbl.className='pk-label'; dLbl.textContent='Antall dager'; dBlk.appendChild(dLbl);
+      var dRow=document.createElement('div'); dRow.className='story-dager-row';
+      dager.forEach(function(n){
+        var b=document.createElement('button'); b.type='button'; b.className='pk-seg'+(st.dager===n?' on':''); b.textContent=String(n);
+        b.addEventListener('click',function(){ st.dager=n; [].forEach.call(dRow.children,function(x){x.classList.toggle('on',x===b);}); sendApply(); });
+        dRow.appendChild(b);
+      });
+      dBlk.appendChild(dRow); kontr.appendChild(dBlk);
+    }
 
     // Lenke — to gjensidig utelukkende avkrysninger. Ingen krysset = ingen lenke (av). Hjelpetekst
     // (dempet) rett under «Book her ↓», synlig kun når den er krysset.
