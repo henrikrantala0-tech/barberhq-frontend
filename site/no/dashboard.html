@@ -43,6 +43,13 @@
      beholder det); overscroll-behavior-x:none dreper horisontal rubber-band/sveip-tilbake. */
   html{overscroll-behavior-x:none}
   body{font-family:'Inter',system-ui,sans-serif;background:var(--bg);color:var(--ink);line-height:1.45;-webkit-font-smoothing:antialiased;overscroll-behavior-x:none;touch-action:manipulation}
+  /* <button> arver IKKE font-family fra body (UA gir «MS Shell Dlg» i WebKit / «Arial» i Chromium →
+     serif-aktig på enkelte systemer). ÉN felles grunnregel så ALLE knapper bruker Inter som resten av
+     dashbordet — ikke per knapp. Fanget 22 knapper på UA-font (.tab, .svc-rm, .pub-copy, .crop-btn-*,
+     .slot-popup-btn, .pw-toggle, .fokus-x, .suksess-x, .tn-close, .plakat-kort m.fl.). Per-element-regler
+     med egen font vinner på spesifisitet og beholdes bevisst (.info-i = italic Georgia ⓘ-glyf). Samme
+     rot-årsak som kom-i-gang .btn. */
+  button{font-family:inherit}
   /* Generell fokusring — SAMME som markedssidene (#4d8bff, 2px, offset 2px), literal (ikke var(--info),
      som er #1456a8 i lys modus). Kun :focus-visible → ingen ring ved museklikk. Dashbordet hadde bare
      spredte per-element-regler; knapper/lenker/faner/piller manglet konsistent ring. De eksisterende
