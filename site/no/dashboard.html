@@ -5431,7 +5431,12 @@ function bryterSkriv(el, felt, errEl){
   var forrige=el.dataset.verdi;               // rull tilbake til FORRIGE lagrede, ikke .checked
   el.dataset.verdi = el.checked ? '1':'0';    // brukerens valg (change har alt flippet .checked)
   var p={}; p[felt]= el.dataset.verdi==='1';
-  lagreSmsInnstilling(p, function(){ el.dataset.verdi=forrige; visBryter(el); }, errEl);
+  // Synkron disable FØR await — samme racevakt som rebook-pillene (#rebookPills). Uten den kan et
+  // andre klikk mens PUT-en er i lufta fyre en overlappende PUT som lander i svar-rekkefølge i stedet
+  // for klikk-rekkefølge (UI av / server på). Hindrer også at `forrige` fanger en optimistisk verdi.
+  el.disabled=true;
+  lagreSmsInnstilling(p, function(){ el.dataset.verdi=forrige; visBryter(el); }, errEl)
+    .finally(function(){ el.disabled=false; });
 }
 $("#tog-paam").addEventListener("change",function(){bryterSkriv(this,'sms_paaminnelse_enabled', $("#paamErr"));});
 $("#tog-rebook").addEventListener("change",function(){
@@ -5439,7 +5444,9 @@ $("#tog-rebook").addEventListener("change",function(){
   var el=this, forrige=el.dataset.verdi;
   el.dataset.verdi = el.checked ? '1':'0';
   syncRebookIntervall();          // speil pillenes synlighet mot den nye tilstanden straks
-  lagreSmsInnstilling({sms_rebooking_enabled: el.dataset.verdi==='1'}, function(){ el.dataset.verdi=forrige; visBryter(el); syncRebookIntervall(); }, $("#rebookErr"), 'Rebooking');
+  el.disabled=true;               // synkron racevakt (som pillene) — ingen overlappende PUT ved dobbeltrykk
+  lagreSmsInnstilling({sms_rebooking_enabled: el.dataset.verdi==='1'}, function(){ el.dataset.verdi=forrige; visBryter(el); syncRebookIntervall(); }, $("#rebookErr"), 'Rebooking')
+    .finally(function(){ el.disabled=false; });
 });
 document.querySelectorAll('#rebookPills button').forEach(function(b){
   b.addEventListener('click',async function(){
@@ -6011,10 +6018,19 @@ $("#loyalSett").addEventListener('click',async function(e){
 // backend). IKKE lokal patch: «X av Y» og totalene er backend-avledet av terskelen.
 async function loyalLagre(felt, verdi){
   var err=$("#loyalSettErr"), patch={}; patch[felt]=verdi;
-  var r=await api.saveSettings(patch);
-  if(erSettings403(r)){ visSettingsLaas(err); return false; }
-  if(r&&r.ok){ if(err)err.hidden=true; loadLoyalty(); return true; }   // refetch: stamps/reward_ready/totals er backend-avledet av terskelen — kan ikke utledes lokalt (samme mønster som de andre loyalty-mutasjonene)
-  if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} return false;
+  // Synkron disable av BEGGE selectene FØR await — samme racevakt som rebook-pillene/SMS-bryterne.
+  // Uten den kan rask dobbel-endring fyre to PUT + to loadLoyalty, og den som refetcher sist vinner
+  // UI-en i stedet for den backend mottok sist. finally re-enabler (loadLoyalty bygger uansett om).
+  var ter=$("#loyalThreshold"), pct=$("#loyalPct");
+  if(ter)ter.disabled=true; if(pct)pct.disabled=true;
+  try{
+    var r=await api.saveSettings(patch);
+    if(erSettings403(r)){ visSettingsLaas(err); return false; }
+    if(r&&r.ok){ if(err)err.hidden=true; loadLoyalty(); return true; }   // refetch: stamps/reward_ready/totals er backend-avledet av terskelen — kan ikke utledes lokalt (samme mønster som de andre loyalty-mutasjonene)
+    if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} return false;
+  } finally {
+    if(ter)ter.disabled=false; if(pct)pct.disabled=false;
+  }
 }
 // Endring av terskel/belønning: samler kunder nå (in_progress>0)? → bekreft FØR lagring (vis
 // konsekvensen). Ellers lagre direkte. Holder selectens NYE verdi synlig mens bekreftelsen står.
