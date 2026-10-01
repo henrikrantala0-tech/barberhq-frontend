@@ -187,6 +187,12 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     expEl.classList.add('show');
   }
 
+  // Felles dobbel-innsendings-vakt (brukt av BÅDE magisk lenke og passord under — ikke to kopier):
+  // Enter-keydown kaller handleren DIREKTE og omgår knappens disabled, så vakten må ligge på
+  // funksjonsnivå. Pakker en async handler så den ikke kan starte på nytt mens den er i lufta.
+  function enOmGangen(fn){ var busy=false; return function(){ if(busy) return;
+    busy=true; Promise.resolve(fn.apply(this, arguments)).finally(function(){ busy=false; }); }; }
+
   // ── PRIMÆR: magisk lenke (deler e-postfeltet med passord-innlogging) ──
   async function sendMagicLink() {
     magicOk.classList.remove('show');
@@ -207,6 +213,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     magicSubmit.disabled    = false;
     magicSubmit.textContent = 'Send meg innloggingslenke';
   }
+  sendMagicLink = enOmGangen(sendMagicLink);   // vaktet binding → dekker både klikk under og Enter-pathen
   magicSubmit.addEventListener('click', sendMagicLink);
   // Enter i e-postfeltet utløser primærhandlingen (send lenke)
   email.addEventListener('keydown', function (e) { if (e.key === 'Enter') sendMagicLink(); });
@@ -241,7 +248,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     toggle.setAttribute('aria-label', show ? 'Skjul passord' : 'Vis passord');
   });
 
-  submit.addEventListener('click', login);
+  submit.addEventListener('click', function () { login(); });   // dynamisk kall → treffer den vaktede login (reassignet under def)
   pw.addEventListener('keydown', function (e) { if (e.key === 'Enter') login(); });
 
   function showError(msg) {
@@ -285,6 +292,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
       submit.textContent = 'Logg inn';
     }
   }
+  login = enOmGangen(login);   // samme vakt som magisk lenke — Enter kan ikke fyre overlappende /login
 }());
 </script>
 </body>

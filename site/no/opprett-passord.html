@@ -176,10 +176,16 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   function showFormErr(msg)  { formErr.textContent = msg; formErr.classList.add('show'); }
   function clearFormErr()    { formErr.classList.remove('show'); }
 
+  // Felles dobbel-innsendings-vakt (samme mønster som logg-inn): Enter-keydown kaller save() DIREKTE
+  // og omgår knappens disabled → vakten må ligge på funksjonsnivå så holdt/gjentatt Enter ikke fyrer
+  // overlappende POST /set-password.
+  function enOmGangen(fn){ var busy=false; return function(){ if(busy) return;
+    busy=true; Promise.resolve(fn.apply(this, arguments)).finally(function(){ busy=false; }); }; }
+
   [pw, pw2].forEach(function (el) {
     el.addEventListener('keydown', function (e) { if (e.key === 'Enter') save(); });
   });
-  submit.addEventListener('click', save);
+  submit.addEventListener('click', function () { save(); });   // dynamisk → treffer den vaktede save (reassignet under def)
 
   async function save() {
     clearFormErr();
@@ -239,6 +245,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
       submit.textContent = 'Lagre og fortsett';
     }
   }
+  save = enOmGangen(save);   // vaktet binding → Enter-spam kan ikke fyre overlappende set-password
 }());
 </script>
 </body>
