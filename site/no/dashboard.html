@@ -3772,9 +3772,12 @@ function upSection(label,items){
   return '<p class="up-day">'+label+'</p>'+body;
 }
 function renderUpcoming(){
-  var t=new Date();t.setHours(0,0,0,0);var today=t.getTime();var tomorrow=today+86400000;
+  // Bøtt på OSLO-kalenderdato (osloDayKey), ikke nettleser-lokal midnatt. Ellers havnet en booking
+  // nær midnatt i feil «I dag/I morgen»-bøtte når nettleser-sona ≠ Oslo (H1), og headeren (dayHead,
+  // som allerede ankrer på osloTodayKey) sa noe annet enn bøtta. Nå én felles Oslo-definisjon.
+  var today=osloTodayKey();var tomorrow=calNesteKey(today,1);  // calNesteKey: DST-trygg +1 dag (ikke +86400000)
   var byKey={};
-  _upcoming.forEach(function(x){var k=new Date(x.start);k.setHours(0,0,0,0);k=k.getTime();(byKey[k]=byKey[k]||[]).push(x);});
+  _upcoming.forEach(function(x){var k=osloDayKey(x.start);(byKey[k]=byKey[k]||[]).push(x);});
   // «I dag» + «I morgen» er faste ankere (alltid, også tomme). Dager lenger frem vises datert, kun med bookinger.
   var html=upSection("I dag",byKey[today]||[])+upSection("I morgen",byKey[tomorrow]||[]);
   Object.keys(byKey).map(Number).filter(function(k){return k>tomorrow;}).sort(function(a,c){return a-c;})
@@ -3953,7 +3956,11 @@ function fmtTid(min){return String(Math.floor(min/60)).padStart(2,'0')+':'+Strin
 // har 25t) og 28.03.2027 (spring-forward, 23t), så en 15:00-booking og nå-streken lander på 15:00-linja
 // uavhengig av overgangen og av nettleserens egen tidssone.
 function osloTodayStr(){var p=osloParts(new Date());return p.y+'-'+String(p.mo).padStart(2,'0')+'-'+String(p.d).padStart(2,'0');} // "YYYY-MM-DD"
-function osloTodayKey(){var p=osloParts(new Date());return new Date(p.y,p.mo-1,p.d).getTime();}
+// Oslo-KALENDERDATO som dag-nøkkel: nettleser-lokal midnatt for Oslos y/mo/d. ÉN definisjon, brukt
+// av både Kommende-lista (bøtting), kalenderen og dayHead → en booking havner i samme «I dag/I morgen»-
+// bøtte som kolonnen kalenderen markerer, uansett nettleserens tidssone (H1). osloTodayKey = osloDayKey(nå).
+function osloDayKey(iso){var p=osloParts(iso);return new Date(p.y,p.mo-1,p.d).getTime();}
+function osloTodayKey(){return osloDayKey(new Date());}
 function osloNowMin(){var p=osloParts(new Date());return p.h*60+p.mi;}
 // Topbar-tittel = valgt dato i klartekst («Fredag 18. sep»); «I dag» kun når valgt = Oslo-i dag.
 function calHeadText(key){if(key===osloTodayKey())return 'I dag';var d=new Date(key);return DAYS[(d.getDay()+6)%7]+' '+d.getDate()+'. '+MONTHS[d.getMonth()].slice(0,3);}
