@@ -7920,7 +7920,13 @@ function settPlakatVersjon(v){
     // den LOKALT (scaleY, transform-origin topp) så boks + tekst følges hele veien — distorsjonen er
     // bevisst og transient; /layout re-flower teksten ekte ved slipp (transform nullstilles da). Treffes
     // via samme top:<y>-hook som lag 3b; finnes den ikke, degraderer vi til ren boks-ghost (ingen transform).
-    function offerBlokk(){ var f=document.getElementById('plakatFrame'); try{ var d=f&&f.contentDocument; return d?d.querySelector('[style*="top:'+t.y+'px"]'):null; }catch(_){ return null; } }
+    // M13: EKSAKT match på top — substring-selektoren [style*="top:100px"] traff også top:1000px og
+    // kunne gi feil node. Finn kandidaten der inline top faktisk er t.y (parseFloat, ingen grense-glipp).
+    function offerBlokk(){ var f=document.getElementById('plakatFrame'); try{ var d=f&&f.contentDocument; if(!d) return null;
+      var kand=d.querySelectorAll('[style*="top:"]');
+      for(var i=0;i<kand.length;i++){ if(parseFloat(kand[i].style.top)===t.y) return kand[i]; }
+      return null;
+    }catch(_){ return null; } }
     var zdrag=null;
     zoom.addEventListener('pointerdown',function(e){ e.preventDefault(); e.stopPropagation(); // ikke start flytt-draget
       try{ zoom.setPointerCapture(e.pointerId); }catch(_){}
