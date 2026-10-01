@@ -8379,6 +8379,7 @@ window.hqDel = (function(){
   // origin (Netlify-proxy i prod = same-origin; lokal dev = kryss-origin — postMessage funker begge).
   // «X av Y» vises KUN når shownDays < totalDays (totalDays = dager med innhold, stengte gir aldri linje).
   window.addEventListener('message', function(ev){
+    if(ev.origin!==STORY_ORIGIN) return;   // M4: valider origin. Iframen er same-origin (relativ BASE) → ev.origin===location.origin alltid; avvis alt annet
     if(!frame || ev.source!==frame.contentWindow) return;
     var d=ev.data; if(!d || d.type!=='ledige-timer-story' || !statusLinje) return;
     var s=d.shownDays, t=d.totalDays;
