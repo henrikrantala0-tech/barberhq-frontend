@@ -7579,6 +7579,7 @@ function settPlakatVersjon(v){
     if(PS){ PS.valgtId=null; _layout=null; PS.aapen=false; lagre(); } // bug 3: nullstill valgt plakat ved lukking
     overlay().classList.remove('open');
     document.body.classList.remove('plakat-lock');
+    _delCache={ sig:null, blob:null, pending:false };   // M2: ingen gjenbruk av del-blob på tvers av lukk/åpne (tidsavhengig innhold)
   }
   function tilSkjerm1(){ PS.valgtId=null; _layout=null; lagre(); render(); }
   function velg(id){ var p=finn(id); if(p && !tilgjengelig(p)) return; PS.valgtId=id; lagre(); render(); }
@@ -8464,10 +8465,11 @@ window.hqDel = (function(){
 
   // ---- åpne/lukke ----
   function aapne(){
-    if(!ov) return;
+    if(!ov || ov.classList.contains('vis')) return;   // M3: re-entrancy — allerede åpen → ignorer dobbel-inngang
     document.body.classList.add('story-open'); ov.classList.add('vis');
     visLaster(true);                    // spinner mens /data henter tilgjengelige_dager (ÉN gang)
     hentMaksDager().then(function(m){
+      if(!ov.classList.contains('vis')) return;   // M3: lukket før /data kom → ikke bygg/last i en lukket overlay
       _maks=Math.max(1,Math.min(MAKS_DAGER,m));   // M1: gulv 1 (ikke 4) → virker med 1–3 åpne dager
       var lo=Math.min(4,_maks);
       st.dager=Math.min(_maks, Math.max(lo, st.dager)); // klamp inn i [lo,_maks] så ett valg alltid er markert
@@ -8476,7 +8478,9 @@ window.hqDel = (function(){
       lastPreview();                    // preview ÉN gang (4 dager/valgt, lenke av; backend velger tjeneste)
     });
   }
-  function lukk(){ if(!ov)return; ov.classList.remove('vis'); document.body.classList.remove('story-open'); clearTimeout(_t); if(frame) frame.removeAttribute('src'); }
+  function lukk(){ if(!ov)return; ov.classList.remove('vis'); document.body.classList.remove('story-open'); clearTimeout(_t); if(frame) frame.removeAttribute('src');
+    _del={sig:null,blob:null,pending:false};   // M2: ingen gjenbruk av del-blob på tvers av lukk/åpne (ledige timer er tidsavhengig)
+  }
 
   function init(){
     ov=el('storyOverlay'); if(!ov) return;
