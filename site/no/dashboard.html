@@ -75,15 +75,11 @@
      kunne swipes sidelengs). Derfor: min-width:0 + overflow/ellipsis så navnet KRYMPER og avkortes
      med «…» i stedet for å sprenge raden. Voktet av tools/render/overflow-mobil.mjs (langt navn). */
   .shopnavn{font-size:14px;font-weight:700;letter-spacing:-.01em;line-height:1.15;color:var(--ink);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}
-  /* Lite BarberHQ-ordmerke venstre for butikknavnet. Mode-styrt: lys-variant (svartblå) i lys
-     modus, mork-variant (hvit/blå) i mørk. Default (data-theme="dark") viser mork.
-     min-width:0 (ikke flex-shrink:0) så blokka kan gi etter og la navnet avkortes; selve logoen
-     er beskyttet av sin egen flex-shrink:0 (.dash-logo) og krymper aldri. */
-  .dash-brand{display:flex;align-items:center;gap:8px;min-width:0}
-  .dash-logo{height:15px;width:auto;display:block;flex-shrink:0}
-  .dash-logo-lys{display:none}
-  html[data-theme="light"] .dash-logo-lys{display:block}
-  html[data-theme="light"] .dash-logo-mork{display:none}
+  /* BarberHQ-ordmerket er FJERNET fra headeren (flyttet til bunnen av Konto-fanen, .konto-brand).
+     Headeren viser nå kun butikknavnet (venstre) + kopi-ikonet (høyre). .dash-brand er fortsatt
+     flex-wrapperen rundt navnet: flex:1 1 auto så den fyller raden og #barberName måles mot reell
+     tilgjengelig bredde (fitShopnavn krymper fonten mot clientWidth); min-width:0 så den kan gi etter. */
+  .dash-brand{display:flex;align-items:center;min-width:0;flex:1 1 auto}
   .brand{font-weight:800;font-size:19px;letter-spacing:-.03em}
   .brand .hq{font-weight:300}
   /* .who (stablet navn+lenke) er fjernet — headeren er nå én rad: .shopnavn + .header-lenke. */
@@ -1438,13 +1434,27 @@
      Begge gjenbruker byggKopierbartLenkefelt (.pub-field + midtForkort + kopierLenke).
      Headerlenka står under sjappenavnet i live-tilstand; suksesskortet vises ÉN gang
      rett etter publisering (hendelses-drevet, ikke ved innlasting). */
-  .header-lenke{max-width:210px;min-width:0}   /* min-width:0 (ikke auto) så lenka KAN krympe forbi
-     sin innholdsbredde når navnet tar plassen → url-en trunkerer (midt-ellipse), aldri linje to.
-     margin-top fjernet: den var for den gamle stablede .who-kolonnen, nå er dette én rad. */
-  .header-lenke .pub-field{background:0;border:0;padding:0;gap:4px}
-  .header-lenke .pub-url{font-size:11.5px}
-  .header-lenke .pub-copy{width:22px;height:22px}
-  @media(max-width:400px){ .header-lenke{max-width:150px} }
+  /* Headeren viser nå KUN kopi-ikonet til høyre — URL-teksten er fjernet (settHeaderLenke bygger
+     bare en .pub-copy.header-kopi-knapp). flex:0 0 auto så ikonet aldri krymper/vokser; all
+     elastisitet i raden ligger i .dash-brand (navnet). */
+  .header-lenke{flex:0 0 auto}
+  .header-kopi{width:22px;height:22px}
+  /* Headerens kvittering sier «Lenke kopiert» (ikke bare «Kopiert» som de andre .pub-copy), fordi
+     det her ikke står noen URL ved siden av som gir kontekst. Samme spesifisitet som den globale
+     .pub-copy.ok::after, men senere i kilden → vinner kun for headerknappen. */
+  .header-kopi.ok::after{content:"Lenke kopiert"}
+  /* BarberHQ-merket i bunnen av Konto-fanen (flyttet fra headeren). Lite og dempet, sentrert,
+     tydelig skilt fra siste trekkspill med topp-border. Ordmerket mode-styrt: mork-variant i
+     mørk (default), lys-variant i lys. */
+  .konto-brand{display:flex;flex-direction:column;align-items:center;gap:12px;
+    margin-top:34px;padding-top:26px;border-top:1px solid var(--line)}
+  .kb-logo{height:16px;width:auto;display:block;opacity:.75}
+  .kb-logo-lys{display:none}
+  html[data-theme="light"] .kb-logo-lys{display:block}
+  html[data-theme="light"] .kb-logo-mork{display:none}
+  .kb-lenker{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px}
+  .kb-lenker a{font-size:12.5px;color:var(--mut);text-decoration:none}
+  .kb-lenker a:hover{color:var(--ink-2);text-decoration:underline}
   .suksess-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px}
   .suksess-overlay[hidden]{display:none}   /* author-display slår UA [hidden]{display:none} — må gjenopprettes eksplisitt */
   .suksess-kort{position:relative;background:var(--surface);border:1px solid var(--line-2);border-radius:18px;padding:30px 26px 26px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
@@ -1518,13 +1528,11 @@
 <div class="topband">
 <div class="wrap">
   <header class="top">
-    <!-- Én RAD: lite BarberHQ-ordmerke + butikknavn til venstre, kopierbar bookinglenke
-         (settHeaderLenke) til høyre. Ordmerket er ren dekor (ingen lenke) — mode-styrt via CSS:
-         svartblå (lys-transparent) i lys modus, hvit/blå (mork-transparent) i mørk. Butikknavnet
-         (#barberName) står fortsatt der og skal aldri brekke til linje to. -->
+    <!-- Én RAD: butikknavn til venstre, kopi-ikon for bookinglenka (settHeaderLenke, kun live) til
+         høyre. BarberHQ-ordmerket er fjernet herfra og bor nå i bunnen av Konto-fanen (.konto-brand).
+         #barberName skal aldri brekke til linje to: fitShopnavn() krymper fonten til den passer på
+         én linje, og faller til «…» (CSS-ellipse) først når minste font fortsatt er for bred. -->
     <span class="dash-brand">
-      <img class="dash-logo dash-logo-lys" src="logo/barberhq-ordmerke-lys-transparent.svg" alt="BarberHQ">
-      <img class="dash-logo dash-logo-mork" src="logo/barberhq-ordmerke-mork-transparent.svg" alt="BarberHQ">
       <b class="shopnavn" id="barberName">Grand Barber</b>
     </span>
     <div class="header-lenke" id="headerLenke" hidden></div>
@@ -2589,6 +2597,17 @@
       </div>
 
     </div>
+    <!-- BarberHQ-merket bor her, i bunnen av Konto — flyttet fra dashbord-headeren. Lite, dempet,
+         med lenker til vilkår/personvern og support. Ordmerket er mode-styrt (lys/mørk-variant). -->
+    <footer class="konto-brand">
+      <img class="kb-logo kb-logo-lys" src="logo/barberhq-ordmerke-lys-transparent.svg" alt="BarberHQ">
+      <img class="kb-logo kb-logo-mork" src="logo/barberhq-ordmerke-mork-transparent.svg" alt="BarberHQ">
+      <nav class="kb-lenker" aria-label="Juridisk og hjelp">
+        <a href="/no/vilkar.html">Vilkår</a>
+        <a href="/no/vilkar.html#personvern">Personvern</a>
+        <a href="/no/support.html">Support</a>
+      </nav>
+    </footer>
   </section>
 </div>
 
@@ -5126,6 +5145,7 @@ async function loadProfil(){
   const displayName=p.shop||p.name||"";
   CONFIG.BARBER_NAME=displayName;
   var el=$("#barberName");if(el)el.textContent=displayName;
+  fitShopnavn();                                 // krymp fonten så navnet står på én linje
 }
 function savedFlash(sel){var s=$(sel);s.classList.add("show");setTimeout(function(){s.classList.remove("show");},1800);}
 // TRE tilbakemeldingsbokser: idé på «Din side», og idé + support i Konto. Markupen må være
@@ -5303,6 +5323,7 @@ async function lagreProfil(knappSel, flashSel){
     if(rs&&!rs.ok){const d=await rs.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre sosiale lenker. Prøv igjen.');return;}
     const displayName=$("#pf-shop").value.trim()||$("#pf-name").value.trim()||"";
     CONFIG.BARBER_NAME=displayName;var el=$("#barberName");if(el)el.textContent=displayName;
+    fitShopnavn();                               // nytt navn kan ha ny bredde → re-fit
     savedFlash(flashSel);
     invaliderPreview(); // tagline/bio/adresse står i preview-HTML-en (navn gjør IKKE — identitetsfelt)
     oppdaterSjekkliste(); // profil-haken (bio/spesialitet/adresse) kan ha endret seg
@@ -6855,17 +6876,48 @@ function renderDinsideCta(b){
   settHeaderLenke(b); // permanent kopierbar lenke i headeren (kun live)
 }
 
-/* ── Live-lenke i header + suksesskort (COMMIT F) ────────────────────────────────── */
-// Permanent kopierbar lenke under sjappenavnet, KUN i live. Gjenbruker byggKopierbartLenkefelt
-// (midtForkort krymper sluggen til den kompakte header-bredden av seg selv).
+/* ── Kopi-ikon i header + suksesskort (COMMIT F) ─────────────────────────────────── */
+// Permanent kopi-IKON (ingen synlig URL-tekst) øverst til høyre, KUN i live. Trykk → kopierer
+// hele booking-URL-en og viser «Lenke kopiert»-kvittering (kopierLenke + .header-kopi.ok::after).
 function settHeaderLenke(b){
   b=b||_billing||{};
   var boks=$('#headerLenke'); if(!boks)return;
   if(b.page_status==='live' && CONFIG.BARBER_SLUG){
-    byggKopierbartLenkefelt(boks, CONFIG.SITE_BASE+'/'+CONFIG.BARBER_SLUG, CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+CONFIG.BARBER_SLUG);
+    var url=CONFIG.SITE_BASE+'/'+CONFIG.BARBER_SLUG;
+    boks.textContent='';
+    var knapp=document.createElement('button');
+    knapp.type='button'; knapp.className='pub-copy header-kopi';
+    knapp.setAttribute('aria-label','Kopier lenke til siden din');
+    knapp.innerHTML=IKON_KOPI;
+    knapp.addEventListener('click',function(){kopierLenke(knapp,url);});
+    boks.appendChild(knapp);
     boks.hidden=false;
   } else { boks.textContent=''; boks.hidden=true; }
 }
+
+// ── Butikknavn: krymp-først-ellipsis-sist (samme prinsipp som bookingsidas FIT_NAVN_JS i
+// fyll.cjs) ──────────────────────────────────────────────────────────────────────────────
+// Headernavnet skal ALLTID stå på én linje. .dash-brand (flex:1 1 auto) gir #barberName hele den
+// ledige bredden; .shopnavn er nowrap+overflow:hidden. Vi måler scrollWidth mot clientWidth, og
+// når navnet er for bredt skalerer vi fonten ned med samme ratio-metode som bookingsidas enkeltord-
+// gren, ned til et gulv (FIT_MIN). Er navnet fortsatt for bredt på gulvet, overtar CSS-ellipsen
+// (.shopnavn text-overflow:ellipsis) — font FØRST, «…» SIST.
+var FIT_MIN=11;                 // lesbar minste font før «…» tar over (normal = 14px)
+function fitShopnavn(){
+  var el=$("#barberName"); if(!el) return;
+  el.style.fontSize='';                                   // reset til CSS-verdien (14px)
+  var normal=parseFloat(getComputedStyle(el).fontSize)||14;
+  var avail=el.clientWidth, need=el.scrollWidth;
+  if(need<=avail+1) return;                               // passer på full størrelse
+  var size=Math.max(FIT_MIN, normal*avail/Math.max(1,need)*0.98);
+  el.style.fontSize=size+'px';                            // for smalt på gulvet → CSS-ellipse overtar
+}
+// Re-fit når web-fonten lastes (fallback-fonten måler annerledes) og ved bredde-endring. Observerer
+// documentElement-BREDDEN, ikke navnet selv: å endre fontSize rører ikke doc-bredden → ingen selv-loop.
+if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fitShopnavn);
+if('ResizeObserver' in window){ var _fitT,_fitW=-1;
+  new ResizeObserver(function(e){ var w=e[0].contentRect.width; if(Math.abs(w-_fitW)<1)return; _fitW=w;
+    clearTimeout(_fitT); _fitT=setTimeout(fitShopnavn,60); }).observe(document.documentElement); }
 // Suksesskort — HENDELSES-drevet: kalles kun fra settSideStatus('live')-suksess, ALDRI ved
 // innlasting. Derfor viser refresh i live-tilstand det ikke igjen (headerlenka dekker varig visning).
 function visSuksesskort(){
