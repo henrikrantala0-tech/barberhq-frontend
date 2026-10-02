@@ -26,6 +26,12 @@
 <link rel="stylesheet" href="lib/cropper.min.css">
 <style>
   :root{
+    /* Native UA-kontroller (klokkeikon i input[type=time], select-nedtrekk, number-spinnere,
+       scrollfelt) følger color-scheme, ikke --bg. Uten den rendrer nettleseren dem i LYS modus
+       → svart klokkeikon på mørk flate. color-scheme bindes til aktivt tema: light her (:root =
+       lys base), dark i html[data-theme="dark"] under. Default-temaet er dark (se <html>-taggen),
+       så klokkeikonet er hvitt ut av boksen. Ingen filter/invert-lapp på selve ikonet. */
+    color-scheme:light;
     --bg:#fafafa;--surface:#fff;--ink:#0a0a0a;--ink-2:#3a3a3a;--mut:#7a7a7a;--mut-2:#a8a8a8;
     --line:#e8e8e8;--line-2:#d8d8d8;
     --good:#1a7a44;--good-bg:#e8f3ec;--bad:#b3261e;--bad-bg:#fbeae9;--info:#1456a8;--info-bg:#e8f0fb;
@@ -371,6 +377,7 @@
 
   /* ---- Morkt tema ---- */
   html[data-theme="dark"]{
+    color-scheme:dark;   /* native kontroller (klokkeikon/select/spinner/scroll) mørke; se :root-noten */
     --bg:#0a0a0a;--surface:#141414;--ink:#ffffff;--ink-2:#cfcfcf;--mut:#8a8a8a;--mut-2:#5f5f5f;
     --line:#242424;--line-2:#363636;
     --good:#3ecf7e;--good-bg:#10241a;--bad:#ff6b5e;--bad-bg:#2c1512;--info:#4d8bff;--info-bg:#11203b;

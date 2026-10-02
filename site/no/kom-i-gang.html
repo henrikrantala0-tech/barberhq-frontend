@@ -37,7 +37,10 @@
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.1.0/dist/tabler-icons.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
-html{scroll-behavior:smooth}
+/* Sida er hardkodet mørk (ingen lys variant, ingen data-theme) → color-scheme fast dark, så native
+   UA-kontroller (select-nedtrekk for åpningstider, scrollfelt) rendrer mørkt i stedet for en hvit
+   option-liste på mørk flate. Ingen filter/invert-lapp. Samme rot-årsak som dashboard.html. */
+html{scroll-behavior:smooth;color-scheme:dark}
 body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;color:#fff;line-height:1.6}
 /* ROT-ÅRSAK til sidelengs-swipen (iPhone/Safari): et skjemafelt under 16px ZOOMER iOS inn ved fokus,
    og den zoomede sida kan dras sidelengs. ÉN grunnregel, 16px på ALLE felt — samme løsning som
