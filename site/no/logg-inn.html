@@ -73,9 +73,16 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .notice.show{display:block}
 
 /* ── Knapp ── */
-.btn-login{width:100%;background:#4d8bff;color:#fff;border:none;border-radius:10px;padding:14px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .18s;margin-top:4px}
-.btn-login:hover:not(:disabled){opacity:.88}
+/* Farge fra .btn-fill (primærstilen på alle no/-sider); .btn-login eier bare form og størrelse. */
+.btn-fill{background:#2563eb;color:#fff}
+.btn-fill:hover{background:#1d4ed8}
+.btn-fill:active{background:#1e40af}
+.btn-login{width:100%;border:1px solid transparent;border-radius:10px;padding:14px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;transition:background-color .2s,opacity .18s;margin-top:4px}
 .btn-login:disabled{opacity:.5;cursor:not-allowed}
+/* Sekundær (passord-innlogging): samme .btn-line som markedssidene. Står etter .btn-login så rammefargen vinner;
+   .btn-login har 1px gjennomsiktig ramme, så primær og sekundær får lik høyde. */
+.btn-line{background:transparent;color:#fff;border:1px solid #2e2e2e}
+.btn-line:hover{border-color:#fff}
 
 /* ── Magisk lenke (primær) ── */
 .magic-info{font-size:13px;color:#9a9a9a;margin-top:10px;text-align:center;line-height:1.5}
@@ -127,7 +134,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     </div>
 
     <!-- PRIMÆR: magisk lenke — ingen passord nødvendig, synlig uten å klikke noe. -->
-    <button class="btn-login" id="magic-submit" type="button">Send meg innloggingslenke</button>
+    <button class="btn-login btn-fill" id="magic-submit" type="button">Send meg innloggingslenke</button>
     <p class="magic-info">Vi sender en lenke til e-posten din. Lenken virker i 24 timer.</p>
     <p class="magic-ok" id="magic-ok">
       Sjekk e-posten din. Hvis adressen er registrert, har vi sendt en lenke.
@@ -153,7 +160,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
         </div>
       </div>
       <p class="error" id="error"></p>
-      <button class="btn-login" id="submit">Logg inn</button>
+      <button class="btn-login btn-line" id="submit">Logg inn</button>
     </div>
 
     <div class="card-foot">

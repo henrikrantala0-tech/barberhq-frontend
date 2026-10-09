@@ -69,8 +69,11 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .form-err.show{display:block}
 
 /* ── Knapp ── */
-.btn{width:100%;background:#4d8bff;color:#fff;border:none;border-radius:10px;padding:14px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;transition:opacity .18s;margin-top:4px}
-.btn:hover:not(:disabled){opacity:.88}
+/* Farge fra .btn-fill (primærstilen på alle no/-sider); .btn eier bare form og størrelse. */
+.btn-fill{background:#2563eb;color:#fff}
+.btn-fill:hover{background:#1d4ed8}
+.btn-fill:active{background:#1e40af}
+.btn{width:100%;border:none;border-radius:10px;padding:14px;font:inherit;font-size:15px;font-weight:600;cursor:pointer;transition:background-color .2s,opacity .18s;margin-top:4px}
 .btn:disabled{opacity:.5;cursor:not-allowed}
 
 /* «Hopp over» — vises kun i bytt-modus (?bytt=1) */
@@ -129,7 +132,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
       <p class="field-err" id="pw2-err"></p>
     </div>
 
-    <button class="btn" id="submit">Lagre og fortsett</button>
+    <button class="btn btn-fill" id="submit">Lagre og fortsett</button>
     <a class="skip" id="skip" href="/no/dashboard.html">Hopp over</a>
   </div>
 </main>
