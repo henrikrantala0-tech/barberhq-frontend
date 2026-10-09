@@ -52,14 +52,14 @@
   /* <button> arver IKKE font-family fra body (UA gir «MS Shell Dlg» i WebKit / «Arial» i Chromium →
      serif-aktig på enkelte systemer). ÉN felles grunnregel så ALLE knapper bruker Inter som resten av
      dashbordet — ikke per knapp. Fanget 22 knapper på UA-font (.tab, .svc-rm, .pub-copy, .crop-btn-*,
-     .slot-popup-btn, .pw-toggle, .fokus-x, .suksess-x, .tn-close, .plakat-kort m.fl.). Per-element-regler
-     med egen font vinner på spesifisitet og beholdes bevisst (.info-i = italic Georgia ⓘ-glyf). Samme
+     .slot-popup-btn, .pw-toggle, .fokus-x, .suksess-x, .plakat-kort m.fl.). Per-element-regler
+     med egen font vinner på spesifisitet og beholdes bevisst. Samme
      rot-årsak som kom-i-gang .btn. */
   button{font-family:inherit}
   /* Generell fokusring — SAMME som markedssidene (#4d8bff, 2px, offset 2px), literal (ikke var(--info),
      som er #1456a8 i lys modus). Kun :focus-visible → ingen ring ved museklikk. Dashbordet hadde bare
      spredte per-element-regler; knapper/lenker/faner/piller manglet konsistent ring. De eksisterende
-     per-element-reglene (.acc-head/.skjold/.info-i m.fl.) er mer spesifikke og beholder sine egne offset. */
+     per-element-reglene (.acc-head/.skjold m.fl.) er mer spesifikke og beholder sine egne offset. */
   a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
   /* ÉN grunnregel for alle skjemafelt i dashbordet: minst 16px. Under 16px zoomer iOS Safari inn
      ved fokus, og den zoomede sida kan dras sidelengs. Kompakthet løses med BREDDE, aldri med
@@ -536,30 +536,13 @@
   .momentum-h{font-size:15px;font-weight:700;color:var(--ink);letter-spacing:-.01em;margin:0 0 6px}
   .momentum-t{font-size:13.5px;color:var(--mut);line-height:1.5;margin:0 0 14px}
   .momentum .btn{display:inline-block;width:auto}
-  /* Trial-nudge (Oversikt, dag 20+): rolig vekst-nudge med BLÅ venstrekant (samme familie som momentum,
-     men blå = vekst/oppdagelse, ikke grønn bonus). Aldri rød. Styres av initTrialNudge(); hidden by default. */
-  /* Ikke venstrestrek (den kolliderer med .momentum-kortets grønne strek — samme «viktig kort»-signal).
-     Skiller seg via TINTET blå bakgrunn (--info-bg, som .sub-banner.info) + myk blå kant → leser som en
-     promo/nudge, ikke et data-kort. */
-  .trial-nudge{position:relative;background:var(--info-bg);border:1px solid color-mix(in srgb,var(--info) 30%,transparent);border-radius:14px;padding:18px 20px;margin:0 0 24px}
-  .trial-nudge[hidden]{display:none}
-  .trial-nudge-h{font-size:16px;font-weight:800;color:var(--ink);letter-spacing:-.02em;margin:0 0 7px;padding-right:28px}
-  .trial-nudge-t{font-size:13.5px;color:var(--mut);line-height:1.55;margin:0 0 15px;max-width:520px}
-  /* Likeverdige knapper (begge solid .btn), side ved side (flex:1 + min-width:0 = LIK bredde). To stablede
-     fullbredde-knapper tok for mye plass øverst. Under 340px (f.eks. 320) blir det for trangt side ved side
-     (wrapper til to linjer) → stables der, fortsatt likeverdige. */
-  .trial-nudge-btns{display:flex;gap:10px}
-  .trial-nudge-btns .btn{flex:1;min-width:0;justify-content:center;text-align:center;padding-left:12px;padding-right:12px}
-  @media(max-width:339px){.trial-nudge-btns{flex-direction:column}.trial-nudge-btns .btn{flex:none;width:100%}}
-  .tn-close{position:absolute;top:9px;right:9px;width:32px;height:32px;border:0;background:transparent;color:var(--mut);font-size:20px;line-height:1;cursor:pointer;border-radius:7px;display:flex;align-items:center;justify-content:center}
-  .tn-close:hover{background:var(--line);color:var(--ink)}
   /* Vekst-skjold (Basis-visning): halvgjennomsiktig lås over hele kortet. Hele laget klikkbart
      → Konto. Innholdet under er dimmet + ikke-interaktivt (pointer-events:none + inputs disabled).
      .eksempel-merke ligger OVER skjoldet (z 6 > 5) så «Eksempel» leses tydelig, ikke bak lås-laget. */
   .skjold-vert{position:relative}
   .skjold-vert > *:not(.skjold):not(.eksempel-merke){pointer-events:none}
   /* Lett skjold: lav overlegg-opacity + svak sløring, så innholdet under SÅ VIDT antydes. Lås,
-     kortnavn (leses gjennom) og «Se abonnement» skal fortsatt leses først — derfor skygge på
+     kortnavn (leses gjennom) og «Oppgrader til Vekst» skal fortsatt leses først — derfor skygge på
      ikon + lenke så de popper over det svake innholdet, i begge temaer. */
   .skjold{position:absolute;inset:0;z-index:5;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:7px;
     background:rgba(10,10,10,.48);backdrop-filter:blur(1px);border-radius:inherit;cursor:pointer;text-align:center;padding:16px}
@@ -621,65 +604,20 @@
   /* margin-left var 2px — arvet fra da klassen satt under en knapp med egen innrykk. Nå står
      den alene under hovedhandlingen og skal flukte med resten av teksten i kortet. */
   .sub-micro{font-size:12px;color:var(--mut);margin:10px 0 0;line-height:1.45;max-width:520px}
-  /* Plan-nedgang: rolig informasjonsboks INNI abonnementskortet — ingen rød, ingen ikon, ingen
-     «handle nå». plan_faller er bevisst utenfor attention_grunn (ingenting er galt), så dette
-     leser som info, ikke varsel. Diskret topp-skille som .fld-vis/.pw-felt, dempet brødtekst. */
-  .plan-fall{margin-top:16px;padding-top:16px;border-top:1px solid var(--line);max-width:520px}
-  .plan-fall p{font-size:13px;color:var(--ink-2);line-height:1.5;margin:0}
-  .plan-fall .lnk-quiet{margin-top:10px}
-  /* Plan-velger (checkout): Basis/Vekst. Vises KUN i checkout-tilstander (visPlanVelger).
-     px-verdier som resten av .subcard — dashboard.html bruker ikke --fs-skalaen. var(--info)
-     er #1456a8 lys / #4d8bff mørk → riktig merkeblå i begge tema uten hardkodet hex. */
-  .plan-velg{display:grid;gap:14px;margin:6px 0 18px;max-width:520px}
-  /* ⚠ Individuelle transform-egenskaper (scale + translate) med VILJE: skaleringen bor på
-     `scale` og glir via transition, mens svevingen animerer `translate` uavhengig. Delte de
-     samme `transform`, ville @keyframes overkjørt transisjonen og valget HOPPET inn/ut i
-     stedet for å gli. `scale`/`translate` som separate props komponeres og kolliderer ikke. */
-  .plan-opt{position:relative;display:flex;flex-direction:column;gap:8px;text-align:left;width:100%;
-    appearance:none;font-family:inherit;color:var(--ink);background:var(--surface);
-    border:1px solid var(--line-2);border-radius:14px;padding:16px 18px;cursor:pointer;
-    scale:1;translate:0 0;
-    transition:border-color .3s ease,box-shadow .3s ease,scale .3s ease,translate .3s ease}
-  .plan-opt:hover{border-color:var(--mut-2)}
-  /* Valgt: hev ~3,5 % + sving ±3px (knapt merkbart, ~3,5 s). Glød per plan under. */
-  .plan-opt[aria-checked="true"]{scale:1.035;animation:planFloat 3.5s ease-in-out infinite}
-  @keyframes planFloat{0%,100%{translate:0 3px}50%{translate:0 -3px}}
-  @media(prefers-reduced-motion:reduce){
-    .plan-opt[aria-checked="true"]{animation:none;translate:0 0}   /* behold skalering, drop sveving */
-  }
-  /* ── Glød (mørk modus, default) — to lag box-shadow: ett tett, ett vidt+svakt, blør ut ── */
-  /* Vekst: merkeblå fra var(--info), gjort gjennomsiktig med color-mix (ingen ny hardkodet hex). */
-  .plan-opt.plan-vekst[aria-checked="true"]{border-color:var(--info);
-    box-shadow:0 0 16px color-mix(in srgb,var(--info) 50%,transparent),
-               0 0 46px color-mix(in srgb,var(--info) 30%,transparent)}
-  /* Basis: hvit diffus glød. */
-  .plan-opt[data-plan="basis"][aria-checked="true"]{border-color:rgba(255,255,255,.55);
-    box-shadow:0 0 16px rgba(255,255,255,.20),
-               0 0 46px rgba(255,255,255,.10)}
-  /* ── Lys modus: dempet myk DROP-skygge i stedet for glød (glød er laget for mørk flate og
-     forsvinner/leser stygt på hvit). To lag som mørk-gløden — ett tett, ett vidt — men mørk
-     rgba, ikke lys, så den leses som løft mot hvit bakgrunn. ── */
-  html[data-theme="light"] .plan-opt[data-plan="basis"][aria-checked="true"],
-  html[data-theme="light"] .plan-opt.plan-vekst[aria-checked="true"]{
-    border-color:var(--info);
-    box-shadow:0 10px 28px rgba(0,0,0,.16),0 3px 10px rgba(0,0,0,.10)}
-  .plan-top{display:flex;align-items:baseline;justify-content:space-between;gap:12px}
-  .plan-navn{font-size:16px;font-weight:800;letter-spacing:-.02em}
-  /* Uvalgt pris på --ink-2, ikke --mut: --mut (#7a7a7a) er ~4,4:1 på hvit — borderline for
-     tall man skal lese fort. --ink-2 (#3a3a3a lys / #cfcfcf mørk) er lesbart i begge moduser. */
-  .plan-pris{font-size:14px;font-weight:600;color:var(--ink-2);white-space:nowrap}
-  .plan-opt[aria-checked="true"] .plan-pris{color:var(--ink)}
-  .plan-under{font-size:13px;font-weight:600;color:var(--ink-2);letter-spacing:-.01em}
-  .plan-liste{list-style:none;margin:2px 0 0;padding:0;display:grid;gap:5px}
-  /* Punktene på --ink-2 (ikke --mut): --mut var nesten uleselig på hvit i lys modus. --ink-2
-     gir ~10:1 lys og høy kontrast mørk — lesbart i BEGGE, ikke bare mørkt. */
-  .plan-liste li{position:relative;padding-left:18px;font-size:12.5px;color:var(--ink-2);line-height:1.45}
-  .plan-liste li::before{content:"";position:absolute;left:2px;top:6px;width:6px;height:6px;border-radius:50%;background:var(--mut)}
-  .plan-vekst[aria-checked="true"] .plan-liste li::before{background:var(--info)}
-  /* Bevisst dempet, men ikke usynlig: --mut (ikke --mut-2 som var ~2,3:1 på hvit). */
-  .plan-mer{font-size:11.5px;color:var(--mut);margin-top:2px}
-  .plan-pill{position:absolute;top:-9px;left:14px;background:var(--info);color:#fff;white-space:nowrap;
-    font-size:10px;font-weight:700;letter-spacing:.02em;padding:2px 9px;border-radius:99px}
+  /* Konto (prismodell 09.10.2026). Oppgraderingsboksen vises KUN i Gratis-tilstanden; finskriften
+     står i boksen der, og under knappen/teksten i prøve- og Vekst-tilstandene. .subcard p-regelen
+     (13px, margin-bottom 16px) har høyere spesifisitet enn en bar klasse — derfor .subcard-prefiks. */
+  .subcard .konto-tekst p{margin-bottom:10px}
+  .subcard .konto-tekst p:last-child{margin-bottom:16px}
+  .konto-opp{margin:0 0 4px;padding:16px 18px;border:1px solid var(--info);border-radius:12px;max-width:520px}
+  .subcard .konto-opp-h{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 6px}
+  .subcard .konto-opp-t{margin:0 0 14px}
+  .subcard .konto-fin{font-size:11.5px;color:var(--mut);line-height:1.45;margin:10px 0 0;max-width:520px}
+  /* Boksen er nestet i kortet: på 320 er det ~149px innvendig, mindre enn knappen trenger med vanlig
+     padding (teksten brakk til to linjer). Fullbredde + smalere sidepadding på smale skjermer. */
+  @media(max-width:480px){ .konto-opp .btn{width:100%;padding-left:10px;padding-right:10px;white-space:nowrap} }
+  .konto-avpub{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
+  .subcard .konto-avpub p{margin-bottom:12px}
   /* Publisering — egen blokk under abonnementskortet. Gjenbruker .subcard/.substatus. */
   .pubcard{margin-top:22px}
   /* Container for lenkeblokka. Live-tilstand fyller den med .pub-field (URL-felt + kopi-ikon);
@@ -740,7 +678,9 @@
   .hjelp-p{font-size:13px;color:var(--ink-2);line-height:1.5;margin-bottom:14px}
   .hjelp-lenke{display:inline-block;text-decoration:none}
   /* Tydelig luft over: avpubliser er destruktiv og skal ikke ligge inntil lenkefeltet/kopi. */
-  .konto-lenker{display:flex;flex-wrap:wrap;gap:18px;margin-top:22px}
+  /* row-gap 0: brekker lenkene til to linjer på mobil, bærer min-height:44px allerede trykkflaten —
+     en ekstra 18px luke mellom radene ga et hull på ~60px. */
+  .konto-lenker{display:flex;flex-wrap:wrap;gap:0 18px;margin-top:22px}
   .konto-lenker .lnk-quiet{margin-top:0}
   /* Prikk på Konto-fanen ved needs_attention. Ingen tall — den sier «se her», ikke «hvor mye».
      Ligger inni nav-knappen, så den overlever flyttingen til «Mer»-menyen på mobil. */
@@ -1338,23 +1278,6 @@
      + luft mellom forklaringen (#rebookPreview) og valget. Bevisst KUN Rebooking — Verving beholdt. */
   .seg-lead-ktrl{font-size:13.5px;font-weight:600;color:var(--ink)}
   #rebookPreview + .seg-line{margin-top:16px}
-  /* Info-ikon ved «Send etter». title= er brukt ellers i dashbordet, men duger IKKE her:
-     den vises aldri på touch, og dashbordet er mobil-primært. Derfor en ekte boble som
-     åpnes på BÅDE trykk og hover. */
-  .info-wrap{position:relative;display:inline-flex;vertical-align:middle;margin-left:5px}
-  .info-i{width:15px;height:15px;flex-shrink:0;border-radius:99px;border:1px solid var(--line-2);
-    background:none;color:var(--mut);font:600 10px/1 Georgia,serif;font-style:italic;
-    display:flex;align-items:center;justify-content:center;cursor:pointer;padding:0}
-  .info-i:hover,.info-i[aria-expanded="true"]{color:var(--ink);border-color:var(--mut)}
-  .info-i:focus-visible{outline:2px solid var(--info);outline-offset:2px}
-  /* Boble over ikonet. left:0 + translateX(-30%) holder den innenfor panelet på 320 —
-     seg-line starter 17px fra kanten, og en sentrert boble hadde stukket ut til venstre. */
-  .info-tip{position:absolute;bottom:calc(100% + 7px);left:0;transform:translateX(-30%);
-    width:max-content;max-width:min(240px,72vw);z-index:20;
-    font-size:11.5px;line-height:1.45;color:var(--ink);text-align:left;white-space:normal;
-    background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:8px 10px;
-    box-shadow:0 6px 20px rgba(0,0,0,.35)}
-  .info-wrap:hover .info-tip{display:block!important}
   .seg-unit{font-size:12.5px;color:var(--mut-2)}
   /* Verdi-piller (rebooking-intervall + hvem-får-rabatt). En VERDI, ikke en av/på-tilstand.
      Derfor IKKE blå — blå betyr «på» ellers i dashbordet (.sw, og .segs på Oversikt der pillen
@@ -1577,10 +1500,10 @@
   <div class="suksess-kort" role="dialog" aria-modal="true" aria-labelledby="suksessTittel">
     <button class="suksess-x" id="suksessX" type="button" aria-label="Lukk">&times;</button>
     <div class="suksess-emoji">🎉</div>
-    <h3 id="suksessTittel">Siden din er live!</h3>
+    <h3 id="suksessTittel">Siden din er klar.</h3>
     <div class="suksess-lenke" id="suksessLenke"></div>
-    <p class="suksess-linje">Legg lenka i Instagram-bioen din nå</p>
-    <p class="suksess-linje sub">30 dager gratis starter nå</p>
+    <p class="suksess-linje">Legg lenka i bioen og del den på&nbsp;story</p>
+    <p class="suksess-linje sub">Nå får vi første booking gjennom&nbsp;den.</p>
   </div>
 </div>
 <div class="wrap">
@@ -1588,17 +1511,6 @@
   <!-- OVERSIKT -->
   <section class="panel active" id="oversikt">
 
-    <!-- Trial-nudge (dag 20+ i prøve): initTrialNudge() styrer synlighet + persistens (shown/dismiss).
-         To knapper åpner Verving-/Lojalitet-trekkspillet i Vekst (panelbytte + scroll). -->
-    <div class="trial-nudge" id="trialNudge" hidden>
-      <button class="tn-close" id="tnClose" type="button" aria-label="Lukk">&times;</button>
-      <p class="trial-nudge-h">Flere nye kunder. Flere som kommer tilbake.</p>
-      <p class="trial-nudge-t">Sett opp verving eller lojalitetsprogram og se hva kundene dine faktisk gjør med det. Du velger belønningen — vi lager kampanjen.</p>
-      <div class="trial-nudge-btns">
-        <button class="btn" id="tnVerv" type="button">Sett opp verving</button>
-        <button class="btn" id="tnLoyal" type="button">Lojalitetsprogram</button>
-      </div>
-    </div>
 
     <!-- 1. Kommende bookinger — løftet ut av .bottom-grid til topp. -->
     <div class="ovs-upcoming">
@@ -1805,13 +1717,7 @@
                Samme streng står fortsatt i #paamPreview (SMS-påminnelse) — ikke rørt her. -->
           <div id="rebookPreview"></div>
           <div class="seg-line" id="rebookIntervallRad">
-            <span class="seg-lead seg-lead-ktrl">Send etter<!--
-              --><span class="info-wrap" id="rebookInfoWrap" hidden><!--
-                --><button type="button" class="info-i" id="rebookInfo" aria-expanded="false"
-                        aria-controls="rebookInfoTip" aria-label="Om rebooking i prøveperioden">i</button><!--
-                --><span class="info-tip" id="rebookInfoTip" role="tooltip" hidden>I prøveperioden sendes rebooking etter 28 dager. Valget ditt gjelder etter prøven.</span><!--
-              --></span><!--
-            --></span>
+            <span class="seg-lead seg-lead-ktrl">Send etter</span>
             <div class="segs segs-val" id="rebookPills" role="group" aria-label="Rebooking-intervall">
               <button type="button" data-days="28" aria-selected="false">28 dager</button>
               <button type="button" data-days="35" aria-selected="false">35 dager</button>
@@ -2140,7 +2046,7 @@
            ser han siden sin, ikke abonnementet. Trial-vilkåret står som dempet note under. -->
       <div class="dinside-cta-handling">
         <button class="btn" id="dinsidePubliser">Publiser siden</button>
-        <span class="dinside-cta-note">Prøveperioden på 30 dager starter når du publiserer.</span>
+        <span class="dinside-cta-note">Publiser når du er fornøyd. Det er gratis, uten kort.</span>
       </div>
     </div>
     <!-- Live-tilstand: erstatter CTA-en når page_status==='live'. Liten grønn prikk + «Live» i
@@ -2341,72 +2247,36 @@
         </button>
         <div class="acc-body" hidden>
 
-    <!-- ETT kort, ÉN knapp. Abonnement og publisering var to kort med hver sin statuspille
-         og hver sin knapp — men de beskrev samme spørsmål: «hva må jeg gjøre nå?».
-         Etter trial-omleggingen (041) er de heller ikke uavhengige: publisering STARTER
-         prøveperioden, og kort kreves før den er ute. To kort ville vist to halve svar.
-         Én knapp, som skifter etikett og handling med tilstanden — se renderKonto().
-         [oversettelse: sv/da/en] -->
+    <!-- ETT kort. Tilstanden velges av kontoTilstand(b) — en ren funksjon av billing-shapen — og
+         tegnes av renderKonto. Ingen tilstandslogikk i markupen: nodene under er tomme flater som
+         fylles eller skjules. Prismodell 09.10.2026: Gratis er standard, publisering er frikoblet
+         billing, Vekst kjøpes via «Oppgrader til Vekst». [oversettelse: sv/da/en] -->
     <div class="subcard">
       <div class="substatus" id="kontoStatus">&#9679; Henter status …</div>
-      <!-- Hovedtallet er TILSTANDSAVHENGIG, ikke alltid prisen. Før publisering er 89 kr
-           ikke det barbereren lurer på — han har ikke begynt å bruke noe ennå. I
-           prøveperioden er det dagene som teller ned som er tallet. Prisen flytter da til
-           mikroteksten, der den fortsatt er ærlig uten å være det første øyet lander på. -->
       <div class="pln" id="kontoTall" style="display:none"><b id="kontoTallStor"></b><span id="kontoTallSuff"></span></div>
       <p class="pln-sub" id="kontoTallSub" style="display:none"></p>
-      <p id="kontoTekst"></p>
-      <!-- Plan-valg: KUN i checkout-tilstander (renderKonto → visPlanVelger). Barbereren velger
-           nivået han skal BETALE for. Priser fylles fra PLAN_INFO i JS — ingen tredje priskilde
-           i markup. Alt innhold er synlig hele tiden (ingen utvidelse). Pillen på Vekst er
-           statisk og lik i alle tilstander. Vekst forhåndsvalgt — prøven kjører på Vekst.
-           [oversettelse: sv/da/en] -->
-      <div class="plan-velg" id="planVelger" role="radiogroup" aria-label="Velg abonnement" style="display:none">
-        <button type="button" class="plan-opt" data-plan="basis" role="radio" aria-checked="false">
-          <span class="plan-top"><span class="plan-navn">Basis</span><span class="plan-pris" data-plan-pris="basis"></span></span>
-          <span class="plan-under">Oppfølgingen tar du selv.</span>
-          <ul class="plan-liste">
-            <li>Egen bookingside med din lenke</li>
-            <li>Kalender og påminnelses-SMS</li>
-            <li>Google Calendar-synk</li>
-          </ul>
-        </button>
-        <button type="button" class="plan-opt plan-vekst" data-plan="vekst" role="radio" aria-checked="true">
-          <span class="plan-pill">Under én klipp i måneden</span>
-          <span class="plan-top"><span class="plan-navn">Vekst</span><span class="plan-pris" data-plan-pris="vekst"></span></span>
-          <span class="plan-under">Henter kunden tilbake av seg selv.</span>
-          <ul class="plan-liste">
-            <li>Alt i Basis</li>
-            <li>Automatisk rebooking når det er på tide</li>
-            <li>Oppfølging etter no-show</li>
-            <li>Bygg klientell med vervesystemet</li>
-            <li>Gi kundene en grunn til å komme tilbake med lojalitetsprogram</li>
-            <li>Se hvor kundene faktisk kommer fra</li>
-          </ul>
-          <span class="plan-mer">90 kr mer enn Basis.</span>
-        </button>
+      <div class="konto-tekst" id="kontoTekst"></div>
+      <!-- Oppgraderingsboks: KUN Gratis. Vekst-prisen fylles fra PLAN_INFO.vekst (én priskilde). -->
+      <div class="konto-opp" id="kontoOpp" style="display:none">
+        <p class="konto-opp-h" id="kontoOppH"></p>
+        <p class="konto-opp-t">Rebooking, vinn tilbake, verving, lojalitet og attribusjon. 100 SMS inkludert hver måned.</p>
+        <button class="btn" id="kontoOppBtn" type="button">Oppgrader til Vekst</button>
+        <p class="konto-fin" id="kontoOppFin"></p>
       </div>
-      <!-- ÉN node for hovedhandlingen. «Vekten» er en klasse-bytte (.btn ↔ .lnk-quiet), ikke
-           to elementer — samme tekst, samme handler, samme id. To noder ville betydd to
-           steder å holde etiketten og aksjonen i synk. -->
+      <!-- ÉN node for hovedhandlingen (publiser / oppgrader / oppdater betaling); _kontoAksjon sier hva. -->
       <button class="btn" id="kontoAksjon" style="display:none"></button>
       <p class="sub-micro" id="kontoMikro" style="display:none"></p>
-      <!-- Plan-nedgang: rolig INFORMASJON (ikke varsel) — vises KUN på _billing.plan_faller, dvs.
-           kort lagt inn på Basis mens prøven løper. Han har Vekst nå, faller til Basis ved
-           prøveslutt. Bevisst utenfor attention_grunn: ingenting er galt, kortet virker, siden
-           står — derfor ingen rød farge, ikke varselikon, ikke «Handle nå». Dagene fra
-           trial_days_left (IKKE days_left — ulik klokke). «Bytt til Vekst» åpner den eksisterende
-           plan-velgeren over, ingen ny flate. [oversettelse: sv/da/en] -->
-      <div class="plan-fall" id="planFall" style="display:none">
-        <p id="planFallTekst"></p>
-        <button class="lnk-quiet" id="planFallBtn" type="button">Bytt til Vekst</button>
+      <p class="konto-fin" id="kontoFin" style="display:none"></p>
+      <!-- Prøve eller abonnement, men siden er avpublisert: plan-tilstanden står over, og
+           publisering tilbys her — over lenkeblokka. -->
+      <div class="konto-avpub" id="kontoAvpub" style="display:none">
+        <p>Siden din er ikke publisert.</p>
+        <button class="btn" id="kontoPubliser" type="button">Publiser bookingsiden</button>
       </div>
       <!-- <div>, ikke <p>: forhåndsvisnings-tilstanden legger en <p class="pub-note"> under
-           lenka, og <p> inne i <p> er ugyldig HTML — parseren lukker den ytre og noten havner
-           utenfor blokka som skjules/vises. [oversettelse: sv/da/en] -->
+           lenka, og <p> inne i <p> er ugyldig HTML. [oversettelse: sv/da/en] -->
       <div class="pub-link" id="pubLink" style="display:none"></div>
-      <!-- Sekundærhandlinger som dempede tekstlenker. Avpubliser skal ALDRI være en knapp:
-           den tar en live side ned og skal ikke konkurrere visuelt med hovedhandlingen. -->
+      <!-- Sekundærhandlinger som dempede tekstlenker. Avpubliser skal ALDRI være en knapp. -->
       <div class="konto-lenker">
         <button class="lnk-quiet" id="manageSub" style="display:none">Administrer abonnement</button>
         <button class="lnk-quiet" id="unpublish" style="display:none">Avpubliser bookingside</button>
@@ -3088,8 +2958,6 @@ const api={
   },
   // Trial-nudge (Oversikt): marker vist (server setter shown_at KUN hvis NULL) / lukket (dismissed_at=now).
   // Tom body. Fire-and-forget — feiler kallet, endrer det bare persistensen, ikke visningen i denne økten.
-  async trialNudgeShown(){ return await apiFetch('/api/dashboard/billing/trial-nudge/shown',{method:'POST',body:'{}'}); },
-  async trialNudgeDismiss(){ return await apiFetch('/api/dashboard/billing/trial-nudge/dismiss',{method:'POST',body:'{}'}); },
   // PUT /api/dashboard/customers/:id/loyalty {opt_in} → melder en kunde inn (true) / ut (false).
   //   Svar: {customer_id, opt_in, opt_in_at, has_unused_reward}. Ruta er i kontrakten.
   // Returnerer Response så kalleren kan skille 403 (Vekst-lås) fra annen feil OG lese svar-body.
@@ -3527,8 +3395,8 @@ function settSkjold(host,opts){
   if(host.querySelector(':scope > .skjold'))return; // allerede skjoldet
   var s=document.createElement('div');
   s.className='skjold'; s.setAttribute('role','button'); s.tabIndex=0;
-  s.setAttribute('aria-label','Se abonnement');
-  s.innerHTML=SKJOLD_LAAS_SVG+'<span class="skjold-lenke">Se abonnement</span>';
+  s.setAttribute('aria-label','Oppgrader til Vekst');
+  s.innerHTML=SKJOLD_LAAS_SVG+'<span class="skjold-lenke">Oppgrader til Vekst</span>';
   s.addEventListener('click',aapneAbonnement);
   s.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' '){e.preventDefault();aapneAbonnement();} });
   host.appendChild(s);
@@ -3557,7 +3425,7 @@ function settHandlingsLaas(host){
   var titel=host.querySelector('.acc-title');
   if(titel && !titel.querySelector('.laas-badge')){
     var b=document.createElement('span'); b.className='laas-badge';
-    b.innerHTML=SKJOLD_LAAS_SVG+'<span>Vekst</span>'; b.title='Med i Vekst-planen';
+    b.innerHTML=SKJOLD_LAAS_SVG+'<span>Vekst</span>'; b.title='Med i Vekst';
     titel.appendChild(b);
   }
 }
@@ -3570,7 +3438,7 @@ function fjernHandlingsLaas(host){
 }
 // Basis: en funksjons-seksjons KUNDE-liste hentes aldri (ingen ekte tall) — vis en kort, lesbar
 // lås-note i stedet for «Laster …», uten å hente noe. Kalles fra loadernes erBasis-gren.
-function basisLaasListe(el){ if(el) el.innerHTML='<p class="wb-empty">Med i Vekst-planen — oppgrader for å bruke dette.</p>'; }
+function basisLaasListe(el){ if(el) el.innerHTML='<p class="wb-empty">Med i Vekst. Oppgrader for å bruke dette.</p>'; }
 // Funksjons-seksjonene får HANDLINGS-lås (lesbar + indikator), IKKE skjold. Attribusjon/«Drevet av»/
 // momentum beholder settSkjold (måling = teaser) via sine egne render-funksjoner. Samme vei inn som
 // før (skjoldVekstFlater) → dekkes av billing-race-helingen i oppdaterSkjoldFlater.
@@ -3582,9 +3450,9 @@ function skjoldVekstFlater(){
 function erSettings403(r){ return !!(r && r.status===403); }
 function visSettingsLaas(errEl, prefix){
   if(!errEl)return;
-  // prefix = valgfri feature-kontekst (f.eks. «Rebooking er med i Vekst.») FORAN «Se abonnement»-lenka.
+  // prefix = feature-kontekst («Rebooking er med i Vekst.») FORAN «Oppgrader»-lenka.
   // Lenka går til Konto-fanen via aapneAbonnement — samme mekanisme for alle Vekst-lås (verving/loyalty/SMS).
-  errEl.innerHTML=(prefix?(prefix+' '):'')+'<a href="#" class="skjold-lenke">Se abonnement</a>';
+  errEl.innerHTML=(prefix?(prefix+' '):'')+'<a href="#" class="skjold-lenke">Oppgrader</a>';
   errEl.hidden=false;
   var a=errEl.querySelector('a'); if(a)a.addEventListener('click',function(e){e.preventDefault();aapneAbonnement();});
 }
@@ -3670,7 +3538,7 @@ function diPaaVeiHtml(pv, opts){
       +'<div class="di-pv-num">'+(rb.naar_vindu_30d||0)+'</div>'
       +'<div class="di-pv-txt">kunder når vinduet de neste 30 dagene</div>'
       +'<div class="di-pv-consent">'+(rb.med_samtykke||0)+' av '+(rb.naar_vindu_30d||0)+' har SMS-samtykke i dag</div>'
-      +(basis?'<div class="di-basis-note">På Basis får ingen av dem SMS.</div>':'')
+      +(basis?'<div class="di-basis-note">På Gratis får ingen av dem rebooking-SMS.</div>':'')
     +'</div>';
   // Vinn tilbake — NÅTILSTAND FØRST (14.09): N klare nå (tall, som rebooking) → dato-prognose → «Ingen ennå».
   var wbN=wb.passerer_innen_30d||0, wbDato=pvDato(wb.foerste_passerer_60);
@@ -3706,7 +3574,7 @@ function diBasisForklaring(){
 // Knapp + pris — KUN Vekst-fanen. På Oversikt bærer «På vei» flaten (det eneste ekte tallet); ingen CTA der.
 function diBasisCtaPris(){
   return '<button type="button" class="di-cta" data-di-oppgrader>Oppgrader til Vekst</button>'
-    +'<div class="di-cta-price">179 kr/mnd, ingen binding</div>';
+    +'<div class="di-cta-price">179 kr/mnd eks. mva. Ingen binding.</div>';
 }
 function koblePaaVeiCta(host){
   if(!host)return;
@@ -4394,14 +4262,7 @@ async function loadMomentum(){
     var acc=$("#accVerv"); if(acc) acc.scrollIntoView({behavior:'smooth',block:'start'});
   });})();
 
-// ── Trial-nudge (Oversikt) ────────────────────────────────────────────────────────────────────────
-// Rolig vekst-nudge i prøve-vinduet. Persistens (overlever enhetsbytte) via barbers.trial_nudge_shown_at
-// /dismissed_at, lest fra /billing/status og skrevet via POST /billing/trial-nudge/{shown,dismiss}.
-// VISES kun: dag 20+ (trial_days_left<=10) OG effective_plan_grunn==='trial_vindu' (ikke Basis, ikke etter
-// trial). ALDRI hvis funksjonene alt er i bruk (loyalty_enabled ELLER en ekte verving) — det dekker også
-// «forsvinner permanent når han gjør noe etter visning»: neste last ser bruken og skjuler.
-// GJENVISNING: 5 dager etter dismissed_at, ÉN gang. Trial-vinduet (dag 20–30) begrenser naturlig til maks
-// én gjenvisning — en tredje ville landet etter prøveslutt (ikke trial_vindu) og blokkeres av gaten der.
+// Åpne et Vekst-trekkspill fra en annen fane (brukes av «Drevet av» → vinn tilbake).
 function aapneVekstAkkordion(sel){
   if(typeof switchPanel==='function') switchPanel('vekst');
   // switchPanel klikker nav-knappen (kan lazy-rendre) → åpne akkordionen på neste tick.
@@ -4411,30 +4272,6 @@ function aapneVekstAkkordion(sel){
     var acc=document.querySelector(sel); if(acc) acc.scrollIntoView({behavior:'smooth',block:'start'});
   },70);
 }
-async function initTrialNudge(){
-  var el=$("#trialNudge"); if(!el) return;
-  var b=_billing; if(!b) return;
-  if(erBasis()) return;                                                             // ikke Basis
-  if(String(b.effective_plan_grunn||'').toLowerCase()!=='trial_vindu') return;      // kun i prøve-vinduet
-  if(!(b.trial_days_left<=10)) return;                                              // tidligst dag 20 (av 30)
-  // Har alt generert en kampanjeplakat → har alt gjort det banneret ber om. Synkront fra _billing
-  // (billig), sjekket FØR de asynkrone kallene så de også spares.
-  if(b.har_generert_plakat===true) return;
-  var dis=b.trial_nudge_dismissed_at ? new Date(b.trial_nudge_dismissed_at).getTime() : null;
-  if(dis!=null && Date.now() < dis + 5*86400000) return;                            // lukket → stille i 5 dager
-  // «Brukt funksjonene?» — aldri nudge om noe han alt gjør.
-  var loy=await api.loyalty();          if(loy && loy.enabled===true) return;
-  var refs=await api.referrals();       if(Array.isArray(refs) && refs.length>0) return; // #3 (all-time referrals) dekker verving-aktivitet
-  // Fjernet 13.09: en attr.verving.count>0-sjekk som ALDRI traff (nøkkelen fantes ikke i noen /attribution-shape).
-  // #3 over er riktig signal; ikke gjenoppliv en vindus-basert attribusjons-sjekk her. Se docs/trial-nudge-verving.md.
-  el.hidden=false;
-  if(!b.trial_nudge_shown_at){ try{ api.trialNudgeShown(); }catch(_){} }            // sett vist (server: kun hvis NULL)
-}
-(function(){
-  var v=$("#tnVerv");  if(v) v.addEventListener("click",function(){ aapneVekstAkkordion('#accVerv'); });
-  var l=$("#tnLoyal"); if(l) l.addEventListener("click",function(){ aapneVekstAkkordion('#accLoyal'); });
-  var x=$("#tnClose"); if(x) x.addEventListener("click",function(){ var el=$("#trialNudge"); if(el)el.hidden=true; try{ api.trialNudgeDismiss(); }catch(_){} });
-})();
 
 /* ---- Attribusjon (Vekst): «Hvor kundene kommer fra» ---- */
 // Egen periode-state, bevisst skilt fra Oversiktens curPeriod: de to flatene skal kunne
@@ -5351,45 +5188,9 @@ async function loadSmsInnstillinger(){
   // Feilmeldinga skrus av ved hvert vellykket kall, ikke bare på. Uten else-grenen ville
   // den blitt stående etter at et senere kall gikk gjennom.
   var fe=$("#settFeil"); if(fe) fe.hidden = !_settingsUkjent;
-  settRebookInfo();
   renderSmsPreview('paaminnelse','paamPreview');
   renderSmsPreview('rebooking','rebookPreview');
 }
-// Info-ikonet ved «Send etter» vises KUN i prøveperioden. Leser _billing — samme kilde som
-// Konto-fanen, ikke en ny utledning. Datoregning hører ikke hjemme i frontend: backend eier
-// trial_days_left, og to steder som regner på trial_start_at ville drevet fra hverandre.
-// trial_days_left, ALDRI days_left (se advarselen over renderKonto): null = ikke startet,
-// 0 = utløpt, >0 = løper. Kun den siste skal vise ikonet.
-// Kalles fra BEGGE sider — her og fra loadBilling — fordi Vekst-fanen kan åpnes før
-// billing-kallet er tilbake. Rekkefølgen er ikke avgjort, og et ikon som mangler fordi to
-// kall løp om kapp er verre enn å sette samme hidden-flagg to ganger.
-function settRebookInfo(){
-  var w=$("#rebookInfoWrap"); if(!w)return;
-  var iProve = !!(_billing && _billing.trial_days_left > 0);
-  w.hidden = !iProve;
-  if(!iProve) lukkRebookTip();   // prøven tok slutt mens boblen sto åpen
-}
-function lukkRebookTip(){
-  var t=$("#rebookInfoTip"), b=$("#rebookInfo");
-  if(t) t.hidden=true;
-  if(b) b.setAttribute('aria-expanded','false');
-}
-(function(){
-  var b=$("#rebookInfo"); if(!b)return;              // ingen null-sjekk lenger ned: init kaster ellers
-  b.addEventListener('click',function(e){
-    e.stopPropagation();                              // ellers lukker dokument-lytteren den umiddelbart
-    var t=$("#rebookInfoTip"); if(!t)return;
-    var aapen=!t.hidden;
-    t.hidden=aapen;
-    b.setAttribute('aria-expanded', aapen?'false':'true');
-  });
-  // Trykk utenfor og Escape lukker. Uten dette blir boblen stående på mobil, der det
-  // ikke finnes en mouseleave å lukke den med.
-  document.addEventListener('click',function(e){
-    if(!e.target.closest('#rebookInfoWrap')) lukkRebookTip();
-  });
-  document.addEventListener('keydown',function(e){ if(e.key==='Escape') lukkRebookTip(); });
-})();
 // Rendrer den EKTE meldingsteksten som en les-bare SMS-boble. Ingen redigering: teksten er
 // backendens (buildPaaminnelseBody/buildRebookingBody), og den skal barbereren kunne stole
 // på gjenkjenner det kunden faktisk får.
@@ -5444,7 +5245,7 @@ function settBryter(el, verdi, ukjent){
 // (saveSettings uten await/sjekk) → en feilet lagring så ut som suksess og rullet aldri tilbake.
 // Nå samme invariant som verving/loyalty: await, sjekk svaret, rull tilbake UI ved feil, meld fra
 // i et INLINE feilfelt VED kontrollen (errEl) — ikke en løsrevet toast. 403 er FORVENTET på
-// Vekst-flater (rebooking) for Basis → feature-spesifikk lås + «Se abonnement»-lenke til Konto
+// Vekst-flater (rebooking) for Gratis → feature-spesifikk lås + «Oppgrader»-lenke til Konto
 // (vekstNavn satt), ikke generisk feil. Én helper for alle tre så invarianten ikke faller ut igjen.
 async function lagreSmsInnstilling(patch, rullTilbake, errEl, vekstNavn){
   var r=await api.saveSettings(patch);
@@ -5652,7 +5453,7 @@ document.querySelectorAll('#vervRecipient button').forEach(function(b){
     piller.forEach(function(x){x.disabled=true;});
     var r=await api.saveSettings({referral_reward_recipient:b.dataset.r});
     piller.forEach(function(x){x.disabled=false;}); // re-enable i ALLE grener
-    if(erSettings403(r)){ setVervRecipient(forrige); visSettingsLaas(err); return; } // Vekst-lås, ikke generisk feil
+    if(erSettings403(r)){ setVervRecipient(forrige); visSettingsLaas(err,'Verving er med i Vekst.'); return; } // Vekst-lås, ikke generisk feil
     if(r&&r.ok){ _vervLagret.recipient=b.dataset.r; err.hidden=true; }
     else  { setVervRecipient(forrige); err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false; }
   });
@@ -5662,7 +5463,7 @@ $("#vervPct").addEventListener('change',async function(){
   if(!Number.isInteger(v)||v<5||v>50){ err.textContent='Rabatt må være et heltall mellom 5 og 50 %.'; err.hidden=false; return; }
   err.hidden=true;
   var r=await api.saveSettings({referral_discount_pct:v});   // via saveSettings → mater plakat-versjonen fra PUT-responsen
-  if(erSettings403(r)){ visSettingsLaas(err); return; } // Vekst-lås → samme lås-tekst som skjoldet
+  if(erSettings403(r)){ visSettingsLaas(err,'Verving er med i Vekst.'); return; } // Vekst-lås, ikke generisk feil
   // Oppdater _vervLagret.pct KUN ved bekreftet lagring — som recipient-søsteren. Før falt null/401
   // gjennom til mutasjonen (r&&!r.ok er false ved r===null) → prosenten ble «lovet bort» uten lagring.
   if(r&&r.ok){ _vervLagret.pct=v; err.hidden=true; }   // først NÅ er prosenten sann å love bort
@@ -5947,7 +5748,7 @@ $("#loyalOversikt").addEventListener('click',async function(e){
   if(slaa){
     slaa.disabled=true; slaa.textContent='Slår på …';
     var rs=await api.saveSettings({loyalty_enabled:true});
-    if(erSettings403(rs)){ slaa.disabled=false; slaa.textContent='Slå på lojalitetsprogram'; showToast('Se abonnement for å bruke Vekst'); return; }
+    if(erSettings403(rs)){ slaa.disabled=false; slaa.textContent='Slå på lojalitetsprogram'; showToast('Oppgrader til Vekst for å bruke dette.'); return; }
     if(rs&&rs.ok){ loadLoyalty(); }
     else { slaa.disabled=false; slaa.textContent='Slå på lojalitetsprogram'; showToast('Kunne ikke slå på. Prøv igjen.'); }
     return;
@@ -5970,7 +5771,7 @@ $("#loyalOversikt").addEventListener('click',async function(e){
   if(ja){
     clearTimeout(_loyalFjernT); ja.disabled=true; ja.textContent='Fjerner …';
     var rf=await api.loyaltyOptIn(ja.dataset.id,false);
-    if(erSettings403(rf)){ showToast('Se abonnement for å bruke Vekst'); renderLoyalOversikt(_loyal); return; }
+    if(erSettings403(rf)){ showToast('Oppgrader til Vekst for å bruke dette.'); renderLoyalOversikt(_loyal); return; }
     if(rf&&rf.ok){
       var body=await rf.json().catch(function(){return{};});
       if(body&&body.has_unused_reward) showToast((ja.dataset.name||'Kunden')+' er fjernet — har fortsatt en ubrukt belønning som gjelder.');
@@ -5994,7 +5795,7 @@ $("#loyalLeggTil").addEventListener('click',async function(e){
   var b=e.target.closest('.verv-btn'); if(!b||b.disabled)return;
   b.disabled=true; b.textContent='Legger til …';
   var r=await api.loyaltyOptIn(b.dataset.id,true);
-  if(erSettings403(r)){ b.disabled=false; b.textContent='Legg til'; showToast('Se abonnement for å bruke Vekst'); return; }
+  if(erSettings403(r)){ b.disabled=false; b.textContent='Legg til'; showToast('Oppgrader til Vekst for å bruke dette.'); return; }
   if(r&&r.ok){ showToast('Lagt til'); loadLoyalty(); }
   else { b.disabled=false; b.textContent='Legg til'; showToast('Kunne ikke legge til. Prøv igjen.'); }
 });
@@ -6019,7 +5820,7 @@ $("#tog-loyal").addEventListener('change',async function(){
   this.dataset.verdi = this.checked ? '1':'0';
   if(warn)warn.hidden=true;
   var r=await api.saveSettings({loyalty_enabled: this.dataset.verdi==='1'});
-  if(erSettings403(r)){ this.dataset.verdi=forrige; visBryter(this); visSettingsLaas(err); return; }
+  if(erSettings403(r)){ this.dataset.verdi=forrige; visBryter(this); visSettingsLaas(err,'Lojalitetsprogram er med i Vekst.'); return; }
   if(r&&r.ok){ if(err)err.hidden=true; loadLoyalty(); }   // av → skjul lister; på → vis  (loadLoyalty→settBryter refresher dataset.verdi)
   else { this.dataset.verdi=forrige; visBryter(this); if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} }
 });
@@ -6031,7 +5832,7 @@ $("#loyalSett").addEventListener('click',async function(e){
   if(ja){
     ja.disabled=true; ja.textContent='Slår av …';
     var r=await api.saveSettings({loyalty_enabled:false});
-    if(erSettings403(r)){ ja.disabled=false; ja.textContent='Slå av likevel'; visSettingsLaas($("#loyalSettErr")); return; } // re-enable + tekst tilbake som søsken-grenene (5411/5426); ellers henger knappen på «Slår av …»
+    if(erSettings403(r)){ ja.disabled=false; ja.textContent='Slå av likevel'; visSettingsLaas($("#loyalSettErr"),'Lojalitetsprogram er med i Vekst.'); return; } // re-enable + tekst tilbake som søsken-grenene (5411/5426); ellers henger knappen på «Slår av …»
     if(r&&r.ok){ var w=$("#loyalOffWarn"); if(w)w.hidden=true; loadLoyalty(); }
     else { ja.disabled=false; ja.textContent='Slå av likevel'; showToast('Kunne ikke slå av. Prøv igjen.'); }
     return;
@@ -6061,7 +5862,7 @@ async function loyalLagre(felt, verdi){
   if(ter)ter.disabled=true; if(pct)pct.disabled=true;
   try{
     var r=await api.saveSettings(patch);
-    if(erSettings403(r)){ visSettingsLaas(err); return false; }
+    if(erSettings403(r)){ visSettingsLaas(err,'Lojalitetsprogram er med i Vekst.'); return false; }
     if(r&&r.ok){ if(err)err.hidden=true; loadLoyalty(); return true; }   // refetch: stamps/reward_ready/totals er backend-avledet av terskelen — kan ikke utledes lokalt (samme mønster som de andre loyalty-mutasjonene)
     if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} return false;
   } finally {
@@ -6096,7 +5897,7 @@ $("#tog-loyalHistory").addEventListener('change',async function(){
   this.dataset.verdi = this.checked ? '1':'0';
   settLoyalHistoryNote(this.checked);   // speil togglen straks
   var r=await api.saveSettings({loyalty_count_history: this.dataset.verdi==='1'});
-  if(erSettings403(r)){ this.dataset.verdi=forrige; visBryter(this); settLoyalHistoryNote(this.checked); visSettingsLaas(err); return; }
+  if(erSettings403(r)){ this.dataset.verdi=forrige; visBryter(this); settLoyalHistoryNote(this.checked); visSettingsLaas(err,'Lojalitetsprogram er med i Vekst.'); return; }
   if(r&&r.ok){ if(err)err.hidden=true; if(_loyal)_loyal.count_history=this.checked; }
   else { this.dataset.verdi=forrige; visBryter(this); settLoyalHistoryNote(this.checked); if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} }
 });
@@ -6601,27 +6402,20 @@ $("#saveDesign").addEventListener("click",function(){
 });
 
 /* ---- Konto: abonnement + publisering, ÉN blokk (ekte, aldri mock) ---- */
-// GET /billing/status →
-//   subscription_status  null før første checkout, ellers trialing|active|past_due|canceled|unpaid
-//   page_status          draft|forhandsvist|live|avslag
-//   trial_start_at       VÅR prøveperiode startet (settes av PUT /page-status), null = ikke startet
-//   trial_days_left      null = ikke startet · 0 = UTLØPT · >0 = dager igjen  ← tre tilstander
-//   nedtaking_dager_igjen dager til siden faktisk tas ned (trial + myk periode).
-//                        null = ingen nedtelling (ikke startet, ELLER fristen er passert)
-//                        ⚠ ANNEN null-konvensjon enn trial_days_left — se renderKonto
-//   myk_periode          trial ute, siden står fortsatt, Stripe dekker ikke
-//   needs_attention      barbereren må gjøre noe (drives prikken på fanen)
-//   attention_grunn      past_due | trial_utlopt_nedtatt | trial_utlopt | trial_slutter | null
-//   days_left / trial_ends_at  ← STRIPES trial. Leses IKKE her. Se advarselen under.
-//
-// ⚠ VI BRUKER trial_days_left, ALDRI days_left. days_left kommer fra Stripes trial_ends_at og
-// finnes ikke før kort er lagt inn — den viste «Gratisperiode — N dager igjen» på et tall som
-// var null i nettopp den tilstanden der barbereren trengte tallet mest. Backend advarer
-// eksplisitt mot forvekslingen (dashboard.js: «days_left er STRIPES trial … trial_days_left
-// under er VÅR»), og de to kan avvike med opptil to dager pga. 48-timers-klemmen i checkout.
-//
-// ⚠ null !== 0. `typeof x === 'number'` slår sammen «ikke startet» og «utløpt» til samme
-// gren — to helt ulike tilstander (A mot C/D). Sjekk === null og === 0 hver for seg.
+// GET /billing/status, PUT /page-status og POST /api/billing/sync-checkout svarer med SAMME shape
+// (backend: buildBillingShape). Feltene Konto leser:
+//   page_status           draft|forhandsvist|live|avslag — publisering er frikoblet billing
+//   subscription_status   null (aldri abonnert) | trialing|active|past_due|canceled|unpaid
+//   plan                  rå Stripe-plan: vekst|basis|null
+//   effective_plan        hva barberen FÅR nå: vekst|basis (basis = Gratis)
+//   effective_plan_grunn  subscription|trial_vindu|gratis|anomali_status_uten_plan
+//   trial_days_left       null = ingen lokal prøve · 0 = utløpt · >0 = dager igjen (backend regner)
+//   cancel_at_period_end  true = Vekst er sagt opp og løper ut ved current_period_end
+//   current_period_end    ISO-dato for slutten på inneværende periode | null
+//   trial_ends_at         Stripes prøveslutt = første trekk når status er 'trialing' | null
+//   needs_attention / attention_grunn (past_due | trial_slutter | null) — driver prikkene
+// ⚠ trial_days_left (VÅR klokke) ≠ days_left (Stripes). Nedtellingen i prøveperioden er
+// trial_days_left; datoen for første trekk er trial_ends_at, fordi det er Stripe som trekker.
 var _billing=null;
 // M10 FAIL-CLOSED: Vekst-innhold vises KUN når billing er BEKREFTET Vekst (effective_plan==='vekst').
 // Alt annet — _billing===null (før lasting), manglende felt, billing-feil, ELLER 'basis' — skjoldes.
@@ -6650,199 +6444,141 @@ document.addEventListener('click',function(e){ var b=e.target.closest('[data-bil
   ['#wbList','#vervSendList','#loyalOversikt'].forEach(function(s){ var el=$(s); if(el)el.innerHTML='<p class="wb-empty">Laster …</p>'; });
   loadBilling(); // suksess → oppdaterSkjoldFlater re-kjører loaderne; ny feil → billingFeilRender igjen
 });
-// Plan-navn + pris, ÉN kilde — delt av renderKonto (viser aktiv plan) og plan-velgeren
-// (visPlanVelger). NOK fordi /no/-fila; backend bør på sikt sende pris-strengen i status så
-// andre markeder/valutaer stemmer. Løftet fra lokal i renderKonto da velgeren også trengte den.
-const PLAN_INFO={basis:{navn:'Basis',pris:'89 kr'},vekst:{navn:'Vekst',pris:'179 kr'}};
+// Vekst-prisen, ÉN kilde i dashbordet. NOK fordi /no/-fila; backend bør på sikt sende pris-strengen
+// i status så andre markeder/valutaer stemmer. Basis er borte: den kan ikke kjøpes (Gratis = 0 kr).
+const PLAN_INFO={vekst:{navn:'Vekst',pris:'179 kr'}};
 async function loadBilling(){
   let r;
   try{ r=await apiFetch('/api/dashboard/billing/status'); }
   catch(e){ console.error('loadBilling: nettverksfeil', e); _billingFeilet=true; billingFeilRender(); return; } // kast → synlig feil+retry, ikke stille «Laster»
   if(!r)return; // 401 → apiFetch redirigerte (forventet, ikke logg)
   if(!r.ok){ console.error('loadBilling: /billing/status svarte '+r.status); _billingFeilet=true; billingFeilRender(); return; } // logg + synlig feil+retry (gaten forblir lukket, ingen fetch)
-  _billing=await r.json();
-  _billingKjent=true; _billingFeilet=false;   // ÅPNE billing-gaten: kundedata-loaderne kan nå fetche (planen er kjent)
+  const d=await r.json().catch(function(){return null;});
+  // Ufullstendig shape = feil, ikke tilstand: samme synlige feil + «Prøv igjen» som en !ok.
+  if(!erBillingShape(d)){ console.error('loadBilling: ufullstendig billing-shape'); _billingFeilet=true; billingFeilRender(); return; }
+  settBilling(d);
+}
+// Er dette en FULL billing-shape? Delt vakt for alle tre veiene inn (loadBilling, PUT /page-status,
+// sync-checkout). Et svar med page_status men uten plan-feltene skal ALDRI overskrive _billing —
+// renderKonto ville da falt til reserve-tilstanden og skjoldene til Gratis på et delvis svar.
+function erBillingShape(d){
+  return !!(d && typeof d.page_status==='string'
+    && typeof d.effective_plan==='string' && typeof d.effective_plan_grunn==='string');
+}
+// ÉN setter for autoritativ billing: tilstand → Konto → Vekst-ikon → skjoldede flater. Ingen av de
+// tre kallstedene skal kunne glemme et ledd (effective_plan kan ha endret seg — f.eks. etter synk).
+function settBilling(d){
+  _billing=d;
+  _billingKjent=true; _billingFeilet=false;   // ÅPNE billing-gaten: kundedata-loaderne kan nå fetche
   renderKonto(_billing);
-  settRebookInfo(); // Vekst-ikonet henger på _billing — se kommentaren over funksjonen
-  // effective_plan kom nå → re-render skjoldede flater som kan ha rendret før billing (erBasis var false),
-  // OG re-kjør kundedata-loaderne som gate-et seg ut i race-vinduet (deep-link #vekst).
+  // effective_plan kom → re-render skjoldede flater + re-kjør kundedata-loaderne som gate-et seg ut.
   if(typeof oppdaterSkjoldFlater==='function')oppdaterSkjoldFlater();
 }
-// Hovedhandlingen er ÉN knapp. `_kontoAksjon` sier hva et trykk skal gjøre i nåværende
-// tilstand — knappen har ingen egen lytter per tilstand, og vi speiler ingen tilstandsmaskin.
+// Hovedhandlingen er ÉN knapp. `_kontoAksjon` sier hva et trykk gjør i nåværende tilstand —
+// knappen har ingen egen lytter per tilstand.
 var _kontoAksjon=null; // 'publiser' | 'checkout' | 'portal' | null
+// true mens synken etter Stripe-retur pågår: oppgrader-knappene viser «Aktiverer Vekst …».
+var _aktivererVekst=false;
 const _dager=n=>n+' dag'+(n===1?'':'er');
+// Finskriften står ÉN gang: i oppgraderingsboksen (Gratis) og under handlingen (prøve, Vekst).
+const KONTO_FINSKRIFT='Etter 100 SMS: 1,21 kr per SMS på neste faktura. Maks 400 kr i måneden med mindre du endrer det.';
+// ISO-dato → «14. november» i Oslo-tid. Manglende/ugyldig → null: kalleren dropper da linja
+// (første trekk) eller hele tilstanden (oppsagt) — aldri en gjettet dato.
+function kontoDato(iso){
+  if(!iso)return null;
+  const d=new Date(iso); if(isNaN(d))return null;
+  return d.toLocaleDateString('nb-NO',{day:'numeric',month:'long',timeZone:'Europe/Oslo'});
+}
 
-// Frontend regner IKKE på trial-datoer lenger. TRIAL_DAGER/MYK_PERIODE_DAGER lå her som
-// kopier av src/lib/trial.js for å kunne vise nedtellingen i C — to sannheter om samme
-// regel. Backend sender nå `nedtaking_dager_igjen` (d525d17), og det er eneste kilde.
-//
-// ⚠ DE TO NEDTELLINGENE HAR ULIK NULL-KONVENSJON, MED VILJE — ikke harmoniser dem:
-//   trial_days_left       0 ved utløp. «0 dager igjen av prøveperioden» er en ekte tilstand
-//                         barbereren står i: myk periode, siden er fortsatt oppe.
-//   nedtaking_dager_igjen null når fristen er passert. «0 dager til nedtaking» er IKKE en
-//                         tilstand — nedtakingen har skjedd, og det finnes ingen nedtelling
-//                         igjen å vise. null betyr «ingen nedtelling», ikke «null dager».
-// Derfor sjekkes den med != null (ikke truthy): 0 er en gyldig verdi å vise for den ene og
-// en umulig verdi for den andre.
+// ÉN funksjon avgjør Konto-tilstanden, kun ut fra billing-shapen. Ren: ingen DOM og ingen klokke —
+// dager og datoer kommer ferdig fra backend. renderKonto tegner resultatet og har ingen egne if-er
+// per tilstand. REKKEFØLGEN ER SEMANTIKK:
+//   5 past_due først — en feilet betaling er det eneste barberen MÅ gjøre noe med.
+//   4 oppsagt før 3 — begge er 'active' + vekst; cancel_at_period_end skiller dem. Mangler
+//     current_period_end, faller den til reserven (ingen «Vekst til …» uten dato).
+//   3 Vekst — 'active' ELLER 'trialing' med plan vekst: kortet er lagt inn, Vekst fortsetter av seg
+//     selv. 'trialing' får «Første trekk [dato]» fra trial_ends_at (utelates når null).
+//   2 prøveperiode uten kort — trial_vindu, N = trial_days_left (aldri regnet her).
+//   0/1 Gratis — tilstand 0 KUN når grunnen er 'gratis' og siden ikke er publisert.
+// Alt annet (anomali, gammel Basis-sub, ukjent grunn) → nøytral reserve. ALDRI «ingen abonnement».
+function kontoTilstand(b){
+  b=b||{};
+  const sub=String(b.subscription_status||'').toLowerCase();
+  const grunn=String(b.effective_plan_grunn||'').toLowerCase();
+  const vekst=b.plan==='vekst';
+  const n=b.trial_days_left;
+  let t=null;
+  if(sub==='past_due'){
+    t={id:5, merke:'Betalingen feilet', farge:'bad',
+       tekst:['Oppdater kortet for å beholde Vekst. SMS er satt på pause til betalingen går gjennom.'],
+       knapp:['Oppdater betaling','portal']};
+  }else if(sub==='active'&&vekst&&b.cancel_at_period_end===true){
+    const slutt=kontoDato(b.current_period_end);
+    if(slutt) t={id:4, merke:'Vekst til '+slutt, farge:'mut',
+                 tekst:['Deretter går du over til Gratis, og siden blir stående.'], manage:true};
+  }else if((sub==='active'||sub==='trialing')&&vekst){
+    const trekk=sub==='trialing'?kontoDato(b.trial_ends_at):null;
+    t={id:3, merke:'Vekst er aktivt', farge:'good',
+       tall:[PLAN_INFO.vekst.pris,'/ mnd eks. mva',trekk?'Første trekk '+trekk+'.':null],
+       tekst:['100 SMS inkludert hver måned.'], fin:true, manage:true};
+  }else if(grunn==='trial_vindu'&&typeof n==='number'&&n>0){
+    t={id:2, merke:'Vekst, prøveperiode', farge:'mut',
+       tekst:[_dager(n)+' igjen. Deretter går du over til Gratis, og siden blir stående.',
+              'Vil du beholde rebooking, verving og SMS-påminnelser?'],
+       knapp:['Oppgrader til Vekst','checkout'], fin:true};
+  }else if(grunn==='gratis'){
+    t=(b.page_status==='forhandsvist')
+      ? {id:0, tekst:['Siden din er ikke publisert ennå.'],
+         knapp:['Publiser bookingsiden','publiser'], mikro:'Gratis. Ingen kort.'}
+      : {id:1, merke:'Gratis', farge:'mut', tall:['0 kr','/ mnd'],
+         tekst:['Bookingsiden, kalenderen og dashbordet er gratis, uten tidsfrist.'], opp:true};
+  }
+  if(!t) t={id:'reserve', merke:'Abonnementsstatus utilgjengelig', farge:'mut',
+            tekst:['Vi får ikke vist abonnementet ditt akkurat nå. Tilgangen din er upåvirket.']};
+  // Publisering er frikoblet billing: avpubliser når siden står live, og tilby publisering over
+  // lenkeblokka når den er avpublisert i en plan-tilstand (tilstand 0 har publisering som hovedknapp).
+  t.avpubliser = b.page_status==='live';
+  t.publiserHer = b.page_status==='forhandsvist' && t.id!==0;
+  return t;
+}
 
 function renderKonto(b){
   b=b||{};
-  const status=$("#kontoStatus"),tekst=$("#kontoTekst"),knapp=$("#kontoAksjon"),
-        lenke=$("#pubLink"),manage=$("#manageSub"),av=$("#unpublish"),dot=$("#kontoDot"),
-        tall=$("#kontoTall"),tallStor=$("#kontoTallStor"),tallSuff=$("#kontoTallSuff"),
-        tallSub=$("#kontoTallSub"),mikro=$("#kontoMikro"),
-        planFall=$("#planFall"),planFallTekst=$("#planFallTekst");
-  if(!status)return;
+  const status=$("#kontoStatus"); if(!status)return;
+  const tekst=$("#kontoTekst"),knapp=$("#kontoAksjon"),manage=$("#manageSub"),av=$("#unpublish"),
+        tall=$("#kontoTall"),tallStor=$("#kontoTallStor"),tallSuff=$("#kontoTallSuff"),tallSub=$("#kontoTallSub"),
+        mikro=$("#kontoMikro"),fin=$("#kontoFin"),opp=$("#kontoOpp"),oppH=$("#kontoOppH"),
+        oppBtn=$("#kontoOppBtn"),oppFin=$("#kontoOppFin"),avpub=$("#kontoAvpub"),dot=$("#kontoDot");
   // Hjemskjerm-nudgen (topplinje) re-evalueres ved hver billing-render — så den dukker opp i
   // samme øyeblikk page_status blir 'live' (publisering) og forsvinner ved avpublisering.
   if(typeof oppdaterHjemskjermNudge==='function') oppdaterHjemskjermNudge();
-  // nullstill (pubErr ryddes IKKE her — settPubFeil skriver den etter en re-synk)
-  status.className='substatus';
-  knapp.style.display='none';lenke.style.display='none';
-  manage.style.display='none';av.style.display='none';
-  tall.style.display='none';tallSub.style.display='none';mikro.style.display='none';
-  if(planFall)planFall.style.display='none';
-  tekst.style.display='';   // forhandsvist-grenen skjuler den; nullstill så andre tilstander viser den
-  var pv=$("#planVelger"); if(pv)pv.style.display='none';   // vises kun av checkout-grenene
-  _kontoAksjon=null;
+  const t=kontoTilstand(b);
+  const vis=(el,ja)=>{ if(el)el.style.display=ja?'':'none'; };
 
-  const sub   = String(b.subscription_status||'').toLowerCase();
-  const grunn = b.attention_grunn||null;
-  const epg   = String(b.effective_plan_grunn||'').toLowerCase(); // subscription|trial_vindu|laast|anomali_status_uten_plan|''
-  const igjen = b.trial_days_left;            // null | 0 | >0 — tre tilstander
-  const live  = b.page_status==='live';
-  // Hovedhandlingen er ALLTID designsystemets primærknapp (.btn) — samme visuelle vekt i alle
-  // tilstander. Checkout i tilstand B ble tidligere degradert til .lnk-quiet ved >7 dager igjen;
-  // det er fjernet: «Legg inn kort» skal være en tydelig primærhandling uansett hvor mye tid
-  // barbereren har igjen. Sekundærhandlinger (#manageSub/#unpublish) er egne .lnk-quiet-noder.
-  const settKnapp=(etikett,aksjon)=>{
-    knapp.textContent=etikett;
-    knapp.className='btn';
-    knapp.style.display='';
-    _kontoAksjon=aksjon;
-  };
-  const settTall=(stor,suffiks,under)=>{
-    tallStor.textContent=stor; tallSuff.textContent=suffiks||'';
-    tall.style.display='';
-    if(under){tallSub.textContent=under;tallSub.style.display='';}
-  };
-  const settMikro=t=>{mikro.textContent=t;mikro.style.display='';};
-  const PRIS_SUFF='/ mnd';
-  // Pris utledes ALLTID fra planen som gjelder (b.plan via PLAN_INFO) — ingen prisstreng utenfor
-  // PLAN_INFO. Ukjent plan i en gren (b.plan null/uventet) → vis INGEN pris (fail-closed), aldri
-  // en gjettet fallback-pris. PLAN_INFO er modul-scope (over loadBilling); plan-velgeren bruker den også.
-  const pinfo=PLAN_INFO[b.plan]||null;   // b.plan: basis|vekst|null → {navn,pris} | null
-
-  // Dispatchet er TRE LAG i fallende hastverk. Vi rangerer ikke attention_grunn på nytt — den ER
-  // serverens prioriterte signal — og vi nøkler ALDRI steady state på subscription_status/
-  // trial_days_left lenger: effective_plan_grunn er den autoritative «hva gjelder nå».
-  //
-  // LAG 1 — attention-overlay + oppsagt («gjør noe nå»-tilstandene), sjekket FØR steady state:
-  //   canceled/unpaid → past_due → trial_utlopt_nedtatt → trial_utlopt/myk → trial_slutter
-  // Oppsagt ligger ØVERST, over past_due: det er en tyngre tilstand enn «prøven slutter snart»,
-  // og en oppsagt konto skal aldri få et mildere varsel enn den skal. Den nøkles på
-  // subscription_status (ikke attention_grunn) — settLenkeblokk og renderDinsideCta gater på det
-  // SAMME oppsagt-flagget, så ingen publiser-knapp/lenke lekker til en konto på vei ned.
-  if(sub==='canceled'||sub==='unpaid'){                                       // oppsagt (topp)
-    status.className='substatus bad';status.innerHTML='&#9679; Abonnementet er avsluttet';
-    tekst.textContent='Siden din tas ned. Legg inn kort for å ta den i bruk igjen.';
-    visPlanVelger();    // velgeren eier prisen — ingen settTall her
-    settKnapp('Fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout');
-  }else if(grunn==='past_due'){                                              // E
-    status.className='substatus bad';status.innerHTML='&#9679; Betalingen gikk ikke gjennom';
-    if(pinfo)settTall(pinfo.pris,PRIS_SUFF);   // ukjent plan → ingen pris; teksten under bærer beskjeden
-    tekst.textContent='Vi fikk ikke trukket kortet ditt. Oppdater det for å beholde siden.';
-    settKnapp('Oppdater kort','portal');
-  }else if(grunn==='trial_utlopt_nedtatt'){                                  // D
-    status.className='substatus bad';status.innerHTML='&#9679; Siden din er ikke synlig';
-    tekst.textContent='Legg inn kort for å publisere igjen.';
-    visPlanVelger();    // velgeren eier prisen — ingen settTall her
-    settKnapp('Fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout');   // haster → hvit knapp
-  }else if(grunn==='trial_utlopt'||b.myk_periode){                           // C
-    // != null, ikke truthy: se null-konvensjonen over. Mangler feltet (eldre backend) eller
-    // er fristen passert, faller vi til «snart» — aldri til «om 0 dager».
-    const n=b.nedtaking_dager_igjen;
-    status.className='substatus bad';status.innerHTML='&#9679; Prøveperioden er over';
-    tekst.textContent=n!=null
-      ? 'Siden din tas ned om '+_dager(n)+' hvis du ikke legger inn kort.'
-      : 'Siden din tas ned snart hvis du ikke legger inn kort.';
-    visPlanVelger();    // velgeren eier prisen — ingen settTall her
-    settKnapp('Fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout');   // haster → hvit knapp
-  }else if(grunn==='trial_slutter'){                                         // slutter snart
-    // Attention-varsel MENS prøven fortsatt løper (fyrer ved en terskel i backend — grep verdien
-    // der; den er ikke synlig herfra). N kommer fra trial_days_left (== igjen), ALDRI hardkodet.
-    // IKKE «beholde siden»: sida tas IKKE ned ved dag 30 — den har 7 dagers myk periode etterpå.
-    // Derfor «fortsette uten avbrudd», ikke «beholde siden», som ville vært en faktafeil.
-    status.className='substatus mut';status.innerHTML='&#9679; Prøveperioden slutter snart';
-    tekst.textContent=(typeof igjen==='number'&&igjen>0)
-      ? _dager(igjen)+' igjen. Legg inn kort for å fortsette uten avbrudd.'
-      : 'Legg inn kort for å fortsette uten avbrudd.';
-    visPlanVelger();    // velgeren eier prisen — ingen settTall her
-    settKnapp('Legg inn kort — fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout');
-  // LAG 2 — effective_plan_grunn (steady state, ingen attention-grunn satt):
-  }else if(epg==='subscription'){                                            // F — aktiv
-    // Kortet ER lagt inn. subscription_status skiller fortsatt trialing (Stripe kjører egen trial,
-    // første trekk senere) fra active — to undertekster, samme «aktiv»-gren.
-    status.innerHTML='&#9679; '+(pinfo?pinfo.navn+'-abonnementet':'Abonnementet')+' er aktivt';
-    if(pinfo)settTall(pinfo.pris,PRIS_SUFF);   // ukjent plan → ingen pris (fail-closed)
-    tekst.textContent=sub==='trialing'
-      ? 'Kortet er lagt inn. Første trekk skjer når prøveperioden er over. Ingen binding.'
-      : 'Alt inkludert. Ingen binding — du kan si opp når som helst.';
-    // Oppgrader-CTA KUN for aktiv Basis → portalen (subscription_update med prorata). Vekst har
-    // ingenting å oppgradere til; trialing holdes utenfor (spec: «aktive Basis-tilstanden»).
-    if(sub==='active'&&b.plan==='basis')settKnapp('Oppgrader til Vekst','portal');
-    manage.style.display='';
-  }else if(epg==='trial_vindu'){                                             // B — prøve aktiv
-    // Hovedtallet er DAGENE (prøven løper ennå). Prisen bor i plan-velgeren, ikke i mikroteksten.
-    status.className='substatus mut';status.innerHTML='&#9679; Prøveperiode';
-    if(typeof igjen==='number'&&igjen>0)settTall(_dager(igjen),'igjen','av prøveperioden');
-    tekst.textContent='Legg inn kort før prøveperioden er slutt for å fortsette.';
-    visPlanVelger();
-    settMikro('Ingen binding.');
-    settKnapp('Legg inn kort — fortsett med '+PLAN_INFO[_valgtPlan].navn,'checkout');
-  }else if(epg==='laast'&&b.page_status==='forhandsvist'){                    // A — ikke publisert
-    // INGEN hovedtall. Prisen er ikke det barbereren lurer på før han har publisert — han har
-    // ikke tatt noe i bruk ennå. Vekst-prisen (prøven kjører på Vekst) står i mikroteksten under.
-    status.className='substatus mut';status.innerHTML='&#9679; Ikke publisert';
-    tekst.style.display='none';tekst.textContent='';
-    settKnapp('Publiser og start gratis prøveperiode','publiser');
-    settMikro('Gratis i 30 dager på Vekst, ingen kort. Ved prøveslutt velger du nivå — Vekst er '+PLAN_INFO.vekst.pris+'/mnd. Si opp når som helst.');
-  }else{
-    // LAG 3 — fail-closed nøytral: anomali_status_uten_plan, laast+live-uten-attention, og enhver
-    // ukjent effective_plan_grunn. ALDRI «ingen aktivt abonnement» på en live side — det ville
-    // skremt en betalende barberer. Ingen handling gjettes; tilgangen er upåvirket, så vi sier det.
-    status.className='substatus mut';status.innerHTML='&#9679; Abonnementsstatus utilgjengelig';
-    tekst.textContent='Vi får ikke vist abonnementet ditt akkurat nå. Tilgangen din er upåvirket.';
-  }
-
-  // Plan-nedgang: INFORMASJON, ikke varsel. Drevet KUN av b.plan_faller (kort på Basis mens
-  // prøven løper → Vekst nå, faller til Basis ved prøveslutt). Bevisst UTENFOR if/else-dispatchen
-  // og attention_grunn: ingenting er galt, så den overlever alle plan-tilstander og legger seg
-  // ved siden av dem. Dagene fra `igjen` (= trial_days_left), ALDRI days_left — days_left er
-  // Stripes dato og kan ligge opptil to døgn senere enn det lokale vinduet planen faller ved.
-  // «1 dag igjen» / «21 dager igjen» via _dager. Mangler et gyldig dag-tall (skal ikke skje mens
-  // prøven løper) → dropp dag-leddet, aldri et oppdiktet tall.
-  if(planFall){
-    if(b.plan_faller){
-      const dagLedd=(typeof igjen==='number'&&igjen>0) ? (' — '+_dager(igjen)+' igjen') : '';
-      planFallTekst.textContent='Du har Vekst ut prøveperioden'+dagLedd
-        +'. Deretter går du over til Basis, og du mister lojalitetsprogram, verving, rebooking og vinn tilbake.';
-      planFall.style.display='';
-    }else{
-      planFall.style.display='none';
-    }
-  }
-  // Avpubliser: tekstlenke i ALLE tilstander der siden faktisk står live. Aldri en knapp.
-  // Unntak: oppsagt/ubetalt — sida er på vei ned, og «Avpubliser» ville tilbudt å ta ned noe
-  // som allerede tas ned. Kortet sier nedtaking; veien tilbake er «Legg inn kort».
-  if(live&&sub!=='canceled'&&sub!=='unpaid')av.style.display='';
-  // Adressen: egen funksjon, kalt UTENFOR if/else-kjeden over. Se settLenkeblokk.
+  if(t.merke){ status.className='substatus'+(t.farge==='good'?'':' '+t.farge); status.innerHTML='&#9679; '+esc(t.merke); }
+  vis(status,!!t.merke);
+  vis(tall,!!t.tall); vis(tallSub,!!(t.tall&&t.tall[2]));
+  if(t.tall){ tallStor.textContent=t.tall[0]; tallSuff.textContent=t.tall[1]; tallSub.textContent=t.tall[2]||''; }
+  tekst.innerHTML=(t.tekst||[]).map(function(l){ return '<p>'+esc(l)+'</p>'; }).join('');
+  vis(opp,!!t.opp);
+  if(t.opp){ oppH.textContent='Vekst · '+PLAN_INFO.vekst.pris+' / mnd eks. mva'; oppFin.textContent=KONTO_FINSKRIFT; }
+  _kontoAksjon=t.knapp?t.knapp[1]:null;
+  vis(knapp,!!t.knapp);
+  knapp.disabled=false; knapp.className='btn';
+  if(t.knapp)knapp.textContent=t.knapp[0];
+  vis(mikro,!!t.mikro); mikro.textContent=t.mikro||'';
+  vis(fin,!!t.fin); fin.textContent=t.fin?KONTO_FINSKRIFT:'';
+  vis(avpub,t.publiserHer);
+  vis(manage,!!t.manage);
+  vis(av,t.avpubliser);
+  // Synk etter Stripe-retur: oppgrader-handlingen (boksens knapp eller hovedknappen) byttes mot
+  // «Aktiverer Vekst …» så barberen ikke trykker Oppgrader en gang til mens Vekst aktiveres.
+  oppBtn.disabled=_aktivererVekst; oppBtn.textContent=_aktivererVekst?'Aktiverer Vekst …':'Oppgrader til Vekst';
+  if(_aktivererVekst&&_kontoAksjon==='checkout'){ knapp.disabled=true; knapp.textContent='Aktiverer Vekst …'; }
+  // Adressen: egen funksjon, kalt UTENFOR tilstandsvalget. Se settLenkeblokk.
   settLenkeblokk(b);
-  // Prikkene følger needs_attention fra serveren — ALDRI «har besøkt fanen». Blir feltet
-  // false ved neste /billing/status, forsvinner de av seg selv.
-  // TRE prikker, samme kilde (needs_attention): desktop-nav (#kontoDot), bunn-navets Konto-fane
-  // på mobil (#kontoBunnDot) og trekkspill-headeren (#kontoAccDot). Aldri ute av synk — settes her.
+  // Prikkene følger needs_attention fra serveren — ALDRI «har besøkt fanen». TRE prikker, samme
+  // kilde: desktop-nav (#kontoDot), bunn-navets Konto-fane (#kontoBunnDot) og trekkspill-headeren.
   if(dot)dot.hidden=!b.needs_attention;
   const accDot=$("#kontoAccDot"); if(accDot)accDot.hidden=!b.needs_attention;
   const bunnDot=$("#kontoBunnDot"); if(bunnDot)bunnDot.hidden=!b.needs_attention;
@@ -6856,16 +6592,8 @@ function renderDinsideCta(b){
   var cta=$("#dinsideCta"), live=$("#dinsideLive");
   if(!cta||!live)return;
   var st=b.page_status;
-  // Publiser-CTA gates på det SAMME oppsagt/nedtatt-flagget som Konto-grenen og settLenkeblokk:
-  // en canceled/unpaid- eller nedtatt-konto står i 'forhandsvist' fordi sida BLE tatt ned, ikke
-  // fordi den «ennå ikke er publisert» — de trenger kort, ikke en publiser-knapp. Nøkler vi bare
-  // på page_status (som før), viser vi «Publiser siden» til en oppsagt konto. Vi gater IKKE på
-  // _kontoAksjon==='publiser': det ville også drept den gyldige re-publiser-CTA-en for en barber
-  // som avpubliserte midt i en løpende prøveperiode (trial_vindu → checkout-knapp, men publisering
-  // er fortsatt lov).
-  var _sub=String(b.subscription_status||'').toLowerCase();
-  var kanPublisere=(_sub!=='canceled'&&_sub!=='unpaid'&&b.attention_grunn!=='trial_utlopt_nedtatt');
-  if(st==='forhandsvist'&&kanPublisere){
+  // Publisering er frikoblet billing: enhver barber kan publisere, uansett plan.
+  if(st==='forhandsvist'){
     cta.hidden=false; live.hidden=true;
   }else if(st==='live'){
     // Live: skjul CTA, vis liten grønn prikk + «Live». Kopiering via headerlenka (settHeaderLenke).
@@ -7098,28 +6826,17 @@ function sjekkGaaTil(action){
 //   forhandsvist  → «Se forhåndsvisning» + hva som mangler før kunder slipper inn
 //   ellers        → ingenting
 //
-// 'forhandsvist' + attention_grunn 'trial_utlopt_nedtatt' er UNNTATT fra tilstand 2, selv om
-// statusen er den samme: der er 'forhandsvist' ikke «ennå ikke publisert», men resultatet av
-// at sida BLE tatt ned da prøveperioden gikk ut. En forhåndsvisningslenke med «tar ikke imot
-// bookinger før du publiserer» ville lest som om han bare hadde glemt å trykke på knappen.
-// Kortet over sier allerede «Siden din er ikke synlig» + «Legg inn kort» — det er beskjeden.
 function settLenkeblokk(b){
   const boks=$("#pubLink"); if(!boks)return;
   boks.textContent=''; boks.style.display='none';   // full nullstilling: ingen rester fra forrige tilstand
-  // Oppsagt/ubetalt: sida tas ned, så adresse + «Kopier lenke» skjules helt — å dele en lenke
-  // som snart slutter å ta imot bookinger er verre enn ingen lenke. Sjekkes FØR page_status,
-  // fordi status ofte fortsatt er 'live' i det vinduet før webhooken/sweepen tar den ned.
-  const oppsagt=/^(canceled|unpaid)$/.test(String(b.subscription_status||'').toLowerCase());
-  if(oppsagt)return;
   const slug=CONFIG.BARBER_SLUG;
   // Uten slug fra /profile gjetter vi ALDRI en adresse. Lander den etter dette kallet,
   // tegner loadProfil blokka på nytt (den re-renderen er ikke betinget av live).
   if(!slug)return;
 
   const st=b.page_status;
-  const nedtatt=b.attention_grunn==='trial_utlopt_nedtatt';
-  const forhandsvist=(st==='forhandsvist'&&!nedtatt);
-  if(st!=='live'&&!forhandsvist)return;             // draft / avslag / nedtatt / ukjent
+  const forhandsvist=(st==='forhandsvist');
+  if(st!=='live'&&!forhandsvist)return;             // draft / avslag / ukjent
 
   // url = HELE https://… — det som KOPIERES og det <a href> peker på. visUrl = uten protokoll,
   // KUN visningstekst («trybarberhq.com/grand-barber»). To ulike verdier, ikke én kilde lenger:
@@ -7225,12 +6942,7 @@ function settPubFeil(kode,tekst){
   const feil=$("#pubErr"); if(!feil)return;
   const t=tekst||'Noe gikk galt. Prøv igjen.';
   let handling='';
-  if(kode===402){
-    // «Legg inn kort», ikke «Start abonnementet»: etter trial-omleggingen kan 402 like gjerne
-    // bety at prøveperioden er ute som at abonnement mangler. Serverteksten over sier hvilken
-    // — knappen sier bare hva som fikser begge.
-    handling='<button type="button" data-pub-act="kort">Legg inn kort</button>';
-  }else if(kode===400){
+  if(kode===400){
     // De to 400-ene (pris=0 og ugyldig overgang) er ikke skillbare uten tekst-matching.
     // Pris-tilfellet er det eneste barbereren kan gjøre noe med; det andre har allerede
     // rettet seg selv via re-synken før denne meldinga vises.
@@ -7260,18 +6972,13 @@ async function settSideStatus(nyStatus,btn){
   if(!r)return; // 401 → apiFetch har allerede sendt til login
   const d=await r.json().catch(function(){return{};});
   if(r.ok){
-    // ROT-ÅRSAK-FIKS: oppdater tilstanden DIREKTE fra skrive-responsen (autoritativ). PUT-svaret
-    // er nå den FULLE billing-shapen, ikke bare de to feltene handlingen endret — så vi ERSTATTER
-    // _billing i sin helhet i stedet for å patche page_status + trial_start_at. Publisering flytter
-    // effective_plan_grunn (laast → trial_vindu) og starter trial_days_left; patchet vi bare de to
-    // feltene, ville renderKonto lest de GAMLE grunn-feltene og vist «Ikke publisert» helt til neste
-    // refresh — det motsatte av «prøveperiode umiddelbart». Vi RE-FETCHER IKKE /billing/status her:
-    // i read-after-write-vinduet kan det svare utdatert 'forhandsvist' og REVERTERE det vi nettopp
-    // satte. Guard på page_status: en tom/parse-feilet body ({} fra catch over) skal ikke wipe
-    // state — da beholder vi forrige _billing. (loadBilling logger på feil — init/Stripe-retur/resynk.)
-    if(d&&d.page_status){
-      _billing=d;
-      renderKonto(_billing);
+    // Tilstanden oppdateres DIREKTE fra skrive-responsen (autoritativ): PUT-svaret er den FULLE
+    // billing-shapen, så _billing erstattes i sin helhet. Vi RE-FETCHER IKKE /billing/status her:
+    // i read-after-write-vinduet kan det svare utdatert og REVERTERE det vi nettopp satte.
+    // erBillingShape stopper både tom body og DELVIS shape (page_status uten plan-feltene) —
+    // da beholdes forrige _billing.
+    if(erBillingShape(d)){
+      settBilling(d);
       // Suksess-feedback gates PÅ SAMME state-oppdatering: en tom/parse-feilet 200-body (uten
       // page_status) skal ikke vise «Siden din er live!» mens renderKonto fortsatt sier «Ikke
       // publisert». Publisering → suksesskort (hendelses-drevet, én gang). Avpublisering → toast.
@@ -7300,6 +7007,9 @@ $("#dinsidePubliser").addEventListener("click",function(){
   settSideStatus('live',this);
 });
 $("#manageSub").addEventListener("click",function(){ if(IS_DEMO)return; aapnePortal(); });
+$("#kontoOppBtn").addEventListener("click",function(){ if(IS_DEMO)return; startCheckout(this); });
+// Avpublisert i en plan-tilstand: samme publiser-dispatch som hovedknappen i tilstand 0.
+$("#kontoPubliser").addEventListener("click",function(){ if(IS_DEMO)return; settSideStatus('live',this); });
 $("#unpublish").addEventListener("click",function(){
   if(IS_DEMO)return;
   if(!confirm('Avpubliser bookingsiden? Kunder kommer ikke inn før du publiserer igjen.'))return;
@@ -7309,68 +7019,18 @@ $("#unpublish").addEventListener("click",function(){
 $("#pubErr").addEventListener("click",function(e){
   const b=e.target.closest('[data-pub-act]'); if(!b)return;
   if(b.dataset.pubAct==='tjenester'){switchPanel('tjenester');}
-  else if(b.dataset.pubAct==='kort'){startCheckout(b);}
 });
 
-// ── Plan-velger (checkout): Basis/Vekst-valg som mater startCheckout ──
-// _valgtPlan er modultilstand som _kontoAksjon: knappen (og pubErr-stien) leser den, ingen arg
-// threades gjennom. Forhåndsvalgt 'vekst' — prøven kjører på Vekst, nivået barbereren har hatt
-// gratis. Verdiene er ALLTID små bokstaver; backend (PLANER = {basis,vekst}) avviser 'Vekst'
-// med 400 uten å normalisere.
-var _valgtPlan='vekst';
-function velgPlan(plan){
-  _valgtPlan=(plan==='basis')?'basis':'vekst';   // alt annet faller til vekst; aldri stor forbokstav
-  document.querySelectorAll('#planVelger .plan-opt').forEach(function(b){
-    b.setAttribute('aria-checked', b.dataset.plan===_valgtPlan ? 'true':'false');
-  });
-  // CTA-en speiler valget: «Fortsett med Vekst/Basis». Kun i checkout-tilstand — ellers
-  // eier den gjeldende grenen (publiser/portal) knappeteksten, og vi skal ikke røre den.
-  if(_kontoAksjon==='checkout'){
-    var k=$("#kontoAksjon"); if(k)k.textContent='Fortsett med '+PLAN_INFO[_valgtPlan].navn;
-  }
-}
-// Priser fylles fra PLAN_INFO — aldri hardkodet i markup, så 89/179 har ÉN kilde. Pillen på
-// Vekst er statisk i markup (lik i alle tilstander), så visning tar ingen parametre lenger.
-function visPlanVelger(){
-  var v=$("#planVelger"); if(!v)return;
-  v.querySelector('[data-plan-pris="basis"]').textContent=PLAN_INFO.basis.pris+' / mnd';
-  v.querySelector('[data-plan-pris="vekst"]').textContent=PLAN_INFO.vekst.pris+' / mnd';
-  velgPlan(_valgtPlan);   // gjenopprett aria-checked etter forrige valg
-  v.style.display='';
-}
-// Hover (desktop) OG tap/klikk (mobil) velger kortet. mouseenter er mus-only, så tap på
-// touch går kun via click — ingen dobbelt-fyring. Valget REVERTERER ikke på mouseleave:
-// ett kort er alltid valgt.
-document.querySelectorAll('#planVelger .plan-opt').forEach(function(b){
-  var velg=function(){ if(IS_DEMO)return; velgPlan(b.dataset.plan); };
-  b.addEventListener('click',velg);
-  b.addEventListener('mouseenter',velg);
-});
-// «Bytt til Vekst» i plan-nedgang-kortet: går til den EKSISTERENDE plan-velgeren i Konto (ingen
-// ny flate). Åpner velgeren med Vekst valgt og gjør checkout-knappen synlig — samme checkout-vei
-// som de øvrige grenene. _kontoAksjon settes FØR velgPlan så velgPlan skriver riktig knappetekst.
-var _planFallBtn=$("#planFallBtn");
-if(_planFallBtn)_planFallBtn.addEventListener('click',function(){
-  if(IS_DEMO)return;
-  _kontoAksjon='checkout';
-  visPlanVelger();
-  velgPlan('vekst');
-  var k=$("#kontoAksjon"); if(k){ k.className='btn'; k.style.display=''; }
-  var pv=$("#planVelger"); if(pv)pv.scrollIntoView({behavior:'smooth',block:'center'});
-});
 
-// POST /billing/checkout {plan:'basis'|'vekst'} → {url}. plan er ALLTID små bokstaver —
-// backend (dashboard.js: PLANER.has(plan)) avviser 'Vekst' med 400. Verdien er barberens valg
-// i plan-velgeren (_valgtPlan), forhåndsvalgt Vekst. Setter IKKE siden live — publisering er en
-// egen handling som STARTER prøveperioden. Backend velger selv trial-parametrene
-// (checkoutTrialParams): løper en lokal trial, sendes trial_end = hans EGEN sluttdato, så han
-// beholder dagene sine uansett hvilket nivå han velger her.
+// POST /billing/checkout {plan:'vekst'} → {url}. Kun Vekst kan kjøpes (backend KJOPBARE_PLANER;
+// 'basis' gir 400). Små bokstaver — backend normaliserer ikke. Backend velger trial-parametrene selv
+// (checkoutTrialParams): løper en gammel lokal prøve, sendes trial_end = barberens egen sluttdato.
 async function startCheckout(btn){
   if(btn)btn.disabled=true;
   const frigi=()=>{if(btn)btn.disabled=false;};
   try{
     const r=await apiFetch('/api/dashboard/billing/checkout',
-      {method:'POST',body:JSON.stringify({plan:String(_valgtPlan).toLowerCase()})});
+      {method:'POST',body:JSON.stringify({plan:'vekst'})});
     if(!r)return; // 401 redirigert
     const d=await r.json().catch(()=>({}));
     // 400 (ugyldig plan e.l.): backendens feiltekst vises slik den er, uten omskriving.
@@ -7381,28 +7041,36 @@ async function startCheckout(btn){
 }
 // GET /billing/portal → 303 til Stripe (browser følger redirect).
 function aapnePortal(){ window.location.href=CONFIG.API_BASE+"/api/dashboard/billing/portal"; }
-// Retur fra Stripe Checkout. Betaling ≠ publisering: barberen må selv trykke «Gå live».
-function applyBillingReturn(){
+// Retur fra Stripe Checkout. success_url bærer ?live=1&session_id={CHECKOUT_SESSION_ID}, cancel_url
+// ?avbrutt=1. Med session_id synker backend abonnementet DIREKTE fra Stripe (POST
+// /api/billing/sync-checkout, idempotent, samme speiling som webhooken) — så Konto ikke viser Gratis
+// fordi webhooken ikke har landet ennå. ÉN gang: flaggene ryddes fra URL-en FØR kallet, så en refresh
+// aldri kaller på nytt. Ingen polling. live=1 uten session_id (gammel success_url) → ventebanneret.
+async function applyBillingReturn(){
   const q=new URLSearchParams(location.search);
-  const live=q.get('live')==='1',avbrutt=q.get('avbrutt')==='1';
-  if(!live&&!avbrutt)return;
-  if(typeof switchPanel==='function')switchPanel('abonnement');
+  const sessionId=q.get('session_id');
+  const live=q.get('live')==='1', avbrutt=q.get('avbrutt')==='1';
+  if(!sessionId&&!live&&!avbrutt)return;
+  history.replaceState(null,'',location.pathname);
+  if(typeof aapneAbonnement==='function')aapneAbonnement();
   const el=$("#subReturn");
-  if(el){
-    if(live){
-      el.className='sub-banner info';
-      // Gate på page_status: en allerede-live barber som la til kort ETTER publisering skal ikke
-      // få «Trykk Gå live» — siden er jo live. _billing er lastet (loadBilling().then(...)).
-      el.innerHTML = (_billing&&_billing.page_status==='live')
-        ? '<strong>Betaling registrert ✓</strong> Siden din er allerede live.'
-        : '<strong>Betaling registrert ✓</strong> Siden er ikke live ennå — den publiseres ikke automatisk. Trykk «Gå live» når du er klar.';
-    }else{
-      el.className='sub-banner mut';
-      el.innerHTML='Betalingen ble avbrutt. Du kan starte når som helst.';
-    }
-    el.style.display='';
+  const banner=function(klasse,tekst){ if(!el)return; el.className='sub-banner '+klasse; el.textContent=tekst; el.style.display=''; };
+  const VENT='Det kan ta et minutt før Vekst vises. Last inn siden på nytt.';
+  if(!sessionId){
+    banner('mut', avbrutt ? 'Betalingen ble avbrutt. Du kan oppgradere når som helst.' : VENT);
+    return;
   }
-  history.replaceState(null,'',location.pathname); // rydd flagg → refresh viser ikke banneret igjen
+  _aktivererVekst=true; if(_billing)renderKonto(_billing);
+  let d=null;
+  try{
+    const r=await apiFetch('/api/billing/sync-checkout',{method:'POST',body:JSON.stringify({session_id:sessionId})});
+    if(r&&r.ok) d=await r.json().catch(function(){return null;});
+  }catch(e){ console.error('sync-checkout feilet', e); }
+  _aktivererVekst=false;
+  if(erBillingShape(d)) settBilling(d);      // ny autoritativ tilstand (også om den ikke ble Vekst)
+  else if(_billing) renderKonto(_billing);   // feil → siste kjente tilstand
+  if(erBillingShape(d)&&kontoTilstand(d).id===3) banner('info','Vekst er aktivt. Vekstverktøyene ligger i Vekst-fanen.');
+  else banner('mut',VENT);
 }
 
 function applyDemoMode(){
@@ -7411,7 +7079,7 @@ function applyDemoMode(){
    'slotPopupFjern','slotPopupEndre','gcalBtn',
    'fbSend-side','fbSend-konto-ide','fbSend-konto-support',  // tre bokser, én handler
    // Konto: én hovedknapp + tekstlenker (startSub/goLive er slått sammen til kontoAksjon)
-   'kontoAksjon','dinsidePubliser','manageSub','unpublish','savePw','loggUt'].forEach(function(id){
+   'kontoAksjon','kontoOppBtn','kontoPubliser','dinsidePubliser','manageSub','unpublish','savePw','loggUt'].forEach(function(id){
     var el=document.getElementById(id);
     if(el){el.disabled=true;el.title='Ikke tilgjengelig i forhåndsvisning';}
   });
@@ -7426,7 +7094,7 @@ loadOversikt();
 loadPayment(); // betalingsmetoder (Tjenester-fanen) fra innstillings-loaderen
 // Oversikt-nudgen (ferske no-shows) fylles av loadWinback — men FØRST etter at plan er kjent, så
 // erBasis()-guarden virker og basis ikke henter kundedata ved sideload (init-race lukket).
-loadBilling().then(applyBillingReturn).finally(function(){ loadWinback(); initTrialNudge(); }); // abonnementsstatus → retur-flagg → nudge (+ trial-nudge, krever _billing)
+loadBilling().then(applyBillingReturn).finally(function(){ loadWinback(); }); // abonnementsstatus → retur-flagg → nudge
 hentSjekklisteData(); // «Fullfør siden»-guide: hent haker (images/services/hours/profile) ved sideload
 anvendHash(); // åpne panelet fra location.hash (ukjent/tom → standardpanel). Stripe-retur over
               // kjører async etterpå og kan overstyre til Konto — det er tilsiktet.

@@ -554,16 +554,27 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
    men `data-panel`/`id` er fortsatt `abonnement` — BEVISST, id-en henger sammen med
    `switchPanel('abonnement')` (Stripe-returen) og hele billing-koden. Ikke døp om id-en.
 
-- **Abonnement-blokka er IKKE et skall — den er fullt koblet.** Dokumentasjonen sa lenge
-  «skall — venter på billing»; det var feil. `loadBilling()` → `GET /api/dashboard/billing/status`
-  → `renderBilling(b)` som bytter på `subscription_status`: `trialing`/`active`/`past_due` viser
-  «Administrer abonnement» (full navigasjon til `GET /api/dashboard/billing/portal`, som svarer
-  303 videre til Stripe Customer Portal), `canceled`/`unpaid`/ukjent viser «Legg inn kort»
-  (knappeteksten settes av `settKnapp('Legg inn kort','checkout')`; «Start 30 dager gratis» har
-  null treff i hele `site/` — verifisert 12.08)
-  (`POST /api/dashboard/billing/checkout` → redirect til `{url}`). Retur fra Stripe håndteres av
-  `applyBillingReturn()` på `?live=1` / `?avbrutt=1` — tvinger fram Konto-fanen, viser kvitterings-
-  banner og stripper query-en med `replaceState`. Betaling ≠ publisering: «Gå live» er separat.
+- **Konto «Abonnement og publisering» — prismodell 09.10.2026 (Gratis / prøveperiode / Vekst).**
+  ÉN ren funksjon `kontoTilstand(b)` velger tilstand KUN fra billing-shapen; `renderKonto` tegner den
+  (ingen tilstands-if-er i markup). Rekkefølge (semantikk): 5 `past_due` «Betalingen feilet» (→ portal) ·
+  4 `active`+vekst+`cancel_at_period_end` «Vekst til [dato]» (dato fra `current_period_end`; null → reserve,
+  aldri gjettet) · 3 `active`/`trialing`+vekst «Vekst er aktivt» (179 kr; `trialing` får «Første trekk
+  [dato]» fra `trial_ends_at`, utelatt ved null) · 2 `trial_vindu` «Vekst, prøveperiode» (N =
+  `trial_days_left`, ALDRI regnet i frontend) · 0/1 `gratis` (0 = ikke publisert → «Publiser bookingsiden»,
+  1 = Gratis + oppgraderingsboks). Alt annet (anomali, gammel Basis-sub) → nøytral reserve. Avpublisert i
+  2–5 → plan-tilstanden + «Siden din er ikke publisert.»/«Publiser bookingsiden» over lenkeblokka.
+  **Basis kan ikke kjøpes:** checkout sender alltid `{plan:'vekst'}`; plan-velgeren, `_valgtPlan`,
+  `#planFall`, 402-grenen og myk-periode/nedtaking-grenene er SLETTET (ikke skjult).
+  **`erBillingShape(d)`** (page_status + effective_plan + effective_plan_grunn) vokter ALLE tre veiene
+  inn (`loadBilling`, PUT `/page-status`, synk) → delvis shape overskriver aldri `_billing`;
+  `settBilling(d)` er ÉN setter (Konto + Vekst-ikon + skjold). **Stripe-retur:** `success_url`
+  `?live=1&session_id={CHECKOUT_SESSION_ID}` → `applyBillingReturn` rydder URL-en FØR kallet, kaller
+  `POST /api/billing/sync-checkout {session_id}` ÉN gang (knappen viser «Aktiverer Vekst …»), banner
+  «Vekst er aktivt. …» ved tilstand 3, ellers «Det kan ta et minutt …». `live=1` uten session_id →
+  ventebanner, ingen synk. Ingen polling. ⚠ `cancel_at_period_end`/`current_period_end` og
+  sync-checkout leveres av backend (Fase 0) — frontend er bygget mot kontrakten.
+  Render: `tools/render/konto-prismodell.mjs` (erstatter konto-billing-grunn/-checkout-knapp/-pris-utledning/
+  -myk-periode/-plan-nedgang).
 - **Basis-visning (Vekst-skjold).** Barbereren på Basis-plan ser Vekst-flatene låst i stedet for
   ekte data. **FAIL-CLOSED (M10):** `erBasis()` = `!(_billing && effective_plan==='vekst')` — skjold
   med mindre billing er BEKREFTET Vekst. Alt annet (`_billing===null` før lasting, manglende felt,
@@ -572,18 +583,19 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   ⚠ Dette er snudd fra den gamle fail-OPEN-varianten (skjold kun ved eksplisitt `'basis'`), som ga et
   kort ULÅST glimt av Vekst-flatene før billing landet. `billingUkjent`-gaten hindrer uansett FETCH før
   planen er kjent; fail-closed gjør SKJOLDET default-på til `oppdaterSkjoldFlater` (etter `loadBilling`)
-  åpner ved bekreftet Vekst. Skjold-komponent (`settSkjold`/`fjernSkjold`): halvgjennomsiktig lås + «Se abonnement»
+  åpner ved bekreftet Vekst. Skjold-komponent (`settSkjold`/`fjernSkjold`): halvgjennomsiktig lås + «Oppgrader til Vekst»
   (klikk → `switchPanel('abonnement')` + scroll `#accAbonnement`), innhold under `pointer-events:none`
   + inputs disabled.
   **⚠ TO ULIKE LÅSE-MEKANISMER — fast regel: MÅLING = skjold, HANDLING = lesbar + låsindikator** (13.09):
   - **MÅLING (teaser, skal IKKE leses):** «Drevet av» (Oversikt), attribusjon (`#attrKort`) og momentum
     (`#momentumCard`) beholder `settSkjold` — halvgjennomsiktig overlay + `pointer-events:none`. **Lett
-    skjold:** overlegg `.48` + `blur(1px)`; lås-ikon + «Se abonnement» med skygge for å leses først.
+    skjold:** overlegg `.48` + `blur(1px)`; lås-ikon + «Oppgrader til Vekst» med skygge for å leses først.
+    ⚠ I praksis vises skjoldet INGEN steder i dag: eneste kaller er momentum, og det kortet er skjult på Gratis.
     Kun de to «Drevet av»/attribusjons-flatene viser eksempeltall (`VEKST_EKSEMPEL`, 6 850 kr) + «Eksempel»-merke.
   - **HANDLING (lesbar, men låst):** funksjons-seksjonene rebooking (`#accRebook`), vinn-tilbake
     (`#accWinback`), verving (`#accVerv`) og lojalitet (`#accLoyal`) bruker `settHandlingsLaas`/`fjernHandlingsLaas`
     — INGEN overlay, innholdet er lesbart. Kontrollene disables (`data-laas-disabled`, ALDRI `.acc-head`, så
-    seksjonen kan åpnes/leses) + en liten `.laas-badge` («Vekst» + lås-ikon) i `.acc-title`. Alle fire fra ÉN
+    seksjonen kan åpnes/leses) + en liten `.laas-badge` («Vekst» + lås-ikon, tips «Med i Vekst») i `.acc-title`. Alle fire fra ÉN
     samlested (`skjoldVekstFlater` → `settHandlingsLaas`), aldri per-sted. Kundedata-listene får en lesbar
     lås-note (`basisLaasListe`) i stedet for «Laster …» — uten fetch. (påminnelse `#accPaam` + `#vekstStats`/trend
     er IKKE låst — volum, ikke Vekst.) 403-inline (`#rebookErr`) er sikkerhetsnett, vises normalt aldri.
@@ -591,7 +603,7 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   ved `erBasis()` (nå med `basisLaasListe`-note i lista i stedet for «Laster …»; init-`loadWinback` er kjørt ETTER `loadBilling` så plan er kjent). `loadSmsInnstillinger`
   guardes IKKE — den fyller også den ULÅSTE SMS-påminnelsen og henter kun barberens egne settings, ikke kundedata.
   Backend gater WRITE: `PUT /settings` + `PUT /customers/:id/loyalty` → 403 for basis (`dashboard.js:1131/1136/1200`),
-  viser «Se abonnement»-lenka. **⚠ Backend-funn (uløst):** GET `/winback`/`/referrals`/`/customers/recent` er
+  viser «[Funksjon] er med i Vekst.» + «Oppgrader»-lenka. **⚠ Backend-funn (uløst):** GET `/winback`/`/referrals`/`/customers/recent` er
   IKKE plan-gatet (kun `asyncRoute`, ingen middleware) — frontend-guardene dekker klienten, backend bør gate også.
   Render: `tools/render/skjold.mjs` (basis + trial) + `tools/render/lojalitetsprogram.mjs` (STEG 4: full Vekst-panel + fetch-guards).
 - **Tema-toggle: header (→31.07) → egen Innstillinger-fane (31.07) → Konto (06.08).** `#themeBtn`

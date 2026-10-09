@@ -60,14 +60,14 @@ function billing(variant) {
   if (variant === 'live') return {
     subscription_status: 'trialing', page_status: 'live',
     trial_start_at: new Date().toISOString(), trial_days_left: 30,
-    nedtaking_dager_igjen: 37, myk_periode: false, needs_attention: false,
-    attention_grunn: null, plan: 'vekst', effective_plan: 'vekst',
+    needs_attention: false, attention_grunn: null, plan: 'vekst', effective_plan: 'vekst',
+    effective_plan_grunn: 'trial_vindu', cancel_at_period_end: false, current_period_end: null, trial_ends_at: null,
   };
-  return { // forhandsvist — publiser-CTA synlig, ingen abonnement ennå
+  return { // forhandsvist — publiser-CTA synlig, Gratis (prismodell 09.10: full billing-shape)
     subscription_status: null, page_status: 'forhandsvist',
-    trial_start_at: null, trial_days_left: null, nedtaking_dager_igjen: null,
-    myk_periode: false, needs_attention: false, attention_grunn: null,
-    plan: null, effective_plan: null,
+    trial_start_at: null, trial_days_left: null, needs_attention: false, attention_grunn: null,
+    plan: null, effective_plan: 'basis', effective_plan_grunn: 'gratis',
+    cancel_at_period_end: false, current_period_end: null, trial_ends_at: null,
   };
 }
 // Representativ server-render-stand-in for kundesida (prod server-rendrer denne via
@@ -103,7 +103,7 @@ function makeRouter(variant) {
     if (p === '/api/dashboard/services')        return json(SERVICES);
     if (p === '/api/dashboard/hours')           return json(HOURS);
     if (p === '/api/dashboard/billing/status')  return json(billing(variant));
-    if (p === '/api/dashboard/page-status')      return json({ page_status: 'live', trial_start_at: NOW }); // PUT (publiser)
+    if (p === '/api/dashboard/page-status')      return json({ ok: true, ...billing('forhandsvist'), page_status: 'live' }); // PUT (publiser) — full shape, Gratis
     if (p === '/api/dashboard/preview')         return route.fulfill({ status: 200, contentType: 'text/html', body: PREVIEW_HTML });
     // Alt annet init rører (stats/bookings/winback/attribution/settings/google/…):
     // liste-formede endepunkt → [], resten → {}. Init må ikke krasje.
@@ -272,10 +272,10 @@ for (const bredde of [320, 402, 1280]) {
 console.table(radF);
 const s1 = radF.filter(r => r.tilstand === 'suksesskort');
 const s2 = radF.filter(r => r.tilstand === 'live-header');
-const okKort = s1.every(r => r.kort && r.tittel === 'Siden din er live!' && r.lenke
-  && /Instagram/.test(r.linjer) && /30 dager gratis/.test(r.linjer) && r.jsfeil === 'ingen');
+const okKort = s1.every(r => r.kort && r.tittel === 'Siden din er klar.' && r.lenke
+  && /Legg lenka i bioen og del den på\sstory/.test(r.linjer) && /Nå får vi første booking gjennom\sden\./.test(r.linjer) && r.jsfeil === 'ingen');
 const okLive = s2.every(r => r.headerLenke && r.kortSkjult === true && r.headerKlaring > 4
   && r.bodyOverflow <= 0 && r.jsfeil === 'ingen');
-console.log('\nSuksesskort OK (synlig, «Siden din er live!», lenke, Instagram+30 dager):', okKort ? 'JA' : 'NEI');
+console.log('\nSuksesskort OK (synlig, «Siden din er klar.», lenke, bio/story + første booking):', okKort ? 'JA' : 'NEI');
 console.log('Live-header OK (lenke synlig, kort skjult, ingen kollisjon/overflow):', okLive ? 'JA' : 'NEI');
 await browser.close(); server.close();
