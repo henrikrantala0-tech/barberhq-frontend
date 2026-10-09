@@ -1,13 +1,17 @@
 <!DOCTYPE html>
 <html lang="no">
 <head>
-<!-- Google tag (gtag.js) - GA4, cookieless (client_storage: none) -->
-<script async src="https://www.googletagmanager.com/gtag/js?id=G-6NSM1CSJKG"></script>
+<!-- Google tag (gtag.js) - GA4, cookieless (client_storage: none). Lastes KUN på prod-domenet, så lokale
+     renders, tester og Netlify-previews aldri havner i statistikken. gtag() finnes alltid (onclick-er kaller den). -->
 <script>
   window.dataLayer = window.dataLayer || [];
   function gtag(){dataLayer.push(arguments);}
-  gtag('js', new Date());
-  gtag('config', 'G-6NSM1CSJKG', { client_storage: 'none' });
+  if (/^(www\.)?trybarberhq\.com$/.test(location.hostname)) {
+    (function(){ var s=document.createElement('script'); s.async=true;
+      s.src='https://www.googletagmanager.com/gtag/js?id=G-6NSM1CSJKG'; document.head.appendChild(s); })();
+    gtag('js', new Date());
+    gtag('config', 'G-6NSM1CSJKG', { client_storage: 'none' });
+  }
 </script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
