@@ -74,10 +74,18 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
 
 ## Låste beslutninger (ikke reåpne uten at Henrik ber om det)
 
-- **Pris:** to planer — **Basis 89 kr/mnd, Vekst 179 kr/mnd** (`PLAN_INFO`, fail-closed;
-  ingen fast 249 eller 499-trapp lenger — verifisert mot kode 07.09). **30 dagers gratis prøveperiode**
-  i alle markeder — bevisst og riktig, ikke en feil i koden. Her sto det «(trial_period_days: 30)», som
-  bare er én av **tre** grener i `checkoutTrialParams` (backend `src/lib/trial.js`) — verifisert
+- **Pris (ny modell 09.10.2026, backend live `8b521d2`):**
+  - **Gratis 0 kr**, ingen kort, ingen tidsfrist. Internt heter planen fortsatt `'basis'`
+    (`effective_plan==='basis'`, `erBasis()`), men UI sier ALDRI «Basis». Basis 89 kr kan ikke kjøpes
+    lenger — checkout sender alltid `{plan:'vekst'}`.
+  - **Vekst 179 kr/mnd eks. mva**, 100 SMS inkludert, deretter 1,21 kr/SMS på neste faktura, tak 400 kr/mnd.
+  - **SMS-pakker** på Gratis: 129 / 279 / 499 kr (engangskjøp, utløper aldri). Antall/pris kommer fra
+    `sms_pakker` i billing-shapen — ALDRI hardkod pakkepriser i frontend.
+  - **Ingen prøveperiode for nye barbere.** Markedssidene sier «Ingen kort · Ingen prøveperiode».
+    Konto-tilstand 2 («Vekst, prøveperiode», `effective_plan_grunn==='trial_vindu'`) gjelder BARE de
+    6 eksisterende kontoene som var i prøveperiode da modellen byttet. Skal stå til de er ute; ikke slett.
+  **Historikk (gammel modell, gjelder bare de 6 i prøveperiode):** 30 dagers prøveperiode. Den var
+  styrt av **tre** grener i `checkoutTrialParams` (backend `src/lib/trial.js`), verifisert
   12.08 mot koden:
   1. **`trial_start_at` er NULL** → `{ trial_period_days: TRIAL_DAGER }`. Stripe teller selv de
      30 dagene. Dette er veien for den som betaler før hen publiserer.
@@ -94,7 +102,8 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
 - **Domene:** `trybarberhq.com` + `trybarberhq.no`.
 - **Ingen KUNDE-pengestrøm** gjennom plattformen: kunder betaler barberen direkte i salongen,
   betalingsmetoder vises kun som info (`loadPayment`, Tjenester-fanen). ⚠ Barberens ABONNEMENT går
-  derimot via Stripe og er LIVE (`loadBilling` → checkout/portal, `PLAN_INFO` 89/179) — ikke bland
+  derimot via Stripe og er LIVE (`loadBilling` → checkout/portal, Vekst 179 kr; SMS-pakker
+  via `POST sms-pakke` → Stripe, retur `?sms_pakke=1`, kjøpstype fra `kjop` i sync-svaret) — ikke bland
   de to. «Ingen pengestrøm» gjaldt aldri abonnementet.
 - **Stripe Connect Express** utsatt til depositum/no-show-funksjon bygges.
   Penger skal ALDRI gå via Henriks konto — hver barber egen mottaker.
@@ -575,8 +584,9 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   sync-checkout leveres av backend (Fase 0) — frontend er bygget mot kontrakten.
   Render: `tools/render/konto-prismodell.mjs` (erstatter konto-billing-grunn/-checkout-knapp/-pris-utledning/
   -myk-periode/-plan-nedgang).
-- **Basis-visning (Vekst-skjold).** Barbereren på Basis-plan ser Vekst-flatene låst i stedet for
-  ekte data. **FAIL-CLOSED (M10):** `erBasis()` = `!(_billing && effective_plan==='vekst')` — skjold
+- **Basis-visning (Vekst-skjold) = Gratis-visning.** «Basis» er det INTERNE navnet på Gratis
+  (`'basis'` i backend, `erBasis()`/`diBasis*`/`basisLaasListe` i koden); UI-tekst sier «Gratis»/«Vekst».
+  Barbereren på Gratis ser Vekst-flatene låst i stedet for ekte data. **FAIL-CLOSED (M10):** `erBasis()` = `!(_billing && effective_plan==='vekst')` — skjold
   med mindre billing er BEKREFTET Vekst. Alt annet (`_billing===null` før lasting, manglende felt,
   billing-feil, `'basis'`) → skjoldet. `effective_plan` er backendens autoritative «hva gjelder nå»;
   ALDRI `b.plan` (NULL i trial). Trial gir `effective_plan==='vekst'` → prøvekunder låses IKKE ute.
@@ -819,14 +829,15 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
 > ikke gjenoppdag som åpne oppgaver.
 
 ### Løst før/ved lansering (ikke gjenoppdag)
-- **Stripe-billing + konverteringsflyt** — plan-velger Basis/Vekst, `startCheckout {plan}`,
-  checkout/portal i Konto. Pris fra `PLAN_INFO[b.plan]` (89 Basis / 179 Vekst, fail-closed — verifisert mot `PLAN_INFO` 07.09). Live og
-  prod-verifisert (`364e2c5`). `effective_plan` leses nå av `erBasis()` (Vekst-skjoldet / Basis-visning
-  — skjuler Vekst-flatene bak lås + eksempeltall når `effective_plan==='basis'`); `effective_plan_grunn`
-  leses av `renderKonto` (billing-tilstandene). Ikke lenger «ligger klare, ubrukt».
+- **Stripe-billing + konverteringsflyt** — opprinnelig plan-velger Basis/Vekst (`364e2c5`). **Erstattet
+  av ny prismodell 09.10.2026:** plan-velgeren er SLETTET, checkout sender alltid `{plan:'vekst'}`
+  (179 kr), Gratis (internt `'basis'`) koster 0 og kjøpes ikke. SMS-pakker kjøpes fra Konto på Gratis.
+  `effective_plan` leses av `erBasis()` (Vekst-skjoldet — låser Vekst-flatene når planen ikke er bekreftet
+  Vekst); `effective_plan_grunn` leses av `kontoTilstand`/`renderKonto`. Se Konto-avsnittet under Fane-struktur.
 - **«Gå live»-publisering** — barbereren publiserer selv fra Konto
-  («Publiser og start gratis prøveperiode» → `PUT /api/dashboard/page-status`), eneste vei
-  `forhandsvist → live`, skriver `trial_start_at` atomisk. Avpubliser er samme vei tilbake.
+  («Publiser bookingsiden» → `PUT /api/dashboard/page-status`), eneste vei `forhandsvist → live`.
+  Avpubliser er samme vei tilbake. (Den gamle knappen «Publiser og start gratis prøveperiode» er borte —
+  nye barbere får ingen prøveperiode.)
 - **Verving-kjeden (`?ref=`)** — fikset i backend (`referralForVisning()`), overlever refresh.
   Verving-raden på landingssida er dekket.
 - **Bytt/sett passord i Konto → Innlogging** — to tilstander fra `profile.hasPassword`, GJORT 26.08.

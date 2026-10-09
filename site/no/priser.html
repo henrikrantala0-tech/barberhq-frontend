@@ -124,8 +124,6 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .pr-fine{color:#6f6f6f;font-size:12px;line-height:1.5}
 .pr-later{color:#9a9a9a;font-size:14px;line-height:1.5;padding:15px 0 8px}
 .pr-card .btn{width:100%;justify-content:center;font-size:15.5px;padding:15px}
-.btn-blue{background:#4d8bff;color:#fff}
-.btn-blue:hover{opacity:.88}
 .pp-sec{max-width:1000px;margin:0 auto;padding:56px 32px 0;text-align:center}
 .pp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
 .pp-item{background:#0e0e0e;border:1px solid #1a1a1a;border-radius:14px;padding:18px 14px;display:flex;align-items:center;justify-content:center;--pp-gap:9px;font-size:14px;font-weight:600;color:#d6d6d6;line-height:1.35;text-align:center}
@@ -133,7 +131,6 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
    (ingen mellomrom → kan ikke brekkes fra det). Som eget flex-barn løsnet haken når teksten brakk. */
 .pp-txt{display:block;min-width:0}
 .pp-item i{color:#3ecf7e;font-size:16px;margin-right:var(--pp-gap);vertical-align:-2px}
-.pr-trial{max-width:520px;margin:24px auto 0;padding:0 32px;text-align:center;color:#8c8c8c;font-size:13.5px;line-height:1.6}
 .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:46px}
 .step{background:#0e0e0e;border:1px solid #1f1f1f;border-radius:16px;padding:26px 22px;text-align:left}
 .step .num{font-size:13px;font-weight:700;color:#4d8bff;letter-spacing:.1em;margin-bottom:14px}
@@ -189,7 +186,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .foot-social a{width:36px;height:36px;border-radius:50%;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;transition:background-color .2s,border-color .2s,color .2s,opacity .2s}
 .foot-social a:hover{background:#fff;color:#000;border-color:#fff}
 @media(max-width:760px){.nav-links{display:none}.nav-burger{display:flex}.nav-wrap{padding:0 16px}.nav .logo img{height:19px}.feat-grid{grid-template-columns:1fr 1fr}.steps{grid-template-columns:1fr 1fr}.pr-grid{grid-template-columns:1fr;max-width:440px;margin:0 auto}.pp-grid{grid-template-columns:1fr 1fr}.foot-top{grid-template-columns:1fr;gap:40px;padding-bottom:42px}.foot-cols{grid-template-columns:1fr 1fr;gap:32px 24px}.foot-wrap{padding:56px 24px 32px}}
-@media(max-width:560px){.ph-hero{padding-left:22px;padding-right:22px}.feat-grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.pr-wrap{padding:26px 22px 0}.pr-card{padding:28px 24px}.pr-price{font-size:36px}.pp-sec{padding:48px 22px 0}.pp-item{padding:15px 10px;font-size:13px;--pp-gap:7px}.pp-item i{font-size:15px}.pr-trial{padding:0 22px}}
+@media(max-width:560px){.ph-hero{padding-left:22px;padding-right:22px}.feat-grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.pr-wrap{padding:26px 22px 0}.pr-card{padding:28px 24px}.pr-price{font-size:36px}.pp-sec{padding:48px 22px 0}.pp-item{padding:15px 10px;font-size:13px;--pp-gap:7px}.pp-item i{font-size:15px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}}
 </style>
 </head>
@@ -271,17 +268,16 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   <div class="sec-head reveal">
     <span class="eyebrow">SLIK KOMMER DU I GANG</span>
     <h2>Fyll inn. Så er du i gang.</h2>
-    <p>Ett skjema — så står siden din klar.</p>
+    <p>Ett skjema, så står siden din klar.</p>
   </div>
   <div class="steps">
     <div class="step reveal"><div class="num">STEG 1</div><h4>Du fyller ut skjemaet</h4><p>Om deg, shoppen, bildene, tjenestene og tidene dine.</p></div>
     <div class="step reveal"><div class="num">STEG 2</div><h4>Siden din står klar med en gang</h4><p>Vi setter den opp fra det du fylte inn. Ingenting teknisk.</p></div>
     <div class="step reveal"><div class="num">STEG 3</div><h4>Du finpusser i dashbordet</h4><p>Bytt bilder, farger, tekst og layout når du vil.</p></div>
-    <div class="step reveal"><div class="num">STEG 4</div><h4>Du går live når du vil</h4><p>Du publiserer selv når du er fornøyd. 30 dager gratis — vi ber ikke om kort før du har sett at det funker.</p></div>
+    <div class="step reveal"><div class="num">STEG 4</div><h4>Du går live når du vil</h4><p>Du publiserer selv når du er fornøyd. Det koster ingenting.</p></div>
   </div>
   <div class="reveal" style="text-align:center;margin-top:36px">
-    <a href="kom-i-gang.html" class="btn btn-blue">Kom i gang</a>
-    <p class="pr-trial">30 dager gratis. Uten kort.</p>
+    <a href="kom-i-gang.html" class="btn btn-fill">Kom i gang gratis</a>
   </div>
 </section>
 <section class="section" style="padding-top:24px">
