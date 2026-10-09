@@ -18,19 +18,19 @@
   <meta property="og:site_name" content="BarberHQ">
   <meta property="og:locale" content="nb_NO">
   <meta property="og:title" content="Priser – BarberHQ">
-  <meta property="og:description" content="Basis 89 kr/mnd, Vekst 179 kr/mnd. Ingen binding, ingen gebyr per booking. 30 dager gratis fra du publiserer — uten kort.">
+  <meta property="og:description" content="Gratis bookingside for barbere. Kundene booker selv, og du betaler aldri provisjon per booking. Vekst 179 kr/mnd eks. mva.">
   <meta property="og:url" content="https://trybarberhq.com/no/priser.html">
   <meta property="og:image" content="https://trybarberhq.com/no/icons/og-image.png">
   <meta name="twitter:card" content="summary_large_image">
   <meta name="twitter:title" content="Priser – BarberHQ">
-  <meta name="twitter:description" content="Basis 89 kr/mnd, Vekst 179 kr/mnd. Ingen binding, ingen gebyr per booking. 30 dager gratis fra du publiserer — uten kort.">
+  <meta name="twitter:description" content="Gratis bookingside for barbere. Kundene booker selv, og du betaler aldri provisjon per booking. Vekst 179 kr/mnd eks. mva.">
   <meta name="twitter:image" content="https://trybarberhq.com/no/icons/og-image.png">
   <link rel="icon" href="icons/favicon.ico" sizes="any">
   <link rel="icon" type="image/svg+xml" href="icons/icon.svg">
   <link rel="apple-touch-icon" href="icons/apple-touch-icon.png?v=2">
   <link rel="manifest" href="icons/site.webmanifest">
   <meta name="theme-color" content="#0a0a0a">
-<meta name="description" content="Basis 89 kr/mnd, Vekst 179 kr/mnd. Ingen binding, ingen gebyr per booking. 30 dager gratis fra du publiserer — uten kort.">
+<meta name="description" content="Gratis bookingside for barbere. Kundene booker selv, og du betaler aldri provisjon per booking. Vekst 179 kr/mnd eks. mva.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
@@ -101,7 +101,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .pr-wrap{max-width:1000px;margin:0 auto;padding:26px 32px 0}
 .pr-grid{display:grid;grid-template-columns:1fr 1fr;gap:18px}
 .pr-card{position:relative;border-radius:20px;padding:32px 30px;text-align:left;display:flex;flex-direction:column;scale:1;translate:0 0;transition:border-color .3s ease,box-shadow .3s ease,scale .3s ease,translate .3s ease}
-.pr-basis{background:#0c0c0c;border:1px solid #1a1a1a}
+.pr-basis{background:#0c0c0c;border:1px solid rgba(255,255,255,.14);box-shadow:none}   /* Gratis: tydelig ramme, ingen glød/hover — løftet er forbeholdt Vekst */
 /* Løft = verbatim fra dashboardets .plan-opt[aria-checked="true"]: scale 1.035 + ±3px sving (planFloat) + tolags --info-glød. #4d8bff ER --info. Kun Vekst, permanent — «anbefalt valg». Ingen hover (matcher valgt beslutning). */
 .pr-vekst{background:#0e0f12;border:1px solid #4d8bff;box-shadow:0 0 16px color-mix(in srgb,#4d8bff 50%,transparent),0 0 46px color-mix(in srgb,#4d8bff 30%,transparent);scale:1.035;translate:0 0;animation:planFloat 3.5s ease-in-out infinite}
 @keyframes planFloat{0%,100%{translate:0 3px}50%{translate:0 -3px}}
@@ -120,14 +120,19 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .pr-check{flex-shrink:0;width:21px;height:21px;border-radius:99px;display:flex;align-items:center;justify-content:center;margin-top:1px;background:rgba(62,207,126,.14);color:#3ecf7e}
 .pr-check svg{width:12px;height:12px}
 .pr-cta{margin-top:auto}
-.pr-later{color:#9a9a9a;font-size:14px;line-height:1.5;padding:15px 0}
+.pr-note{color:#8c8c8c;font-size:13px;margin-top:14px;text-align:center}   /* = .cta-note (index) */
+.pr-fine{color:#6f6f6f;font-size:12px;line-height:1.5}
+.pr-later{color:#9a9a9a;font-size:14px;line-height:1.5;padding:15px 0 8px}
 .pr-card .btn{width:100%;justify-content:center;font-size:15.5px;padding:15px}
 .btn-blue{background:#4d8bff;color:#fff}
 .btn-blue:hover{opacity:.88}
 .pp-sec{max-width:1000px;margin:0 auto;padding:56px 32px 0;text-align:center}
 .pp-grid{display:grid;grid-template-columns:repeat(4,1fr);gap:12px}
-.pp-item{background:#0e0e0e;border:1px solid #1a1a1a;border-radius:14px;padding:18px 14px;display:flex;align-items:center;justify-content:center;gap:9px;font-size:14px;font-weight:600;color:#d6d6d6;line-height:1.35;text-align:center}
-.pp-item i{color:#3ecf7e;font-size:16px;flex-shrink:0}
+.pp-item{background:#0e0e0e;border:1px solid #1a1a1a;border-radius:14px;padding:18px 14px;display:flex;align-items:center;justify-content:center;--pp-gap:9px;font-size:14px;font-weight:600;color:#d6d6d6;line-height:1.35;text-align:center}
+/* Hake + tekst i ÉN .pp-txt: chipen sentrerer enheten, haken står i tekstflyten foran første ord
+   (ingen mellomrom → kan ikke brekkes fra det). Som eget flex-barn løsnet haken når teksten brakk. */
+.pp-txt{display:block;min-width:0}
+.pp-item i{color:#3ecf7e;font-size:16px;margin-right:var(--pp-gap);vertical-align:-2px}
 .pr-trial{max-width:520px;margin:24px auto 0;padding:0 32px;text-align:center;color:#8c8c8c;font-size:13.5px;line-height:1.6}
 .steps{display:grid;grid-template-columns:repeat(4,1fr);gap:18px;margin-top:46px}
 .step{background:#0e0e0e;border:1px solid #1f1f1f;border-radius:16px;padding:26px 22px;text-align:left}
@@ -183,8 +188,8 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .foot-social{display:flex;gap:9px}
 .foot-social a{width:36px;height:36px;border-radius:50%;border:1px solid #2a2a2a;display:flex;align-items:center;justify-content:center;color:#fff;font-size:16px;transition:background-color .2s,border-color .2s,color .2s,opacity .2s}
 .foot-social a:hover{background:#fff;color:#000;border-color:#fff}
-@media(max-width:760px){.nav-links{display:none}.nav-burger{display:flex}.nav-wrap{padding:0 16px}.nav .logo img{height:19px}.feat-grid{grid-template-columns:1fr 1fr}.steps{grid-template-columns:1fr 1fr}.pr-grid{grid-template-columns:1fr;max-width:440px;margin:0 auto}.pr-vekst{order:-1}.pp-grid{grid-template-columns:1fr 1fr}.foot-top{grid-template-columns:1fr;gap:40px;padding-bottom:42px}.foot-cols{grid-template-columns:1fr 1fr;gap:32px 24px}.foot-wrap{padding:56px 24px 32px}}
-@media(max-width:560px){.feat-grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.pr-wrap{padding:26px 22px 0}.pr-card{padding:28px 24px}.pr-price{font-size:36px}.pp-sec{padding:48px 22px 0}.pp-item{padding:15px 10px;font-size:13px;gap:7px}.pp-item i{font-size:15px}.pr-trial{padding:0 22px}}
+@media(max-width:760px){.nav-links{display:none}.nav-burger{display:flex}.nav-wrap{padding:0 16px}.nav .logo img{height:19px}.feat-grid{grid-template-columns:1fr 1fr}.steps{grid-template-columns:1fr 1fr}.pr-grid{grid-template-columns:1fr;max-width:440px;margin:0 auto}.pp-grid{grid-template-columns:1fr 1fr}.foot-top{grid-template-columns:1fr;gap:40px;padding-bottom:42px}.foot-cols{grid-template-columns:1fr 1fr;gap:32px 24px}.foot-wrap{padding:56px 24px 32px}}
+@media(max-width:560px){.ph-hero{padding-left:22px;padding-right:22px}.feat-grid{grid-template-columns:1fr}.steps{grid-template-columns:1fr}.pr-wrap{padding:26px 22px 0}.pr-card{padding:28px 24px}.pr-price{font-size:36px}.pp-sec{padding:48px 22px 0}.pp-item{padding:15px 10px;font-size:13px;--pp-gap:7px}.pp-item i{font-size:15px}.pr-trial{padding:0 22px}}
 @media(prefers-reduced-motion:reduce){html{scroll-behavior:auto}.reveal{opacity:1;transform:none;transition:none}}
 </style>
 </head>
@@ -201,7 +206,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
       <a href="logg-inn.html" class="nav-login">Logg inn</a>
     </div>
     <div class="nav-right">
-      <a href="kom-i-gang.html" class="nav-cta">Prøv gratis</a>
+      <a href="kom-i-gang.html" class="nav-cta">Kom i gang gratis</a>
       <button class="nav-burger" id="nav-burger" aria-label="Meny"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -215,53 +220,53 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 </nav>
 <header class="ph-hero">
   <span class="eyebrow">PRISER</span>
-  <h1>Mindre enn <span class="hl-blue">en klipp</span> i måneden.</h1>
-  <p>30 dager gratis fra du publiserer — uten kort. Ingen binding.</p>
+  <h1><span class="hl-blue">Gratis booking.</span><br>Betal for vekst.</h1>
+  <p>Bookingsiden er gratis, uten&nbsp;tidsfrist.</p>
 </header>
 <div class="pr-wrap">
   <div class="pr-grid">
 
     <div class="pr-card pr-basis reveal">
-      <div class="pr-name">BASIS</div>
-      <div class="pr-price">89 kr <span>/mnd eks. mva</span></div>
+      <div class="pr-name">GRATIS</div>
+      <div class="pr-price">0 kr <span>/mnd</span></div>
       <p class="pr-tag">Kundene booker selv.</p>
       <ul class="pr-list">
-        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Egen bookingside — din side, dine kunder</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Egen bookingside: din side, dine kunder</li>
         <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Ubegrensede bookinger</li>
-        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Ubegrensede påminnelses-SMS</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Kalender og dashbord</li>
         <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Google Calendar-synk</li>
-        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Dashbord med full oversikt</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Lag story med ledige timer</li>
       </ul>
-      <div class="pr-cta"><p class="pr-later">Velges ved prøveslutt.</p></div>
+      <div class="pr-cta"><a href="kom-i-gang.html" class="btn btn-fill">Kom i gang gratis</a><div class="pr-note">Ingen kort · Ingen prøveperiode</div></div>
     </div>
 
     <div class="pr-card pr-vekst reveal">
-      <span class="pr-pill">ALLE STARTER HER</span>
+      <span class="pr-pill">MEST VERDI</span>
       <div class="pr-name">VEKST</div>
       <div class="pr-price">179 kr <span>/mnd eks. mva</span></div>
       <p class="pr-tag">Det som fyller stolen.</p>
-      <div class="pr-inc">Alt i Basis, pluss:</div>
+      <div class="pr-inc">Alt i Gratis, pluss:</div>
       <ul class="pr-list">
-        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Automatisk rebooking — SMS inkludert</li>
-        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Vinn-tilbake etter no-show</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Automatisk rebooking</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Vinn tilbake etter no-show</li>
         <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Verving med sporing og automatisk rabatt</li>
-        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Attribusjonspanel: se hvor kundene kommer fra</li>
-        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Gi kundene en grunn til å komme tilbake med lojalitetsprogram</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Attribusjon: se hvor kundene kommer fra</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>Lojalitetsprogram som gir kundene en grunn til å komme tilbake</li>
+        <li><span class="pr-check"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg></span>100 SMS inkludert hver måned</li>
       </ul>
-      <div class="pr-cta"><a href="kom-i-gang.html" class="btn btn-blue">Prøv gratis i 30 dager</a></div>
+      <div class="pr-cta"><p class="pr-later">Slå på Vekst fra dashbordet når du vil.</p><p class="pr-fine">Etter 100 SMS: 1,21 kr per SMS på neste faktura.</p></div>
     </div>
 
   </div>
 </div>
 <section class="pp-sec reveal">
   <div class="pp-grid">
-    <div class="pp-item"><i class="ti ti-check"></i>Ingen SMS-regning</div>
-    <div class="pp-item"><i class="ti ti-check"></i>Ingen gebyr per ny kunde</div>
-    <div class="pp-item"><i class="ti ti-check"></i>Ingen gebyr per booking</div>
-    <div class="pp-item"><i class="ti ti-check"></i>Ingen binding</div>
+    <div class="pp-item"><span class="pp-txt"><i class="ti ti-check"></i>Ingen kort for å starte</span></div>
+    <div class="pp-item"><span class="pp-txt"><i class="ti ti-check"></i>Ingen gebyr per ny kunde</span></div>
+    <div class="pp-item"><span class="pp-txt"><i class="ti ti-check"></i>Ingen gebyr per booking</span></div>
+    <div class="pp-item"><span class="pp-txt"><i class="ti ti-check"></i>Ingen binding</span></div>
   </div>
 </section>
-<p class="pr-trial reveal">Prøven kjører på Vekst. 30 dager, uten kort. Ingen binding.</p>
 <section class="section">
   <div class="sec-head reveal">
     <span class="eyebrow">SLIK KOMMER DU I GANG</span>
@@ -282,18 +287,18 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 <section class="section" style="padding-top:24px">
   <div class="sec-head reveal"><span class="eyebrow">SPØRSMÅL</span><h2>Vanlige spørsmål</h2></div>
   <div class="faq">
-    <div class="faq-item reveal"><h4>Er det binding?</h4><p>Nei. Du kan si opp eller bytte nivå når som helst, uten oppsigelsestid.</p></div>
-    <div class="faq-item reveal"><h4>Tar dere en andel av inntekten min?</h4><p>Nei. Kundene betaler deg direkte i salongen — vi tar kun det faste månedsbeløpet.</p></div>
-    <div class="faq-item reveal"><h4>Krever dere depositum?</h4><p>Nei. Kundene betaler deg direkte, og booking krever ikke kort. Kunden får en påminnelse på SMS dagen før, og på Vekst ser du hvem som ikke møtte opp i vinn tilbake-lista.</p></div>
+    <div class="faq-item reveal"><h4>Er det binding?</h4><p>Nei. Gratis koster ingenting, og Vekst kan du si opp når som helst, uten oppsigelsestid.</p></div>
+    <div class="faq-item reveal"><h4>Tar dere en andel av inntekten min?</h4><p>Nei. Kundene betaler deg direkte. Vi tar aldri provisjon per booking.</p></div>
+    <div class="faq-item reveal"><h4>Krever dere depositum?</h4><p>Nei. Kundene betaler deg direkte, og booking krever ikke kort. Med SMS-pakke eller Vekst får kunden en påminnelse dagen før.</p></div>
     <div class="faq-item reveal"><h4>Hva om jeg ikke har bilder klare?</h4><p>Du sender oss bildene du vil bruke når du fyller ut skjemaet — eller laster dem opp selv i dashbordet etter at siden er live.</p></div>
   </div>
 </section>
 <section class="final-cta">
   <div class="reveal">
     <h2>Klar til å fylle stolen?</h2>
-    <p>Vi setter opp siden din. Du publiserer når du er fornøyd — 30 dager gratis.</p>
-    <a href="kom-i-gang.html" class="btn btn-fill">Prøv gratis</a>
-    <div class="final-note">Ingen binding</div>
+    <p>Vi setter opp siden din. Du publiserer når du er fornøyd.</p>
+    <a href="kom-i-gang.html" class="btn btn-fill">Kom i gang gratis</a>
+    <div class="final-note">Ingen kort · Ingen prøveperiode</div>
   </div>
 </section>
 
