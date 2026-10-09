@@ -247,7 +247,7 @@ for(const [navn,b,sel] of [['fra Gratis-boksen',gratis(),'#kontoOppBtn'],['fra p
 
 // ── 4. Stripe-retur ──
 { // suksess: «Aktiverer Vekst …» mens synken går, så tilstand 3 + suksessbanner
-  const {page,errs,logg}=await nySide(375,{billing:()=>gratis(), sync:()=>({delay:1500, body:vekstSub()})},
+  const {page,errs,logg}=await nySide(375,{billing:()=>gratis(), sync:()=>({delay:1500, body:{...vekstSub(),kjop:'vekst'}})},
                                       '/no/dashboard.html?live=1&session_id=cs_test_123','domcontentloaded');
   // networkidle ville ventet til synken (1,5 s) var ferdig — les MENS den pågår.
   await page.waitForFunction(()=>{ const b=document.getElementById('kontoOppBtn'); return b&&b.offsetParent!==null&&b.textContent==='Aktiverer Vekst …'; },null,{timeout:1400}).catch(()=>{});

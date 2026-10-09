@@ -618,6 +618,74 @@
   @media(max-width:480px){ .konto-opp .btn{width:100%;padding-left:10px;padding-right:10px;white-space:nowrap} }
   .konto-avpub{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
   .subcard .konto-avpub p{margin-bottom:12px}
+  /* SMS-påminnelser (Konto, Gratis) — tre nivåer: KONTROLL (trekkspill-headeren: tittel + bryter +
+     undertekst, samme mønster som Vekst-fanens «SMS-påminnelse») · STATUS (saldo) · KJØP (fliser + knapp).
+     Kun designsystemets farger via eksisterende tokens (--ink/--ink-2/--mut/--line/--info/--surface/--bg);
+     radius/padding følger trekkspill- og kortverdiene som allerede brukes her (10/12px, 17px). */
+  .subcard.sms-kort{border:0;background:none;padding:0;max-width:520px}
+  #smsBryterRad[hidden],#smsSub[hidden]{display:none}
+  /* Luft mellom nivåene (mer enn mellom elementene inni et nivå). */
+  .sms-niva + .sms-niva{margin-top:34px}
+  .subcard .sms-saldo-rad{align-items:center;flex-wrap:wrap;row-gap:6px;margin:2px 0 0}
+  .sms-chip{display:inline-flex;align-items:center;font-size:12px;font-weight:600;color:var(--ink-2);
+    background:var(--line);border-radius:99px;padding:3px 10px;margin-left:4px}
+  .sms-chip[hidden]{display:none}
+  .subcard .sms-hjelp{font-size:13px;color:var(--mut);line-height:1.45;margin:8px 0 0}
+  .subcard .sms-hjelp[hidden]{display:none}
+  .sms-eksempel{margin:20px 0 0}
+  .sms-eksempel[hidden]{display:none}
+  .subcard .sms-eksempel-etikett{font-size:12px;color:var(--mut);margin:0 0 6px}
+  /* SMS-boble: grå, venstrejustert, «avsender»-hjørnet nede til venstre — som en mottatt melding. */
+  .subcard .sms-boble{display:inline-block;max-width:88%;background:var(--line);color:var(--ink);font-size:13.5px;
+    line-height:1.45;padding:9px 13px;border-radius:16px 16px 16px 4px;margin:0;white-space:pre-wrap;overflow-wrap:anywhere}
+  .subcard .sms-niva-h{font-size:14px;font-weight:600;color:var(--ink);margin:0 0 14px}
+  /* Flisene: tre i én rad. Containerspørring på faktisk bredde: får ikke tre fliser plass med tekst
+     ≥ 13px (per-SMS-linja ≈86px + 2×8px padding, tre fliser + 2×8px gap ≈ 322px), stables de som rader. */
+  .sms-fliser-wrap{container-type:inline-size}
+  .sms-fliser-wrap[hidden]{display:none}
+  .sms-fliser{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;padding-top:10px}
+  .sms-flis{position:relative;appearance:none;font:inherit;color:var(--ink);background:var(--surface);
+    border:1px solid var(--line-2);border-radius:12px;padding:20px 8px 13px;cursor:pointer;min-width:0;
+    display:flex;flex-direction:column;align-items:center;justify-content:flex-start;gap:8px;text-align:center;
+    transition:border-color .2s,background-color .2s}
+  .sms-flis:hover{border-color:var(--mut)}
+  /* Valgt = blå ramme + svak blå tone i bakgrunnen. Ingen glød. */
+  .sms-flis[aria-checked="true"]{border-color:var(--info);background:color-mix(in srgb,var(--info) 9%,var(--surface))}
+  .sms-flis:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
+  .sms-flis-a,.sms-flis-b{display:flex;flex-direction:column;align-items:center;min-width:0}
+  .sms-flis-antall{font-size:24px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
+  .sms-flis-enhet{font-size:13px;color:var(--mut)}
+  .sms-flis-pris{font-size:15px;font-weight:700;white-space:nowrap}
+  .sms-flis-per{font-size:13px;color:var(--mut);white-space:nowrap}
+  /* «Spar»-pillen: samme pill som «MEST VERDI» på priser.html (sentrert over toppkanten, blå tone, 11px). */
+  .sms-flis-spar{position:absolute;top:-10px;left:50%;transform:translateX(-50%);white-space:nowrap;
+    background:var(--info-bg);border:1px solid color-mix(in srgb,var(--info) 45%,transparent);color:var(--info);
+    font-size:11px;font-weight:700;letter-spacing:.06em;padding:3px 9px;border-radius:99px}
+  @container (max-width:321px){
+    .sms-fliser{grid-template-columns:1fr;gap:14px}
+    .sms-flis{flex-direction:row;justify-content:space-between;align-items:center;padding:17px 16px 13px;text-align:left}
+    .sms-flis-a{flex-direction:row;align-items:baseline;gap:6px}
+    .sms-flis-b{align-items:flex-end}
+    .sms-flis-spar{left:16px;transform:none}
+  }
+  /* Kjøpsknappen: samme blå som «Kom i gang gratis» på markedssidene (#2563eb), full bredde, én linje. */
+  .sms-kjop{display:block;width:100%;margin:18px 0 0;appearance:none;border:0;border-radius:99px;background:#2563eb;
+    color:#fff;font:inherit;font-size:15px;font-weight:600;padding:14px 16px;min-height:48px;cursor:pointer;
+    white-space:nowrap;overflow:hidden;text-overflow:ellipsis;transition:background-color .2s}
+  .sms-kjop:hover{background:#1d4ed8}
+  .sms-kjop:active{background:#1e40af}
+  .sms-kjop:disabled{opacity:.55;cursor:default}
+  .sms-kjop[hidden]{display:none}
+  .subcard .sms-fot{font-size:12px;color:var(--mut);text-align:center;line-height:1.45;margin:10px 0 0}
+  /* No-show-linja: Konto-kortets brødtekst (13px, --ink-2 — lysere enn dempet), ikke finskrift. Luft
+     ned til finskriften så de to linjene leses som to ting. */
+  .subcard .sms-noshow-linje{font-size:13px;color:var(--ink-2);text-align:center;line-height:1.45;margin:14px 0 0}
+  .subcard .sms-noshow-linje + .sms-fot{margin-top:8px}
+  .subcard .sms-fot[hidden]{display:none}
+  /* SMS-tilbud på Oversikt: samme mønster og plass som «Lag story»-inngangen (linje + flatknapp). */
+  .sms-tilbud[hidden]{display:none}
+  .sms-tilbud-knapper{display:flex;align-items:center;gap:14px;margin:0 0 28px}
+  .sms-tilbud-knapper .lnk-quiet{margin-top:0;flex-shrink:0}
   /* Publisering — egen blokk under abonnementskortet. Gjenbruker .subcard/.substatus. */
   .pubcard{margin-top:22px}
   /* Container for lenkeblokka. Live-tilstand fyller den med .pub-field (URL-felt + kopi-ikon);
@@ -765,9 +833,10 @@
   /* Tall-linje over «Lag story»-knappen (Commit 2): «Du har N ledige timer i dag/i morgen». Skjult (hidden) til /ledige svarer med antall>0. */
   .ovs-story-linje{margin:0 0 8px;font-size:13px;font-weight:500;color:var(--ink-2);letter-spacing:-.01em}
   .ovs-story-linje[hidden]{display:none}
-  #storyOpenOversikt{display:block;width:100%;height:48px;margin:0 0 28px;appearance:none;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;cursor:pointer}
+  #storyOpenOversikt,#smsTilbudSe{display:block;width:100%;height:48px;margin:0 0 28px;appearance:none;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;cursor:pointer}
   #storyOpenOversikt[hidden]{display:none}   /* author display:block ellers slår UA [hidden] → vakt mot vis-alltid */
-  #storyOpenOversikt:hover{border-color:var(--ink)}
+  #storyOpenOversikt:hover,#smsTilbudSe:hover{border-color:var(--ink)}
+  #smsTilbudSe{margin:0;flex:1;min-width:0}
   .up-day{margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
   .up-day:not(:first-child){margin-top:14px}
   .up-row{display:flex;align-items:center;gap:10px;min-height:56px;border-top:1px solid var(--line)}
@@ -1530,6 +1599,16 @@
          false / 404 / feil → verken knapp eller linje (stille). Vekst-kortet er uberørt, alltid synlig. -->
     <p class="ovs-story-linje" id="storyLedigeLinje" hidden></p>
     <button type="button" id="storyOpenOversikt" hidden>Lag story med ledige timer</button>
+    <!-- SMS-tilbud (Gratis): vises KUN når sms_pakke_kan_kjopes, påminnelser ikke går (saldo 0 eller av),
+         minst én booking i morgen, og tilbudet ikke er avvist siste 14 dager. Viker for «Lag story»: maks
+         ett slikt kort om gangen (oppdaterSmsTilbud). [oversettelse: sv/da/en] -->
+    <div class="sms-tilbud" id="smsTilbud" hidden>
+      <p class="ovs-story-linje" id="smsTilbudLinje"></p>
+      <div class="sms-tilbud-knapper">
+        <button type="button" id="smsTilbudSe">Se SMS-pakker</button>
+        <button type="button" class="lnk-quiet" id="smsTilbudIkkeNaa">Ikke nå</button>
+      </div>
+    </div>
 
     <!-- 2. Periode-piller + KPI. Pillene styrer KPI/diagram/Drevet av (period-scope) og følger
          KPI hit — de sitter IKKE over Kommende, som ikke er periodefiltrert. -->
@@ -1672,7 +1751,7 @@
           <button type="button" class="acc-head" aria-expanded="false">
             <span class="acc-htext">
               <span class="acc-title">SMS-påminnelse</span>
-              <span class="acc-sub">Alle kunder med time neste dag får én SMS kvelden før — færre glemte avtaler.</span>
+              <span class="acc-sub">Alle kunder med time neste dag får én SMS dagen før — færre glemte avtaler.</span>
             </span>
             <span class="acc-chev">▾</span>
           </button>
@@ -2267,6 +2346,8 @@
       <button class="btn" id="kontoAksjon" style="display:none"></button>
       <p class="sub-micro" id="kontoMikro" style="display:none"></p>
       <p class="konto-fin" id="kontoFin" style="display:none"></p>
+      <!-- Vekst/prøve med kjøpte SMS igjen: én dempet linje (pakkene vises kun på Gratis). -->
+      <p class="sub-micro" id="kontoSmsRest" style="display:none"></p>
       <!-- Prøve eller abonnement, men siden er avpublisert: plan-tilstanden står over, og
            publisering tilbys her — over lenkeblokka. -->
       <div class="konto-avpub" id="kontoAvpub" style="display:none">
@@ -2283,6 +2364,53 @@
       </div>
       <p class="pub-err" id="pubErr"></p>
     </div>
+        </div>
+      </div>
+
+      <!-- ── SMS-PÅMINNELSER (Gratis) ─────────────────────────────────────────────────
+           Eget trekkspill, ikke en seksjon inni abonnementskortet: kortet svarer på «hvilken plan
+           har jeg», dette på «sender jeg påminnelser og har jeg SMS». Egen header gjør det også til
+           et mål for «Se SMS-pakker» fra Oversikt (aapneKontoSeksjon) uten å folde ut planen.
+           Vises KUN når billing.sms_pakke_kan_kjopes (renderSmsKonto). [oversettelse: sv/da/en] -->
+      <div class="acc" id="accSms" hidden>
+        <!-- NIVÅ 1 — KONTROLL: tittel + bryter på samme linje, undertekst under (som Vekst-fanens
+             #accPaam). Bryteren er SAMME innstilling som Vekst-fanens #tog-paam (sms_paaminnelse_enabled via
+             /settings, speilet av settPaamBrytere). Gratis med saldo 0: ingen bryter og ingen undertekst. -->
+        <div class="acc-row">
+          <button type="button" class="acc-head" aria-expanded="false">
+            <span class="acc-htext">
+              <span class="acc-title" id="smsBryterTekst">SMS-påminnelser</span>
+              <span class="acc-sub" id="smsSub">Sendes automatisk dagen før timen</span>
+            </span>
+            <span class="acc-chev">▾</span>
+          </button>
+          <label class="sw sw-green acc-sw" id="smsBryterRad"><input type="checkbox" id="tog-smsPaam" aria-labelledby="smsBryterTekst"><span class="sl"></span></label>
+        </div>
+        <p class="sett-err" id="smsInnstErr" hidden></p>
+        <div class="acc-body" hidden>
+          <div class="subcard sms-kort">
+            <!-- NIVÅ 2 — STATUS -->
+            <div class="sms-niva">
+              <div class="pln sms-saldo-rad" id="smsSaldoRad"><b id="smsSaldoTall"></b><span>SMS igjen</span><span class="sms-chip" id="smsChip" hidden>Lav saldo</span></div>
+              <p class="sms-hjelp" id="smsStatus" hidden></p>
+              <!-- Forhåndsvisning: KUN når billing.sms_paaminnelse_eksempel finnes. Teksten vises ordrett. -->
+              <div class="sms-eksempel" id="smsEksempel" hidden>
+                <p class="sms-eksempel-etikett">Dette får kunden dagen før</p>
+                <p class="sms-boble" id="smsBoble"></p>
+              </div>
+            </div>
+            <!-- NIVÅ 3 — KJØP: radiogruppe (piltaster, roving tabindex) + én kjøpsknapp. -->
+            <div class="sms-niva" id="smsKjopNiva">
+              <p class="sms-niva-h">Kjøp SMS</p>
+              <div class="sms-fliser-wrap" id="smsFliserWrap">
+                <div class="sms-fliser" id="smsFliser" role="radiogroup" aria-label="Velg SMS-pakke"></div>
+              </div>
+              <button type="button" class="sms-kjop" id="smsKjop"></button>
+              <p class="sett-err" id="smsPakkeErr" hidden></p>
+              <p class="sms-noshow-linje" id="smsNoshow"></p>
+              <p class="sms-fot" id="smsFot">Engangskjøp, eks. mva. Kjøpte SMS utløper aldri.</p>
+            </div>
+          </div>
         </div>
       </div>
 
@@ -3060,8 +3188,8 @@ function ledigTekst(n){ return n===1 ? '1 ledig time' : n+' ledige timer'; }
 // (i dag prioritert). Ellers (begge false / 404 / feil) skjules begge stille. Tekst-antall fra /ledige.
 async function loadStoryLedigeLinje(){
   var linje=$("#storyLedigeLinje"), knapp=$("#storyOpenOversikt"); if(!linje||!knapp) return;
-  function skjul(){ linje.hidden=true; linje.textContent=''; knapp.hidden=true; }
-  function vis(d,naar,dato){ linje.textContent='Du har '+ledigTekst(d.antall)+' '+naar; linje.hidden=false; knapp.hidden=false; meldVist(dato); }
+  function skjul(){ linje.hidden=true; linje.textContent=''; knapp.hidden=true; if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud(); }
+  function vis(d,naar,dato){ linje.textContent='Du har '+ledigTekst(d.antall)+' '+naar; linje.hidden=false; knapp.hidden=false; meldVist(dato); if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud(); }
   var tz='Europe/Oslo';
   var iDag=new Date().toLocaleDateString('en-CA',{timeZone:tz});
   var m=new Date(iDag+'T12:00:00Z'); m.setUTCDate(m.getUTCDate()+1); var iMorgen=m.toISOString().slice(0,10);
@@ -3371,13 +3499,14 @@ function krFmt(n){return (n||0).toLocaleString("no-NO")+" kr";} // "9 800 kr" (k
 //  eksempeltall bak skjold for Basis — backend sender ingen hentetInn, og panelet viser CTA i stedet.)
 var SKJOLD_LAAS_SVG='<svg class="skjold-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>';
 // Skjold-klikk → Konto-fanen + åpne/scroll abonnementsseksjonen. Gjenbruker switchPanel (ingen ny fanebytte).
-function aapneAbonnement(){
+function aapneKontoSeksjon(id){
   if(typeof switchPanel==='function')switchPanel('abonnement');
-  var acc=document.getElementById('accAbonnement');
-  if(acc){ var head=acc.querySelector('.acc-head');
+  var acc=document.getElementById(id);
+  if(acc && !acc.hidden){ var head=acc.querySelector('.acc-head');
     if(head && head.getAttribute('aria-expanded')!=='true')head.click();
     acc.scrollIntoView({behavior:'smooth',block:'start'}); }
 }
+function aapneAbonnement(){ aapneKontoSeksjon('accAbonnement'); }
 // Legg/fjern skjold på et kort. Sjekker erBasis() selv → kall settSkjold(host) etter enhver render.
 // opts.eksempel=true → «Eksempel»-merke øverst (KUN attribusjonskortene), lagt som eget host-barn
 // OVER skjoldet. Deaktiverer bare kontroller VI slår av (data-skjold-disabled), så fjernSkjold ikke
@@ -3642,6 +3771,9 @@ async function loadUpcoming(){
   try{
     var b=await api.bookings();
     var now=Date.now();
+    var morgenKey=calNesteKey(osloTodayKey(),1);
+    _morgenBookinger=b.filter(function(x){return x.status!=='avlyst' && osloDayKey(x.start)===morgenKey;});
+    if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud();
     var horisont=now+7*86400000;   // 7 dager frem
     _upcoming=b.filter(function(x){return new Date(x.start).getTime()>now && x.status!=='avlyst';})
                .sort(function(a,c){return new Date(a.start)-new Date(c.start);})
@@ -4631,6 +4763,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   if(window.__syncBunnNav)window.__syncBunnNav();   // speil aktiv fane i bunn-nav (mobil)
   if(id==="oversikt"){loadOversikt();}
   if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();loadLoyalty();}
+  if(id==="abonnement"){loadSmsInnstillinger();}   // Konto-bryteren deler sms_paaminnelse_enabled med Vekst
   if(id==="tjenester"){loadTjenester();loadArbeidstider();}
   // «Din side» laster alle tre trekkspillene. loadProfil FØRST — den fyller Profil-feltene
   // (navn/adresse/bio/tagline) som bor i dette panelet, før vi bruker tid på design + bilder.
@@ -5181,7 +5314,7 @@ async function loadSmsInnstillinger(){
   // samme pass. Rekkefølgen betyr noe: .checked=true nullstiller ikke indeterminate, men
   // en klikk gjør det — se guarden i change-handleren.
   _settingsUkjent = !!s._hentFeilet;
-  settBryter($("#tog-paam"),   s.sms_paaminnelse_enabled, _settingsUkjent);
+  settPaamBrytere(s.sms_paaminnelse_enabled, _settingsUkjent);   // begge påminnelse-bryterne (Vekst + Konto)
   settBryter($("#tog-rebook"), s.sms_rebooking_enabled,   _settingsUkjent);
   setRebookPills(s.rebooking_interval_days);
   syncRebookIntervall();   // skjul intervallet hvis rebooking er av / ukjent
@@ -5275,7 +5408,7 @@ function bryterSkriv(el, felt, errEl){
   lagreSmsInnstilling(p, function(){ el.dataset.verdi=forrige; visBryter(el); }, errEl)
     .finally(function(){ el.disabled=false; });
 }
-$("#tog-paam").addEventListener("change",function(){bryterSkriv(this,'sms_paaminnelse_enabled', $("#paamErr"));});
+$("#tog-paam").addEventListener("change",function(){ skrivPaaminnelse(this,$("#paamErr")); });   // felles med Konto-bryteren
 $("#tog-rebook").addEventListener("change",function(){
   if(_settingsUkjent){ this.dataset.verdi='u'; visBryter(this); return; }
   var el=this, forrige=el.dataset.verdi;
@@ -6473,12 +6606,15 @@ function settBilling(d){
   renderKonto(_billing);
   // effective_plan kom → re-render skjoldede flater + re-kjør kundedata-loaderne som gate-et seg ut.
   if(typeof oppdaterSkjoldFlater==='function')oppdaterSkjoldFlater();
+  if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud();   // tilbudet avhenger av saldo/bryter/avvist
 }
 // Hovedhandlingen er ÉN knapp. `_kontoAksjon` sier hva et trykk gjør i nåværende tilstand —
 // knappen har ingen egen lytter per tilstand.
 var _kontoAksjon=null; // 'publiser' | 'checkout' | 'portal' | null
 // true mens synken etter Stripe-retur pågår: oppgrader-knappene viser «Aktiverer Vekst …».
 var _aktivererVekst=false;
+// true mens synken etter et SMS-pakkekjøp (?sms_pakke=1) pågår: kjøpsknappen viser «Legger til SMS …».
+var _leggerTilSms=false;
 const _dager=n=>n+' dag'+(n===1?'':'er');
 // Finskriften står ÉN gang: i oppgraderingsboksen (Gratis) og under handlingen (prøve, Vekst).
 const KONTO_FINSKRIFT='Etter 100 SMS: 1,21 kr per SMS på neste faktura. Maks 400 kr i måneden med mindre du endrer det.';
@@ -6582,8 +6718,187 @@ function renderKonto(b){
   if(dot)dot.hidden=!b.needs_attention;
   const accDot=$("#kontoAccDot"); if(accDot)accDot.hidden=!b.needs_attention;
   const bunnDot=$("#kontoBunnDot"); if(bunnDot)bunnDot.hidden=!b.needs_attention;
+  renderSmsKonto(b);
   renderDinsideCta(b); // publiser-CTA på «Din side» følger page_status — forsvinner ved publisering
 }
+
+// ── SMS-påminnelser (Konto) ──────────────────────────────────────────────────────────────
+// Kontrakt (billing-shape): sms_saldo, sms_paaminnelser_sendes (sendes påminnelser faktisk nå),
+// sms_paaminnelse_eksempel, sms_pakker[{antall,pris_kr,per_sms_kr}],
+// sms_pakke_kan_kjopes, sms_tilbud_avvist_at. Prisene leses ALLTID fra sms_pakker — aldri hardkodet.
+// Selve påminnelse-valget er IKKE i billing: det er sms_paaminnelse_enabled i /settings (én bryter, to steder).
+// Pakkene vises KUN når sms_pakke_kan_kjopes (Gratis). Vekst/prøve: ingen pakker, men har barberen
+// kjøpte SMS igjen, står én dempet linje i abonnementskortet.
+const SMS_LAV_SALDO=10;
+// Norsk tallformat (desimalkomma). desimaler=2 for per-SMS-prisen; hele kroner vises uten desimaler.
+function nok(n,desimaler){
+  var x=Number(n); if(!isFinite(x))return null;
+  var d=(desimaler!=null)?desimaler:(Number.isInteger(x)?0:2);
+  return x.toLocaleString('nb-NO',{minimumFractionDigits:d,maximumFractionDigits:d});
+}
+// Valgt pakke (antall). Overlever re-render (ny billing-shape) så valget ikke hopper tilbake.
+var _smsValgt=null;
+// Gyldige pakker, sortert på antall. Ugyldige rader (manglende/ikke-tall) filtreres bort.
+function smsPakker(b){
+  return (Array.isArray(b&&b.sms_pakker)?b.sms_pakker:[]).filter(function(p){
+    return p&&Number.isInteger(p.antall)&&p.antall>0&&isFinite(Number(p.pris_kr))&&isFinite(Number(p.per_sms_kr))&&Number(p.per_sms_kr)>0;
+  }).slice().sort(function(a,c){return a.antall-c.antall;});
+}
+// «Spar X %» mot per-SMS-prisen til den MINSTE pakken. Regnes, aldri hardkodet. Vises bare ved ≥ 5 %.
+// +1e-9 tar flyttallsstøy (et eksakt helt prosenttall skal ikke rundes ned til forrige heltall).
+function smsSpar(p,minstPer){
+  var x=Math.floor((1-Number(p.per_sms_kr)/minstPer)*100+1e-9);
+  return x>=5?x:0;
+}
+function renderSmsKonto(b){
+  b=b||{};
+  var acc=$("#accSms"), rest=$("#kontoSmsRest");
+  var saldo=(typeof b.sms_saldo==='number'&&b.sms_saldo>=0)?b.sms_saldo:null;
+  var kanKjope=b.sms_pakke_kan_kjopes===true;
+  if(rest){
+    var visRest=!kanKjope&&saldo!=null&&saldo>0;
+    rest.textContent=visRest?(saldo===1?'1 kjøpt SMS ligger på kontoen.':nok(saldo)+' kjøpte SMS ligger på kontoen.'):'';
+    rest.style.display=visRest?'':'none';
+  }
+  if(!acc)return;
+  acc.hidden=!kanKjope;
+  if(!kanKjope)return;
+  // Nivå 1: bryteren eies av /settings (settPaamBrytere); her styres bare om den vises. Saldo 0 → ingen
+  // bryter og ingen «Sendes automatisk …» (ingenting sendes).
+  $("#smsBryterRad").hidden=(saldo===0); $("#smsSub").hidden=(saldo===0);
+  // Nivå 2: saldo (tusenskille med mellomrom via nb-NO), nøytral «Lav saldo»-chip ved 1–10, hjelpetekst.
+  var rad=$("#smsSaldoRad");
+  rad.style.display=(saldo==null)?'none':'';
+  $("#smsSaldoTall").textContent=(saldo==null)?'':nok(saldo);
+  var lav=saldo!=null&&saldo>0&&saldo<=SMS_LAV_SALDO;
+  $("#smsChip").hidden=!lav;
+  var hjelp='';
+  if(saldo===0) hjelp='Ingen påminnelser sendes før du kjøper en SMS-pakke.';
+  else if(lav) hjelp='Påminnelsene stopper automatisk når saldoen er tom.';
+  var st=$("#smsStatus"); st.textContent=hjelp; st.hidden=!hjelp;
+  // Forhåndsvisning — kun når API-et sender eksempelet; teksten vises ordrett
+  var eks=(typeof b.sms_paaminnelse_eksempel==='string')?b.sms_paaminnelse_eksempel.trim():'';
+  $("#smsBoble").textContent=eks; $("#smsEksempel").hidden=!eks;
+  // Nivå 3: fliser + kjøpsknapp. Ingen gyldige pakker → hele kjøpsnivået skjules.
+  var pakker=smsPakker(b), niva=$("#smsKjopNiva");
+  niva.hidden=!pakker.length;
+  if(!pakker.length){ $("#smsFliser").innerHTML=''; return; }
+  // «Én no-show koster mer enn [antall i minste pakke] SMS.» — regnet av sms_pakker, aldri hardkodet.
+  $("#smsNoshow").textContent='Én no-show koster mer enn '+nok(pakker[0].antall)+' SMS.';
+  // Standardvalg: den midterste pakken (250 med dagens tre). Et tidligere valg som fortsatt finnes, beholdes.
+  if(!pakker.some(function(p){return p.antall===_smsValgt;})) _smsValgt=pakker[Math.floor((pakker.length-1)/2)].antall;
+  var minstPer=Number(pakker[0].per_sms_kr);
+  $("#smsFliser").innerHTML=pakker.map(function(p){
+    var spar=smsSpar(p,minstPer), valgt=p.antall===_smsValgt;
+    var etikett=nok(p.antall)+' SMS, '+nok(p.pris_kr)+' kr, '+nok(p.per_sms_kr,2)+' kr per SMS'+(spar?', spar '+spar+' %':'');
+    return '<button type="button" class="sms-flis" role="radio" aria-checked="'+valgt+'" tabindex="'+(valgt?0:-1)+'"'
+      +' data-sms-antall="'+p.antall+'" data-sms-pris="'+esc(String(p.pris_kr))+'" aria-label="'+esc(etikett)+'">'
+      +(spar?'<span class="sms-flis-spar" aria-hidden="true">Spar '+spar+'&nbsp;%</span>':'')
+      +'<span class="sms-flis-a" aria-hidden="true"><span class="sms-flis-antall">'+esc(nok(p.antall))+'</span><span class="sms-flis-enhet">SMS</span></span>'
+      +'<span class="sms-flis-b" aria-hidden="true"><span class="sms-flis-pris">'+esc(nok(p.pris_kr))+'&nbsp;kr</span>'
+      +'<span class="sms-flis-per">'+esc(nok(p.per_sms_kr,2))+'&nbsp;kr/SMS</span></span></button>';
+  }).join('');
+  settSmsKnapp();
+}
+// ÉN påminnelse-bryter, to steder (Vekst-fanen #tog-paam + Konto #tog-smsPaam). Samme felt
+// (sms_paaminnelse_enabled via /settings), samme tilstand: settPaamBrytere er ENESTE writer av begge,
+// så en endring det ene stedet vises det andre stedet uten reload.
+function settPaamBrytere(verdi, ukjent){
+  settBryter($("#tog-paam"), verdi, ukjent);
+  settBryter($("#tog-smsPaam"), verdi, ukjent);
+}
+function skrivPaaminnelse(el, errEl){
+  if(_settingsUkjent){ el.dataset.verdi='u'; visBryter(el); return; }   // ukjent → ikke skriv (som bryterSkriv)
+  var forrige=el.dataset.verdi==='1', ny=el.checked;
+  var begge=[$("#tog-paam"),$("#tog-smsPaam")];
+  settPaamBrytere(ny);                                   // speil straks
+  begge.forEach(function(b){ if(b)b.disabled=true; });   // racevakt: ingen overlappende PUT
+  lagreSmsInnstilling({sms_paaminnelse_enabled:ny}, function(){ settPaamBrytere(forrige); }, errEl)
+    .then(function(ok){ if(ok&&typeof loadBilling==='function') loadBilling(); })   // sms_paaminnelser_sendes kan ha endret seg
+    .finally(function(){ begge.forEach(function(b){ if(b)b.disabled=false; }); });
+}
+$("#tog-smsPaam").addEventListener("change",function(){ if(IS_DEMO){ visBryter(this); return; } skrivPaaminnelse(this,$("#smsInnstErr")); });
+// Kjøpsknappen speiler valgt flis: «Kjøp [antall] SMS · [pris] kr». Deaktivert mens en Stripe-retur synker.
+function settSmsKnapp(){
+  var k=$("#smsKjop"), v=document.querySelector('#smsFliser .sms-flis[aria-checked="true"]'); if(!k||!v)return;
+  if(_leggerTilSms){ k.textContent='Legger til SMS …'; k.disabled=true; return; }
+  k.textContent='Kjøp '+nok(Number(v.dataset.smsAntall))+' SMS · '+nok(Number(v.dataset.smsPris))+' kr';
+  k.disabled=!!_aktivererVekst;
+}
+// Velg en flis UTEN full re-render (fokus og glød skal ikke blinke). fokus=true ved tastaturnavigasjon.
+function velgSmsPakke(antall,fokus){
+  _smsValgt=antall;
+  document.querySelectorAll('#smsFliser .sms-flis').forEach(function(t){
+    var ja=Number(t.dataset.smsAntall)===antall;
+    t.setAttribute('aria-checked',ja?'true':'false'); t.tabIndex=ja?0:-1;
+    if(ja&&fokus)t.focus();
+  });
+  settSmsKnapp();
+}
+$("#smsFliser").addEventListener("click",function(e){
+  var t=e.target.closest('.sms-flis'); if(t)velgSmsPakke(Number(t.dataset.smsAntall),false);
+});
+// Radiogruppe (WAI-ARIA): piltaster flytter OG velger, med omløp; Home/End til første/siste.
+$("#smsFliser").addEventListener("keydown",function(e){
+  var liste=[].slice.call(document.querySelectorAll('#smsFliser .sms-flis')); if(!liste.length)return;
+  var i=liste.findIndex(function(t){return t.getAttribute('aria-checked')==='true';}), ny=null;
+  if(e.key==='ArrowRight'||e.key==='ArrowDown') ny=(i+1)%liste.length;
+  else if(e.key==='ArrowLeft'||e.key==='ArrowUp') ny=(i-1+liste.length)%liste.length;
+  else if(e.key==='Home') ny=0;
+  else if(e.key==='End') ny=liste.length-1;
+  if(ny==null)return;
+  e.preventDefault();
+  velgSmsPakke(Number(liste[ny].dataset.smsAntall),true);
+});
+// Kjøp: POST /api/billing/sms-pakke {antall} → {url} → Stripe. Retur håndteres av applyBillingReturn.
+$("#smsKjop").addEventListener("click",async function(){
+  var btn=this; if(IS_DEMO||_smsValgt==null)return;
+  var err=$("#smsPakkeErr"); if(err)err.hidden=true;
+  btn.disabled=true;
+  try{
+    var r=await apiFetch('/api/billing/sms-pakke',{method:'POST',body:JSON.stringify({antall:_smsValgt})});
+    if(!r){ btn.disabled=false; return; }
+    var d=await r.json().catch(function(){return{};});
+    if(r.ok&&d&&d.url){ window.location.href=d.url; return; }
+    if(err){ err.textContent=(d&&d.error)||'Kunne ikke starte betaling. Prøv igjen.'; err.hidden=false; }
+  }catch(x){ if(err){ err.textContent='Kunne ikke starte betaling. Prøv igjen.'; err.hidden=false; } }
+  btn.disabled=false;
+});
+
+// ── SMS-tilbud på Oversikt ────────────────────────────────────────────────────────────────
+// Vises når ALLE stemmer: sms_pakke_kan_kjopes, påminnelser sendes IKKE (sms_paaminnelser_sendes), ≥1 booking i morgen
+// (Oslo-dato), og ikke avvist siste 14 dager. Viker for «Lag story»: maks ett slikt kort om gangen.
+// Kalles fra settBilling, loadUpcoming og loadStoryLedigeLinje — rekkefølgen de lander i er ikke
+// avgjort, så hver av dem re-evaluerer.
+var _morgenBookinger=[];          // ikke-avlyste bookinger i morgen (Oslo), satt av loadUpcoming
+var _smsTilbudAvvistLokalt=false; // «Ikke nå» skjuler straks, uavhengig av om POST-en lykkes
+const SMS_TILBUD_PAUSE_DAGER=14;
+function fornavn(navn){ var f=String(navn||'').trim().split(/\s+/)[0]; return f||null; }
+function oppdaterSmsTilbud(){
+  var boks=$("#smsTilbud"), linje=$("#smsTilbudLinje"); if(!boks||!linje)return;
+  var b=_billing, story=$("#storyOpenOversikt");
+  var avvist=(b&&b.sms_tilbud_avvist_at)?new Date(b.sms_tilbud_avvist_at).getTime():null;
+  var nyligAvvist=avvist!=null&&!isNaN(avvist)&&(Date.now()-avvist)<SMS_TILBUD_PAUSE_DAGER*86400000;
+  var vis=!!b && b.sms_pakke_kan_kjopes===true && b.sms_paaminnelser_sendes!==true
+    && _morgenBookinger.length>0 && !nyligAvvist && !_smsTilbudAvvistLokalt
+    && !(story&&!story.hidden);   // «Lag story» vinner
+  if(!vis){ boks.hidden=true; return; }
+  var n=_morgenBookinger.length, fn=n===1?fornavn(_morgenBookinger[0].name):null;
+  linje.textContent = n===1
+    ? (fn?fn+' har time i morgen. Vil du at BarberHQ sender en påminnelse?':'En kunde har time i morgen. Vil du at BarberHQ sender en påminnelse?')
+    : n+' kunder har time i morgen. Vil du at BarberHQ sender dem en påminnelse?';
+  boks.hidden=false;
+}
+$("#smsTilbudSe").addEventListener("click",function(){ aapneKontoSeksjon('accSms'); });
+$("#smsTilbudIkkeNaa").addEventListener("click",async function(){
+  _smsTilbudAvvistLokalt=true; oppdaterSmsTilbud();
+  if(IS_DEMO)return;
+  try{
+    var r=await apiFetch('/api/dashboard/sms-tilbud/avvis',{method:'POST',body:'{}'});
+    var d=(r&&r.ok)?await r.json().catch(function(){return null;}):null;
+    if(erBillingShape(d)) settBilling(d);
+  }catch(e){}
+});
 // Publiser-CTA på «Din side»: synlig KUN i forhandsvist. Kalles fra renderKonto (hver
 // billing-lasting), så et vellykket publiser → loadBilling → page_status='live' skjuler den
 // uten reload. Egen node fra Konto-knappen; deler bare settSideStatus-dispatchen.
@@ -7049,10 +7364,11 @@ function aapnePortal(){ window.location.href=CONFIG.API_BASE+"/api/dashboard/bil
 async function applyBillingReturn(){
   const q=new URLSearchParams(location.search);
   const sessionId=q.get('session_id');
-  const live=q.get('live')==='1', avbrutt=q.get('avbrutt')==='1';
+  const live=q.get('live')==='1', avbrutt=q.get('avbrutt')==='1', smsPakke=q.get('sms_pakke')==='1';
   if(!sessionId&&!live&&!avbrutt)return;
   history.replaceState(null,'',location.pathname);
-  if(typeof aapneAbonnement==='function')aapneAbonnement();
+  // ?sms_pakke=1 (satt av backend i success/cancel_url for pakkekjøp) → SMS-seksjonen, ellers abonnementet.
+  aapneKontoSeksjon(smsPakke?'accSms':'accAbonnement');
   const el=$("#subReturn");
   const banner=function(klasse,tekst){ if(!el)return; el.className='sub-banner '+klasse; el.textContent=tekst; el.style.display=''; };
   const VENT='Det kan ta et minutt før Vekst vises. Last inn siden på nytt.';
@@ -7060,16 +7376,25 @@ async function applyBillingReturn(){
     banner('mut', avbrutt ? 'Betalingen ble avbrutt. Du kan oppgradere når som helst.' : VENT);
     return;
   }
-  _aktivererVekst=true; if(_billing)renderKonto(_billing);
+  if(smsPakke) _leggerTilSms=true; else _aktivererVekst=true;
+  if(_billing)renderKonto(_billing);
   let d=null;
   try{
     const r=await apiFetch('/api/billing/sync-checkout',{method:'POST',body:JSON.stringify({session_id:sessionId})});
     if(r&&r.ok) d=await r.json().catch(function(){return null;});
   }catch(e){ console.error('sync-checkout feilet', e); }
-  _aktivererVekst=false;
+  _aktivererVekst=false; _leggerTilSms=false;
   if(erBillingShape(d)) settBilling(d);      // ny autoritativ tilstand (også om den ikke ble Vekst)
   else if(_billing) renderKonto(_billing);   // feil → siste kjente tilstand
-  if(erBillingShape(d)&&kontoTilstand(d).id===3) banner('info','Vekst er aktivt. Vekstverktøyene ligger i Vekst-fanen.');
+  // Hva ble kjøpt? synk-svaret sier det selv (kjop: 'vekst' | 'sms_pakke') — ingen gjetting ut fra saldo.
+  // Vekst-banneret krever i tillegg at svaret faktisk ER Vekst. «Påminnelsene er slått på» står bare når
+  // sms_paaminnelser_sendes sier at de går.
+  const kjop=erBillingShape(d)?d.kjop:null;
+  if(kjop==='vekst'&&kontoTilstand(d).id===3) banner('info','Vekst er aktivt. Vekstverktøyene ligger i Vekst-fanen.');
+  else if(kjop==='sms_pakke'){
+    banner('info', d.sms_paaminnelser_sendes===true ? 'SMS-pakken er lagt til. Påminnelsene er slått på.' : 'SMS-pakken er lagt til.');
+    aapneKontoSeksjon('accSms');
+  }
   else banner('mut',VENT);
 }
 
@@ -7079,7 +7404,7 @@ function applyDemoMode(){
    'slotPopupFjern','slotPopupEndre','gcalBtn',
    'fbSend-side','fbSend-konto-ide','fbSend-konto-support',  // tre bokser, én handler
    // Konto: én hovedknapp + tekstlenker (startSub/goLive er slått sammen til kontoAksjon)
-   'kontoAksjon','kontoOppBtn','kontoPubliser','dinsidePubliser','manageSub','unpublish','savePw','loggUt'].forEach(function(id){
+   'kontoAksjon','kontoOppBtn','kontoPubliser','tog-smsPaam','smsKjop','smsTilbudSe','smsTilbudIkkeNaa','dinsidePubliser','manageSub','unpublish','savePw','loggUt'].forEach(function(id){
     var el=document.getElementById(id);
     if(el){el.disabled=true;el.title='Ikke tilgjengelig i forhåndsvisning';}
   });
