@@ -1751,7 +1751,7 @@
           <button type="button" class="acc-head" aria-expanded="false">
             <span class="acc-htext">
               <span class="acc-title">SMS-påminnelse</span>
-              <span class="acc-sub">Alle kunder med time neste dag får én SMS dagen før — færre glemte avtaler.</span>
+              <span class="acc-sub">Kunden får én SMS dagen før timen. Færre glemte avtaler.</span>
             </span>
             <span class="acc-chev">▾</span>
           </button>
@@ -6617,7 +6617,7 @@ var _aktivererVekst=false;
 var _leggerTilSms=false;
 const _dager=n=>n+' dag'+(n===1?'':'er');
 // Finskriften står ÉN gang: i oppgraderingsboksen (Gratis) og under handlingen (prøve, Vekst).
-const KONTO_FINSKRIFT='Etter 100 SMS: 1,21 kr per SMS på neste faktura. Maks 400 kr i måneden med mindre du endrer det.';
+const KONTO_FINSKRIFT='Etter 100 SMS: 1,21 kr per SMS på neste faktura. Maks 400 kr i måneden.';   // taket kan ikke endres ennå
 // ISO-dato → «14. november» i Oslo-tid. Manglende/ugyldig → null: kalleren dropper da linja
 // (første trekk) eller hele tilstanden (oppsagt) — aldri en gjettet dato.
 function kontoDato(iso){
@@ -6667,7 +6667,7 @@ function kontoTilstand(b){
       ? {id:0, tekst:['Siden din er ikke publisert ennå.'],
          knapp:['Publiser bookingsiden','publiser'], mikro:'Gratis. Ingen kort.'}
       : {id:1, merke:'Gratis', farge:'mut', tall:['0 kr','/ mnd'],
-         tekst:['Bookingsiden, kalenderen og dashbordet er gratis, uten tidsfrist.'], opp:true};
+         tekst:['Bookingsiden, kalenderen og dashbordet er gratis.'], opp:true};
   }
   if(!t) t={id:'reserve', merke:'Abonnementsstatus utilgjengelig', farge:'mut',
             tekst:['Vi får ikke vist abonnementet ditt akkurat nå. Tilgangen din er upåvirket.']};

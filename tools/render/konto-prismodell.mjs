@@ -36,7 +36,7 @@ const server=http.createServer((q,r)=>{const f=path.join(ROOT,decodeURIComponent
 await new Promise(r=>server.listen(0,r));
 const PORT=server.address().port;
 
-const FIN='Etter 100 SMS: 1,21 kr per SMS på neste faktura. Maks 400 kr i måneden med mindre du endrer det.';
+const FIN='Etter 100 SMS: 1,21 kr per SMS på neste faktura. Maks 400 kr i måneden.';
 const NOV14='2026-11-14T10:00:00Z';
 
 // Full billing-shape (backend buildBillingShape + steg 1-feltene cancel_at_period_end/current_period_end).
@@ -56,7 +56,7 @@ const TILSTANDER=[
     vent:{status:'—', tekst:/^Siden din er ikke publisert ennå\.$/, tall:'—', knapp:/^Publiser bookingsiden$/,
           mikro:/^Gratis\. Ingen kort\.$/, opp:false, fin:false, manage:false, av:false, avpub:false} },
   { id:'1-gratis', desktop:true, b:gratis(),
-    vent:{status:/^● Gratis$/, tekst:/^Bookingsiden, kalenderen og dashbordet er gratis, uten tidsfrist\.$/,
+    vent:{status:/^● Gratis$/, tekst:/^Bookingsiden, kalenderen og dashbordet er gratis\.$/,
           tall:/^0 kr\/ mnd$/, knapp:'—', opp:true, fin:false, manage:false, av:true, avpub:false} },
   { id:'2-prove', b:prove(),
     vent:{status:/^● Vekst, prøveperiode$/,

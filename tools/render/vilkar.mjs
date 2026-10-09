@@ -19,8 +19,8 @@ const server=http.createServer((q,r)=>{const f=path.join(ROOT,decodeURIComponent
 await new Promise(r=>server.listen(0,r));
 const PORT=server.address().port;
 
-const H2=['Hvem du handler med','Hva BarberHQ er','Pris','Prøveperiode','Betaling','Oppsigelse',
-          'Hvis du ikke betaler','Angrerett','Innholdet ditt','Kundene dine','SMS','Data om deg',
+const H2=['Hvem du handler med','Hva BarberHQ er','Pris','SMS-pakker','Betaling','Oppsigelse',
+          'Hvis en betaling feiler','Angrerett','Innholdet ditt','Kundene dine','SMS','Data om deg',
           'Cookies','Underleverandører','Ansvar','Endringer'];
 
 const browser=await chromium.launch();
