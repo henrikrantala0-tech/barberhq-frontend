@@ -10,6 +10,13 @@
 # mot prod). Kun «ikke i publish» lukker hele klassen.
 [build]
   publish = "site"
+  # Hopp over bygget når ingenting som publiseres er endret siden forrige bygg (sparer credits:
+  # en push med bare CLAUDE.md, tools/ eller _utkast/ skal ikke koste en deploy).
+  # Netlify: exit 0 = hopp over, exit ≠ 0 = bygg. $CACHED_COMMIT_REF er forrige bygde commit.
+  # netlify.toml er med fordi ruting/proxy/headere bor her. Mangler forrige ref (første bygg,
+  # tømt cache), må det BYGGES: uten vakta ville `git diff --quiet "" HEAD` sammenlignet mot det
+  # rene arbeidstreet, svart 0 og hoppet over. Ukjent ref gir exit 128 → bygg. Feil vei = bygg.
+  ignore = "[ -n \"$CACHED_COMMIT_REF\" ] && git diff --quiet $CACHED_COMMIT_REF $COMMIT_REF -- site/ netlify.toml"
 
 # 0a. www → apex, 301, host-basert. Netlifys domene-config gjør allerede dette, men denne
 #     regelen gjør det EKSPLISITT og portabelt (uavhengig av UI-innstillinger). Host-spesifikk
