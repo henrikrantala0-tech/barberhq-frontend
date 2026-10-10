@@ -82,7 +82,7 @@
      Headeren viser butikknavnet (venstre) + avkuttet bookinglenke m/kopi-knapp (høyre). .dash-brand
      er flex-wrapperen rundt navnet; min-width:0 så den kan gi etter og la navnet krympe/avkortes
      (fitShopnavn font-krymper #barberName mot clientWidth før CSS-ellipsen overtar). */
-  .dash-brand{display:flex;align-items:center;min-width:0}
+  .dash-brand{display:flex;align-items:center;min-width:0;min-height:22px}   /* reserverer bookinglenkas høyde (.pub-copy 22px) fra start: headeren hopper ikke når lenka kommer */
   .brand{font-weight:800;font-size:19px;letter-spacing:-.03em}
   .brand .hq{font-weight:300}
   /* .who (stablet navn+lenke) er fjernet — headeren er nå én rad: .shopnavn + .header-lenke. */

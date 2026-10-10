@@ -75,7 +75,8 @@ for (const bredde of [320, 375]) {
     // Navnet skal aldri bli HØYERE enn skjelettet (da ville det skyve). Lavere er lov: fitShopnavn krymper
     // fonten på smale skjermer for å få plass ved siden av bookinglenka.
     sjekk(etter.hoyde <= foer.hoyde + 0.5, `${bredde} navnet skyver ikke: skjelett ${foer.hoyde}px → navn ${etter.hoyde}px høyt`);
-    console.log(`INFO ${bredde} bookinglenka (#headerLenke, ${etter.lenke}px) vises når siden er live: header ${foer.header}px → ${etter.header}px — eget hopp, eldre enn denne endringen`);
+    // Bookinglenka (#headerLenke) dukker opp når siden er live; plassen er reservert fra start (.dash-brand min-height).
+    sjekk(etter.lenke > 0 && Math.abs(etter.header - foer.header) < 0.6, `${bredde} headeren hopper ikke når bookinglenka kommer: ${foer.header}px → ${etter.header}px (lenke ${etter.lenke}px)`);
     await topp(page, `etter-data-${bredde}`);
     sjekk(errs.length === 0, `${bredde}: JS-feil ${errs.join(' | ')}`); await page.close(); }
   { const { page, errs, slipp } = await side(bredde, { profilStatus: 500 });
