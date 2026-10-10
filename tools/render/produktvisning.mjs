@@ -446,33 +446,58 @@ for(const bredde of [320,MOBIL,1280]){
 }
 
 // ── prefers-reduced-motion ───────────────────────────────────────────────────────
-{
-  const ctx=await browser.newContext({viewport:{width:1280,height:900},deviceScaleFactor:2,
+// Regel (Henrik 10.10): med redusert bevegelse står HVER scene ferdig, i sluttilstanden, uten animasjon —
+// ikke tom, ikke blokk for blokk. Målt på de tre EKTE kortene (ikke loopens kopier), på 320/375/1280,
+// rett etter lasting, etter 6 s, og etter et fokusskifte (stoppSekvenser nullstiller kalenderen).
+const sluttilstand=page=>page.evaluate(()=>{
+  const k=i=>document.querySelector('#scene .mock[data-i="'+i+'"]');
+  const kal=k(0), dash=k(1), bok=k(2);
+  const synlig=x=>x&&x.offsetParent!==null;
+  const d=[...dash.querySelectorAll('.pv-dash')].find(x=>synlig(x)&&x.querySelector('.pv-fill'))||dash;
+  return {
+    kalender:{inn:kal.querySelectorAll('.ks-block.ks-in').length, av:kal.querySelectorAll('.ks-block').length,
+      teller:(kal.querySelector('.ks-chip-count[data-today]')||{}).textContent, naa:!!kal.querySelector('.ks-now.ks-in')},
+    dashbord:{gull:/rekord-gull/.test((d.querySelector('.pv-rev')||{}).className||''), bar:(d.querySelector('.pv-fill')||{style:{}}).style.width,
+      tekst:((d.querySelector('.pv-witext')||{}).textContent||'').trim(), kpi:((d.querySelector('.pv-rev-n')||{}).textContent||'').replace(/\s/g,''),
+      stolper:[...d.querySelectorAll('.pv-bar')].filter(x=>getComputedStyle(x).getPropertyValue('--g').trim()!=='1').length},
+    // Det som VISES, ikke bare klassen: bekreftelsen (.success-wrap) skal være synlig i et synlig ark.
+    booking:{suksess:(function(){const w=bok.querySelector('.success-wrap'), sh=bok.querySelector('.sheet');
+      return !!w&&!!sh&&getComputedStyle(sh).display!=='none'&&getComputedStyle(w).display!=='none'&&w.getBoundingClientRect().height>0;})()},
+  };
+});
+const erFerdig=m=>m.kalender.inn===m.kalender.av&&m.kalender.av===5&&m.kalender.teller==='5'&&m.kalender.naa
+  &&m.dashbord.gull&&m.dashbord.bar==='100%'&&/Ny rekord/.test(m.dashbord.tekst)&&m.dashbord.kpi==='10550'&&m.dashbord.stolper===0
+  &&m.booking.suksess;
+const kort=m=>`kal ${m.kalender.inn}/${m.kalender.av} t=${m.kalender.teller} · dash ${m.dashbord.gull?'gull':'-'} ${m.dashbord.bar} «${m.dashbord.tekst.slice(0,10)}» ${m.dashbord.kpi} · bok ${m.booking.suksess?'bekreftelse':'-'}`;
+for(const bredde of [320,375,1280]){
+  const ctx=await browser.newContext({viewport:{width:bredde,height:900},deviceScaleFactor:2,
                                       reducedMotion:'reduce'});
   const page=await ctx.newPage();
   const errs=[]; page.on('pageerror',e=>errs.push(e.message));
   await page.goto(`http://localhost:${PORT}/no/index.html`,{waitUntil:'networkidle'});
   await page.locator('#produkt').scrollIntoViewIfNeeded();
   await page.waitForTimeout(600);
+  const m0=await sluttilstand(page);
   const a=await aktiv(page);
   await page.waitForTimeout(6000);
   const b=await aktiv(page);
-  const trans=await page.evaluate(()=>getComputedStyle(document.querySelector('#scene .mock:not(.pv-klon)')).transitionDuration);
-  // Kalender-kortet ble byttet 25.09 (2bb95da): den gamle klonen med .cal-pop/#calRows finnes ikke
-  // lenger — testen krasjet på querySelector(null). Den nye scenen (.ks-cal) har .ks-block-blokker i
-  // markupen og en egen redusert-regel (transition:none på .ks-block/.ks-now). Måles på den.
-  const anim=await page.evaluate(()=>{ const e=document.querySelector('#produkt .ks-cal .ks-block'); return e?getComputedStyle(e).transitionDuration:'(fant ikke .ks-block)'; });
-  const kalInn=await page.evaluate(()=>document.querySelectorAll('#produkt .ks-cal .ks-block.ks-in').length);
-  await page.locator('#produkt').screenshot({path:`${OUT}/1280-produkt-redusert.png`});
-  oppforsel.push({test:'redusert: ingen autoplay', resultat:`${a.kort} → ${b.kort}`, ventet:'uendret',
-    ok:a.kort===b.kort?'✓':'✗'});
-  oppforsel.push({test:'redusert: ingen transition', resultat:trans, ventet:'0s', ok:/^0s(,\s*0s)*$/.test(trans)?'✓':'✗'});
-  oppforsel.push({test:'redusert: ingen kalender-transition', resultat:anim, ventet:'0s', ok:/^0s/.test(anim)?'✓':'✗'});
-  // INFO, ikke krav (10.10): den nye scenen spiller av blokkene én og én også med redusert bevegelse
-  // (uten transition). Om den heller skal stå ferdig eller tom er Henriks avgjørelse — til da logges tallet.
-  oppforsel.push({test:'redusert: kalenderblokker vist etter 6 s (info)', resultat:kalInn+' blokker', ventet:'avgjøres',
-    ok:'info'});
-  oppforsel.push({test:'redusert: jsfeil', resultat:errs.length?errs.join('; ').slice(0,40):'ingen',
+  const m6=await sluttilstand(page);
+  if(bredde===1280){
+    const trans=await page.evaluate(()=>getComputedStyle(document.querySelector('#scene .mock:not(.pv-klon)')).transitionDuration);
+    const anim=await page.evaluate(()=>{ const e=document.querySelector('#scene .mock:not(.pv-klon) .ks-cal .ks-block'); return e?getComputedStyle(e).transitionDuration:'(fant ikke .ks-block)'; });
+    oppforsel.push({test:'redusert: ingen autoplay', resultat:`${a.kort} → ${b.kort}`, ventet:'uendret', ok:a.kort===b.kort?'✓':'✗'});
+    oppforsel.push({test:'redusert: ingen transition', resultat:trans, ventet:'0s', ok:/^0s(,\s*0s)*$/.test(trans)?'✓':'✗'});
+    oppforsel.push({test:'redusert: ingen kalender-transition', resultat:anim, ventet:'0s', ok:/^0s/.test(anim)?'✓':'✗'});
+  }
+  oppforsel.push({test:`redusert ${bredde}: alle kort ferdige ved lasting`, resultat:kort(m0), ventet:'sluttilstand', ok:erFerdig(m0)?'✓':'✗'});
+  oppforsel.push({test:`redusert ${bredde}: fortsatt ferdige etter 6 s`, resultat:kort(m6), ventet:'sluttilstand', ok:erFerdig(m6)?'✓':'✗'});
+  // Fokusskifte: klikk kalenderkortet (startSekvens → stoppSekvenser nullstiller kalenderen) og så et annet.
+  await page.locator('#scene .mock[data-i="0"]').click({force:true}); await page.waitForTimeout(500);
+  await page.locator('#scene .mock[data-i="2"]').click({force:true}); await page.waitForTimeout(500);
+  const mF=await sluttilstand(page);
+  oppforsel.push({test:`redusert ${bredde}: ferdige etter fokusskifte`, resultat:kort(mF), ventet:'sluttilstand', ok:erFerdig(mF)?'✓':'✗'});
+  await page.locator('#produkt').screenshot({path:`${OUT}/${bredde}-produkt-redusert.png`});
+  oppforsel.push({test:`redusert ${bredde}: jsfeil`, resultat:errs.length?errs.join('; ').slice(0,40):'ingen',
     ventet:'ingen', ok:errs.length?'✗':'✓'});
   await ctx.close();
 }
@@ -617,10 +642,13 @@ for(const bredde of [320,MOBIL,1280]){
 // padding:40px 20px (booking-module.cjs:246). Uten klassen sto bekreftelsen
 // venstrestilt og uten luft, med alt innholdet klemt mot toppen.
 //
-// FASIT-TALLENE er målt mot den publiserte sida ved å avsløre #bk-success i DOM-en
-// (ingen booking opprettet): success-wrap starter 115px inn i .sheet-inner, og ✓-ikonet
-// 155px inn. Endres kildens padding eller .back-sheet, skal disse tallene endres MED
-// en ny måling — ikke justeres til det som får testen grønn.
+// FASIT-TALLENE er målt mot bookingsiden backend serverer (booking-module.cjs) ved å gjøre
+// nøyaktig showSuccess() sine DOM-steg (skjul #acc-wrap og #bk-back, vis #bk-success — ingen
+// booking): success-wrap starter 56px inn i .sheet-inner, og ✓-ikonet 96px inn (likt på 320/375).
+// Ny måling 10.10: den gamle fasiten 115/155 var målt 10.08, FØR backend begynte å skjule
+// «Tilbake» (#bk-back) på bekreftelsen (5664384, 04.09). Med Tilbake synlig gir samme måling
+// fortsatt 115/155 — knappens 59px er hele forskjellen. Endres kildens padding eller .back-sheet,
+// skal disse tallene endres MED en ny måling — ikke justeres til det som får testen grønn.
 {
   const ctx=await browser.newContext({viewport:{width:1280,height:900},deviceScaleFactor:1});
   const page=await ctx.newPage();
@@ -658,8 +686,8 @@ for(const bredde of [320,MOBIL,1280]){
   oppforsel.push({test:'tilstand 6: ✓-ikon sentrert i skjermen',
     resultat:s6.ikonBom+'px fra midten', ventet:'≤2px', ok:s6.ikonBom<=2?'✓':'✗'});
   oppforsel.push({test:'tilstand 6: vertikal posisjon som fasiten',
-    resultat:`wrap ${s6.wrapTop}px / ikon ${s6.ikonTop}px`, ventet:'115px / 155px (±4)',
-    ok:(Math.abs(s6.wrapTop-115)<=4&&Math.abs(s6.ikonTop-155)<=4)?'✓':'✗'});
+    resultat:`wrap ${s6.wrapTop}px / ikon ${s6.ikonTop}px`, ventet:'56px / 96px (±4)',
+    ok:(Math.abs(s6.wrapTop-56)<=4&&Math.abs(s6.ikonTop-96)<=4)?'✓':'✗'});
   oppforsel.push({test:'tilstand 6: jsfeil', resultat:errs.length?errs.join('; ').slice(0,40):'ingen',
     ventet:'ingen', ok:errs.length?'✗':'✓'});
   await ctx.close();
@@ -943,6 +971,16 @@ for(const bredde of [320,MOBIL,1280]){
   oppforsel.push({test:'kalender: starter forfra ved fokus',
     resultat:`teller=${kC.teller} synlige=${kC.synlige}`, ventet:'0 / 0',
     ok:(kC.teller==='0'&&kC.synlige===0)?'✓':'✗'});
+  // Loopens kopier (.pv-klon) skal stå i sluttilstanden: kalender 5/5, booking på bekreftelsen.
+  // frysBooking fjernet før vis-sheet, så kopiene av bookingkortet viste forsiden (rettet 10.10).
+  const kopier=await page.evaluate(()=>[...document.querySelectorAll('#scene .mock.pv-klon')].map(k=>{
+    const kal=k.querySelector('.ks-cal'), bok=k.querySelector('.pv-book');
+    if(kal) return 'kal '+kal.querySelectorAll('.ks-block.ks-in').length;
+    if(bok){ const w=bok.querySelector('.success-wrap'), sh=bok.querySelector('.sheet');
+      return 'bok '+((w&&sh&&getComputedStyle(sh).display!=='none'&&getComputedStyle(w).display!=='none')?'bekreftelse':'FORSIDE'); }
+    return 'dash'; }));
+  const kopiOk=kopier.filter(x=>x.startsWith('kal')).every(x=>x==='kal 5')&&kopier.filter(x=>x.startsWith('bok')).length>0&&kopier.filter(x=>x.startsWith('bok')).every(x=>x==='bok bekreftelse');
+  oppforsel.push({test:'loop-kopier: i sluttilstanden', resultat:kopier.join(', ')||'ingen kopier', ventet:'kal 5, bok bekreftelse', ok:kopiOk?'✓':'✗'});
   oppforsel.push({test:'kalender: jsfeil', resultat:errs.length?errs.join('; ').slice(0,40):'ingen',
     ventet:'ingen', ok:errs.length?'✗':'✓'});
   await ctx.close();

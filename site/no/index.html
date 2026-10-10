@@ -3351,7 +3351,9 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   function startSekvens(i){
     stoppSekvenser();
     sekvStart=Date.now();        // når den PÅGÅENDE sekvensen begynte — ikke dvelleklokka
-    if(REDUSERT) return;
+    // Redusert bevegelse: ingen avspilling — alle kortene står i sluttilstanden. stoppSekvenser()
+    // over nullstiller kalenderen, så sluttilstanden settes på nytt på ALLE tre kortene her.
+    if(REDUSERT){ settAlleSlutt(); return; }
     if(i===0) kalenderLoop();
     else if(i===1) tellOpp();
     else if(i===2) bookingLoop();
@@ -3457,13 +3459,26 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   }
   function frysBooking(k){
     var bok=k.querySelector('.pv-book');
-    if(bok){ bok.classList.remove('vis-sheet','vis-scroll'); bok.classList.add('vis-success'); }
+    // Sluttilstand = slik sekvensen slutter: arket oppe (vis-sheet) med bekreftelsen (vis-success). Før
+    // fjernet den vis-sheet, og da var arket skjult — kopiene og redusert bevegelse viste forsiden.
+    if(bok){ bok.classList.remove('vis-scroll'); bok.classList.add('vis-sheet','vis-success'); }
   }
   // Sluttilstand for kort i. Virker på BÅDE klon (ved bygging) og original (ved hopp).
   // På en original legger den bare sluttilstanden oppå — startSekvens() nullstiller og
   // spiller av på nytt like etter (via io2), akkurat som ved et vanlig fokusskifte.
   function settSlutt(node,i){
     if(i===0) frysKalender(node); else if(i===1) frysDashbord(node); else if(i===2) frysBooking(node);
+  }
+  // Redusert bevegelse (prefers-reduced-motion): hver scene står FERDIG, i sluttilstanden — ikke tom,
+  // ikke blokk for blokk. Gjelder de tre EKTE kortene (kopiene i loopen fryses allerede av byggKloner).
+  // Dashbordet: frysDashbord dekker gull/bar/tekst; stolpene trenger --g=1 (originalen har ikke vært
+  // gjennom skrubb), og tellOpp() sin REDUSERT-gren setter tallene i den synlige utgaven.
+  function settAlleSlutt(){
+    [0,1,2].forEach(function(i){
+      var k=scene.querySelector('.mock[data-i="'+i+'"]'); if(!k) return;
+      settSlutt(k,i);
+      if(i===1){ [].forEach.call(k.querySelectorAll('.pv-bar'),function(b){ b.style.setProperty('--g','1'); }); tellOpp(); }
+    });
   }
   function skrubb(k){
     k.removeAttribute('data-i'); k.removeAttribute('role');
@@ -3542,6 +3557,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   },{passive:true});
 
   byggKloner();
+  if(REDUSERT) settAlleSlutt();   // redusert bevegelse: alle kortene ferdige fra første frame
   settTelefonSkala();
   settRammehoyde();
   // Start med dashbordet sentrert, uten glatt scroll — brukeren skal ikke se et hopp.
@@ -3648,9 +3664,10 @@ function play(){
   // Ingen loop: en sekvens som gjentar seg selv i det uendelige er nettopp det
   // innstillingen ber oss la være.
   if(REDUSERT){
+    // Redusert bevegelse: sluttscenen med en gang, ingen tidsur (samme regel som produktvisningen).
     sw.classList.add('on'); acc.classList.add('aapen'); velgPille(35);
-    T(function(){ vis(2); dag.textContent='35'; kap.classList.add('inn'); }, 1800);
-    T(function(){ vis(3); boble.classList.add('inn'); }, 3600);
+    dag.textContent='35'; kap.classList.add('inn');
+    vis(3); boble.classList.add('inn');
     return;
   }
   // Scene 1 — hold på lukket liste før noe skjer, ellers rekker ikke øyet å se at det
@@ -3726,8 +3743,9 @@ function reset(){
 function play(){
   reset();
   if(REDUSERT){
+    // Redusert bevegelse: sluttscenen med en gang, ingen tidsur (samme regel som produktvisningen).
     sw.classList.add('on'); acc.classList.add('aapen');
-    T(function(){ vis(3); boble.classList.add('inn'); }, 1600);
+    vis(3); boble.classList.add('inn');
     return;
   }
   // Scene 1 — hold 500, bryter på 400, pause 500, boksen utvider 500, hold 500
@@ -3830,10 +3848,11 @@ function reset(){
 function play(){
   reset();
   if(REDUSERT){
+    // Redusert bevegelse: sluttscenen med en gang, ingen tidsur (samme regel som produktvisningen).
     acc.classList.add('aapen'); s1.classList.add('rullet');
     seg.classList.add('vis'); velgPille('begge'); pct.textContent='25';
-    T(function(){ vis(2); lenke.classList.add('inn'); dim.classList.add('inn'); ark.classList.add('inn'); }, 1600);
-    T(function(){ vis(3); leggInn(); }, 3400);
+    lenke.classList.add('inn'); dim.classList.add('inn'); ark.classList.add('inn');
+    vis(3); leggInn();
     return;
   }
   // Scene 1 — hold 500, boks utvider 500, innstillinger inn 500, valg 400, prosent 400, hold 500.

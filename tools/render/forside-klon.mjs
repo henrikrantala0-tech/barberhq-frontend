@@ -81,6 +81,45 @@ for (const bredde of [320, 375]) {
   sjekk(errs.length === 0, `${bredde}: JS-feil ${errs.join(' | ')}`);
   await page.close();
 }
+// ── Redusert bevegelse: «Fem systemer»-demoene står i SLUTTSCENEN med en gang, uten tidsur ──
+// Samme regel som produktvisningen (Henrik 10.10). Måles 150 ms etter at raden åpnes (før ville
+// rebooking/påminnelse/verving fortsatt stå i scene 1 — tidsurene gikk på 1,6–3,6 s) og igjen etter 4 s.
+const SLUTT = {
+  'sys-rebooking':    () => { const st = document.getElementById('rbStage');
+    return !!st.querySelector('.rb-scene[data-s="3"].on') && document.getElementById('rbBoble').classList.contains('inn')
+      && document.getElementById('rbDag').textContent === '35'; },
+  'sys-paaminnelse':  () => { const st = document.getElementById('paaStage');
+    return !!st.querySelector('.rb-scene[data-s="3"].on') && document.getElementById('paaBoble').classList.contains('inn'); },
+  'sys-verving':      () => { const st = document.getElementById('vvStage');
+    return !!st.querySelector('.rb-scene[data-s="3"].on') && !!document.querySelector('#vvRows .crow.inn') && document.getElementById('vvCount').textContent === '1'; },
+  'sys-vinn-tilbake': () => document.getElementById('wbListe').classList.contains('inn') && document.getElementById('wbAcc').classList.contains('aapen'),
+};
+for (const bredde of [320, 375]) {
+  const ctx = await browser.newContext({ viewport: { width: bredde, height: 900 }, deviceScaleFactor: 2, reducedMotion: 'reduce' });
+  const page = await ctx.newPage();
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  await page.route('**/*', r => { const u = new URL(r.request().url());
+    if (u.hostname === 'localhost') return r.continue();
+    if (u.hostname === 'api.trybarberhq.com' && r.request().method() === 'GET') return r.fulfill({ status: 401, contentType: 'application/json', body: '{}' });
+    if (/fonts\.(googleapis|gstatic)\.com$|cdn\.jsdelivr\.net$|cdnjs\.cloudflare\.com$|unpkg\.com$/.test(u.hostname)) return r.continue();
+    prod++; return r.abort(); });
+  await page.goto(`http://localhost:${PORT}/no/index.html`, { waitUntil: 'load' });
+  await page.waitForTimeout(600);
+  for (const [rad, ferdig] of Object.entries(SLUTT)) {
+    const el = page.locator('#' + rad);
+    await el.scrollIntoViewIfNeeded();
+    if ((await el.getAttribute('data-open')) !== 'true') await page.click('#' + rad + ' .sys-head');
+    await page.waitForTimeout(150);
+    const straks = await page.evaluate(ferdig);
+    await page.waitForTimeout(4000);
+    const etter = await page.evaluate(ferdig);
+    sjekk(straks && etter, `${bredde} redusert ${rad}: sluttscenen med en gang (${straks}) og fortsatt etter 4 s (${etter})`);
+    await el.screenshot({ path: path.join(OUT, `redusert-${rad.replace('sys-', '')}-${bredde}.png`) });
+    await page.click('#' + rad + ' .sys-head'); await page.waitForTimeout(300);
+  }
+  sjekk(errs.length === 0, `${bredde} redusert: JS-feil ${errs.join(' | ')}`);
+  await ctx.close();
+}
 sjekk(prod === 0, `uventede requests utenfor localhost: ${prod}`);
 await browser.close(); server.close();
 console.log(feil ? `${feil} FEIL` : 'Alt grønt — bilder i ' + OUT);
