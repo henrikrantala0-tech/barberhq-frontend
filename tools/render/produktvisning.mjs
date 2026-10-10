@@ -617,10 +617,13 @@ for(const bredde of [320,MOBIL,1280]){
 // padding:40px 20px (booking-module.cjs:246). Uten klassen sto bekreftelsen
 // venstrestilt og uten luft, med alt innholdet klemt mot toppen.
 //
-// FASIT-TALLENE er målt mot den publiserte sida ved å avsløre #bk-success i DOM-en
-// (ingen booking opprettet): success-wrap starter 115px inn i .sheet-inner, og ✓-ikonet
-// 155px inn. Endres kildens padding eller .back-sheet, skal disse tallene endres MED
-// en ny måling — ikke justeres til det som får testen grønn.
+// FASIT-TALLENE er målt mot bookingsiden backend serverer (booking-module.cjs) ved å gjøre
+// nøyaktig showSuccess() sine DOM-steg (skjul #acc-wrap og #bk-back, vis #bk-success — ingen
+// booking): success-wrap starter 56px inn i .sheet-inner, og ✓-ikonet 96px inn (likt på 320/375).
+// Ny måling 10.10: den gamle fasiten 115/155 var målt 10.08, FØR backend begynte å skjule
+// «Tilbake» (#bk-back) på bekreftelsen (5664384, 04.09). Med Tilbake synlig gir samme måling
+// fortsatt 115/155 — knappens 59px er hele forskjellen. Endres kildens padding eller .back-sheet,
+// skal disse tallene endres MED en ny måling — ikke justeres til det som får testen grønn.
 {
   const ctx=await browser.newContext({viewport:{width:1280,height:900},deviceScaleFactor:1});
   const page=await ctx.newPage();
@@ -658,8 +661,8 @@ for(const bredde of [320,MOBIL,1280]){
   oppforsel.push({test:'tilstand 6: ✓-ikon sentrert i skjermen',
     resultat:s6.ikonBom+'px fra midten', ventet:'≤2px', ok:s6.ikonBom<=2?'✓':'✗'});
   oppforsel.push({test:'tilstand 6: vertikal posisjon som fasiten',
-    resultat:`wrap ${s6.wrapTop}px / ikon ${s6.ikonTop}px`, ventet:'115px / 155px (±4)',
-    ok:(Math.abs(s6.wrapTop-115)<=4&&Math.abs(s6.ikonTop-155)<=4)?'✓':'✗'});
+    resultat:`wrap ${s6.wrapTop}px / ikon ${s6.ikonTop}px`, ventet:'56px / 96px (±4)',
+    ok:(Math.abs(s6.wrapTop-56)<=4&&Math.abs(s6.ikonTop-96)<=4)?'✓':'✗'});
   oppforsel.push({test:'tilstand 6: jsfeil', resultat:errs.length?errs.join('; ').slice(0,40):'ingen',
     ventet:'ingen', ok:errs.length?'✗':'✓'});
   await ctx.close();
