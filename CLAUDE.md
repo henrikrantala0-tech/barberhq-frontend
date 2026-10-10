@@ -71,6 +71,9 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
 - **Konsekvens:** push til main = umiddelbar prod-deploy. Ingen staging. Verifiser
   FØR push (render-before-commit), for det er ingen mellomstasjon.
 - **Credits:** hver deploy koster ~15 credits (tak 1000/mnd). Batch pushes — se Arbeidsregler.
+- **Bygg hoppes over når ingenting publisert er endret** (`ignore` i `netlify.toml`, `c54f9b3`): en push som
+  bare rører CLAUDE.md, tools/, _utkast/ o.l. bygger ikke. Endring i `site/` eller `netlify.toml` bygger.
+  Grunnlaget er `git diff` mot forrige BYGDE commit, så hoppede pusher samles opp til neste bygg.
 
 ## Låste beslutninger (ikke reåpne uten at Henrik ber om det)
 
