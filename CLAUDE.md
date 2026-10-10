@@ -350,11 +350,7 @@ til output. DB-passordet ble eksponert to ganger via `railway variables` i chat-
 chatten — 1/l og 0/O er uleselige i chatfonten og har forårsaket feil (05.07).
 
 ## Kjente sikkerhetshull (MVP-bevisst, ikke akutt)
-- **Hero-bildegrense er kun klientsiden** — `kom-i-gang.html` begrenser til 1 fil for
-  hero, men backend (`multer`) har kun en generell grense på 5 filer, ingen per-layout-
-  validering. En teknisk bruker kan sende flere hero-bilder direkte mot API-et.
-- **orders.barber_id FK ikke fullt enforced** — vi så en id som ikke matchet uten at DB
-  klaget under testing. Bør verifiseres — kan føre til stille feil ved feil barber_id.
+Åpne hull står i PLAN.md (## Utsatt / Sjekker).
 
 
 ## Systemtilstand
@@ -414,8 +410,8 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 - **`produktvisning.mjs` teller bare EKTE kort (10.10).** Mobil-karusellens uendelige loop (`559137b`) legger
   kopier (`.pv-klon`, `aria-hidden`, `inert`, uten `data-i`) foran og bak; kalenderkortet er scenen `.ks-cal`
   (`2bb95da`) med `.pv-scale`/`--ph-s`. Testen krasjet på det gamle kortet (`.cal-pop`/`#calRows`) og målte kopier
-  som kort — rettet. ÅPEN: «tilstand 6: vertikal posisjon» (bekreftelsen 56/96 px mot fasit 115/155 px målt mot
-  publisert bookingside) — må måles på nytt mot bookingsiden før noe endres.
+  som kort — rettet. Tilstand 6 er avklart: fasit 56/96 px (`2631d4c`),
+  målt mot backend-render (bookingsiden skjuler `#bk-back` siden backend `5664384`).
 - **⚠ Klonens rekord-terskel er `>=`, produktets er `>`.** `dashboard.html` bruker
   `var beaten = hasRecord && p.current_week_revenue > p.best_week_revenue`; scenens demo i `site/no/index.html` bruker
   `maalRev*e >= FORRIGE_REKORD`. Ved NØYAKTIG likt beløp tenner klonen gull der produktet
@@ -568,6 +564,61 @@ pushet er testrunde-fiksene (bug 3 / beslutning 4–7 / kamerarull / miniatyr-ca
 - Tagline (kort, valgfri) + Bio (lengre, valgfri) er to separate felt. Onboarding samler ikke tagline — barbereren fyller i dashboard.
 - Onboarding-bilder er alltid klippbilder — portrett-slot fylles ALDRI automatisk ved bygg-barber.
 
+### Desktop-bredde (dashbordet)
+- Alle fem paneler er **680px SENTRERT** fra 720px viewport (`b7882e80`): `@media(min-width:720px){ #oversikt,#vekst,#tjenester,#design,#abonnement{max-width:680px;margin-left:auto;margin-right:auto} .topband>.wrap{max-width:728px} }`. Headeren er 728 (= 680 + 2×24 `.wrap`-padding), så streker og innhold flukter. `#design` er med (2-kolonne-gridet får ~369px til trekkspillene). Alle fem har samme bredde, så fanebytte hopper ikke. Mobil er uendret.
+- «Drevet av»-radene er kappet med `#drivenBy .di-rows{max-width:320px}` (`3a28a65`), så tallene ikke står langt fra etikettene.
+
+### SMS-blokka (Konto + Oversikt) — låst design, bygget 09.10 (`f3a1e05`, tekster `5e98f18`)
+Flyttet hit fra `bugjakt-ut/rapport-2026-10-09.md` (slettet).
+- **Vises bare når `sms_pakke_kan_kjopes`** (Gratis). På Vekst/prøve: ingen pakker. Har barberen
+  `sms_saldo > 0`, står én dempet linje i abonnementskortet: «N kjøpte SMS ligger på kontoen.» / entall
+  «1 kjøpt SMS ligger på kontoen.».
+- **Tre nivåer, 34 px luft mellom:**
+  1. **Kontroll:** tittel «SMS-påminnelser» + bryter på samme linje, «Sendes automatisk dagen før timen» under.
+     Ved saldo 0: ingen bryter og ingen undertekst.
+  2. **Status:** stort tall + «SMS igjen» («1 250»). Ved 1–10: nøytral chip «Lav saldo» (`--line`) + «Påminnelsene
+     stopper automatisk når saldoen er tom.». Ved saldo 0: «Ingen påminnelser sendes før du kjøper en SMS-pakke.».
+     Forhåndsvisning (grå boble) bare når `sms_paaminnelse_eksempel` finnes. Ingen fremdriftslinje.
+  3. **Kjøp:** «Kjøp SMS». Fliser som radiogruppe (piltaster og Home/End med omløp), **midterste pakke valgt som
+     standard** (ikke hardkodet), blå ramme og svak blå tone, uten glød. «Spar X %» = floor mot minste pakke, vises
+     fra 5 %. «Spar»-merket på 11 px er godkjent. Én blå knapp «Kjøp N SMS · P kr». «Én no-show koster mer enn
+     100 SMS.» (antallet fra minste pakke) + «Engangskjøp, eks. mva. Kjøpte SMS utløper aldri.».
+- **Fliser:** stables på 320 og 375 (tre fliser trenger ~322 px), én rad på desktop. Ingen krymping av tekst.
+- **Pakker og priser leses fra `sms_pakker`** — aldri hardkodet (0 treff på pakkepriser i dashboard.html, også i
+  kommentarer). `per_sms_kr` vises alltid med 2 desimaler. Kjøp: `POST /api/billing/sms-pakke {antall}` → `{url}`.
+- **Én påminnelse-bryter:** Konto og Vekst bruker `sms_paaminnelse_enabled` via `/settings`. `settPaamBrytere` er
+  eneste skriver av begge, så de speiles uten reload; feil ruller begge tilbake. Etter lagring hentes billing på nytt
+  (`sms_paaminnelser_sendes` kan endre seg).
+- **Stripe-retur:** `?sms_pakke=1` gir «Legger til SMS …» mens synken går og åpner SMS-seksjonen. Banneret styres av
+  `kjop` i sync-svaret: `'vekst'` → Vekst-banneret; `'sms_pakke'` → «SMS-pakken er lagt til. Påminnelsene er slått på.»
+  når `sms_paaminnelser_sendes` er true, ellers «SMS-pakken er lagt til.» (LÅST). Uten `kjop` → ventebanneret.
+  Ingen gjetting ut fra saldo.
+- **SMS-tilbudet på Oversikt** (under «Lag story», samme flatknapp-stil): vises når ALLE stemmer —
+  `sms_pakke_kan_kjopes`, `sms_paaminnelser_sendes !== true`, minst én ikke-avlyst booking i morgen (Oslo,
+  `calNesteKey(osloTodayKey(),1)`), ikke avvist siste 14 dager. **Viker for «Lag story»** (maks ett kort).
+  «Ikke nå» skjuler straks + `POST /api/dashboard/sms-tilbud/avvis`; feiler den, forblir kortet skjult resten av økta.
+- **Tokens:** dashboard.html har bare farge-tokens (`--ink`, `--ink-2`, `--mut`, `--line`, `--line-2`, `--info`,
+  `--info-bg`, `--surface`, `--bg`), ingen for radius/padding.
+- Render: `tools/render/sms-pakker.mjs` (54 sjekker).
+
+### Testdekning og avkreftelser (bugjakt 01.10.2026)
+Flyttet hit fra `bugjakt-frontend.md` (slettet). Funnene er fikset eller står i PLAN.md.
+- **Sjekket og trygt (ikke gjenoppdag):**
+  - XSS: 0 hull. Barber-, kunde- og tjenestenavn går via `esc()`/`textContent`; runtime-sveip `window.__xss=0`.
+  - `index.html` bruker ingen GSAP/pin (bare IntersectionObserver), så `scroll-behavior:smooth` er ufarlig der.
+  - `aapnePortal` er navigasjon (303 → Stripe) og skal omgå `apiFetch`.
+  - `effectiveStatus` sammenligner `Date.now()` med absolutt starttid → tidssone-uavhengig.
+  - Story er bevisst åpen på Gratis; plakat gater `erBasis()` → abonnement.
+  - Plakat/hqDel: hver render lager ny knapp → ingen handler-opphopning.
+- **Ikke testet (og hvorfor):**
+  - Ekte booking-INSERT: lokal Postgres kan ikke INSERTe bookinger (btree_gist-DLL blokkert av Smart App Control,
+    som ikke skal røres). Booking-avhengige flater er testet via mock.
+  - Ekte Stripe checkout/portal-redirect, ekte server-render av `/preview`/`/render`, Google Calendar OAuth.
+  - Ekte iOS Safari (`navigator.share`, momentum-scroll) — headless kan ikke gjenskape det.
+- **Lærdom for render-vakter:** tell bare DIREKTE barn av raden du måler. `bar.querySelectorAll('button')` sveipet
+  den skjulte `.perseg-meny`-dropdownen (bredde 0, top 0) og ga falsk «brekker til to linjer». Det gjorde
+  `periodepiller.mjs` ubrukelig som vakt til den ble rettet.
+
 ## Dashboard: fane-struktur (11 → 5)
 
 `site/no/dashboard.html` har **FEM faner** — talt 12.08: fem `<button role="tab" data-panel=…>`
@@ -690,7 +741,7 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   preview-qs). Det var **onboarding**-fonten som ble fjernet (alle får Fraunces), ikke
   dashboard-velgeren. Ikke behandle den som dead UI.
 
-## Kjent teknisk gjeld
+## Overflow-flagget i render-testene
 
 **Overflow-flagget i render-testene er et RENT signal.** Det pleide ikke å være det:
 `.hero-video` sto på `width:112vw` + `transform:scale(0.9)` og dyttet 5px ut på hver bredde,
@@ -703,64 +754,7 @@ palett-grid + layout-karusell `#layGrid` + preview-iframe) ble fjernet i skjemao
 på `layGrid/palGrid/preview-tjenester` nå. Render-testene måler `scrollWidth − viewport = 0` på
 320/402/1280. Ikke lenger en kjent overflow.
 
-### Dashboard — desktop-bredde + polish (desktop-bredde FIKSET 21.09 `b7882e80`, polish 3–4 åpen)
-1. **Dashbordets desktop-container var ~3,5× for bred — FIKSET (`b7882e80`, 21.09).** `.wrap`
-   (`.wrap{max-width:1120px…}`, én delt instans rundt alle fem paneler) ga inner 1072px @1280 — ~3,5×
-   det enkeltkolonne-innholdet trenger (målt @1280: bookingrad 279px, «Drevet av»-rad 170px, KPI to kort
-   ~318px min / ~600–640 komfortabelt → `justify-between`-rader fikk 888–926px tomt midtparti). Fiks:
-   `@media(min-width:720px){ #oversikt,#vekst,#tjenester,#design,#abonnement{max-width:680px;margin-left:auto;margin-right:auto} .topband>.wrap{max-width:728px} }`
-   — alle fem paneler **680px SENTRERT**, header strammet til 728 (=680+2×24 `.wrap`-padding) så streker
-   og innhold flukter på samme akse. **`#design` er INKLUDERT** — ombestemt fra det opprinnelige
-   «UNNTAS»-forslaget: 2-kolonne-gridet får 680 − 281 preview − 30 gap = ~369px til trekkspillene,
-   rikelig. Alle fem får SAMME bredde så fanebytte ikke hopper. Mobil uendret (viewport <720 → media
-   treffer ikke; `@375` verifisert). En eldre død prototype-blokk (venstrejustert, `min-width:768`,
-   `6e1d574a` 14.09) er ryddet ut — den var 100 % overstyrt av `b7882e80`. ⚠ Restgap: «Drevet av»-radene
-   (170px innhold) trenger fortsatt et EKSTRA grep utover containeren (kap `.di-rows` inner-bredde
-   ~460px) for å tettes helt.
-2. **«Klipp totalt 0» (Vekst) — FIKSET (`ac09064`, 23.09).** `renderVekstKpi` guarder nå
-   `if(klipp<=0){ wrap.innerHTML=''; wrap.hidden=true; return; }` (`dashboard.html`, `#vekstStats`) —
-   hele KPI-blokka (både «Kunder i snitt per måned» og «Klipp totalt») skjules når
-   `completed_all_time<=0`, så det store nullet vises aldri. Tom-teksten bæres av diagrammet under
-   (`renderMonthChart`). Merk: løsningen SKJULER hele blokka (litt annerledes enn «Drevet av», som
-   viser én dempet linje via `diTotalHtml`), men målet — vekk med det store nullet for fersk barber —
-   er nådd. Selve verdien 0 er korrekt: `completed_all_time` teller `ends_at<now()` +
-   `status NOT IN ('avlyst','ikke_mott')` (all-time), så 0 = genuint ingen passerte klipp ennå.
-3. **Enkelt-stolpe-diagram leser som en halv-tegnet graf.** «Kunder per måned» med kun ÉN måned
-   (ett stolpe i et vidt lerret) ser tomt/uferdig ut. Trenger en tom-/tynn-tilstand ved ≤1 måned med
-   data (dempet baseline eller hjelpetekst i stedet for én ensom stolpe).
-4. **Gap navn ↔ tjeneste i «Kommende bookinger» på mobil (LAV).** Synlig mellomrom mellom navn og
-   tjeneste-etikett også på 375. Mobil ble ellers målt som stram, så **DETTE MÅ VERIFISERES PÅ EKTE
-   TELEFON** før noe endres — ikke stol på headless-målingen alene her.
-
-### Funnet i frontend, men SKAL FIKSES I BACKEND (barberhq-backend)
-Funnet ved å klone bookingmodulen inn i produktvisningen og måle klonen mot den publiserte
-sida. Ikke frontend-feil, og ikke rørt herfra — ÉN Code-sesjon per repo, så backend-endringene
-tas i backend-repoet.
-- **UKLAR — navnedrift på samtykke-oppslaget.** Lokal kilde er konsistent med seg selv:
-  `booking-module.cjs` kaller `POST /api/barbers/:slug/sms-consent-check`, og backend-ruta
-  heter det samme (verifisert 12.08 mot begge sider). Men gjelden gjaldt aldri lokal kode —
-  den gjaldt DRIFT mot den DEPLOYEDE sida på trybarberhq.com, som ble observert kalle
-  `POST /api/barbers/:slug/sms-consent` under rendring av tilstandsbildene. Om deployet
-  fortsatt ligger på det gamle navnet kan ikke avgjøres fra disken; det krever et oppslag mot
-  prod. Til det er gjort står punktet som uavklart, ikke som løst.
-
-- **ÅPEN — `buildPalette` er duplisert i `fyll.cjs` og `site/no/palett.js`, og må holdes i synk
-  manuelt.** Fortsatt to kopier (verifisert 12.08). Ingen delt kilde.
-
-- **ÅPEN — tredelt fane uten dekkende navn.** Fanen (`<section class="panel" id="tjenester">`) inneholder
-  tjenester med priser, Arbeidstider (`#saveHours`) og Google Calendar (`#gcal`). Etiketten «Tjenester & tider»
-  nevner ikke de to siste. Navnedriften mot panel-tittelen er rettet (`58e7e60`); selve
-  navngivningen står åpen.
-
-- **ÅPEN (delvis testet) — mobil-loopens teleport på eldre iOS.** Produktvisnings-karusellen på
-  mobil (`site/no/index.html`) er en uendelig loop: tre sett kloner + et scroll-drevet,
-  rAF-throttlet hopp som holder `scrollLeft` i ett vindu på én settbredde (`sjekkOgHopp`).
-  Det er ÉN bane for alle nettlesere — ingen feature-detection, ingen `scrollend`/debounce.
-  **Verifisert uendelig på nyere iOS Safari (ekte enhet).** Eldre iOS (≤17.3, som mangler
-  `scrollend`) kjører NØYAKTIG samme kode — det finnes ingen egen gren for dem — men
-  momentum-fysikken der (hva som skjer når `scrollLeft` settes midt i et sving) er
-  device-avhengig og **ikke testet på en faktisk gammel enhet**. Headless Chromium kan ikke
-  reprodusere iOS-momentum, så gapet må lukkes med en ekte ≤17.3-enhet om det skal bli grønt.
+Alle gjøremål står i C:\Users\henri\Desktop\barberhq-plan\PLAN.md.
 
 ## Layout-galleri på engelsk — FERDIG 28.07 (pushet, `aa7ac98`)
 
@@ -836,39 +830,13 @@ Løst 28.07:
    igjen i BEGGE — død CSS, bevisst beholdt for å holde filene like.
    **Dashboard-velgeren er urørt og fortsatt levende** — ikke forveksle de to.
 
-Fortsatt åpent:
-3. **Direkte-thumbnailen er markant annerledes enn no/:** malen rendrer nå FASE B-booking-
-   modulen (3 steg), ikke den gamle enkle tjenestelista. Riktig ifølge WYSIWYG-prinsippet i
-   `_utkast/layout_gallery_handoff/HANDOFF.md`, men en bevisst synlig endring. no/-galleriet viser
-   fortsatt den gamle lista og bør rendres på nytt fra samme kjede.
-4. **Valuta i Direkte-thumbnailen:** eneste layout som viser priser, og en/ dekker to valutaer.
-   Nå £ i begge. Skisse: to varianter (`layout-direkte-uk.webp` / `-us.webp`) byttet på landvalget.
-   Men det er plaster på det hardkodede `' kr'` i backend, ikke en fiks.
-5. **`.manage-link` kolliderer med statuslinja på notch-telefon (ekte bug, ikke bare mockup):**
-   `direkte.template.html` har `.manage-link{position:absolute;top:18px` inne i en `.page` med
-   `padding:max(56px,env(safe-area-inset-top))`. Med `viewport-fit=cover` havner «Endre/avbestill»
-   under statuslinja på enhver iPhone med notch. Mockupen dytter den ned i `2-render.mjs`; malen er
-   IKKE fikset. Hører hjemme i backend-repoet.
-6. **Palett-navnene i `site/en/kom-i-gang.html` står fortsatt på norsk.** `PALETTES`-arrayet er
-   inline i fila og har norske titler/beskrivelser («Klassisk BarberHQ», «Krem & Gull»,
-   «Minimalistisk», «Friskt grønt», «Sort/hvit + blå», «Brent oransje, sort») — synlig i steg 2.
-   Tas i oversettelsesfasen sammen med resten av en/. Henger sammen med den uavklarte
-   `palett.js`-delingen over: løses den ved å skille tekst fra logikk, forsvinner dette punktet
-   av seg selv.
+Åpne punkter herfra står i PLAN.md (## Utsatt).
 
-## Må gjøres (prioritert)
+## Gjøremål
 
-**Status 04.09.2026: lansert. Stripe-billing live. Ingen launch-blokkere.**
-BarberHQ er ute i markedet. Konverteringsflyten (plan-velger Basis/Vekst i Konto,
-`startCheckout` med `{plan}`, checkout-/portal-knapper) er ferdig og live — prod-verifisert.
-Alt som tidligere sto som «lanseringsblokker» er enten levert eller ikke lenger blokkerende.
-Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
+Alle gjøremål står i C:\Users\henri\Desktop\barberhq-plan\PLAN.md.
 
-> **Historikk (13.08–25.08):** 23 commits gikk til `origin/main` i ett Netlify-bygg (Netlify
-> auto-deployer fra `main`). `?ref=`-verving-kjeden ble fikset i backend samme dag
-> (`e57535f` + `3e657f4`, `referralForVisning()`, overlever refresh), og dashbordets
-> konverteringsflyt ble bygget og pushet 25.08 (`364e2c5`). Detaljene lever i git-historikk —
-> ikke gjenoppdag som åpne oppgaver.
+## Løst (ikke gjenoppdag)
 
 ### Løst før/ved lansering (ikke gjenoppdag)
 - **Stripe-billing + konverteringsflyt** — opprinnelig plan-velger Basis/Vekst (`364e2c5`). **Erstattet
@@ -904,115 +872,7 @@ Lista under er POST-LAUNCH-arbeid, ikke launch-gating.
 - **Pris-0-markør i tjeneste-lista** — `5fe012d`: rød kant + «Sett pris».
 - **Kalender-dagvelger på mobil starter på i dag** — `7d76c8c` (rotårsak i rekkevidden, ikke scroll-hack).
 
-### Post-launch — gjenstående arbeid
-
-#### Mobil (primærflate — de fleste barberere bruker dashbordet fra telefon)
-- Full gjennomgang, bunn-nav og periodepille-fiksen er GJORT — se «Løst post-launch». Nye mobilfunn
-  føyes til her.
-- **Lojalitetsprogram-kortet @320/375/390 (trial + basis) — FERDIG.** Mobil-gjennomgangen er kjørt
-  (21 kjøringer, 0 JS-feil, 0 overflow, ingen klipping). Trykkflate-funnene (bekreftelses-tekstknapper
-  22px, fjern-ikon 30px m.fl.) er fikset i `f955de8` — alle kontroller ≥44px via padding/hitboks,
-  uendret skrift. `tools/render/mobil-lojalitet.mjs` er nå en bestått regresjonstest. Rapporten i
-  `docs/mobil-lojalitet.md` (07.09) beholdes som historikk over hva som ble funnet.
-
-#### i18n (en/sv/da — oversettelsesfasen)
-1. **Kundesiden er hardkodet norsk (backend).** `booking-module.cjs` har ingen i18n («Velg
-   tjeneste», «Velg time», «Bygget med BarberHQ» osv.), og `prisTekst()` hardkoder `' kr'` — ingen
-   valuta-abstraksjon. En UK/US-barberer via en/ får norsk bookingside med kroner. Må løses i
-   backend før en/ tar imot ekte barberere.
-2. **«Forgot password?» er død i en/** — `<a href="#" class="forgot">` i `site/en/logg-inn.html`.
-   Magisk-lenke-flyten (`POST /api/send-magic-link` + `opprett-passord.html`) finnes bare i no/.
-   Krever lenke/flyt i `en/logg-inn.html` + en engelsk `opprett-passord.html`.
-3. **Oversettelse (utsatt fase) — full streng-liste under «Teknisk gjeld».** Kort: plassholdere,
-   bilde-hjelpetekster, Vekst-flytens ledd, SMS-trekkspill, palett-navn og alt sv/da/en. Markør:
-   `[oversettelse: sv/da/en]`. ⚠ `.ds-tab` rad 4/5 kan IKKE oversettes rett — de er sanne i det
-   nordiske feltet, men usanne i USA (theCut PRO inkluderer begge). Faktasjekk, ikke språkjobb.
-   **en/-flater som venter på denne fasen (ikke åpne no/-oppgaver):** terms/cookies-innhold (no/ er
-   dekket av `vilkar.html`; en/ mangler innhold + har døde footer-`<a href="#">`), og «Forgot
-   password»-flyten (pkt 2).
-4. **Telefon-placeholderen (`#pf-phone` → `contact_phone`, Profil på «Din side», bygget no/ 11.09) er
-   landavhengig — må håndteres i oversettelsesfasen:** «91 23 45 67» er NORSK format og må følge
-   barberens `market` (NO/SE/DK/UK) når sv/da/en bygges. INGEN landkode-håndtering trengs — kunden
-   ringer lokalt.
-
-#### Innhold / sider
-4. **Terms/Cookies-innhold: no/ DEKKET.** no/-footerne (`index`/`funksjoner`/`priser`/`support`)
-   peker på `vilkar.html` — kombinert vilkår + personvern + cookies, ekte innhold, ingen døde lenker
-   (verifisert 06.09). no/ har personvern INNE i vilkar.html (`#personvern`), ikke som egen
-   `personvern.html`. en/-innholdet hører til oversettelsesfasen (pkt 3), ikke en åpen no/-oppgave.
-   Merk `netlify.toml`: hele `/en/*` har `X-Robots-Tag: noindex` til oversettelsesfasen er ferdig.
-5. **Døde footer-lenker (no/ FERDIG 06.09).** Vilkår/Personvern/Cookies peker på `vilkar.html` —
-   som HAR innhold (18 seksjoner), ikke «mangler». Personvern/Cookies lander på `#personvern`/`#cookies`
-   (id-anker + `scroll-padding-top:84px` for sticky nav, `59d56c4`). Alle fire no/-footere verifisert
-   uten døde lenker (`index`/`funksjoner`/`priser`/`support`). en/-footerne hører til oversettelsesfasen
-   (pkt 3). `Se dashbordet` (`id="demoNavBtn"`) er `href="#"` med vilje (`DEMO_ENABLED = false`) — ikke en bug.
-6. **Landingsside-tekst (`site/no/index.html`).** «Bygd for å fylle stolen»-seksjonen skal endres
-   (anker `<h2 class="sys-h2">`, omfang ikke bestemt), og siden mangler et sted som pitcher løftet
-   direkte: FLERE KUNDER + OVERSIKT skal stå sammen ett sted, ikke bare underforstått i
-   feature-seksjonene. Begge trekker budskapet fra «færre hull» til «flere kunder». Avklares før kode.
-7. **`.ds-tab` nivåmerking + rebooking/verving-rader.** Radene ble tatt UT 12.08 (`8c41945`) og INN
-    igjen 13.08 (`9de6c17`) — omgjort beslutning, ikke regresjon; ikke «rett» tilbake uten å spørre.
-    De leser som BarberHQ-egenskaper for alle, mens begge er Vekst-eksklusive ifølge `priser.html`.
-    En `.ds-note`-fotnote for nivåmerking ble bygget og fjernet igjen på Henriks beskjed — bevisst
-    valg som må tas stilling til. Ikke gjenoppdag som bug.
-
-#### Data / backend-avhengig
-8. **Koble ekte data i Vekst.** Oversikt (diagram/KPI/rekord/månedsvelger) EKTE mot
-    `/stats` + `/stats/month`; bookinger-liste ekte. «Drevet av»/Vekst-attribusjon er nå EKTE
-    ende-til-ende: backend `GET /api/dashboard/attribution` returnerer `total {count,revenue}`
-    (efaa553), frontend gjort autoritativ på `data.total` (`46701a3`, klient-sum fjernet). Gjenstår
-    kun: verifiser seedede/ekte tall mot prod. No-show-knapp mock. (Ved Basis-plan vises eksempeltall
-    bak lås, ikke ekte data — se Basis-visning.)
-9. **Vekstfeatures (backend):** rebooking, verving, vinn-tilbake auto-SMS. Deretter
-    landingsside-avsnitt under «fyll stolen» som forklarer dem.
-10. **Test full klikk-flyt med ekte klippbilde** — crop + lagring i Din side, verifiser riktig slot
-    på ekte kundeside. Bevist via API, ikke UI-flyt ennå.
-    (Pris-0-markøren som sto her er GJORT — `5fe012d`, se «Løst post-launch».)
-
-### Åpne tester (ikke kjørt ennå)
-- **Test full klikk-flyt med ekte klippbilde** — se «Data / backend-avhengig» punkt 10.
-
-### Lav / polish
-- **WebAuthn-instruksjonsbanner + «App kommer»-banner** i dashboard.
-- **favicon.ico mangler** — 404 på alle sider (kosmetisk).
-
-### Teknisk gjeld
-12. **`buildHeroHeader()` (fyll.cjs) er dødkode** — backend-CLAUDE.md sier feilaktig «Hero bruker
-    `{{HERO_HEADER}}`». Rydd begge.
-13. **R2-foreldreløse bildeblobber** fra de 5 slettede test-barberne.
-14. **Hero-bildegrense server-side** + **orders.barber_id FK-enforcement** — se sikkerhetshull.
-15. **Oversettelse (utsatt fase):** plassholder-strenger (`(spesialitet)`/`(adresse)`/`(bio)`) +
-    4 bilde-hjelpetekster + Vekst-flytens nye ledd (Påminnelse-boks «Kvelden før» + kortede
-    undertekster) + de omskrevne SMS-trekkspillene i Vekst (06.08: `acc-sub` på både
-    SMS-påminnelse og Rebooking, «Send etter» + pilletekstene «28/35/45 dager», og
-    `sett-note` i SMS-påminnelse) + alt sv/da/en. Greppbar markør i koden:
-    `[oversettelse: sv/da/en]`. **Også: norske palett-navn i `PALETTES` i
-    `site/en/kom-i-gang.html`** — se «Layout-galleri på engelsk», punkt 6.
-    **Merk:** «SMS-samtykke-linja i Rebooking-trekkspillet» sto her tidligere. Den strengen
-    finnes ikke lenger — `acc-lead` ble slått sammen med noten, og noten ble deretter fjernet
-    fra Rebooking helt. Ikke let etter den.
-    **⚠ `.ds-tab` rad 4 og 5 kan IKKE oversettes rett — de må revurderes for en/.** ✕-cellene
-    «Påminnelser koster per SMS» og «Rebooking er et betalt tillegg» er sanne som
-    generaliseringer i det NORDISKE feltet (Fresha priser markedsførings-SMS per stykk uten fri
-    kvote; Timma selger alt utover booking som betalte moduler; Squire legger markedsførings-SMS
-    på topplanen; Setmore forbyr den; Booksy caper). De holder ikke i USA: **theCut PRO
-    inkluderer både SMS og blasts i prisen**, så begge ✕-ene blir usanne. Dette er ikke en
-    språkjobb — det er en faktasjekk mot et annet konkurransefelt, og radene må enten byttes
-    eller tas ut i en/. Konkurranseanalysen ligger UTENFOR repoet; hent den før jobben startes.
-    **`.ds-tab`-radtekstene har NULL linjemargin på 320** — fem av tolv celler ligger allerede på
-    tre linjer (grensa), så sv/da-oversettelsene må måles celle for celle, ikke bare oversettes.
-    Forvent omformuleringer: norsk er kortere enn svensk og dansk på flere av disse frasene.
-16. **buildPalette duplisert** (fyll.cjs ↔ site/no/palett.js) — se «Kjent teknisk gjeld» over.
-    (Tidssone-via-market sto her også; den er løst — `barbers.timezone` er sannhetskilde.)
-17. **`reward_settled_at` stemples UANSETT plan (verving-oppgjør) — «feil plan» og «ingenting skjedde»
-    ser like ut i `bookings`.** `settleBookingRewards` returnerer `null` for ikke-vekst, men kalleren
-    setter `reward_settled_at` likevel (`referralSettle.js:78–82/212`) — bevisst (ingen retroaktive
-    belønninger ved basis→vekst, og sweepen slipper å re-skanne). Konsekvens for TESTING/observability:
-    en satt `reward_settled_at` uten `referral_rewards`-rad kan bety enten «basis, ingen reward» ELLER
-    «vekst, men ingen verving på bookingen». Verifiser derfor ALLTID planen (SELECT over) FØR du tolker
-    et manglende reward som en bug. Backend-atferd; noteres her som gjeld/felle, ikke som frontend-fiks.
-
-### Hvor filer bor (plasseringsregler)
+## Hvor filer bor (plasseringsregler)
 - **Seksjonsutkast bor i `_utkast/`** — `din-side-seksjon.html`, `din-side__bilde.html`,
   `problem-seksjon.html`, `problem-seksjon__venstre.html`, `systemer-seksjon.html`,
   `produktvisning-seksjon.html`, `SPEC-bytt-seksjoner.md`. Katalogen ligger utenfor publish-rota
