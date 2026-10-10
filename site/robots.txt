@@ -9,3 +9,5 @@ Disallow: /no/opprett-passord.html
 Disallow: /no/preview-tjenester.html
 
 Sitemap: https://trybarberhq.com/sitemap.xml
+
+# Siden bygges bare når noe under site/ eller netlify.toml er endret (ignore i netlify.toml).
