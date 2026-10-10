@@ -62,6 +62,15 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .nav-login{color:#fff!important}
 .nav-cta{background:#2563eb!important;color:#fff!important;font-size:14px!important;font-weight:600!important;padding:9px 18px!important;border-radius:99px!important;margin-left:8px;white-space:nowrap!important;text-decoration:none;transition:opacity .2s!important}
 .nav-cta:hover{background:#1d4ed8!important}
+/* Én nav-knapp for begge tilstander: innloggingssjekken (#navCta) bytter tekst og lenke, og den ANDRE
+   teksten ligger usynlig i samme rute (::after) — knappen har samme bredde før og etter, ingen hopp. */
+.nav-cta{display:inline-grid;justify-items:center}
+.nav-cta>span,.nav-cta::after{grid-area:1/1}
+.nav-cta::after{content:attr(data-annen);visibility:hidden}
+/* Innlogget («Mitt dashbord»): hvit knapp med mørk tekst, som forsidens gamle pille. Samme form og bredde. */
+.nav-cta.nav-cta-inn{background:#fff!important;color:#000!important}
+.nav-cta.nav-cta-inn:hover{background:#fff!important;opacity:.85}
+.nav-cta.nav-cta-inn:active{background:#fff!important;opacity:.75}
 .nav-right{display:flex;align-items:center;gap:14px}.nav-right a{text-decoration:none}
 .nav-burger{display:none;flex-direction:column;justify-content:center;gap:4px;width:32px;height:32px;background:none;border:none;cursor:pointer;padding:6px 4px}
 .nav-burger span{display:block;width:20px;height:2px;background:#fff;border-radius:2px;transition:transform .2s,opacity .2s}
@@ -200,7 +209,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
       <a href="logg-inn.html" class="nav-login">Logg inn</a>
     </div>
     <div class="nav-right">
-      <a href="kom-i-gang.html" class="nav-cta">Kom i gang gratis</a>
+      <a href="kom-i-gang.html" class="nav-cta" id="navCta" data-annen="Mitt dashbord"><span>Kom i gang gratis</span></a>
       <button class="nav-burger" id="nav-burger" aria-label="Meny"><span></span><span></span><span></span></button>
     </div>
   </div>
@@ -336,6 +345,24 @@ if(burger){burger.addEventListener('click',function(){nav.classList.toggle('open
 window.addEventListener('scroll',function(){nav.classList.toggle('scrolled',window.scrollY>10);});
 var io=new IntersectionObserver(function(entries){entries.forEach(function(e){if(e.isIntersecting){e.target.classList.add('in');io.unobserve(e.target);}});},{threshold:.12});
 document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
+</script>
+<script>
+/* «Mitt dashbord» i nav-hjørnet når barberen er innlogget — ett trykk tilbake til dashbordet fra alle
+   markedssidene (f.eks. Vilkår/Personvern/Support fra Konto i hjemskjerm-appen). Innloggingssjekken er
+   GET /api/dashboard/session (svarer {loggedIn}). Sist kjente svar huskes, så en innlogget barber ser riktig
+   knapp med en gang; sjekken retter det etterpå. Feil/timeout → ingen endring. Utlogget/401 → «Kom i gang gratis». */
+(function(){
+  var a=document.getElementById('navCta'); if(!a||!a.firstElementChild) return;
+  var UT={t:'Kom i gang gratis',h:'kom-i-gang.html'}, INN={t:'Mitt dashbord',h:'dashboard.html'};
+  function sett(inn){ var v=inn?INN:UT, o=inn?UT:INN; a.firstElementChild.textContent=v.t; a.setAttribute('href',v.h); a.setAttribute('data-annen',o.t);
+    a.classList.toggle('nav-cta-inn',!!inn); }   // innlogget: hvit knapp (.nav-cta-inn)
+  try{ if(localStorage.getItem('bhq-innlogget')==='1') sett(true); }catch(e){}
+  fetch('https://api.trybarberhq.com/api/dashboard/session',{credentials:'include'})
+    .then(function(r){ if(r.status===401) return {loggedIn:false}; return r.ok?r.json():null; })
+    .then(function(d){ if(!d) return; var inn=d.loggedIn===true; sett(inn);
+      try{ localStorage.setItem('bhq-innlogget',inn?'1':'0'); }catch(e){} })
+    .catch(function(){});
+})();
 </script>
 </body>
 </html>
