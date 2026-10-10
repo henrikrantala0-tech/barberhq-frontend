@@ -382,6 +382,18 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
   **`.gcal-warn` MÅ ligge utenfor `@media`-blokkene** — første forsøk havnet inni en `max-width`-regel,
   og da var varselet usynlig på desktop mens 320/375-screenshotene så helt riktige ut.
 - **Palett-konsistens:** én delt kilde (`site/no/palett.js`) for kom-i-gang + dashboard, i synk med `fyll.cjs`. Ren svart/hvit bakgrunn i mørk modus, aksent skiller.
+- **Ny versjon etter deploy (10.10).** Netlify sender `max-age=0, must-revalidate` og det finnes ingen
+  service worker, så en EKTE lasting gir alltid siste versjon. Feilen var sider som aldri lastes: iOS-appen
+  på hjemskjermen og bakgrunnsfaner holder siden i minnet i timevis (Henrik så «kvelden før» 13 t etter
+  deploy). Nå: når dashbordet kommer i forgrunnen (`visibilitychange`/`pageshow` fra bfcache) sammenlignes
+  innholdshashen i ETag-en til `dashboard.html` (HEAD, `cache:no-store`; endelsen `-ssl`/`-ssl-df` ignoreres)
+  med den fra oppstart. Endret + ingenting ulagret → `location.reload()`; ulagrede felt → stripe `#nyVersjon`
+  «Ny versjon. Last inn på nytt.» (skjuler hjemskjerm-nudgen: aldri to topplinjer). Maks én sjekk/min;
+  feilet sjekk = ingenting. «Ulagret» = felt barbereren har skrevet i, til et skrivekall lykkes etter klikk i
+  SAMME seksjon (`ulagretLagret` i `apiFetch`); usikkerhet går alltid mot stripe. Render: `tools/render/ny-versjon.mjs`.
+- **Trekkspill-hover gjelder bare ekte hover (10.10).** `.acc-head:hover` ligger i `@media (hover:hover)`, og i
+  rader med bryter (`.acc-row`) tones hele raden. Før ble `:hover` hengende etter et trykk på telefon, og
+  tittelfeltet fikk annen bakgrunn enn bryterkolonnen. Render: `tools/render/vekst-kort.mjs`.
 - **Kundeside bygges fra `barbers`-raden** (ikke `orders.payload`): alt barbereren endrer (design, layout, font, adresse, bio, bilder, tjenester) når bookingsiden. Oppslag via `barbers.slug`, status-gating via `barbers.page_status`. `savedLayout` er skilt fra `design.layout` — Bilder-fanen leser alltid lagret DB-verdi.
 
 ### Oversikt-diagram (Oversikt-fanen)
@@ -395,6 +407,15 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 - **Volum-farge (lag 1):** `colorForRatio(d.kr/max)` — glidende lineær RGB dempet blågrå → brand-blå → brand-grønn, relativt til beste stolpe i visningen. Per-stolpe gradient (mørk bunn→lys topp av stolpens EGEN farge), ingen glow.
 - **HUD + touch (lag 2, variant A):** magnetisk `pointerdown`/`pointermove` på `#chartBars`, snap via `getBoundingClientRect`. Valgt stolpe → **kort forankret til stolpen** (`#chartHud`, absolutt i `.chart-wrap`): dato liten/dempet, beløp stort + «· N klipp», pills nye (blå) / gjengangere (grønn). Løsrevet caret (`#chartCaret`) på stolpe-senter + peker-linje til stolpetopp; horisontal clamping innenfor kort-padding ved kant-stolper; skann-glid `transition:left .09s`. `pointer-events:none` på kort/caret → tap/skann/undo treffer stolpene under. Undo: tap valgt stolpe → `clearSel()`, tap-vs-dra <8px.
 - **Entré + tell-opp (lag 3):** stolper stiger staggered venstre→høyre (variant D: step 95ms / rise 350ms, clamp `ENTRY_MAX_TOTAL=3000` → 90-heatmap sprenger aldri), KPI teller 0→target, KUN første render (`chartEntered`-flagg); pill/tab = uniform vekst, ingen tell-opp. Respekterer `prefers-reduced-motion`.
+- **⚠ Tekst i forsidens dashbord-kloner driver når dashbordet endres (10.10).** Vekst-demoene (`.rbdemo` i
+  «Fem systemer»-radene) viste fortsatt «kvelden før», tankestrek, «SLIK SER DEN UT» og «Del vervelenke» lenge
+  etter at dashbordet var endret. `tools/render/forside-klon.mjs` låser klonens UI-tekster til det dashbordet sier
+  — endrer du en tekst i `dashboard.html` som også står i en klon, oppdater klonen OG testen.
+- **`produktvisning.mjs` teller bare EKTE kort (10.10).** Mobil-karusellens uendelige loop (`559137b`) legger
+  kopier (`.pv-klon`, `aria-hidden`, `inert`, uten `data-i`) foran og bak; kalenderkortet er scenen `.ks-cal`
+  (`2bb95da`) med `.pv-scale`/`--ph-s`. Testen krasjet på det gamle kortet (`.cal-pop`/`#calRows`) og målte kopier
+  som kort — rettet. ÅPEN: «tilstand 6: vertikal posisjon» (bekreftelsen 56/96 px mot fasit 115/155 px målt mot
+  publisert bookingside) — må måles på nytt mot bookingsiden før noe endres.
 - **⚠ Klonens rekord-terskel er `>=`, produktets er `>`.** `dashboard.html` bruker
   `var beaten = hasRecord && p.current_week_revenue > p.best_week_revenue`; scenens demo i `site/no/index.html` bruker
   `maalRev*e >= FORRIGE_REKORD`. Ved NØYAKTIG likt beløp tenner klonen gull der produktet

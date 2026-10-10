@@ -503,7 +503,8 @@
   .dinside-cta-handling{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:0 0 auto}
   .dinside-cta-handling .btn{white-space:nowrap}
   .dinside-cta-note{font-size:11.5px;color:var(--mut);line-height:1.4;text-align:right}
-  @media(max-width:520px){.dinside-cta-handling{align-items:stretch;flex:1 1 100%}.dinside-cta-handling .btn{justify-content:center}.dinside-cta-note{text-align:center}}
+  .dinside-cta-handling .pub-err{margin:0;text-align:right;max-width:260px}
+  @media(max-width:520px){.dinside-cta-handling{align-items:stretch;flex:1 1 100%}.dinside-cta-handling .btn{justify-content:center}.dinside-cta-note,.dinside-cta-handling .pub-err{text-align:center;max-width:none}}
   /* Live-tilstand på «Din side» (page_status==='live'): liten grønn prikk + «Live» i vanlig
      tekstfarge — ingen bakgrunn/kant/hover. Kopiering skjer via lenka i toppen (#headerLenke). */
   .dinside-live{display:flex;align-items:center;gap:8px;margin:0 0 22px;font-size:14px;font-weight:600;color:var(--ink)}
@@ -1076,6 +1077,12 @@
     padding:10px 46px;background:var(--surface);border-bottom:1px solid var(--line);
     font-size:13.5px;font-weight:500;color:var(--ink-2);line-height:1.4;text-align:center;cursor:pointer}
   .hs-nudge.show{display:flex}
+  /* «Ny versjon»-stripa: samme topplinje-flate som hjemskjerm-nudgen; knappen i aksentblå (handling). */
+  .ny-versjon{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;background:var(--surface);
+    border-bottom:1px solid var(--line);font-size:13.5px;font-weight:500;color:var(--ink-2);line-height:1.4;text-align:center}
+  .ny-versjon[hidden]{display:none}
+  .ny-versjon button{appearance:none;border:0;background:0;font:inherit;font-weight:600;color:var(--info);cursor:pointer;padding:6px 4px;margin:-6px 0}
+  .ny-versjon button:hover{text-decoration:underline}
   /* Alltid-synlig pil = handlings-affordans ved hvile (ikke bare på hover), så stripa ikke
      leser som ren informasjon. Liten slide på hover. */
   .hs-nudge-pil{display:inline-block;white-space:nowrap;transition:transform .18s}
@@ -1320,7 +1327,14 @@
      og på mørk bakgrunn forsvant den nesten helt. */
   .acc-chev{flex-shrink:0;color:var(--ink-2);font-size:16px;line-height:1;transition:transform .18s;margin-top:3px}
   .acc-head[aria-expanded="true"] .acc-chev{transform:rotate(180deg)}
-  .acc-head:hover{background:rgba(127,127,127,.06)}
+  /* Hover kun der enheten har ekte hover: på touch blir :hover hengende etter et trykk, og tittelfeltet
+     fikk da en annen bakgrunn enn bryterkolonnen ved siden av. I rader med bryter (.acc-row) tones hele
+     raden, så kortet aldri har to bakgrunner side om side. */
+  @media (hover:hover){
+    .acc-head:hover{background:rgba(127,127,127,.06)}
+    .acc-row:has(> .acc-head:hover){background:rgba(127,127,127,.06)}
+    .acc-row > .acc-head:hover{background:none}
+  }
   .acc-head:focus-visible{outline:2px solid var(--info);outline-offset:-2px}
   .acc-body{padding:2px 17px 18px}
   /* Bryter på tittelraden (variant B). .acc-head er en <button>, så bryteren kan IKKE ligge
@@ -1562,6 +1576,11 @@
   <span class="hs-nudge-tekst" data-copy="hs-nudge">Få dashbordet som app<span class="hs-nudge-lang"> — legg til på hjemskjermen</span><span class="hs-nudge-pil" aria-hidden="true"> →</span></span>
   <button class="hs-nudge-x" id="hsNudgeX" type="button" aria-label="Skjul">&times;</button>
 </div>
+<!-- Ny versjon av dashbordet er deployet mens siden sto åpen, og barbereren har ulagrede endringer
+     (uten ulagrede endringer lastes siden bare inn på nytt). Vises av nyVersjonSjekk(). -->
+<div class="ny-versjon" id="nyVersjon" role="status" hidden>
+  <span>Ny versjon.</span><button type="button" id="nyVersjonLast">Last inn på nytt</button>
+</div>
 <div class="topband">
 <div class="wrap">
   <header class="top">
@@ -1741,7 +1760,7 @@
          Wrapper sec-h + periodevelger + rader som ÉN enhet; momentum-kortet under er egen host. -->
     <div id="attrKort">
     <p class="sec-h">Hentet inn av BarberHQ</p>
-    <p class="block-s">Verving er kunder som kom via en delt vervelenke. Rebooking er kunder som booket innen 14 dager etter en rebooking-SMS. Vinn tilbake er kunder som var borte i over 60 dager og kom tilbake. Dem lister vi for deg, men vi tar ikke kontakt automatisk.</p>
+    <p class="block-s">Verving er kunder som kom via en delt vervelenke. Rebooking er kunder som booket innen 14 dager etter en rebooking-SMS. Vinn tilbake er kunder som var borte i over 60 dager og kom tilbake.</p>
     <!-- Periodevelger turn 3: kompakt segmentert kontroll [2 uker][30 dager][3 mnd ▾]. 3. pille bærer
          nedtrekket (3/6/12 måneder) og viser aktivt valg forkortet («6 mnd ▾»). attrPeriod-state, ALDRI
          curPeriod. Verdier: 2uker / siste_maaned (=«30 dager») / siste_3mnd/6mnd/12mnd. Menyen er absolutt-
@@ -1871,7 +1890,7 @@
         <button type="button" class="acc-head" aria-expanded="false">
           <span class="acc-htext">
             <span class="acc-title">Vinn tilbake <span class="acc-badge" id="wbBadge" hidden></span></span>
-            <span class="acc-sub">Kunder som ikke møtte opp, eller har vært borte lenge. En personlig melding fra deg — ikke en maskin.</span>
+            <span class="acc-sub">Kunder som ikke møtte opp, eller har vært borte lenge. En personlig melding fra deg, ikke en maskin.</span>
           </span>
           <!-- Chevron fordi denne raden IKKE har bryter — se regelen ved .acc-chev. -->
           <span class="acc-chev">▾</span>
@@ -2169,6 +2188,7 @@
       <div class="dinside-cta-handling">
         <button class="btn" id="dinsidePubliser">Publiser siden</button>
         <span class="dinside-cta-note">Publiser når du er fornøyd. Det er gratis, uten kort.</span>
+        <p class="pub-err" id="dinsidePubErr"></p>
       </div>
     </div>
     <!-- Live-tilstand: erstatter CTA-en når page_status==='live'. Liten grønn prikk + «Live» i
@@ -2318,7 +2338,7 @@
     </div>
     <div class="ideacard">
       <p class="block-h" id="fbLbl-side" style="margin-top:0">Ideer &amp; ønsker</p>
-      <p class="block-s">Har du en idé til en funksjon, eller ønsker en endring på siden, en ny farge eller layout? Send oss — vi leser alt.</p>
+      <p class="block-s">Har du en idé til en funksjon, eller ønsker en endring på siden, en ny farge eller layout? Send oss, vi leser alt.</p>
       <!-- Suffiks «-side»: samme boks finnes i Konto («-konto-ide»), og der ligger også en
            support-boks («-konto-support»). Alle tre deler bindFeedbackBoks(). Prefikset er
            «fb», ikke «idea» — feltene bærer nå både idé og support. -->
@@ -2570,7 +2590,7 @@
           <div class="kt-rad kt-rad-blokk" id="smsLoggBody" hidden>
             <div class="sub-banner info" id="smsKvote" role="status" style="display:none"></div>
             <button type="button" class="sms-info-i" data-sms-info aria-expanded="false">Hva vises her? <span aria-hidden="true">&#8505;</span></button>
-            <p class="block-s sms-info-note" id="smsInfo" hidden>Loggen viser SMS som faktisk ble sendt. Meldinger som ble stoppet &mdash; manglende samtykke, avmeldt kunde, kvotegrense eller ugyldig nummer &mdash; vises ikke. En tom liste betyr ikke at ingen skulle f&aring;tt SMS.</p>
+            <p class="block-s sms-info-note" id="smsInfo" hidden>Loggen viser SMS som faktisk ble sendt. Meldinger som ble stoppet på grunn av manglende samtykke, avmeldt kunde, kvotegrense eller ugyldig nummer, vises ikke. En tom liste betyr ikke at ingen skulle f&aring;tt SMS.</p>
             <div id="smsLoggList"></div>
           </div>
         </div>
@@ -2940,6 +2960,7 @@ async function apiFetch(path,opts={}){
   }
   const r=await fetch((sameOrigin?'':CONFIG.API_BASE)+path,init);
   if(r.status===401&&!raw401){location.href='/no/logg-inn.html';return null;}
+  if(r.ok&&init.method&&init.method.toUpperCase()!=='GET'&&typeof ulagretLagret==='function')ulagretLagret();
   return r;
 }
 
@@ -3684,7 +3705,8 @@ function diPaaVeiHtml(pv, opts){
     +'<div class="di-pv-block"><div class="di-pv-sub">REBOOKING</div>'
       +'<div class="di-pv-num">'+(rb.naar_vindu_30d||0)+'</div>'
       +'<div class="di-pv-txt">kunder når vinduet de neste 30 dagene</div>'
-      +'<div class="di-pv-consent">'+(rb.med_samtykke||0)+' av '+(rb.naar_vindu_30d||0)+' har SMS-samtykke i dag</div>'
+      // Samtykkelinja bare når noen når vinduet: «0 av 0 har SMS-samtykke» sier ingenting.
+      +((rb.naar_vindu_30d||0)>0?'<div class="di-pv-consent">'+(rb.med_samtykke||0)+' av '+rb.naar_vindu_30d+' har SMS-samtykke i dag</div>':'')
       +(basis?'<div class="di-basis-note">På Gratis får ingen av dem rebooking-SMS.</div>':'')
     +'</div>';
   // Vinn tilbake — NÅTILSTAND FØRST (14.09): N klare nå (tall, som rebooking) → dato-prognose → «Ingen ennå».
@@ -5355,7 +5377,8 @@ $("#pwForgot").addEventListener("click",async function(){
   var btn=this, ok=$("#pwForgotOk"), epost=CONFIG.BARBER_EMAIL;
   if(!epost){ if(ok){ok.textContent='Fant ikke e-postadressen din. Logg ut og bruk «Send meg innloggingslenke».';ok.hidden=false;} return; }
   btn.disabled=true;
-  try{ await apiFetch('/api/send-magic-link',{method:'POST',body:JSON.stringify({email:epost}),raw401:true}); }catch(e){}
+  // formaal:'reset' → backend lar lenka lande på opprett-passord.html?bytt=1 («Lag nytt passord»).
+  try{ await apiFetch('/api/send-magic-link',{method:'POST',body:JSON.stringify({email:epost,formaal:'reset'}),raw401:true}); }catch(e){}
   btn.disabled=false;
   // Backend svarer alltid {ok:true} (lekker aldri om adressen finnes) — kvitteringen sier hvor lenka gikk.
   if(ok){ok.textContent='Sjekk e-posten din. Vi har sendt en lenke til '+epost+'.';ok.hidden=false;}
@@ -5452,7 +5475,7 @@ async function renderSmsPreview(kind, elId){
   // Å utlede det av kind her ville duplisert en regel som bor ett sted.
   var forklaring = d.transaksjonell
     ? 'Går til alle som har time. En påminnelse om noe kunden allerede har avtalt krever ikke samtykke, og har derfor ingen avmeldingslenke.'
-    : 'Går kun til kunder som har samtykket til SMS ved booking. Avmeldingslenka legges til automatisk.';
+    : 'Går kun til kunder som har samtykket til SMS ved booking.';
   el.innerHTML='<p class="sms-prev-lbl">Dette får kunden</p>'+
     '<div class="sms-bubble">'+esc(d.body).replace(/\n/g,'<br>')+'</div>'+
     '<p class="sms-prev-note">'+forklaring+'</p>';
@@ -6209,10 +6232,10 @@ function wbNoShowCtx(c){                     // «no-show i dag» / «no-show i 
   if(c.days_since===1)return'no-show i går';
   return 'no-show '+wbMonthDay(c.last_booking_at);
 }
-function wbLapsedCtx(c){                     // «sist her 4. mai — 74 dager siden»
+function wbLapsedCtx(c){                     // «sist her 4. mai, 74 dager siden»
   // «N dager siden» bindes som ÉN enhet med &nbsp; → aldri «siden» alene på linje 2
   // i vinn-tilbake. Entitet (ikke literal nbsp) fordi ctx settes via innerHTML; greppbart. sisteBesok urørt.
-  var since=(c.days_since!=null)?(' — '+c.days_since+'&nbsp;dager&nbsp;siden'):'';
+  var since=(c.days_since!=null)?(', '+c.days_since+'&nbsp;dager&nbsp;siden'):'';
   return 'sist her '+wbMonthDay(c.last_booking_at)+since;
 }
 // Rad-HTML UTEN kort-wrapper, så «Vis flere» kan appende rader inn i et eksisterende kort uten
@@ -7387,11 +7410,13 @@ function settPubFeil(kode,tekst,maal){
   // tilbake på none og meldinga forblir usynlig. (Samme felle som .idea-err.)
   feil.style.display='block';
 }
-function nullstillPubFeil(){["#pubErr","#avpubErr"].forEach(function(sel){const f=$(sel);if(f){f.style.display='none';f.textContent='';}});}
+function nullstillPubFeil(){["#pubErr","#avpubErr","#dinsidePubErr"].forEach(function(sel){const f=$(sel);if(f){f.style.display='none';f.textContent='';}});}
 // Felles for begge retninger. nyStatus: 'live' | 'forhandsvist'.
 async function settSideStatus(nyStatus,btn){
   nullstillPubFeil();
-  const feilMaal=nyStatus==='forhandsvist'?'#avpubErr':'#pubErr';   // feilen står ved knappen som utløste den
+  // Feilen står ved knappen som utløste den: avpubliser nederst i Konto, publiser på «Din side»,
+  // ellers abonnementskortet (tilstand 0 og «Publiser bookingsiden» i avpublisert plan-tilstand).
+  const feilMaal=nyStatus==='forhandsvist'?'#avpubErr':(btn&&btn.id==='dinsidePubliser')?'#dinsidePubErr':'#pubErr';
   const orig=btn.textContent;btn.disabled=true;btn.textContent='Lagrer …';
   let r;
   try{
@@ -7449,7 +7474,7 @@ $("#unpublish").addEventListener("click",function(){
   settSideStatus('forhandsvist',this);
 });
 // Handlingslenkene i feilmeldinga — delegert, fordi innerHTML byttes ved hver feil.
-["#pubErr","#avpubErr"].forEach(function(sel){$(sel).addEventListener("click",function(e){
+["#pubErr","#avpubErr","#dinsidePubErr"].forEach(function(sel){$(sel).addEventListener("click",function(e){
   const b=e.target.closest('[data-pub-act]'); if(!b)return;
   if(b.dataset.pubAct==='tjenester'){switchPanel('tjenester');}
 });});
@@ -7603,6 +7628,69 @@ anvendHash(); // åpne panelet fra location.hash (ukjent/tom → standardpanel).
   });
 })();
 
+/* ---- Ulagrede endringer (brukes av versjonssjekken under) ----
+   Et felt er ULAGRET fra barbereren skriver i det (ekte input-hendelse) til et skrivekall lykkes etter
+   et klikk i SAMME seksjon (raden, trekkspillet eller kortet feltet står i). Brytere/radioknapper lagres
+   med en gang og telles ikke. Usikkerhet går alltid mot «ulagret»: da vises en stripe i stedet for en
+   automatisk ny lasting, så ingenting barbereren har skrevet forsvinner. */
+var _ulagrede=new Set(), _sisteKlikk=null;
+var ULAGRET_SEKSJON='.kt-rad, .acc, .ideacard, .subcard, .dinside-cta, .gen-card, #plakatOverlay';
+document.addEventListener('input',function(e){
+  var t=e.target;
+  if(!e.isTrusted||!t||!t.matches)return;
+  if(t.matches('input[type="checkbox"],input[type="radio"],input[type="file"]'))return;
+  if(t.matches('input,textarea,select'))_ulagrede.add(t);
+},true);
+document.addEventListener('click',function(e){ if(e.isTrusted)_sisteKlikk=e.target; },true);
+function ulagretLagret(){
+  var sek=_sisteKlikk&&_sisteKlikk.closest&&_sisteKlikk.closest(ULAGRET_SEKSJON);
+  if(!sek)return;
+  _ulagrede.forEach(function(el){ if(sek.contains(el))_ulagrede.delete(el); });
+}
+function harUlagret(){
+  var n=0; _ulagrede.forEach(function(el){ if(el.isConnected)n++; else _ulagrede.delete(el); });
+  return n>0;
+}
+
+/* ---- Ny versjon etter deploy (hurtigminnet) ----
+   iOS-appen på hjemskjermen og faner i bakgrunnen holder siden i minnet i timevis. Netlify sender
+   «max-age=0, must-revalidate», så en EKTE lasting gir alltid siste versjon — feilen er sider som aldri
+   lastes, og da kjører barbereren gammel frontend mot nytt API. Når dashbordet kommer i forgrunnen
+   (visibilitychange → visible, eller pageshow fra bfcache) sammenlignes ETag-en til dashboard.html med
+   den fra oppstart. Endret + ingenting ulagret → last inn på nytt. Endret + ulagrede endringer → stripe
+   «Ny versjon. Last inn på nytt.». Maks én sjekk per minutt; en feilet sjekk gjør ingenting. */
+(function(){
+  var MIN_MS=60*1000, _etag=null, _siste=0, _venter=false;
+  async function hentEtag(){
+    try{
+      var r=await fetch(location.pathname,{method:'HEAD',cache:'no-store',credentials:'same-origin'});
+      if(!r.ok)return null;
+      // Bare innholdshashen: Netlify legger på -ssl / -ssl-df etter komprimering, og den skal aldri lese som ny versjon.
+      var e=r.headers.get('ETag'); if(!e)return null;
+      var h=e.match(/[0-9a-f]{16,}/i); return h?h[0]:e;
+    }catch(e){ return null; }
+  }
+  async function sjekk(){
+    var stripe=document.getElementById('nyVersjon');
+    if(_venter||(stripe&&!stripe.hidden))return;              // allerede funnet ny versjon
+    var naa=Date.now(); if(naa-_siste<MIN_MS)return;          // maks én sjekk per minutt
+    _siste=naa; _venter=true;
+    var etag=await hentEtag(); _venter=false;
+    if(!etag)return;                                          // feilet sjekk: ingenting skjer
+    if(!_etag){ _etag=etag; return; }                         // oppstarten feilet: dette blir utgangspunktet
+    if(etag===_etag)return;
+    if(!harUlagret()){ location.reload(); return; }
+    if(stripe)stripe.hidden=false;
+    if(typeof window.oppdaterHjemskjermNudge==='function')window.oppdaterHjemskjermNudge();   // aldri to topplinjer
+  }
+  window.nyVersjonSjekk=sjekk;
+  // Utgangspunkt: ETag ved oppstart (siden kan ikke lese sine egne svar-headere). Teller som en sjekk.
+  _siste=Date.now(); hentEtag().then(function(e){ if(e)_etag=e; });
+  document.addEventListener('visibilitychange',function(){ if(document.visibilityState==='visible')sjekk(); });
+  window.addEventListener('pageshow',function(e){ if(e.persisted)sjekk(); });
+  var knapp=document.getElementById('nyVersjonLast'); if(knapp)knapp.addEventListener('click',function(){ location.reload(); });
+})();
+
 /* ---- Standalone-sjekk: delt kilde for initHjemskjerm + hjemskjerm-nudgen ----
    Funksjonsdeklarasjon (hoistet) så begge IIFE-ene ser den uansett rekkefølge. */
 function erStandalone(){
@@ -7630,7 +7718,8 @@ function erStandalone(){
   }
   window.oppdaterHjemskjermNudge=function(){
     var live = !!(typeof _billing!=='undefined' && _billing && _billing.page_status==='live');
-    el.classList.toggle('show', live && !erStandalone() && !nyligSkjult() && !demoSynlig());
+    var nyVersjonVises=!document.getElementById('nyVersjon').hidden;   // aldri to topplinjer: «Ny versjon» vinner
+    el.classList.toggle('show', live && !erStandalone() && !nyligSkjult() && !demoSynlig() && !nyVersjonVises);
   };
   function tilKonto(){
     switchPanel('abonnement');           // → Konto-fanen (+ location.hash='konto')

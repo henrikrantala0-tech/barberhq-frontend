@@ -77,7 +77,7 @@ for(const bredde of [320,MOBIL,1280]){
 
   const m=await page.evaluate(w=>{
     const sec=document.getElementById('produkt');
-    const mocks=[...sec.querySelectorAll('.mock')];
+    const mocks=[...sec.querySelectorAll('.mock:not(.pv-klon)')];   // loopens kopier (.pv-klon) er ikke kort
     const r=sec.getBoundingClientRect();
     const synlige=mocks.filter(k=>{const b=k.getBoundingClientRect();
       return b.right>0 && b.left<w && b.width>0;}).length;
@@ -124,6 +124,14 @@ for(const bredde of [320,MOBIL,1280]){
           // Aktiv fane skal skille seg fra de inaktive på BÅDE farge og understrek.
           navAktiv:(function(){
             const alle=[...synligDash.querySelectorAll('.nav button[data-panel]')].filter(b=>b.offsetParent!==null);
+            // Mobil: topp-navet er skjult, bunnmenyen (.bunn-nav .tab, aria-current="page") er navigasjonen.
+            // Den markerer aktiv fane med farge alene — ingen understrek i produktet.
+            if(!alle.length){
+              const bunn=[...synligDash.querySelectorAll('.bunn-nav .tab[data-panel]')].filter(b=>b.offsetParent!==null);
+              const bAkt=bunn.find(b=>b.getAttribute('aria-current')==='page'), bInakt=bunn.find(b=>b!==bAkt);
+              if(!bAkt||!bInakt) return 'MANGLER';
+              return getComputedStyle(bAkt).color!==getComputedStyle(bInakt).color ? 'farge (bunnmeny)' : 'SAMME FARGE (bunnmeny)';
+            }
             const akt=alle.find(b=>b.getAttribute('aria-selected')==='true');
             const inakt=alle.find(b=>b!==akt);
             if(!akt||!inakt) return 'MANGLER';
@@ -191,7 +199,10 @@ for(const bredde of [320,MOBIL,1280]){
           dom:  /rekord-gull/.test((rev||{}).className||'') ? 'klasse satt' : 'KLASSE MANGLER',
         };
       })(),
-      barTekst:((sec.querySelector('.pv-dash .pv-witext')||{}).textContent||'').trim(),
+      // Den SYNLIGE dashbordklonen i et ekte kort (som målingene over) — den første .pv-witext i seksjonen
+      // er på mobil den skjulte desktop-utgaven eller en av loopens kopier, og står tom.
+      barTekst:(function(){const d=[...sec.querySelectorAll('.mock:not(.pv-klon) .pv-dash')].find(x=>x.offsetParent!==null&&x.querySelector('.pv-fill'));
+        return d?((d.querySelector('.pv-witext')||{}).textContent||'').trim():'';})(),
       rekordNote:((sec.querySelector('.pv-dash .rekord-note')||{}).textContent||'').trim(),
       // Klon-sjekker: elementer som KUN finnes hvis den ekte markupen faktisk kom med.
       svcKort:sec.querySelectorAll('.pv-book .svc-card').length,
@@ -255,7 +266,8 @@ for(const bredde of [320,MOBIL,1280]){
       antallAktive:sec.querySelectorAll('.mock.on').length,
       antallCapAktive:sec.querySelectorAll('.cap.on').length,
       synligeKort:synlige,
-      dødRest:['.tab','.slide','.dot','.arrow','.pv-section'].filter(s=>document.querySelector(s)).join(' ')||'—',
+      // .tab er IKKE med: det er dashbordklonens bunnmeny (75a7386), ikke den gamle karusellens faner.
+      dødRest:['.slide','.dot','.arrow','.pv-section'].filter(s=>document.querySelector(s)).join(' ')||'—',
       seksjonshøyde:Math.round(r.height),
     };
   },bredde);
@@ -264,7 +276,7 @@ for(const bredde of [320,MOBIL,1280]){
 
   rapport.push({bredde, modus:m.modus, mockups:m.antallMock, aktive:m.antallAktive,
     ramme:m.ramme, 'nav-faner':m.navFaner,
-    'nav aktiv':m.navAktiv==='farge+understrek'?'farge+understrek ✓':m.navAktiv+' ✗',
+    'nav aktiv':(m.navAktiv==='farge+understrek'||m.navAktiv==='farge (bunnmeny)')?m.navAktiv+' ✓':m.navAktiv+' ✗',
     'KPI px':m.kpiFont,
     'KPI≥14':m.kpiFont>=14?'ja ✓':'NEI ✗',
     // «Høyde > 0» er IKKE falsifiserbart: kilden har .cbar-bar{min-height:4px}, så en
@@ -445,19 +457,21 @@ for(const bredde of [320,MOBIL,1280]){
   const a=await aktiv(page);
   await page.waitForTimeout(6000);
   const b=await aktiv(page);
-  const trans=await page.evaluate(()=>getComputedStyle(document.querySelector('#scene .mock')).transitionDuration);
-  // Måles på .cal-pop, ikke på .crow: radene BLIR til av animasjonen, og med bevegelse av
-  // kjører den aldri — så #calRows er tom og querySelector('.crow') ga null. Popup-kortet
-  // står permanent i markupen og har samme transition-regel.
-  const anim=await page.evaluate(()=>getComputedStyle(document.querySelector('#produkt .cal-pop')).transitionDuration);
-  const kalTom=await page.evaluate(()=>document.querySelectorAll('#calRows .crow').length);
+  const trans=await page.evaluate(()=>getComputedStyle(document.querySelector('#scene .mock:not(.pv-klon)')).transitionDuration);
+  // Kalender-kortet ble byttet 25.09 (2bb95da): den gamle klonen med .cal-pop/#calRows finnes ikke
+  // lenger — testen krasjet på querySelector(null). Den nye scenen (.ks-cal) har .ks-block-blokker i
+  // markupen og en egen redusert-regel (transition:none på .ks-block/.ks-now). Måles på den.
+  const anim=await page.evaluate(()=>{ const e=document.querySelector('#produkt .ks-cal .ks-block'); return e?getComputedStyle(e).transitionDuration:'(fant ikke .ks-block)'; });
+  const kalInn=await page.evaluate(()=>document.querySelectorAll('#produkt .ks-cal .ks-block.ks-in').length);
   await page.locator('#produkt').screenshot({path:`${OUT}/1280-produkt-redusert.png`});
   oppforsel.push({test:'redusert: ingen autoplay', resultat:`${a.kort} → ${b.kort}`, ventet:'uendret',
     ok:a.kort===b.kort?'✓':'✗'});
   oppforsel.push({test:'redusert: ingen transition', resultat:trans, ventet:'0s', ok:/^0s(,\s*0s)*$/.test(trans)?'✓':'✗'});
   oppforsel.push({test:'redusert: ingen kalender-transition', resultat:anim, ventet:'0s', ok:/^0s/.test(anim)?'✓':'✗'});
-  oppforsel.push({test:'redusert: kalenderen står tom', resultat:kalTom+' rader', ventet:'0 rader',
-    ok:kalTom===0?'✓':'✗'});
+  // INFO, ikke krav (10.10): den nye scenen spiller av blokkene én og én også med redusert bevegelse
+  // (uten transition). Om den heller skal stå ferdig eller tom er Henriks avgjørelse — til da logges tallet.
+  oppforsel.push({test:'redusert: kalenderblokker vist etter 6 s (info)', resultat:kalInn+' blokker', ventet:'avgjøres',
+    ok:'info'});
   oppforsel.push({test:'redusert: jsfeil', resultat:errs.length?errs.join('; ').slice(0,40):'ingen',
     ventet:'ingen', ok:errs.length?'✗':'✓'});
   await ctx.close();
@@ -481,7 +495,7 @@ for(const bredde of [320,MOBIL,1280]){
     null,{timeout:4000,polling:60});
   const start=await page.evaluate(()=>{
     const sc=document.getElementById('scene');
-    const k=[...sc.querySelectorAll('.mock')].find(x=>x.dataset.i==='1');
+    const k=[...sc.querySelectorAll('.mock:not(.pv-klon)')].find(x=>x.dataset.i==='1');
     const rs=sc.getBoundingClientRect(), rk=k.getBoundingClientRect();
     return Math.round(Math.abs((rk.left+rk.width/2)-(rs.left+rs.width/2)));
   });
@@ -551,9 +565,9 @@ for(const bredde of [320,MOBIL,1280]){
       const on=document.querySelector('#scene .mock.on');
       const r={
         i:on?+on.dataset.i:-1,
-        teller:(document.getElementById('calCount')||{}).textContent||'-',
-        kpi:(document.querySelector('#scene .pv-rev-n')||{}).textContent||'-',
-        gull:/rekord-gull/.test((document.querySelector('#scene .pv-rev')||{}).className||''),
+        teller:(document.querySelector('#scene .mock:not(.pv-klon) .ks-cal .ks-chip-count[data-today]')||{}).textContent||'-',
+        kpi:(document.querySelector('#scene .mock:not(.pv-klon) .pv-rev-n')||{}).textContent||'-',
+        gull:/rekord-gull/.test((document.querySelector('#scene .mock:not(.pv-klon) .pv-rev')||{}).className||''),
         bok: b.classList.contains('vis-success') ? '6'
            : !b.classList.contains('vis-sheet') ? '1' : 'underveis',
       };
@@ -692,16 +706,19 @@ for(const bredde of [320,MOBIL,1280]){
   oppforsel.push({test:'--ph-s: riktig mot layoutbredden',
     resultat:`${phs.etter2s} (skjerm ${phs.layoutbredde}px)`, ventet:String(phs.fasit),
     ok:Math.abs(parseFloat(phs.etter2s)-phs.fasit)<0.0002?'✓':'✗'});
-  // Kalenderkortet bruker samme mekanikk, men har ingen .pv-scale — .pv-cal er bygget i
-  // designsystemet og fyller skjermen naturlig. Den skal IKKE få --ph-s.
+  // Kalenderkortet ble byttet 25.09 (2bb95da) til scenen fra den ekte kalenderen, bygget inn i SAMME
+  // iPhone-ramme + .pv-scale/--ph-s som bookingkortet (den gamle .pv-cal hadde ingen skala). Den skal
+  // derfor ha --ph-s regnet av SIN egen skjermbredde, akkurat som bookingkortet over.
   const kal=await page.evaluate(()=>{
     const k=document.querySelector('#scene .pv-phone[data-i="0"]');
-    return {scale:!!k.querySelector('.pv-scale'),
-      phS:(getComputedStyle(k).getPropertyValue('--ph-s')||'').trim()||'(ingen)'};
+    const skjerm=k.querySelector('.iph-screen');
+    return {scale:!!k.querySelector('.ks-cal .pv-scale'),
+      phS:(getComputedStyle(k).getPropertyValue('--ph-s')||'').trim()||'(ingen)',
+      fasit:Math.round(skjerm.offsetWidth/320*10000)/10000};
   });
-  oppforsel.push({test:'--ph-s: kalenderkortet skaleres ikke',
-    resultat:`.pv-scale=${kal.scale}, --ph-s=${kal.phS}`, ventet:'false / (ingen)',
-    ok:(!kal.scale&&kal.phS==='(ingen)')?'✓':'✗'});
+  oppforsel.push({test:'--ph-s: kalenderkortet skaleres som bookingkortet',
+    resultat:`.pv-scale=${kal.scale}, --ph-s=${kal.phS}`, ventet:`true / ${kal.fasit}`,
+    ok:(kal.scale&&Math.abs(parseFloat(kal.phS)-kal.fasit)<0.0002)?'✓':'✗'});
   oppforsel.push({test:'--ph-s: jsfeil', resultat:errs.length?errs.join('; ').slice(0,40):'ingen',
     ventet:'ingen', ok:errs.length?'✗':'✓'});
   await ctx.close();
@@ -724,7 +741,7 @@ for(const bredde of [320,MOBIL,1280]){
   const geo=()=>page.evaluate(()=>{
     const sc=document.getElementById('scene');
     const rs=sc.getBoundingClientRect();
-    const kort=[...sc.querySelectorAll('.mock')].map(k=>{
+    const kort=[...sc.querySelectorAll('.mock:not(.pv-klon)')].map(k=>{
       const r=k.getBoundingClientRect();
       return {i:+k.dataset.i, on:k.classList.contains('on'),
         venstre:r.left, hoyre:r.right, senter:r.left+r.width/2};
@@ -761,14 +778,14 @@ for(const bredde of [320,MOBIL,1280]){
     const foer=await geo();
     const foerSortert=await page.evaluate(()=>{
       const sc=document.getElementById('scene');
-      return [...sc.querySelectorAll('.mock')]
+      return [...sc.querySelectorAll('.mock:not(.pv-klon)')]
         .map(k=>({i:+k.dataset.i, x:k.getBoundingClientRect().left}))
         .sort((a,b)=>a.x-b.x).map(k=>k.i);
     });
     const hoyreKort=foerSortert[2];
     await page.evaluate(()=>{                       // ett autoplay-hakk, uten å klikke
       const sc=document.getElementById('scene');
-      const kort=[...sc.querySelectorAll('.mock')];
+      const kort=[...sc.querySelectorAll('.mock:not(.pv-klon)')];
       const aktiv=+kort.find(k=>k.classList.contains('on')).dataset.i;
       kort.find(k=>+k.dataset.i===(aktiv+2)%3).click();
     });
@@ -792,7 +809,7 @@ for(const bredde of [320,MOBIL,1280]){
   await page.waitForTimeout(2500);          // la rotasjonen lande
   const kaos=await page.evaluate(()=>{
     const sc=document.getElementById('scene'), rs=sc.getBoundingClientRect();
-    const kort=[...sc.querySelectorAll('.mock')];
+    const kort=[...sc.querySelectorAll('.mock:not(.pv-klon)')];
     const på=kort.filter(k=>k.classList.contains('on'));
     const a=på[0];
     const ra=a?a.getBoundingClientRect():null;
@@ -821,7 +838,7 @@ for(const bredde of [320,MOBIL,1280]){
   await mpage.goto(`http://localhost:${PORT}/no/index.html`,{waitUntil:'networkidle'});
   await mpage.locator('#produkt').scrollIntoViewIfNeeded();
   await mpage.waitForTimeout(700);
-  const mobilDx=await mpage.evaluate(()=>[...document.querySelectorAll('#scene .mock')]
+  const mobilDx=await mpage.evaluate(()=>[...document.querySelectorAll('#scene .mock:not(.pv-klon)')]
     .map(k=>getComputedStyle(k).transform).join(' | '));
   oppforsel.push({test:'ring: av på mobil', resultat:mobilDx.replace(/\s+/g,''),
     ventet:'none på alle', ok:/^none(\|none)*$/.test(mobilDx.replace(/\s+/g,''))?'✓':'✗'});
@@ -841,7 +858,7 @@ for(const bredde of [320,MOBIL,1280]){
   await rpage.waitForTimeout(900);
   const etterResize=await rpage.evaluate(()=>{
     const sc=document.getElementById('scene');
-    const kort=[...sc.querySelectorAll('.mock')];
+    const kort=[...sc.querySelectorAll('.mock:not(.pv-klon)')];
     return {
       transform:kort.map(k=>getComputedStyle(k).transform).join('|'),
       dx:kort.map(k=>k.style.getPropertyValue('--dx')||'-').join('|'),
@@ -872,8 +889,11 @@ for(const bredde of [320,MOBIL,1280]){
 
 // ── Kalenderen fylles fra tom ───────────────────────────────────────────────────
 // Dagen skal starte HELT tom med telleren på 0 og fylles med fem fargekodede bookinger.
-// Sto det rader i markupen, ville testen ikke merket at animasjonen var død — den ville
-// bare sett rader som alltid har vært der. Derfor måles BÅDE utgangspunktet og fyllingen.
+// Kortet ble byttet 25.09 (2bb95da): den nye scenen (.ks-cal) har de fem blokkene i markupen fra
+// start, og avspillingen viser dem med .ks-in. «Tom» betyr derfor ingen .ks-in og telleren på 0 —
+// ikke tom markup som i det gamle kortet (#calRows/.crow/#calCount, som ikke finnes lenger).
+// Mål på det EKTE kortet: karusellens uendelige loop (559137b) har kopier av kortene foran og bak
+// (aria-hidden + inert), frosset i sluttilstand — den første .ks-cal i DOM-en er en slik kopi.
 {
   const ctx=await browser.newContext({viewport:{width:1280,height:900},deviceScaleFactor:1});
   const page=await ctx.newPage();
@@ -881,31 +901,29 @@ for(const bredde of [320,MOBIL,1280]){
   await page.goto(`http://localhost:${PORT}/no/index.html`,{waitUntil:'networkidle'});
   await page.locator('#produkt').scrollIntoViewIfNeeded();
 
-  const tom=await page.evaluate(()=>({
-    rader:document.querySelectorAll('#calRows .crow').length,
-    markup:document.getElementById('calRows').innerHTML.trim().length}));
-  oppforsel.push({test:'kalender: tom i markupen',
-    resultat:`${tom.markup} tegn i #calRows`, ventet:'0 (fylles av JS)',
-    ok:tom.markup===0?'✓':'✗'});
+  const kles=()=>page.evaluate(()=>{
+    const root=document.querySelector('#scene .mock:not([aria-hidden="true"]) .ks-cal .ks-root');
+    const blokker=[...root.querySelectorAll('.ks-block')];
+    const synlige=blokker.filter(b=>b.classList.contains('ks-in'));
+    const teller=root.querySelector('.ks-chip-count[data-today]');
+    return {blokker:blokker.length, teller:teller?teller.textContent:'(mangler)', synlige:synlige.length,
+      ufarget:synlige.filter(b=>{ const c=b.style.getPropertyValue('--ks-blk'); return !c||c==='var(--mut)'; }).length,
+      farger:synlige.map(b=>b.style.getPropertyValue('--ks-blk')).join(',')};
+  });
+  const k0=await kles();
+  oppforsel.push({test:'kalender: fem bookinger i markupen', resultat:`${k0.blokker} .ks-block`, ventet:'5',
+    ok:k0.blokker===5?'✓':'✗'});
 
   await fokuser(page,0);
   await page.locator('#sceneVp').hover();
-  const kles=()=>page.evaluate(()=>{
-    const rows=document.getElementById('calRows');
-    const synlige=[...rows.querySelectorAll('.crow.inn')];
-    return {teller:document.getElementById('calCount').textContent,
-      synlige:synlige.length,
-      farger:synlige.map(r=>(r.className.match(/k-[abc]/)||['-'])[0]).join(','),
-      ufarget:synlige.filter(r=>!/k-[abc]/.test(r.className)).length};
-  });
   const t0k=Date.now();
   await page.waitForTimeout(300);
   const kA=await kles();
   oppforsel.push({test:'kalender: starter på 0', resultat:`teller=${kA.teller} synlige=${kA.synlige}`,
     ventet:'0 / 0', ok:(kA.teller==='0'&&kA.synlige===0)?'✓':'✗'});
 
-  // Alle fem skal være inne innen 6s — kravet er «~5–6s».
-  await page.waitForFunction(()=>document.getElementById('calCount').textContent==='5',
+  // Alle fem skal være inne innen 6s — kravet er «~5–6s» (START_DELAY 550 + 4×750 ≈ 3,6 s).
+  await page.waitForFunction(()=>{ const t=document.querySelector('#scene .mock:not([aria-hidden="true"]) .ks-cal .ks-root .ks-chip-count[data-today]'); return t&&t.textContent==='5'; },
     null,{timeout:6500,polling:80}).catch(()=>{});
   const brukt=Math.round((Date.now()-t0k)/100)/10;
   const kB=await kles();

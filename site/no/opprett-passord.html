@@ -157,8 +157,8 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   // magisk lenke) — her signaliserer vi bare intensjonen; POST-en er identisk.
   var BYTT = new URLSearchParams(location.search).get('bytt') === '1';
   if (BYTT) {
-    document.querySelector('.card h1').textContent = 'Sett et nytt passord';
-    document.querySelector('.card-sub').textContent = 'Du er i ferd med å sette et NYTT passord — det gamle slutter å virke.';
+    document.querySelector('.card h1').textContent = 'Lag nytt passord';
+    document.querySelector('.card-sub').textContent = 'Du er i ferd med å sette et nytt passord. Det gamle slutter å virke.';
     document.getElementById('skip').classList.add('show');
   }
 

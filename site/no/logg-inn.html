@@ -92,6 +92,12 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .pw-alt{text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid #1a1a1a}
 .pw-alt-link{font:inherit;font-size:13px;color:#8c8c8c;background:none;border:none;cursor:pointer;padding:0}
 .pw-alt-link:hover{color:#bbb;text-decoration:underline}
+/* «Glemt passordet?» rett under passordfeltet: dempet tekstlenke, venstrejustert som feltet. */
+.pw-glemt{display:block;font:inherit;font-size:13px;color:#8c8c8c;background:none;border:none;cursor:pointer;padding:6px 0;margin:-8px 0 12px;text-align:left}
+.pw-glemt:hover{color:#bbb;text-decoration:underline}
+.pw-glemt-msg{display:none;font-size:13.5px;line-height:1.5;margin:-6px 0 12px;text-align:left}
+.pw-glemt-msg.ok{display:block;color:#5cb85c}
+.pw-glemt-msg.feil{display:block;color:#c0594a}
 .pw-panel{display:none;margin-top:14px}
 .pw-panel.show{display:block}
 /* Kontekst over passordfeltet: knytter det til det delte e-postfeltet over. */
@@ -135,7 +141,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 
     <!-- PRIMÆR: magisk lenke — ingen passord nødvendig, synlig uten å klikke noe. -->
     <button class="btn-login btn-fill" id="magic-submit" type="button">Send meg innloggingslenke</button>
-    <p class="magic-info">Vi sender en lenke til e-posten din. Lenken virker i 24 timer.</p>
+    <p class="magic-info">Vi sender en lenke til e-posten din. Lenken virker i 30 minutter.</p>
     <p class="magic-ok" id="magic-ok">
       Sjekk e-posten din. Hvis adressen er registrert, har vi sendt en lenke.
     </p>
@@ -159,6 +165,11 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
           </button>
         </div>
       </div>
+      <!-- Glemt passordet: innloggingslenke med formaal:'reset' → backend lar den lande på
+           opprett-passord.html?bytt=1 («Lag nytt passord»). «Send meg innloggingslenke» over sender
+           fortsatt bare {email} og lander i dashbordet. -->
+      <button class="pw-glemt" id="pw-glemt" type="button">Glemt passordet?</button>
+      <p class="pw-glemt-msg" id="pw-glemt-msg" role="status"></p>
       <p class="error" id="error"></p>
       <button class="btn-login btn-line" id="submit">Logg inn</button>
     </div>
@@ -258,6 +269,34 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     eyeOff.style.display = show ? ''      : 'none';
     toggle.setAttribute('aria-label', show ? 'Skjul passord' : 'Vis passord');
   });
+
+  // ── Glemt passordet → innloggingslenke for nytt passord (formaal:'reset') ──
+  var glemtBtn = document.getElementById('pw-glemt');
+  var glemtMsg = document.getElementById('pw-glemt-msg');
+  function visGlemt(klasse, tekst) { glemtMsg.className = 'pw-glemt-msg ' + klasse; glemtMsg.textContent = tekst; }
+  async function sendGlemt() {
+    var adr = email.value.trim();
+    error.classList.remove('show');
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adr)) {
+      visGlemt('feil', 'Skriv inn e-posten din over, så sender vi en lenke.');
+      email.focus();
+      return;
+    }
+    glemtBtn.disabled = true;
+    try {
+      await fetch(API + '/api/send-magic-link', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify({ email: adr, formaal: 'reset' }),
+      });
+    } catch (_) {}
+    glemtBtn.disabled = false;
+    // Backend svarer alltid {ok:true} (lekker aldri om adressen finnes) — samme kvittering som i Konto.
+    visGlemt('ok', 'Sjekk e-posten din. Vi har sendt en lenke til ' + adr + '.');
+  }
+  sendGlemt = enOmGangen(sendGlemt);
+  glemtBtn.addEventListener('click', sendGlemt);
+  email.addEventListener('input', function () { if (glemtMsg.classList.contains('feil')) glemtMsg.className = 'pw-glemt-msg'; });
 
   submit.addEventListener('click', function () { login(); });   // dynamisk kall → treffer den vaktede login (reassignet under def)
   pw.addEventListener('keydown', function (e) { if (e.key === 'Enter') login(); });

@@ -249,8 +249,8 @@ for (const bredde of [320, 375]) { // Passord: ikke satt / satt / glemt-lenken, 
     await page.addStyleTag({ content: '.bunn-nav{visibility:hidden!important}' });
     await page.locator('#kontoKonto').screenshot({ path: path.join(OUT, `passord-satt-${bredde}.png`) });
     await page.click('#pwForgot'); await page.waitForTimeout(500);
-    sjekk(logg.magic.length === 1 && logg.magic[0].email === 'henrik@grandbarber.no' && await tekst(page, '#pwForgotOk') === 'Sjekk e-posten din. Vi har sendt en lenke til henrik@grandbarber.no.',
-      `${bredde} glemt: POST /api/send-magic-link {email} + «${await tekst(page, '#pwForgotOk')}»`);
+    sjekk(logg.magic.length === 1 && logg.magic[0].email === 'henrik@grandbarber.no' && logg.magic[0].formaal === 'reset' && await tekst(page, '#pwForgotOk') === 'Sjekk e-posten din. Vi har sendt en lenke til henrik@grandbarber.no.',
+      `${bredde} glemt: POST /api/send-magic-link {email, formaal:'reset'} + «${await tekst(page, '#pwForgotOk')}»`);
     await page.locator('#kontoKonto').screenshot({ path: path.join(OUT, `passord-glemt-${bredde}.png`) });
     sjekk(errs.length === 0, `${bredde} satt/glemt: JS-feil ${errs.join(' | ')}`); await page.close(); }
   { // Avpublisering feiler → feilen står rett ved knappen nederst, ikke i #pubErr
@@ -272,6 +272,69 @@ for (const bredde of [320, 375]) { // Passord: ikke satt / satt / glemt-lenken, 
     sjekk(await vis(page, '#pubErr') && !!(await page.$('#kontoAbonnement #pubErr')) && /Minst én tjeneste/.test(await tekst(page, '#pubErr')) && !(await vis(page, '#avpubErr')),
       `${bredde} publiseringsfeil i abonnementskortet: «${await tekst(page, '#pubErr')}»`);
     sjekk(errs.length === 0, `${bredde} publisering: JS-feil ${errs.join(' | ')}`); await page.close(); }
+  { // Publiser-knappen på «Din side» feiler → feilen står ved den knappen, ikke i #pubErr i Konto
+    const { page, errs } = await side(bredde, { scen: 'gratis-0', billing: () => ({ ...SCEN['gratis-0'](), page_status: 'forhandsvist' }),
+      pageStatus: () => [400, { error: 'Minst én tjeneste med pris kreves for å gå live' }] });
+    await page.evaluate(() => switchPanel('design')); await page.waitForTimeout(900);
+    await page.click('#dinsidePubliser'); await page.waitForTimeout(900);
+    const pos = await page.evaluate(() => { const b = document.getElementById('dinsidePubliser').getBoundingClientRect(), e = document.getElementById('dinsidePubErr').getBoundingClientRect();
+      return Math.round(e.top - b.bottom); });
+    sjekk(await vis(page, '#dinsidePubErr') && /Minst én tjeneste/.test(await tekst(page, '#dinsidePubErr')) && await page.$eval('#pubErr', e => e.style.display !== 'block') && pos >= 0 && pos < 60,
+      `${bredde} Din side: publiseringsfeil ved «Publiser siden» (avstand ${pos}px), #pubErr i Konto tom`);
+    await page.addStyleTag({ content: '.bunn-nav{visibility:hidden!important}' });
+    await page.locator('#dinsideCta').screenshot({ path: path.join(OUT, `dinside-publiser-feil-${bredde}.png`) });
+    sjekk(errs.length === 0, `${bredde} Din side publiser: JS-feil ${errs.join(' | ')}`); await page.close(); }
+  { // opprett-passord.html?bytt=1 → «Lag nytt passord»; uten bytt → «Lag et passord»
+    for (const [q, h] of [['?bytt=1', 'Lag nytt passord'], ['', 'Lag et passord']]) {
+      const page = await browser.newPage({ viewport: { width: bredde, height: 800 }, deviceScaleFactor: 2 });
+      const errs = []; page.on('pageerror', e => errs.push(e.message));
+      await page.route('**/*', r => { const u = new URL(r.request().url()); if (u.hostname === 'localhost') return r.continue();
+        if (u.hostname === 'api.trybarberhq.com') { apiForsok++; apiMocket++; return r.fulfill({ status: 200, contentType: 'application/json', body: '{}' }); }
+        if (/fonts|jsdelivr|cdnjs/.test(u.hostname)) return r.continue(); return r.abort(); });
+      await page.goto(`http://localhost:${PORT}/no/opprett-passord.html${q}`, { waitUntil: 'networkidle' });
+      sjekk(await tekst(page, '.card h1') === h && errs.length === 0, `${bredde} opprett-passord${q || ' (uten bytt)'}: «${await tekst(page, '.card h1')}»`);
+      if (q) {
+        const sub = await tekst(page, '.card-sub');
+        sjekk(sub === 'Du er i ferd med å sette et nytt passord. Det gamle slutter å virke.', `${bredde} opprett-passord?bytt=1: undertekst «${sub}»`);
+        await page.locator('.card').screenshot({ path: path.join(OUT, `opprett-passord-bytt-${bredde}.png`) });
+      }
+      await page.close();
+    }
+    { // logg-inn.html: lenkas levetid (backend: 30 min)
+      const page = await browser.newPage({ viewport: { width: bredde, height: 800 }, deviceScaleFactor: 2 });
+      const errs = []; page.on('pageerror', e => errs.push(e.message));
+      const magic = [];
+      await page.route('**/*', r => { const u = new URL(r.request().url()); if (u.hostname === 'localhost') return r.continue();
+        if (u.hostname === 'api.trybarberhq.com') { apiForsok++; apiMocket++;
+          if (u.pathname === '/api/send-magic-link') magic.push(JSON.parse(r.request().postData() || '{}'));
+          return r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }); }
+        if (/fonts|jsdelivr|cdnjs/.test(u.hostname)) return r.continue(); return r.abort(); });
+      await page.goto(`http://localhost:${PORT}/no/logg-inn.html`, { waitUntil: 'networkidle' });
+      const info = await tekst(page, '.magic-info');
+      sjekk(info === 'Vi sender en lenke til e-posten din. Lenken virker i 30 minutter.' && errs.length === 0, `${bredde} logg-inn: «${info}»`);
+      await page.locator('.card').screenshot({ path: path.join(OUT, `logg-inn-${bredde}.png`) });
+      // «Glemt passordet?» under passordfeltet
+      await page.click('#pw-alt-btn'); await page.waitForTimeout(200);
+      sjekk(await vis(page, '#pw-glemt') && await tekst(page, '#pw-glemt') === 'Glemt passordet?', `${bredde} logg-inn: «Glemt passordet?» under passordfeltet`);
+      const under = await page.evaluate(() => { const p = document.getElementById('pw').getBoundingClientRect(), g = document.getElementById('pw-glemt').getBoundingClientRect();
+        return Math.round(g.top - p.bottom); });
+      sjekk(under >= 0 && under < 24, `${bredde} logg-inn: lenka står rett under feltet (${under}px)`);
+      await page.click('#pw-glemt'); await page.waitForTimeout(200);
+      sjekk(await tekst(page, '#pw-glemt-msg') === 'Skriv inn e-posten din over, så sender vi en lenke.' && magic.length === 0, `${bredde} glemt + tomt felt: «${await tekst(page, '#pw-glemt-msg')}», ingenting sendt`);
+      await page.locator('.card').screenshot({ path: path.join(OUT, `logg-inn-glemt-tomt-${bredde}.png`) });
+      await page.fill('#email', 'ikke-en-epost'); await page.click('#pw-glemt'); await page.waitForTimeout(200);
+      sjekk(await tekst(page, '#pw-glemt-msg') === 'Skriv inn e-posten din over, så sender vi en lenke.' && magic.length === 0, `${bredde} glemt + ugyldig e-post: ingenting sendt`);
+      await page.fill('#email', 'henrik@grandbarber.no'); await page.click('#pw-glemt'); await page.waitForTimeout(400);
+      sjekk(magic.length === 1 && magic[0].email === 'henrik@grandbarber.no' && magic[0].formaal === 'reset'
+        && await tekst(page, '#pw-glemt-msg') === 'Sjekk e-posten din. Vi har sendt en lenke til henrik@grandbarber.no.',
+        `${bredde} glemt sendt: ${JSON.stringify(magic[0])} + «${await tekst(page, '#pw-glemt-msg')}»`);
+      await page.locator('.card').screenshot({ path: path.join(OUT, `logg-inn-glemt-sendt-${bredde}.png`) });
+      await page.click('#magic-submit'); await page.waitForTimeout(400);
+      sjekk(magic.length === 2 && JSON.stringify(magic[1]) === '{"email":"henrik@grandbarber.no"}', `${bredde} «Send meg innloggingslenke» sender fortsatt bare {email}: ${JSON.stringify(magic[1])}`);
+      sjekk(errs.length === 0, `${bredde} logg-inn: JS-feil ${errs.join(' | ')}`);
+      await page.close();
+    }
+  }
   { // SMS-kortet (Gratis 120)
     const { page, errs } = await side(bredde, { scen: 'gratis-120' });
     sjekk(await page.$eval('#kontoSms .kt-h', e => e.textContent.trim()) === 'SMS-påminnelser' && await tekst(page, '#smsBryterTekst') === 'Påminnelse dagen før',
