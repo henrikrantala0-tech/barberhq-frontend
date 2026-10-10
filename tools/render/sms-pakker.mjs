@@ -1,4 +1,4 @@
-// SMS-pakker (Gratis): Konto-trekkspillet «SMS-påminnelser», den felles påminnelse-bryteren,
+// SMS-pakker (Gratis): Konto-kortet «SMS-påminnelser», den felles påminnelse-bryteren,
 // Stripe-retur etter pakkekjøp og SMS-tilbudet på Oversikt. Bygget mot backend-kontrakten (ikke live
 // ennå) — alt under /api/** mockes, alt annet mot prod avbrytes og telles.
 //
@@ -74,7 +74,8 @@ const synlig=(page,sel)=>page.$eval(sel,e=>e.offsetParent!==null).catch(()=>fals
 async function aapneSms(page){
   await page.$eval('button[data-panel="abonnement"]',b=>b.click());
   await page.waitForTimeout(300);
-  await page.evaluate(()=>{ const h=document.querySelector('#accSms .acc-head'); if(h&&h.getAttribute('aria-expanded')!=='true')h.click(); });
+  // Konto er en innstillingsside: SMS-kortet står alltid åpent (når det vises) — ingenting å folde ut.
+  await page.evaluate(()=>{ const s=document.getElementById('kontoSms'); if(s&&!s.hidden)s.scrollIntoView({block:'start'}); });
   await page.waitForTimeout(400);
 }
 const browser=await chromium.launch();
@@ -131,7 +132,8 @@ for(const c of KONTO){
     await aapneSms(page);
     const f=[];
     // Nivå 1: tittel + bryter i headeren, undertekst under — ingen av delene ved saldo 0
-    like('tittel',await tekstAv(page,'#smsBryterTekst'),'SMS-påminnelser',f);
+    like('overskrift',await page.$eval('#kontoSms .kt-h',e=>e.textContent.trim()).catch(()=>'—'),'SMS-påminnelser',f);   // textContent: CSS gjør den versal
+    like('tittel',await tekstAv(page,'#smsBryterTekst'),c.vent.bryter?'Påminnelse dagen før':'—',f);
     const bryterVist=await synlig(page,'#smsBryterRad'), subVist=await synlig(page,'#smsSub');
     if(bryterVist!==c.vent.bryter) f.push(`bryter vist=${bryterVist}`);
     if(subVist!==c.vent.bryter) f.push(`undertekst vist=${subVist}`);
@@ -178,7 +180,7 @@ for(const c of KONTO){
     if(m.valgtBg===m.flatBg) f.push('valgt flis mangler blå bakgrunnstone');
     const over=await page.evaluate(()=>document.documentElement.scrollWidth-innerWidth); if(over>0) f.push(`overflow ${over}`);
     push(`Konto SMS ${c.id} @${b}`,f,errs);
-    await page.locator('#accSms').screenshot({path:path.join(OUT,`${b}-konto-sms-${c.id}.png`)});
+    await page.locator('#kontoSms').screenshot({path:path.join(OUT,`${b}-konto-sms-${c.id}.png`)});
     if(c.fliser){
       for(const n of [100,250,500]){
         await page.click(`#smsFliser [data-sms-antall="${n}"]`); await page.waitForTimeout(150);
@@ -186,7 +188,7 @@ for(const c of KONTO){
         const g=[]; if(JSON.stringify(k.valgt)!==`[${n}]`) g.push(`valgt ${JSON.stringify(k.valgt)}`);
         if(k.knapp!==KNAPP[n]) g.push(`knapp «${k.knapp}»`); if(k.knappLinjer!==1||k.knappKuttet) g.push('knapp brekker/kuttes');
         push(`flis ${n} valgt @${b}`,g,errs);
-        await page.locator('#accSms').screenshot({path:path.join(OUT,`${b}-konto-sms-flis-${n}-valgt.png`)});
+        await page.locator('#kontoSms').screenshot({path:path.join(OUT,`${b}-konto-sms-flis-${n}-valgt.png`)});
       }
     }
     await page.close();
@@ -212,10 +214,9 @@ for(const [id,bill,forvent] of [['vekst-saldo40',vekst({sms_saldo:40}),'40 kjøp
                                 ['prove-saldo12',vekst({subscription_status:null,plan:null,effective_plan_grunn:'trial_vindu',trial_days_left:9,sms_saldo:12}),'12 kjøpte SMS ligger på kontoen.']]){
   const {page,errs}=await nySide(375,{billing:()=>bill});
   await page.$eval('button[data-panel="abonnement"]',x=>x.click());
-  await page.evaluate(()=>{ const h=document.querySelector('#accAbonnement .acc-head'); if(h.getAttribute('aria-expanded')!=='true')h.click(); });
   await page.waitForTimeout(400);
   const f=[];
-  if(await page.$eval('#accSms',e=>!e.hidden)) f.push('SMS-trekkspillet vises (skal ikke)');
+  if(await page.$eval('#kontoSms',e=>!e.hidden)) f.push('SMS-kortet vises (skal ikke)');
   like('kjøpte-linje',await tekstAv(page,'#kontoSmsRest'),forvent,f);
   push(`Konto ${id}`,f,errs);
   await page.close();
@@ -250,7 +251,7 @@ for(const [id,bill,forvent] of [['vekst-saldo40',vekst({sms_saldo:40}),'40 kjøp
   if(s.konto||s.vekst) f.push(`ikke rullet tilbake ${JSON.stringify(s)}`);
   like('feil',await tekstAv(page,'#smsInnstErr'),'Kunne ikke lagre. Prøv igjen.',f);
   push('bryter: feil → begge rullet tilbake',f,errs);
-  await page.locator('#accSms').screenshot({path:path.join(OUT,'375-konto-sms-bryter-feil.png')});
+  await page.locator('#kontoSms').screenshot({path:path.join(OUT,'375-konto-sms-bryter-feil.png')});
   await page.close();
 }
 { // Vekst-fanens tekst: «dagen før»
@@ -276,7 +277,7 @@ for(const [id,bill,forvent] of [['vekst-saldo40',vekst({sms_saldo:40}),'40 kjøp
   await page.waitForFunction(()=>{ const k=document.getElementById('smsKjop'); return k&&k.offsetParent!==null&&k.textContent==='Legger til SMS …'; },null,{timeout:1400}).catch(()=>{});
   const under=await tekstAv(page,'#smsKjop'), underDis=await page.$eval('#smsKjop',e=>e.disabled);
   const vekstKnapp=await page.$eval('#kontoOppBtn',e=>e.textContent);
-  await page.locator('#accSms').screenshot({path:path.join(OUT,'375-retur-sms-legger-til.png')});
+  await page.locator('#kontoSms').screenshot({path:path.join(OUT,'375-retur-sms-legger-til.png')});
   await page.waitForTimeout(1800);
   const f=[];
   if(!(under==='Legger til SMS …'&&underDis)) f.push(`mens synk: «${under}» disabled=${underDis}`);

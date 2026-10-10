@@ -144,7 +144,7 @@ async function maalKort(page){
     lenke:  await synlig(page,'#pubLink'),
     lenkeOverAvpub: await page.evaluate(()=>{const a=document.getElementById('kontoAvpub'),l=document.getElementById('pubLink');
                       return !!(a&&l&&(a.compareDocumentPosition(l)&Node.DOCUMENT_POSITION_FOLLOWING));}),
-    kortTekst: await page.$eval('#accAbonnement .subcard',e=>e.innerText).catch(()=>''),
+    kortTekst: await page.$eval('#kontoAbonnement .subcard',e=>e.innerText).catch(()=>''),
   };
 }
 function sjekkVent(m,v){
@@ -168,8 +168,7 @@ function sjekkVent(m,v){
 
 async function aapneKonto(page){
   await page.$eval('button[data-panel="abonnement"]',b=>b.click());
-  const lukket=await page.$eval('#accAbonnement .acc-head',h=>h.getAttribute('aria-expanded')!=='true');
-  if(lukket) await page.$eval('#accAbonnement .acc-head',b=>b.click());
+  // Konto er en innstillingsside: abonnementskortet står alltid åpent — ingenting å folde ut.
   await page.waitForTimeout(500);
 }
 async function nySide(bredde,stub,url='/no/dashboard.html',vent='networkidle'){
@@ -180,7 +179,7 @@ async function nySide(bredde,stub,url='/no/dashboard.html',vent='networkidle'){
   await page.goto(`http://localhost:${PORT}${url}`,{waitUntil:vent});
   return {page,errs,logg};
 }
-const kortSkudd=(page,fil)=>page.locator('#accAbonnement').screenshot({path:path.join(OUT,fil)});
+const kortSkudd=(page,fil)=>page.locator('#kontoAbonnement').screenshot({path:path.join(OUT,fil)});
 
 const browser=await chromium.launch();
 const rapport=[]; const push=(navn,feil,errs)=>rapport.push({sjekk:navn, resultat:feil.length?'✗ '+feil.join(' | '):'OK ✓', jsfeil:errs&&errs.length?errs.join('; '):'ingen'});

@@ -170,11 +170,10 @@ for(const b of [320,375]){
       needs_attention:false,attention_grunn:null,cancel_at_period_end:false,current_period_end:null,sms_saldo:0,sms_pakke_kan_kjopes:false};
     const {page,errs}=await aapne('dashboard.html',b,gratis);
     await page.$eval('button[data-panel="abonnement"]',x=>x.click());
-    await page.evaluate(()=>{ const h=document.querySelector('#accAbonnement .acc-head'); if(h.getAttribute('aria-expanded')!=='true')h.click(); });
-    await page.waitForTimeout(400);
+    await page.waitForTimeout(400);   // Konto: abonnementskortet står alltid åpent
     const fin=norm(await page.$eval('#kontoOppFin',e=>e.textContent));
     const gratisTekst=norm(await page.$eval('#kontoTekst',e=>e.textContent));
-    await page.locator('#accAbonnement').screenshot({path:path.join(OUT,`${b}-konto-gratis.png`)});
+    await page.locator('#kontoAbonnement').screenshot({path:path.join(OUT,`${b}-konto-gratis.png`)});
     await page.locator('#kontoOpp').screenshot({path:path.join(OUT,`${b}-konto-finskrift.png`)});
     await page.$eval('button[data-panel="vekst"]',x=>x.click()); await page.waitForTimeout(600);
     const paam=norm(await page.$eval('#accPaam .acc-sub',e=>e.textContent));

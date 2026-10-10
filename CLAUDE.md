@@ -570,9 +570,19 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
    side», men `data-panel`/`id` er fortsatt `design`** — BEVART med vilje, samme grunn som
    `abonnement` under. Profil-fanen (navn, bio, adresse, tagline) er slått inn her og finnes ikke
    lenger som egen fane; det er ingen `data-panel="profil"` i fila.
-5. **Konto** = abonnement ØVERST + «Utseende» (tema-toggle) under. Nav-etiketten er «Konto»,
+5. **Konto** = innstillingsside (10.10), IKKE trekkspill. Nav-etiketten er «Konto»,
    men `data-panel`/`id` er fortsatt `abonnement` — BEVISST, id-en henger sammen med
    `switchPanel('abonnement')` (Stripe-returen) og hele billing-koden. Ikke døp om id-en.
+   Seksjoner i `#kontoSider` (små dempede overskrifter `.kt-h` utenfor kortene, rader `.kt-rad` skilt
+   med tynne linjer): `#kontoAbonnement` (kontoTilstand/renderKonto, alltid synlig) → `#kontoSms`
+   (kun `sms_pakke_kan_kjopes`; SMS-nivåene står i en innebygd `.subcard.sms-kort` fordi all SMS-CSS er
+   skopet til `.subcard`) → `#kontoKonto` (Navn/E-post/Passord; «Endre» åpner redigering i SAMME rad,
+   flere kan være åpne; E-post uten «Endre» — ingen rute) → `#kontoUtseende` (tema som segmentert
+   valg + hjemskjerm-rad `#kontoHjemskjerm` når relevant) → `#kontoSmsLogg` (antall denne måneden fra
+   `forbruk.sendt_maaned`; ENESTE som foldes) → `#kontoHjelp` (Support/Vilkår/Personvern + de to
+   tilbakemeldingsboksene) → `.kt-bunn` (Avpubliser — KUN her — og Logg ut) → logo. Lenker hit
+   (Vekst-lås, «Se SMS-pakker», Stripe-retur) går via `aapneKontoSeksjon(id)`, som scroller til seksjonen.
+   Render: `tools/render/konto-innstillinger.mjs`.
 
 - **Konto «Abonnement og publisering» — prismodell 09.10.2026 (Gratis / prøveperiode / Vekst).**
   ÉN ren funksjon `kontoTilstand(b)` velger tilstand KUN fra billing-shapen; `renderKonto` tegner den
@@ -632,9 +642,9 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   med etikett «Mørk modus» + «Huskes i denne nettleseren». Headerens `.who` har kun barbernavnet.
   Underteksten sier eksplisitt at dette gjelder dashbordet, ikke kundesida — lys/mørk for
   bookingsida velges under Design, og de to ble blandet sammen så lenge knappen sto løs i headeren.
-  **(Oppdatert:** tema-toggle er nå et kort-rutenett (`#themeGrid`, delegert klikk-lytter) i Konto —
-  den gamle enkelt-`#themeBtn`-knappen finnes ikke lenger, så null-sjekk-advarselen er ikke relevant.)
-- **«Bytt passord» i Konto → Innlogging er BYGGET (GJORT 26.08).** Trekkspillet har to tilstander
+  **(Oppdatert 10.10:** tema-valget er en segmentert Lys/Mørk-velger (`#themeGrid`, `role=radiogroup`,
+  delegert klikk + piltaster) i Konto → Utseende. Logikken er uendret: `applyTheme` + `localStorage['bhq-theme']`.)
+- **«Bytt passord» i Konto → Passord-raden er BYGGET (GJORT 26.08).** Raden har to tilstander
   styrt av `profile.hasPassword` (`settInnloggingTilstand`): `false` → «Sett et passord» (kun nytt-felt,
   sender `{password}`); `true` → «Bytt passord» (nåværende + nytt, sender `{current_password,password}`).
   `POST /api/dashboard/set-password` VERIFISERER nåværende passord — frontend håndterer
@@ -645,7 +655,7 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   navigasjonen på ≤719px; topp-navet er `display:none` (knappene blir skjult i DOM så
   `switchPanel()` treffer dem). `__syncBunnNav()` speiler aktiv fane (`aria-current`) fra det
   sentrale klikk-handleret. **Varselprikk:** desktop-Konto bærer `#kontoDot`, bunn-navets Konto-fane
-  bærer `#kontoBunnDot`, og abonnement-trekkspillet `#kontoAccDot` — alle tre settes fra
+  bærer `#kontoBunnDot`, og overskriften «Abonnement og publisering» `#kontoAccDot` — alle tre settes fra
   `b.needs_attention` i `renderBilling` (samme kilde, aldri ute av synk). **Den gamle «Mer»-dropdownen
   (`#merDot`/`oppdaterMerPrikk`/`.nav-mer-*`) er FJERNET** — render-test `tools/render/nav-prikk.mjs`
   asserterer prikk kun ved `needs_attention`, på riktig flate per bredde, og at «Mer»-rester = 0.

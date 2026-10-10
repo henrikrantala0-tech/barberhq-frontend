@@ -508,12 +508,6 @@
      tekstfarge — ingen bakgrunn/kant/hover. Kopiering skjer via lenka i toppen (#headerLenke). */
   .dinside-live{display:flex;align-items:center;gap:8px;margin:0 0 22px;font-size:14px;font-weight:600;color:var(--ink)}
   .live-dot{width:8px;height:8px;border-radius:50%;background:#3ecf7e;flex:0 0 auto}
-  /* Miniatyr inne i et .preset-kort: temaets bakgrunn med «Aa» i temaets tekstfarge.
-     Intern i .preset, som .swatches — ikke en ny komponent. */
-  .theme-mini{display:flex;align-items:center;justify-content:center;height:62px;border-radius:7px;
-              border:1px solid rgba(127,127,127,.3);margin-bottom:9px;font-size:19px;font-weight:700;
-              letter-spacing:-.02em}
-  .theme-grid{max-width:380px;margin-bottom:10px}
   .swatches{display:flex;gap:5px;margin-top:9px}
   .swatches span{width:18px;height:18px;border-radius:5px;border:1px solid rgba(127,127,127,.3)}
   /* «Din egen»-utfelling: blå info-ramme (samme som det valgte custom-kortet) gjør at den leser
@@ -1448,9 +1442,56 @@
   .kb-logo-lys{display:none}
   html[data-theme="light"] .kb-logo-lys{display:block}
   html[data-theme="light"] .kb-logo-mork{display:none}
-  .kb-lenker{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 18px}
-  .kb-lenker a{font-size:12.5px;color:var(--mut);text-decoration:none}
-  .kb-lenker a:hover{color:var(--ink-2);text-decoration:underline}
+  /* ── Konto som innstillingsside (10.10) ── Samme kort-flate som resten (surface, 1px --line, radius 12).
+     Seksjonsnavn utenfor kortene, rader skilt med tynne linjer, god luft mellom seksjonene. */
+  .kt{display:flex;flex-direction:column;gap:30px;margin-top:22px}
+  .kt [hidden]{display:none!important}   /* author-display på radene slår UA [hidden] */
+  .kt-seksjon{scroll-margin-top:16px}
+  .kt-h{font-size:11px;font-weight:600;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px 2px;display:flex;align-items:center}
+  .kt-kort{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
+  .kt-kort+.kt-kort{margin-top:12px}
+  .kt .subcard{max-width:none}
+  .kt-rad{display:block;width:100%;padding:14px 16px;border-top:1px solid var(--line);text-align:left}
+  .kt-rad:first-child{border-top:0}
+  .kt-rad-topp{display:flex;align-items:center;gap:12px;min-height:22px}
+  .kt-tekst{flex:1;min-width:0;display:flex;flex-direction:column}
+  .kt-rad-topp.kt-start{align-items:flex-start}
+  .kt-start .sw{margin-top:0}
+  .kt-etikett{font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-.01em}   /* kan bryte (ikke midt i ord) så korte verdier får plass */
+  .kt-under{font-size:12px;color:var(--mut);margin-top:3px;line-height:1.5}
+  .kt-under-blokk{display:block;margin:8px 0 0}
+  .kt-vokser{flex:1}
+  .kt-verdi{flex:1;min-width:0;font-size:14px;color:var(--mut);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .kt-rad-topp .saved{margin:0;flex-shrink:0}
+  .kt-rad-topp .saved:not(.show){display:none}   /* .saved er opacity:0 i hvile og ville ellers tatt plass fra verdien */
+  .kt-verdi.kt-hel{flex:1 0 auto}   /* korte verdier (passord, antall) kuttes aldri: utgangsbredde = innholdet */
+  .kt-endre,.kt-avbryt{appearance:none;border:0;background:0;font:inherit;font-size:14px;font-weight:600;color:var(--info);cursor:pointer;padding:10px 4px;margin:-10px -4px;flex-shrink:0}
+  .kt-avbryt{color:var(--ink-2);margin:0;padding:10px 8px}
+  .kt-endre:hover,.kt-avbryt:hover{text-decoration:underline}
+  .kt-endre:focus-visible,.kt-avbryt:focus-visible,.kt-fold:focus-visible,.kt-lenke:focus-visible{outline:2px solid var(--info);outline-offset:-2px;border-radius:6px}
+  .kt-red{padding-top:14px}
+  .kt-red .fld:last-of-type{margin-bottom:12px}
+  .kt-handl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
+  .kt-rad-blokk>:first-child{margin-top:0}
+  .kt-rad-blokk>:last-child{margin-bottom:0}
+  .kt-fold{appearance:none;border:0;background:0;font:inherit;color:inherit;cursor:pointer}
+  .kt-fold:hover,.kt-lenke:hover{background:rgba(127,127,127,.06)}
+  .kt-fold .acc-chev{margin-top:0}
+  .kt-fold[aria-expanded="true"] .acc-chev{transform:rotate(180deg)}
+  .kt-lenke{text-decoration:none;color:inherit}
+  .kt-lenke .kt-etikett{flex:1}
+  .kt-pil{color:var(--mut);font-size:20px;line-height:1}
+  .kt-seg{display:inline-flex;flex-shrink:0;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:2px}
+  .kt-seg button{appearance:none;border:0;background:0;font:inherit;font-size:13px;font-weight:600;color:var(--mut);padding:0 16px;border-radius:7px;cursor:pointer;min-height:40px}
+  .kt-seg button[aria-checked="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line-2)}
+  .kt-seg button:focus-visible{outline:2px solid var(--info);outline-offset:1px}
+  .kt-hs{margin-top:8px}
+  .kt-hs .block-s{margin-bottom:10px}
+  .kt-hs .block-s:last-child{margin-bottom:0}
+  .kt-feedback .block-h:first-child{margin-top:0!important}
+  .kt-bunn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:14px}
+  .kt-bunn .lnk-quiet{margin-top:0}
+  .kt-bunn .pub-err{margin:0 0 6px}
   .suksess-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px}
   .suksess-overlay[hidden]{display:none}   /* author-display slår UA [hidden]{display:none} — må gjenopprettes eksplisitt */
   .suksess-kort{position:relative;background:var(--surface);border:1px solid var(--line-2);border-radius:18px;padding:30px 26px 26px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
@@ -2301,35 +2342,22 @@
     <p class="block-s">Abonnement, publisering og innstillinger.</p>
     <div class="sub-banner" id="subReturn" role="status" style="display:none"></div>
 
-    <!-- Fire trekkspill, samme mønster og samme .acc-CSS som «Din side». data-single →
-         ett åpent om gangen (Vekst-fanens .acc-list er umerket og beholder flere åpne).
-         Alle Konto-trekkspillene åpner LUKKET (aria-expanded="false", .acc-body med hidden).
-         Abonnement ligger øverst fordi den er viktigst — det er spørsmålet barbereren kommer
-         hit for — men den foldes ut ved trykk som de andre, ikke automatisk. -->
-    <div class="acc-list side-accs" id="kontoAccs" data-single>
+    <!-- Innstillingsside (10.10), ikke trekkspill. Seksjonsnavn står som små dempede overskrifter UTENFOR
+         kortene; radene i kortene skilles med tynne linjer. Ingenting foldes bortsett fra SMS-loggen, og
+         flere rader kan stå i redigering samtidig. Seksjonene har id-er (kontoAbonnement, kontoSms, …) som
+         aapneKontoSeksjon() scroller til — lenker fra Vekst-låsen og SMS-tilbudet lander der.
+         [oversettelse: sv/da/en] -->
+    <div class="kt" id="kontoSider">
 
-      <div class="acc" id="accAbonnement">
-        <button type="button" class="acc-head" aria-expanded="false">
-          <span class="acc-htext">
-            <!-- Prikken gjentar nav-prikken. Med data-single lukkes denne seksjonen når du
-                 åpner en annen, og da er headeren eneste sted sporet kan fortsette. Vist
-                 ALLTID ved needs_attention, også når seksjonen er åpen: et varsel som
-                 forsvinner fordi du foldet ut noe, er verre enn ett som står stille.
-                 Samme .nav-dot-klasse og samme plassering som .acc-badge på «Vinn tilbake». -->
-            <!-- Ingen .acc-sub på Konto-trekkspillene: fire toradede headere fylte nesten hele
-                 320-skjermen før noe var åpnet. Panel-undertittelen over sier hva fanen er;
-                 forklaringene bor INNE i seksjonene, der de faktisk trengs. -->
-            <span class="acc-title">Abonnement og publisering<span class="nav-dot" id="kontoAccDot" hidden></span></span>
-          </span>
-          <span class="acc-chev">▾</span>
-        </button>
-        <div class="acc-body" hidden>
-
+      <!-- ── ABONNEMENT OG PUBLISERING ── Alltid synlig. Innholdet er uendret: kontoTilstand(b) velger
+           tilstanden, renderKonto tegner den. Prikken følger needs_attention (samme kilde som nav-prikkene). -->
+      <section class="kt-seksjon" id="kontoAbonnement">
+        <h2 class="kt-h">Abonnement og publisering<span class="nav-dot" id="kontoAccDot" hidden></span></h2>
     <!-- ETT kort. Tilstanden velges av kontoTilstand(b) — en ren funksjon av billing-shapen — og
          tegnes av renderKonto. Ingen tilstandslogikk i markupen: nodene under er tomme flater som
          fylles eller skjules. Prismodell 09.10.2026: Gratis er standard, publisering er frikoblet
          billing, Vekst kjøpes via «Oppgrader til Vekst». [oversettelse: sv/da/en] -->
-    <div class="subcard">
+    <div class="subcard kt-kort">
       <div class="substatus" id="kontoStatus">&#9679; Henter status …</div>
       <div class="pln" id="kontoTall" style="display:none"><b id="kontoTallStor"></b><span id="kontoTallSuff"></span></div>
       <p class="pln-sub" id="kontoTallSub" style="display:none"></p>
@@ -2356,88 +2384,97 @@
       <!-- <div>, ikke <p>: forhåndsvisnings-tilstanden legger en <p class="pub-note"> under
            lenka, og <p> inne i <p> er ugyldig HTML. [oversettelse: sv/da/en] -->
       <div class="pub-link" id="pubLink" style="display:none"></div>
-      <!-- Sekundærhandlinger som dempede tekstlenker. Avpubliser skal ALDRI være en knapp. -->
+      <!-- Sekundærhandling som dempet tekstlenke. «Avpubliser bookingside» står nederst på siden (.kt-bunn). -->
       <div class="konto-lenker">
         <button class="lnk-quiet" id="manageSub" style="display:none">Administrer abonnement</button>
-        <button class="lnk-quiet" id="unpublish" style="display:none">Avpubliser bookingside</button>
       </div>
       <p class="pub-err" id="pubErr"></p>
     </div>
-        </div>
-      </div>
+      </section>
 
-      <!-- ── SMS-PÅMINNELSER (Gratis) ─────────────────────────────────────────────────
-           Eget trekkspill, ikke en seksjon inni abonnementskortet: kortet svarer på «hvilken plan
-           har jeg», dette på «sender jeg påminnelser og har jeg SMS». Egen header gjør det også til
-           et mål for «Se SMS-pakker» fra Oversikt (aapneKontoSeksjon) uten å folde ut planen.
-           Vises KUN når billing.sms_pakke_kan_kjopes (renderSmsKonto). [oversettelse: sv/da/en] -->
-      <div class="acc" id="accSms" hidden>
-        <!-- NIVÅ 1 — KONTROLL: tittel + bryter på samme linje, undertekst under (som Vekst-fanens
-             #accPaam). Bryteren er SAMME innstilling som Vekst-fanens #tog-paam (sms_paaminnelse_enabled via
-             /settings, speilet av settPaamBrytere). Gratis med saldo 0: ingen bryter og ingen undertekst. -->
-        <div class="acc-row">
-          <button type="button" class="acc-head" aria-expanded="false">
-            <span class="acc-htext">
-              <span class="acc-title" id="smsBryterTekst">SMS-påminnelser</span>
-              <span class="acc-sub" id="smsSub">Sendes automatisk dagen før timen</span>
-            </span>
-            <span class="acc-chev">▾</span>
-          </button>
-          <label class="sw sw-green acc-sw" id="smsBryterRad"><input type="checkbox" id="tog-smsPaam" aria-labelledby="smsBryterTekst"><span class="sl"></span></label>
-        </div>
-        <p class="sett-err" id="smsInnstErr" hidden></p>
-        <div class="acc-body" hidden>
-          <div class="subcard sms-kort">
-            <!-- NIVÅ 2 — STATUS -->
-            <div class="sms-niva">
-              <div class="pln sms-saldo-rad" id="smsSaldoRad"><b id="smsSaldoTall"></b><span>SMS igjen</span><span class="sms-chip" id="smsChip" hidden>Lav saldo</span></div>
-              <p class="sms-hjelp" id="smsStatus" hidden></p>
-              <!-- Forhåndsvisning: KUN når billing.sms_paaminnelse_eksempel finnes. Teksten vises ordrett. -->
-              <div class="sms-eksempel" id="smsEksempel" hidden>
-                <p class="sms-eksempel-etikett">Dette får kunden dagen før</p>
-                <p class="sms-boble" id="smsBoble"></p>
-              </div>
+      <!-- ── SMS-PÅMINNELSER (Gratis) ── Alltid synlig kort, KUN når billing.sms_pakke_kan_kjopes
+           (renderSmsKonto). Bryteren er SAMME innstilling som Vekst-fanens #tog-paam (sms_paaminnelse_enabled
+           via /settings, speilet av settPaamBrytere). Saldo 0: bryter-raden skjules (ingenting sendes). -->
+      <section class="kt-seksjon" id="kontoSms" hidden>
+        <h2 class="kt-h">SMS-påminnelser</h2>
+        <div class="kt-kort">
+          <div class="kt-rad" id="smsPaamRad">
+            <div class="kt-rad-topp kt-start">
+              <span class="kt-tekst">
+                <span class="kt-etikett" id="smsBryterTekst">Påminnelse dagen før</span>
+                <span class="kt-under" id="smsSub">Sendes automatisk dagen før timen</span>
+              </span>
+              <label class="sw sw-green" id="smsBryterRad"><input type="checkbox" id="tog-smsPaam" aria-labelledby="smsBryterTekst"><span class="sl"></span></label>
             </div>
-            <!-- NIVÅ 3 — KJØP: radiogruppe (piltaster, roving tabindex) + én kjøpsknapp. -->
-            <div class="sms-niva" id="smsKjopNiva">
-              <p class="sms-niva-h">Kjøp SMS</p>
-              <div class="sms-fliser-wrap" id="smsFliserWrap">
-                <div class="sms-fliser" id="smsFliser" role="radiogroup" aria-label="Velg SMS-pakke"></div>
+            <p class="sett-err" id="smsInnstErr" hidden></p>
+          </div>
+          <div class="kt-rad kt-rad-blokk">
+            <div class="subcard sms-kort">
+              <!-- NIVÅ 2 — STATUS -->
+              <div class="sms-niva">
+                <div class="pln sms-saldo-rad" id="smsSaldoRad"><b id="smsSaldoTall"></b><span>SMS igjen</span><span class="sms-chip" id="smsChip" hidden>Lav saldo</span></div>
+                <p class="sms-hjelp" id="smsStatus" hidden></p>
+                <!-- Forhåndsvisning: KUN når billing.sms_paaminnelse_eksempel finnes. Teksten vises ordrett. -->
+                <div class="sms-eksempel" id="smsEksempel" hidden>
+                  <p class="sms-eksempel-etikett">Dette får kunden dagen før</p>
+                  <p class="sms-boble" id="smsBoble"></p>
+                </div>
               </div>
-              <button type="button" class="sms-kjop" id="smsKjop"></button>
-              <p class="sett-err" id="smsPakkeErr" hidden></p>
-              <p class="sms-noshow-linje" id="smsNoshow"></p>
-              <p class="sms-fot" id="smsFot">Engangskjøp, eks. mva. Kjøpte SMS utløper aldri.</p>
+              <!-- NIVÅ 3 — KJØP: radiogruppe (piltaster, roving tabindex) + én kjøpsknapp. -->
+              <div class="sms-niva" id="smsKjopNiva">
+                <p class="sms-niva-h">Kjøp SMS</p>
+                <div class="sms-fliser-wrap" id="smsFliserWrap">
+                  <div class="sms-fliser" id="smsFliser" role="radiogroup" aria-label="Velg SMS-pakke"></div>
+                </div>
+                <button type="button" class="sms-kjop" id="smsKjop"></button>
+                <p class="sett-err" id="smsPakkeErr" hidden></p>
+                <p class="sms-noshow-linje" id="smsNoshow"></p>
+                <p class="sms-fot" id="smsFot">Engangskjøp, eks. mva. Kjøpte SMS utløper aldri.</p>
+              </div>
             </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- ── INNLOGGING ──────────────────────────────────────────────────────────────
-           E-post er REN VISNING: det finnes ingen rute for å endre den. En redigerbar
-           input uten sted å lagre er verre enn ingen input. [oversettelse: sv/da/en] -->
-      <div class="acc" id="accInnlogging">
-        <button type="button" class="acc-head" aria-expanded="false">
-          <span class="acc-htext">
-            <span class="acc-title">Innlogging</span>
-            <span class="acc-sub">Navn, e-post og passord.</span>
-          </span>
-          <span class="acc-chev">▾</span>
-        </button>
-        <div class="acc-body" hidden>
-          <!-- Navn: identitets-/kontofelt (display_name — rendres ALDRI på kundeflaten; brukt i
-               e-post/Telegram/Stripe). Flyttet hit fra Profil 26.08. Samme PUT /profile-kall. -->
-          <div class="fld"><label>Navn</label><input id="pf-name" type="text"></div>
-          <div class="savebar"><button class="btn" id="saveNavn">Lagre navn</button><span class="saved" id="navnSaved">Lagret &#10003;</span></div>
-          <div class="fld-vis">
-            <div class="fld-vis-l">E-post</div>
-            <div class="fld-vis-v" id="kontoEpost">—</div>
+      <!-- ── KONTO ── Navn / E-post / Passord. «Endre» åpner redigering i SAMME rad (flere kan være åpne);
+           Lagre og Avbryt står i raden. Samme endepunkter som før: PUT /profile (navn) og
+           POST /set-password. E-post er ren visning: det finnes ingen rute for å endre den. -->
+      <section class="kt-seksjon" id="kontoKonto">
+        <h2 class="kt-h">Konto</h2>
+        <div class="kt-kort">
+          <div class="kt-rad" id="radNavn">
+            <div class="kt-rad-topp">
+              <span class="kt-etikett">Navn</span>
+              <span class="kt-verdi" id="navnVerdi">—</span>
+              <span class="saved" id="navnSaved">Lagret &#10003;</span>
+              <button type="button" class="kt-endre" data-endre="radNavn" aria-expanded="false" aria-controls="radNavnRed">Endre</button>
+            </div>
+            <!-- Navn: identitets-/kontofelt (display_name — rendres ALDRI på kundeflaten; brukt i
+                 e-post/Telegram/Stripe). Samme PUT /profile-kall som Profil (lagreProfil). -->
+            <div class="kt-red" id="radNavnRed" hidden>
+              <div class="fld"><label for="pf-name">Navn</label><input id="pf-name" type="text" autocomplete="name"></div>
+              <div class="kt-handl"><button class="btn" id="saveNavn" type="button">Lagre</button><button type="button" class="kt-avbryt" data-avbryt="radNavn">Avbryt</button></div>
+            </div>
           </div>
+          <div class="kt-rad">
+            <div class="kt-rad-topp">
+              <span class="kt-etikett">E-post</span>
+              <span class="kt-verdi" id="kontoEpost">—</span>
+            </div>
+          </div>
+          <div class="kt-rad" id="radPassord">
+            <div class="kt-rad-topp">
+              <span class="kt-etikett">Passord</span>
+              <span class="kt-verdi kt-hel" id="pwVerdi">••••••••</span>
+              <span class="saved" id="pwSaved">Endret &#10003;</span>
+              <button type="button" class="kt-endre" data-endre="radPassord" aria-expanded="false" aria-controls="radPassordRed">Endre</button>
+            </div>
+            <div class="kt-red" id="radPassordRed" hidden>
           <div class="pw-felt">
-            <!-- «Sett et passord» vises KUN i false-tilstand (settInnloggingTilstand). Default-markupen
-                 er true-tilstanden («Bytt passord»), som er dagens visning uendret. -->
-            <p class="pw-tittel" id="pwTittel" hidden>Sett et passord</p>
-            <div class="fld" id="pw-current-fld"><label>Nåværende passord</label>
+            <!-- Satt: nåværende + nytt + gjenta. Ikke satt: nytt + gjenta (settInnloggingTilstand skjuler
+                 nåværende-feltet). Backend krever nåværende passord når et passord finnes (DB-tilstanden
+                 avgjør, ikke klienten) — unntak: fersk innloggingslenke-sesjon (≤30 min). -->
+            <div class="fld" id="pw-current-fld"><label for="pw-current">Nåværende passord</label>
               <div class="pw-wrap">
                 <input id="pw-current" type="password" autocomplete="current-password">
                 <button class="pw-toggle" id="toggle-pwc" type="button" aria-label="Vis passord">
@@ -2446,7 +2483,7 @@
                 </button>
               </div>
             </div>
-            <div class="fld"><label>Nytt passord</label>
+            <div class="fld"><label for="pw-new">Nytt passord</label>
               <div class="pw-wrap">
                 <input id="pw-new" type="password" autocomplete="new-password" placeholder="Minst 8 tegn">
                 <button class="pw-toggle" id="toggle-pwn" type="button" aria-label="Vis passord">
@@ -2455,120 +2492,101 @@
                 </button>
               </div>
             </div>
-            <div class="savebar"><button class="btn" id="savePw">Bytt passord</button><span class="saved" id="pwSaved">Endret &#10003;</span></div>
+            <div class="fld"><label for="pw-repeat">Gjenta passord</label>
+              <div class="pw-wrap">
+                <input id="pw-repeat" type="password" autocomplete="new-password">
+                <button class="pw-toggle" id="toggle-pwr" type="button" aria-label="Vis passord">
+                  <svg id="eye-on-r" viewBox="0 0 24 24"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+                  <svg id="eye-off-r" viewBox="0 0 24 24" style="display:none"><path d="M17.94 17.94A10.07 10.07 0 0 1 12 20c-7 0-11-8-11-8a18.45 18.45 0 0 1 5.06-5.94M9.9 4.24A9.12 9.12 0 0 1 12 4c7 0 11 8 11 8a18.5 18.5 0 0 1-2.16 3.19m-6.72-1.07a3 3 0 1 1-4.24-4.24"/><line x1="1" y1="1" x2="23" y2="23"/></svg>
+                </button>
+              </div>
+            </div>
+            <div class="kt-handl"><button class="btn" id="savePw" type="button">Lagre</button><button type="button" class="kt-avbryt" data-avbryt="radPassord">Avbryt</button></div>
             <p class="pub-err" id="pwErr"></p>
-            <!-- Reset-vei for glemt passord: krever fersk magisk-lenke-sesjon (≤30 min). Er den
-                 ikke det, sier opprett-passord.html?bytt=1 tydelig at han må be om en ny lenke. -->
-            <a class="lnk-quiet" id="pwForgot" href="/no/opprett-passord.html?bytt=1" style="display:inline-block;margin-top:2px">Husker du ikke passordet?</a>
+            <!-- Glemt passordet (kun når passord er satt): sender innloggingslenke til kontoens e-post
+                 (POST /api/send-magic-link, samme som logg-inn.html). Lenka gir en fersk sesjon (≤30 min) der
+                 backend lar ham sette nytt passord uten det gamle. Backend svarer alltid {ok:true}. -->
+            <button type="button" class="lnk-quiet" id="pwForgot">Glemt passordet? Få en lenke på e-post</button>
+            <p class="kt-under kt-under-blokk" id="pwForgotOk" role="status" hidden></p>
           </div>
-          <button class="lnk-quiet" id="loggUt">Logg ut</button>
-        </div>
-      </div>
-
-      <!-- ── SMS-LOGG ────────────────────────────────────────────────────────────────
-           Leveranselogg (GET /api/dashboard/sms-logg). Backend er eksplisitt: omfang er
-           'kun_leveranser' — KUN SMS som faktisk ble sendt. Stoppede meldinger (samtykke,
-           avmeldt, kvote, ugyldig nummer) etterlater INGEN rad, derfor info-noten: en tom
-           liste betyr ikke at ingen skulle fått SMS. Ingen leveringsstatus finnes (ingen
-           status-kolonne/-prikker — det ville vært en påstand uten grunnlag). Kvote-varselet
-           gjelder KUN markedsførings-SMS; påminnelser belaster ikke taket.
-           [oversettelse: sv/da/en] -->
-      <div class="acc" id="accSmsLogg">
-        <button type="button" class="acc-head" aria-expanded="false">
-          <span class="acc-htext"><span class="acc-title">SMS-logg</span></span>
-          <span class="acc-chev">▾</span>
-        </button>
-        <div class="acc-body" hidden>
-          <!-- Kvote-varsel: gjenbruker .sub-banner.info. Vises kun nær taket (renderSmsKvote). -->
-          <div class="sub-banner info" id="smsKvote" role="status" style="display:none"></div>
-          <button type="button" class="sms-info-i" data-sms-info aria-expanded="false">Hva vises her? <span aria-hidden="true">&#8505;</span></button>
-          <p class="block-s sms-info-note" id="smsInfo" hidden>Loggen viser SMS som faktisk ble sendt. Meldinger som ble stoppet &mdash; manglende samtykke, avmeldt kunde, kvotegrense eller ugyldig nummer &mdash; vises ikke. En tom liste betyr ikke at ingen skulle f&aring;tt SMS.</p>
-          <div id="smsLoggList"></div>
-        </div>
-      </div>
-
-      <!-- ── UTSEENDE ────────────────────────────────────────────────────────────────
-           Lå i egen Innstillinger-fane (31.07) → Konto (06.08) → trekkspill (08.08).
-           Undertittelen sier eksplisitt at dette gjelder DASHBORDET: lys/mørk for
-           bookingsida velges under «Din side», og de to ble blandet sammen før. -->
-      <div class="acc" id="accUtseende">
-        <button type="button" class="acc-head" aria-expanded="false">
-          <span class="acc-htext">
-            <span class="acc-title">Utseende</span>
-          </span>
-          <span class="acc-chev">▾</span>
-        </button>
-        <div class="acc-body" hidden>
-          <!-- Flyttet hit fra headeren: denne sier noe ekte (hvilken flate temaet gjelder),
-               og de to ble blandet sammen før. Hører derfor hjemme ved valget, ikke i en
-               undertittel man leser før man har åpnet noe. -->
-          <p class="block-s">Gjelder bare dashbordet. Lyst/mørkt på bookingsiden din velger du under Din side.</p>
-    <!-- To preview-kort i stedet for en toggle. Gjenbruker .preset-grid/.preset fra «Din
-         side» — inkludert .preset[aria-pressed=true]{border-color:var(--info)} som er
-         markeringen av valgt kort. Det ENESTE som ikke fantes fra før er miniatyren:
-         .swatches viser fargebrikker uten tekst, .lthumb forventer en <img>. Derfor én ny
-         indre klasse, .theme-mini — intern i .preset, samme rolle som .swatches.
-         Fargene er hardkodet, ikke var(--bg)/var(--ink): begge kortene skal vise SITT tema
-         uansett hvilket tema dashbordet står i akkurat nå. Verdiene speiler :root (:14) og
-         html[data-theme="dark"] (:181) — endres de der, må de endres her.
-         Logikken er uendret: applyTheme() + localStorage['bhq-theme']. -->
-          <div class="preset-grid theme-grid" id="themeGrid"></div>
-          <p class="sub-micro" style="display:block;margin-top:0">Huskes i denne nettleseren.</p>
-        </div>
-      </div>
-
-      <!-- ── LEGG TIL PÅ HJEMSKJERM (PWA) ─────────────────────────────────────────────
-           STRUKTUR — Henrik skriver copy i data-copy-nodene. Hele seksjonen er hidden i
-           markup og vises av initHjemskjerm() KUN når appen ikke alt kjører standalone
-           (display-mode:standalone / navigator.standalone). JS avslører NØYAKTIG én
-           .hs-variant etter plattform; ved usikker deteksjon vises iOS-Safari + Android.
-           Android: beforeinstallprompt fanges → #hsInstall vises og kan trigge prompt().
-           Ingen service worker. [oversettelse: sv/da/en når copy finnes] -->
-      <div class="acc" id="accHjemskjerm" hidden>
-        <button type="button" class="acc-head" aria-expanded="false">
-          <span class="acc-htext">
-            <span class="acc-title" data-copy="hs-title">Legg til på hjemskjerm</span>
-          </span>
-          <span class="acc-chev">▾</span>
-        </button>
-        <div class="acc-body" hidden>
-          <!-- iOS + Safari -->
-          <div class="hs-variant" data-hs="ios-safari" hidden>
-            <p class="block-s" data-copy="hs-ios-safari">Trykk Del-knappen nederst, velg «Legg til på Hjem-skjerm».</p>
-          </div>
-          <!-- iOS, men IKKE Safari (Chrome/Firefox/Edge på iPhone) — MÅ si at det kun virker i Safari -->
-          <div class="hs-variant" data-hs="ios-annet" hidden>
-            <p class="block-s" data-copy="hs-ios-annet">Dette virker bare i Safari. Åpne trybarberhq.com i Safari.</p>
-          </div>
-          <!-- Android / Chrome -->
-          <div class="hs-variant" data-hs="android" hidden>
-            <p class="block-s" data-copy="hs-android">Trykk menyen øverst til høyre, velg «Legg til på startskjerm».</p>
-            <button class="btn" id="hsInstall" style="display:none" data-copy="hs-install">Legg til</button>
-          </div>
-          <!-- Desktop / ukjent plattform -->
-          <div class="hs-variant" data-hs="desktop" hidden>
-            <p class="block-s" data-copy="hs-desktop">Åpne dashbordet på telefonen for å legge det til på hjemskjermen.</p>
+            </div>
           </div>
         </div>
-      </div>
+      </section>
 
-      <!-- ── HJELP ───────────────────────────────────────────────────────────────────
-           LENKE til support.html, ikke en kopi av FAQ-en. Duplisert FAQ ville betydd to
-           steder å oppdatere, og de to ville drevet fra hverandre. Dashbordet hadde ingen
-           vei til support i det hele tatt før nå (null treff på «support» i fila).
-           [oversettelse: sv/da/en] -->
-      <div class="acc" id="accHjelp">
-        <button type="button" class="acc-head" aria-expanded="false">
-          <span class="acc-htext">
-            <span class="acc-title">Hjelp</span>
-          </span>
-          <span class="acc-chev">▾</span>
-        </button>
-        <div class="acc-body" hidden>
-          <!-- 1. Supportsida FØRST: FAQ-en svarer på mye uten at noen må vente på svar. -->
-          <p class="hjelp-p">Vanlige spørsmål og kontaktskjema ligger på supportsiden.</p>
-          <a class="btn-outline hjelp-lenke" href="/no/support.html" target="_blank" rel="noopener">Åpne support</a>
+      <!-- ── UTSEENDE ── Lys/mørk som segmentert valg direkte i raden. Gjelder DASHBORDET; lys/mørk for
+           bookingsida velges under «Din side». Logikken er uendret: applyTheme() + localStorage['bhq-theme'].
+           «Legg til på hjemskjerm» er en egen rad her, vist KUN når relevant (initHjemskjerm). -->
+      <section class="kt-seksjon" id="kontoUtseende">
+        <h2 class="kt-h">Utseende</h2>
+        <div class="kt-kort">
+          <div class="kt-rad">
+            <div class="kt-rad-topp">
+              <span class="kt-etikett kt-vokser" id="temaEtikett">Tema</span>
+              <div class="kt-seg" id="themeGrid" role="radiogroup" aria-labelledby="temaEtikett"></div>
+            </div>
+            <p class="kt-under kt-under-blokk">Gjelder bare dashbordet. Lyst/mørkt på bookingsiden din velger du under Din side. Huskes i denne nettleseren.</p>
+          </div>
+          <!-- PWA-veiledning: hidden i markup; initHjemskjerm() viser raden KUN når appen ikke alt kjører
+               standalone, og avslører NØYAKTIG én .hs-variant etter plattform. Android: beforeinstallprompt
+               fanges → #hsInstall vises. Copy i data-copy-nodene. [oversettelse: sv/da/en] -->
+          <div class="kt-rad" id="kontoHjemskjerm" hidden>
+            <div class="kt-rad-topp"><span class="kt-etikett" data-copy="hs-title">Legg til på hjemskjerm</span></div>
+            <div class="kt-hs">
+              <div class="hs-variant" data-hs="ios-safari" hidden>
+                <p class="block-s" data-copy="hs-ios-safari">Trykk Del-knappen nederst, velg «Legg til på Hjem-skjerm».</p>
+              </div>
+              <!-- iOS, men IKKE Safari (Chrome/Firefox/Edge på iPhone) — MÅ si at det kun virker i Safari -->
+              <div class="hs-variant" data-hs="ios-annet" hidden>
+                <p class="block-s" data-copy="hs-ios-annet">Dette virker bare i Safari. Åpne trybarberhq.com i Safari.</p>
+              </div>
+              <!-- Android / Chrome -->
+              <div class="hs-variant" data-hs="android" hidden>
+                <p class="block-s" data-copy="hs-android">Trykk menyen øverst til høyre, velg «Legg til på startskjerm».</p>
+                <button class="btn" id="hsInstall" style="display:none" data-copy="hs-install">Legg til</button>
+              </div>
+              <!-- Desktop / ukjent plattform -->
+              <div class="hs-variant" data-hs="desktop" hidden>
+                <p class="block-s" data-copy="hs-desktop">Åpne dashbordet på telefonen for å legge det til på hjemskjermen.</p>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
 
+      <!-- ── SMS-LOGG ── Én rad med antall sendte SMS denne måneden (forbruk.sendt_maaned fra /sms-logg,
+           talt som segmenter som saldoen; mangler feltet → ingen tall). Det ENESTE som foldes på Konto.
+           Leveranselogg: KUN SMS som faktisk ble sendt (omfang 'kun_leveranser'), derfor info-noten. -->
+      <section class="kt-seksjon" id="kontoSmsLogg">
+        <h2 class="kt-h">SMS-logg</h2>
+        <div class="kt-kort">
+          <button type="button" class="kt-rad kt-fold" id="smsLoggFold" aria-expanded="false" aria-controls="smsLoggBody">
+            <span class="kt-rad-topp">
+              <span class="kt-etikett">Sendt denne måneden</span>
+              <span class="kt-verdi kt-hel" id="smsMaanedTall"></span>
+              <span class="acc-chev" aria-hidden="true">▾</span>
+            </span>
+          </button>
+          <div class="kt-rad kt-rad-blokk" id="smsLoggBody" hidden>
+            <div class="sub-banner info" id="smsKvote" role="status" style="display:none"></div>
+            <button type="button" class="sms-info-i" data-sms-info aria-expanded="false">Hva vises her? <span aria-hidden="true">&#8505;</span></button>
+            <p class="block-s sms-info-note" id="smsInfo" hidden>Loggen viser SMS som faktisk ble sendt. Meldinger som ble stoppet &mdash; manglende samtykke, avmeldt kunde, kvotegrense eller ugyldig nummer &mdash; vises ikke. En tom liste betyr ikke at ingen skulle f&aring;tt SMS.</p>
+            <div id="smsLoggList"></div>
+          </div>
+        </div>
+      </section>
+
+      <!-- ── HJELP ── Lenker med pil. Supportsida har FAQ + kontaktskjema; vilkår og personvern bor i
+           vilkar.html. Tilbakemeldingsboksene under er ikke lenker — de står uendret til Henrik avgjør. -->
+      <section class="kt-seksjon" id="kontoHjelp">
+        <h2 class="kt-h">Hjelp</h2>
+        <div class="kt-kort">
+          <a class="kt-rad kt-lenke" href="/no/support.html" target="_blank" rel="noopener"><span class="kt-rad-topp"><span class="kt-etikett">Support</span><span class="kt-pil" aria-hidden="true">›</span></span></a>
+          <a class="kt-rad kt-lenke" href="/no/vilkar.html"><span class="kt-rad-topp"><span class="kt-etikett">Vilkår</span><span class="kt-pil" aria-hidden="true">›</span></span></a>
+          <a class="kt-rad kt-lenke" href="/no/vilkar.html#personvern"><span class="kt-rad-topp"><span class="kt-etikett">Personvern</span><span class="kt-pil" aria-hidden="true">›</span></span></a>
+        </div>
+        <div class="kt-kort kt-feedback">
+          <div class="kt-rad kt-rad-blokk">
           <!-- 2. FEIL — type:'support'. Teksten over skiller den fra idé-boksen: dette er
                «noe er i stykker», ikke «jeg ønsker meg noe». Uten det ville to like
                tekstfelt under hverandre vært umulige å velge mellom.
@@ -2586,26 +2604,28 @@
           <!-- 3. ØNSKE — type:'idea'. Samme boks som på «Din side»; markupen er duplisert
                (to tekstfelt kan ikke være samme node), men handleren er det IKKE. -->
           <p class="block-h" id="fbLbl-konto-ide" style="margin-top:26px">Ideer &amp; ønsker</p>
-          <p class="block-s">Ønsker du en ny funksjon, farge eller layout? Send oss — vi leser alt.</p>
+          <p class="block-s">Ønsker du en ny funksjon, farge eller layout? Send oss, vi leser alt.</p>
           <div class="ideacard ideacard-flat">
             <textarea id="fbBox-konto-ide" aria-labelledby="fbLbl-konto-ide"></textarea>
             <div class="savebar"><button class="btn" id="fbSend-konto-ide">Send</button><span class="saved" id="fbSaved-konto-ide">Sendt &#10003;</span></div>
             <p class="idea-err" id="fbErr-konto-ide"></p>
           </div>
+          </div>
         </div>
-      </div>
+      </section>
 
+      <!-- ── NEDERST ── adskilt med luft. Avpubliser står BARE her (renderKonto styrer synligheten, som før);
+           dempet, ikke rød. Logg ut under. -->
+      <div class="kt-bunn">
+        <button class="lnk-quiet" id="unpublish" style="display:none">Avpubliser bookingside</button>
+        <p class="pub-err" id="avpubErr"></p>
+        <button class="lnk-quiet" id="loggUt">Logg ut</button>
+      </div>
     </div>
-    <!-- BarberHQ-merket bor her, i bunnen av Konto — flyttet fra dashbord-headeren. Lite, dempet,
-         med lenker til vilkår/personvern og support. Ordmerket er mode-styrt (lys/mørk-variant). -->
+    <!-- BarberHQ-merket i bunnen av Konto. Lenkene (vilkår/personvern/support) står i Hjelp. -->
     <footer class="konto-brand">
       <img class="kb-logo kb-logo-lys" src="logo/barberhq-ordmerke-lys-transparent.svg" alt="BarberHQ">
       <img class="kb-logo kb-logo-mork" src="logo/barberhq-ordmerke-mork-transparent.svg" alt="BarberHQ">
-      <nav class="kb-lenker" aria-label="Juridisk og hjelp">
-        <a href="/no/vilkar.html">Vilkår</a>
-        <a href="/no/vilkar.html#personvern">Personvern</a>
-        <a href="/no/support.html">Support</a>
-      </nav>
     </footer>
   </section>
 </div>
@@ -3497,15 +3517,14 @@ function krFmt(n){return (n||0).toLocaleString("no-NO")+" kr";} // "9 800 kr" (k
 // (VEKST_EKSEMPEL + eksempel-hjelpere fjernet 14.09: «Drevet av»-panelet viser ikke lenger
 //  eksempeltall bak skjold for Basis — backend sender ingen hentetInn, og panelet viser CTA i stedet.)
 var SKJOLD_LAAS_SVG='<svg class="skjold-ic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="4" y="10.5" width="16" height="10" rx="2"/><path d="M8 10.5V7a4 4 0 0 1 8 0v3.5"/></svg>';
-// Skjold-klikk → Konto-fanen + åpne/scroll abonnementsseksjonen. Gjenbruker switchPanel (ingen ny fanebytte).
+// Lenker til Konto (Vekst-lås, «Se SMS-pakker», Stripe-retur) → Konto-fanen + scroll til seksjonen.
+// Konto har ingen trekkspill lenger; seksjonene står alltid åpne. Skjult seksjon → bare fanebytte.
 function aapneKontoSeksjon(id){
   if(typeof switchPanel==='function')switchPanel('abonnement');
-  var acc=document.getElementById(id);
-  if(acc && !acc.hidden){ var head=acc.querySelector('.acc-head');
-    if(head && head.getAttribute('aria-expanded')!=='true')head.click();
-    acc.scrollIntoView({behavior:'smooth',block:'start'}); }
+  var sek=document.getElementById(id);
+  if(sek && !sek.hidden) sek.scrollIntoView({behavior:'smooth',block:'start'});
 }
-function aapneAbonnement(){ aapneKontoSeksjon('accAbonnement'); }
+function aapneAbonnement(){ aapneKontoSeksjon('kontoAbonnement'); }
 // Legg/fjern skjold på et kort. Sjekker erBasis() selv → kall settSkjold(host) etter enhver render.
 // opts.eksempel=true → «Eksempel»-merke øverst (KUN attribusjonskortene), lagt som eget host-barn
 // OVER skjoldet. Deaktiverer bare kontroller VI slår av (data-skjold-disabled), så fjernSkjold ikke
@@ -3859,6 +3878,7 @@ async function loadSmsLogg(){
   if(!d){ var e0=$("#smsLoggList"); if(e0)e0.innerHTML=emptyHTML("Kunne ikke hente SMS-logg"); return; }
   _smsRows=d.logg||[]; _smsCursor=d.neste_cursor||null;
   renderSmsKvote(d.forbruk);
+  renderSmsMaaned(d.forbruk);
   renderSmsLogg(!!d.har_mer);
 }
 // Kvote-varsel KUN nær taket (>=80% av månedstaket). Gjelder markedsførings-SMS; påminnelser
@@ -3870,6 +3890,17 @@ function renderSmsKvote(f){
     el.style.display='';
   } else { el.style.display='none'; }
 }
+// Antall sendte SMS denne måneden (forbruk.sendt_maaned: alle typer, barberens tidssone, talt som
+// segmenter slik saldoen trekkes). Backend regner — frontend viser. Mangler feltet → intet tall.
+function renderSmsMaaned(f){
+  var el=$("#smsMaanedTall"); if(!el) return;
+  var n=f&&Number.isInteger(f.sendt_maaned)&&f.sendt_maaned>=0?f.sendt_maaned:null;
+  el.textContent=n==null?'':(n===1?'1 SMS':nok(n)+' SMS');
+}
+$("#smsLoggFold").addEventListener("click",function(){
+  var b=$("#smsLoggBody"), aapen=this.getAttribute('aria-expanded')==='true';
+  this.setAttribute('aria-expanded',String(!aapen)); if(b)b.hidden=aapen;
+});
 function smsTid(iso){ var d=new Date(iso); if(isNaN(d))return''; return d.getDate()+'.&nbsp;'+MONTHS[d.getMonth()].slice(0,3)+' '+String(d.getHours()).padStart(2,'0')+':'+String(d.getMinutes()).padStart(2,'0'); }
 // Prikk-farge per kind — samme mønster/prikk (.drv-dot) som «Drevet av». Ukjent kind faller
 // tilbake på nøytral grå — ingen krasj, ingen oppfunnet farge. Verving-familien (verving +
@@ -5086,9 +5117,7 @@ $("#gcalBtn").addEventListener("click",async()=>{
 });
 
 /* ---- Tema (lyst/morkt) ---- */
-// Tema-valgene som preview-kort. Fargene MÅ være literaler: begge kortene viser sitt eget
-// tema samtidig, så var(--bg)/var(--ink) ville gitt to like kort i gjeldende tema.
-// Speiler :root og html[data-theme="dark"] — holdes i synk manuelt.
+// Tema-valgene (Lys/Mørk) som segmentert velger i Konto → Utseende.
 const TEMAER=[
   {key:"light",navn:"Lys",  bg:"#fafafa",ink:"#0a0a0a"},
   {key:"dark", navn:"Mørk", bg:"#0a0a0a",ink:"#ffffff"},
@@ -5096,9 +5125,8 @@ const TEMAER=[
 function renderTemaValg(aktiv){
   var g=$("#themeGrid"); if(!g)return;
   g.innerHTML=TEMAER.map(function(t){
-    return '<button class="preset" data-tema="'+t.key+'" aria-pressed="'+(aktiv===t.key)+'">'
-      +'<div class="theme-mini" style="background:'+t.bg+';color:'+t.ink+'">Aa</div>'
-      +'<div class="pt">'+t.navn+'</div></button>';
+    var p=aktiv===t.key;
+    return '<button type="button" role="radio" data-tema="'+t.key+'" aria-checked="'+p+'" tabindex="'+(p?0:-1)+'">'+t.navn+'</button>';
   }).join("");
 }
 // UENDRET logikk: samme attributt, samme localStorage-nøkkel, samme default.
@@ -5112,8 +5140,17 @@ function initTheme(){var t="dark";try{t=localStorage.getItem("bhq-theme")||"dark
 // bytte, så lyttere på kortene ville dødd etter første klikk. (Den gamle #themeBtn-lytteren
 // hadde ingen null-sjekk og ville kastet ved init nå som knappen er borte.)
 $("#themeGrid").addEventListener("click",function(e){
-  var b=e.target.closest('.preset[data-tema]'); if(!b)return;
+  var b=e.target.closest('[data-tema]'); if(!b)return;
   applyTheme(b.dataset.tema);
+  var ny=$('#themeGrid [data-tema="'+b.dataset.tema+'"]'); if(ny)ny.focus();
+});
+// Piltaster flytter valget (radiogruppe).
+$("#themeGrid").addEventListener("keydown",function(e){
+  if(['ArrowLeft','ArrowRight','ArrowUp','ArrowDown'].indexOf(e.key)<0)return;
+  e.preventDefault();
+  var i=TEMAER.findIndex(function(t){return document.documentElement.getAttribute('data-theme')===t.key;});
+  var n=TEMAER[(i+(e.key==='ArrowLeft'||e.key==='ArrowUp'?-1:1)+TEMAER.length)%TEMAER.length];
+  applyTheme(n.key); var b=$('#themeGrid [data-tema="'+n.key+'"]'); if(b)b.focus();
 });
 
 /* ---- Profil ---- */
@@ -5131,13 +5168,14 @@ async function loadProfil(){
   CONFIG.BARBER_EMAIL=p.email||null;
   // Bookinghorisont (per-barber, /profile 85d7afe). Styrer kalenderens framover-rekkevidde.
   CONFIG.BOOKING_HORIZON=(typeof p.booking_horizon_days==='number'&&p.booking_horizon_days>0)?p.booking_horizon_days:28;
-  var ep=$("#kontoEpost");if(ep)ep.textContent=p.email||'—'; // Innlogging-seksjonen, ren visning
-  settInnloggingTilstand(!!p.hasPassword); // false → «Sett et passord», true → «Bytt passord»
+  var ep=$("#kontoEpost");if(ep){ep.textContent=p.email||'—';ep.title=p.email||'';} // Konto → E-post-raden, ren visning
+  settInnloggingTilstand(!!p.hasPassword); // false → «Lag passord», true → «Endre»
   // /profile og /billing/status lastes parallelt. Rakk billing å tegne publiseringsblokka
   // før sluggen var her, mangler den lenka til den publiserte sida — tegn på nytt nå.
   if(_billing&&typeof renderKonto==='function')renderKonto(_billing);
   if(p.isDemo&&!IS_DEMO){IS_DEMO=true;applyDemoMode();}
   $("#pf-name").value=p.name||"";
+  _lagretNavn=(p.name||"").trim(); oppdaterNavnVerdi();   // Konto → Navn-raden
   $("#pf-shop").value=p.shop||"";
   $("#pf-address").value=p.address||"";
   $("#pf-tagline").value=p.tagline||"";
@@ -5214,17 +5252,43 @@ bindFeedbackBoks('side','idea');
 bindFeedbackBoks('konto-ide','idea');
 bindFeedbackBoks('konto-support','support');
 
-/* ---- Innlogging: Sett/Bytt passord-tilstand (styres av profile.hasPassword) ---- */
-// false → «Sett et passord» (kun nytt-felt, ingen nåværende, ingen glemt-lenke).
-// true  → dagens visning: «Bytt passord», nåværende + nytt, glemt-lenke.
+/* ---- Konto-radene: «Endre» åpner redigering i samme rad, flere kan være åpne ---- */
+// Lagre og Avbryt står i raden. Avbryt tilbakestiller feltene til lagret verdi og lukker. Etter
+// vellykket lagring lukkes raden og den nye verdien vises (kontoRadLagret).
+var _lagretNavn='';
+function settRadAapen(radId,aapen){
+  var rad=document.getElementById(radId); if(!rad)return;
+  var red=rad.querySelector('.kt-red'), endre=rad.querySelector('[data-endre]');
+  if(red)red.hidden=!aapen;
+  if(endre){endre.hidden=aapen;endre.setAttribute('aria-expanded',String(aapen));}
+  if(aapen){var f=red&&red.querySelector('input:not([hidden])');if(f)f.focus();}
+}
+function nullstillRad(radId){
+  if(radId==='radNavn'){$("#pf-name").value=_lagretNavn;}
+  if(radId==='radPassord'){$("#pw-current").value='';$("#pw-new").value='';$("#pw-repeat").value='';var e=$("#pwErr");if(e)e.style.display='none';var ok=$("#pwForgotOk");if(ok)ok.hidden=true;}
+}
+function oppdaterNavnVerdi(){var v=$("#navnVerdi");if(v)v.textContent=_lagretNavn||'Ikke satt';}
+// Kalles av lagreProfil (navn) og savePw (passord) etter et vellykket kall.
+function kontoRadLagret(radId){
+  if(radId==='radNavn'){_lagretNavn=$("#pf-name").value.trim();oppdaterNavnVerdi();}
+  settRadAapen(radId,false);
+}
+$("#kontoKonto").addEventListener("click",function(e){
+  var en=e.target.closest('[data-endre]'); if(en){settRadAapen(en.dataset.endre,true);return;}
+  var av=e.target.closest('[data-avbryt]'); if(av){nullstillRad(av.dataset.avbryt);settRadAapen(av.dataset.avbryt,false);}
+});
+
+/* ---- Passord-raden: tilstand styres av profile.hasPassword ---- */
+// false → raden sier «Ikke satt», knappen «Lag passord»: nytt + gjenta, ingen nåværende, ingen glemt-lenke.
+// true  → «••••••••», knappen «Endre»: nåværende + nytt + gjenta, og «Glemt passordet?»-lenka.
 var _harPassord=true; // default = true-tilstanden (markupen); loadProfil setter ekte verdi
 function settInnloggingTilstand(harPassord){
   _harPassord=harPassord;
-  var tittel=$("#pwTittel"), curFld=$("#pw-current-fld"), forgot=$("#pwForgot"), btn=$("#savePw");
-  if(tittel)tittel.hidden=harPassord;                              // «Sett et passord» kun ved false
-  if(curFld)curFld.hidden=!harPassord;                             // nåværende-felt kun ved true
-  if(forgot)forgot.style.display=harPassord?'inline-block':'none'; // glemt-lenke kun ved true
-  if(btn)btn.textContent=harPassord?'Bytt passord':'Sett passord';
+  var curFld=$("#pw-current-fld"), forgot=$("#pwForgot"), endre=$('#radPassord [data-endre]');
+  if(curFld)curFld.hidden=!harPassord;                             // nåværende-felt kun når passord er satt
+  if(forgot)forgot.hidden=!harPassord;                             // glemt-lenke kun når passord er satt
+  if(endre)endre.textContent=harPassord?'Endre':'Lag passord';     // radens knapp
+  var v=$("#pwVerdi"); if(v)v.textContent=harPassord?'••••••••':'Ikke satt';
 }
 
 // Vis/skjul-øye — samme mønster som opprett-passord.html (bindToggle). Ikke et nytt.
@@ -5242,14 +5306,17 @@ function bindPwToggle(toggleId,inputId,eyeOnId,eyeOffId){
 }
 bindPwToggle('toggle-pwc','pw-current','eye-on-c','eye-off-c');
 bindPwToggle('toggle-pwn','pw-new','eye-on-n','eye-off-n');
+bindPwToggle('toggle-pwr','pw-repeat','eye-on-r','eye-off-r');
 
 /* ---- Innlogging: e-post (visning), bytt passord, logg ut ---- */
 $("#savePw").addEventListener("click",async function(){
   if(IS_DEMO)return;
   const btn=this,err=$("#pwErr"),orig=btn.textContent;
-  const naa=$("#pw-current").value,ny=$("#pw-new").value;
+  const naa=$("#pw-current").value,ny=$("#pw-new").value,igjen=$("#pw-repeat").value;
   err.style.display='none';
+  if(_harPassord&&!naa){err.textContent='Skriv inn nåværende passord';err.style.display='block';return;}
   if(!ny||ny.length<8){err.textContent='Passordet må være minst 8 tegn';err.style.display='block';return;}
+  if(ny!==igjen){err.textContent='Passordene er ikke like';err.style.display='block';return;}   // samme tekst som opprett-passord.html
   btn.disabled=true;btn.textContent='Lagrer …';
   let r;
   try{
@@ -5268,9 +5335,10 @@ $("#savePw").addEventListener("click",async function(){
   if(!r){err.textContent='Nettverksfeil. Prøv igjen.';err.style.display='block';return;}
   const d=await r.json().catch(function(){return{};});
   if(r.ok){
-    $("#pw-current").value='';$("#pw-new").value='';
+    $("#pw-current").value='';$("#pw-new").value='';$("#pw-repeat").value='';
+    if(!_harPassord)settInnloggingTilstand(true); // nå har han passord → raden bytter til «Endre» uten reload
+    kontoRadLagret('radPassord');
     savedFlash("#pwSaved");
-    if(!_harPassord)settInnloggingTilstand(true); // nå har han passord → bytt til «Bytt passord» uten reload
     return;
   }
   // FEIL GAMMELT PASSORD — bli i dashbordet. Uten denne grenen (og raw401 over) ville
@@ -5281,6 +5349,16 @@ $("#savePw").addEventListener("click",async function(){
   // EKTE sesjonsutløp (ingen passord-kode). raw401 slo av auto-redirecten, så den må gjøres her.
   if(r.status===401){location.href='/no/logg-inn.html';return;}
   err.textContent=d.error||'Kunne ikke bytte passord. Prøv igjen.';err.style.display='block';
+});
+$("#pwForgot").addEventListener("click",async function(){
+  if(IS_DEMO)return;
+  var btn=this, ok=$("#pwForgotOk"), epost=CONFIG.BARBER_EMAIL;
+  if(!epost){ if(ok){ok.textContent='Fant ikke e-postadressen din. Logg ut og bruk «Send meg innloggingslenke».';ok.hidden=false;} return; }
+  btn.disabled=true;
+  try{ await apiFetch('/api/send-magic-link',{method:'POST',body:JSON.stringify({email:epost}),raw401:true}); }catch(e){}
+  btn.disabled=false;
+  // Backend svarer alltid {ok:true} (lekker aldri om adressen finnes) — kvitteringen sier hvor lenka gikk.
+  if(ok){ok.textContent='Sjekk e-posten din. Vi har sendt en lenke til '+epost+'.';ok.hidden=false;}
 });
 $("#loggUt").addEventListener("click",async function(){
   if(IS_DEMO)return;
@@ -5330,6 +5408,8 @@ async function lagreProfil(knappSel, flashSel){
     const displayName=$("#pf-shop").value.trim()||$("#pf-name").value.trim()||"";
     CONFIG.BARBER_NAME=displayName;var el=$("#barberName");if(el)el.textContent=displayName;
     fitShopnavn();                               // nytt navn kan ha ny bredde → re-fit
+    if(flashSel==="#navnSaved")kontoRadLagret('radNavn');   // Konto: lukk raden + vis nytt navn
+    else{_lagretNavn=$("#pf-name").value.trim();oppdaterNavnVerdi();}   // Profil sendte også navnet
     savedFlash(flashSel);
     invaliderPreview(); // tagline/bio/adresse står i preview-HTML-en (navn gjør IKKE — identitetsfelt)
     oppdaterSjekkliste(); // profil-haken (bio/spesialitet/adresse) kan ha endret seg
@@ -6749,7 +6829,7 @@ function renderKonto(b){
   // Adressen: egen funksjon, kalt UTENFOR tilstandsvalget. Se settLenkeblokk.
   settLenkeblokk(b);
   // Prikkene følger needs_attention fra serveren — ALDRI «har besøkt fanen». TRE prikker, samme
-  // kilde: desktop-nav (#kontoDot), bunn-navets Konto-fane (#kontoBunnDot) og trekkspill-headeren.
+  // kilde: desktop-nav (#kontoDot), bunn-navets Konto-fane (#kontoBunnDot) og seksjonsoverskriften.
   if(dot)dot.hidden=!b.needs_attention;
   const accDot=$("#kontoAccDot"); if(accDot)accDot.hidden=!b.needs_attention;
   const bunnDot=$("#kontoBunnDot"); if(bunnDot)bunnDot.hidden=!b.needs_attention;
@@ -6787,7 +6867,7 @@ function smsSpar(p,minstPer){
 }
 function renderSmsKonto(b){
   b=b||{};
-  var acc=$("#accSms"), rest=$("#kontoSmsRest");
+  var acc=$("#kontoSms"), rest=$("#kontoSmsRest");
   var saldo=(typeof b.sms_saldo==='number'&&b.sms_saldo>=0)?b.sms_saldo:null;
   var kanKjope=b.sms_pakke_kan_kjopes===true;
   if(rest){
@@ -6798,9 +6878,9 @@ function renderSmsKonto(b){
   if(!acc)return;
   acc.hidden=!kanKjope;
   if(!kanKjope)return;
-  // Nivå 1: bryteren eies av /settings (settPaamBrytere); her styres bare om den vises. Saldo 0 → ingen
-  // bryter og ingen «Sendes automatisk …» (ingenting sendes).
-  $("#smsBryterRad").hidden=(saldo===0); $("#smsSub").hidden=(saldo===0);
+  // Nivå 1: bryteren eies av /settings (settPaamBrytere); her styres bare om raden vises. Saldo 0 → ingen
+  // bryter og ingen «Sendes automatisk …» (ingenting sendes) — seksjonsoverskriften står alene.
+  $("#smsPaamRad").hidden=(saldo===0);
   // Nivå 2: saldo (tusenskille med mellomrom via nb-NO), nøytral «Lav saldo»-chip ved 1–10, hjelpetekst.
   var rad=$("#smsSaldoRad");
   rad.style.display=(saldo==null)?'none':'';
@@ -6924,7 +7004,7 @@ function oppdaterSmsTilbud(){
     : n+' kunder har time i morgen. Vil du at BarberHQ sender dem en påminnelse?';
   boks.hidden=false;
 }
-$("#smsTilbudSe").addEventListener("click",function(){ aapneKontoSeksjon('accSms'); });
+$("#smsTilbudSe").addEventListener("click",function(){ aapneKontoSeksjon('kontoSms'); });
 $("#smsTilbudIkkeNaa").addEventListener("click",async function(){
   _smsTilbudAvvistLokalt=true; oppdaterSmsTilbud();
   if(IS_DEMO)return;
@@ -7288,8 +7368,10 @@ function kopierLenke(knapp,url){
 // (renderPubliser er FJERNET 08.08 — slått inn i renderKonto. Ett kort, én knapp.)
 // Greiner KUN på statuskode, aldri på feilteksten — ruta gir ingen maskinlesbar kode, og
 // tekst-matching ville røket stille hvis backend endret ordlyd. Serverteksten vises ordrett.
-function settPubFeil(kode,tekst){
-  const feil=$("#pubErr"); if(!feil)return;
+// mål: feilflaten ved knappen som utløste kallet. Publisering → #pubErr i abonnementskortet;
+// avpublisering → #avpubErr rett under «Avpubliser bookingside» nederst.
+function settPubFeil(kode,tekst,maal){
+  const feil=$(maal||"#pubErr"); if(!feil)return;
   const t=tekst||'Noe gikk galt. Prøv igjen.';
   let handling='';
   if(kode===400){
@@ -7305,17 +7387,18 @@ function settPubFeil(kode,tekst){
   // tilbake på none og meldinga forblir usynlig. (Samme felle som .idea-err.)
   feil.style.display='block';
 }
-function nullstillPubFeil(){const f=$("#pubErr");if(f){f.style.display='none';f.textContent='';}}
+function nullstillPubFeil(){["#pubErr","#avpubErr"].forEach(function(sel){const f=$(sel);if(f){f.style.display='none';f.textContent='';}});}
 // Felles for begge retninger. nyStatus: 'live' | 'forhandsvist'.
 async function settSideStatus(nyStatus,btn){
   nullstillPubFeil();
+  const feilMaal=nyStatus==='forhandsvist'?'#avpubErr':'#pubErr';   // feilen står ved knappen som utløste den
   const orig=btn.textContent;btn.disabled=true;btn.textContent='Lagrer …';
   let r;
   try{
     r=await apiFetch('/api/dashboard/page-status',{method:'PUT',body:JSON.stringify({status:nyStatus})});
   }catch(e){
     btn.disabled=false;btn.textContent=orig;
-    settPubFeil(0,'Nettverksfeil. Sjekk tilkoblingen og prøv igjen.');
+    settPubFeil(0,'Nettverksfeil. Sjekk tilkoblingen og prøv igjen.',feilMaal);
     return;
   }
   btn.disabled=false;btn.textContent=orig;
@@ -7340,7 +7423,7 @@ async function settSideStatus(nyStatus,btn){
   // RE-SYNK FØR MELDING. Var UI-en utdatert (400 «Ugyldig overgang»), retter den seg her.
   // Motsatt rekkefølge ville latt renderKonto overskrive feilmeldinga vi nettopp skrev.
   await loadBilling();
-  settPubFeil(r.status,d&&d.error);
+  settPubFeil(r.status,d&&d.error,feilMaal);
 }
 // ÉN knapp, tre mulige handlinger. Hva den gjør bestemmes av _kontoAksjon, satt av
 // renderKonto — knappen har ingen kunnskap om tilstand, og tilstanden ingen om knappen.
@@ -7366,10 +7449,10 @@ $("#unpublish").addEventListener("click",function(){
   settSideStatus('forhandsvist',this);
 });
 // Handlingslenkene i feilmeldinga — delegert, fordi innerHTML byttes ved hver feil.
-$("#pubErr").addEventListener("click",function(e){
+["#pubErr","#avpubErr"].forEach(function(sel){$(sel).addEventListener("click",function(e){
   const b=e.target.closest('[data-pub-act]'); if(!b)return;
   if(b.dataset.pubAct==='tjenester'){switchPanel('tjenester');}
-});
+});});
 
 
 // POST /billing/checkout {plan:'vekst'} → {url}. Kun Vekst kan kjøpes (backend KJOPBARE_PLANER;
@@ -7403,7 +7486,7 @@ async function applyBillingReturn(){
   if(!sessionId&&!live&&!avbrutt)return;
   history.replaceState(null,'',location.pathname);
   // ?sms_pakke=1 (satt av backend i success/cancel_url for pakkekjøp) → SMS-seksjonen, ellers abonnementet.
-  aapneKontoSeksjon(smsPakke?'accSms':'accAbonnement');
+  aapneKontoSeksjon(smsPakke?'kontoSms':'kontoAbonnement');
   const el=$("#subReturn");
   const banner=function(klasse,tekst){ if(!el)return; el.className='sub-banner '+klasse; el.textContent=tekst; el.style.display=''; };
   const VENT='Det kan ta et minutt før Vekst vises. Last inn siden på nytt.';
@@ -7428,7 +7511,7 @@ async function applyBillingReturn(){
   if(kjop==='vekst'&&kontoTilstand(d).id===3) banner('info','Vekst er aktivt. Vekstverktøyene ligger i Vekst-fanen.');
   else if(kjop==='sms_pakke'){
     banner('info', d.sms_paaminnelser_sendes===true ? 'SMS-pakken er lagt til. Påminnelsene er slått på.' : 'SMS-pakken er lagt til.');
-    aapneKontoSeksjon('accSms');
+    aapneKontoSeksjon('kontoSms');
   }
   else banner('mut',VENT);
 }
@@ -7484,7 +7567,7 @@ anvendHash(); // åpne panelet fra location.hash (ukjent/tom → standardpanel).
    Viser seksjonen KUN når appen ikke alt kjører standalone, og avslører den plattform-
    varianten som gjelder. Copy skrives av Henrik i data-copy-nodene; her er bare mekanikken. */
 (function(){
-  var acc=document.getElementById('accHjemskjerm'); if(!acc)return;
+  var acc=document.getElementById('kontoHjemskjerm'); if(!acc)return;
   // Alt installert/standalone? Da er veiledningen støy — la seksjonen bli stående hidden.
   // Delt sjekk med hjemskjerm-nudgen (erStandalone).
   if(erStandalone()) return;
@@ -7507,7 +7590,7 @@ anvendHash(); // åpne panelet fra location.hash (ukjent/tom → standardpanel).
   else if(android) vis = [ 'android' ];
   else             vis = [ 'desktop' ];
   vis.forEach(function(k){ var el=acc.querySelector('.hs-variant[data-hs="'+k+'"]'); if(el) el.hidden=false; });
-  acc.hidden=false; // seksjonen dukker opp i Konto-lista
+  acc.hidden=false; // raden dukker opp under Utseende
 
   // Android/Chrome tilbyr install selv: fang prompten og vis knappen.
   window.addEventListener('beforeinstallprompt', function(e){
@@ -7551,9 +7634,8 @@ function erStandalone(){
   };
   function tilKonto(){
     switchPanel('abonnement');           // → Konto-fanen (+ location.hash='konto')
-    _sjekkAapneAkk('accHjemskjerm');      // eksisterende helper: åpner kun hvis lukket
-    var acc=document.getElementById('accHjemskjerm');
-    if(acc) acc.scrollIntoView({block:'center'});
+    var acc=document.getElementById('kontoHjemskjerm');   // raden står åpen — ingen trekkspill å folde ut
+    if(acc && !acc.hidden) acc.scrollIntoView({block:'center'});
   }
   el.addEventListener('click', tilKonto);
   el.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); tilKonto(); } });
@@ -7650,7 +7732,7 @@ function settPlakatVersjon(v){
     // Hele plakat-flaten er Vekst. Basis → send til abonnement (samme vei som skjold-lenka).
     if(typeof erBasis==='function' && erBasis()){
       switchPanel('abonnement');
-      var a=document.getElementById('accAbonnement'); if(a) a.scrollIntoView({block:'center'});
+      var a=document.getElementById('kontoAbonnement'); if(a) a.scrollIntoView({block:'start'});
       return;
     }
     // Bug 4b: nullstill memoiserte _regler/_palett/_mode så de RE-HENTES ved hver åpning. Ellers frøs

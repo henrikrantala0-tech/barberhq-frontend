@@ -172,17 +172,16 @@ for (const shape of ['trial','basis']) {
     radX.push({ shape, fane:'Din egen (HSV-velger)', docOverflow:m.docOverflow,
       offenders:m.offenders.length?m.offenders.map(o=>o.el+'→'+o.right).join(' '):'—', jsfeil:errs.length?errs.join(';').slice(0,50):'ingen' });
   }
-  // Konto → åpne Abonnement-accordionen (billing/plan-velger) @320
+  // Konto → abonnementskortet (alltid åpent på innstillingssiden) @320
   await page.evaluate(()=>switchPanel('abonnement'));
   await page.waitForTimeout(800);
-  await page.evaluate(()=>{ var acc=document.querySelector('#accAbonnement'); if(acc){ var h=acc.querySelector('.acc-head'); if(h && h.getAttribute('aria-expanded')!=='true')h.click(); } });
   await page.waitForTimeout(600);
   {
     const m = await maalPanel(page, 320);
-    await page.evaluate(()=>{const e=document.querySelector('#accAbonnement');if(e)e.scrollIntoView({block:'start'});});
+    await page.evaluate(()=>{const e=document.querySelector('#kontoAbonnement');if(e)e.scrollIntoView({block:'start'});});
     await page.waitForTimeout(150);
     await page.screenshot({ path:`${OUT}/mobx-${shape}-billing-320.png`, fullPage:true });
-    radX.push({ shape, fane:'Konto › Abonnement (åpen)', docOverflow:m.docOverflow,
+    radX.push({ shape, fane:'Konto › Abonnement', docOverflow:m.docOverflow,
       offenders:m.offenders.length?m.offenders.map(o=>o.el+'→'+o.right).join(' '):'—', jsfeil:errs.length?errs.join(';').slice(0,50):'ingen' });
   }
   await page.close();

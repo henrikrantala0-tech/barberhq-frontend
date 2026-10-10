@@ -167,7 +167,7 @@ const LISTER={
   vekst:   [['#wbList',1]],
   tjenester:[['#hovedList',3],['#tilleggList',2],['#hoursList',7],['#payList',2]],
   design:  [['#sideAccs',3]],
-  abonnement:[['#kontoAccs',4]],
+  abonnement:[['#kontoSider',6]],   // seks seksjoner + bunnen (SMS-kortet er skjult på Vekst)
 };
 
 const FANER=[['oversikt','Oversikt'],['vekst','Vekst'],['tjenester','Tjenester & tider'],

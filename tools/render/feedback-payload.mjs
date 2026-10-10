@@ -40,8 +40,7 @@ async function kjor(profil){
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`,{waitUntil:'networkidle'});
   await page.$eval('button[data-panel="abonnement"]',b=>b.click());
   await page.waitForTimeout(1200);
-  await page.click('#accHjelp .acc-head');
-  await page.waitForTimeout(500);
+  // Konto er en innstillingsside: boksene under Hjelp står åpne — ingenting å folde ut.
 
   await page.fill('#fbBox-konto-support','Knappen gjør ingenting');
   await page.click('#fbSend-konto-support'); await page.waitForTimeout(800);
