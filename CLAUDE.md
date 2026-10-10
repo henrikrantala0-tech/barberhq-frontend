@@ -197,8 +197,8 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
   (verifisert 11.07); fella er PS-konsollen.
 - **Railway shell:** engangs-scripts må ha `.cjs`-endelse (package.json er `type:module`) og
   ligge i `/app` (ikke `/tmp`) for å finne `pg`-modulen.
-- **Launch-plan ligger i backend-repoets CLAUDE.md (LAUNCH-PLAN-seksjonen) — les den ved
-  /oppstart før frontend-arbeid prioriteres.**
+- **Alle gjøremål står i C:\Users\henri\Desktop\barberhq-plan\PLAN.md — les den ved /oppstart før
+  frontend-arbeid prioriteres.**
 - **ÉN Code-sesjon per repo.** To sesjoner på samme repo deler arbeidstre og kan committe
   hverandres endringer. Skjedde 6. august: en parallell sesjon committet endringer den ikke
   hadde skrevet (`46b3940` og `ecacf83` i backend-repoet). Det gikk bra den gangen fordi begge
