@@ -414,14 +414,8 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 - **`produktvisning.mjs` teller bare EKTE kort (10.10).** Mobil-karusellens uendelige loop (`559137b`) legger
   kopier (`.pv-klon`, `aria-hidden`, `inert`, uten `data-i`) foran og bak; kalenderkortet er scenen `.ks-cal`
   (`2bb95da`) med `.pv-scale`/`--ph-s`. Testen krasjet på det gamle kortet (`.cal-pop`/`#calRows`) og målte kopier
-  som kort — rettet. «Tilstand 6»-fasiten er målt på nytt 10.10: 56/96 px (backend skjuler «Tilbake» på
-  bekreftelsen siden 5664384, 04.09; den gamle 115/155 hadde knappen med).
-- **Redusert bevegelse: hver scene i produktvisningen står FERDIG (10.10).** Ikke tom, ikke blokk for blokk.
-  `settAlleSlutt()` setter sluttilstanden på de tre ekte kortene ved oppstart og ved hvert fokusskifte
-  (`stoppSekvenser` nullstiller kalenderen). `frysBooking` må sette `vis-sheet` + `vis-success` — uten
-  `vis-sheet` er arket skjult og kortet viser forsiden (gjaldt også loopens kopier før 10.10).
-  Samme regel i Vekst-demoene i «Fem systemer»: rebooking, påminnelse og verving går rett til sluttscenen
-  (scene 3) uten tidsur; vinn tilbake og lojalitet sto allerede ferdige. Voktet av `tools/render/forside-klon.mjs`.
+  som kort — rettet. ÅPEN: «tilstand 6: vertikal posisjon» (bekreftelsen 56/96 px mot fasit 115/155 px målt mot
+  publisert bookingside) — må måles på nytt mot bookingsiden før noe endres.
 - **⚠ Klonens rekord-terskel er `>=`, produktets er `>`.** `dashboard.html` bruker
   `var beaten = hasRecord && p.current_week_revenue > p.best_week_revenue`; scenens demo i `site/no/index.html` bruker
   `maalRev*e >= FORRIGE_REKORD`. Ved NØYAKTIG likt beløp tenner klonen gull der produktet
