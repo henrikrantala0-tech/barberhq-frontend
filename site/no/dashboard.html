@@ -6826,7 +6826,8 @@ function billingUkjent(){ return !_billingKjent; }
 // og ALDRI fetche (lekkasje-vernet står — vi vet fortsatt ikke planen). I stedet: synlig feil +
 // «Prøv igjen» som re-kjører loadBilling. Ikke fail-open til ugatet fetch.
 function visBillingFeil(el){ if(el) el.innerHTML='<p class="wb-empty">Kunne ikke laste akkurat nå. <button type="button" class="retry-lenke" data-billing-retry>Prøv igjen</button></p>'; }
-function billingFeilRender(){ ['#wbList','#vervSendList','#loyalOversikt'].forEach(function(s){ visBillingFeil($(s)); }); }
+function billingFeilRender(){ ['#wbList','#vervSendList','#loyalOversikt'].forEach(function(s){ visBillingFeil($(s)); });
+  if(typeof oppdaterHjemskjermKort==='function') oppdaterHjemskjermKort(); }   // første booking avgjort (skjult) → kortet kan vises
 document.addEventListener('click',function(e){ var b=e.target.closest('[data-billing-retry]'); if(!b)return; e.preventDefault();
   ['#wbList','#vervSendList','#loyalOversikt'].forEach(function(s){ var el=$(s); if(el)el.innerHTML='<p class="wb-empty">Laster …</p>'; });
   loadBilling(); // suksess → oppdaterSkjoldFlater re-kjører loaderne; ny feil → billingFeilRender igjen
@@ -7792,6 +7793,7 @@ function erStandalone(){
    tilbake uten melding. Kopier/«Lag story» krysser av steget selv (kun hvis det ikke alt er ferdig). */
 const FB_STEG=['svarmelding','bio','story'];
 var _aktivering=null;   // null = ukjent/feilet → seksjonen skjult
+var _aktiveringKjent=false;   // true når GET /aktivering har svart (eller feilet)
 // Alle tre krysset → seksjonen krympes til én linje. «Vis stegene» setter _fbApnet. Den nullstilles
 // først når SERVEREN bekrefter at et steg mangler kryss (fbNullstillApnet) — ikke på det optimistiske
 // trykket, ellers ville en tilbakerulling (403/500) klappe stegene sammen midt i bruk.
@@ -7804,6 +7806,7 @@ async function loadAktivering(){
   }catch(_){ d=null; }
   _aktivering=(d&&typeof d.har_booking==='boolean'&&d.steg&&typeof d.steg==='object')
     ? {har_booking:d.har_booking, steg:fbStegFra(d.steg)} : null;
+  _aktiveringKjent=true;
   fbNullstillApnet();
   renderForsteBooking();
 }
@@ -7812,8 +7815,17 @@ function fbStegFra(o){ var s={}; FB_STEG.forEach(function(k){ s[k]=!!(o&&o[k]===
 function fbLenke(){ return CONFIG.BARBER_SLUG ? CONFIG.SITE_BASE+'/'+CONFIG.BARBER_SLUG : null; }
 // Låst copy (Henrik 13.10): uten https:// — slik barbereren skriver den selv i en DM.
 function fbSvarmelding(){ return 'Yes 👌 Se ledige tider og book her: '+CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+CONFIG.BARBER_SLUG; }
+// Hjemskjerm-kortet og stegene vises ALDRI samtidig: kortet venter mens stegene står åpne.
+// avgjort = både /aktivering og billing har svart (eller feilet) — før det vet vi ikke om stegene
+// kommer, og kortet holdes tilbake så det ikke blinker inn og ut for en ny barber.
+function fbAvgjort(){ return _aktiveringKjent && (_billingKjent||_billingFeilet); }
+function fbStegeneApne(){ var k=$("#forsteBooking"); return !!(k && !k.hidden && !k.classList.contains('fb-krympet')); }
 function renderForsteBooking(){
   var kort=$("#forsteBooking"); if(!kort)return;
+  fbTegn(kort);
+  if(typeof oppdaterHjemskjermKort==='function') oppdaterHjemskjermKort();
+}
+function fbTegn(kort){
   var a=_aktivering;
   var vis=!!(a && a.har_booking===false && _billing && _billing.page_status==='live' && fbLenke());
   kort.hidden=!vis;
@@ -7876,7 +7888,8 @@ async function settFbSteg(k,ferdig){
 
 /* ---- Hjemskjerm-kortet (Oversikt) ----
    Vises når ALT stemmer: telefon (iOS/Android), ikke kjørende som app (erStandalone), ikke installert
-   (permanent flagg), ikke lukket nylig, ikke demo og ikke fokusmodus. Lukk (×) → borte i 14 dager;
+   (permanent flagg), ikke lukket nylig, ikke demo og ikke fokusmodus — OG «Få din første booking» er
+   avgjort og viser ikke stegene (fbAvgjort/fbStegeneApne; krympet eller skjult seksjon slipper kortet fram). Lukk (×) → borte i 14 dager;
    lukket to ganger → borte for godt. Android: Chromes beforeinstallprompt fanges → «Installer»-knapp
    som åpner Chromes egen dialog; avvist = som lukking, godtatt/appinstalled = installert for godt.
    Lagring i try/catch: blokkert localStorage gir et kort som vises, aldri en feil.
@@ -7910,7 +7923,8 @@ async function settFbSteg(k,ferdig){
   function render(){
     var v=variant();
     var demo=(typeof IS_DEMO!=='undefined'&&IS_DEMO);
-    var vis=!!v && !erStandalone() && les(KEY_INST)!=='1' && !lukketNaa() && !demo && !document.body.classList.contains('fokus');
+    var vis=!!v && !erStandalone() && les(KEY_INST)!=='1' && !lukketNaa() && !demo && !document.body.classList.contains('fokus')
+      && fbAvgjort() && !fbStegeneApne();
     kort.hidden=!vis;
     if(!vis) return;
     kort.querySelectorAll('[data-hs]').forEach(function(el){ el.hidden=(el.getAttribute('data-hs')!==v); });

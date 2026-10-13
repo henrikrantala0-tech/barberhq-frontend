@@ -9,6 +9,9 @@
 //   • «Kopier svarmelding» → utklippstavla har meldingen + steget krysses; «Kopier lenke» → full lenke
 //   • «Lag story» → story-generatoren åpner + steget krysses
 //   • kryss overlever reload (lagret på serveren — mocken holder tilstanden, ikke nettleseren)
+//   • hjemskjerm-kortet (iPhone-UA) vises ALDRI samtidig med åpne steg: skjult mens stegene står åpne,
+//     synlig når seksjonen er krympet, har_booking er true, siden er upublisert eller /aktivering feiler;
+//     lukket kort (14 dager) forblir lukket også når seksjonen krympes
 //   • INGEN request mot prod: alt under /api/** mockes, resten avbrytes
 // Skjermbilder: 320 og 375, lys og mørk.
 import http from 'node:http';
@@ -65,11 +68,14 @@ async function stubApi(page,state){
 }
 
 const browser=await chromium.launch({channel:'msedge'});
-async function nySide(bredde,tema,state){
+const IPHONE='Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1';
+async function nySide(bredde,tema,state,{userAgent,hsLukket}={}){
   const ctx=await browser.newContext({viewport:{width:bredde,height:900},deviceScaleFactor:2,colorScheme:tema,
+    ...(userAgent?{userAgent,isMobile:true,hasTouch:true}:{}),
     permissions:['clipboard-read','clipboard-write']});
   const page=await ctx.newPage();
   await page.addInitScript(t=>{ try{ localStorage.setItem('bhq-theme',t); }catch(e){} },tema);
+  if(hsLukket) await page.addInitScript(()=>{ try{ localStorage.setItem('bhq-hjemskjerm-skjult',JSON.stringify({t:Date.now(),n:1})); }catch(e){} });
   const errs=[]; page.on('pageerror',e=>errs.push(e.message)); page.on('dialog',d=>d.dismiss());
   await stubApi(page,state);
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`,{waitUntil:'networkidle'});
@@ -217,6 +223,59 @@ for(const c of VIS){
   if(!apen) f.push('story-generatoren åpnet ikke');
   if((await kryss(page))[2]!==true) f.push('story ikke krysset');
   push('Lag story → generator + kryss',f,errs); await ctx.close();
+}
+
+// ── Hjemskjerm-kortet og første booking (iPhone) ─────────────────────────────────────────
+const hsSynlig=page=>page.$eval('#hsKort',e=>!e.hidden&&e.offsetParent!==null).catch(()=>false);
+const fbApen=page=>page.$eval('#forsteBooking',e=>!e.hidden&&e.offsetParent!==null&&!e.classList.contains('fb-krympet')).catch(()=>false);
+const ALLE=steg({svarmelding:true,bio:true,story:true});
+const HS=[
+  {id:'hs-ny-barber', a:{har_booking:false,steg:steg()},                  fb:'apen',    hs:false, skudd:true},
+  {id:'hs-krympet',   a:{har_booking:false,steg:ALLE},                    fb:'krympet', hs:true,  skudd:true},
+  {id:'hs-har-booking',a:{har_booking:true,steg:steg()},                  fb:'skjult',  hs:true,  skudd:true},
+  {id:'hs-upublisert', b:billing({page_status:'forhandsvist'}), a:{har_booking:false,steg:steg()}, fb:'skjult', hs:true},
+  {id:'hs-api-feil',  a:{status:500},                                     fb:'skjult',  hs:true},
+  {id:'hs-krympet-lukket', a:{har_booking:false,steg:ALLE}, hsLukket:true, fb:'krympet', hs:false},
+];
+for(const c of HS){
+  for(const bredde of [320,375]) for(const tema of (c.skudd?['light','dark']:['light'])){
+    const state={billing:c.b||billing(), aktivering:JSON.parse(JSON.stringify(c.a)), post:'ok'};
+    const {ctx,page,errs}=await nySide(bredde,tema,state,{userAgent:IPHONE,hsLukket:c.hsLukket});
+    const f=[];
+    const fbVis=await synlig(page), krymp=await page.$eval('#forsteBooking',e=>e.classList.contains('fb-krympet')).catch(()=>false);
+    const fb=!fbVis?'skjult':(krymp?'krympet':'apen');
+    if(fb!==c.fb) f.push(`første booking=${fb}, ventet ${c.fb}`);
+    const hs=await hsSynlig(page);
+    if(hs!==c.hs) f.push(`hjemskjerm-kort synlig=${hs}, ventet ${c.hs}`);
+    if(hs && await fbApen(page)) f.push('begge synlige med åpne steg');
+    if(fb==='krympet'&&hs){
+      const rekke=await page.$eval('#oversikt',e=>[...e.children].filter(x=>x.offsetParent!==null).slice(0,2).map(x=>x.id).join(','));
+      if(rekke!=='forsteBooking,hsKort') f.push(`rekkefølge ${rekke}`);
+    }
+    if(c.skudd) await page.screenshot({path:path.join(OUT,`${c.id}-${bredde}-${tema}.png`),clip:{x:0,y:0,width:bredde,height:900}});
+    push(`${c.id} ${bredde} ${tema}`,f,errs);
+    await ctx.close();
+  }
+}
+{ // krympet (kort synlig) → «Vis stegene» → kortet skjules → fjern kryss → fortsatt skjult → kryss igjen → kortet tilbake
+  const state={billing:billing(), aktivering:{har_booking:false,steg:steg({svarmelding:true,bio:true,story:true})}, post:'ok'};
+  const {ctx,page,errs}=await nySide(375,'light',state,{userAgent:IPHONE}); const f=[];
+  if(!(await hsSynlig(page))) f.push('kortet ikke synlig i krympet tilstand');
+  await page.click('#fbVis'); await page.waitForTimeout(100);
+  if(await hsSynlig(page)) f.push('kortet synlig etter «Vis stegene»');
+  await page.click('li[data-steg="bio"] .fb-kryss'); await page.waitForTimeout(300);
+  if(await hsSynlig(page)) f.push('kortet synlig med et steg uten kryss');
+  await page.click('li[data-steg="bio"] .fb-kryss'); await page.waitForTimeout(300);
+  if(!(await hsSynlig(page))) f.push('kortet kom ikke tilbake da seksjonen krympet');
+  push('hjemskjerm-kort følger krymping',f,errs); await ctx.close();
+}
+{ // ny barber krysser alle tre (via knapper) → seksjonen krympes → kortet vises
+  const state={billing:billing(), aktivering:{har_booking:false,steg:steg({svarmelding:true,bio:true})}, post:'ok'};
+  const {ctx,page,errs}=await nySide(375,'light',state,{userAgent:IPHONE}); const f=[];
+  if(await hsSynlig(page)) f.push('kortet synlig mens stegene er åpne');
+  await page.click('li[data-steg="story"] .fb-kryss'); await page.waitForTimeout(300);
+  if(!(await hsSynlig(page))) f.push('kortet kom ikke etter siste kryss');
+  push('siste kryss → kortet vises',f,errs); await ctx.close();
 }
 
 await browser.close(); server.close();
