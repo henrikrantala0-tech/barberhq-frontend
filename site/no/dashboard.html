@@ -402,6 +402,8 @@
      bunn; faneraden capper på 480px sentrert (ellers 143px/fane på 719). Flate/kant = kort-tokens
      (--surface/--line), hairline topplinje, ingen shadow. Aktiv = --info-blekk #4d8bff. ══════════ */
   .bunn-nav{display:none}
+  /* Bunnmenyens radhøyde, ÉN kilde: fanehøyden, innholdets klaring og «Fullfør siden din»-pillens løft. */
+  :root{--bunn-nav-h:56px}
   @media(max-width:719px){
     .nav{display:none}                     /* topp-nav + dropdown erstattes; knappene blir i DOM
                                               (skjult), så switchPanel treffer dem fortsatt */
@@ -412,12 +414,12 @@
     /* Innholdet klarer baren: 56px (barhøyde) + safe-area under siste rad, så ingen liste skjules
        bak baren når man scroller til bunns. Erstatter panelets 50px bunn-padding på mobil. Baren er
        sticky IN-FLOW, så klaringen hører på INNHOLDET (.panel) — body-padding havner under baren. */
-    .panel{padding-bottom:calc(56px + env(safe-area-inset-bottom))}
+    .panel{padding-bottom:calc(var(--bunn-nav-h) + env(safe-area-inset-bottom))}
     .bunn-nav{display:block;position:sticky;bottom:0;z-index:120;margin-top:auto;
       background:var(--surface);border-top:1px solid var(--line);
       padding-bottom:env(safe-area-inset-bottom)}   /* hjemindikator-plass (krever viewport-fit=cover) */
     .bunn-nav-rad{display:flex;width:100%;max-width:480px;margin:0 auto}
-    .tab{flex:1;min-height:48px;height:56px;display:flex;flex-direction:column;align-items:center;
+    .tab{flex:1;min-height:48px;height:var(--bunn-nav-h);display:flex;flex-direction:column;align-items:center;
       justify-content:center;gap:3px;appearance:none;border:0;background:0;color:var(--mut);cursor:pointer;padding:0;position:relative}
     .tab[aria-current="page"]{color:#4d8bff;--ac:currentColor}
     .tab-lbl{max-width:100%;font-size:10.5px;font-weight:600;line-height:1.15;letter-spacing:-.01em;
@@ -1436,6 +1438,15 @@
   .sjekk-ring-num{position:relative;font-size:9.5px;font-weight:700;color:var(--ink)}
   .sjekk-popover{position:absolute;right:0;bottom:calc(100% + 10px);width:min(300px,calc(100vw - 32px));box-shadow:0 12px 34px rgba(0,0,0,.28);border-radius:14px}
   @media(max-width:520px){ .sjekk-pill-wrap{right:12px;bottom:12px} .sjekk-pill-tekst{font-size:13px} }
+  /* Pillen er fixed og ligger over alt: på mobil står den OVER bunnmenyen (radhøyde + safe-area + 12px),
+     ellers dekker den fanene og tar trykket (Din side/Konto). Mens pillen vises (body.har-sjekkpill, satt i
+     renderSjekkliste) får panelene ekstra bunnklaring = pillen (48) + luft (2×12), så den aldri dekker
+     innhold eller knapper når man har scrollet til bunns. Desktop: samme klaring over 18px-marginen. */
+  body.har-sjekkpill .panel{padding-bottom:calc(18px + 48px + 12px)}
+  @media(max-width:719px){
+    .sjekk-pill-wrap{bottom:calc(var(--bunn-nav-h) + env(safe-area-inset-bottom) + 12px)}
+    body.har-sjekkpill .panel{padding-bottom:calc(var(--bunn-nav-h) + env(safe-area-inset-bottom) + 12px + 48px + 12px)}
+  }
 
   /* ── Live (COMMIT F): kompakt kopierbar lenke i headeren + suksesskort ────────────
      Begge gjenbruker byggKopierbartLenkefelt (.pub-field + midtForkort + kopierLenke).
@@ -7226,7 +7237,9 @@ function renderSjekkliste(){
   // ville kollidert med den). Synlig kun ved forhandsvist.
   var pill=$('#sjekkPill');
   if(pill){
-    if(forhV&&!iFokus){
+    var visPill=forhV&&!iFokus;
+    document.body.classList.toggle('har-sjekkpill',visPill);   // ekstra bunnklaring mens pillen står (se CSS)
+    if(visPill){
       pill.hidden=false;
       var pct=Math.round(ferdig/items.length*100);
       var ring=$('#sjekkRing'); if(ring)ring.style.setProperty('--p',pct);
