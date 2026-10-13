@@ -1076,30 +1076,40 @@
   .demo-banner a{color:inherit;font-weight:700;text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
   html[data-theme="dark"] .demo-banner{background:#2d1d00;border-bottom-color:#d97706;color:#fde68a}
 
-  /* Hjemskjerm-nudge (topplinje). Nøytral grå — informasjonsbanner, ikke handling: blå er
-     aksentfargen for handling ellers, og publiseringsflyten skal eie oppmerksomheten. Samme
-     topplinje-flate som .demo-banner. Hele stripa er klikkbar (→ Konto), X skjuler i 14 dager.
-     Vises/skjules via .show (oppdaterHjemskjermNudge). */
-  .hs-nudge{display:none;align-items:center;justify-content:center;gap:8px;position:relative;
-    padding:10px 46px;background:var(--surface);border-bottom:1px solid var(--line);
-    font-size:13.5px;font-weight:500;color:var(--ink-2);line-height:1.4;text-align:center;cursor:pointer}
-  .hs-nudge.show{display:flex}
-  /* «Ny versjon»-stripa: samme topplinje-flate som hjemskjerm-nudgen; knappen i aksentblå (handling). */
+  /* «Ny versjon»-stripa: topplinje-flate (som .demo-banner); knappen i aksentblå (handling). */
   .ny-versjon{display:flex;align-items:center;justify-content:center;gap:8px;padding:10px 16px;background:var(--surface);
     border-bottom:1px solid var(--line);font-size:13.5px;font-weight:500;color:var(--ink-2);line-height:1.4;text-align:center}
   .ny-versjon[hidden]{display:none}
   .ny-versjon button{appearance:none;border:0;background:0;font:inherit;font-weight:600;color:var(--info);cursor:pointer;padding:6px 4px;margin:-6px 0}
   .ny-versjon button:hover{text-decoration:underline}
-  /* Alltid-synlig pil = handlings-affordans ved hvile (ikke bare på hover), så stripa ikke
-     leser som ren informasjon. Liten slide på hover. */
-  .hs-nudge-pil{display:inline-block;white-space:nowrap;transition:transform .18s}
-  /* Nudgen er ÉN linje på ALLE bredder: den midterste frasen skjules alltid → «Få dashbordet som
-     app →». (Var før kun ≤380px, som ga 59px på 402 mot 40px på 320 — den brede fikk høyest nudge.) */
-  .hs-nudge-lang{display:none}
-  .hs-nudge:hover .hs-nudge-pil{transform:translateX(3px)}
-  .hs-nudge-x{position:absolute;right:8px;top:50%;transform:translateY(-50%);appearance:none;border:0;
-    background:0;color:var(--mut);font-size:20px;line-height:1;cursor:pointer;padding:6px 9px;border-radius:7px}
-  .hs-nudge-x:hover{color:var(--ink);background:rgba(127,127,127,.14)}
+  /* Hjemskjerm-kortet (Oversikt, 13.10) — erstatter topplinje-stripa og Konto-raden «Legg til på
+     hjemskjerm». ÉN plattform-variant vises ([data-hs], satt av oppdaterHjemskjermKort).
+     Stegene er et rutenett [nr][ikon][tekst], så en lang linje brytes under teksten, ikke under
+     ikonet. Ikonene er egne strek-SVG-er i samme stil som .nav-ico (1.8 strek, runde ender), 18px,
+     toppjustert mot første tekstlinje (line-height 20px → 1px ned). */
+  .hs-kort{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;
+    padding:16px 18px 18px;margin:0 0 18px}
+  .hs-kort[hidden],.hs-kort [hidden]{display:none}
+  .hs-kort-h{font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--ink);margin:0 34px 4px 0;line-height:1.3}
+  .hs-kort-s{font-size:13px;color:var(--mut);line-height:1.45;margin:0 0 14px}
+  .hs-kort-x{position:absolute;top:8px;right:8px;width:40px;height:40px;border-radius:8px;border:0;background:0;
+    color:var(--mut);font-size:20px;line-height:1;cursor:pointer}
+  .hs-kort-x:hover{color:var(--ink);background:rgba(127,127,127,.14)}
+  .hs-steg{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:hs}
+  .hs-steg li{display:grid;grid-template-columns:12px 18px minmax(0,1fr);column-gap:10px;align-items:start;
+    font-size:13.5px;line-height:20px;color:var(--ink-2)}
+  .hs-steg li::before{counter-increment:hs;content:counter(hs);font-size:12px;font-weight:700;color:var(--mut);text-align:right}
+  .hs-steg li.hs-hint{margin-top:-4px;font-size:12.5px;color:var(--mut)}
+  .hs-steg li.hs-hint::before{counter-increment:none;content:''}
+  .hs-steg b{font-weight:600;color:var(--ink)}
+  .hs-ic{width:18px;height:18px;margin-top:1px;fill:none;stroke:currentColor;stroke-width:1.8;
+    stroke-linecap:round;stroke-linejoin:round;color:var(--ink)}
+  .hs-ic .hs-fyll{fill:currentColor;stroke:none}
+  .hs-ic .hs-paa{fill:var(--good);stroke:var(--good)}
+  .hs-ic .hs-knott{fill:#fff;stroke:none}
+  .hs-kort-tekst{font-size:13.5px;line-height:1.45;color:var(--ink-2);margin:0}
+  .hs-kort-tekst + .hs-steg{margin-top:12px}
+  .hs-installer{margin-top:14px}
 
   /* ---- Grønn toggle-variant ---- */
   .sw-green input:checked + .sl{background:#22c55e}
@@ -1162,7 +1172,7 @@
   .wb-days{font-size:11.5px;color:var(--mut);margin-top:3px}
   .wb-newdot{display:inline-block;width:7px;height:7px;border-radius:50%;background:#4d8bff;margin-right:7px;vertical-align:middle} /* «Ny» no-show <3d */
   /* ── CONCERN 4 — KUN ≤380px (320-fiks). 390/402 bit-for-bit uendret; alt her ligger med vilje
-     i denne media query-en. Plassert ETTER .wb-row/.wb-right/.hs-nudge så den overstyrer dem. ── */
+     i denne media query-en. Plassert ETTER .wb-row/.wb-right så den overstyrer dem. ── */
   @media(max-width:380px){
     /* (a) Vinn-tilbake: navnet klippes fordi høyrekolonnen (.wb-right, «sist her …») er fast bredde.
        Stables til én kolonne: navn+meta full bredde, «sist her …» på egen linje under, venstrejustert.
@@ -1171,8 +1181,6 @@
     .wb-row{flex-direction:column;gap:4px}
     .wb-info{width:100%}
     .wb-right{max-width:none;text-align:left}
-    /* (b) Hjemskjerm-nudgen kortes ned — flyttet til global regel (.hs-nudge-lang) så den er én
-       linje på ALLE bredder, ikke bare ≤380. */
   }
   /* Verving-seksjon (spec 2) + delt blå/dempet pill (også booking-rad-rabatt spec 4) */
   .sett-num-row{display:flex;align-items:center;gap:12px;padding:14px 0}
@@ -1515,9 +1523,6 @@
   .kt-seg button{appearance:none;border:0;background:0;font:inherit;font-size:13px;font-weight:600;color:var(--mut);padding:0 16px;border-radius:7px;cursor:pointer;min-height:40px}
   .kt-seg button[aria-checked="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line-2)}
   .kt-seg button:focus-visible{outline:2px solid var(--info);outline-offset:1px}
-  .kt-hs{margin-top:8px}
-  .kt-hs .block-s{margin-bottom:10px}
-  .kt-hs .block-s:last-child{margin-bottom:0}
   .kt-feedback .block-h:first-child{margin-top:0!important}
   .kt-bunn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:14px}
   .kt-bunn .lnk-quiet{margin-top:0}
@@ -1585,13 +1590,6 @@
   <strong>Forhåndsvisning.</strong> Tallene og innholdet her er eksempeldata — de viser <strong>ikke</strong> ekte aktivitet.
   &nbsp;<a href="/no/kom-i-gang.html">Opprett din egen side →</a>
 </div>
-<!-- Hjemskjerm-nudge (topplinje). Vises kun når page_status='live' + ikke standalone + ikke
-     X-et siste 14 dager (oppdaterHjemskjermNudge, kalt fra renderKonto). Klikk → Konto +
-     åpne «Legg til på hjemskjerm»-trekkspillet. Ingen how-to her — den bor i trekkspillet. -->
-<div class="hs-nudge" id="hsNudge" role="button" tabindex="0" aria-label="Legg dashbordet til på hjemskjermen">
-  <span class="hs-nudge-tekst" data-copy="hs-nudge">Få dashbordet som app<span class="hs-nudge-lang"> — legg til på hjemskjermen</span><span class="hs-nudge-pil" aria-hidden="true"> →</span></span>
-  <button class="hs-nudge-x" id="hsNudgeX" type="button" aria-label="Skjul">&times;</button>
-</div>
 <!-- Ny versjon av dashbordet er deployet mens siden sto åpen, og barbereren har ulagrede endringer
      (uten ulagrede endringer lastes siden bare inn på nytt). Vises av nyVersjonSjekk(). -->
 <div class="ny-versjon" id="nyVersjon" role="status" hidden>
@@ -1658,6 +1656,49 @@
   <!-- OVERSIKT -->
   <section class="panel active" id="oversikt">
 
+    <!-- Hjemskjerm-kortet (13.10). Erstatter topplinje-stripa og Konto-raden: ÉN flate. Skjult i markup;
+         oppdaterHjemskjermKort() viser kortet på telefon (iOS/Android) når dashbordet ikke kjører som app,
+         ikke er installert og ikke er lukket, og avslører NØYAKTIG én [data-hs]-variant. Ikonene er egne
+         strek-SVG-er (ikke Apples). [oversettelse: sv/da/en] -->
+    <div class="hs-kort" id="hsKort" hidden>
+      <button class="hs-kort-x" id="hsKortX" type="button" aria-label="Lukk">&times;</button>
+      <p class="hs-kort-h">Legg BarberHQ på hjemskjermen</p>
+      <p class="hs-kort-s">Da åpner du dashbordet som en app, rett fra hjemskjermen.</p>
+      <!-- iPhone: Safari og Chrome (Del finnes i begge; i Safari med kompakt fanelinje ligger den bak ⋯) -->
+      <ol class="hs-steg" data-hs="ios" hidden>
+        <li><svg class="hs-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 9.5H7a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7.5a2 2 0 0 0-2-2h-1.5"/><path d="M12 3v11.5M8.5 6.5 12 3l3.5 3.5"/></svg><span>Trykk <b>Del</b></span></li>
+        <li class="hs-hint"><svg class="hs-ic" viewBox="0 0 24 24" aria-hidden="true"><circle class="hs-fyll" cx="5" cy="12" r="1.7"/><circle class="hs-fyll" cx="12" cy="12" r="1.7"/><circle class="hs-fyll" cx="19" cy="12" r="1.7"/></svg><span>Ser du ikke Del? Trykk <b>⋯</b> først</span></li>
+        <li><svg class="hs-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M12 8.5v7M8.5 12h7"/></svg><span>Trykk <b>Legg til på Hjem-skjerm</b></span></li>
+        <li><svg class="hs-ic" viewBox="0 0 24 24" aria-hidden="true"><rect class="hs-paa" x="2.5" y="6.5" width="19" height="11" rx="5.5"/><circle class="hs-knott" cx="16" cy="12" r="3.6"/></svg><span>Slå på <b>Åpne som nettapp</b> hvis du ser den</span></li>
+        <li><svg class="hs-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Trykk <b>Legg til</b></span></li>
+      </ol>
+      <!-- iPhone i en innebygd nettleser (Instagram, Facebook, TikTok …): ingen Legg til på Hjem-skjerm der -->
+      <div data-hs="ios-innebygd" hidden>
+        <p class="hs-kort-tekst">Du er i en app sin egen nettleser. Der kan du ikke legge til på hjemskjermen.</p>
+        <ol class="hs-steg">
+          <li><svg class="hs-ic" viewBox="0 0 24 24" aria-hidden="true"><circle class="hs-fyll" cx="5" cy="12" r="1.7"/><circle class="hs-fyll" cx="12" cy="12" r="1.7"/><circle class="hs-fyll" cx="19" cy="12" r="1.7"/></svg><span>Trykk <b>⋯</b> øverst til høyre</span></li>
+          <li><svg class="hs-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Velg <b>Åpne i ekstern nettleser</b> og følg stegene der</span></li>
+        </ol>
+      </div>
+      <!-- Android Chrome med beforeinstallprompt: ekte installer-knapp -->
+      <div data-hs="android-installer" hidden>
+        <p class="hs-kort-tekst">Ett trykk, så ligger dashbordet på startskjermen.</p>
+        <button class="btn hs-installer" id="hsInstaller" type="button">Installer</button>
+      </div>
+      <!-- Android uten prompt (annen nettleser, eller Chrome som ikke tilbyr det nå): menyen -->
+      <ol class="hs-steg" data-hs="android-meny" hidden>
+        <li><svg class="hs-ic" viewBox="0 0 24 24" aria-hidden="true"><circle class="hs-fyll" cx="12" cy="5" r="1.7"/><circle class="hs-fyll" cx="12" cy="12" r="1.7"/><circle class="hs-fyll" cx="12" cy="19" r="1.7"/></svg><span>Trykk <b>⋮</b> øverst til høyre</span></li>
+        <li><svg class="hs-ic" viewBox="0 0 24 24" aria-hidden="true"><rect x="4" y="4" width="16" height="16" rx="3.5"/><path d="M12 8.5v7M8.5 12h7"/></svg><span>Velg <b>Legg til på startskjermen</b> eller <b>Installer app</b></span></li>
+        <li><svg class="hs-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Trykk <b>Installer</b> eller <b>Legg til</b></span></li>
+      </ol>
+      <div data-hs="android-innebygd" hidden>
+        <p class="hs-kort-tekst">Du er i en app sin egen nettleser. Der kan du ikke legge til på startskjermen.</p>
+        <ol class="hs-steg">
+          <li><svg class="hs-ic" viewBox="0 0 24 24" aria-hidden="true"><circle class="hs-fyll" cx="12" cy="5" r="1.7"/><circle class="hs-fyll" cx="12" cy="12" r="1.7"/><circle class="hs-fyll" cx="12" cy="19" r="1.7"/></svg><span>Trykk <b>⋮</b> øverst til høyre</span></li>
+          <li><svg class="hs-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12.5l4.5 4.5L19 7.5"/></svg><span>Velg <b>Åpne i Chrome</b> og følg stegene der</span></li>
+        </ol>
+      </div>
+    </div>
 
     <!-- 1. Kommende bookinger — løftet ut av .bottom-grid til topp. -->
     <div class="ovs-upcoming">
@@ -2561,30 +2602,6 @@
               <div class="kt-seg" id="themeGrid" role="radiogroup" aria-labelledby="temaEtikett"></div>
             </div>
             <p class="kt-under kt-under-blokk">Gjelder bare dashbordet. Lyst/mørkt på bookingsiden din velger du under Din side. Huskes i denne nettleseren.</p>
-          </div>
-          <!-- PWA-veiledning: hidden i markup; initHjemskjerm() viser raden KUN når appen ikke alt kjører
-               standalone, og avslører NØYAKTIG én .hs-variant etter plattform. Android: beforeinstallprompt
-               fanges → #hsInstall vises. Copy i data-copy-nodene. [oversettelse: sv/da/en] -->
-          <div class="kt-rad" id="kontoHjemskjerm" hidden>
-            <div class="kt-rad-topp"><span class="kt-etikett" data-copy="hs-title">Legg til på hjemskjerm</span></div>
-            <div class="kt-hs">
-              <div class="hs-variant" data-hs="ios-safari" hidden>
-                <p class="block-s" data-copy="hs-ios-safari">Trykk Del-knappen nederst, velg «Legg til på Hjem-skjerm».</p>
-              </div>
-              <!-- iOS, men IKKE Safari (Chrome/Firefox/Edge på iPhone) — MÅ si at det kun virker i Safari -->
-              <div class="hs-variant" data-hs="ios-annet" hidden>
-                <p class="block-s" data-copy="hs-ios-annet">Dette virker bare i Safari. Åpne trybarberhq.com i Safari.</p>
-              </div>
-              <!-- Android / Chrome -->
-              <div class="hs-variant" data-hs="android" hidden>
-                <p class="block-s" data-copy="hs-android">Trykk menyen øverst til høyre, velg «Legg til på startskjerm».</p>
-                <button class="btn" id="hsInstall" style="display:none" data-copy="hs-install">Legg til</button>
-              </div>
-              <!-- Desktop / ukjent plattform -->
-              <div class="hs-variant" data-hs="desktop" hidden>
-                <p class="block-s" data-copy="hs-desktop">Åpne dashbordet på telefonen for å legge det til på hjemskjermen.</p>
-              </div>
-            </div>
           </div>
         </div>
       </section>
@@ -6848,9 +6865,8 @@ function renderKonto(b){
         tall=$("#kontoTall"),tallStor=$("#kontoTallStor"),tallSuff=$("#kontoTallSuff"),tallSub=$("#kontoTallSub"),
         mikro=$("#kontoMikro"),fin=$("#kontoFin"),opp=$("#kontoOpp"),oppH=$("#kontoOppH"),
         oppBtn=$("#kontoOppBtn"),oppFin=$("#kontoOppFin"),avpub=$("#kontoAvpub"),dot=$("#kontoDot");
-  // Hjemskjerm-nudgen (topplinje) re-evalueres ved hver billing-render — så den dukker opp i
-  // samme øyeblikk page_status blir 'live' (publisering) og forsvinner ved avpublisering.
-  if(typeof oppdaterHjemskjermNudge==='function') oppdaterHjemskjermNudge();
+  // Hjemskjerm-kortet re-evalueres ved hver billing-render (demo/fokus kan ha endret seg).
+  if(typeof oppdaterHjemskjermKort==='function') oppdaterHjemskjermKort();
   const t=kontoTilstand(b);
   const vis=(el,ja)=>{ if(el)el.style.display=ja?'':'none'; };
 
@@ -7621,45 +7637,6 @@ anvendHash(); // åpne panelet fra location.hash (ukjent/tom → standardpanel).
   if(document.readyState==='loading') document.addEventListener('DOMContentLoaded',init); else init();
 })();
 
-/* ---- Legg til på hjemskjerm (PWA-veiledning i Konto) ----
-   Viser seksjonen KUN når appen ikke alt kjører standalone, og avslører den plattform-
-   varianten som gjelder. Copy skrives av Henrik i data-copy-nodene; her er bare mekanikken. */
-(function(){
-  var acc=document.getElementById('kontoHjemskjerm'); if(!acc)return;
-  // Alt installert/standalone? Da er veiledningen støy — la seksjonen bli stående hidden.
-  // Delt sjekk med hjemskjerm-nudgen (erStandalone).
-  if(erStandalone()) return;
-
-  var ua=navigator.userAgent||'';
-  // iPadOS 13+ melder seg som «MacIntel» med touch — fang det som iOS.
-  var iOS = /iP(hone|od|ad)/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
-  // POSITIV Safari-identifikasjon (IKKE svarteliste): ekte iOS-Safari har BÅDE «Version/» og
-  // «Safari/» i UA-en og bærer INGEN app-token. Alt annet på iOS → ios-annet. In-app-nettlesere
-  // faller ut: Chrome (CriOS), Firefox (FxiOS), Edge (EdgiOS), Opera (OPiOS), Google-appen (GSA),
-  // DuckDuckGo, Instagram, Facebook (FBAN/FBAV/FB_IAB), Line/WeChat/WhatsApp — samt token-løse
-  // WKWebViews, som mangler «Version/». En ren svarteliste bommet på GSA og nye in-app-browsere;
-  // kun ekte Safari skal få Del→«Legg til på Hjem-skjerm»-instruksjonen (de andre har ingen slik knapp).
-  var APP_TOKENS = /(CriOS|FxiOS|EdgiOS|OPiOS|GSA|DuckDuckGo|Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger|WhatsApp|WebView)/i;
-  var erSafari = iOS && /\bVersion\//.test(ua) && /\bSafari\//.test(ua) && !APP_TOKENS.test(ua);
-  var android = /Android/.test(ua);
-
-  var vis;
-  if(iOS)          vis = [ erSafari ? 'ios-safari' : 'ios-annet' ];
-  else if(android) vis = [ 'android' ];
-  else             vis = [ 'desktop' ];
-  vis.forEach(function(k){ var el=acc.querySelector('.hs-variant[data-hs="'+k+'"]'); if(el) el.hidden=false; });
-  acc.hidden=false; // raden dukker opp under Utseende
-
-  // Android/Chrome tilbyr install selv: fang prompten og vis knappen.
-  window.addEventListener('beforeinstallprompt', function(e){
-    e.preventDefault(); window.__bhqInstallEvt=e;
-    var b=document.getElementById('hsInstall'); if(b) b.style.display='';
-  });
-  var installBtn=document.getElementById('hsInstall');
-  if(installBtn) installBtn.addEventListener('click', function(){
-    var p=window.__bhqInstallEvt; if(p && p.prompt) p.prompt();
-  });
-})();
 
 /* ---- Ulagrede endringer (brukes av versjonssjekken under) ----
    Et felt er ULAGRET fra barbereren skriver i det (ekte input-hendelse) til et skrivekall lykkes etter
@@ -7714,7 +7691,6 @@ function harUlagret(){
     if(etag===_etag)return;
     if(!harUlagret()){ location.reload(); return; }
     if(stripe)stripe.hidden=false;
-    if(typeof window.oppdaterHjemskjermNudge==='function')window.oppdaterHjemskjermNudge();   // aldri to topplinjer
   }
   window.nyVersjonSjekk=sjekk;
   // Utgangspunkt: ETag ved oppstart (siden kan ikke lese sine egne svar-headere). Teller som en sjekk.
@@ -7724,48 +7700,68 @@ function harUlagret(){
   var knapp=document.getElementById('nyVersjonLast'); if(knapp)knapp.addEventListener('click',function(){ location.reload(); });
 })();
 
-/* ---- Standalone-sjekk: delt kilde for initHjemskjerm + hjemskjerm-nudgen ----
-   Funksjonsdeklarasjon (hoistet) så begge IIFE-ene ser den uansett rekkefølge. */
+/* ---- Standalone-sjekk: kjører dashbordet som app fra hjemskjermen? (hjemskjerm-kortet) ----
+   Funksjonsdeklarasjon (hoistet). */
 function erStandalone(){
   return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
          || window.navigator.standalone===true;
 }
 
-/* ---- Hjemskjerm-nudge (topplinje) ----
-   Vises når ALLE tre er sanne: page_status='live' (fra _billing), ikke standalone, og ikke
-   X-et de siste 14 dagene (localStorage-timestamp, ikke permanent flagg). Re-evalueres fra
-   renderKonto() — så den dukker opp i det øyeblikket hun publiserer. Klikk på stripa →
-   Konto-fanen + åpne «Legg til på hjemskjerm»-trekkspillet (riktig variant er alt avslørt av
-   initHjemskjerm). Publiserings-CTA-en krever 'forhandsvist' og nudgen 'live' → gjensidig
-   utelukkende, aldri to topplinjer; i tillegg vakt mot samtidig demo-banner. */
+/* ---- Hjemskjerm-kortet (Oversikt) ----
+   Vises når ALT stemmer: telefon (iOS/Android), ikke kjørende som app (erStandalone), ikke installert
+   (permanent flagg), ikke lukket nylig, ikke demo og ikke fokusmodus. Lukk (×) → borte i 14 dager;
+   lukket to ganger → borte for godt. Android: Chromes beforeinstallprompt fanges → «Installer»-knapp
+   som åpner Chromes egen dialog; avvist = som lukking, godtatt/appinstalled = installert for godt.
+   Lagring i try/catch: blokkert localStorage gir et kort som vises, aldri en feil.
+   Re-evalueres fra renderKonto (demo/fokus kan ha endret seg) og når prompten kommer. */
 (function(){
-  var el=document.getElementById('hsNudge'); if(!el) return;
-  var KEY='bhq-hjemskjerm-nudge-skjult', VINDU=14*24*60*60*1000;
-  function nyligSkjult(){
-    var t=parseInt(localStorage.getItem(KEY)||'0',10);
-    return t>0 && (Date.now()-t) < VINDU;
+  var kort=document.getElementById('hsKort'); if(!kort) return;
+  var KEY_SKJULT='bhq-hjemskjerm-skjult', KEY_INST='bhq-hjemskjerm-installert';
+  var VINDU=14*24*60*60*1000, MAKS_LUKK=2;
+  function les(k){ try{ return localStorage.getItem(k); }catch(_){ return null; } }
+  function skriv(k,v){ try{ localStorage.setItem(k,v); }catch(_){} }
+  function skjult(){ try{ return JSON.parse(les(KEY_SKJULT)||'null'); }catch(_){ return null; } }
+  function lukketNaa(){ var s=skjult(); if(!s) return false; return s.n>=MAKS_LUKK || (Date.now()-s.t)<VINDU; }
+  function lukk(){ var s=skjult(); skriv(KEY_SKJULT, JSON.stringify({t:Date.now(), n:((s&&s.n)||0)+1})); kort.hidden=true; }
+  function installert(){ skriv(KEY_INST,'1'); kort.hidden=true; }
+
+  var ua=navigator.userAgent||'';
+  // iPadOS 13+ melder seg som «MacIntel» med touch — fang det som iOS.
+  var iOS=/iP(hone|od|ad)/.test(ua) || (navigator.platform==='MacIntel' && navigator.maxTouchPoints>1);
+  var android=/Android/.test(ua);
+  // Innebygde nettlesere (in-app) har ingen «Legg til på Hjem-skjerm». Safari, Chrome (CriOS), Firefox
+  // (FxiOS) og Edge (EdgiOS) på iPhone har Del → Legg til (iOS 16.4+). Token-løse WKWebView-er mangler
+  // «Safari/», Android-WebView har «; wv)».
+  var INNEBYGD=/(Instagram|FBAN|FBAV|FB_IAB|Line\/|MicroMessenger|musical_ly|BytedanceWebview|Snapchat|Pinterest|GSA\/|; wv\))/i;
+  var innebygd=INNEBYGD.test(ua) || (iOS && !/\bSafari\//.test(ua));
+
+  function variant(){
+    if(iOS) return innebygd?'ios-innebygd':'ios';
+    if(android) return innebygd?'android-innebygd':(window.__bhqInstallEvt?'android-installer':'android-meny');
+    return null;   // PC: ingen hjemskjerm å legge til på
   }
-  function demoSynlig(){
-    var d=document.getElementById('demoBanner');
-    return !!(d && d.classList.contains('show'));
+  function render(){
+    var v=variant();
+    var demo=(typeof IS_DEMO!=='undefined'&&IS_DEMO);
+    var vis=!!v && !erStandalone() && les(KEY_INST)!=='1' && !lukketNaa() && !demo && !document.body.classList.contains('fokus');
+    kort.hidden=!vis;
+    if(!vis) return;
+    kort.querySelectorAll('[data-hs]').forEach(function(el){ el.hidden=(el.getAttribute('data-hs')!==v); });
   }
-  window.oppdaterHjemskjermNudge=function(){
-    var live = !!(typeof _billing!=='undefined' && _billing && _billing.page_status==='live');
-    var nyVersjonVises=!document.getElementById('nyVersjon').hidden;   // aldri to topplinjer: «Ny versjon» vinner
-    el.classList.toggle('show', live && !erStandalone() && !nyligSkjult() && !demoSynlig() && !nyVersjonVises);
-  };
-  function tilKonto(){
-    switchPanel('abonnement');           // → Konto-fanen (+ location.hash='konto')
-    var acc=document.getElementById('kontoHjemskjerm');   // raden står åpen — ingen trekkspill å folde ut
-    if(acc && !acc.hidden) acc.scrollIntoView({block:'center'});
-  }
-  el.addEventListener('click', tilKonto);
-  el.addEventListener('keydown', function(e){ if(e.key==='Enter'||e.key===' '){ e.preventDefault(); tilKonto(); } });
-  document.getElementById('hsNudgeX').addEventListener('click', function(e){
-    e.stopPropagation();                  // X skal ikke trigge navigasjonen
-    try{ localStorage.setItem(KEY, String(Date.now())); }catch(_){}
-    el.classList.remove('show');
+  window.addEventListener('beforeinstallprompt', function(e){ e.preventDefault(); window.__bhqInstallEvt=e; render(); });
+  window.addEventListener('appinstalled', function(){ window.__bhqInstallEvt=null; installert(); });
+  document.getElementById('hsKortX').addEventListener('click', lukk);
+  document.getElementById('hsInstaller').addEventListener('click', async function(){
+    var e=window.__bhqInstallEvt; if(!e||!e.prompt) return;
+    window.__bhqInstallEvt=null;   // en prompt kan bare brukes én gang
+    var utfall=null;
+    try{ e.prompt(); utfall=(await e.userChoice).outcome; }catch(_){}
+    if(utfall==='accepted') installert();
+    else if(utfall==='dismissed') lukk();
+    else render();                 // ukjent utfall: tilbake til meny-stegene
   });
+  window.oppdaterHjemskjermKort=render;
+  render();
 })();
 
 /* ===== KAMPANJEPLAKATER — fullskjerm-editor =====

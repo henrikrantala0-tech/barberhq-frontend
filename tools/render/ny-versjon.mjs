@@ -10,6 +10,8 @@
 //   E  feltet er lagret (PUT ok)            → regnes ikke som ulagret → ny lasting
 //   F  pageshow fra bfcache                 → sjekker også
 //   G  bare ETag-endelsen endret (-ssl/-df) → ikke ny versjon (kun innholdshashen sammenlignes)
+//   H  iPhone + stripe                      → hjemskjerm-kortet står i Oversikt UNDER stripa (aldri en
+//                                             andre topplinje; den gamle hjemskjerm-stripa finnes ikke)
 // Tiden styres med page.clock (install + resume, fastForward over minuttet). Alt /api/** mockes.
 //
 //   node tools/render/ny-versjon.mjs
@@ -30,8 +32,8 @@ const browser = await chromium.launch();
 let feil = 0, apiForsok = 0, apiMocket = 0;
 const sjekk = (ok, t) => { console.log((ok ? 'OK   ' : 'FEIL ') + t); if (!ok) feil++; };
 
-async function side(bredde = 375) {
-  const page = await browser.newPage({ viewport: { width: bredde, height: 800 }, deviceScaleFactor: 2 });
+async function side(bredde = 375, userAgent) {
+  const page = await browser.newPage({ viewport: { width: bredde, height: 800 }, deviceScaleFactor: 2, ...(userAgent ? { userAgent } : {}) });
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   const st = { etag: '"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-ssl"', headStatus: 200, head: 0, lastinger: 0, profilPut: 0 };
   page.on('request', q => { const u = new URL(q.url());
@@ -78,7 +80,7 @@ for (const bredde of [320, 375]) { // B — ny ETag + ulagret tekst → stripe, 
   sjekk(await page.$eval('#nyVersjon', e => e.textContent.replace(/\s+/g, ' ').trim()) === 'Ny versjon.Last inn på nytt'
     || await page.$eval('#nyVersjon', e => e.innerText.replace(/\s+/g, ' ').trim()) === 'Ny versjon. Last inn på nytt', `B ${bredde}: tekst «Ny versjon. Last inn på nytt»`);
   sjekk(await page.$eval('#pf-name', e => e.value) === 'Henrik R.x', `B ${bredde}: det barbereren skrev står fortsatt`);
-  sjekk(!(await page.$eval('#hsNudge', e => e.classList.contains('show'))), `B ${bredde}: aldri to topplinjer (hjemskjerm-stripa skjult mens «Ny versjon» vises)`);
+  sjekk(await page.evaluate(() => !document.querySelector('#hsNudge,.hs-nudge')), `B ${bredde}: én topplinje — den gamle hjemskjerm-stripa finnes ikke`);
   await page.evaluate(() => window.scrollTo(0, 0));
   await page.screenshot({ path: path.join(OUT, `stripe-${bredde}.png`), clip: { x: 0, y: 0, width: bredde, height: 260 } });
   await page.click('#nyVersjonLast'); await ventLasting(st, 1);
@@ -120,6 +122,21 @@ for (const bredde of [320, 375]) { // B — ny ETag + ulagret tekst → stripe, 
   await etMinutt(page); st.etag = '"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-ssl-df"'; await forgrunn(page); await page.waitForTimeout(600);
   sjekk(st.head === 2 && st.lastinger === 1 && !(await stripe(page)), `G: bare ETag-endelsen endret → ingen lasting, ingen stripe`);
   sjekk(errs.length === 0, `G: JS-feil ${errs.join(' | ')}`); await page.close();
+}
+const IPHONE = 'Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1';
+for (const bredde of [320, 375]) { // H — iPhone: hjemskjerm-kortet og «Ny versjon»-stripa samtidig → kortet i Oversikt, under stripa
+  const { page, errs, st } = await side(bredde, IPHONE);
+  await page.click('#radNavn [data-endre]'); await page.fill('#pf-name', 'Henrik R.'); await page.type('#pf-name', 'x');
+  await etMinutt(page); st.etag = '"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb-ssl"'; await forgrunn(page); await page.waitForTimeout(600);
+  await page.evaluate(() => { document.querySelector('.bunn-nav [data-panel="oversikt"]').click(); window.scrollTo(0, 0); }); await page.waitForTimeout(300);
+  const m = await page.evaluate(() => { const k = document.getElementById('hsKort'), s = document.getElementById('nyVersjon');
+    const vis = e => !!e && !e.hidden && e.offsetParent !== null;
+    return { kort: vis(k), stripe: vis(s), iOversikt: !!(k && k.closest('#oversikt')), under: vis(k) && vis(s) && k.getBoundingClientRect().top >= s.getBoundingClientRect().bottom,
+      variant: k ? [...k.querySelectorAll('[data-hs]')].filter(e => !e.hidden).map(e => e.getAttribute('data-hs')).join(',') : '' }; });
+  sjekk(m.stripe && m.kort && m.iOversikt && m.under && m.variant === 'ios', `H ${bredde}: stripe + hjemskjerm-kort (iOS) i Oversikt under stripa ${JSON.stringify(m)}`);
+  await page.screenshot({ path: path.join(OUT, `stripe-og-kort-${bredde}.png`), clip: { x: 0, y: 0, width: bredde, height: 560 } });
+  sjekk(st.lastinger === 1, `H ${bredde}: ingen ny lasting (ulagret navn)`);
+  sjekk(errs.length === 0, `H ${bredde}: JS-feil ${errs.join(' | ')}`); await page.close();
 }
 sjekk(apiForsok === apiMocket,`alle ${apiForsok} kall mot api.trybarberhq.com besvart av mocken — ingen nådde prod`);
 await browser.close(); server.close();
