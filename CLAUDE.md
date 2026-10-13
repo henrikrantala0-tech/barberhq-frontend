@@ -520,9 +520,14 @@ pushet er testrunde-fiksene (bug 3 / beslutning 4–7 / kamerarull / miniatyr-ca
   `POST`/`DELETE /images` bærer `bildekrav: {[layout]:{felt,baerer,reserve,maks}}` og
   `bilde_status: {[layout]: null|'reserve'|'mangler'}`. Dashbordet har INGEN egen layout→bilde-liste:
   `renderSlotView` og hjelpeteksten (`layoutHint`) leses av `felt`/`maks`. Ved `'mangler'` for VALGT layout
-  vises bildevarselet (låste tekster i `BILDE_VARSEL`) to steder, styrt av samme `oppdaterBildeVarsel()`:
-  `#layoutBildeVarsel` under layoutvalget i Design og `#bilderVarsel` øverst i Bilder. Begge trengs fordi
-  «Din side» har ett åpent trekkspill om gangen. `'reserve'` (Hero uten forsidebilde, med galleri) gir en
+  vises bildevarselet (låste tekster i `BILDE_VARSEL`) KUN i Design: `#layoutBildeVarsel` under layoutvalget
+  (`oppdaterBildeVarsel()`). **Ikke i Bilder (13.10):** når Bilder er åpen, er den tomme boksen oppfordringen;
+  under tom portrett-boks står lenka «Har du ikke et portrett? Velg en annen layout.» (`data-velg-layout` →
+  `aapneLayoutvalg()`). «Din side» har ett åpent trekkspill om gangen, så banneret i Design dekker «Bilder
+  lukket». **Ingen forhåndsvisnings-lås (13.10):** boksene er trykkbare også når layouten bare er valgt, ikke
+  lagret (bilder hører til slot, ikke layout). Første opplasting i ulagret layout lagrer layouten ETTER bildet
+  (`lagreLayoutEtterOpplasting`, `PUT /design {layout}`); feiler den, står en varig feillinje (`#bilderFeil`)
+  i stedet for «… er lagret», og `savedLayout` røres ikke. `'reserve'` (Hero uten forsidebilde, med galleri) gir en
   dempet linje ved forsidebilde-feltet. **Ingen slettebekreftelse** (fjernet 10.10): sletting skjer med en
   gang, også av layoutens siste bilde; varselet kommer etterpå av `bilde_status` i DELETE-svaret. ÉN setter
   (`settBildeData`). **Mangler feltene (gammel backend): ingen varsler OG ingen bildefelt** — frontend må

@@ -5,10 +5,13 @@
 // (i «backend») av bildene i mock-DB-en — dashbordet skal bare lese den. Bildene er stateful, så en
 // DELETE endrer status og svaret bærer den nye. Alt /api/** mockes; ingenting når prod.
 //
-// Dekker: varsel/tekst per layout ved 'mangler' (i Design OG øverst i Bilder), ingen varsel ved 'ok',
-// reservelinje ved 'reserve', «Legg til bilde» → riktig felt, sletting uten bekreftelse (også siste
-// bilde) med varselet rett etter fra DELETE-svaret, hjelpetekst fra felt+maks, og gammel backend
-// (uten feltene) → ingen varsler.
+// Dekker: varsel/tekst per layout ved 'mangler' (i Design — ALDRI i Bilder, 13.10: der er den tomme
+// boksen oppfordringen), ingen varsel ved 'ok', reservelinje ved 'reserve', «Legg til bilde» → riktig felt,
+// lenka «Har du ikke et portrett? Velg en annen layout.» under tom portrett-boks → layoutvalget, sletting
+// uten bekreftelse (også siste bilde) med varselet satt i Design fra DELETE-svaret, hjelpetekst fra
+// felt+maks, gammel backend (uten feltene) → ingen varsler, og FORHÅNDSVISNING (valgt, ulagret layout):
+// boksene er trykkbare (ingen lås), opplasting lagrer layouten etterpå (PUT /design {layout}), og feiler
+// den PUT-en (500 eller nettverk) står en varig feillinje i Bilder — aldri «… er lagret».
 //
 //   node tools/render/bildevarsel.mjs
 //
@@ -57,6 +60,17 @@ function lagRouter(state) {
     const req = route.request(); const u = new URL(req.url()); const p = u.pathname; const m = req.method();
     const json = (obj, status = 200) => route.fulfill({ status, contentType: 'application/json', body: JSON.stringify(obj) });
     const kontrakt = () => state.gammel ? {} : { bildekrav: BILDEKRAV, bilde_status: bildeStatus(state.imgs) };
+    if (p === '/api/dashboard/design' && m === 'PUT') {
+      state.designPut.push(req.postData());
+      if (state.designFeil === 'nett') return route.abort();
+      if (state.designFeil === '500') return json({ error: 'kunne ikke lagre design' }, 500);
+      state.layout = JSON.parse(req.postData()).layout || state.layout;
+      return json({ ok: true, bilderSlettet: false });
+    }
+    if (p === '/api/dashboard/images' && m === 'POST') {
+      state.imgs.push(img(100 + state.imgs.length, 'portrett', 1)); state.opplastet++;
+      return json({ ok: true, ...kontrakt() });
+    }
     if (p === '/api/dashboard/profile') return json(PROFILE);
     if (p === '/api/dashboard/design' && m === 'GET') return json({ palette: 'minimal', font: 'fraunces', layout: state.layout, mode: 'mork', ...kontrakt() });
     if (p === '/api/dashboard/images' && m === 'GET') return json(state.imgs);
@@ -81,6 +95,7 @@ const TEKST = {
 const HINT = { hero: 'Hero: ett forsidebilde', profil: 'Profil: ett portrett + opptil 10 i galleriet',
   showcase: 'Showcase: opptil 10 bilder i galleriet', direkte: 'Direkte: ingen bilder på siden' };
 const RESERVE = 'Siden bruker ditt første galleribilde.';
+const LENKE = 'Har du ikke et portrett? Velg en annen layout.';
 
 async function aapne(state, w) {
   const page = await browser.newPage({ viewport: { width: w, height: 900 }, deviceScaleFactor: 2 });
@@ -114,10 +129,11 @@ const les = page => page.evaluate(() => {
     felt: [...document.querySelectorAll('#bilderMount .slot-section .slot-box')].map(b => b.dataset.slot).filter((v, i, a) => a.indexOf(v) === i),
     reserve: [...document.querySelectorAll('#bilderMount .slot-reserve')].map(e => ({ t: e.textContent, i: e.closest('.slot-section').querySelector('.slot-box')?.dataset.slot })),
     direkteMsg: !!document.querySelector('#bilderMount .slot-direkte-msg'),
-    // Varselet øverst i Bilder: «satt» = ikke [hidden] (trekkspillet kan være lukket), «synlig» = på skjermen.
-    bSatt: !(document.querySelector('#bilderVarsel') || { hidden: true }).hidden,
-    bSynlig: vis(document.querySelector('#bilderVarsel')),
-    bTekst: (document.querySelector('#bilderVarselTekst') || {}).textContent || '',
+    // Bilder har INGEN varsel-banner (13.10) og ingen forhåndsvisnings-lås.
+    bFinnes: !!document.querySelector('#bilderVarsel'),
+    laas: !!document.querySelector('.slots-lock-note,#bilderMount.slots-locked'),
+    lenke: (document.querySelector('#bilderMount [data-velg-layout]') || {}).textContent || '',
+    feillinje: (el => el && !el.hidden ? el.textContent : '')(document.querySelector('#bilderFeil')),
     slettebekreftelse: !!document.querySelector('#bildeDelWarn,#showcaseDelWarn,.sg-danger'),
     overflow: document.documentElement.scrollWidth - innerWidth,
   };
@@ -157,13 +173,15 @@ const BAERER = { profil: 'portrett', showcase: 'galleri', hero: 'hero' };
 const prodTotalt = { n: 0 }; const skrivTotalt = [];
 for (const w of [320, 375]) {
   for (const t of TILSTANDER) {
-    const state = { layout: t.layout, imgs: t.imgs.map(i => ({ ...i })), slettet: [], skriv: [], prod: 0, gammel: false };
+    const state = { layout: t.layout, imgs: t.imgs.map(i => ({ ...i })), slettet: [], skriv: [], designPut: [], opplastet: 0, prod: 0, gammel: false };
     const { page, errs } = await aapne(state, w);
     const m = await les(page);
     const id = `${w} ${t.layout}/${t.tilstand}`;
     const vilVarsel = t.status === 'mangler';
     sjekk(m.varsel === vilVarsel && m.tekst === (vilVarsel ? TEKST[t.layout] : ''), `${id}: varsel ${m.varsel ? '«' + m.tekst + '»' : 'skjult'}`);
-    sjekk(m.bSatt === vilVarsel && m.bTekst === (vilVarsel ? TEKST[t.layout] : ''), `${id}: samme varsel øverst i Bilder (${m.bSatt ? '«' + m.bTekst + '»' : 'skjult'})`);
+    sjekk(!m.bFinnes && !m.laas, `${id}: ingen banner og ingen lås i Bilder`);
+    const vilLenke = t.layout === 'profil' && !t.imgs.some(i => i.slot === 'portrett');
+    sjekk(m.lenke === (vilLenke ? LENKE : ''), `${id}: lenke under portrett ${m.lenke ? '«' + m.lenke + '»' : 'ingen'}`);
     sjekk(!m.slettebekreftelse, `${id}: ingen slettebekreftelse i DOM-en`);
     sjekk(m.hint === HINT[t.layout], `${id}: hjelpetekst «${m.hint}»`);
     const forventFelt = BILDEKRAV[t.layout].felt.join(',');
@@ -197,25 +215,25 @@ for (const w of [320, 375]) {
     { navn: 'hero med galleri (→ reserve)', layout: 'hero',    imgs: [img(1, 'hero', 2), img(2, 'galleri', 0)], id: 1, mangler: false },
   ];
   for (const s of SLETT) {
-    const state = { layout: s.layout, imgs: s.imgs.map(i => ({ ...i })), slettet: [], skriv: [], prod: 0, gammel: false };
+    const state = { layout: s.layout, imgs: s.imgs.map(i => ({ ...i })), slettet: [], skriv: [], designPut: [], opplastet: 0, prod: 0, gammel: false };
     const { page, errs } = await aapne(state, w);
     await aapneAkk(page, 'accBilder');
     const foer = await les(page);
-    sjekk(!foer.bSatt, `${w} slett ${s.navn}: intet varsel før slettingen`);
+    sjekk(!foer.bFinnes, `${w} slett ${s.navn}: intet banner i Bilder før slettingen`);
     await page.click(`#bilderMount .slot-menu-btn[data-id="${s.id}"]`); await page.waitForTimeout(250);
     await page.click('#slotPopupFjern'); await page.waitForTimeout(900);
     const m = await les(page);
     const id = `${w} slett ${s.navn}`;
     sjekk(state.slettet.length === 1 && state.slettet[0] === s.id, `${id}: slettet med en gang, uten bekreftelse (DELETE ${state.slettet})`);
     if (s.mangler) {
-      sjekk(m.bSynlig && m.bTekst === TEKST[s.layout], `${id}: varselet vises øverst i Bilder rett etter: «${m.bTekst}»`);
-      sjekk(m.varsel === false && m.tekst === TEKST[s.layout], `${id}: samme varsel satt i Design (lukket trekkspill)`);
+      sjekk(!m.bFinnes, `${id}: intet banner i Bilder — den tomme boksen er oppfordringen`);
+      sjekk(m.varsel === false && m.tekst === TEKST[s.layout], `${id}: varselet satt i Design (lukket trekkspill)`);
+      if (s.layout === 'profil') sjekk(m.lenke === LENKE, `${id}: lenke under tom portrett-boks «${m.lenke}»`);
       await page.mouse.move(0, 0);
       const r = await page.evaluate(() => { const e = document.querySelector('#accBilder').getBoundingClientRect(); return { y: e.top + scrollY - 8, h: e.height + 16 }; });
       await page.screenshot({ clip: { x: 0, y: r.y, width: w, height: r.h }, fullPage: true, path: path.join(OUT, `slett-${s.layout}-etter-${w}.png`) });
-      await page.click('#bilderVarselAdd'); await page.waitForTimeout(700);
-      const fokus = await page.evaluate(() => ({ slot: document.activeElement?.dataset?.slot, tom: !document.activeElement?.classList.contains('filled') }));
-      sjekk(fokus.slot === BAERER[s.layout] && fokus.tom, `${id}: «Legg til bilde» i Bilder → ${JSON.stringify(fokus)}`);
+      const tom = await page.evaluate(b => !!document.querySelector(`#bilderMount .slot-box[data-slot="${b}"]:not(.filled)`), BAERER[s.layout]);
+      sjekk(tom, `${id}: tom ${BAERER[s.layout]}-boks står klar i Bilder`);
     } else {
       sjekk(!m.bSatt && !m.tekst, `${id}: intet varsel etter slettingen`);
       if (s.layout === 'hero') sjekk(m.reserve.length === 1 && m.reserve[0].t === RESERVE, `${id}: DELETE-svaret satte 'reserve' → reservelinje vises`);
@@ -227,13 +245,62 @@ for (const w of [320, 375]) {
 
   // ── Gammel backend: ingen bildekrav/bilde_status → ingen varsler (heller ikke ved sletting) ──
   {
-    const state = { layout: 'showcase', imgs: [img(1, 'galleri', 0)], slettet: [], skriv: [], prod: 0, gammel: true };
+    const state = { layout: 'showcase', imgs: [img(1, 'galleri', 0)], slettet: [], skriv: [], designPut: [], opplastet: 0, prod: 0, gammel: true };
     const { page, errs } = await aapne(state, w);
     const m = await les(page);
     sjekk(!m.varsel && !m.bSatt && m.hint === '' && m.felt.length === 0, `${w} gammel backend: varsel ${m.varsel}, hint «${m.hint}», felt [${m.felt}]`);
     sjekk(errs.length === 0, `${w} gammel backend: JS-feil ${errs.join(' | ')}`);
     await page.close();
   }
+}
+// ── Forhåndsvisning: Profil valgt, ikke lagret (lagret = direkte). Tre utfall av layout-PUT etter opplasting ──
+const nyState = designFeil => ({ layout: 'direkte', imgs: [], slettet: [], skriv: [], designPut: [], opplastet: 0, prod: 0, gammel: false, designFeil });
+for (const w of [320, 375]) {
+  for (const designFeil of [null, '500', 'nett']) {
+    const state = nyState(designFeil);
+    const { page, errs } = await aapne(state, w);
+    const id = `${w} forhåndsvisning (PUT /design ${designFeil || 'ok'})`;
+    await page.click('#layoutGrid [data-key="profil"]'); await page.waitForTimeout(400);
+    await aapneAkk(page, 'accBilder');
+    const m = await les(page);
+    sjekk(!m.bFinnes && !m.laas && m.lenke === LENKE, `${id}: ingen banner/lås i Bilder, lenke «${m.lenke}»`);
+    const boks = page.locator('#bilderMount .slot-box[data-slot="portrett"]');
+    await boks.evaluate(e => e.scrollIntoView({ block: 'center' }));
+    const treff = await boks.evaluate(el => { const r = el.getBoundingClientRect(); const t = document.elementFromPoint(r.left + r.width / 2, r.top + r.height / 2); return !!t && (t === el || el.contains(t)); });
+    sjekk(treff, `${id}: portrett-boksen tar trykket selv (elementFromPoint)`);
+    const fcP = page.waitForEvent('filechooser', { timeout: 3000 }).catch(() => null);
+    await boks.click(); const fc = await fcP;
+    sjekk(!!fc, `${id}: trykk på portrett-boksen åpner filvelgeren`);
+    if (fc) { await fc.setFiles({ name: 'p.png', mimeType: 'image/png', buffer: fs.readFileSync(path.join(ROOT, 'no/icons/icon-192.png')) }); await page.waitForTimeout(1200); }
+    const etter = await les(page);
+    const toast = await page.evaluate(() => { const t = document.querySelector('#toast'); return t && t.classList.contains('show') ? t.textContent : ''; });
+    sjekk(state.opplastet === 1 && state.designPut.length === 1 && state.designPut[0] === '{"layout":"profil"}',
+      `${id}: opplasting først, så PUT /design ${state.designPut.join(',')}`);
+    if (!designFeil) {
+      sjekk(toast === 'Profil-layouten er lagret.' && !etter.feillinje, `${id}: suksess «${toast}», ingen feillinje`);
+    } else {
+      sjekk(!/er lagret/.test(toast), `${id}: ingen «er lagret»-toast (toast: «${toast}»)`);
+      sjekk(etter.feillinje === 'Bildet er lastet opp, men Profil-layouten ble ikke lagret. Trykk Lagre design for å bruke den.',
+        `${id}: varig feillinje «${etter.feillinje}»`);
+      await page.waitForTimeout(2200);
+      sjekk((await les(page)).feillinje !== '', `${id}: feillinja står fortsatt etter 2,2 s`);
+      await page.mouse.move(0, 0);
+      const r = await page.evaluate(() => { const e = document.querySelector('#accBilder').getBoundingClientRect(); return { y: e.top + scrollY - 8, h: Math.min(e.height + 16, 700) }; });
+      await page.screenshot({ clip: { x: 0, y: r.y, width: w, height: r.h }, fullPage: true, path: path.join(OUT, `forhandsvisning-designfeil-${designFeil}-${w}.png`) });
+    }
+    sjekk(errs.length === 0, `${id}: JS-feil ${errs.join(' | ')}`);
+    prodTotalt.n += state.prod; await page.close();
+  }
+  // Lenka (tom portrett-boks i forhåndsvisning) → Design åpen ved layoutvalget
+  const state = nyState(null);
+  const { page, errs } = await aapne(state, w);
+  await page.click('#layoutGrid [data-key="profil"]'); await page.waitForTimeout(300);
+  await aapneAkk(page, 'accBilder');
+  await page.click('#bilderMount [data-velg-layout]'); await page.waitForTimeout(900);
+  const d = await page.evaluate(() => ({ apen: !document.querySelector('#accDesign > .acc-body').hidden, top: Math.round(document.getElementById('layoutGrid').getBoundingClientRect().top) }));
+  sjekk(d.apen && d.top >= -2 && d.top < 200, `${w} forhåndsvisning: lenka åpner Design ved layoutvalget ${JSON.stringify(d)}`);
+  sjekk(errs.length === 0, `${w} lenketest: JS-feil ${errs.join(' | ')}`);
+  prodTotalt.n += state.prod; await page.close();
 }
 sjekk(prodTotalt.n === 0, `requests utenfor localhost (prod/annet): ${prodTotalt.n}`);
 sjekk(skrivTotalt.length === 0, `uventede skrivende kall: ${skrivTotalt.join(', ') || 0}`);

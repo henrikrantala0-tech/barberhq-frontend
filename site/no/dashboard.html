@@ -231,8 +231,11 @@
      Design da begge lå løst i samme panel. Trekkspillet gjør nå den jobben. */
   .slot-hint{font-size:12px;color:var(--mut);margin:-6px 0 16px;line-height:1.45}
   .slot-hint:empty{display:none}
-  .slots-lock-note{background:var(--surface);border:1px solid var(--line);border-radius:8px;padding:10px 12px;margin-bottom:16px;font-size:13px;color:var(--ink-2);line-height:1.45}
-  #bilderMount.slots-locked .slot-section,#bilderMount.slots-locked .slot-direkte-msg{opacity:.5;pointer-events:none}
+  /* Låsen i forhåndsvisning (.slots-locked: pointer-events:none + .slots-lock-note) er FJERNET 13.10:
+     bilder er ikke knyttet til layout, så boksene er trykkbare også før layouten er lagret — første
+     opplasting lagrer layouten (handleUpload). Den tomme boksen er oppfordringen. */
+  .slot-alt-lenke{margin:6px auto 0;justify-content:center;text-align:center}
+  .bilder-feil{font-size:13px;font-weight:600;color:var(--bad);line-height:1.45;margin:0 0 14px}
   /* Showcase-uten-bilder-guard (Din side). Myk advarsel — blokkerer ALDRI lagring/sletting hardt,
      gjør bare konsekvensen tydelig. Venstre aksent i solid hex (ikke rgba/opacity → overlever lys
      modus, jf. palett-notatet). [oversettelse: sv/da/en] */
@@ -241,7 +244,6 @@
   .bilde-guard .sg-actions{display:flex;flex-wrap:wrap;gap:8px}
   .bilde-guard button{appearance:none;border:1px solid var(--line-2);background:var(--bg);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;padding:8px 13px;border-radius:7px;cursor:pointer;min-height:38px}
   .bilde-guard button.sg-primary{background:var(--info);border-color:var(--info);color:#fff}
-  #bilderVarsel{margin:0 0 16px}
   /* Layoutens bærende bilde mangler, men siden bruker et reservebilde (bilde_status 'reserve'). */
   .slot-reserve{font-size:12px;color:var(--mut);margin:-4px 0 10px;line-height:1.45}
   .slot-section{margin-bottom:22px}
@@ -2251,13 +2253,12 @@
           </button>
           <div class="acc-body" hidden>
             <p class="slot-hint" id="layoutHint"></p>
-            <!-- Samme varsel som #layoutBildeVarsel i Design, styrt av samme oppdaterBildeVarsel(). Står her
-                 også fordi «Din side» har ett åpent trekkspill om gangen: sletter barbereren layoutens siste
-                 bilde her, ville varselet i Design stått i et lukket trekkspill. -->
-            <div class="bilde-guard" id="bilderVarsel" hidden>
-              <p id="bilderVarselTekst"></p>
-              <div class="sg-actions"><button type="button" class="sg-primary" id="bilderVarselAdd">Legg til bilde</button></div>
-            </div>
+            <!-- Bildevarselet (#bilderVarsel) er FJERNET her 13.10: når Bilder er åpen, er den tomme boksen
+                 oppfordringen. Varselet står fortsatt i Design (#layoutBildeVarsel), som er der barbereren er
+                 når Bilder er lukket («Din side» har ett åpent trekkspill om gangen). -->
+            <!-- Varig feillinje når opplastingen lyktes men layout-lagringen etterpå feilet (lagreLayoutEtterOpplasting).
+                 Står til layouten faktisk er lagret — en toast forsvinner før barbereren rekker å lese den. -->
+            <p class="bilder-feil" id="bilderFeil" role="alert" hidden></p>
             <input type="file" id="fileInput" accept="image/*" hidden>
             <input type="file" id="replaceInput" accept="image/*" hidden>
             <div id="bilderMount"><div class="loading">Laster …</div></div>
@@ -4563,15 +4564,12 @@ async function bilderEndret(){
 }
 
 // Rendrer slots for VALGT layout (design.layout), ikke lagret. Slik ser barberen
-// slot-oppsettet skifte live når hen bytter layout. Opplasting/crop/slett er derimot
-// låst til LAGRET layout (savedLayout). Backend rører ALDRI bilder ved layout-bytte
-// (dashboard.js:379, svarer bilderSlettet:false), så låsen er IKKE lenger et vern mot
-// sletting — den hindrer at bilder lastes opp til en PREVIEWET, ulagret layout og havner
-// på en slot den live siden ikke leser (usynlig opplasting). Lagre layouten → slots låses opp.
-// Ukjent layout ⇒ LÅST. `null!==null` er false, så uten den første testen ville en feilet
-// /design-henting låst OPP opplasting i stedet for ned — bilder kunne lastes til en slot vi
-// ikke vet finnes. Fail-closed er eneste forsvarlige retning her.
-function slotsLaast(){return design.layout===null||design.layout!==savedLayout;}
+// slot-oppsettet skifte live når hen bytter layout. Boksene er trykkbare også når layouten
+// bare er forhåndsvist (13.10 — låsen er fjernet): bilder hører til en SLOT, ikke en layout
+// (images.slot; PUT /design rører aldri bilder), så ingenting går tapt. Første opplasting i en
+// ulagret layout lagrer layouten etterpå (handleUpload), så bildet aldri blir usynlig på siden.
+// Ukjent layout (null) gir ingen bokser i det hele tatt (refreshSlots), så ingen opplasting.
+function layoutUlagret(){return design.layout!==null&&design.layout!==savedLayout;}
 // Bildekrav per layout eies av BACKEND (GET /design + svarene fra POST/DELETE /images):
 //   _bildekrav[layout]   = { felt:[...], baerer, reserve, maks:{ felt: antall } }
 //   _bildeStatus[layout] = null | 'reserve' | 'mangler'
@@ -4604,7 +4602,7 @@ function layoutHint(layout){
   }).filter(Boolean);
   return nm+': '+deler.join(' + ');
 }
-// Låste tekster (Henrik 10.10). Vises i Design (#layoutBildeVarsel) og øverst i Bilder (#bilderVarsel).
+// Låste tekster (Henrik 10.10). Vises i Design (#layoutBildeVarsel) — ikke i Bilder (13.10, se markup).
 // [oversettelse: sv/da/en]
 const BILDE_VARSEL={
   showcase:'Showcase viser galleriet ditt. Legg til minst ett bilde, eller velg Direkte.',
@@ -4617,15 +4615,13 @@ const RESERVE_TEKST={galleri:'Siden bruker ditt første galleribilde.'};
 // bildeendring — begge går gjennom refreshSlots(). Blokkerer aldri lagring.
 function oppdaterBildeVarsel(){
   var t=(design.layout&&statusFor(design.layout)==='mangler')?(BILDE_VARSEL[design.layout]||''):'';
-  [['#layoutBildeVarsel','#layoutBildeVarselTekst'],['#bilderVarsel','#bilderVarselTekst']].forEach(function(par){
-    var g=$(par[0]);if(!g)return;
-    var p=$(par[1]);if(p)p.textContent=t;
-    g.hidden=!t;
-  });
+  var g=$('#layoutBildeVarsel');if(!g)return;
+  var p=$('#layoutBildeVarselTekst');if(p)p.textContent=t;
+  g.hidden=!t;
 }
 // «Legg til bilde»: åpne Bilder-trekkspillet og gå til layoutens bærende felt (tomt «+»-felt
-// foretrekkes). Ingen auto-filvelger (mister bruker-gesten etter accordion-toggle, og opplasting
-// er uansett låst til LAGRET layout — slots-lock-noten guider videre om layouten ikke er lagret).
+// foretrekkes). Ingen auto-filvelger (mister bruker-gesten etter accordion-toggle) — den tomme
+// boksen er trykkbar, også i forhåndsvisning.
 function aapneBaerendeFelt(){
   var k=kravFor(design.layout);
   if(typeof _sjekkAapneAkk==='function')_sjekkAapneAkk('accBilder');
@@ -4638,15 +4634,22 @@ function aapneBaerendeFelt(){
   if(maal)maal.scrollIntoView({behavior:'smooth',block:'start'});
   if(boks)boks.focus({preventScroll:true});
 }
-['#layoutBildeVarselAdd','#bilderVarselAdd'].forEach(function(sel){var b=$(sel);if(b)b.addEventListener('click',aapneBaerendeFelt);});
+$('#layoutBildeVarselAdd').addEventListener('click',aapneBaerendeFelt);
+// «Har du ikke et portrett? Velg en annen layout.» under den tomme portrett-boksen → layoutvalget i Design.
+function aapneLayoutvalg(){
+  if(typeof _sjekkAapneAkk==='function')_sjekkAapneAkk('accDesign');
+  var g=document.getElementById('layoutGrid');
+  if(g)g.scrollIntoView({behavior:'smooth',block:'start'});
+}
 
 function refreshSlots(){
   oppdaterBildeVarsel();   // følger layout/bilde-state — oppdater ved hvert kall (også null-layout → skjult)
+  if(!layoutUlagret())visBilderFeil('');   // tilbake på lagret layout → layout-feilen gjelder ikke lenger
   // Vet vi ikke hvilken layout barbereren har, sier vi INGENTING: ingen slot-bokser, ingen
   // layout-hjelpetekst, ingen bio-varsel. Alt tre er påstander om et valg vi ikke kjenner.
   // Tomt panel er ærlig; Direkte-farget panel er en gjetning som ser ut som et faktum.
   if(design.layout===null){
-    const m=$("#bilderMount");if(m){m.innerHTML='';m.classList.remove('slots-locked');}
+    const m=$("#bilderMount");if(m)m.innerHTML='';
     const lh=$("#layoutHint");if(lh)lh.textContent='';
     const b0=$("#bioHint");if(b0)b0.hidden=true;
     return;
@@ -4658,15 +4661,6 @@ function refreshSlots(){
   // øyeblikkene svaret kan endre seg. En egen lytter ville vært et tredje sted å holde i synk.
   // Følger VALGT layout, ikke lagret — samme regel som slot-visningen rett over.
   const bh=$("#bioHint");if(bh)bh.hidden=design.layout!=='direkte';
-  const mount=$("#bilderMount");if(!mount)return;
-  if(slotsLaast()){
-    mount.classList.add('slots-locked');
-    const nm=(LAYOUTS.find(function(l){return l.key===design.layout;})||{}).t||design.layout;
-    mount.insertAdjacentHTML('afterbegin',
-      '<div class="slots-lock-note">Forhåndsvisning av <b>'+nm+'</b>-layouten. Trykk <b>Lagre design</b> for å laste opp bilder til denne layouten.</div>');
-  }else{
-    mount.classList.remove('slots-locked');
-  }
 }
 
 function renderSlotView(layout,imgs){
@@ -4699,7 +4693,9 @@ function slotPortrett(bilde,reserve){
   const box=bilde
     ?`<div class="slot-wrap"><div class="slot-box slot-portrett filled" data-slot="portrett" tabindex="0" role="button" aria-label="Beskjær portrett"><img src="${CONFIG.API_BASE+bilde.url}" alt="Portrett"></div>${_slotActions(bilde.id)}</div>`
     :`<div class="slot-box slot-portrett" data-slot="portrett" tabindex="0" role="button" aria-label="Last opp portrett"><span class="slot-plus">+</span></div>`;
-  return`<div class="slot-section"><div class="slot-label">Portrett</div>${slotReserve(reserve)}<div class="slot-portrett-wrap">${box}</div></div>`;
+  // Tom portrett-boks = oppfordringen. Alternativet (annen layout) er en liten lenke rett under.
+  const alt=bilde?'':'<button type="button" class="lnk-quiet slot-alt-lenke" data-velg-layout>Har du ikke et portrett? Velg en annen layout.</button>';
+  return`<div class="slot-section"><div class="slot-label">Portrett</div>${slotReserve(reserve)}<div class="slot-portrett-wrap">${box}</div>${alt}</div>`;
 }
 
 function slotHero(bilde,reserve){
@@ -4726,9 +4722,25 @@ async function handleUpload(f,slot){
     if(!r)return;
     if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke laste opp bilde. Prøv igjen.');return;}
     settBildeData(await r.json().catch(()=>null));   // bilde_status etter opplastingen
+    // Opplasting i en forhåndsvist (ulagret) layout lagrer layouten — ETTER bildet, så siden aldri
+    // står med f.eks. Profil uten portrett. Kun layout sendes: backend COALESCE-er resten, så ulagret
+    // farge/skrift forblir ulagret til «Lagre design».
+    if(layoutUlagret())await lagreLayoutEtterOpplasting();
     await bilderEndret();
   }, {feil:'Kunne ikke laste opp bilde. Prøv igjen.'});
 }
+async function lagreLayoutEtterOpplasting(){
+  const lay=design.layout;
+  const nm=(LAYOUTS.find(function(l){return l.key===lay;})||{}).t||lay;
+  let r, nettFeil=false;
+  try{ r=await apiFetch('/api/dashboard/design',{method:'PUT',body:JSON.stringify({layout:lay})}); }catch(e){ nettFeil=true; }
+  if(r&&r.ok){ savedLayout=lay; visBilderFeil(''); showToast(nm+'-layouten er lagret.'); return; }
+  if(!nettFeil&&!r)return;   // 401 → apiFetch har sendt til innlogging
+  // savedLayout røres IKKE: layouten er fortsatt ulagret, så neste opplasting prøver igjen, og
+  // «Lagre design» lagrer den. Ingen suksess-toast — bildet ligger trygt, men siden bruker gammel layout.
+  visBilderFeil('Bildet er lastet opp, men '+nm+'-layouten ble ikke lagret. Trykk Lagre design for å bruke den.');
+}
+function visBilderFeil(t){ var e=$('#bilderFeil'); if(!e)return; e.textContent=t; e.hidden=!t; }
 
 let hours=[];
 // Delt feilstate: erstatt innholdet i el med en kort melding + «Prøv igjen» som re-kaller fn.
@@ -5027,8 +5039,8 @@ document.getElementById('cropSave').addEventListener('click',async()=>{
 });
 
 $("#bilderMount").addEventListener("click",async e=>{
+  if(e.target.closest('[data-velg-layout]')){ aapneLayoutvalg(); return; }
   if(IS_DEMO)return;
-  if(slotsLaast())return; // opplasting/crop/slett låst til lagret layout
   const menuBtn=e.target.closest('.slot-menu-btn');
   if(menuBtn){
     e.stopPropagation();
@@ -6487,7 +6499,7 @@ const LAYOUTS=[
 // layouten har ikke bilder», bio-varselet sa «Direkte viser ikke beskrivelsen», og «Mint»
 // sto markert som valgt palett. Alt sammen usant for en barberer med Profil + Krem & Gull.
 // Med null sier panelet ingenting i stedet. Hver leser under må tåle det — se guardene i
-// refreshSlots(), slotsLaast(), oppdaterPreview() og saveDesign.
+// refreshSlots(), layoutUlagret(), oppdaterPreview() og saveDesign.
 let design={palette:null,font:null,layout:null,mode:null,customAccent:null};
 let savedLayout=design.layout;
 // Har vi et fullstendig design å rendre/lagre? Alle fire må være kjent.
@@ -6667,11 +6679,10 @@ $("#saveDesign").addEventListener("click",function(){
     const r=await apiFetch('/api/dashboard/design',{method:'PUT',body:JSON.stringify(body)});
     if(!r)return;
     if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre design. Prøv igjen.');return;}
-    savedLayout=design.layout;savedFlash("#designSaved");
-    // bilderEndret (ikke loadBilder): savedLayout ble nettopp oppdatert, så slot-låsen skal
-    // åpnes (slotsLaast leser savedLayout) OG preview-cachen tømmes. Backend sletter IKKE bilder
+    savedLayout=design.layout;savedFlash("#designSaved");visBilderFeil('');
+    // bilderEndret (ikke loadBilder): re-hent bilder + tøm preview-cachen. Backend sletter IKKE bilder
     // ved layout-bytte (dashboard.js:379) — re-hentingen holder bare slot-visning + cache i synk.
-    await bilderEndret(); // re-hent bilder + lås opp slots + tøm preview-cache
+    await bilderEndret();
   }, {btn:$("#saveDesign"), feil:'Kunne ikke lagre design. Prøv igjen.'});
 });
 
