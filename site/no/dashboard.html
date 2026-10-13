@@ -1108,6 +1108,30 @@
   .hs-ic .hs-paa{fill:var(--good);stroke:var(--good)}
   .hs-ic .hs-knott{fill:#fff;stroke:none}
   .hs-kort-tekst{font-size:13.5px;line-height:1.45;color:var(--ink-2);margin:0}
+  /* «Få din første booking» (Oversikt, øverst). Samme kortflate som hjemskjerm-kortet. Hvert steg er
+     [kryss][innhold]; krysset er en 44px trykkflate rundt en 20px sirkel. Ingen teller, ingen prosent. */
+  .fb-kort{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px 18px;margin:0 0 18px}
+  .fb-kort[hidden],.fb-kort [hidden]{display:none}
+  .fb-h{font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--ink);margin:0 0 4px;line-height:1.3}
+  .fb-s{font-size:13px;color:var(--mut);line-height:1.45;margin:0 0 6px}
+  .fb-steg{list-style:none;margin:0;padding:0}
+  .fb-steg li{display:grid;grid-template-columns:28px minmax(0,1fr);column-gap:6px;align-items:start;padding:12px 0 0}
+  .fb-steg li + li{border-top:1px solid var(--line);margin-top:12px}
+  .fb-kryss{appearance:none;position:relative;width:44px;height:44px;margin:-12px 0 0 -12px;padding:0;border:0;background:0;
+    cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--surface)}
+  .fb-kryss::before{content:'';width:20px;height:20px;border-radius:50%;border:1.8px solid var(--line-2);box-sizing:border-box}
+  .fb-kryss svg{position:absolute;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;
+    stroke-linecap:round;stroke-linejoin:round;opacity:0}
+  .fb-kryss[aria-checked="true"]::before{background:var(--ink);border-color:var(--ink)}
+  .fb-kryss[aria-checked="true"] svg{opacity:1}
+  .fb-kryss:focus-visible{outline:2px solid var(--info);outline-offset:-6px;border-radius:12px}
+  .fb-tittel{font-size:14px;font-weight:700;color:var(--ink);margin:0;line-height:20px}
+  li[data-ferdig] .fb-tittel{color:var(--mut)}
+  .fb-tekst{font-size:13px;color:var(--mut);line-height:1.45;margin:4px 0 0}
+  .fb-melding{font-size:13px;color:var(--ink-2);line-height:1.45;margin:8px 0 0;padding:8px 10px;border-radius:8px;
+    background:var(--bg);overflow-wrap:anywhere}
+  .fb-knapp{margin-top:10px;min-height:44px}
+  .fb-ferdig{font-size:13px;color:var(--ink-2);line-height:1.45;margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line)}
   .hs-kort-tekst + .hs-steg{margin-top:12px}
   .hs-installer{margin-top:14px}
 
@@ -1655,6 +1679,42 @@
 
   <!-- OVERSIKT -->
   <section class="panel active" id="oversikt">
+
+    <!-- «Få din første booking» (13.10). Vises KUN når page_status==='live' og GET /aktivering gir
+         har_booking===false — feiler kallet eller mangler feltet, vises ingenting. Forsvinner av seg selv
+         ved første booking (avledet i backend, intet skjult-flagg). Kryssene lagres per barber på serveren
+         (POST /aktivering/steg). Ingen priser og ingen Vekst-salg her. renderForsteBooking. [oversettelse: sv/da/en] -->
+    <section class="fb-kort" id="forsteBooking" hidden aria-labelledby="fbTittel">
+      <p class="fb-h" id="fbTittel">Få din første booking</p>
+      <p class="fb-s">Siden din er live. Nå gjelder det å få kundene dit.</p>
+      <ol class="fb-steg">
+        <li data-steg="svarmelding">
+          <button type="button" class="fb-kryss" role="checkbox" aria-checked="false" aria-label="Ferdig: Svar kundene med lenka"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 6.4 4.8 9 9.8 3.2"/></svg></button>
+          <div>
+            <p class="fb-tittel">Svar kundene med lenka</p>
+            <p class="fb-tekst">Når noen spør om time på Snap eller Instagram: send dette i stedet for å avtale tiden selv.</p>
+            <p class="fb-melding" id="fbMelding"></p>
+            <button type="button" class="btn-outline fb-knapp" data-fb-handling="svarmelding">Kopier svarmelding</button>
+          </div>
+        </li>
+        <li data-steg="bio">
+          <button type="button" class="fb-kryss" role="checkbox" aria-checked="false" aria-label="Ferdig: Legg lenka i Instagram-bioen"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 6.4 4.8 9 9.8 3.2"/></svg></button>
+          <div>
+            <p class="fb-tittel">Legg lenka i Instagram-bioen</p>
+            <button type="button" class="btn-outline fb-knapp" data-fb-handling="bio">Kopier lenke</button>
+          </div>
+        </li>
+        <li data-steg="story">
+          <button type="button" class="fb-kryss" role="checkbox" aria-checked="false" aria-label="Ferdig: Legg ut en story"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 6.4 4.8 9 9.8 3.2"/></svg></button>
+          <div>
+            <p class="fb-tittel">Legg ut en story</p>
+            <p class="fb-tekst">Vis ledige timer i dag eller i morgen, med lenka til siden din.</p>
+            <button type="button" class="btn-outline fb-knapp" data-fb-handling="story">Lag story</button>
+          </div>
+        </li>
+      </ol>
+      <p class="fb-ferdig" id="fbFerdig" hidden>Bra. Seksjonen forsvinner når den første kunden har booket.</p>
+    </section>
 
     <!-- Hjemskjerm-kortet (13.10). Erstatter topplinje-stripa og Konto-raden: ÉN flate. Skjult i markup;
          oppdaterHjemskjermKort() viser kortet på telefon (iOS/Android) når dashbordet ikke kjører som app,
@@ -4906,7 +4966,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
   $("#"+id).classList.add("active");
   if(window.__syncBunnNav)window.__syncBunnNav();   // speil aktiv fane i bunn-nav (mobil)
-  if(id==="oversikt"){loadOversikt();}
+  if(id==="oversikt"){loadOversikt();loadAktivering();}
   if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();loadLoyalty();}
   if(id==="abonnement"){loadSmsInnstillinger();}   // Konto-bryteren deler sms_paaminnelse_enabled med Vekst
   if(id==="tjenester"){loadTjenester();loadArbeidstider();}
@@ -5239,6 +5299,7 @@ async function loadProfil(){
   // /profile og /billing/status lastes parallelt. Rakk billing å tegne publiseringsblokka
   // før sluggen var her, mangler den lenka til den publiserte sida — tegn på nytt nå.
   if(_billing&&typeof renderKonto==='function')renderKonto(_billing);
+  if(typeof renderForsteBooking==='function')renderForsteBooking();   // lenka i steg 1/2 trenger sluggen
   if(p.isDemo&&!IS_DEMO){IS_DEMO=true;applyDemoMode();}
   $("#pf-name").value=p.name||"";
   _lagretNavn=(p.name||"").trim(); oppdaterNavnVerdi();   // Konto → Navn-raden
@@ -6787,6 +6848,7 @@ function settBilling(d){
   // effective_plan kom → re-render skjoldede flater + re-kjør kundedata-loaderne som gate-et seg ut.
   if(typeof oppdaterSkjoldFlater==='function')oppdaterSkjoldFlater();
   if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud();   // tilbudet avhenger av saldo/bryter/avvist
+  if(typeof renderForsteBooking==='function')renderForsteBooking();   // vises kun når page_status==='live'
 }
 // Hovedhandlingen er ÉN knapp. `_kontoAksjon` sier hva et trykk gjør i nåværende tilstand —
 // knappen har ingen egen lytter per tilstand.
@@ -7608,6 +7670,7 @@ initTheme();
 initChartTouch(); // lag 2: koble pointer-events på #chartBars (én gang; overlever innerHTML-rebuild)
 loadProfil(); // fyller header-navn + profil-fane ved sideload
 loadOversikt();
+loadAktivering(); // «Få din første booking»: har_booking + kryss (vises først når billing sier live)
 loadPayment(); // betalingsmetoder (Tjenester-fanen) fra innstillings-loaderen
 // Oversikt-nudgen (ferske no-shows) fylles av loadWinback — men FØRST etter at plan er kjent, så
 // erBasis()-guarden virker og basis ikke henter kundedata ved sideload (init-race lukket).
@@ -7706,6 +7769,87 @@ function erStandalone(){
   return (window.matchMedia && window.matchMedia('(display-mode: standalone)').matches)
          || window.navigator.standalone===true;
 }
+
+/* ---- «Få din første booking» (Oversikt) ----
+   Kontrakt (backend 1647f62): GET /api/dashboard/aktivering → { har_booking, steg:{svarmelding,bio,story} };
+   POST /api/dashboard/aktivering/steg { steg, ferdig } → { steg }. Demo → 403 på POST.
+   Vises KUN når billing sier page_status==='live' OG har_booking===false. Alt annet — kallet feiler, feltet
+   mangler, billing ukjent, ingen slug — gir INGENTING (fail-closed: aldri vist på mistanke).
+   Kryss: oppdateres lokalt med en gang, POST sendes; feiler POST (også 403 i demo), rulles krysset
+   tilbake uten melding. Kopier/«Lag story» krysser av steget selv (kun hvis det ikke alt er ferdig). */
+const FB_STEG=['svarmelding','bio','story'];
+var _aktivering=null;   // null = ukjent/feilet → seksjonen skjult
+async function loadAktivering(){
+  var d=null;
+  try{
+    var r=await apiFetch('/api/dashboard/aktivering');
+    if(r&&r.ok) d=await r.json();
+  }catch(_){ d=null; }
+  _aktivering=(d&&typeof d.har_booking==='boolean'&&d.steg&&typeof d.steg==='object')
+    ? {har_booking:d.har_booking, steg:fbStegFra(d.steg)} : null;
+  renderForsteBooking();
+}
+function fbStegFra(o){ var s={}; FB_STEG.forEach(function(k){ s[k]=!!(o&&o[k]===true); }); return s; }
+function fbLenke(){ return CONFIG.BARBER_SLUG ? CONFIG.SITE_BASE+'/'+CONFIG.BARBER_SLUG : null; }
+// Låst copy (Henrik 13.10): uten https:// — slik barbereren skriver den selv i en DM.
+function fbSvarmelding(){ return 'Yes 👌 Se ledige tider og book her: '+CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+CONFIG.BARBER_SLUG; }
+function renderForsteBooking(){
+  var kort=$("#forsteBooking"); if(!kort)return;
+  var a=_aktivering;
+  var vis=!!(a && a.har_booking===false && _billing && _billing.page_status==='live' && fbLenke());
+  kort.hidden=!vis;
+  if(!vis)return;
+  $("#fbMelding").textContent=fbSvarmelding();
+  var alle=true;
+  FB_STEG.forEach(function(k){
+    var li=kort.querySelector('li[data-steg="'+k+'"]'); if(!li)return;
+    var f=a.steg[k]===true; if(!f) alle=false;
+    li.querySelector('.fb-kryss').setAttribute('aria-checked',f?'true':'false');
+    if(f) li.setAttribute('data-ferdig',''); else li.removeAttribute('data-ferdig');
+  });
+  $("#fbFerdig").hidden=!alle;
+}
+// Optimistisk: lokalt først, så POST. Feil (nettverk, 4xx/5xx, 403 i demo) → rull tilbake, ingen melding.
+// _fbSekv per steg: et eldre svar skal ikke overskrive et nyere trykk.
+var _fbSekv={};
+async function settFbSteg(k,ferdig){
+  if(!_aktivering||FB_STEG.indexOf(k)<0)return;
+  var forrige=_aktivering.steg[k];
+  if(forrige===ferdig)return;
+  _aktivering.steg[k]=ferdig; renderForsteBooking();
+  var n=_fbSekv[k]=(_fbSekv[k]||0)+1;
+  var d=null;
+  try{
+    var r=await apiFetch('/api/dashboard/aktivering/steg',{method:'POST',body:JSON.stringify({steg:k,ferdig:ferdig})});
+    if(r&&r.ok) d=await r.json();
+  }catch(_){ d=null; }
+  if(n!==_fbSekv[k]||!_aktivering)return;
+  if(d&&d.steg&&typeof d.steg==='object') _aktivering.steg[k]=d.steg[k]===true;
+  else _aktivering.steg[k]=forrige;
+  renderForsteBooking();
+}
+(function(){
+  var kort=$("#forsteBooking"); if(!kort)return;
+  kort.addEventListener('click',async function(e){
+    var kryss=e.target.closest('.fb-kryss');
+    if(kryss){
+      settFbSteg(kryss.closest('li').dataset.steg, kryss.getAttribute('aria-checked')!=='true');
+      return;
+    }
+    var b=e.target.closest('[data-fb-handling]'); if(!b)return;
+    var h=b.dataset.fbHandling;
+    if(h==='story'){
+      if(window.aapneStory) window.aapneStory();
+      settFbSteg('story',true);
+      return;
+    }
+    var tekst = h==='svarmelding' ? fbSvarmelding() : fbLenke();
+    if(!tekst)return;
+    var ok=await kopierTekst(tekst);
+    showToast(ok ? (h==='svarmelding'?'Svarmelding kopiert':'Lenke kopiert') : 'Kunne ikke kopiere');
+    if(ok) settFbSteg(h,true);
+  });
+})();
 
 /* ---- Hjemskjerm-kortet (Oversikt) ----
    Vises når ALT stemmer: telefon (iOS/Android), ikke kjørende som app (erStandalone), ikke installert
