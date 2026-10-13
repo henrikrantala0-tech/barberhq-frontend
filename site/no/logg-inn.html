@@ -88,6 +88,19 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .magic-info{font-size:13px;color:#9a9a9a;margin-top:10px;text-align:center;line-height:1.5}
 .magic-ok{color:#5cb85c;font-size:13.5px;margin-top:10px;display:none;text-align:center;line-height:1.5}
 .magic-ok.show{display:block}
+/* ── Kode fra e-posten (079) — for hjemskjerm-appen, der lenka åpner Safari i stedet for appen.
+   ÉN blokk; flyttes inn under kvitteringen den hører til (lenke eller glemt passord). ── */
+.kode{margin-top:16px;padding-top:16px;border-top:1px solid #1a1a1a;text-align:left}
+.kode[hidden]{display:none}
+.kode-intro{font-size:13.5px;color:#e5e5e5;font-weight:500;line-height:1.45;margin-bottom:10px}
+.kode .field{margin-bottom:6px}
+.field input.kode-input{font-size:18px;font-variant-numeric:tabular-nums}
+.field input.kode-input:not(:placeholder-shown){letter-spacing:.18em}
+.field input.kode-input::placeholder{font-size:15px;letter-spacing:0}
+.field input.kode-input.ugyldig{border-color:#c0594a}
+.kode-hjelp{font-size:12.5px;color:#8c8c8c;line-height:1.45}
+.kode-feil{display:none;color:#c0594a;font-size:13.5px;line-height:1.45;margin-top:8px}
+.kode-feil.show{display:block}
 /* ── Passord (sekundær, nedtonet + sammenlagt) ── */
 .pw-alt{text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid #1a1a1a}
 .pw-alt-link{font:inherit;font-size:13px;color:#8c8c8c;background:none;border:none;cursor:pointer;padding:0}
@@ -145,6 +158,21 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     <p class="magic-ok" id="magic-ok">
       Sjekk e-posten din. Hvis adressen er registrert, har vi sendt en lenke.
     </p>
+
+    <!-- Kode fra e-posten: vises etter «Send meg innloggingslenke» OG etter «Glemt passordet?» (JS flytter
+         blokken under riktig kvittering). POST /api/login-kode {email, kode} → {ok, redirect} | 400 | 429.
+         Ingen maxlength: JS fjerner alt som ikke er siffer og beholder 6, så innliming med mellomrom,
+         bindestrek eller linjeskift virker. -->
+    <div class="kode" id="kode" hidden>
+      <p class="kode-intro" id="kodeIntro">Bruker du BarberHQ som app? Skriv inn koden fra e-posten her.</p>
+      <div class="field">
+        <input class="kode-input" id="loginKode" type="text" inputmode="numeric" autocomplete="one-time-code"
+               placeholder="6 siffer fra e-posten" aria-labelledby="kodeIntro" aria-describedby="kodeHjelp kodeFeil">
+      </div>
+      <p class="kode-hjelp" id="kodeHjelp">Sjekk e-posten din, kopier koden og lim den inn her.</p>
+      <p class="kode-feil" id="kodeFeil" role="alert"></p>
+      <button class="btn-login btn-fill" id="kodeSubmit" type="button">Logg inn med koden</button>
+    </div>
 
     <!-- SEKUNDÆR: passord, nedtonet lenke som folder ut feltet + «Logg inn». -->
     <div class="pw-alt">
@@ -232,6 +260,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 
     // Alltid samme melding — avslører ikke om adressen finnes (uendret)
     magicOk.classList.add('show');
+    visKode(magicOk);
     magicSubmit.disabled    = false;
     magicSubmit.textContent = 'Send meg innloggingslenke';
   }
@@ -255,6 +284,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     pwPanel.classList.toggle('show');
     if (pwPanel.classList.contains('show')) {
       magicOk.classList.remove('show');   // gått over på passord → skjul magisk-lenke-kvitteringen
+      skjulKodeEtter(magicOk);
       updatePwContext();
       // Tom e-post → fokuser feltet over (der hint-en peker); ellers rett i passord.
       if (email.value.trim()) pw.focus(); else email.focus();
@@ -293,6 +323,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     glemtBtn.disabled = false;
     // Backend svarer alltid {ok:true} (lekker aldri om adressen finnes) — samme kvittering som i Konto.
     visGlemt('ok', 'Sjekk e-posten din. Vi har sendt en lenke til ' + adr + '.');
+    visKode(glemtMsg);   // samme kode-felt: en reset-kode lander på opprett-passord (redirect fra backend)
   }
   sendGlemt = enOmGangen(sendGlemt);
   glemtBtn.addEventListener('click', sendGlemt);
@@ -309,6 +340,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   async function login() {
     error.classList.remove('show');
     magicOk.classList.remove('show');   // gått over på passord → skjul magisk-lenke-kvitteringen
+    skjulKodeEtter(magicOk);
     submit.disabled     = true;
     submit.textContent  = 'Logger inn …';
 
@@ -343,6 +375,92 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     }
   }
   login = enOmGangen(login);   // samme vakt som magisk lenke — Enter kan ikke fyre overlappende /login
+
+  // ── Kode fra e-posten (hjemskjerm-appen) ──
+  var kode       = document.getElementById('kode');
+  var kodeIn     = document.getElementById('loginKode');
+  var kodeFeil   = document.getElementById('kodeFeil');
+  var kodeSubmit = document.getElementById('kodeSubmit');
+  var KODE_TEKST = 'Logg inn med koden';
+  var sistSendt  = null;   // auto-innsending fyrer bare én gang per kode (ikke på nytt etter en feil)
+
+  // Hoistet (function-deklarasjoner), så handlerne over kan kalle dem.
+  function visKode(etter) {
+    if (kode.previousElementSibling !== etter) etter.insertAdjacentElement('afterend', kode);
+    kode.hidden = false;
+  }
+  function skjulKodeEtter(etter) { if (kode.previousElementSibling === etter) kode.hidden = true; }
+  function visKodeFeil(tekst) {
+    kodeFeil.textContent = tekst;
+    kodeFeil.classList.toggle('show', !!tekst);
+    kodeIn.classList.toggle('ugyldig', !!tekst);
+  }
+  // Bare siffer, maks 6: «042 137», «042-137» og «042137» blir alle 042137.
+  function siffer(v) { return String(v || '').replace(/\D/g, '').slice(0, 6); }
+  // Backend sender en absolutt URL på trybarberhq.com. Alt annet → dashbordet (aldri en åpen redirect).
+  // Parses med new URL() og sammenlignes NØYAKTIG mot en eksplisitt liste — ingen endsWith/includes/regex,
+  // så evil-trybarberhq.com, trybarberhq.com.evil.no, //evil.no og javascript: faller alle til dashbordet.
+  // Relative stier løses mot denne siden (samme origin) og slipper gjennom.
+  var TRYGGE_VERTER = ['trybarberhq.com', 'www.trybarberhq.com'];
+  function tryggMaal(r) {
+    // Manglende/tom redirect ville løst seg som relativ sti («» = denne siden, null = /no/null).
+    if (typeof r !== 'string' || !r.trim()) return '/no/dashboard.html';
+    try {
+      var u = new URL(r, location.href);
+      var sammeOrigin = u.origin === location.origin;
+      if (sammeOrigin || (u.protocol === 'https:' && TRYGGE_VERTER.indexOf(u.hostname) !== -1)) return u.href;
+    } catch (_) {}
+    return '/no/dashboard.html';
+  }
+
+  kodeIn.addEventListener('input', function () {
+    var v = siffer(kodeIn.value);
+    if (kodeIn.value !== v) kodeIn.value = v;
+    if (kodeFeil.classList.contains('show') && v !== sistSendt) visKodeFeil('');
+    if (v.length === 6 && v !== sistSendt) sendKode();
+  });
+  kodeIn.addEventListener('keydown', function (e) { if (e.key === 'Enter') sendKode(); });
+  kodeSubmit.addEventListener('click', function () { sendKode(); });
+
+  async function sendKode() {
+    var k = siffer(kodeIn.value);
+    if (k.length !== 6) { visKodeFeil('Skriv inn alle 6 sifrene fra e-posten.'); kodeIn.focus(); return; }
+    var adr = email.value.trim();
+    if (!adr) { visKodeFeil('Skriv inn e-posten din over.'); email.focus(); return; }
+    sistSendt = k;
+    visKodeFeil('');
+    kodeSubmit.disabled = true; kodeSubmit.textContent = 'Logger inn …';
+    try {
+      var res = await fetch(API + '/api/login-kode', {
+        method:      'POST',
+        headers:     { 'Content-Type': 'application/json' },
+        credentials: 'include',
+        body:        JSON.stringify({ email: adr, kode: k }),
+      });
+      var data = {};
+      try { data = await res.json(); } catch (_) {}
+      if (res.ok && data.ok) {
+        location.href = tryggMaal(data.redirect);
+        return;   // siden byttes — ikke slå på knappen igjen
+      }
+      if (res.status === 429) {
+        // Grensen gjelder e-posten i 15 min, også for en ny kode — lenka i e-posten virker fortsatt.
+        visKodeFeil('For mange forsøk. Bruk lenka i e-posten, eller vent et kvarter og prøv igjen.');
+      } else if (res.status === 400) {
+        visKodeFeil('Koden er feil eller utløpt. Be om en ny e-post.');
+        kodeIn.select();
+      } else {
+        visKodeFeil('Noe gikk galt, prøv igjen.');
+        sistSendt = null;
+      }
+    } catch (_) {
+      // Nettverksfeil: koden står igjen, så et nytt trykk sender den på nytt.
+      visKodeFeil('Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.');
+      sistSendt = null;
+    }
+    kodeSubmit.disabled = false; kodeSubmit.textContent = KODE_TEKST;
+  }
+  sendKode = enOmGangen(sendKode);
 }());
 </script>
 </body>
