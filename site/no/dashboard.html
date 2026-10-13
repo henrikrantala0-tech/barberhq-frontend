@@ -2361,7 +2361,7 @@
             <!-- Telefon (contact_phone, migrasjon 062). IKKE @-prefiks — det er et nummer, ikke en handle.
                  Vises på bookingBEKREFTELSEN (backend), ikke på forsiden. Tomt → '' → backend nullstiller →
                  vises ikke. Lagres via PUT /settings (api.saveSettings) på «Lagre profil». Maks 32 (backend). -->
-            <div class="fld"><label>Telefon</label><input id="pf-phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="91 23 45 67"><p class="fld-hint">Kunden ser nummeret på bekreftelsen sin, ikke på selve bookingsiden.</p></div>
+            <div class="fld"><label>Telefon</label><input id="pf-phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="91 23 45 67" aria-describedby="phoneErr"><p class="fld-err" id="phoneErr" role="alert" hidden></p><p class="fld-hint">Kunden ser nummeret på bekreftelsen sin, ikke på selve bookingsiden.</p></div>
             <div class="savebar"><button class="btn" id="saveProfil">Lagre profil</button><span class="saved" id="profilSaved">Lagret &#10003;</span></div>
           </div>
         </div>
@@ -5510,6 +5510,19 @@ $("#loggUt").addEventListener("click",async function(){
 // Profil («Din side») og Navn (Konto → Innlogging) deler PUT /api/dashboard/profile. Navn er
 // flyttet til Konto, resten står i Profil. Begge sender HELE profilen — trygt uansett om ruta er
 // partial eller full-replace, og feltene er alt fylt av loadProfil ved init. Flash-en skiller dem.
+const PROFIL_DELVIS_LAGRET='Telefon og lenker er lagret, men navn og bio ble ikke lagret. Prøv igjen.';
+// Inline-feil under Telefon (Profil). tekst=null skjuler. fokus=true åpner Profil-trekkspillet (lagring
+// kan komme fra Konto → «Lagre navn») og setter fokus i feltet, som salongnavn-feilen.
+function setTelefonFeil(tekst, fokus){
+  var el=$("#phoneErr"), inp=$("#pf-phone"); if(!el||!inp)return;
+  el.textContent=tekst||''; el.hidden=!tekst;
+  if(tekst) inp.setAttribute('aria-invalid','true'); else inp.removeAttribute('aria-invalid');
+  if(tekst&&fokus){
+    var _head=document.querySelector('#accProfil .acc-head');
+    if(_head && _head.getAttribute('aria-expanded')!=='true') _head.click();
+    inp.focus();
+  }
+}
 async function lagreProfil(knappSel, flashSel){
   // Validering: salongnavnet er PÅKREVD (bygger sidetittel/slug-kontekst). Tomt → avbryt uten PUT,
   // vis tydelig inline-feil + fokus. Kan lagres fra «Lagre profil» ELLER «Lagre navn», så åpne
@@ -5524,18 +5537,14 @@ async function lagreProfil(knappSel, flashSel){
   }
   if(shopErr) shopErr.hidden=true;
   // M7: felles knapp-/sikkerhetsnett (medLagreKnapp, som saveSvc/savePay/saveDesign) — en nettverks-
-  // reject hang før knappen på «Lagrer …». To writes (profil + sosiale handles); feiler ÉN, vises det
-  // som FEIL og flash/«Lagret» kjører ALDRI. Profil først: feiler den, prøver vi ikke sosiale.
+  // reject hang før knappen på «Lagrer …». To writes (sosiale handles/telefon + profil); feiler ÉN, vises
+  // det som FEIL og flash/«Lagret» kjører ALDRI.
+  // /settings FØRST: den er den eneste som validerer (telefonen, gyldigTelefon per marked) og skriver alt
+  // i én UPDATE etter valideringen — avvist nummer = ingenting lagret. Først når den har gått gjennom,
+  // sendes /profile. Omvendt rekkefølge lagret navn/bio og mistet lenkene når telefonen ble avvist.
+  // Telefonregelen bor KUN i backend — vi viser bare serverens tekst under feltet.
+  setTelefonFeil(null);
   medLagreKnapp(async function(){
-    const r=await apiFetch('/api/dashboard/profile',{method:'PUT',body:JSON.stringify({
-      name:    $("#pf-name").value,
-      shop:    $("#pf-shop").value,
-      address: $("#pf-address").value,
-      tagline: $("#pf-tagline").value,
-      bio:     $("#pf-bio").value,
-    })});
-    if(!r)return;
-    if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre. Prøv igjen.');return;}
     // Sosiale handles lagres via PUT /settings (backend-kontrakt: normalizeHandle strippar @/URL/domene,
     // tom streng nullstiller kolonnen → ikonet forsvinner fra bookingsiden). Samme «Lagre profil»-knapp.
     const rs=await api.saveSettings({
@@ -5544,7 +5553,25 @@ async function lagreProfil(knappSel, flashSel){
       snapchat:      $("#pf-snapchat").value,
       contact_phone: $("#pf-phone").value,
     });
-    if(rs&&!rs.ok){const d=await rs.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre sosiale lenker. Prøv igjen.');return;}
+    if(!rs)return;                                  // 401 → apiFetch har sendt til logg-inn
+    if(!rs.ok){
+      const d=await rs.json().catch(()=>({}));
+      if(rs.status===400 && /telefon|contact_phone/i.test((d&&d.error)||'')){ setTelefonFeil(d.error,true); return; }
+      alert((d&&d.error)||'Kunne ikke lagre sosiale lenker. Prøv igjen.'); return;
+    }
+    // /settings er lagret. Feiler /profile nå (nett/server), sier meldingen nøyaktig hva som ble lagret.
+    let r;
+    try{
+      r=await apiFetch('/api/dashboard/profile',{method:'PUT',body:JSON.stringify({
+        name:    $("#pf-name").value,
+        shop:    $("#pf-shop").value,
+        address: $("#pf-address").value,
+        tagline: $("#pf-tagline").value,
+        bio:     $("#pf-bio").value,
+      })});
+    }catch(_){ r=undefined; }
+    if(r===null)return;                             // 401 → apiFetch har sendt til logg-inn
+    if(!r||!r.ok){ alert(PROFIL_DELVIS_LAGRET); return; }
     const displayName=$("#pf-shop").value.trim()||$("#pf-name").value.trim()||"";
     CONFIG.BARBER_NAME=displayName;
     settHeaderNavn(displayName);                 // nytt navn kan ha ny bredde → re-fit
@@ -5558,6 +5585,7 @@ async function lagreProfil(knappSel, flashSel){
 $("#saveProfil").addEventListener("click",function(){lagreProfil("#saveProfil","#profilSaved");});
 $("#saveNavn").addEventListener("click",function(){lagreProfil("#saveNavn","#navnSaved");});
 $("#pf-shop").addEventListener("input",function(){var e=$("#shopErr");if(e&&!e.hidden&&this.value.trim())e.hidden=true;});
+$("#pf-phone").addEventListener("input",function(){ setTelefonFeil(null); });
 
 /* ---- SMS-knotter (Vekst-fanen) ---- */
 // Het loadInnstillinger() da SMS-knottene bodde i en egen Innstillinger-fane.
@@ -7000,9 +7028,9 @@ function smsPakker(b){
   }).slice().sort(function(a,c){return a.antall-c.antall;});
 }
 // «Spar X %» mot per-SMS-prisen til den MINSTE pakken. Regnes, aldri hardkodet. Vises bare ved ≥ 5 %.
-// +1e-9 tar flyttallsstøy (et eksakt helt prosenttall skal ikke rundes ned til forrige heltall).
+// Avrundet til nærmeste hele prosent.
 function smsSpar(p,minstPer){
-  var x=Math.floor((1-Number(p.per_sms_kr)/minstPer)*100+1e-9);
+  var x=Math.round((1-Number(p.per_sms_kr)/minstPer)*100);
   return x>=5?x:0;
 }
 function renderSmsKonto(b){
