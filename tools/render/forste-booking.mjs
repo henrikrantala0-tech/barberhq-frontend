@@ -29,6 +29,7 @@ await new Promise(r=>server.listen(0,r));
 const PORT=server.address().port;
 
 const SLUG='saxe-cuts';
+const KRYMPET='Lenka er delt. Første booking kommer når en kunde bruker den.';
 const MELDING=`Yes 👌 Se ledige tider og book her: trybarberhq.com/${SLUG}`;
 const PROFIL={hasPassword:true,name:'Sander',shop:'Saxe Cuts',email:'s@s.no',slug:SLUG};
 const billing=(x={})=>({ subscription_status:null, page_status:'live', plan:null, effective_plan:'basis',
@@ -83,7 +84,8 @@ const rapport=[]; const push=(n,f,errs=[])=>rapport.push({sjekk:n,resultat:(f.le
 const VIS=[
   {id:'uten-kryss', b:billing(), a:{har_booking:false,steg:steg()}, vis:true},
   {id:'med-kryss',  b:billing(), a:{har_booking:false,steg:steg({svarmelding:true,bio:true})}, vis:true},
-  {id:'alle-kryss', b:billing(), a:{har_booking:false,steg:steg({svarmelding:true,bio:true,story:true})}, vis:true},
+  {id:'krympet', b:billing(), a:{har_booking:false,steg:steg({svarmelding:true,bio:true,story:true})}, vis:true, krympet:true},
+  {id:'krympet-har-booking', b:billing(), a:{har_booking:true,steg:steg({svarmelding:true,bio:true,story:true})}, vis:false},
   {id:'har-booking',b:billing(), a:{har_booking:true,steg:steg()}, vis:false},
   {id:'upublisert', b:billing({page_status:'forhandsvist'}), a:{har_booking:false,steg:steg()}, vis:false},
   {id:'api-feil',   b:billing(), a:{status:500}, vis:false},
@@ -97,7 +99,16 @@ for(const c of VIS){
     const f=[];
     const v=await synlig(page);
     if(v!==c.vis) f.push(`synlig=${v}, ventet ${c.vis}`);
-    if(c.vis){
+    if(c.krympet){
+      const t=await page.$eval('#forsteBooking',e=>e.innerText.replace(/\s+/g,' ').trim());
+      if(t!==KRYMPET+' Vis stegene') f.push(`krympet tekst «${t}»`);
+      if(!(await page.$eval('#fbFull',e=>e.hidden))) f.push('stegene står åpne');
+      const forst=await page.$eval('#oversikt',e=>{const k=[...e.children].find(x=>x.offsetParent!==null);return k&&k.id;});
+      if(forst!=='forsteBooking') f.push(`ikke øverst på Oversikt (først: ${forst})`);
+      if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) f.push('horisontal scroll');
+      await page.locator('#forsteBooking').screenshot({path:path.join(OUT,`${c.id}-${bredde}-${tema}.png`)});
+      await page.screenshot({path:path.join(OUT,`${c.id}-kontekst-${bredde}-${tema}.png`),clip:{x:0,y:0,width:bredde,height:420}});
+    }else if(c.vis){
       const t=await page.$eval('#forsteBooking',e=>e.innerText);
       for(const forvent of ['Få din første booking','Siden din er live. Nå gjelder det å få kundene dit.',
         'Svar kundene med lenka','Når noen spør om time på Snap eller Instagram: send dette i stedet for å avtale tiden selv.',
@@ -106,8 +117,6 @@ for(const c of VIS){
       if(/grand-barber|kr\b|Vekst|Oppgrader|\d+\s*\/\s*3|%/.test(t)) f.push(`forbudt innhold: «${t.match(/grand-barber|kr\b|Vekst|Oppgrader|\d+\s*\/\s*3|%/)[0]}»`);
       const k=await kryss(page), vent=['svarmelding','bio','story'].map(s=>c.a.steg[s]);
       if(JSON.stringify(k)!==JSON.stringify(vent)) f.push(`kryss ${JSON.stringify(k)} ≠ ${JSON.stringify(vent)}`);
-      const ferdig=await page.$eval('#fbFerdig',e=>!e.hidden);
-      if(ferdig!==(c.id==='alle-kryss')) f.push(`ferdig-linja synlig=${ferdig}`);
       const forst=await page.$eval('#oversikt',e=>{const k=[...e.children].find(x=>x.offsetParent!==null);return k&&k.id;});
       if(forst!=='forsteBooking') f.push(`ikke øverst på Oversikt (først: ${forst})`);
       const bred=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
@@ -169,6 +178,36 @@ for(const c of VIS){
   if(c2!==`https://trybarberhq.com/${SLUG}`) f.push(`utklipp 2 «${c2}»`);
   const k=await kryss(page); if(!(k[0]&&k[1]&&!k[2])) f.push(`kryss ${JSON.stringify(k)}`);
   push('kopier → utklippstavle + kryss',f,errs); await ctx.close();
+}
+{ // krympet → «Vis stegene» åpner → fjern kryss (POST) → stegene står åpne → kryss igjen → krympes
+  const state={billing:billing(), aktivering:{har_booking:false,steg:steg({svarmelding:true,bio:true,story:true})}, post:'ok'};
+  const {ctx,page,errs}=await nySide(375,'light',state); const f=[];
+  const full=()=>page.$eval('#fbFull',e=>!e.hidden), krymp=()=>page.$eval('#fbKrympet',e=>!e.hidden);
+  await page.click('#fbVis'); await page.waitForTimeout(100);
+  if(!(await full())||(await krymp())) f.push('«Vis stegene» åpnet ikke');
+  await page.click('li[data-steg="bio"] .fb-kryss'); await page.waitForTimeout(300);
+  if(JSON.stringify(state.poster.at(-1))!==JSON.stringify({steg:'bio',ferdig:false})) f.push(`POST ${JSON.stringify(state.poster.at(-1))}`);
+  if(!(await full())) f.push('stegene lukket etter fjernet kryss');
+  await page.click('li[data-steg="bio"] .fb-kryss'); await page.waitForTimeout(300);
+  if(!(await krymp())) f.push('krympet ikke igjen når alle tre ble krysset');
+  push('krympet → Vis stegene → fjern/sett kryss',f,errs); await ctx.close();
+}
+{ // krympet, så fjernes et kryss på serveren (annen enhet) → reload → stegene åpne automatisk
+  const state={billing:billing(), aktivering:{har_booking:false,steg:steg({svarmelding:true,bio:true,story:true})}, post:'ok'};
+  const {ctx,page,errs}=await nySide(375,'light',state); const f=[];
+  if(!(await page.$eval('#fbKrympet',e=>!e.hidden))) f.push('ikke krympet ved start');
+  state.aktivering.steg.story=false;
+  await page.reload({waitUntil:'networkidle'}); await page.waitForTimeout(300);
+  if(!(await page.$eval('#fbFull',e=>!e.hidden))) f.push('stegene åpnet ikke');
+  push('krympet → kryss fjernet → åpent',f,errs); await ctx.close();
+}
+{ // 403 mens stegene er åpnet fra krympet: tilbakerulling holder dem åpne (ingen hopp)
+  const state={billing:billing(), aktivering:{har_booking:false,steg:steg({svarmelding:true,bio:true,story:true})}, post:403};
+  const {ctx,page,errs}=await nySide(375,'light',state); const f=[];
+  await page.click('#fbVis'); await page.click('li[data-steg="story"] .fb-kryss'); await page.waitForTimeout(400);
+  if((await kryss(page))[2]!==true) f.push('ikke rullet tilbake');
+  if(!(await page.$eval('#fbFull',e=>!e.hidden))) f.push('stegene klappet sammen etter tilbakerulling');
+  push('krympet + 403 → tilbakerullet',f,errs); await ctx.close();
 }
 { // Lag story → generatoren åpner + kryss
   const state={billing:billing(), aktivering:{har_booking:false,steg:steg()}, post:'ok'};

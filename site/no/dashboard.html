@@ -1131,7 +1131,14 @@
   .fb-melding{font-size:13px;color:var(--ink-2);line-height:1.45;margin:8px 0 0;padding:8px 10px;border-radius:8px;
     background:var(--bg);overflow-wrap:anywhere}
   .fb-knapp{margin-top:10px;min-height:44px}
-  .fb-ferdig{font-size:13px;color:var(--ink-2);line-height:1.45;margin:14px 0 0;padding-top:12px;border-top:1px solid var(--line)}
+  /* Krympet (alle tre krysset, ingen booking ennå): én linje + «Vis stegene». Kortet beholder flaten,
+     men med mindre luft — det skal ikke ta plass fra resten av Oversikt. */
+  .fb-kort.fb-krympet{padding:12px 18px}
+  .fb-krympet-rad{display:flex;align-items:center;justify-content:space-between;gap:4px 12px;flex-wrap:wrap}
+  .fb-krympet-rad p{font-size:13.5px;line-height:1.45;color:var(--ink-2);margin:0;flex:1 1 220px}
+  .fb-vis{appearance:none;font:inherit;font-size:13px;font-weight:600;color:var(--info);background:0;border:0;
+    padding:12px 0;margin:-12px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
+  .fb-vis:hover{color:var(--ink)}
   .hs-kort-tekst + .hs-steg{margin-top:12px}
   .hs-installer{margin-top:14px}
 
@@ -1684,7 +1691,13 @@
          har_booking===false — feiler kallet eller mangler feltet, vises ingenting. Forsvinner av seg selv
          ved første booking (avledet i backend, intet skjult-flagg). Kryssene lagres per barber på serveren
          (POST /aktivering/steg). Ingen priser og ingen Vekst-salg her. renderForsteBooking. [oversettelse: sv/da/en] -->
-    <section class="fb-kort" id="forsteBooking" hidden aria-labelledby="fbTittel">
+    <section class="fb-kort" id="forsteBooking" hidden aria-label="Få din første booking">
+      <!-- Krympet: alle tre steg krysset, har_booking fortsatt false. «Vis stegene» åpner dem igjen. -->
+      <div class="fb-krympet-rad" id="fbKrympet" hidden>
+        <p>Lenka er delt. Første booking kommer når en kunde bruker den.</p>
+        <button type="button" class="fb-vis" id="fbVis">Vis stegene</button>
+      </div>
+      <div id="fbFull">
       <p class="fb-h" id="fbTittel">Få din første booking</p>
       <p class="fb-s">Siden din er live. Nå gjelder det å få kundene dit.</p>
       <ol class="fb-steg">
@@ -1713,7 +1726,7 @@
           </div>
         </li>
       </ol>
-      <p class="fb-ferdig" id="fbFerdig" hidden>Bra. Seksjonen forsvinner når den første kunden har booket.</p>
+      </div>
     </section>
 
     <!-- Hjemskjerm-kortet (13.10). Erstatter topplinje-stripa og Konto-raden: ÉN flate. Skjult i markup;
@@ -7779,6 +7792,10 @@ function erStandalone(){
    tilbake uten melding. Kopier/«Lag story» krysser av steget selv (kun hvis det ikke alt er ferdig). */
 const FB_STEG=['svarmelding','bio','story'];
 var _aktivering=null;   // null = ukjent/feilet → seksjonen skjult
+// Alle tre krysset → seksjonen krympes til én linje. «Vis stegene» setter _fbApnet. Den nullstilles
+// først når SERVEREN bekrefter at et steg mangler kryss (fbNullstillApnet) — ikke på det optimistiske
+// trykket, ellers ville en tilbakerulling (403/500) klappe stegene sammen midt i bruk.
+var _fbApnet=false;
 async function loadAktivering(){
   var d=null;
   try{
@@ -7787,8 +7804,10 @@ async function loadAktivering(){
   }catch(_){ d=null; }
   _aktivering=(d&&typeof d.har_booking==='boolean'&&d.steg&&typeof d.steg==='object')
     ? {har_booking:d.har_booking, steg:fbStegFra(d.steg)} : null;
+  fbNullstillApnet();
   renderForsteBooking();
 }
+function fbNullstillApnet(){ if(_aktivering&&!FB_STEG.every(function(k){ return _aktivering.steg[k]===true; })) _fbApnet=false; }
 function fbStegFra(o){ var s={}; FB_STEG.forEach(function(k){ s[k]=!!(o&&o[k]===true); }); return s; }
 function fbLenke(){ return CONFIG.BARBER_SLUG ? CONFIG.SITE_BASE+'/'+CONFIG.BARBER_SLUG : null; }
 // Låst copy (Henrik 13.10): uten https:// — slik barbereren skriver den selv i en DM.
@@ -7800,14 +7819,17 @@ function renderForsteBooking(){
   kort.hidden=!vis;
   if(!vis)return;
   $("#fbMelding").textContent=fbSvarmelding();
-  var alle=true;
+  var alle=FB_STEG.every(function(k){ return a.steg[k]===true; });
+  var krymp=alle&&!_fbApnet;
+  kort.classList.toggle('fb-krympet',krymp);
+  $("#fbKrympet").hidden=!krymp;
+  $("#fbFull").hidden=krymp;
   FB_STEG.forEach(function(k){
     var li=kort.querySelector('li[data-steg="'+k+'"]'); if(!li)return;
-    var f=a.steg[k]===true; if(!f) alle=false;
+    var f=a.steg[k]===true;
     li.querySelector('.fb-kryss').setAttribute('aria-checked',f?'true':'false');
     if(f) li.setAttribute('data-ferdig',''); else li.removeAttribute('data-ferdig');
   });
-  $("#fbFerdig").hidden=!alle;
 }
 // Optimistisk: lokalt først, så POST. Feil (nettverk, 4xx/5xx, 403 i demo) → rull tilbake, ingen melding.
 // _fbSekv per steg: et eldre svar skal ikke overskrive et nyere trykk.
@@ -7824,13 +7846,14 @@ async function settFbSteg(k,ferdig){
     if(r&&r.ok) d=await r.json();
   }catch(_){ d=null; }
   if(n!==_fbSekv[k]||!_aktivering)return;
-  if(d&&d.steg&&typeof d.steg==='object') _aktivering.steg[k]=d.steg[k]===true;
+  if(d&&d.steg&&typeof d.steg==='object'){ _aktivering.steg[k]=d.steg[k]===true; fbNullstillApnet(); }
   else _aktivering.steg[k]=forrige;
   renderForsteBooking();
 }
 (function(){
   var kort=$("#forsteBooking"); if(!kort)return;
   kort.addEventListener('click',async function(e){
+    if(e.target.closest('#fbVis')){ _fbApnet=true; renderForsteBooking(); return; }
     var kryss=e.target.closest('.fb-kryss');
     if(kryss){
       settFbSteg(kryss.closest('li').dataset.steg, kryss.getAttribute('aria-checked')!=='true');
