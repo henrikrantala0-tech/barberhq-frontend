@@ -437,6 +437,11 @@
   .fld-hint{font-size:11.5px;color:var(--mut);margin-top:6px;line-height:1.4;letter-spacing:-.01em}
   /* Feilmelding under et felt (validering) — rød, samme plass som .fld-hint. Salongnavnet er påkrevd. */
   .fld-err{font-size:11.5px;color:var(--bad);margin-top:6px;line-height:1.4;letter-spacing:-.01em}
+  /* Tegnteller på profilfeltene (PROFIL_MAKS). Høyrejustert, dempet; ved taket i --ink-2 (maxlength stopper
+     videre skriving, så det er en opplysning, ikke en feil). */
+  .fld-teller{display:block;font-size:11.5px;color:var(--mut);margin-top:6px;text-align:right;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .fld-teller[hidden]{display:none}
+  .fld-teller.full{color:var(--ink-2)}
   /* @-prefiks i de sosiale feltene: @ står fast til venstre i inputen og er IKKE del av verdien
      (barbereren skriver kun handlen). Gjør det åpenbart at det er brukernavn, ikke URL. */
   .fld-at{position:relative}
@@ -2364,7 +2369,7 @@
           <div class="acc-body" hidden>
             <div class="fld"><label>Navn på salongen</label><input id="pf-shop" type="text"><p class="fld-err" id="shopErr" hidden>Salongnavnet kan ikke være tomt.</p></div>
             <div class="fld"><label>Adresse</label><input id="pf-address" type="text"><p class="fld-hint">Skriv full adresse (gate, nummer, postnr, by) så kunder finner frem i kart. Vil du ikke dele nøyaktig sted, skriv bare byen.</p></div>
-            <div class="fld"><label>Spesialitet</label><input id="pf-tagline" type="text" maxlength="60"></div>
+            <div class="fld"><label>Spesialitet</label><input id="pf-tagline" type="text"></div>
             <!-- bioHint: se refreshSlots(). Direkte-malen har ingen {{BIO_BLOCK}}, så
                  beskrivelsen lagres men er usynlig i preview — uten denne linja leser det
                  som at lagringen ikke virket. [oversettelse: sv/da/en] -->
@@ -5399,6 +5404,7 @@ async function loadProfil(){
   $("#pf-address").value=p.address||"";
   $("#pf-tagline").value=p.tagline||"";
   $("#pf-bio").value=p.bio||"";
+  oppdaterProfilTellere();   // verdiene er satt programmatisk (ingen input-hendelse)
   // Strip evt. ledende @ ved lasting — @-en vises som fast prefiks (.fld-at), aldri i verdien.
   $("#pf-instagram").value=(p.instagram||"").replace(/^@+/,"");
   $("#pf-tiktok").value=(p.tiktok||"").replace(/^@+/,"");
@@ -5607,6 +5613,48 @@ function setTelefonFeil(tekst, fokus){
     inp.focus();
   }
 }
+// ── Lengdetak på profilfeltene ──
+// Navn/salongnavn/adresse/beskrivelse = backend rensTekst i PUT /profile. Spesialitet (tagline) er 60 her,
+// strammere enn backendens 150: den vises som en sperret overlinje på bookingsiden, og 150 tegn ble 5–6
+// linjer på 320/375 (rendret 14.10, Henrik valgte 60).
+// ÉN kilde: maxlength og telleren settes herfra. Telleren står alltid under beskrivelsen; på de korte
+// feltene først fra 80 % av taket, så «11 / 100» ikke står under hvert felt.
+const PROFIL_MAKS={'pf-name':100,'pf-shop':100,'pf-address':200,'pf-tagline':60,'pf-bio':2000};
+const PROFIL_TELLER_ALLTID={'pf-bio':true};
+function profilTeller(id){
+  var inp=document.getElementById(id), t=document.getElementById(id+'-teller'); if(!inp||!t)return;
+  var max=PROFIL_MAKS[id], n=inp.value.length;
+  t.textContent=nok(n)+' / '+nok(max);
+  t.hidden=!(PROFIL_TELLER_ALLTID[id] || n>=max*0.8);
+  t.classList.toggle('full', n>=max);
+}
+function oppdaterProfilTellere(){ Object.keys(PROFIL_MAKS).forEach(profilTeller); }
+Object.keys(PROFIL_MAKS).forEach(function(id){
+  var inp=document.getElementById(id); if(!inp)return;
+  inp.maxLength=PROFIL_MAKS[id];
+  var t=document.createElement('span'); t.className='fld-teller'; t.id=id+'-teller'; t.setAttribute('aria-live','polite');
+  inp.insertAdjacentElement('afterend',t);
+  var feil=document.createElement('p'); feil.className='fld-err'; feil.id=id+'-feil'; feil.hidden=true; feil.setAttribute('role','alert');
+  t.insertAdjacentElement('afterend',feil);
+  inp.setAttribute('aria-describedby',[inp.getAttribute('aria-describedby'),t.id,feil.id].filter(Boolean).join(' '));
+  inp.addEventListener('input',function(){ profilTeller(id); var f=document.getElementById(id+'-feil'); if(f&&!f.hidden)f.hidden=true; });
+  profilTeller(id);
+});
+// Backendens 400 for et profilfelt → meldingen ordrett under feltet. Feltet tas KUN fra svaret (felt: name|
+// shop|address|tagline|bio) — aldri gjettet fra ordlyden. Mangler/ukjent felt → null (kalleren viser alert).
+const PROFIL_FELT={name:'pf-name',shop:'pf-shop',address:'pf-address',tagline:'pf-tagline',bio:'pf-bio'};
+function profilFeltFraFeil(d){
+  var k=d&&d.felt;
+  return (k&&Object.prototype.hasOwnProperty.call(PROFIL_FELT,k))?PROFIL_FELT[k]:null;
+}
+function visProfilFeltFeil(id, tekst){
+  var f=document.getElementById(id+'-feil'), inp=document.getElementById(id); if(!f||!inp)return false;
+  f.textContent=tekst; f.hidden=false;
+  if(id==='pf-name'){ var rad=document.getElementById('radNavnRed'); if(rad&&rad.hidden&&typeof settRadAapen==='function')settRadAapen('radNavn',true); }
+  else{ var h=document.querySelector('#accProfil .acc-head'); if(h&&h.getAttribute('aria-expanded')!=='true')h.click(); }
+  inp.focus();
+  return true;
+}
 async function lagreProfil(knappSel, flashSel){
   // Validering: salongnavnet er PÅKREVD (bygger sidetittel/slug-kontekst). Tomt → avbryt uten PUT,
   // vis tydelig inline-feil + fokus. Kan lagres fra «Lagre profil» ELLER «Lagre navn», så åpne
@@ -5655,6 +5703,13 @@ async function lagreProfil(knappSel, flashSel){
       })});
     }catch(_){ r=undefined; }
     if(r===null)return;                             // 401 → apiFetch har sendt til logg-inn
+    if(r&&r.status===400){
+      // For lang tekst (eller annen feltfeil): backendens norske melding under feltet den gjelder.
+      const d=await r.json().catch(()=>({}));
+      const id=profilFeltFraFeil(d);
+      if(id&&d&&d.error&&visProfilFeltFeil(id,d.error))return;
+      alert((d&&d.error)||PROFIL_DELVIS_LAGRET); return;
+    }
     if(!r||!r.ok){ alert(PROFIL_DELVIS_LAGRET); return; }
     const displayName=$("#pf-shop").value.trim()||$("#pf-name").value.trim()||"";
     CONFIG.BARBER_NAME=displayName;
