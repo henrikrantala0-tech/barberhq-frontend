@@ -125,14 +125,16 @@ for(const w of [320,375]){
   const f=[]; if(await feil(page,'pf-tagline')) f.push('gjettet felt fra ordlyden'); if(!dialoger.includes(MELD)) f.push(`alert ${JSON.stringify(dialoger)}`);
   push('400 uten felt → alert (ingen gjetting)',f,errs); await page.close();
 }
-// 5. Navnefeil fra Konto → under Navn i Konto-raden
+// 5. Navnefeil fra Konto → #navnErr i Konto-raden
 {
   const MELD='Navnet er for langt (maks 100 tegn).';
   const {page,errs}=await nySide(375,{profil400:{status:400,body:{error:MELD,felt:'name'}}});
   await page.$eval('button[data-panel="abonnement"]',b=>b.click()); await page.waitForTimeout(200);
   await page.click('[data-endre="radNavn"]'); await page.waitForTimeout(200);
   await page.click('#saveNavn'); await page.waitForTimeout(600);
-  const f=[]; if(await feil(page,'pf-name')!==MELD) f.push(`feil «${await feil(page,'pf-name')}»`);
+  // Feilen står i Konto-raden (#navnErr), ikke i en skjult fane.
+  const nf=await page.$eval('#navnErr',e=>(!e.hidden&&e.offsetParent!==null)?e.textContent:null);
+  const f=[]; if(nf!==MELD) f.push(`#navnErr «${nf}»`);
   if(await page.$eval('#radNavnRed',e=>e.hidden)) f.push('Navn-raden lukket');
   push('400 felt:name fra Konto',f,errs); await page.close();
 }

@@ -6,7 +6,7 @@
 //   • gyldig telefon → PUT /settings, så PUT /profile (rekkefølge), «Lagret» vises
 //   • /settings 500 → ingen PUT /profile, alert med feilen
 //   • /settings OK + /profile 500 eller nettverksfeil → alert «Telefon og lenker er lagret, men navn og bio …»
-//   • Konto → «Lagre navn» (samme lagreProfil): ugyldig telefon stopper /profile og viser feilen i Profil;
+//   • Konto → «Lagre navn»: bare /profile (ingen /settings) — ugyldig telefon stopper den ikke;
 //     gyldig → begge kall
 // Skjermbilder av feilen under Telefon: 320 og 375, lys og mørk.
 import http from 'node:http';
@@ -140,21 +140,16 @@ for(const pf of [500,'nett']){
   push(`/profile ${pf} etter /settings OK → delvis-melding`,f,errs); await ctx.close();
 }
 
-// ── Konto → «Lagre navn» ──────────────────────────────────────────────────────────────────
+// ── Konto → «Lagre navn» (14.10): sender KUN /profile — ingen /settings, så et gammelt ugyldig telefonnummer
+// kan ikke stoppe navnelagringen, og ingen feil havner i den skjulte Din side-fanen. Se konto-navn.mjs.
 { const {ctx,page,errs,dialoger,logg}=await nySide({svar:{settings:'ugyldig',profile:'ok'},telefon:'4545'}); const f=[];
   await page.$eval('button[data-panel="abonnement"]',b=>b.click()); await page.waitForTimeout(200);
   await page.$eval('#saveNavn',b=>b.click()); await page.waitForTimeout(500);
-  if(logg.map(x=>x.kall).join()!=='settings') f.push(`kall: ${logg.map(x=>x.kall).join()}`);
-  if(await page.$eval('#phoneErr',e=>e.textContent)!==UGYLDIG||await page.$eval('#phoneErr',e=>e.hidden)) f.push('telefonfeil ikke satt');
-  if(await page.$eval('#accProfil .acc-head',h=>h.getAttribute('aria-expanded'))!=='true') f.push('Profil-trekkspillet ble ikke åpnet');
+  if(logg.map(x=>x.kall).join()!=='profile') f.push(`kall: ${logg.map(x=>x.kall).join()}`);
+  if(!(await page.$eval('#phoneErr',e=>e.hidden))) f.push('telefonfeil satt (skal ikke røres)');
+  if(await page.$eval('#accProfil .acc-head',h=>h.getAttribute('aria-expanded'))==='true') f.push('Profil-trekkspillet ble åpnet');
   if(dialoger.length) f.push(`alert: ${dialoger.join(' / ')}`);
-  push('Lagre navn (Konto) + ugyldig telefon → ingen /profile',f,errs); await ctx.close(); }
-{ const {ctx,page,errs,dialoger,logg}=await nySide({svar:{settings:'ok',profile:'ok'}}); const f=[];
-  await page.$eval('button[data-panel="abonnement"]',b=>b.click()); await page.waitForTimeout(200);
-  await page.$eval('#saveNavn',b=>b.click()); await page.waitForTimeout(500);
-  if(logg.map(x=>x.kall).join()!=='settings,profile') f.push(`kall: ${logg.map(x=>x.kall).join()}`);
-  if(dialoger.length) f.push(`alert: ${dialoger.join(' / ')}`);
-  push('Lagre navn (Konto) gyldig → settings, så profile',f,errs); await ctx.close(); }
+  push('Lagre navn (Konto) + ugyldig telefon → bare /profile',f,errs); await ctx.close(); }
 
 await browser.close(); server.close();
 rapport.push({sjekk:'prod-trafikk', resultat:(prodSluppet-prodAvbrutt)>0?`✗ ${prodSluppet-prodAvbrutt} sluppet`:'OK ✓ (0 sluppet)'});

@@ -2622,9 +2622,11 @@
               <button type="button" class="kt-endre" data-endre="radNavn" aria-expanded="false" aria-controls="radNavnRed">Endre</button>
             </div>
             <!-- Navn: identitets-/kontofelt (display_name — rendres ALDRI på kundeflaten; brukt i
-                 e-post/Telegram/Stripe). Samme PUT /profile-kall som Profil (lagreProfil). -->
+                 e-post/Telegram/Stripe). Lagres av lagreNavn: PUT /profile med NYTT navn + de sist LAGREDE
+                 verdiene for resten (ikke det som står ulagret i Din side). Feil vises i #navnErr her. -->
             <div class="kt-red" id="radNavnRed" hidden>
               <div class="fld"><label for="pf-name">Navn</label><input id="pf-name" type="text" autocomplete="name"></div>
+              <p class="fld-err" id="navnErr" role="alert" hidden></p>
               <div class="kt-handl"><button class="btn" id="saveNavn" type="button">Lagre</button><button type="button" class="kt-avbryt" data-avbryt="radNavn">Avbryt</button></div>
             </div>
           </div>
@@ -5407,6 +5409,7 @@ async function loadProfil(){
   $("#pf-address").value=p.address||"";
   $("#pf-tagline").value=p.tagline||"";
   $("#pf-bio").value=p.bio||"";
+  _lagretProfil={name:p.name||"",shop:p.shop||"",address:p.address||"",tagline:p.tagline||"",bio:p.bio||""};
   oppdaterProfilTellere();   // verdiene er satt programmatisk (ingen input-hendelse)
   // Strip evt. ledende @ ved lasting — @-en vises som fast prefiks (.fld-at), aldri i verdien.
   $("#pf-instagram").value=(p.instagram||"").replace(/^@+/,"");
@@ -5483,6 +5486,10 @@ bindFeedbackBoks('konto-support','support');
 // Lagre og Avbryt står i raden. Avbryt tilbakestiller feltene til lagret verdi og lukker. Etter
 // vellykket lagring lukkes raden og den nye verdien vises (kontoRadLagret).
 var _lagretNavn='';
+// Sist LAGREDE profil (fra GET /profile, oppdatert etter hver vellykket PUT). PUT /profile skriver alle fem
+// feltene (backend: full erstatning), så hver lagring sender sine egne felt + disse for resten — aldri ulagret
+// tekst fra en annen fane. null = profilen er ikke lastet → ingen lagring.
+var _lagretProfil=null;
 function settRadAapen(radId,aapen){
   var rad=document.getElementById(radId); if(!rad)return;
   var red=rad.querySelector('.kt-red'), endre=rad.querySelector('[data-endre]');
@@ -5491,7 +5498,7 @@ function settRadAapen(radId,aapen){
   if(aapen){var f=red&&red.querySelector('input:not([hidden])');if(f)f.focus();}
 }
 function nullstillRad(radId){
-  if(radId==='radNavn'){$("#pf-name").value=_lagretNavn;}
+  if(radId==='radNavn'){$("#pf-name").value=_lagretNavn;var ne=$("#navnErr");if(ne){ne.hidden=true;ne.textContent='';}}
   if(radId==='radPassord'){$("#pw-current").value='';$("#pw-new").value='';$("#pw-repeat").value='';var e=$("#pwErr");if(e)e.style.display='none';var ok=$("#pwForgotOk");if(ok)ok.hidden=true;}
 }
 function oppdaterNavnVerdi(){var v=$("#navnVerdi");if(v)v.textContent=_lagretNavn||'Ikke satt';}
@@ -5698,7 +5705,7 @@ async function lagreProfil(knappSel, flashSel){
     let r;
     try{
       r=await apiFetch('/api/dashboard/profile',{method:'PUT',body:JSON.stringify({
-        name:    $("#pf-name").value,
+        name:    _lagretProfil?_lagretProfil.name:$("#pf-name").value,   // navnet eies av Konto (lagreNavn)
         shop:    $("#pf-shop").value,
         address: $("#pf-address").value,
         tagline: $("#pf-tagline").value,
@@ -5714,7 +5721,9 @@ async function lagreProfil(knappSel, flashSel){
       alert((d&&d.error)||PROFIL_DELVIS_LAGRET); return;
     }
     if(!r||!r.ok){ alert(PROFIL_DELVIS_LAGRET); return; }
-    const displayName=$("#pf-shop").value.trim()||$("#pf-name").value.trim()||"";
+    _lagretProfil={name:_lagretProfil?_lagretProfil.name:$("#pf-name").value,shop:$("#pf-shop").value,
+      address:$("#pf-address").value,tagline:$("#pf-tagline").value,bio:$("#pf-bio").value};
+    const displayName=$("#pf-shop").value.trim()||_lagretProfil.name.trim()||"";
     CONFIG.BARBER_NAME=displayName;
     settHeaderNavn(displayName);                 // nytt navn kan ha ny bredde → re-fit
     if(flashSel==="#navnSaved")kontoRadLagret('radNavn');   // Konto: lukk raden + vis nytt navn
@@ -5725,7 +5734,28 @@ async function lagreProfil(knappSel, flashSel){
   }, {btn:$(knappSel), feil:'Kunne ikke lagre. Prøv igjen.'});
 }
 $("#saveProfil").addEventListener("click",function(){lagreProfil("#saveProfil","#profilSaved");});
-$("#saveNavn").addEventListener("click",function(){lagreProfil("#saveNavn","#navnSaved");});
+// Konto → «Lagre navn»: KUN navnet endres. Før lagret knappen hele profilen fra feltene i Din side (ulagret
+// bio-utkast ble publisert) og kjørte /settings først — avviste den et gammelt telefonnummer, havnet feilen i
+// den skjulte Din side-fanen og navnet ble aldri lagret. Nå: PUT /profile med nytt navn + lagrede verdier,
+// ingen /settings, og feil i #navnErr i samme rad.
+async function lagreNavn(){
+  var btn=$("#saveNavn"), err=$("#navnErr"), navn=$("#pf-name").value;
+  function visFeil(t){ err.textContent=t; err.hidden=!t; }
+  visFeil('');
+  if(!_lagretProfil){ visFeil('Profilen er ikke lastet. Last siden på nytt og prøv igjen.'); return; }
+  var orig=btn.textContent; btn.disabled=true; btn.textContent='Lagrer …';
+  try{
+    var r=await apiFetch('/api/dashboard/profile',{method:'PUT',body:JSON.stringify(Object.assign({},_lagretProfil,{name:navn}))});
+    if(r===null) return;                                          // 401 → apiFetch sender til logg-inn
+    if(!r.ok){ var d=await r.json().catch(function(){return{};}); visFeil((d&&d.error)||'Kunne ikke lagre navnet. Prøv igjen.'); return; }
+    _lagretProfil.name=navn;
+    CONFIG.BARBER_NAME=(_lagretProfil.shop||'').trim()||navn.trim()||'';
+    settHeaderNavn(CONFIG.BARBER_NAME);
+    kontoRadLagret('radNavn'); savedFlash("#navnSaved");
+  }catch(e){ visFeil(kontaktFeil(e)); }
+  finally{ btn.disabled=false; btn.textContent=orig; }
+}
+$("#saveNavn").addEventListener("click",lagreNavn);
 $("#pf-shop").addEventListener("input",function(){var e=$("#shopErr");if(e&&!e.hidden&&this.value.trim())e.hidden=true;});
 $("#pf-phone").addEventListener("input",function(){ setTelefonFeil(null); });
 
