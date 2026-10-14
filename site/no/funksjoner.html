@@ -233,7 +233,7 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
 .hero-viz.sp .pv-phoneframe{width:min(384px,86vw);aspect-ratio:1884/3402;height:auto}
 .hero-viz.sp .iph{display:none}
 @media(max-width:899px){.hero-viz.sp .pv-phoneframe{width:min(300px,84vw)}}
-/* Fixed reise-telefon (#ksPhoneTravel) skal ALDRI gi horisontal scroll når J-kroken svinger ut til høyre. */
+/* Fixed reise-telefon (#ksPhoneTravel) skal ALDRI gi horisontal scroll (sikkerhetsnett; banen holder seg innenfor skjermen). */
 html{overflow-x:clip}
 /* Kalenderen inni telefonen — klonet fra dashbordets .cal-* (dashboard.html:2536–2601), scopet til .hv-cal. */
 .hv-cal{flex:1;min-height:0;display:flex;flex-direction:column;overflow:hidden;position:relative;
@@ -1671,7 +1671,6 @@ window.PinInit=(function(){
       function smoother(x){x=cl01(x);return x*x*x*(x*(x*6-15)+10);}   // smootherstep: 0-deriv i begge ender → myk start/landing
       function sstep(a,b,x){var t=cl01((x-a)/(b-a));return t*t*(3-2*t);}
       function lerp(a,b,t){return a+(b-a)*t;}
-      function bez(a,b,c,d,t){var u=1-t;return u*u*u*a+3*u*u*t*b+3*u*t*t*c+t*t*t*d;}
       // Mål hele reisens geometri. Cacher vh (visualViewport) så Safari-adresselinja ikke får banen til å «puste».
       function measureTravel(){
         var sy=window.scrollY||window.pageYOffset||0;
@@ -1719,6 +1718,8 @@ window.PinInit=(function(){
       // travel→dock først når man er godt UNDER (heroStart − DEADBAND) → absolute↔fixed flipper ikke frem og
       // tilbake når iOS-momentum vibrerer scrollen rundt grensen (hver flip = layout + layer-rebygg = jank).
       var DEADBAND=6;
+      // Rolig bane (14.10): maks vipp, bue som andel av skjermbredden, minste avstand til skjermkanten.
+      var TILT_MAKS=6, BUE_ANDEL=0.06, MARG=8;
       function renderTravel(){
         if(!g.baseW)return;
         var sy=window.scrollY||window.pageYOffset||0;
@@ -1727,17 +1728,28 @@ window.PinInit=(function(){
         else { if(sy < g.heroStart-DEADBAND) dockEnter(); }                     // hysterese opp
         // FASE 1: telefonen følger innholdet via NATIV scroll (dokket, absolutt i sec). Ingen posisjonsskriv per tick.
         if(mode==='docked') return;
-        // FASE 2 (fixed): J-kroken som FØR — ren scrub-transform (funksjon av progress, ikke rå scrollY).
+        // FASE 2 (fixed): rolig bane — ren scrub-transform (funksjon av progress, ikke rå scrollY).
+        // Var (til 14.10): full 360°-snurr + J-krok med utslag 50 % av bredden / 62 % av høyden. Rotasjonen var
+        // over 20° i ~94 % av banen (innholdet sto på skrå/«speilvendt»), og telefonen gikk opptil ~210 px ut av
+        // høyre kant og ~60 px under bunnen. Nå: rett linje med svak bue, lett vipp som er 0° i begge ender,
+        // og det roterte omrisset holdes innenfor skjermen.
         var cx,cy,scale,rot,mix;
         var p=cl01((sy-g.heroStart)/Math.max(1,g.ksStart-g.heroStart));
         var e=smoother(p);
+        var bue=Math.sin(Math.PI*e);      // 0 i begge ender, 1 midt i banen
         scale=lerp(g.sourceScale,1,e);   // hero-størrelse → NØYAKTIG slot-størrelse
-        rot=360*e;                        // flat snurr, myk inn/ut via e
+        rot=TILT_MAKS*bue;                // lett vipp, rolig inn og ut
         var sx=g.sourceCx, syc=navH+g.sourceH/2, ex=g.targetCx, ey=g.targetCy;
-        var R=g.vw*(isD?0.40:0.50), D=g.vh*(isD?0.42:0.62);   // J-krok-utslag; skaleres etter viewport (desktop: tydeligere høyre-krok, mindre bunn-dykk)
-        cx=bez(sx, sx+R, ex+R*0.85, ex, e);   // ÉN jevn kubisk bezier — ingen knekker
-        cy=bez(syc, syc+D*0.42, ey+D, ey, e);
-        mix=sstep(1/3,2/3,e);   // skjermglid over rotasjon 120°–240°
+        cx=lerp(sx,ex,e)+g.vw*BUE_ANDEL*bue;   // svak bue mot høyre
+        cy=lerp(syc,ey,e);
+        // Hold det roterte, skalerte omrisset innenfor skjermen (MARG px). Tonet inn/ut med bue → start og
+        // landing treffer plassholder og slot NØYAKTIG (der er bue 0), midt i banen kan den aldri gå ut.
+        var rr=Math.abs(rot)*Math.PI/180, hw=(g.baseW*scale/2)*Math.cos(rr)+(g.baseH*scale/2)*Math.sin(rr),
+            hh=(g.baseW*scale/2)*Math.sin(rr)+(g.baseH*scale/2)*Math.cos(rr);
+        var kx=(2*hw+2*MARG<=g.vw)?Math.min(Math.max(cx,hw+MARG),g.vw-hw-MARG):g.vw/2;
+        var ky=(2*hh+2*MARG<=g.vh-navH)?Math.min(Math.max(cy,navH+hh+MARG),g.vh-hh-MARG):cy;
+        cx=lerp(cx,kx,bue); cy=lerp(cy,ky,bue);
+        mix=sstep(1/3,2/3,e);   // skjermglid midt i banen
         gsap.set(phoneTravel,{x:cx-g.baseW/2,y:cy-g.baseH/2,scale:scale,rotation:rot,force3D:true});
         // Skjermer + status settes KUN opp til landing (sy<=ksStart). Etter landing eier tidslinja dem
         // (skjerm-xPercent-tweens + statusTick) — vanntett skille, ingen race mot reise-driveren.
