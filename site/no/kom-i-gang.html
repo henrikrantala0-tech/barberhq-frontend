@@ -127,9 +127,9 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .svc-row{background:#0a0a0a;border:1px solid #1f1f1f;border-radius:12px;padding:12px;margin-bottom:10px}
 .svc-name{margin-bottom:9px}
 .svc-nums{display:flex;align-items:flex-end;gap:9px}
-.svc-nums .np{flex:1;display:flex;flex-direction:column;gap:5px;font-size:11px;color:#777;font-weight:500}
+.svc-nums .np{flex:1;display:flex;flex-direction:column;gap:5px;font-size:11px;color:#777;font-weight:500;margin-bottom:0} /* 0: den generelle label-margin (7px) løftet feltene over ×-knappens bunnlinje */
 .svc-nums .np input{width:100%}
-.svc-rm{flex:0 0 auto;width:38px;height:44px;border-radius:9px;background:#0e0e0e;border:1px solid #2a2a2a;color:#9a9a9a;font-size:18px;cursor:pointer;line-height:1}
+.svc-rm{flex:0 0 auto;width:44px;height:54px;border-radius:9px;background:#0e0e0e;border:1px solid #2a2a2a;color:#9a9a9a;font-size:18px;cursor:pointer;line-height:1}
 .svc-rm:hover{border-color:#c0594a;color:#c0594a}
 .svc-add{appearance:none;background:#0e0e0e;border:1px dashed #2e2e2e;border-radius:11px;color:#cfcfcf;font:inherit;font-size:14px;font-weight:500;padding:12px;width:100%;cursor:pointer;transition:border-color .15s,color .15s}
 .svc-add:hover{border-color:#4d8bff;color:#fff}
@@ -214,7 +214,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   <div class="ob-card" id="obForm">
     <div class="stepind"><span class="d on"></span><span class="d"></span></div>
     <div class="field"><label for="o-name">Navn</label><input type="text" id="o-name" autocomplete="name" placeholder="Ditt navn"></div>
-    <div class="field"><label for="o-shop">Navn på salongen</label><input type="text" id="o-shop" autocomplete="organization" placeholder="Blir navnet på siden din"></div>
+    <div class="field"><label for="o-shop">Navn på salongen</label><input type="text" id="o-shop" autocomplete="organization" placeholder="Blir navnet på siden din" maxlength="100"></div>
     <div class="field"><label for="o-email">E-post</label><input type="email" id="o-email" autocomplete="email" inputmode="email" placeholder="E-posten du logger inn med"></div>
     <button type="button" class="btn btn-fill ob-submit" onclick="submitOb()">Neste &rarr;</button>
   </div>
@@ -228,10 +228,11 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
       <div class="uploader" id="dropZone" tabindex="0">
         <div class="ui">&#8682;</div>
         <div class="ut">Trykk for &aring; laste opp bilder</div>
-        <div class="us">JPG eller PNG &middot; maks 10</div>
+        <div class="us">JPG, PNG, WebP eller HEIC &middot; maks 10 bilder, 20&nbsp;MB per bilde</div>
       </div>
-      <input type="file" id="fileInput" accept="image/*" multiple hidden>
+      <input type="file" id="fileInput" accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" multiple hidden>
       <div class="img-count" id="imgCount">0 av 10 lastet opp</div>
+      <p class="ob-err" id="imgErr" role="alert"></p>
       <div class="thumbs" id="thumbs"></div>
       <p class="fav-hint" id="favHint" style="display:none">Trykk på et bilde for å velge hva som vises først på siden.</p>
     </div>
@@ -239,7 +240,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     <div class="dgrp"><span class="lab">Tjenester</span>
       <div id="svcList"></div>
       <button type="button" class="svc-add" id="svcAdd">+ Legg til tjeneste</button>
-      <p class="ob-err" id="svcErr"></p>
+      <p class="ob-err" id="svcErr" role="alert"></p>
     </div>
 
     <div class="dgrp"><span class="lab">Åpningstider</span>
@@ -271,6 +272,12 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 function v(id){return document.getElementById(id).value.trim();}
 var API_BASE='https://api.trybarberhq.com';
 var MAX_IMG=10;
+// Backendens grenser, speilet her så en feil aldri koster et innsendingsforsøk (onboarding har 3/time per
+// IP, telt FØR validering). Kilde: backend src/routes/onboarding.js (multer: 20 MB, jpeg/png/webp/heic/heif)
+// og src/lib/tjeneste-grenser.js (MAX_PRIS, MAX_MIN, SVC_NAME_MAX, MAX_TJENESTER). Endres der → endres her.
+var IMG_MAKS_BYTE=20*1024*1024;
+var IMG_TYPE_OK=/^image\/(jpeg|png|webp|heic|heif)$/;
+var SVC_PRIS_MAKS=100000, SVC_MIN_MAKS=600, SVC_NAVN_MAKS=80, SVC_ANTALL_MAKS=50;
 // Submit-timeout: uten AbortController spinner knappen i det uendelige hvis serveren eller
 // opplastingen henger. 120s dekker treg mobilopplasting av inntil 10 bilder (ukomprimert fra
 // telefon, ~10–40 MB) + backend-bygg, med margin — «for kort er verre enn for lang».
@@ -310,8 +317,18 @@ var favIndex=-1;
 var fileInput=document.getElementById('fileInput');
 document.getElementById('dropZone').addEventListener('click',function(){fileInput.click();});
 fileInput.addEventListener('change',function(){
-  Array.prototype.forEach.call(fileInput.files,function(f){ if(files.length<MAX_IMG && f.type.indexOf('image/')===0) files.push(f); });
+  // Hver fil som ikke legges til får navn + grunn i #imgErr. Typen sjekkes mot backendens liste: en fil med tom
+  // type (f.eks. HEIC fra enkelte filvelgere) sendes som application/octet-stream og ville blitt avvist der.
+  var avvist=[];
+  Array.prototype.forEach.call(fileInput.files,function(f){
+    if(!IMG_TYPE_OK.test(f.type)) avvist.push(f.name+' (filtypen støttes ikke)');
+    else if(f.size>IMG_MAKS_BYTE) avvist.push(f.name+' (over 20 MB)');
+    else if(files.length>=MAX_IMG) avvist.push(f.name+' (maks '+MAX_IMG+' bilder)');
+    else files.push(f);
+  });
   fileInput.value='';
+  document.getElementById('imgErr').textContent=avvist.length
+    ? 'Ikke lagt til: '+avvist.join(', ')+'. Bruk JPG, PNG, WebP eller HEIC under 20 MB.' : '';
   refreshImages();
 });
 document.getElementById('thumbs').addEventListener('click',function(e){
@@ -352,10 +369,10 @@ var svcList=document.getElementById('svcList');
 function svcRow(name,price,min){
   var div=document.createElement('div'); div.className='svc-row';
   div.innerHTML=
-    '<input class="svc-name" type="text" placeholder="Tjeneste" value="'+(name||'')+'">'+
+    '<input class="svc-name" type="text" placeholder="Tjeneste" maxlength="'+SVC_NAVN_MAKS+'" value="'+(name||'')+'">'+
     '<div class="svc-nums">'+
-      '<label class="np">Pris (kr)<input class="svc-price" type="text" inputmode="decimal" placeholder="450" value="'+(price||'')+'"></label>'+
-      '<label class="np">Min<input class="svc-min" type="text" inputmode="decimal" placeholder="30" value="'+(min||'')+'"></label>'+
+      '<label class="np">Pris (kr)<input class="svc-price" type="text" inputmode="decimal" placeholder="Pris" value="'+(price||'')+'"></label>'+
+      '<label class="np">Min<input class="svc-min" type="text" inputmode="decimal" placeholder="Min" value="'+(min||'')+'"></label>'+
       '<button type="button" class="svc-rm" aria-label="Fjern tjeneste">&times;</button>'+
     '</div>';
   return div;
@@ -363,26 +380,35 @@ function svcRow(name,price,min){
 svcList.appendChild(svcRow('Hårklipp','','30'));
 document.getElementById('svcAdd').addEventListener('click',function(){ svcList.appendChild(svcRow('','','')); });
 svcList.addEventListener('click',function(e){ var b=e.target.closest('.svc-rm'); if(!b)return; if(svcList.querySelectorAll('.svc-row').length>1) b.closest('.svc-row').remove(); });
+// Retter barbereren et rødt felt, forsvinner markeringen (feilteksten står til neste «Fullfør»).
+svcList.addEventListener('input',function(e){ if(e.target.matches('input')) e.target.style.borderColor=''; });
+// Returnerer {list, err}. err = FØRSTE feil {el, msg}; alle feil felt markeres røde. En rad med feil blir ALDRI
+// stille utelatt (før ble «Skjegg» uten pris bare borte og resten sendt). Kun HELT tomme rader hoppes over.
 function collectServices(){
   var out=[], err=null;
+  function feil(el,msg){ el.style.borderColor='#c0594a'; if(!err) err={el:el,msg:msg}; }
   Array.prototype.forEach.call(svcList.querySelectorAll('.svc-row'),function(row){
     var nameEl=row.querySelector('.svc-name'), priceEl=row.querySelector('.svc-price'), minEl=row.querySelector('.svc-min');
-    priceEl.style.borderColor='#2a2a2a'; minEl.style.borderColor='#2a2a2a';
+    nameEl.style.borderColor=''; priceEl.style.borderColor='#2a2a2a'; minEl.style.borderColor='#2a2a2a';
     var name=nameEl.value.trim();
-    if(!name) return; // tomme rader hoppes over
+    if(!name && !priceEl.value.trim() && !minEl.value.trim()) return; // helt tom rad hoppes over
+    if(!name){ feil(nameEl,'Gi tjenesten et navn, eller fjern raden.'); return; }
+    if(name.length>SVC_NAVN_MAKS){ feil(nameEl,'Tjenestenavnet kan være maks '+SVC_NAVN_MAKS+' tegn.'); return; }
     // Pris: type=text inputmode=decimal → JS ser råstrengen, også kommaet (type=number avviste «45,5»
     // til value="" før JS så det). Strip mellomrom (tusenskille), komma→punktum, rund til hele krone,
     // klamp negativ→0 — speiler dashbord-fiksen 8f12868. Ugyldig/≤0 → synlig rød feil, ingen submit.
     var priceRaw=priceEl.value.trim();
     var priceN=parseFloat(priceRaw.replace(/\s+/g,'').replace(',','.'));
     var price=Number.isFinite(priceN)?Math.max(0,Math.round(priceN)):NaN;
-    if(!(price>0)){ priceEl.style.borderColor='#c0594a'; if(!err)err={el:priceEl}; return; }
+    if(!(price>0)){ feil(priceEl,'«'+name+'» mangler pris.'); return; }
+    if(price>SVC_PRIS_MAKS){ feil(priceEl,'Prisen kan være maks 100 000 kr.'); return; }
     // Varighet: samme komma-parsing som pris (L-12). Ugyldig/tom/≤0 → synlig rød feil, IKKE stille
     // fallback til 30 (som skjulte at feltet var feil/uutfylt). Hovedtjeneste MÅ ha varighet.
     var minRaw=minEl.value.trim();
     var minN=parseFloat(minRaw.replace(/\s+/g,'').replace(',','.'));
     var min=Number.isFinite(minN)?Math.max(0,Math.round(minN)):NaN;
-    if(!(min>0)){ minEl.style.borderColor='#c0594a'; if(!err)err={el:minEl}; return; }
+    if(!(min>0)){ feil(minEl,'«'+name+'» mangler varighet i minutter.'); return; }
+    if(min>SVC_MIN_MAKS){ feil(minEl,'Varigheten kan være maks '+SVC_MIN_MAKS+' minutter.'); return; }
     out.push({name:name, price:price, min:min});
   });
   return {list:out, err:err};
@@ -395,10 +421,14 @@ var HRS_DAYS=[
   {wd:6,label:'Lørdag',open:false},{wd:0,label:'Søndag',open:false}
 ];
 var hrsList=document.getElementById('hrsList');
-// Verdisett: 05:00–23:45 i 15-min-steg. Verdiene er ren HH:MM (uendret backend-kontrakt).
+// Verdisett: 05:00–23:45 i 15-min-steg. Verdiene er ren HH:MM (uendret backend-kontrakt). Lukketid får i
+// tillegg 23:59 som siste valg (backend TIME_RE tillater 00:00–23:59): ellers ble lista TOM ved åpning 23:45,
+// det ble sendt 18:00, og backend svarte 400 «open_time må være før close_time».
 var HRS_SLOTS=(function(){var a=[];for(var h=5;h<=23;h++){for(var mi=0;mi<60;mi+=15){a.push((h<10?'0'+h:''+h)+':'+(mi<10?'0'+mi:''+mi));}}return a;})();
-function hrsOptions(min){ // min: kun tider strengt større enn min (utelates ved undefined)
-  var o='';for(var i=0;i<HRS_SLOTS.length;i++){var t=HRS_SLOTS[i];if(min!==undefined&&t<=min)continue;o+='<option value="'+t+'">'+t+'</option>';}return o;
+function hrsOptions(min){ // min: kun tider strengt større enn min (utelates ved undefined = åpningstid-lista)
+  var o='';for(var i=0;i<HRS_SLOTS.length;i++){var t=HRS_SLOTS[i];if(min!==undefined&&t<=min)continue;o+='<option value="'+t+'">'+t+'</option>';}
+  if(min!==undefined) o+='<option value="23:59">23:59</option>';   // lukketid: alltid minst ett gyldig valg
+  return o;
 }
 // Lukketid-select filtreres til kun tider ETTER valgt åpningstid; bevar gyldig valg, ellers første.
 function filterClose(openSel,closeSel){
@@ -443,6 +473,12 @@ async function submitFinal(){
   svcErr.textContent=''; hrsErr.textContent='';
   // 1) Tjenester — minst én med pris>0 (tomme/prislause rader hoppes over av collectServices)
   var svc=collectServices();
+  if(!svc.err && svc.list.length>SVC_ANTALL_MAKS) svc.err={el:svcList.querySelector('.svc-name'),msg:'Maks '+SVC_ANTALL_MAKS+' tjenester.'};
+  if(svc.err){
+    svcErr.textContent=svc.err.msg;
+    svc.err.el.scrollIntoView({behavior:'smooth',block:'center'}); svc.err.el.focus();
+    return;
+  }
   if(svc.list.length===0){
     svcErr.textContent='Legg inn minst én tjeneste med pris.';
     var t=svc.err?svc.err.el:svcList.querySelector('.svc-price');
