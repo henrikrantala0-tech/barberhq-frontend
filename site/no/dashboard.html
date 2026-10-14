@@ -761,7 +761,9 @@
   .nav-dot{display:inline-block;width:6px;height:6px;border-radius:50%;background:var(--bad);
            margin-left:6px;vertical-align:middle}
   .nav-dot[hidden]{display:none}
-  .pub-err{display:none;color:#c0594a;font-size:13px;margin-top:12px;line-height:1.45;max-width:520px}
+  /* Samme rød som .sett-err (#paamErr). p.pub-err: .subcard p{color:var(--ink-2)} har høyere spesifisitet
+     enn en ren klasse og gjorde publiseringsfeilen i Konto grå. */
+  .pub-err,.subcard p.pub-err{display:none;color:#c0392b;font-size:13px;margin-top:12px;line-height:1.45;max-width:520px}
   .pub-err button{appearance:none;border:0;background:0;font:inherit;font-size:13px;
                   color:var(--info);text-decoration:underline;cursor:pointer;padding:0}
 
@@ -1159,7 +1161,9 @@
      .svc-err, så de to feiltypene i dashbordet ser like ut. */
   .sett-err{font-size:12px;color:#c0392b;line-height:1.45;margin:0 0 12px}
   /* Gratis med 0 SMS: dempet lenkelinje under påminnelse-bryteren i Vekst-fanen. Ingen knapp, ingen aksentfarge. */
-  .paam-kjop{font-size:12px;color:var(--mut);line-height:1.45;margin:-4px 17px 15px}   /* 17px = .acc-head-innrykket: flukter med tittelen */
+  .paam-kjop{font-size:12px;color:var(--mut);line-height:1.45;margin:-4px 17px 15px}
+  /* Feiltekst rett i et trekkspill-kort (#paamErr, #rebookErr): samme innrykk som tittelen (.acc-head 17px). */
+  .acc > .sett-err{margin:-4px 17px 15px}   /* 17px = .acc-head-innrykket: flukter med tittelen */
   .paam-kjop a{color:inherit;text-decoration:underline;text-underline-offset:2px}
   .sett-note{font-size:12px;color:var(--mut);padding:11px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;line-height:1.55}
   /* SMS-forhåndsvisning: les-bare boble som ligner en mottatt melding. Ett hjørne stramt
@@ -1534,6 +1538,7 @@
   .kt-etikett{font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-.01em}   /* kan bryte (ikke midt i ord) så korte verdier får plass */
   .kt-under{font-size:12px;color:var(--mut);margin-top:3px;line-height:1.5}
   .kt-under-blokk{display:block;margin:8px 0 0}
+  .kt-under.pw-forgot-feil{color:var(--bad)}   /* Glemt passord: lenka ble ikke sendt (ikke-2xx/kontaktfeil) */
   .kt-vokser{flex:1}
   .kt-verdi{flex:1;min-width:0;font-size:14px;color:var(--mut);text-align:right;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .kt-rad-topp .saved{margin:0;flex-shrink:0}
@@ -3062,11 +3067,39 @@ const PLAN_INFO={vekst:{navn:'Vekst',pris:'179 kr'}};
 // leser som en feil i innloggingen. Flagget hører hjemme på kallstedet: apiFetch måtte ellers lest
 // kroppen på hver eneste 401 og kjent til backend-koder den ikke har noe med å gjøre.
 // ⚠ Setter du raw401, må kallstedet SELV håndtere ekte sesjonsutløp.
+// ── Tidsavbrudd for ALLE API-kall (14.10.2026) ──
+// Uten dette kunne et kall som aldri svarte (dårlig dekning, server som henger) holde en knapp på
+// «Lagrer …» til OS-et ga opp etter minutter: fetch verken løser seg eller kaster, så ingen finally kjører.
+// apiFetch er ENESTE vei til API-et i dashbordet; her avbrytes kallet etter API_TIMEOUT_MS og KASTER en
+// feil med .tidsavbrudd=true og meldingen «Fikk ikke kontakt. Prøv igjen.» — så alle eksisterende
+// catch/finally-veier rydder knappen. Opplasting og server-rendret PNG får lengre tid (opts.timeout).
+const API_TIMEOUT_MS=15000;
+const API_TIMEOUT_TUNG_MS=45000;   // bildeopplasting/-beskjæring og plakat/story-PNG (Chromium på serveren)
+const KONTAKT_TIDSAVBRUDD='Fikk ikke kontakt. Prøv igjen.';
+const KONTAKT_NETT='Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.';
+function kontaktFeil(e){ return (e&&e.tidsavbrudd)?KONTAKT_TIDSAVBRUDD:KONTAKT_NETT; }
+// AbortController + setTimeout (ikke AbortSignal.timeout: mangler i Safari < 16).
+function tidsavbruddSignal(ms){
+  var c=new AbortController(), t=setTimeout(function(){ c.abort(); },ms);
+  return {signal:c.signal, stopp:function(){ clearTimeout(t); }};
+}
+// Skrive-metodene i api{} som kallerne behandler som «svar» (saveSettings, loyaltyOptIn) kaster ALDRI:
+// en kastet feil blir et mislykket svar, så kallerens vanlige !ok-gren ruller tilbake og frigjør knappen.
+// json() gir {error:melding}, så kallere som viser serverens error-tekst viser kontaktteksten.
+function kontaktSvar(e){
+  var m=kontaktFeil(e);
+  return {ok:false, status:0, kontaktfeil:true, melding:m,
+          json:function(){ return Promise.resolve({error:m}); }, clone:function(){ return this; }};
+}
+// Feiltekst for et mislykket svar: kontaktfeil → kontaktteksten, ellers kallerens egen tekst.
+function feilTekst(r,standard){ return (r&&r.kontaktfeil)?r.melding:standard; }
+
 async function apiFetch(path,opts={}){
   // sameOrigin: behold RELATIV URL (same-origin via Netlify-proxy) i stedet for CONFIG.API_BASE.
   // Brukes av plakat-editoren — den MÅ være same-origin (CLAUDE.md-guardrail), men skal fortsatt
   // arve 401-redirecten. Slik rutes plakat gjennom apiFetch uten å bli kryss-origin.
-  const{body,headers={},raw401,sameOrigin, ...rest}=opts;
+  // timeout: ms før kallet avbrytes (standard API_TIMEOUT_MS). Gjelder til svaret (headerne) er mottatt.
+  const{body,headers={},raw401,sameOrigin,timeout=API_TIMEOUT_MS, ...rest}=opts;
   const init={credentials:'include',...rest};
   if(body!==undefined){
     init.body=body;
@@ -3075,7 +3108,15 @@ async function apiFetch(path,opts={}){
   } else {
     init.headers={...headers};
   }
-  const r=await fetch((sameOrigin?'':CONFIG.API_BASE)+path,init);
+  const vakt=tidsavbruddSignal(timeout);
+  init.signal=vakt.signal;
+  let r;
+  try{ r=await fetch((sameOrigin?'':CONFIG.API_BASE)+path,init); }
+  catch(e){
+    if(vakt.signal.aborted){ const t=new Error(KONTAKT_TIDSAVBRUDD); t.tidsavbrudd=true; throw t; }
+    throw e;
+  }
+  finally{ vakt.stopp(); }
   if(r.status===401&&!raw401){location.href='/no/logg-inn.html';return null;}
   if(r.ok&&init.method&&init.method.toUpperCase()!=='GET'&&typeof ulagretLagret==='function')ulagretLagret();
   return r;
@@ -3090,7 +3131,7 @@ async function apiFetch(path,opts={}){
 async function lagreRequest(path, payload, hva){
   let r;
   try{ r=await apiFetch(path,{method:'PUT',body:JSON.stringify(payload)}); }
-  catch(_){ return {ok:false, error:'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.'}; }
+  catch(e){ return {ok:false, error:kontaktFeil(e)}; }
   if(!r) return {ok:false};                                   // 401 → siden bytter til logg-inn
   if(r.ok) return {ok:true, res:r};
   const j=await r.json().catch(()=>null);
@@ -3108,7 +3149,7 @@ async function medLagreKnapp(arbeid, {btn=null, feil='Fikk ikke kontakt med serv
   const orig = btn ? btn.textContent : '';
   if(btn){ btn.disabled=true; btn.textContent='Lagrer …'; }
   try{ await arbeid(); }
-  catch(_){ alert(feil); }
+  catch(e){ alert(e&&e.tidsavbrudd?KONTAKT_TIDSAVBRUDD:feil); }   // tidsavbrudd i apiFetch kaster hit → knappen frigjøres i finally
   finally{ if(btn){ btn.disabled=false; btn.textContent=orig; } }
 }
 
@@ -3153,7 +3194,8 @@ const api={
   },
   // Ekte, session-basert status-endring. PATCH /api/dashboard/bookings/:id  { status: fullfort | ikke_mott | avlyst }
   async setBookingStatus(id,status){
-    const r=await apiFetch('/api/dashboard/bookings/'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({status:status})});
+    let r; try{ r=await apiFetch('/api/dashboard/bookings/'+encodeURIComponent(id),{method:'PATCH',body:JSON.stringify({status:status})}); }
+    catch(_){ return false; }   // nett/tidsavbrudd → samme gren som !ok: knappen frigjøres, radfeil vises
     return !!(r&&r.ok); },
   async images(){ const r=await apiFetch('/api/dashboard/images'); if(!r)return []; if(!r.ok)return []; return r.json(); },
   async hours(){
@@ -3184,8 +3226,8 @@ const api={
     return r.json();
   },
   async googleDisconnect(){
-    const r=await apiFetch('/api/dashboard/google/disconnect',{method:'POST'});
-    return r&&r.ok;
+    try{ const r=await apiFetch('/api/dashboard/google/disconnect',{method:'POST'}); return r&&r.ok; }
+    catch(_){ return false; }
   },
   async settings(){
     const r=await apiFetch('/api/dashboard/settings');
@@ -3213,7 +3255,9 @@ const api={
   // ALLE kallere MÅ sjekke svaret og rulle tilbake ved feil — SMS-bryterne + rebook-pillene går
   // via lagreSmsInnstilling. Fire-and-forget ble fjernet: en feilet lagring så ut som suksess.
   async saveSettings(patch){
-    const r=await apiFetch('/api/dashboard/settings',{method:'PUT',body:JSON.stringify(patch)});
+    let r;
+    try{ r=await apiFetch('/api/dashboard/settings',{method:'PUT',body:JSON.stringify(patch)}); }
+    catch(e){ return kontaktSvar(e); }   // kaster aldri — se kontaktSvar
     // PUT-responsen bærer utseendeVersjon (tall ELLER opak streng) — mat plakat-cachebusteren (monoton).
     // Leses fra en KLONE så kalleren fortsatt kan gjøre r.json() for feil/verdier. Dekker verving/lojalitet
     // + SMS. Ingen typeof-vakt her: settPlakatVersjon validerer selv (tåler begge former, avviser resten).
@@ -3245,8 +3289,9 @@ const api={
   //   Svar: {customer_id, opt_in, opt_in_at, has_unused_reward}. Ruta er i kontrakten.
   // Returnerer Response så kalleren kan skille 403 (Vekst-lås) fra annen feil OG lese svar-body.
   async loyaltyOptIn(customerId, optIn){
-    return await apiFetch('/api/dashboard/customers/'+encodeURIComponent(customerId)+'/loyalty',
-      {method:'PUT',body:JSON.stringify({opt_in:!!optIn})});
+    try{ return await apiFetch('/api/dashboard/customers/'+encodeURIComponent(customerId)+'/loyalty',
+      {method:'PUT',body:JSON.stringify({opt_in:!!optIn})}); }
+    catch(e){ return kontaktSvar(e); }   // kaster aldri — se kontaktSvar
   },
   // GET /api/dashboard/customers/recent → {limit,customers:[{customer_id,name,phone,referral_code,last_visit_at,last_service}]}
   // Kunder etter siste FULLFØRTE klipp, nyeste først. Mater verve-lista.
@@ -4072,7 +4117,7 @@ function renderSmsLogg(harMer){
 }
 async function smsMer(btn){
   btn.disabled=true; btn.textContent='Henter …';
-  var d=await api.smsLogg(_smsCursor);
+  var d=null; try{ d=await api.smsLogg(_smsCursor); }catch(_){}   // nett/tidsavbrudd → samme gren som null
   if(!d){ btn.disabled=false; btn.innerHTML='Vis flere <span class="chev"></span>'; return; }
   _smsRows=_smsRows.concat(d.logg||[]); _smsCursor=d.neste_cursor||null;
   renderSmsLogg(!!d.har_mer);
@@ -4829,7 +4874,7 @@ async function handleUpload(f,slot){
   // STUMT ved nettverks-reject (apiFetch kaster, bilderEndret kjører aldri, ingen melding).
   await medLagreKnapp(async()=>{
     const fd=new FormData();fd.append("image",f);if(slot)fd.append("slot",slot);
-    const r=await apiFetch('/api/dashboard/images',{method:'POST',body:fd});
+    const r=await apiFetch('/api/dashboard/images',{method:'POST',body:fd,timeout:API_TIMEOUT_TUNG_MS});
     if(!r)return;
     if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke laste opp bilde. Prøv igjen.');return;}
     settBildeData(await r.json().catch(()=>null));   // bilde_status etter opplastingen
@@ -5137,14 +5182,14 @@ document.getElementById('cropSave').addEventListener('click',async()=>{
     const canvas=_cropper.getCroppedCanvas();
     const blob=await new Promise((res,rej)=>canvas.toBlob(b=>b?res(b):rej(new Error('toBlob feilet')),'image/jpeg',0.92));
     const fd=new FormData();fd.append('image',blob,'crop.jpg');fd.append('op','crop');fd.append('crop_rect',JSON.stringify(rect));
-    const r=await apiFetch('/api/dashboard/images/'+_activeImgId,{method:'PUT',body:fd});
+    const r=await apiFetch('/api/dashboard/images/'+_activeImgId,{method:'PUT',body:fd,timeout:API_TIMEOUT_TUNG_MS});
     // 413 = for stort. 415 (og annen feil): serverens egen melding ordrett («Bildeformatet støttes ikke …»).
     if(r&&r.status===413){errEl.textContent='Bildet er for stort (maks 20 MB).';saveBtn.disabled=false;return;}
     if(!r||!r.ok){const d=await r?.json().catch(()=>{});errEl.textContent=d?.error||'Feil ved lagring. Prøv igjen.';saveBtn.disabled=false;return;}
     _closeCropModal();
     await bilderEndret();
   }catch(err){
-    errEl.textContent='Beskjæring feilet: '+err.message;
+    errEl.textContent=err&&err.tidsavbrudd?KONTAKT_TIDSAVBRUDD:('Beskjæring feilet: '+err.message);
     saveBtn.disabled=false;
   }
 });
@@ -5185,7 +5230,9 @@ $("#bilderMount").addEventListener("keydown",e=>{
 // Selve slettingen. Ingen bekreftelse, heller ikke for layoutens siste bilde: bilde_status i svaret
 // viser bildevarselet (Design + Bilder) med «Legg til bilde» etterpå.
 async function slettBilde(id){
-  const r=await apiFetch('/api/dashboard/images/'+id,{method:'DELETE'});
+  let r;
+  try{ r=await apiFetch('/api/dashboard/images/'+id,{method:'DELETE'}); }
+  catch(e){ alert(kontaktFeil(e)); return; }   // før: kastet stumt (ingen melding, bildet sto)
   if(!r)return;
   if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke slette bildet. Prøv igjen.');return;}
   settBildeData(await r.json().catch(()=>null));     // bilde_status etter slettingen
@@ -5209,14 +5256,14 @@ $("#replaceInput").addEventListener('change',async e=>{
   // ev. lagret crop); gammel backend ignorerer op og lagrer den rå fila som før → ingen regresjon.
   const fd=new FormData();fd.append('image',f);fd.append('op','replace');
   try{
-    const r=await apiFetch('/api/dashboard/images/'+_activeImgId,{method:'PUT',body:fd});
+    const r=await apiFetch('/api/dashboard/images/'+_activeImgId,{method:'PUT',body:fd,timeout:API_TIMEOUT_TUNG_MS});
     if(!r)return;
     // 413 = for stort. 415: serverens egen melding ordrett («Bildeformatet støttes ikke. Prøv JPG eller PNG.»).
     if(r.status===413){alert('Bildet er for stort (maks 20 MB).');return;}
     if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke erstatte bildet. Prøv igjen.');return;}
     await bilderEndret();
   }catch(err){
-    alert('Nettverksfeil ved bildebyte. Prøv igjen.');
+    alert(kontaktFeil(err));
   }
 });
 
@@ -5478,7 +5525,7 @@ $("#savePw").addEventListener("click",async function(){
       body:JSON.stringify(_harPassord?{current_password:naa,password:ny}:{password:ny})});
   }catch(e){
     btn.disabled=false;btn.textContent=orig;
-    err.textContent='Nettverksfeil. Prøv igjen.';err.style.display='block';return;
+    err.textContent=kontaktFeil(e);err.style.display='block';return;
   }
   btn.disabled=false;btn.textContent=orig;
   if(!r){err.textContent='Nettverksfeil. Prøv igjen.';err.style.display='block';return;}
@@ -5505,10 +5552,15 @@ $("#pwForgot").addEventListener("click",async function(){
   if(!epost){ if(ok){ok.textContent='Fant ikke e-postadressen din. Logg ut og bruk «Send meg innloggingslenke».';ok.hidden=false;} return; }
   btn.disabled=true;
   // formaal:'reset' → backend lar lenka lande på opprett-passord.html?bytt=1 («Lag nytt passord»).
-  try{ await apiFetch('/api/send-magic-link',{method:'POST',body:JSON.stringify({email:epost,formaal:'reset'}),raw401:true}); }catch(e){}
+  var feil=null;
+  try{
+    var r=await apiFetch('/api/send-magic-link',{method:'POST',body:JSON.stringify({email:epost,formaal:'reset'}),raw401:true});
+    if(!r||!r.ok) feil='Vi fikk ikke sendt lenken. Prøv igjen om litt.';
+  }catch(e){ feil=kontaktFeil(e); }
   btn.disabled=false;
-  // Backend svarer alltid {ok:true} (lekker aldri om adressen finnes) — kvitteringen sier hvor lenka gikk.
-  if(ok){ok.textContent='Sjekk e-posten din. Vi har sendt en lenke til '+epost+'.';ok.hidden=false;}
+  // Kvitteringen KUN ved 2xx (samme regel som logg-inn.html). 2xx er alltid likt for kjente og ukjente
+  // adresser; en feil betyr at ingen e-post er på vei — da skal det ikke stå «Sjekk e-posten din».
+  if(ok){ok.textContent=feil||('Sjekk e-posten din. Vi har sendt en lenke til '+epost+'.');ok.classList.toggle('pw-forgot-feil',!!feil);ok.hidden=false;}
 });
 $("#loggUt").addEventListener("click",async function(){
   if(IS_DEMO)return;
@@ -5675,7 +5727,7 @@ function settBryter(el, verdi, ukjent){
 async function lagreSmsInnstilling(patch, rullTilbake, errEl, vekstNavn){
   var r=await api.saveSettings(patch);
   if(erSettings403(r)){ rullTilbake(); visSettingsLaas(errEl, vekstNavn ? (vekstNavn+' er med i Vekst.') : null); return false; }
-  if(!(r&&r.ok)){ rullTilbake(); if(errEl){ errEl.textContent='Kunne ikke lagre. Prøv igjen.'; errEl.hidden=false; } return false; }
+  if(!(r&&r.ok)){ rullTilbake(); if(errEl){ errEl.textContent=feilTekst(r,'Kunne ikke lagre. Prøv igjen.'); errEl.hidden=false; } return false; }
   if(errEl) errEl.hidden=true;
   return true;
 }
@@ -5880,7 +5932,7 @@ document.querySelectorAll('#vervRecipient button').forEach(function(b){
     piller.forEach(function(x){x.disabled=false;}); // re-enable i ALLE grener
     if(erSettings403(r)){ setVervRecipient(forrige); visSettingsLaas(err,'Verving er med i Vekst.'); return; } // Vekst-lås, ikke generisk feil
     if(r&&r.ok){ _vervLagret.recipient=b.dataset.r; err.hidden=true; }
-    else  { setVervRecipient(forrige); err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false; }
+    else  { setVervRecipient(forrige); err.textContent=feilTekst(r,'Kunne ikke lagre. Prøv igjen.'); err.hidden=false; }
   });
 });
 $("#vervPct").addEventListener('change',async function(){
@@ -6175,7 +6227,7 @@ $("#loyalOversikt").addEventListener('click',async function(e){
     var rs=await api.saveSettings({loyalty_enabled:true});
     if(erSettings403(rs)){ slaa.disabled=false; slaa.textContent='Slå på lojalitetsprogram'; showToast('Oppgrader til Vekst for å bruke dette.'); return; }
     if(rs&&rs.ok){ loadLoyalty(); }
-    else { slaa.disabled=false; slaa.textContent='Slå på lojalitetsprogram'; showToast('Kunne ikke slå på. Prøv igjen.'); }
+    else { slaa.disabled=false; slaa.textContent='Slå på lojalitetsprogram'; showToast(feilTekst(rs,'Kunne ikke slå på. Prøv igjen.')); }
     return;
   }
   // Fjern-ikon → bekreftelse i .kl-act UNDER pillen (pillen står, så en kan-hente-kunde ikke ser
@@ -6222,7 +6274,7 @@ $("#loyalLeggTil").addEventListener('click',async function(e){
   var r=await api.loyaltyOptIn(b.dataset.id,true);
   if(erSettings403(r)){ b.disabled=false; b.textContent='Legg til'; showToast('Oppgrader til Vekst for å bruke dette.'); return; }
   if(r&&r.ok){ showToast('Lagt til'); loadLoyalty(); }
-  else { b.disabled=false; b.textContent='Legg til'; showToast('Kunne ikke legge til. Prøv igjen.'); }
+  else { b.disabled=false; b.textContent='Legg til'; showToast(feilTekst(r,'Kunne ikke legge til. Prøv igjen.')); }
 });
 $("#loyalLeggTilMore").addEventListener('click',function(){ _loyalKandAlle=!_loyalKandAlle; renderLoyalLeggTil(); });
 
@@ -6247,7 +6299,7 @@ $("#tog-loyal").addEventListener('change',async function(){
   var r=await api.saveSettings({loyalty_enabled: this.dataset.verdi==='1'});
   if(erSettings403(r)){ this.dataset.verdi=forrige; visBryter(this); visSettingsLaas(err,'Lojalitetsprogram er med i Vekst.'); return; }
   if(r&&r.ok){ if(err)err.hidden=true; loadLoyalty(); }   // av → skjul lister; på → vis  (loadLoyalty→settBryter refresher dataset.verdi)
-  else { this.dataset.verdi=forrige; visBryter(this); if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} }
+  else { this.dataset.verdi=forrige; visBryter(this); if(err){err.textContent=feilTekst(r,'Kunne ikke lagre. Prøv igjen.'); err.hidden=false;} }
 });
 // Delegasjon i innstillingene: av-bryter-advarsel + terskel/belønning-bekreftelse (før lagring).
 $("#loyalSett").addEventListener('click',async function(e){
@@ -6259,7 +6311,7 @@ $("#loyalSett").addEventListener('click',async function(e){
     var r=await api.saveSettings({loyalty_enabled:false});
     if(erSettings403(r)){ ja.disabled=false; ja.textContent='Slå av likevel'; visSettingsLaas($("#loyalSettErr"),'Lojalitetsprogram er med i Vekst.'); return; } // re-enable + tekst tilbake som søsken-grenene (5411/5426); ellers henger knappen på «Slår av …»
     if(r&&r.ok){ var w=$("#loyalOffWarn"); if(w)w.hidden=true; loadLoyalty(); }
-    else { ja.disabled=false; ja.textContent='Slå av likevel'; showToast('Kunne ikke slå av. Prøv igjen.'); }
+    else { ja.disabled=false; ja.textContent='Slå av likevel'; showToast(feilTekst(r,'Kunne ikke slå av. Prøv igjen.')); }
     return;
   }
   // Terskel/belønning-bekreftelse: «Avbryt» → tilbakestill selecten til lagret verdi.
@@ -6289,7 +6341,7 @@ async function loyalLagre(felt, verdi){
     var r=await api.saveSettings(patch);
     if(erSettings403(r)){ visSettingsLaas(err,'Lojalitetsprogram er med i Vekst.'); return false; }
     if(r&&r.ok){ if(err)err.hidden=true; loadLoyalty(); return true; }   // refetch: stamps/reward_ready/totals er backend-avledet av terskelen — kan ikke utledes lokalt (samme mønster som de andre loyalty-mutasjonene)
-    if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} return false;
+    if(err){err.textContent=feilTekst(r,'Kunne ikke lagre. Prøv igjen.'); err.hidden=false;} return false;
   } finally {
     if(ter)ter.disabled=false; if(pct)pct.disabled=false;
   }
@@ -6324,7 +6376,7 @@ $("#tog-loyalHistory").addEventListener('change',async function(){
   var r=await api.saveSettings({loyalty_count_history: this.dataset.verdi==='1'});
   if(erSettings403(r)){ this.dataset.verdi=forrige; visBryter(this); settLoyalHistoryNote(this.checked); visSettingsLaas(err,'Lojalitetsprogram er med i Vekst.'); return; }
   if(r&&r.ok){ if(err)err.hidden=true; if(_loyal)_loyal.count_history=this.checked; }
-  else { this.dataset.verdi=forrige; visBryter(this); settLoyalHistoryNote(this.checked); if(err){err.textContent='Kunne ikke lagre. Prøv igjen.'; err.hidden=false;} }
+  else { this.dataset.verdi=forrige; visBryter(this); settLoyalHistoryNote(this.checked); if(err){err.textContent=feilTekst(r,'Kunne ikke lagre. Prøv igjen.'); err.hidden=false;} }
 });
 
 /* ---- Accordion (Vekst + «Din side») — chevron + aria + skjul/vis body ---- */
@@ -7183,7 +7235,7 @@ $("#smsKjop").addEventListener("click",async function(){
     var d=await r.json().catch(function(){return{};});
     if(r.ok&&d&&d.url){ window.location.href=d.url; return; }
     if(err){ err.textContent=(d&&d.error)||'Kunne ikke starte betaling. Prøv igjen.'; err.hidden=false; }
-  }catch(x){ if(err){ err.textContent='Kunne ikke starte betaling. Prøv igjen.'; err.hidden=false; } }
+  }catch(x){ if(err){ err.textContent=x&&x.tidsavbrudd?KONTAKT_TIDSAVBRUDD:'Kunne ikke starte betaling. Prøv igjen.'; err.hidden=false; } }
   btn.disabled=false;
 });
 
@@ -7616,7 +7668,7 @@ async function settSideStatus(nyStatus,btn){
     r=await apiFetch('/api/dashboard/page-status',{method:'PUT',body:JSON.stringify({status:nyStatus})});
   }catch(e){
     btn.disabled=false;btn.textContent=orig;
-    settPubFeil(0,'Nettverksfeil. Sjekk tilkoblingen og prøv igjen.',feilMaal);
+    settPubFeil(0,kontaktFeil(e),feilMaal);
     return;
   }
   btn.disabled=false;btn.textContent=orig;
@@ -7688,7 +7740,7 @@ async function startCheckout(btn){
     if(!r.ok){alert(d.error||'Kunne ikke starte betaling. Prøv igjen.');frigi();return;}
     if(d&&d.url){window.location.href=d.url;} // Stripe Checkout
     else{alert('Kunne ikke starte betaling. Prøv igjen.');frigi();}
-  }catch(e){alert('Kunne ikke starte betaling. Prøv igjen.');frigi();}
+  }catch(e){alert(e&&e.tidsavbrudd?KONTAKT_TIDSAVBRUDD:'Kunne ikke starte betaling. Prøv igjen.');frigi();}
 }
 // GET /billing/portal → 303 til Stripe (browser følger redirect).
 function aapnePortal(){ window.location.href=CONFIG.API_BASE+"/api/dashboard/billing/portal"; }
@@ -7821,7 +7873,10 @@ function harUlagret(){
   var MIN_MS=60*1000, _etag=null, _siste=0, _venter=false;
   async function hentEtag(){
     try{
-      var r=await fetch(location.pathname,{method:'HEAD',cache:'no-store',credentials:'same-origin'});
+      // Tidsavbrudd: et HEAD som hang, holdt _venter=true for alltid → aldri en ny sjekk i økten.
+      var vakt=tidsavbruddSignal(API_TIMEOUT_MS);
+      var r; try{ r=await fetch(location.pathname,{method:'HEAD',cache:'no-store',credentials:'same-origin',signal:vakt.signal}); }
+      finally{ vakt.stopp(); }
       if(!r.ok)return null;
       // Bare innholdshashen: Netlify legger på -ssl / -ssl-df etter komprimering, og den skal aldri lese som ny versjon.
       var e=r.headers.get('ETag'); if(!e)return null;
@@ -8695,8 +8750,8 @@ function settPlakatVersjon(v){
   function renderUrl(p){ return PREVIEW_BASE+'/render?'+plakatQuery(p); } // kun GET-veien (ingen base64)
   async function hentPlakatBlob(p){ // POST når base64, GET ellers → PNG-blob
     var r = harBase64(p)
-      ? await apiFetch(PREVIEW_BASE+'/render', {sameOrigin:true, method:'POST', body:JSON.stringify(plakatState(p))})
-      : await apiFetch(renderUrl(p), {sameOrigin:true});
+      ? await apiFetch(PREVIEW_BASE+'/render', {sameOrigin:true, method:'POST', body:JSON.stringify(plakatState(p)), timeout:API_TIMEOUT_TUNG_MS})
+      : await apiFetch(renderUrl(p), {sameOrigin:true, timeout:API_TIMEOUT_TUNG_MS});
     if(!r||!r.ok) throw 0; return await r.blob();   // !r = 401, apiFetch redirigerte
   }
   // iOS (alle nettlesere der er WebKit) IGNORERER <a download> → ingen stille disk-lagring mulig.
@@ -8896,14 +8951,31 @@ window.hqDel = (function(){
   function skalerFrame(){ if(!frame||!prev) return; var w=prev.clientWidth; if(w>0) frame.style.transform='scale('+(w/1080)+')'; }
 
   function visLaster(på){ if(laster) laster.style.display=på?'flex':'none'; }
-  function visFeil(t){ visLaster(false); if(feil){ feil.textContent=t; feil.style.display='flex'; } }
+  // Ved feil skjules iframen: den holder ellers rått serversvar (JSON/404-side) bak meldingen.
+  function visFeil(t){ visLaster(false); if(frame) frame.style.visibility='hidden'; if(feil){ feil.textContent=t; feil.style.display='flex'; } }
   // Lastes ÉN gang per åpning: full-vindu-HTML (alle åpne dager opp til 7 + alle lenke-varianter i DOM).
   // Backend setter initialt utsnitt via ?dager&lenke; videre bytte skjer klientside (sendApply).
+  // En iframe gir ingen HTTP-status, og onerror fyrer ikke på 4xx/5xx — før viste en 403/500 rå JSON i
+  // previewen og #storyFeil kom aldri. Iframen er same-origin (relativ BASE), så etter load leses dokumentet:
+  // story-HTML-en har ALLTID #days. Mangler den (JSON-feil, Netlifys 404) eller er dokumentet uleselig
+  // (nettverksfeil gir en feilside vi ikke får lese → contentDocument null) → feilmelding. Laster den ikke
+  // innen tidsavbruddet (samme grense som apiFetch), → samme melding.
+  var STORY_FEIL='Kunne ikke lage forhåndsvisningen. Lukk og prøv igjen om litt.';
+  var _previewVakt=null;
   function lastPreview(){
     if(!frame) return;
     if(feil) feil.style.display='none'; visLaster(true);
+    frame.style.visibility='';   // vist igjen etter en tidligere feil
     if(statusLinje){ statusLinje.hidden=true; statusLinje.textContent=''; } // vent på ny melding fra iframen
-    frame.onload=function(){ visLaster(false); sendApply(); };   // sendApply dekker race: bytter brukeren før load, rettes utsnittet her
+    clearTimeout(_previewVakt);
+    _previewVakt=setTimeout(function(){ frame.onload=null; visFeil(STORY_FEIL); }, API_TIMEOUT_MS);
+    frame.onload=function(){
+      clearTimeout(_previewVakt);
+      var ok=false;
+      try{ var doc=frame.contentDocument; ok=!!(doc && doc.getElementById('days')); }catch(e){}
+      if(!ok){ visFeil(STORY_FEIL); return; }
+      visLaster(false); sendApply();   // sendApply dekker race: bytter brukeren før load, rettes utsnittet her
+    };
     frame.src=BASE+'/preview?'+q();
   }
   // Dag-/lenkebytte = REN KLIENTSIDE: be iframen vise valgt utsnitt ({type:'ledige-timer-set', dager, lenke},
@@ -9008,7 +9080,7 @@ window.hqDel = (function(){
     requestAnimationFrame(function(){ t.classList.add('inn'); });
     clearTimeout(_toastT); _toastT=setTimeout(function(){ t.classList.remove('inn'); setTimeout(function(){ if(t===_toastEl)_toastEl=null; t.remove(); },220); },2200);
   }
-  async function hentBlob(){ var r=await apiFetch(BASE+'/render?'+q(),{sameOrigin:true}); if(!r||!r.ok) throw 0; return await r.blob(); }
+  async function hentBlob(){ var r=await apiFetch(BASE+'/render?'+q(),{sameOrigin:true,timeout:API_TIMEOUT_TUNG_MS}); if(!r||!r.ok) throw 0; return await r.blob(); }
   // iOS-forhåndsblob: share() må kalles SYNKRONT i trykket (await før spiser aktivering). Hold en fersk
   // blob klar etter hver preview. Nøkkel = query, så et parameterbytte gir ny blob.
   var _del={sig:null,blob:null,pending:false};
