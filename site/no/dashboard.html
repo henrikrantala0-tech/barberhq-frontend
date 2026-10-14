@@ -6637,8 +6637,12 @@ function wbToggleEldre(){
 })();
 
 /* ---- Tjenester ---- */
-let hoved=[{name:"Skinnfade",price:450,min:45},{name:"Klipp",price:300,min:30}];
-let tillegg=[{name:"Skjegg",price:150,min:0},{name:"Hårvask",price:80,min:0}];
+// Tomt til en EKTE GET /services har lyktes. Her sto demotjenester (Skinnfade/Klipp/Skjegg/Hårvask): feilet
+// hentingen, ble de stående i skjemaet, og ett «Lagre» overskrev barberens ekte tjenester med dem.
+let hoved=[];
+let tillegg=[];
+// true først når GET /services har lyktes. Lagring er umulig før (samme vern som arbeidstidene, M-6).
+var _svcHentet=false;
 // size-attributtet driver navnefeltets innholdsbredde → brekk-terskelen. Gulv 6 (nytt/tomt felt
 // blir ikke absurd smalt), tak 28 (superlange navn brekker uansett, ellipsis tar resten).
 function svcSize(n){return Math.min(Math.max((n||'').length+1,6),28);}
@@ -6660,16 +6664,21 @@ function validateSvc(){
   if(named.some(s=>!(Number(s.min)>0))){btn.disabled=true;err.textContent="Alle hovedtjenester må ha en varighet i minutter.";return false;}
   btn.disabled=false;err.textContent="";return true;
 }
+// Samme vern som loadArbeidstider (M-6): «Lagre» og «+ Legg til» er av til hentingen har lyktes. Ved feil
+// (500, nett, tidsavbrudd): feilstate + «Prøv igjen» — aldri et skjema som kan lagres over ekte data.
+function settSvcKontroller(på){ ['#saveSvc','#addHoved','#addTillegg'].forEach(function(s){ var b=$(s); if(b)b.disabled=!på; }); }
 async function loadTjenester(){
-  const r=await apiFetch('/api/dashboard/services');
-  if(!r){renderSvc();return;}
-  if(!r.ok){renderSvc();return;}
-  const d=await r.json();
+  _svcHentet=false; settSvcKontroller(false);
+  var r, d=null;
+  try{ r=await apiFetch('/api/dashboard/services'); if(r&&r.ok) d=await r.json(); }catch(e){ r=undefined; d=null; }
+  if(r===null) return;                             // 401 → apiFetch sender til logg-inn (kastet feil gir undefined)
+  if(!d){ $("#tilleggList").innerHTML=''; feilMedRetry($("#hovedList"),'Klarte ikke å laste tjenestene.',loadTjenester); return; }
   // L-3: tving pris/min til tall (fallback 0) allerede ved innlasting — en ikke-numerisk verdi fra
   // backend kan ellers nå value="…"-attributtet uendret (attributt-injeksjon). esc() i radene er
   // andrelinjeforsvar; Number()||0 kutter kilden.
   hoved=(d.hoved||[]).map(function(s){return{name:s.name,price:Number(s.price)||0,min:Number(s.min)||0};});
   tillegg=(d.tillegg||[]).map(function(s){return{name:s.name,price:Number(s.price)||0,min:Number(s.min)||0};});
+  _svcHentet=true; settSvcKontroller(true);
   renderSvc();
 }
 $("#addHoved").addEventListener("click",()=>{hoved.push({name:"",price:0,min:30});renderSvc();});
@@ -6710,6 +6719,7 @@ $("#hovedList").addEventListener("click",svcRemove);
 $("#tilleggList").addEventListener("click",svcRemove);
 function svcRemove(e){const b=e.target.closest(".svc-rm");if(!b)return;const l=b.dataset.l,i=+b.dataset.i;(l==="h"?hoved:tillegg).splice(i,1);renderSvc();}
 $("#saveSvc").addEventListener("click",function(){
+  if(!_svcHentet)return;   // aldri lagre et skjema som ikke er fylt fra en vellykket henting
   if(!validateSvc())return;
   medLagreKnapp(async()=>{
     const r=await apiFetch('/api/dashboard/services',{method:'PUT',body:JSON.stringify({
@@ -6728,8 +6738,15 @@ $("#saveSvc").addEventListener("click",function(){
 let payMethods=[];
 function payRow(v,i){return '<div class="pay-row"><input value="'+esc(v)+'" data-i="'+i+'" placeholder="Cash" aria-label="Betalingsmetode"><button class="svc-rm" data-pi="'+i+'" aria-label="Fjern betalingsmetode">&times;</button></div>';}
 function renderPay(){var el=$("#payList");if(!el)return;el.innerHTML=payMethods.map(payRow).join("");var add=$("#addPay");if(add)add.style.display=payMethods.length>=6?'none':'';}
+// Samme vern som tjenestene: api.settings() gir {_hentFeilet:true} ved feil — da ble lista tom, og «Lagre
+// betaling» sendte {methods:[]} og slettet Vipps/Kort. Nå: feilstate + «Prøv igjen», lagring av til GET har lyktes.
+var _payHentet=false;
 async function loadPayment(){                       // innstillings-loaderen (api.settings) → payment_methods
-  var s=await api.settings();
+  _payHentet=false; ['#savePay','#addPay'].forEach(function(s){ var b=$(s); if(b)b.disabled=true; });
+  var s=null;
+  try{ s=await api.settings(); }catch(e){ s=null; }
+  if(!s||s._hentFeilet){ feilMedRetry($("#payList"),'Klarte ikke å laste betalingsmetodene.',loadPayment); return; }
+  _payHentet=true; ['#savePay','#addPay'].forEach(function(s){ var b=$(s); if(b)b.disabled=false; });
   payMethods=((s&&s.payment_methods)||[]).slice();
   if(!payMethods.length)payMethods=['']; // seed én tom rad så «Cash»-placeholderen vises
   renderPay();
@@ -6742,6 +6759,7 @@ $("#addPay").addEventListener('click',function(){
   var inputs=$("#payList").querySelectorAll('input');if(inputs.length)inputs[inputs.length-1].focus();
 });
 $("#savePay").addEventListener('click',function(){
+  if(!_payHentet)return;   // aldri lagre en liste som ikke er fylt fra en vellykket henting
   var methods=payMethods.map(function(m){return (m||'').trim();}).filter(function(m){return m;}); // trimmet, ikke-tom, radrekkefølge
   medLagreKnapp(async function(){
     var r=await apiFetch('/api/dashboard/payment-methods',{method:'PUT',body:JSON.stringify({methods:methods})});
