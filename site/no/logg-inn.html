@@ -88,6 +88,13 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .magic-info{font-size:13px;color:#9a9a9a;margin-top:10px;text-align:center;line-height:1.5}
 .magic-ok{color:#5cb85c;font-size:13.5px;margin-top:10px;display:none;text-align:center;line-height:1.5}
 .magic-ok.show{display:block}
+/* Feil fra serveren/nettet ved «Send meg innloggingslenke» — står der kvitteringen ellers ville stått. */
+.magic-feil{color:#c0594a;font-size:13.5px;margin-top:10px;display:none;text-align:center;line-height:1.5}
+.magic-feil.show{display:block}
+/* Feil ved e-postfeltet (tom/ugyldig adresse) — stoppes før kallet. */
+.felt-feil{display:none;color:#c0594a;font-size:13px;line-height:1.45;margin-top:7px}
+.felt-feil.show{display:block}
+.field input.ugyldig{border-color:#c0594a}
 /* ── Kode fra e-posten (079) — for hjemskjerm-appen, der lenka åpner Safari i stedet for appen.
    ÉN blokk; flyttes inn under kvitteringen den hører til (lenke eller glemt passord). ── */
 .kode{margin-top:16px;padding-top:16px;border-top:1px solid #1a1a1a;text-align:left}
@@ -149,7 +156,8 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     <div class="field">
       <label for="email">E-post</label>
       <input type="email" id="email" placeholder="din@epost.no"
-             autocomplete="username" inputmode="email">
+             autocomplete="username" inputmode="email" aria-describedby="email-feil">
+      <p class="felt-feil" id="email-feil" role="alert"></p>
     </div>
 
     <!-- PRIMÆR: magisk lenke — ingen passord nødvendig, synlig uten å klikke noe. -->
@@ -158,6 +166,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     <p class="magic-ok" id="magic-ok">
       Sjekk e-posten din. Hvis adressen er registrert, har vi sendt en lenke.
     </p>
+    <p class="magic-feil" id="magic-feil" role="alert"></p>
 
     <!-- Kode fra e-posten: vises etter «Send meg innloggingslenke» OG etter «Glemt passordet?» (JS flytter
          blokken under riktig kvittering). POST /api/login-kode {email, kode} → {ok, redirect} | 400 | 429.
@@ -229,13 +238,36 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   var pwPanel     = document.getElementById('pw-panel');
   var pwContext   = document.getElementById('pw-context');
 
-  // Vis utløpt-lenke-feil fra ?error=expired (uendret)
+  var magicFeil   = document.getElementById('magic-feil');
+  var emailFeil   = document.getElementById('email-feil');
+
+  // Vis utløpt-lenke-feil fra ?error=expired. Null-sjekk: mangler elementet, skal resten av
+  // innloggings-JS-en likevel kjøre (en kastet feil her stoppet ALT under, også knappene).
   var params = new URLSearchParams(location.search);
-  if (params.get('error') === 'expired') {
-    var expEl = document.getElementById('expired-msg');
+  var expEl = document.getElementById('expired-msg');
+  if (params.get('error') === 'expired' && expEl) {
     expEl.textContent = 'Logg inn med e-post og passord, eller be om en ny lenke.';
     expEl.classList.add('show');
   }
+
+  // Samme e-postregel for begge handlingene som sender en e-post (lenke og glemt passord).
+  // Backend svarer {ok:true} også på tom adresse, så uten denne venter barbereren på en e-post som aldri kommer.
+  var EPOST_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+  function visEmailFeil(tekst) {
+    emailFeil.textContent = tekst || '';
+    emailFeil.classList.toggle('show', !!tekst);
+    email.classList.toggle('ugyldig', !!tekst);
+    email.setAttribute('aria-invalid', tekst ? 'true' : 'false');
+  }
+  // Gyldig adresse → returnerer den. Ugyldig → feil ved feltet, fokus dit, returnerer null.
+  function sjekkEpost() {
+    var adr = email.value.trim();
+    if (EPOST_RE.test(adr)) { visEmailFeil(''); return adr; }
+    visEmailFeil(adr ? 'Sjekk e-postadressen. Den ser ikke riktig ut.' : 'Skriv inn e-posten din.');
+    email.focus();
+    return null;
+  }
+  email.addEventListener('input', function () { if (emailFeil.classList.contains('show')) visEmailFeil(''); });
 
   // Felles dobbel-innsendings-vakt (brukt av BÅDE magisk lenke og passord under — ikke to kopier):
   // Enter-keydown kaller handleren DIREKTE og omgår knappens disabled, så vakten må ligge på
@@ -246,21 +278,35 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   // ── PRIMÆR: magisk lenke (deler e-postfeltet med passord-innlogging) ──
   async function sendMagicLink() {
     magicOk.classList.remove('show');
+    magicFeil.classList.remove('show');
     error.classList.remove('show');   // symmetrisk: fjern ev. passord-feil så to meldinger ikke står samtidig
+    var adr = sjekkEpost();
+    if (!adr) return;                 // tom/ugyldig → feil ved feltet, ingen kall, ingen kvittering
     magicSubmit.disabled    = true;
     magicSubmit.textContent = 'Sender …';
 
+    // Kvitteringen KUN ved 2xx. Svaret er alltid det samme for kjente og ukjente adresser (backend
+    // avslører ikke om den finnes) — men en 4xx/5xx eller nettverksfeil betyr at ingen e-post er på vei.
+    var feil = null;
     try {
-      await fetch(API + '/api/send-magic-link', {
+      var res = await fetch(API + '/api/send-magic-link', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
-        body:    JSON.stringify({ email: email.value.trim() }),
+        body:    JSON.stringify({ email: adr }),
       });
-    } catch (_) {}
+      if (!res.ok) feil = 'Vi fikk ikke sendt lenken. Prøv igjen om litt.';
+    } catch (_) {
+      feil = 'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.';
+    }
 
-    // Alltid samme melding — avslører ikke om adressen finnes (uendret)
-    magicOk.classList.add('show');
-    visKode(magicOk);
+    if (feil) {
+      magicFeil.textContent = feil;
+      magicFeil.classList.add('show');
+      skjulKodeEtter(magicOk);
+    } else {
+      magicOk.classList.add('show');
+      visKode(magicOk);
+    }
     magicSubmit.disabled    = false;
     magicSubmit.textContent = 'Send meg innloggingslenke';
   }
@@ -284,6 +330,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     pwPanel.classList.toggle('show');
     if (pwPanel.classList.contains('show')) {
       magicOk.classList.remove('show');   // gått over på passord → skjul magisk-lenke-kvitteringen
+      magicFeil.classList.remove('show');
       skjulKodeEtter(magicOk);
       updatePwContext();
       // Tom e-post → fokuser feltet over (der hint-en peker); ellers rett i passord.
@@ -307,21 +354,26 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   async function sendGlemt() {
     var adr = email.value.trim();
     error.classList.remove('show');
-    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(adr)) {
+    if (!EPOST_RE.test(adr)) {
       visGlemt('feil', 'Skriv inn e-posten din over, så sender vi en lenke.');
       email.focus();
       return;
     }
     glemtBtn.disabled = true;
+    var feil = null;
     try {
-      await fetch(API + '/api/send-magic-link', {
+      var res = await fetch(API + '/api/send-magic-link', {
         method:  'POST',
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ email: adr, formaal: 'reset' }),
       });
-    } catch (_) {}
+      if (!res.ok) feil = 'Vi fikk ikke sendt lenken. Prøv igjen om litt.';
+    } catch (_) {
+      feil = 'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.';
+    }
     glemtBtn.disabled = false;
-    // Backend svarer alltid {ok:true} (lekker aldri om adressen finnes) — samme kvittering som i Konto.
+    // Samme regel som lenka over: kvittering KUN ved 2xx (2xx er alltid likt for kjente og ukjente adresser).
+    if (feil) { visGlemt('feil', feil); skjulKodeEtter(glemtMsg); return; }
     visGlemt('ok', 'Sjekk e-posten din. Vi har sendt en lenke til ' + adr + '.');
     visKode(glemtMsg);   // samme kode-felt: en reset-kode lander på opprett-passord (redirect fra backend)
   }
@@ -340,6 +392,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   async function login() {
     error.classList.remove('show');
     magicOk.classList.remove('show');   // gått over på passord → skjul magisk-lenke-kvitteringen
+    magicFeil.classList.remove('show');
     skjulKodeEtter(magicOk);
     submit.disabled     = true;
     submit.textContent  = 'Logger inn …';
