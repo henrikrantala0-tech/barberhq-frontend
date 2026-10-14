@@ -93,6 +93,9 @@ for(const plan of ['basis','vekst']){
   const kortSynlig = await page.locator('#storyOpen').isVisible();
   const kortLaast  = await page.locator('#storyOpen').isDisabled();
   await page.locator('#accStory').screenshot({path:`${OUT}/story-kort-${plan}-${bredde}.png`}).catch(()=>{});
+  // Oversikt henter /data én gang ved oppstart (har_ledige → «Fullt de neste dagene», story-fullt.mjs).
+  // Kontrakten her gjelder GENERATOREN: tell fra åpningen.
+  previewReqs=0; dataReqs=0;
   await aapneVia(page,'#storyOpen');
   const previewEtterAapning = previewReqs, dataEtterAapning = dataReqs;   // begge skal være 1
   const m0=await page.evaluate(()=>({

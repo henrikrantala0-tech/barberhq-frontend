@@ -841,6 +841,9 @@
   /* Tall-linje over «Lag story»-knappen (Commit 2): «Du har N ledige timer i dag/i morgen». Skjult (hidden) til /ledige svarer med antall>0. */
   .ovs-story-linje{margin:0 0 8px;font-size:13px;font-weight:500;color:var(--ink-2);letter-spacing:-.01em}
   .ovs-story-linje[hidden]{display:none}
+  /* Fullbooket (har_ledige:false): dempet linje i stedet for «Lag story»-knappen. Samme luft under som knappen. */
+  .ovs-story-fullt{margin:0 0 28px;font-size:13px;color:var(--mut);letter-spacing:-.01em}
+  .ovs-story-fullt[hidden]{display:none}
   #storyOpenOversikt,#smsTilbudSe{display:block;width:100%;height:48px;margin:0 0 28px;appearance:none;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;cursor:pointer}
   #storyOpenOversikt[hidden]{display:none}   /* author display:block ellers slår UA [hidden] → vakt mot vis-alltid */
   #storyOpenOversikt:hover,#smsTilbudSe:hover{border-color:var(--ink)}
@@ -1801,6 +1804,9 @@
          false / 404 / feil → verken knapp eller linje (stille). Vekst-kortet er uberørt, alltid synlig. -->
     <p class="ovs-story-linje" id="storyLedigeLinje" hidden></p>
     <button type="button" id="storyOpenOversikt" hidden>Lag story med ledige timer</button>
+    <!-- Ingen ledige tider de neste dagene (/story/ledige-timer/data har_ledige:false): knapp og tall-linje
+         skjules, og denne står i stedet. Backend nekter da også preview/render (409 ingen_ledige_tider). -->
+    <p class="ovs-story-fullt" id="storyFullt" hidden>Fullt de neste dagene</p>
     <!-- SMS-tilbud (Gratis): vises KUN når sms_pakke_kan_kjopes, påminnelser ikke går (saldo 0 eller av),
          minst én booking i morgen, og tilbudet ikke er avvist siste 14 dager. Viker for «Lag story»: maks
          ett slikt kort om gangen (oppdaterSmsTilbud). [oversettelse: sv/da/en] -->
@@ -3386,9 +3392,25 @@ function meldLaget(){ try{ apiFetch('/api/dashboard/ledige/laget',{method:'POST'
 function ledigTekst(n){ return n===1 ? '1 ledig time' : n+' ledige timer'; }
 // Oversikt: KNAPP + tall-linje vises kun når /ledige gir vis_banner=true for i dag eller i morgen
 // (i dag prioritert). Ellers (begge false / 404 / feil) skjules begge stille. Tekst-antall fra /ledige.
+// Er det NOEN ledige tider i story-vinduet? GET /story/ledige-timer/data → har_ledige. Gir true/false bare når
+// barberen har en tjeneste (tjenester:0 gir også har_ledige:false — da er han ikke «full», bare ikke satt opp).
+// Feil/ukjent → null: Oversikt oppfører seg som før (ingen «Fullt»-påstand uten dekning).
+async function hentHarLedige(){
+  try{
+    var r=await apiFetch('/api/dashboard/story/ledige-timer/data?dager=4',{sameOrigin:true});
+    if(!r||!r.ok) return null;
+    var d=await r.json();
+    if(!d||!(d.tjenester>0)||typeof d.har_ledige!=='boolean') return null;
+    return d.har_ledige;
+  }catch(e){ return null; }
+}
 async function loadStoryLedigeLinje(){
-  var linje=$("#storyLedigeLinje"), knapp=$("#storyOpenOversikt"); if(!linje||!knapp) return;
+  var linje=$("#storyLedigeLinje"), knapp=$("#storyOpenOversikt"), fullt=$("#storyFullt"); if(!linje||!knapp) return;
+  var harLedige=hentHarLedige();   // parallelt med /ledige
   function skjul(){ linje.hidden=true; linje.textContent=''; knapp.hidden=true; if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud(); }
+  if(fullt) fullt.hidden=true;
+  // Fullt de neste dagene → ingen knapp (en story uten ledige tider lages aldri), dempet linje i stedet.
+  if((await harLedige)===false){ skjul(); if(fullt) fullt.hidden=false; return; }
   function vis(d,naar,dato){ linje.textContent='Du har '+ledigTekst(d.antall)+' '+naar; linje.hidden=false; knapp.hidden=false; meldVist(dato); if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud(); }
   var tz='Europe/Oslo';
   var iDag=new Date().toLocaleDateString('en-CA',{timeZone:tz});
@@ -8961,6 +8983,13 @@ window.hqDel = (function(){
   // (nettverksfeil gir en feilside vi ikke får lese → contentDocument null) → feilmelding. Laster den ikke
   // innen tidsavbruddet (samme grense som apiFetch), → samme melding.
   var STORY_FEIL='Kunne ikke lage forhåndsvisningen. Lukk og prøv igjen om litt.';
+  var STORY_FULLT='Fullt de neste dagene. Det er ingen ledige tider å lage story av.';
+  // Feilsvaret er JSON i iframen (same-origin). 409 {kode:'ingen_ledige_tider'} er ikke en feil som går over
+  // av å prøve igjen — si hvorfor i stedet.
+  function storyFeilTekst(doc){
+    try{ var j=JSON.parse((doc&&doc.body&&doc.body.textContent)||''); if(j&&j.kode==='ingen_ledige_tider') return STORY_FULLT; }catch(_){}
+    return STORY_FEIL;
+  }
   var _previewVakt=null;
   function lastPreview(){
     if(!frame) return;
@@ -8971,9 +9000,9 @@ window.hqDel = (function(){
     _previewVakt=setTimeout(function(){ frame.onload=null; visFeil(STORY_FEIL); }, API_TIMEOUT_MS);
     frame.onload=function(){
       clearTimeout(_previewVakt);
-      var ok=false;
-      try{ var doc=frame.contentDocument; ok=!!(doc && doc.getElementById('days')); }catch(e){}
-      if(!ok){ visFeil(STORY_FEIL); return; }
+      var ok=false, doc=null;
+      try{ doc=frame.contentDocument; ok=!!(doc && doc.getElementById('days')); }catch(e){}
+      if(!ok){ visFeil(storyFeilTekst(doc)); return; }
       visLaster(false); sendApply();   // sendApply dekker race: bytter brukeren før load, rettes utsnittet her
     };
     frame.src=BASE+'/preview?'+q();
