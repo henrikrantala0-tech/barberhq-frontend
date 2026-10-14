@@ -572,7 +572,7 @@
   .subcard .pln{display:flex;align-items:baseline;gap:8px;margin-bottom:4px}
   .subcard .pln b{font-size:26px;font-weight:800;letter-spacing:-.03em}
   .subcard .pln span{font-size:13px;color:var(--mut)}
-  /* Undertittel under hovedtallet («av prøveperioden»). Egen node fordi den skal stå på
+  /* Undertittel under hovedtallet («Første trekk [dato].» i Vekst under Stripe-prøve). Egen node fordi den skal stå på
      EGEN linje — .pln er flex/baseline og ville lagt den ved siden av tallet. */
   .pln-sub{font-size:13px;color:var(--mut);margin:-2px 0 4px;letter-spacing:-.01em}
   .substatus{display:inline-flex;align-items:center;gap:7px;font-size:13px;font-weight:600;color:var(--good);background:var(--good-bg);padding:5px 11px;border-radius:7px;margin-bottom:16px}
@@ -1661,7 +1661,7 @@
          billing-koden. Bare etiketten er byttet. -->
     <!-- #kontoDot = varselprikk (needs_attention) på DESKTOP-fanen. På mobil bærer bunn-navets
          Konto-fane prikken (#kontoBunnDot). Begge settes i renderBilling og slukkes kun når
-         needs_attention blir false — et nedtakingsvarsel skal ikke forsvinne fordi noen kikket. -->
+         needs_attention blir false — et varsel (feilet betaling, prøveperioden slutter) skal ikke forsvinne fordi noen kikket. -->
     <button role="tab" aria-selected="false" data-panel="abonnement">Konto<span class="nav-dot" id="kontoDot" hidden></span></button>
   </nav>
 </div>
@@ -2320,8 +2320,8 @@
       <div class="dinside-cta-tekst">
         <strong>Siden din er ikke publisert ennå</strong>
       </div>
-      <!-- «Publiser siden» (ikke Konto-kortets «… start gratis prøveperiode») — på «Din side»
-           ser han siden sin, ikke abonnementet. Trial-vilkåret står som dempet note under. -->
+      <!-- «Publiser siden» — på «Din side» ser han siden sin, ikke abonnementet. Publisering er gratis og
+           frikoblet planen (ingen prøveperiode for nye barbere); noten under sier det. -->
       <div class="dinside-cta-handling">
         <button class="btn" id="dinsidePubliser">Publiser siden</button>
         <span class="dinside-cta-note">Publiser når du er fornøyd. Det er gratis, uten kort.</span>
@@ -2491,7 +2491,7 @@
   <!-- ABONNEMENT -->
   <section class="panel" id="abonnement">
     <!-- Tittelen var «Abonnement». Kortet dekker nå BÅDE abonnement og publisering — de to
-         henger sammen etter trial-omleggingen — så den gamle tittelen navnga halve innholdet.
+         står i samme kort (publisering er frikoblet planen, men styres herfra) — så den gamle tittelen navnga halve innholdet.
          Nav-etiketten har hett «Konto» siden 06.08; nå sier de to det samme. (id-en
          #abonnement er fortsatt bevart — den henger sammen med applyBillingReturn.) -->
     <p class="panel-h">Konto</p>
@@ -3046,6 +3046,11 @@ const CONFIG={
   SITE_BASE:"https://trybarberhq.com",
   BARBER_NAME:null, // settes dynamisk fra GET /api/dashboard/profile
 };
+// Vekst-prisen, ÉN kilde i dashbordet (Konto, Vekst-fanens oppgrader-CTA). Står her øverst så ingen
+// render-funksjon kan nå den før den er definert (const har ingen hoisting). NOK fordi /no/-fila;
+// backend bør på sikt sende pris-strengen i billing så andre markeder/valutaer stemmer.
+// SMS-pakkene har INGEN pris her — de leses alltid fra sms_pakker i billing.
+const PLAN_INFO={vekst:{navn:'Vekst',pris:'179 kr'}};
 
 // Sentral fetch-wrapper — credentials alltid med, 401 sender til login.
 // body som string → Content-Type: application/json settes automatisk.
@@ -3236,8 +3241,6 @@ const api={
     if(!r||!r.ok)return null;
     return r.json();
   },
-  // Trial-nudge (Oversikt): marker vist (server setter shown_at KUN hvis NULL) / lukket (dismissed_at=now).
-  // Tom body. Fire-and-forget — feiler kallet, endrer det bare persistensen, ikke visningen i denne økten.
   // PUT /api/dashboard/customers/:id/loyalty {opt_in} → melder en kunde inn (true) / ut (false).
   //   Svar: {customer_id, opt_in, opt_in_at, has_unused_reward}. Ruta er i kontrakten.
   // Returnerer Response så kalleren kan skille 403 (Vekst-lås) fra annen feil OG lese svar-body.
@@ -3807,7 +3810,7 @@ function diHentetInnHtml(hi){
     +diRaderHtml(hi)
   +'</div>';
 }
-// På vei-blokk: kunder/datoer, ALDRI kroner. opts.basis=true → «På Basis får ingen…»-noten (selg + CTA
+// På vei-blokk: kunder/datoer, ALDRI kroner. opts.basis=true → «På Gratis får ingen…»-noten (selg + CTA
 // bor nå i den låste «Med Vekst»-blokka OVER På vei, ikke her — så CTA-en ikke dupliseres).
 function diPaaVeiHtml(pv, opts){
   var rb=(pv&&pv.rebooking)||{naar_vindu_30d:0,med_samtykke:0};
@@ -3855,7 +3858,7 @@ function diBasisForklaring(){
 // Knapp + pris — KUN Vekst-fanen. På Oversikt bærer «På vei» flaten (det eneste ekte tallet); ingen CTA der.
 function diBasisCtaPris(){
   return '<button type="button" class="di-cta" data-di-oppgrader>Oppgrader til Vekst</button>'
-    +'<div class="di-cta-price">179 kr/mnd eks.&nbsp;mva. Ingen binding.</div>';
+    +'<div class="di-cta-price">'+PLAN_INFO.vekst.pris+'/mnd eks.&nbsp;mva. Ingen binding.</div>';
 }
 function koblePaaVeiCta(host){
   if(!host)return;
@@ -5977,7 +5980,7 @@ function showToast(msg){
    (2) LEGG TIL KUNDE — kandidater fra d.eligible (backend-filtrert), én «Legg til» per kunde
    (barberen velger, ingen «legg til alle»). Ett /loyalty-kall mater begge deler + innstillinger.
    UI-navn «Lojalitetsprogram»; koden beholder loyalty_* / id-er med «loyal».
-   Basis: eksempeltall bak Vekst-skjoldet, ALDRI API-kall (lekker aldri ekte tall). */
+   Basis (= Gratis): statisk låst forhåndsvisning (renderLoyalBasisPreview), ALDRI API-kall (lekker aldri ekte tall). */
 // Sist lastede respons — så en re-render (etter lagret innstilling) slipper nytt kall.
 var _loyal=null;
 async function loadLoyalty(){
@@ -6839,6 +6842,8 @@ $("#saveDesign").addEventListener("click",function(){
 // ⚠ trial_days_left (VÅR klokke) ≠ days_left (Stripes). Nedtellingen i prøveperioden er
 // trial_days_left; datoen for første trekk er trial_ends_at, fordi det er Stripe som trekker.
 var _billing=null;
+// «Basis» er det INTERNE navnet på Gratis (backend 'basis'); UI sier alltid «Gratis». Basis 89 kr kan ikke
+// kjøpes lenger — der koden sier Basis, menes Gratis-planen (prismodell 09.10.2026).
 // M10 FAIL-CLOSED: Vekst-innhold vises KUN når billing er BEKREFTET Vekst (effective_plan==='vekst').
 // Alt annet — _billing===null (før lasting), manglende felt, billing-feil, ELLER 'basis' — skjoldes.
 // effective_plan er backendens autoritative «hva gjelder nå»: trial_vindu gir 'vekst' (prøvekunder
@@ -6867,9 +6872,6 @@ document.addEventListener('click',function(e){ var b=e.target.closest('[data-bil
   ['#wbList','#vervSendList','#loyalOversikt'].forEach(function(s){ var el=$(s); if(el)el.innerHTML='<p class="wb-empty">Laster …</p>'; });
   loadBilling(); // suksess → oppdaterSkjoldFlater re-kjører loaderne; ny feil → billingFeilRender igjen
 });
-// Vekst-prisen, ÉN kilde i dashbordet. NOK fordi /no/-fila; backend bør på sikt sende pris-strengen
-// i status så andre markeder/valutaer stemmer. Basis er borte: den kan ikke kjøpes (Gratis = 0 kr).
-const PLAN_INFO={vekst:{navn:'Vekst',pris:'179 kr'}};
 async function loadBilling(){
   let r;
   try{ r=await apiFetch('/api/dashboard/billing/status'); }
@@ -6891,11 +6893,16 @@ function erBillingShape(d){
 // ÉN setter for autoritativ billing: tilstand → Konto → Vekst-ikon → skjoldede flater. Ingen av de
 // tre kallstedene skal kunne glemme et ledd (effective_plan kan ha endret seg — f.eks. etter synk).
 function settBilling(d){
+  var forrige=_billing, varFeilet=_billingFeilet;
   _billing=d;
   _billingKjent=true; _billingFeilet=false;   // ÅPNE billing-gaten: kundedata-loaderne kan nå fetche
   renderKonto(_billing);
-  // effective_plan kom → re-render skjoldede flater + re-kjør kundedata-loaderne som gate-et seg ut.
-  if(typeof oppdaterSkjoldFlater==='function')oppdaterSkjoldFlater();
+  // Skjoldede flater + kundedata-loaderne avhenger KUN av planen. Kjør dem når planen kom første gang,
+  // når den endret seg (synk, oppsigelse) eller når forrige lasting feilet (listene står da på
+  // «Laster …»/feil og må fylles). Ellers ikke: et billing-svar etter f.eks. påminnelse-bryteren endrer
+  // bare SMS-feltene, og hentet før «Drevet av» + fem Vekst-lister på nytt for hvert klikk.
+  var planEndret=!forrige || varFeilet || forrige.effective_plan!==d.effective_plan;
+  if(planEndret && typeof oppdaterSkjoldFlater==='function')oppdaterSkjoldFlater();
   if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud();   // tilbudet avhenger av saldo/bryter/avvist
   if(typeof oppdaterPaamVekst==='function')oppdaterPaamVekst();   // Vekst-fanens bryter: av ved Gratis uten SMS
   if(typeof renderForsteBooking==='function')renderForsteBooking();   // vises kun når page_status==='live'
@@ -7457,8 +7464,8 @@ function sjekkGaaTil(action){
 // Lenke-blokka styres av page_status ALENE, og ligger derfor utenfor if/else-kjeden i
 // renderKonto. Billing-grenen svarer på «hva må jeg gjøre nå?»; adressen svarer på «hvor bor
 // sida mi?» — to ulike spørsmål. Legges den inne i kjeden, forsvinner adressen i det
-// øyeblikket en betalingsgren tar over: en barberer i myk periode (C) har fortsatt en LIVE
-// side som kunder booker på, og skal kunne dele lenka mens han ordner kortet.
+// øyeblikket en betalingsgren tar over: en barberer med feilet betaling (past_due) har fortsatt en
+// LIVE side som kunder booker på, og skal kunne dele lenka mens han ordner kortet.
 //
 // Tre tilstander:
 //   live          → hele URL-en synlig + «Kopier lenke»
