@@ -82,7 +82,7 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
     (`effective_plan==='basis'`, `erBasis()`), men UI sier ALDRI «Basis». Basis 89 kr kan ikke kjøpes
     lenger — checkout sender alltid `{plan:'vekst'}`.
   - **Vekst 179 kr/mnd eks. mva**, 100 SMS inkludert, deretter 1,21 kr/SMS på neste faktura, tak 400 kr/mnd.
-  - **SMS-pakker** på Gratis: 129 / 279 / 499 kr (engangskjøp, utløper aldri). Antall/pris kommer fra
+  - **SMS-pakker** på Gratis: 100 = 129 kr / 250 = 279 kr / 500 = 495 kr (0,99 kr/SMS; 499 → 495 besluttet 13.10) (engangskjøp, utløper aldri). Antall/pris kommer fra
     `sms_pakker` i billing-shapen — ALDRI hardkod pakkepriser i frontend.
   - **Ingen prøveperiode for nye barbere.** Markedssidene sier «Ingen kort · Ingen prøveperiode».
     Konto-tilstand 2 («Vekst, prøveperiode», `effective_plan_grunn==='trial_vindu'`) gjelder BARE de

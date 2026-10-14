@@ -331,6 +331,8 @@
   /* Handlingslåst rad (Basis): bryteren rendres AV (visBryter) + markeres tydelig ikke-interaktiv. */
   .handlingslaas .sw{opacity:.55}
   .handlingslaas .sw .sl{cursor:not-allowed}
+  /* Påminnelse sperret (Gratis uten SMS): hele kortet er en lenke til Konto → SMS. */
+  #accPaam.handlingslaas .acc-head,#accPaam.handlingslaas .sw .sl{cursor:pointer}
 
   .btn{appearance:none;border:0;font:inherit;font-weight:600;font-size:13px;padding:10px 20px;border-radius:8px;cursor:pointer;background:var(--ink);color:#fff;letter-spacing:-.01em}
   .btn:active{transform:scale(.985)}
@@ -1156,6 +1158,9 @@
   /* Rød, ikke dempet som .sett-hint: dette er en FEIL, ikke en veiledning. Samme farge som
      .svc-err, så de to feiltypene i dashbordet ser like ut. */
   .sett-err{font-size:12px;color:#c0392b;line-height:1.45;margin:0 0 12px}
+  /* Gratis med 0 SMS: dempet lenkelinje under påminnelse-bryteren i Vekst-fanen. Ingen knapp, ingen aksentfarge. */
+  .paam-kjop{font-size:12px;color:var(--mut);line-height:1.45;margin:-4px 17px 15px}   /* 17px = .acc-head-innrykket: flukter med tittelen */
+  .paam-kjop a{color:inherit;text-decoration:underline;text-underline-offset:2px}
   .sett-note{font-size:12px;color:var(--mut);padding:11px 14px;background:var(--surface);border:1px solid var(--line);border-radius:10px;line-height:1.55}
   /* SMS-forhåndsvisning: les-bare boble som ligner en mottatt melding. Ett hjørne stramt
      (nederst venstre) er den vanlige «innkommende»-formen — den signaliserer at teksten er
@@ -1950,6 +1955,8 @@
           <label class="sw sw-green acc-sw"><input type="checkbox" id="tog-paam"><span class="sl"></span></label>
         </div>
         <p class="sett-err" id="paamErr" hidden></p>
+        <!-- Gratis med 0 SMS: ingenting sendes, så bryteren står AV og deaktivert (oppdaterPaamVekst). -->
+        <p class="paam-kjop" id="paamKjop" hidden><a href="#" id="paamKjopLenke">Kjøp SMS for å sende påminnelser</a></p>
         <div class="acc-body" hidden>
           <!-- Startinnholdet ER fallbacken. Svarer ikke /sms-preview — eller kjører JS-en
                aldri — blir noten stående, og trekkspillet åpner til noe i stedet for ingenting.
@@ -2578,7 +2585,7 @@
                 <button type="button" class="sms-kjop" id="smsKjop"></button>
                 <p class="sett-err" id="smsPakkeErr" hidden></p>
                 <p class="sms-noshow-linje" id="smsNoshow"></p>
-                <p class="sms-fot" id="smsFot">Engangskjøp, eks. mva. Kjøpte SMS utløper aldri.</p>
+                <p class="sms-fot" id="smsFot">Engangskjøp, eks.&nbsp;mva. Kjøpte SMS utløper aldri.</p>
               </div>
             </div>
           </div>
@@ -3848,7 +3855,7 @@ function diBasisForklaring(){
 // Knapp + pris — KUN Vekst-fanen. På Oversikt bærer «På vei» flaten (det eneste ekte tallet); ingen CTA der.
 function diBasisCtaPris(){
   return '<button type="button" class="di-cta" data-di-oppgrader>Oppgrader til Vekst</button>'
-    +'<div class="di-cta-price">179 kr/mnd eks. mva. Ingen binding.</div>';
+    +'<div class="di-cta-price">179 kr/mnd eks.&nbsp;mva. Ingen binding.</div>';
 }
 function koblePaaVeiCta(host){
   if(!host)return;
@@ -5646,7 +5653,7 @@ var _settingsUkjent = false;
 // OG låsestatus. Handlingslåst rad (Basis) → alltid AV. .checked leses ALDRI som fasit.
 function visBryter(el){
   if(!el)return;
-  var laast=!!el.closest('.handlingslaas');
+  var laast=!!el.closest('.handlingslaas') || el.dataset.sperret==='1';   // sperret: Gratis uten SMS (oppdaterPaamVekst)
   el.checked       = el.dataset.verdi==='1' && !laast;
   el.indeterminate = el.dataset.verdi==='u' && !laast;
 }
@@ -6890,6 +6897,7 @@ function settBilling(d){
   // effective_plan kom → re-render skjoldede flater + re-kjør kundedata-loaderne som gate-et seg ut.
   if(typeof oppdaterSkjoldFlater==='function')oppdaterSkjoldFlater();
   if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud();   // tilbudet avhenger av saldo/bryter/avvist
+  if(typeof oppdaterPaamVekst==='function')oppdaterPaamVekst();   // Vekst-fanens bryter: av ved Gratis uten SMS
   if(typeof renderForsteBooking==='function')renderForsteBooking();   // vises kun når page_status==='live'
 }
 // Hovedhandlingen er ÉN knapp. `_kontoAksjon` sier hva et trykk gjør i nåværende tilstand —
@@ -6914,7 +6922,8 @@ function kontoDato(iso){
 // dager og datoer kommer ferdig fra backend. renderKonto tegner resultatet og har ingen egne if-er
 // per tilstand. REKKEFØLGEN ER SEMANTIKK:
 //   5 past_due først — en feilet betaling er det eneste barberen MÅ gjøre noe med.
-//   4 oppsagt før 3 — begge er 'active' + vekst; cancel_at_period_end skiller dem. Mangler
+//   4 oppsagt før 3 — begge er 'active'/'trialing' + vekst; cancel_at_period_end skiller dem. Oppsagt
+//     under Stripe-prøve er også 4: ellers lover 3 «Første trekk» for et trekk som aldri kommer. Mangler
 //     current_period_end, faller den til reserven (ingen «Vekst til …» uten dato).
 //   3 Vekst — 'active' ELLER 'trialing' med plan vekst: kortet er lagt inn, Vekst fortsetter av seg
 //     selv. 'trialing' får «Første trekk [dato]» fra trial_ends_at (utelates når null).
@@ -6932,14 +6941,14 @@ function kontoTilstand(b){
     t={id:5, merke:'Betalingen feilet', farge:'bad',
        tekst:['Oppdater kortet for å beholde Vekst. SMS er satt på pause til betalingen går gjennom.'],
        knapp:['Oppdater betaling','portal']};
-  }else if(sub==='active'&&vekst&&b.cancel_at_period_end===true){
-    const slutt=kontoDato(b.current_period_end);
+  }else if((sub==='active'||sub==='trialing')&&vekst&&b.cancel_at_period_end===true){
+    const slutt=kontoDato(b.current_period_end);   // under Stripe-prøve = prøveslutt
     if(slutt) t={id:4, merke:'Vekst til '+slutt, farge:'mut',
                  tekst:['Deretter går du over til Gratis, og siden blir stående.'], manage:true};
   }else if((sub==='active'||sub==='trialing')&&vekst){
     const trekk=sub==='trialing'?kontoDato(b.trial_ends_at):null;
     t={id:3, merke:'Vekst er aktivt', farge:'good',
-       tall:[PLAN_INFO.vekst.pris,'/ mnd eks. mva',trekk?'Første trekk '+trekk+'.':null],
+       tall:[PLAN_INFO.vekst.pris,'/ mnd eks.\u00a0mva',trekk?'Første trekk '+trekk+'.':null],
        tekst:['100 SMS inkludert hver måned.'], fin:true, manage:true};
   }else if(grunn==='trial_vindu'&&typeof n==='number'&&n>0){
     t={id:2, merke:'Vekst, prøveperiode', farge:'mut',
@@ -6980,7 +6989,7 @@ function renderKonto(b){
   if(t.tall){ tallStor.textContent=t.tall[0]; tallSuff.textContent=t.tall[1]; tallSub.textContent=t.tall[2]||''; }
   tekst.innerHTML=(t.tekst||[]).map(function(l){ return '<p>'+esc(l)+'</p>'; }).join('');
   vis(opp,!!t.opp);
-  if(t.opp){ oppH.textContent='Vekst · '+PLAN_INFO.vekst.pris+' / mnd eks. mva'; oppFin.textContent=KONTO_FINSKRIFT; }
+  if(t.opp){ oppH.textContent='Vekst · '+PLAN_INFO.vekst.pris+' / mnd eks.\u00a0mva'; oppFin.textContent=KONTO_FINSKRIFT; }
   _kontoAksjon=t.knapp?t.knapp[1]:null;
   vis(knapp,!!t.knapp);
   knapp.disabled=false; knapp.className='btn';
@@ -7028,9 +7037,9 @@ function smsPakker(b){
   }).slice().sort(function(a,c){return a.antall-c.antall;});
 }
 // «Spar X %» mot per-SMS-prisen til den MINSTE pakken. Regnes, aldri hardkodet. Vises bare ved ≥ 5 %.
-// Avrundet til nærmeste hele prosent.
+// Rundet NED (floor): 4,9 % skal ikke vises som «Spar 5 %».
 function smsSpar(p,minstPer){
-  var x=Math.round((1-Number(p.per_sms_kr)/minstPer)*100);
+  var x=Math.floor((1-Number(p.per_sms_kr)/minstPer)*100+1e-9);   // epsilon: 13,0000 kan bli 12,9999 i flyttall
   return x>=5?x:0;
 }
 function renderSmsKonto(b){
@@ -7089,7 +7098,30 @@ function renderSmsKonto(b){
 function settPaamBrytere(verdi, ukjent){
   settBryter($("#tog-paam"), verdi, ukjent);
   settBryter($("#tog-smsPaam"), verdi, ukjent);
+  oppdaterPaamVekst();
 }
+// Vekst-fanens bryter viser FAKTISK tilstand, ikke bare innstillingen. Gratis med 0 SMS sender ingenting
+// (backend paaminnelseSendes) — da står bryteren av og deaktivert, med en dempet lenke til Konto → SMS.
+// Innstillingen (dataset.verdi) røres ikke: kjøper barbereren SMS, gjelder den lagrede verdien igjen.
+// Konto-bryteren trenger ikke dette — den raden er skjult ved saldo 0 (renderSmsKonto).
+function oppdaterPaamVekst(){
+  var el=$("#tog-paam"), linje=$("#paamKjop"); if(!el)return;
+  var b=_billing, tom=!!b && b.sms_pakke_kan_kjopes===true && b.sms_saldo===0;
+  el.dataset.sperret=tom?'1':'';
+  el.disabled=tom;
+  // Samme låste utseende som Rebooking (handlingslaas: dempet bryter, not-allowed) — ingen egen variant.
+  // settHandlingsLaas brukes IKKE: påminnelser er ikke en Vekst-funksjon, så ingen «Vekst»-merke.
+  var kort=$("#accPaam"); if(kort) kort.classList.toggle('handlingslaas',tom);
+  visBryter(el);
+  if(linje) linje.hidden=!tom;
+}
+// Sperret: ethvert trykk i kortet (bryter, tittel, lenke) går til Konto → SMS i stedet for å folde ut.
+// Capture-fase, så trekkspillets egen klikk-handler aldri ser trykket.
+$("#accPaam").addEventListener("click",function(e){
+  if($("#tog-paam").dataset.sperret!=='1')return;
+  e.preventDefault(); e.stopPropagation();
+  aapneKontoSeksjon('kontoSms');
+},true);
 function skrivPaaminnelse(el, errEl){
   if(_settingsUkjent){ el.dataset.verdi='u'; visBryter(el); return; }   // ukjent → ikke skriv (som bryterSkriv)
   var forrige=el.dataset.verdi==='1', ny=el.checked;
@@ -7098,7 +7130,7 @@ function skrivPaaminnelse(el, errEl){
   begge.forEach(function(b){ if(b)b.disabled=true; });   // racevakt: ingen overlappende PUT
   lagreSmsInnstilling({sms_paaminnelse_enabled:ny}, function(){ settPaamBrytere(forrige); }, errEl)
     .then(function(ok){ if(ok&&typeof loadBilling==='function') loadBilling(); })   // sms_paaminnelser_sendes kan ha endret seg
-    .finally(function(){ begge.forEach(function(b){ if(b)b.disabled=false; }); });
+    .finally(function(){ begge.forEach(function(b){ if(b)b.disabled=false; }); oppdaterPaamVekst(); });
 }
 $("#tog-smsPaam").addEventListener("change",function(){ if(IS_DEMO){ visBryter(this); return; } skrivPaaminnelse(this,$("#smsInnstErr")); });
 // Kjøpsknappen speiler valgt flis: «Kjøp [antall] SMS · [pris] kr». Deaktivert mens en Stripe-retur synker.
@@ -7653,8 +7685,8 @@ async function startCheckout(btn){
 }
 // GET /billing/portal → 303 til Stripe (browser følger redirect).
 function aapnePortal(){ window.location.href=CONFIG.API_BASE+"/api/dashboard/billing/portal"; }
-// Retur fra Stripe Checkout. success_url bærer ?live=1&session_id={CHECKOUT_SESSION_ID}, cancel_url
-// ?avbrutt=1. Med session_id synker backend abonnementet DIREKTE fra Stripe (POST
+// Retur fra Stripe Checkout. Vekst: success_url ?live=1&session_id={CHECKOUT_SESSION_ID}, cancel_url
+// ?avbrutt=1. SMS-pakke: success_url ?sms_pakke=1&session_id=…, cancel_url ?sms_pakke_avbrutt=1. Med session_id synker backend abonnementet DIREKTE fra Stripe (POST
 // /api/billing/sync-checkout, idempotent, samme speiling som webhooken) — så Konto ikke viser Gratis
 // fordi webhooken ikke har landet ennå. ÉN gang: flaggene ryddes fra URL-en FØR kallet, så en refresh
 // aldri kaller på nytt. Ingen polling. live=1 uten session_id (gammel success_url) → ventebanneret.
@@ -7662,13 +7694,17 @@ async function applyBillingReturn(){
   const q=new URLSearchParams(location.search);
   const sessionId=q.get('session_id');
   const live=q.get('live')==='1', avbrutt=q.get('avbrutt')==='1', smsPakke=q.get('sms_pakke')==='1';
-  if(!sessionId&&!live&&!avbrutt)return;
+  const smsAvbrutt=q.get('sms_pakke_avbrutt')==='1';
+  if(!sessionId&&!live&&!avbrutt&&!smsAvbrutt)return;
   history.replaceState(null,'',location.pathname);
-  // ?sms_pakke=1 (satt av backend i success/cancel_url for pakkekjøp) → SMS-seksjonen, ellers abonnementet.
-  aapneKontoSeksjon(smsPakke?'kontoSms':'kontoAbonnement');
+  // Pakkekjøp (?sms_pakke=1 / ?sms_pakke_avbrutt=1) → SMS-seksjonen, ellers abonnementet.
+  aapneKontoSeksjon((smsPakke||smsAvbrutt)?'kontoSms':'kontoAbonnement');
   const el=$("#subReturn");
   const banner=function(klasse,tekst){ if(!el)return; el.className='sub-banner '+klasse; el.textContent=tekst; el.style.display=''; };
-  const VENT='Det kan ta et minutt før Vekst vises. Last inn siden på nytt.';
+  // Ventebanneret handler om det som ble kjøpt: SMS-pakke eller Vekst.
+  const VENT=smsPakke ? 'Det kan ta et minutt før SMS-ene vises. Last inn siden på nytt.'
+                      : 'Det kan ta et minutt før Vekst vises. Last inn siden på nytt.';
+  if(smsAvbrutt&&!sessionId){ banner('mut','Kjøpet ble avbrutt. Ingenting er trukket.'); return; }
   if(!sessionId){
     banner('mut', avbrutt ? 'Betalingen ble avbrutt. Du kan oppgradere når som helst.' : VENT);
     return;
@@ -7686,7 +7722,7 @@ async function applyBillingReturn(){
   // Hva ble kjøpt? synk-svaret sier det selv (kjop: 'vekst' | 'sms_pakke') — ingen gjetting ut fra saldo.
   // Vekst-banneret krever i tillegg at svaret faktisk ER Vekst. «Påminnelsene er slått på» står bare når
   // sms_paaminnelser_sendes sier at de går.
-  const kjop=erBillingShape(d)?d.kjop:null;
+  const kjop=erBillingShape(d)?d.kjop:null;   // null (synkfeil/409/502) → VENT, som følger smsPakke
   if(kjop==='vekst'&&kontoTilstand(d).id===3) banner('info','Vekst er aktivt. Vekstverktøyene ligger i Vekst-fanen.');
   else if(kjop==='sms_pakke'){
     banner('info', d.sms_paaminnelser_sendes===true ? 'SMS-pakken er lagt til. Påminnelsene er slått på.' : 'SMS-pakken er lagt til.');

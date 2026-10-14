@@ -23,7 +23,7 @@ await new Promise(r=>server.listen(0,r));
 const PORT=server.address().port;
 
 // per_sms_kr kan komme som 1 (ikke 1.00) — skal likevel vises «1,00».
-const PAKKER=[{antall:100,pris_kr:129,per_sms_kr:1.29},{antall:250,pris_kr:279,per_sms_kr:1.12},{antall:500,pris_kr:499,per_sms_kr:1}];
+const PAKKER=[{antall:100,pris_kr:129,per_sms_kr:1.29},{antall:250,pris_kr:279,per_sms_kr:1.12},{antall:500,pris_kr:495,per_sms_kr:0.99}];
 const base=()=>({ subscription_status:null, page_status:'live', plan:null, effective_plan:'basis',
   effective_plan_grunn:'gratis', trial_start_at:null, trial_days_left:null, trial_ends_at:null, days_left:null,
   needs_attention:false, attention_grunn:null, plakater_doede:false, cancel_at_period_end:false, current_period_end:null,
@@ -98,7 +98,7 @@ const KONTO=[
   { id:'saldo1250-uten-eks', b:gratis({sms_saldo:1250}), paa:false,
     vent:{rad:'1 250 | SMS igjen', bryter:true, paa:false, chip:false, hjelp:'—', eks:'—'}, fliser:true },
 ];
-const KNAPP={100:'Kjøp 100 SMS · 129 kr',250:'Kjøp 250 SMS · 279 kr',500:'Kjøp 500 SMS · 499 kr'};
+const KNAPP={100:'Kjøp 100 SMS · 129 kr',250:'Kjøp 250 SMS · 279 kr',500:'Kjøp 500 SMS · 495 kr'};
 async function maalFliser(page){
   return page.evaluate(()=>{
     const fl=[...document.querySelectorAll('#smsFliser .sms-flis')];
@@ -166,8 +166,8 @@ for(const c of KONTO){
     const m=await maalFliser(page);
     if(m.gruppe!=='radiogroup') f.push('flisene er ikke radiogroup');
     if(JSON.stringify(m.valgt)!=='[250]'||JSON.stringify(m.tabbare)!=='[250]') f.push(`standardvalg ${JSON.stringify(m.valgt)} tab ${JSON.stringify(m.tabbare)}`);
-    if(JSON.stringify(m.spar)!==JSON.stringify(['','Spar 13 %','Spar 22 %'])) f.push(`spar ${JSON.stringify(m.spar)}`);
-    if(JSON.stringify(m.tekst)!==JSON.stringify(['100 SMS | 129 kr | 1,29 kr/SMS','250 SMS | 279 kr | 1,12 kr/SMS','500 SMS | 499 kr | 1,00 kr/SMS'])) f.push(`flistekst ${JSON.stringify(m.tekst)}`);
+    if(JSON.stringify(m.spar)!==JSON.stringify(['','Spar 13 %','Spar 23 %'])) f.push(`spar ${JSON.stringify(m.spar)}`);
+    if(JSON.stringify(m.tekst)!==JSON.stringify(['100 SMS | 129 kr | 1,29 kr/SMS','250 SMS | 279 kr | 1,12 kr/SMS','500 SMS | 495 kr | 0,99 kr/SMS'])) f.push(`flistekst ${JSON.stringify(m.tekst)}`);
     if(m.knapp!==KNAPP[250]) f.push(`knapp «${m.knapp}»`);
     if(m.knappLinjer!==1||m.knappKuttet) f.push(`knapp brekker/kuttes (linjer ${m.knappLinjer}, kuttet ${m.knappKuttet})`);
     if(m.smaa.length) f.push(`tekst under 13px: ${m.smaa.join(', ')}`);

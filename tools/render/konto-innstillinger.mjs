@@ -28,7 +28,7 @@ const server = http.createServer((q, r) => {
 await new Promise(r => server.listen(0, r));
 const PORT = server.address().port;
 
-const PAKKER = [{ antall: 100, pris_kr: 129, per_sms_kr: 1.29 }, { antall: 250, pris_kr: 279, per_sms_kr: 1.12 }, { antall: 500, pris_kr: 499, per_sms_kr: 1 }];
+const PAKKER = [{ antall: 100, pris_kr: 129, per_sms_kr: 1.29 }, { antall: 250, pris_kr: 279, per_sms_kr: 1.12 }, { antall: 500, pris_kr: 495, per_sms_kr: 0.99 }];
 const base = () => ({ subscription_status: null, page_status: 'live', plan: null, effective_plan: 'basis', effective_plan_grunn: 'gratis',
   trial_start_at: null, trial_days_left: null, trial_ends_at: null, needs_attention: false, attention_grunn: null,
   cancel_at_period_end: false, current_period_end: null, sms_saldo: 0, sms_paaminnelser_sendes: false, sms_pakker: PAKKER,
