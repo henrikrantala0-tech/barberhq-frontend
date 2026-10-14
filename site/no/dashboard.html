@@ -1462,6 +1462,7 @@
   body.fokus .fokus-x:hover{border-color:var(--ink)}
   .fokus-bar{display:none}
   body.fokus .fokus-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
+  .fokus-bar .fokus-pub-err{flex:1 1 100%;margin:0}   /* publiseringsfeil over knappene, full bredde */
   .fokus-bar .btn,.fokus-bar .btn-outline{padding:12px 22px;font-size:14px}
   @media(max-width:520px){ .fokus-bar .btn,.fokus-bar .btn-outline{flex:1;justify-content:center;text-align:center} }
 
@@ -1485,6 +1486,7 @@
   .sjekk-rad-t{font-size:13.5px;font-weight:600}
   .sjekk-rad-s{font-size:12px;color:var(--mut)}
   .sjekk-rad.done .sjekk-rad-t{text-decoration:line-through;color:var(--mut);font-weight:500}
+  .sjekk-pub-err{margin:4px 14px 12px}
   .sjekk-pill-wrap{position:fixed;right:18px;bottom:18px;z-index:130}
   .sjekk-pill{display:inline-flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line-2);border-radius:99px;padding:8px 16px 8px 8px;box-shadow:0 6px 22px rgba(0,0,0,.22);cursor:pointer;font:inherit;color:var(--ink)}
   .sjekk-pill:hover{border-color:var(--ink)}
@@ -2478,7 +2480,8 @@
          «Publiser siden» gjenbruker settSideStatus('live') (samme dispatch som #dinsidePubliser);
          «Utforsk dashbordet» = X = avslutt fokus. -->
     <div class="fokus-bar" id="fokusBar">
-      <button class="btn" id="fokusPubliser" type="button">Publiser siden</button>
+      <p class="pub-err fokus-pub-err" id="fokusPubErr" role="alert"></p>
+      <button class="btn" id="fokusPubliser" type="button" data-pub-err="#fokusPubErr">Publiser siden</button>
       <button class="btn-outline" id="fokusUtforsk" type="button">Utforsk dashbordet</button>
     </div>
     <!-- #slotPopup står på PANEL-nivå, ikke inne i Bilder-trekkspillet: den er position:fixed
@@ -7557,14 +7560,16 @@ function sjekklisteItems(){
 function byggSjekkPanel(items,ferdig){
   var pct=Math.round(ferdig/items.length*100);
   var rader=items.map(function(it){
-    return '<button type="button" class="sjekk-rad'+(it.done?' done':'')+'" data-act="'+it.action+'">'
+    return '<button type="button" class="sjekk-rad'+(it.done?' done':'')+'" data-act="'+it.action+'"'
+      +(it.action==='publiser'?' data-pub-err="#sjekkPubErr"':'')+'>'
       +'<span class="sjekk-ikon'+(it.done?' done':'')+'">'+(it.done?SJEKK_CHECK:'')+'</span>'
       +'<span class="sjekk-rad-tekst"><span class="sjekk-rad-t">'+it.label+'</span><span class="sjekk-rad-s">'+it.sub+'</span></span></button>';
   }).join('');
   return '<div class="sjekk-panel"><div class="sjekk-panel-hd"><span class="sjekk-panel-t">Fullfør siden din</span>'
     +'<span class="sjekk-panel-teller">'+ferdig+' av '+items.length+'</span></div>'
     +'<div class="sjekk-bar"><span style="width:'+pct+'%"></span></div>'
-    +'<div class="sjekk-rader">'+rader+'</div></div>';
+    +'<div class="sjekk-rader">'+rader+'</div>'
+    +'<p class="pub-err sjekk-pub-err" id="sjekkPubErr" role="alert"></p></div>';
 }
 function renderSjekkliste(){
   var b=_billing||{};
@@ -7611,8 +7616,16 @@ function _sjekkAapneAkk(id){var h=document.querySelector('#'+id+' .acc-head');if
 function _sjekkScroll(sel){var el=document.querySelector(sel);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}
 function _sjekkPopoverLukk(){ _sjekkPopoverAapen=false; var p=$('#sjekkPopover'); if(p)p.hidden=true; var b=$('#sjekkPillBtn'); if(b)b.setAttribute('aria-expanded','false'); }
 function sjekkGaaTil(action){
+  if(action==='publiser'){
+    // Popoveren blir STÅENDE: før ble den lukket og en usynlig dummy-knapp sendt inn, så en 400 («Sett en pris …»)
+    // havnet i #pubErr i Konto-fanen og barberen så ingenting. Nå er raden selv knappen og feilen står i panelet.
+    if(IS_DEMO) return;
+    var rad=document.querySelector('#sjekkPopover .sjekk-rad[data-act="publiser"]');
+    if(rad){ _sjekkPopoverAapen=true; var pop=$('#sjekkPopover'); if(pop)pop.hidden=false; }
+    settSideStatus('live',rad||document.createElement('button'));
+    return;
+  }
   _sjekkPopoverLukk();
-  if(action==='publiser'){ if(!IS_DEMO) settSideStatus('live',document.createElement('button')); return; }
   if(action==='bilder'||action==='profil'){
     // Begge bor i «Din side» (#design) — synlig i fokus, så vi BLIR i fokus, åpner bare trekkspillet.
     if(typeof aktivtPanel==='function'&&aktivtPanel()!=='design') switchPanel('design');
@@ -7783,23 +7796,26 @@ function settPubFeil(kode,tekst,maal){
   // tilbake på none og meldinga forblir usynlig. (Samme felle som .idea-err.)
   feil.style.display='block';
 }
-function nullstillPubFeil(){["#pubErr","#avpubErr","#dinsidePubErr"].forEach(function(sel){const f=$(sel);if(f){f.style.display='none';f.textContent='';}});}
+function nullstillPubFeil(){["#pubErr","#avpubErr","#dinsidePubErr","#fokusPubErr","#sjekkPubErr"].forEach(function(sel){const f=$(sel);if(f){f.style.display='none';f.textContent='';}});}
 // Felles for begge retninger. nyStatus: 'live' | 'forhandsvist'.
 async function settSideStatus(nyStatus,btn){
   nullstillPubFeil();
   // Feilen står ved knappen som utløste den: avpubliser nederst i Konto, publiser på «Din side»,
   // ellers abonnementskortet (tilstand 0 og «Publiser bookingsiden» i avpublisert plan-tilstand).
-  const feilMaal=nyStatus==='forhandsvist'?'#avpubErr':(btn&&btn.id==='dinsidePubliser')?'#dinsidePubErr':'#pubErr';
-  const orig=btn.textContent;btn.disabled=true;btn.textContent='Lagrer …';
+  // data-pub-err på knappen vinner (fokusmodus, sjekklista) — feilen skal stå der barberen trykket.
+  const feilMaal=(btn&&btn.dataset&&btn.dataset.pubErr)||(nyStatus==='forhandsvist'?'#avpubErr':(btn&&btn.id==='dinsidePubliser')?'#dinsidePubErr':'#pubErr');
+  // En sjekkliste-rad har egen markup: bytt bare undertittelen, ikke hele knappeteksten.
+  const tekstEl=(btn.querySelector&&btn.querySelector('.sjekk-rad-s'))||btn;
+  const orig=tekstEl.textContent;btn.disabled=true;tekstEl.textContent='Lagrer …';
   let r;
   try{
     r=await apiFetch('/api/dashboard/page-status',{method:'PUT',body:JSON.stringify({status:nyStatus})});
   }catch(e){
-    btn.disabled=false;btn.textContent=orig;
+    btn.disabled=false;tekstEl.textContent=orig;
     settPubFeil(0,kontaktFeil(e),feilMaal);
     return;
   }
-  btn.disabled=false;btn.textContent=orig;
+  btn.disabled=false;tekstEl.textContent=orig;
   if(!r)return; // 401 → apiFetch har allerede sendt til login
   const d=await r.json().catch(function(){return{};});
   if(r.ok){
@@ -7847,10 +7863,15 @@ $("#unpublish").addEventListener("click",function(){
   settSideStatus('forhandsvist',this);
 });
 // Handlingslenkene i feilmeldinga — delegert, fordi innerHTML byttes ved hver feil.
-["#pubErr","#avpubErr","#dinsidePubErr"].forEach(function(sel){$(sel).addEventListener("click",function(e){
-  const b=e.target.closest('[data-pub-act]'); if(!b)return;
-  if(b.dataset.pubAct==='tjenester'){switchPanel('tjenester');}
-});});
+// På dokumentet, ikke per element: sjekklistens #sjekkPubErr tegnes på nytt ved hver render.
+document.addEventListener("click",function(e){
+  const b=e.target.closest('.pub-err [data-pub-act]'); if(!b)return;
+  if(b.dataset.pubAct==='tjenester'){
+    if(document.body.classList.contains('fokus')&&typeof avsluttFokus==='function')avsluttFokus();
+    _sjekkPopoverLukk();
+    switchPanel('tjenester');
+  }
+});
 
 
 // POST /billing/checkout {plan:'vekst'} → {url}. Kun Vekst kan kjøpes (backend KJOPBARE_PLANER;
