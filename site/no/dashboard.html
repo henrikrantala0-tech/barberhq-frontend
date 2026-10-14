@@ -3399,6 +3399,8 @@ function ledigTekst(n){ return n===1 ? '1 ledig time' : n+' ledige timer'; }
 // (i dag prioritert). Ellers (begge false / 404 / feil) skjules begge stille. Tekst-antall fra /ledige.
 // Er det NOEN ledige tider i story-vinduet? GET /story/ledige-timer/data → har_ledige. Gir true/false bare når
 // barberen har en tjeneste (tjenester:0 gir også har_ledige:false — da er han ikke «full», bare ikke satt opp).
+// apne_dager (backend 11f7f2f) = dager i vinduet barberen jobber. 0 = alle stengt → ikke «full», bare stengt:
+// null, ingen «Fullt». Mangler feltet (eldre backend) → gammel oppførsel (har_ledige alene).
 // Feil/ukjent → null: Oversikt oppfører seg som før (ingen «Fullt»-påstand uten dekning).
 async function hentHarLedige(){
   try{
@@ -3406,6 +3408,7 @@ async function hentHarLedige(){
     if(!r||!r.ok) return null;
     var d=await r.json();
     if(!d||!(d.tjenester>0)||typeof d.har_ledige!=='boolean') return null;
+    if(d.har_ledige===false && typeof d.apne_dager==='number' && !(d.apne_dager>0)) return null;   // alle stengt ≠ fullt
     return d.har_ledige;
   }catch(e){ return null; }
 }
@@ -9039,10 +9042,11 @@ window.hqDel = (function(){
   // innen tidsavbruddet (samme grense som apiFetch), → samme melding.
   var STORY_FEIL='Kunne ikke lage forhåndsvisningen. Lukk og prøv igjen om litt.';
   var STORY_FULLT='Fullt de neste dagene. Det er ingen ledige tider å lage story av.';
+  var STORY_STENGT='Du har stengt alle de neste dagene.';
   // Feilsvaret er JSON i iframen (same-origin). 409 {kode:'ingen_ledige_tider'} er ikke en feil som går over
   // av å prøve igjen — si hvorfor i stedet.
   function storyFeilTekst(doc){
-    try{ var j=JSON.parse((doc&&doc.body&&doc.body.textContent)||''); if(j&&j.kode==='ingen_ledige_tider') return STORY_FULLT; }catch(_){}
+    try{ var j=JSON.parse((doc&&doc.body&&doc.body.textContent)||''); if(j&&j.kode==='ingen_ledige_tider') return _apneDager===0?STORY_STENGT:STORY_FULLT; }catch(_){}
     return STORY_FEIL;
   }
   var _previewVakt=null;
@@ -9075,10 +9079,15 @@ window.hqDel = (function(){
   // /data hentes ÉN gang ved kort-åpning. tilgjengelige_dager (nytt kontrakt-felt, erstatter gamle dager_vist)
   // kapper dag-velgeren til min(MAKS_DAGER, …) så barbereren aldri kan be om flere dager enn det finnes åpne
   // dager for. Feil/0/manglende → fall til MAKS_DAGER (vis hele 4–7-spennet). Returnerer promise med antallet.
+  // apne_dager fra samme svar (backend 11f7f2f): 0 = alle dager stengt → 409-teksten sier det, ikke «Fullt».
+  // null = ukjent (feil / eldre backend) → «Fullt»-teksten som før.
+  var _apneDager=null;
   function hentMaksDager(){
+    _apneDager=null;
     return apiFetch(BASE+'/data?dager='+st.dager,{sameOrigin:true}).then(function(r){
       if(!r||!r.ok) return MAKS_DAGER;
-      return r.json().then(function(d){ var t=Number(d&&d.tilgjengelige_dager); return (t>0)?t:MAKS_DAGER; });
+      return r.json().then(function(d){ _apneDager=(d&&typeof d.apne_dager==='number')?d.apne_dager:null;
+        var t=Number(d&&d.tilgjengelige_dager); return (t>0)?t:MAKS_DAGER; });
     }).catch(function(){ return MAKS_DAGER; });
   }
 

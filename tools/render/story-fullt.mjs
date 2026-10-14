@@ -23,8 +23,11 @@ const PORT=server.address().port;
 const billing={subscription_status:null,page_status:'live',plan:null,effective_plan:'basis',effective_plan_grunn:'gratis',
   needs_attention:false,cancel_at_period_end:false,current_period_end:null,sms_saldo:0,sms_paaminnelser_sendes:false,
   sms_pakker:[],sms_pakke_kan_kjopes:false,sms_tilbud_avvist_at:null,trial_days_left:null,trial_ends_at:null};
-const FULLT={tjenester:1,tjeneste_id:'s1',valgt_dager:4,har_ledige:false,tilgjengelige_dager:0,oppdatert:'Oppdatert ons 13:00',dager:[]};
+const FULLT={tjenester:1,tjeneste_id:'s1',valgt_dager:4,har_ledige:false,apne_dager:5,tilgjengelige_dager:0,oppdatert:'Oppdatert ons 13:00',dager:[]};
 const LEDIG={tjenester:1,tjeneste_id:'s1',valgt_dager:4,har_ledige:true,tilgjengelige_dager:7,oppdatert:'Oppdatert ons 13:00',dager:[{dato:'2026-10-15',overskrift:'Tor 15.10',tekst:'10:00, 11:00'}]};
+// Alle dager stengt (apne_dager:0, backend 11f7f2f): ikke «full» → ingen «Fullt». Eldre backend uten feltet → som før.
+const STENGT={tjenester:1,tjeneste_id:'s1',valgt_dager:4,har_ledige:false,apne_dager:0,tilgjengelige_dager:0,oppdatert:'',dager:[]};
+const FULLT_UTEN_FELT={tjenester:1,tjeneste_id:'s1',valgt_dager:4,har_ledige:false,tilgjengelige_dager:0,oppdatert:'',dager:[]};
 const UTEN_TJENESTE={tjenester:0,valgt_dager:4,har_ledige:false,tilgjengelige_dager:0,dager:[],oppdatert:''};
 const INGEN_LEDIGE={error:'Ingen ledige tider de neste dagene — ingen story å lage.',kode:'ingen_ledige_tider'};
 
@@ -59,6 +62,9 @@ const push=(n,f,errs)=>rapport.push({sjekk:n,resultat:f.length?'✗ '+f.join(' |
 const OVERSIKT=[
   {id:'fullt',         opts:{data:FULLT},                 knapp:false, linje:false, fullt:true,  bilde:true},
   {id:'ledig',         opts:{data:LEDIG},                 knapp:true,  linje:true,  fullt:false, bilde:true},
+  {id:'stengt',        opts:{data:STENGT,visBanner:false}, knapp:false, linje:false, fullt:false, bilde:true},
+  {id:'stengt-banner', opts:{data:STENGT},                knapp:true,  linje:true,  fullt:false},
+  {id:'fullt-uten-felt',opts:{data:FULLT_UTEN_FELT},      knapp:false, linje:false, fullt:true},
   {id:'uten-tjeneste', opts:{data:UTEN_TJENESTE},         knapp:true,  linje:true,  fullt:false},
   {id:'data-feil',     opts:{data:null,dataStatus:500},   knapp:true,  linje:true,  fullt:false},
   {id:'ledig-uten-banner', opts:{data:LEDIG,visBanner:false}, knapp:false, linje:false, fullt:false},
@@ -78,21 +84,24 @@ for(const w of [320,375]){
       if(farge!==mut) f.push(`ikke dempet (${farge})`);
     }
     if(c.bilde){
-      await page.$eval(c.fullt?'#storyFullt':'#storyOpenOversikt',e=>e.scrollIntoView({block:'center'})); await page.waitForTimeout(200);
+      // Uten knapp/linje (stengt): sentrer på periodevelgeren rett under, så tomrommet der «Fullt» ellers står synes.
+      await page.$eval(c.fullt?'#storyFullt':(c.knapp?'#storyOpenOversikt':'#segs'),e=>e.scrollIntoView({block:'center'})); await page.waitForTimeout(200);
       const fil=path.join(OUT,`oversikt-${c.id}-${w}.png`); await page.screenshot({path:fil}); bilder.push(fil);
     }
     push(`${w} Oversikt ${c.id}`,f,errs); await page.close();
   }
-  // Generatoren: 409 ingen_ledige_tider
-  {
-    const {page,errs}=await nySide(w,{data:FULLT,preview409:true});
+  // Generatoren: 409 ingen_ledige_tider. apne_dager:0 (alle stengt) → egen tekst; > 0 eller mangler → «Fullt».
+  const FULLT_TEKST='Fullt de neste dagene. Det er ingen ledige tider å lage story av.';
+  for(const [id,data,vent,bilde] of [['409',FULLT,FULLT_TEKST,true],['409-stengt',STENGT,'Du har stengt alle de neste dagene.',true],['409-uten-felt',FULLT_UTEN_FELT,FULLT_TEKST,false]]){
+    if(!bilde&&w===320) continue;
+    const {page,errs}=await nySide(w,{data,preview409:true});
     await page.evaluate(()=>window.aapneStory&&window.aapneStory()); await page.waitForTimeout(1500);
     const f=[];
     const t=await page.$eval('#storyFeil',e=>getComputedStyle(e).display!=='none'?e.textContent.trim():'—');
-    if(t!=='Fullt de neste dagene. Det er ingen ledige tider å lage story av.') f.push(`storyFeil «${t}»`);
+    if(t!==vent) f.push(`storyFeil «${t}»`);
     if(await page.$eval('#storyFrame',e=>getComputedStyle(e).visibility!=='hidden')) f.push('iframen (rått JSON) synes');
-    const fil=path.join(OUT,`generator-409-${w}.png`); await page.screenshot({path:fil}); bilder.push(fil);
-    push(`${w} generator 409`,f,errs); await page.close();
+    if(bilde){ const fil=path.join(OUT,`generator-${id}-${w}.png`); await page.screenshot({path:fil}); bilder.push(fil); }
+    push(`${w} generator ${id}`,f,errs); await page.close();
   }
 }
 await browser.close(); server.close();
