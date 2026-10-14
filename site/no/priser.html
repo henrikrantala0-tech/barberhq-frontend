@@ -1,6 +1,9 @@
 <!DOCTYPE html>
-<html lang="no">
+<html lang="no" class="no-js">
 <head>
+<!-- Uten JS: .reveal-innhold (opacity:0 til IntersectionObserver gir .in) vises likevel via .no-js. Klassen fjernes
+     her, FØR første tegning, så med JS er alt som før. -->
+<script>document.documentElement.classList.remove('no-js')</script>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <meta name="format-detection" content="telephone=no">
@@ -35,6 +38,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .eyebrow{color:#7a7a7a;font-size:12px;letter-spacing:.2em;font-weight:600}
 .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease,transform .7s ease}
 .reveal.in{opacity:1;transform:none}
+.no-js .reveal{opacity:1;transform:none;transition:none}
 /* Alfa .97, ikke .72/.9 — se index.html (d0242bd): på .9 leser broedteksten
    seg gjennom headeren under scroll. Maalt luminans-spredning i header-baandet:
    sd 8.12 paa .9, sd 1.41 her. backdrop-filter bidrar knapt (sd 9.11 uten) —
