@@ -4965,7 +4965,7 @@ async function loadArbeidstider(){
   var h=null;
   try{ h=await api.hours(); }catch(e){ h=null; }
   if(!h){ feilMedRetry($("#hoursList"),'Klarte ikke å laste arbeidstidene.',loadArbeidstider); loadGoogleStatus(); return; }
-  hours=h;
+  hours=h; _ulagret.timer=false;
   if(btn)btn.disabled=false;
   renderHoursList();
   loadGoogleStatus();
@@ -5088,10 +5088,11 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   if(id==="oversikt"){loadOversikt();loadAktivering();}
   if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();loadLoyalty();}
   if(id==="abonnement"){loadSmsInnstillinger();}   // Konto-bryteren deler sms_paaminnelse_enabled med Vekst
-  if(id==="tjenester"){loadTjenester();loadArbeidstider();}
+  if(id==="tjenester"){ if(!_ulagret.svc)loadTjenester(); if(!_ulagret.timer)loadArbeidstider(); }   // ulagret → behold det barberen har skrevet
   // «Din side» laster alle tre trekkspillene. loadProfil FØRST — den fyller Profil-feltene
   // (navn/adresse/bio/tagline) som bor i dette panelet, før vi bruker tid på design + bilder.
-  if(id==="design"){loadProfil();loadDesign().then(loadBilder);}
+  // loadProfil hentes alltid (header/slug/_lagretProfil), men fyller bare felt uten ulagrede endringer.
+  if(id==="design"){loadProfil(); if(!_ulagret.design)loadDesign().then(loadBilder); else loadBilder();}
   // Konto (id fortsatt "abonnement"): SMS-loggen lastes ved fane-åpning. Billing lastes
   // separat ved init + Stripe-retur, ikke her — derfor egen, ny gren.
   if(id==="abonnement"){loadSmsLogg();}
@@ -5353,6 +5354,25 @@ $("#saveHours").addEventListener("click",async()=>{const btn=$("#saveHours");btn
   if(res.ok){await loadArbeidstider();/* refetch: ufullstendige pauser (start uten slutt) droppes i payloaden (api.saveHours) men blir stående lokalt → speil backend, som saveSvc/savePay. Ellers viser pause-modalen en fantompause til full reload. */ const s=$("#hoursSaved");s.classList.add("show");setTimeout(()=>s.classList.remove("show"),1800);oppdaterSjekkliste();/* åpen-dag-haken kan ha endret seg */}
   else if(res.error){$("#hoursErr").textContent=res.error;}});   // 409 booking-kollisjon / 400 validering — ordrett
 
+// ── Ulagrede endringer per område (fanebytte) ──
+// Fanebyttet lastet Tjenester (tjenester + tider) og Din side (profil + design) på nytt HVER gang, så en
+// ulagret pris, åpningstid, palett eller bio forsvant uten advarsel — også via sjekklista (switchPanel).
+// Nå: et område lastes på nytt bare når det IKKE har ulagrede endringer. Flagget settes ved endring og
+// nullstilles når hentingen eller lagringen har lyktes (lagring henter på nytt / er serverens sannhet).
+// Egne flagg i stedet for _ulagrede (DOM-basert): listene tegnes på nytt ved hver endring, og palettvalg er
+// klikk, ikke input — begge falt ut av den sporingen.
+var _ulagret={svc:false,timer:false,design:false,profil:false,navn:false};
+function merkUlagret(k){ _ulagret[k]=true; }
+["#hovedList","#tilleggList"].forEach(function(s){ $(s).addEventListener('input',function(){ merkUlagret('svc'); }); });
+$("#tjenester").addEventListener('click',function(e){ if(e.target.closest('.svc-rm,#addHoved,#addTillegg')) merkUlagret('svc'); },true);
+$("#hoursList").addEventListener('input',function(){ merkUlagret('timer'); });
+$("#pauseModalList").addEventListener('change',function(){ merkUlagret('timer'); });
+$("#design").addEventListener('click',function(e){ if(e.target.closest('.preset,.modebtn')) merkUlagret('design'); },true);
+$("#customPanel").addEventListener('pointerdown',function(){ merkUlagret('design'); },true);
+$("#customPanel").addEventListener('input',function(){ merkUlagret('design'); });
+$("#accProfil").addEventListener('input',function(){ merkUlagret('profil'); });
+$("#pf-name").addEventListener('input',function(){ merkUlagret('navn'); });
+
 $("#gcalBtn").addEventListener("click",async()=>{
   if(gcalAction==="disconnect"){
     if(!confirm("Koble fra Google Calendar? Opptatte tider fra Google vil ikke lenger sperre bookbare timer."))return;
@@ -5422,19 +5442,24 @@ async function loadProfil(){
   if(_billing&&typeof renderKonto==='function')renderKonto(_billing);
   if(typeof renderForsteBooking==='function')renderForsteBooking();   // lenka i steg 1/2 trenger sluggen
   if(p.isDemo&&!IS_DEMO){IS_DEMO=true;applyDemoMode();}
-  $("#pf-name").value=p.name||"";
+  // Feltene fylles bare når de ikke har ulagrede endringer (fanebytte/sjekkliste skal ikke slette det barberen
+  // har skrevet). Lagret-tilstanden (_lagretNavn/_lagretProfil) følger alltid serveren.
+  var _uk=(typeof _ulagret==='object'&&_ulagret)||{};
+  if(!_uk.navn) $("#pf-name").value=p.name||"";
   _lagretNavn=(p.name||"").trim(); oppdaterNavnVerdi();   // Konto → Navn-raden
-  $("#pf-shop").value=p.shop||"";
-  $("#pf-address").value=p.address||"";
-  $("#pf-tagline").value=p.tagline||"";
-  $("#pf-bio").value=p.bio||"";
   _lagretProfil={name:p.name||"",shop:p.shop||"",address:p.address||"",tagline:p.tagline||"",bio:p.bio||""};
-  oppdaterProfilTellere();   // verdiene er satt programmatisk (ingen input-hendelse)
-  // Strip evt. ledende @ ved lasting — @-en vises som fast prefiks (.fld-at), aldri i verdien.
-  $("#pf-instagram").value=(p.instagram||"").replace(/^@+/,"");
-  $("#pf-tiktok").value=(p.tiktok||"").replace(/^@+/,"");
-  $("#pf-snapchat").value=(p.snapchat||"").replace(/^@+/,"");
-  $("#pf-phone").value=p.contact_phone||"";
+  if(!_uk.profil){
+    $("#pf-shop").value=p.shop||"";
+    $("#pf-address").value=p.address||"";
+    $("#pf-tagline").value=p.tagline||"";
+    $("#pf-bio").value=p.bio||"";
+    oppdaterProfilTellere();   // verdiene er satt programmatisk (ingen input-hendelse)
+    // Strip evt. ledende @ ved lasting — @-en vises som fast prefiks (.fld-at), aldri i verdien.
+    $("#pf-instagram").value=(p.instagram||"").replace(/^@+/,"");
+    $("#pf-tiktok").value=(p.tiktok||"").replace(/^@+/,"");
+    $("#pf-snapchat").value=(p.snapchat||"").replace(/^@+/,"");
+    $("#pf-phone").value=p.contact_phone||"";
+  }
   // Sett barber-navn i header — null til dette punktet
   const displayName=p.shop||p.name||"";
   CONFIG.BARBER_NAME=displayName;
@@ -5517,7 +5542,7 @@ function settRadAapen(radId,aapen){
   if(aapen){var f=red&&red.querySelector('input:not([hidden])');if(f)f.focus();}
 }
 function nullstillRad(radId){
-  if(radId==='radNavn'){$("#pf-name").value=_lagretNavn;var ne=$("#navnErr");if(ne){ne.hidden=true;ne.textContent='';}}
+  if(radId==='radNavn'){$("#pf-name").value=_lagretNavn;_ulagret.navn=false;var ne=$("#navnErr");if(ne){ne.hidden=true;ne.textContent='';}}
   if(radId==='radPassord'){$("#pw-current").value='';$("#pw-new").value='';$("#pw-repeat").value='';var e=$("#pwErr");if(e)e.style.display='none';var ok=$("#pwForgotOk");if(ok)ok.hidden=true;}
 }
 function oppdaterNavnVerdi(){var v=$("#navnVerdi");if(v)v.textContent=_lagretNavn||'Ikke satt';}
@@ -5742,6 +5767,7 @@ async function lagreProfil(knappSel, flashSel){
     if(!r||!r.ok){ alert(PROFIL_DELVIS_LAGRET); return; }
     _lagretProfil={name:_lagretProfil?_lagretProfil.name:$("#pf-name").value,shop:$("#pf-shop").value,
       address:$("#pf-address").value,tagline:$("#pf-tagline").value,bio:$("#pf-bio").value};
+    _ulagret.profil=false;
     const displayName=$("#pf-shop").value.trim()||_lagretProfil.name.trim()||"";
     CONFIG.BARBER_NAME=displayName;
     settHeaderNavn(displayName);                 // nytt navn kan ha ny bredde → re-fit
@@ -5767,7 +5793,7 @@ async function lagreNavn(){
     var r=await apiFetch('/api/dashboard/profile',{method:'PUT',body:JSON.stringify(Object.assign({},_lagretProfil,{name:navn}))});
     if(r===null) return;                                          // 401 → apiFetch sender til logg-inn
     if(!r.ok){ var d=await r.json().catch(function(){return{};}); visFeil((d&&d.error)||'Kunne ikke lagre navnet. Prøv igjen.'); return; }
-    _lagretProfil.name=navn;
+    _lagretProfil.name=navn; _ulagret.navn=false;
     CONFIG.BARBER_NAME=(_lagretProfil.shop||'').trim()||navn.trim()||'';
     settHeaderNavn(CONFIG.BARBER_NAME);
     kontoRadLagret('radNavn'); savedFlash("#navnSaved");
@@ -6727,7 +6753,7 @@ async function loadTjenester(){
   // andrelinjeforsvar; Number()||0 kutter kilden.
   hoved=(d.hoved||[]).map(function(s){return{name:s.name,price:Number(s.price)||0,min:Number(s.min)||0};});
   tillegg=(d.tillegg||[]).map(function(s){return{name:s.name,price:Number(s.price)||0,min:Number(s.min)||0};});
-  _svcHentet=true; settSvcKontroller(true);
+  _svcHentet=true; settSvcKontroller(true); _ulagret.svc=false;
   renderSvc();
 }
 $("#addHoved").addEventListener("click",()=>{hoved.push({name:"",price:0,min:30});renderSvc();});
@@ -6986,6 +7012,7 @@ async function loadDesign(){
     if(d.layout){design.layout=d.layout;savedLayout=d.layout;}
     if(d.mode)design.mode=d.mode;
     if(d.custom_accent)design.customAccent=normHex(d.custom_accent);
+    _ulagret.design=false;
   }catch(e){}
   renderDesign();
 }
@@ -7018,7 +7045,7 @@ $("#saveDesign").addEventListener("click",function(){
     const r=await apiFetch('/api/dashboard/design',{method:'PUT',body:JSON.stringify(body)});
     if(!r)return;
     if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre design. Prøv igjen.');return;}
-    savedLayout=design.layout;savedFlash("#designSaved");visBilderFeil('');
+    savedLayout=design.layout;_ulagret.design=false;savedFlash("#designSaved");visBilderFeil('');
     // bilderEndret (ikke loadBilder): re-hent bilder + tøm preview-cachen. Backend sletter IKKE bilder
     // ved layout-bytte (dashboard.js:379) — re-hentingen holder bare slot-visning + cache i synk.
     await bilderEndret();
