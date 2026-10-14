@@ -12,9 +12,8 @@ Kunden betaler barbereren direkte (Vipps eller kontant hos barbereren). BarberHQ
 - Galleri for å vise fram arbeidet
 - SMS-påminnelse dagen før timen
 - Automatisk rebooking: SMS når det er tid for ny klipp, med lenke rett til bookingsiden (Vekst)
-- Verving: kunder deler lenken sin, og begge får rabatt (barberen bestemmer prosenten) (Vekst)
+- Verving: kunder deler lenken sin, og barberen bestemmer hvem som får rabatt og hvor mye (Vekst)
 - Lojalitetsprogram: kundene samler klipp mot en belønning barberen bestemmer (Vekst)
-- No-show-beskyttelse med depositum (under utvikling)
 
 ## Pris
 - Gratis: 0 kr. Bookingside, kalender og dashbord. Ingen kort, ingen tidsfrist.
