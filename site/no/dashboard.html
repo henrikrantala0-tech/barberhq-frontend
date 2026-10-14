@@ -2828,7 +2828,7 @@
   /* Halvtimeetikett: samme plassering/format som timeetiketten (right:8px, tabular), men mindre
      (9px vs 11px) og svakere (opacity .6) så timen leses først. top: 30min×1.8 − 7 = 47px. */
   .cal-hour>.cal-half{top:47px;font-size:9px;opacity:.6}
-  .cal-days{flex:1;display:flex;min-width:0}
+  .cal-days{flex:1;display:flex;min-width:0;align-items:flex-start}   /* kolonnene får innholdets høyde (dag + dagflate), ikke .cal-scroll sin synlige høyde — ellers sluttet kant og bakgrunn midt i dagen */
   .cal-day{flex:1;min-width:0;border-left:1px solid var(--line);display:flex;flex-direction:column}
   .cal-dayhead{height:34px;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:600;color:var(--ink-2);border-bottom:1px solid var(--line);gap:6px}
   .cal-dayhead.is-today{color:var(--info)}
@@ -2862,6 +2862,7 @@
   .cal-block.noshow{background:var(--bad-bg);border-color:var(--bad);border-left-color:var(--bad)}
   .cal-block.noshow .blk-name{text-decoration:line-through;color:var(--mut)}
   .cal-day.closed{background:repeating-linear-gradient(45deg,var(--bg),var(--bg) 6px,var(--surface) 6px,var(--surface) 12px)}
+  .cal-head-stengt{color:var(--mut-2);font-weight:500}   /* stengt dag som likevel har bookinger */
   .cal-closed,.cal-empty{position:absolute;top:0;left:0;right:0;bottom:0;display:flex;align-items:center;justify-content:center;color:var(--mut-2);font-size:12.5px;font-weight:500}
   /* Mobil: én dag full bredde. Desktop (>760): tre side om side. */
   @media(min-width:761px){.cal-days .cal-day:nth-child(n+4){display:none}}
@@ -4296,9 +4297,20 @@ function dagTimer(key){   // → {closed} | {open,close} i minutter. getDay() 0=
   if(o==null||c==null||c<=o)return{closed:false,open:CAL_HFALL[0],close:CAL_HFALL[1]}; // ubundet → 08–20-ramme
   return{closed:false,open:o,close:c};
 }
-function yAkse(keys){  // [tidligste åpning, seneste stenging] blant synlige ÅPNE dager, rundet til time
-  var mn=null,mx=null;
-  keys.forEach(function(k){var h=dagTimer(k);if(h.closed)return;mn=(mn==null)?h.open:Math.min(mn,h.open);mx=(mx==null)?h.close:Math.max(mx,h.close);});
+// [tidligste start, seneste slutt] blant synlige dager — åpningstider OG bookinger — rundet til time.
+// Bookingene MÅ med: en booking utenfor åpningstid (åpningstidene endret etter at den ble booket) ble før
+// klippet mot aksekanten — to slike landet oppå hverandre, og en kveldsbooking havnet under aksen.
+// Stengte dager bidrar bare med bookinger (en booking på en dag som siden er satt til stengt).
+function yAkse(keys){
+  var mn=null,mx=null,harApen=false;
+  function ta(a,b){mn=(mn==null)?a:Math.min(mn,a);mx=(mx==null)?b:Math.max(mx,b);}
+  keys.forEach(function(k){
+    var h=dagTimer(k); if(!h.closed){ harApen=true; ta(h.open,h.close); }
+    dagSegmenter(k).forEach(function(sg){ ta(sg.segStart,Math.max(sg.segEnd,sg.segStart+15)); });
+  });
+  // Ingen åpen dag i visningen (bare stengt dag med bookinger): 08–20-rammen som grunnlag, utvidet med
+  // bookingene — ellers ble aksen bare bookingens time og kolonnen et kort stykke øverst.
+  if(!harApen&&mn!=null) ta(CAL_HFALL[0],CAL_HFALL[1]);
   if(mn==null){mn=CAL_HFALL[0];mx=CAL_HFALL[1];}
   return{min:Math.floor(mn/60)*60,max:Math.ceil(mx/60)*60};
 }
@@ -4366,10 +4378,14 @@ function renderGrid(){
   var cols='';
   keys.forEach(function(k){
     var head='<div class="cal-dayhead'+(k===todayKey?' is-today':'')+'">'+dayHead(new Date(k))+'</div>',h=dagTimer(k);
-    if(h.closed){cols+='<div class="cal-day closed" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px"><div class="cal-closed">Stengt</div></div></div>';return;}
+    var segs=dagSegmenter(k);
+    // Stengt UTEN bookinger: bare «Stengt». Stengt MED bookinger (dagen satt til stengt etter at kunder
+    // booket): tegnes som en vanlig dag + dempet «Stengt»-merke, så barberen ser timene — før ble de borte.
+    if(h.closed&&!segs.length){cols+='<div class="cal-day closed" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px"><div class="cal-closed">Stengt</div></div></div>';return;}
     // Time- + halvtimeslinjer fra SAMME tidsrom (y.min..y.max) via minToPx — halvlinja svakere (.cal-halfline).
     var lines='';for(var mm=y.min;mm<y.max;mm+=60){lines+='<div class="cal-hourline" style="top:'+minToPx(mm,y.min)+'px"></div>';var half=mm+30;if(half<y.max)lines+='<div class="cal-halfline" style="top:'+minToPx(half,y.min)+'px"></div>';}
-    var segs=dagSegmenter(k),blocks='';
+    var blocks='';
+    if(h.closed) head=head.replace('</div>',' <span class="cal-head-stengt">· Stengt</span></div>');   // merket i dagoverskriften: kolliderer aldri med blokkene
     if(!segs.length)blocks='<div class="cal-empty">Ingen bookinger</div>';
     else blokkLayout(segs,y.min,y.max).forEach(function(o){
       var ns=(effectiveStatus(o.b)==='noshow')?' noshow':'', svc=(o.h>=40)?'<span class="blk-svc">'+esc(o.b.service||'')+'</span>':'';
@@ -4379,7 +4395,7 @@ function renderGrid(){
       var tid=timeOnly(o.b.start)+((o.w>60&&o.b.end)?'–'+timeOnly(o.b.end):'');
       blocks+='<div class="cal-block'+ns+'" data-id="'+o.b.id+'" style="top:'+o.top+'px;height:'+o.h+'px;left:'+o.left+'%;width:calc('+o.w+'% - 3px);--blk:'+svcFarge(o.b.service_id)+'"><div class="blk-top"><span class="blk-name">'+esc(o.b.name)+'</span><span class="blk-time">'+tid+'</span></div>'+svc+'</div>';
     });
-    cols+='<div class="cal-day" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px">'+lines+blocks+'</div></div>';
+    cols+='<div class="cal-day'+(h.closed?' closed has-bk':'')+'" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px">'+lines+blocks+'</div></div>';
   });
   $("#calDays").innerHTML=cols;
   oppdaterKalenderBannere(keys);   // Commit 2: «Lag story»-banner øverst i dagen når /ledige gir vis_banner
