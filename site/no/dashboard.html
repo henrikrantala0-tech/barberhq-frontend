@@ -4941,7 +4941,7 @@ async function lagreLayoutEtterOpplasting(){
   const nm=(LAYOUTS.find(function(l){return l.key===lay;})||{}).t||lay;
   let r, nettFeil=false;
   try{ r=await apiFetch('/api/dashboard/design',{method:'PUT',body:JSON.stringify({layout:lay})}); }catch(e){ nettFeil=true; }
-  if(r&&r.ok){ savedLayout=lay; visBilderFeil(''); showToast(nm+'-layouten er lagret.'); return; }
+  if(r&&r.ok){ savedLayout=lay; _sjekkData.layout=lay; visBilderFeil(''); showToast(nm+'-layouten er lagret.'); return; }
   if(!nettFeil&&!r)return;   // 401 → apiFetch har sendt til innlogging
   // savedLayout røres IKKE: layouten er fortsatt ulagret, så neste opplasting prøver igjen, og
   // «Lagre design» lagrer den. Ingen suksess-toast — bildet ligger trygt, men siden bruker gammel layout.
@@ -7009,10 +7009,11 @@ async function loadDesign(){
     // mot prod — /preview?font=inter svarer 200). Font-grid-et markerer da ingenting, og det
     // er sant: ingen av de tre tilbudte fontene er den som faktisk er satt.
     if(d.font)design.font=d.font;
-    if(d.layout){design.layout=d.layout;savedLayout=d.layout;}
+    if(d.layout){design.layout=d.layout;savedLayout=d.layout;_sjekkData.layout=d.layout;}
     if(d.mode)design.mode=d.mode;
     if(d.custom_accent)design.customAccent=normHex(d.custom_accent);
     _ulagret.design=false;
+    renderSjekkliste();   // bildekrav + lagret layout er lastet → bildepunktet kan ha endret seg
   }catch(e){}
   renderDesign();
 }
@@ -7045,7 +7046,7 @@ $("#saveDesign").addEventListener("click",function(){
     const r=await apiFetch('/api/dashboard/design',{method:'PUT',body:JSON.stringify(body)});
     if(!r)return;
     if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre design. Prøv igjen.');return;}
-    savedLayout=design.layout;_ulagret.design=false;savedFlash("#designSaved");visBilderFeil('');
+    savedLayout=design.layout;_sjekkData.layout=savedLayout;_ulagret.design=false;savedFlash("#designSaved");visBilderFeil('');
     // bilderEndret (ikke loadBilder): re-hent bilder + tøm preview-cachen. Backend sletter IKKE bilder
     // ved layout-bytte (dashboard.js:379) — re-hentingen holder bare slot-visning + cache i synk.
     await bilderEndret();
@@ -7584,21 +7585,37 @@ function avsluttFokus(){ document.body.classList.remove('fokus'); settFokusFlagg
    vanlig → flytende pill (alle faner) som folder ut popover. Haker KUN fra ekte data
    (images/services/hours/profile/billing). Synlig kun ved forhandsvist; dør ved
    publisering (page_status→live via renderDinsideCta → renderSjekkliste). */
-var _sjekkData={bilderGalleri:0,tjenesterMedPris:0,apneDager:0,profilUtfylt:0};
+// layout = LAGRET layout fra GET /design (det kundene ser), ikke den som bare er valgt i Design.
+var _sjekkData={bilderGalleri:0,bilderPortrett:0,bilderHero:0,layout:null,tjenesterMedPris:0,apneDager:0,profilUtfylt:0};
 var _sjekkPopoverAapen=false;
 var SJEKK_CHECK='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
-// Bildekrav i sjekklista = 2 (bekreftet: backend BILDER_MIN=2, samme som onboarding MIN_IMG=2).
-// Egen konstant så tallet bor ETT sted, ikke hardkodet i regelen + underteksten under.
+// Minste antall galleribilder for at bildepunktet regnes som ferdig. Et rent sjekkliste-valg: backend
+// krever ingen bilder for å publisere, og verken backend eller onboarding har en tilsvarende konstant.
+// Egen konstant så tallet bor ETT sted, ikke hardkodet i reglene + undertekstene under.
 var SJEKK_BILDER_MIN=2;
+// Bildepunktet følger layoutens felt fra backendens bildekrav (kravFor), ikke en egen layoutliste:
+// ingen felt (direkte) → punktet utelates; portrett (profil) → portrett + galleri; hero → forsidebildet;
+// galleri (showcase) og ukjent layout / gammel backend uten bildekrav → minst N i galleriet.
+function sjekkBildePunkt(){
+  var k=_sjekkData.layout?kravFor(_sjekkData.layout):null;
+  var felt=k?k.felt:null;
+  var galleriOk=_sjekkData.bilderGalleri>=SJEKK_BILDER_MIN;
+  var p={action:'bilder', label:'Last opp bilder', sub:'Minst '+SJEKK_BILDER_MIN+' i galleriet', done:galleriOk};
+  if(!felt) return p;
+  if(!felt.length) return null;
+  if(felt.indexOf('portrett')>=0){ p.sub='Portrett + minst '+SJEKK_BILDER_MIN+' i galleriet'; p.done=_sjekkData.bilderPortrett>=1&&galleriOk; }
+  else if(felt.indexOf('hero')>=0){ p.sub='Ett forsidebilde'; p.done=_sjekkData.bilderHero>=1; }
+  return p;
+}
 function sjekklisteItems(){
   var b=_billing||{};
   return [
-    {action:'bilder',    label:'Last opp bilder',     sub:'Minst '+SJEKK_BILDER_MIN+' i galleriet',done:_sjekkData.bilderGalleri>=SJEKK_BILDER_MIN},
+    sjekkBildePunkt(),
     {action:'tjenester', label:'Legg til tjenester',  sub:'Minst én med pris',                     done:_sjekkData.tjenesterMedPris>=1},
     {action:'tider',     label:'Sett åpningstider',   sub:'Minst én åpen dag',                     done:_sjekkData.apneDager>=1},
     {action:'profil',    label:'Fortell om deg selv', sub:'Minst 2 av: bio, spesialitet, adresse', done:_sjekkData.profilUtfylt>=2},
     {action:'publiser',  label:'Publiser siden',      sub:'Gjør siden synlig for kunder',          done:b.page_status==='live'},
-  ];
+  ].filter(Boolean);   // bildepunktet er null når layouten ikke har bilder → «X av 4»
 }
 function byggSjekkPanel(items,ferdig){
   var pct=Math.round(ferdig/items.length*100);
@@ -7642,12 +7659,20 @@ async function hentSjekklisteData(){
       apiFetch('/api/dashboard/services'),
       apiFetch('/api/dashboard/hours'),
       apiFetch('/api/dashboard/profile'),
+      // Lagret layout + bildekrav. Pillen står på ALLE faner, og loadDesign kjører først når Din side
+      // åpnes — uten eget kall ville bildepunktet fulgt dagens regel til barberen åpnet Din side.
+      apiFetch('/api/dashboard/design'),
     ]);
     var imgs=res[0]&&res[0].ok?await res[0].json():[];
     var svc =res[1]&&res[1].ok?await res[1].json():{};
     var hrs =res[2]&&res[2].ok?await res[2].json():[];
     var prof=res[3]&&res[3].ok?await res[3].json():{};
-    _sjekkData.bilderGalleri   =(imgs||[]).filter(function(i){return i.slot==='galleri';}).length;
+    var dsg =res[4]&&res[4].ok?await res[4].json().catch(function(){return null;}):null;
+    if(dsg){ settBildeData(dsg); if(dsg.layout)_sjekkData.layout=dsg.layout; }
+    var iSlot=function(s){return (imgs||[]).filter(function(i){return i.slot===s;}).length;};
+    _sjekkData.bilderGalleri   =iSlot('galleri');
+    _sjekkData.bilderPortrett  =iSlot('portrett');
+    _sjekkData.bilderHero      =iSlot('hero');
     _sjekkData.tjenesterMedPris=(((svc&&svc.hoved)||[])).filter(function(s){return Number(s.price)>0;}).length;
     _sjekkData.apneDager       =(Array.isArray(hrs)?hrs:[]).filter(function(d){return !d.is_closed;}).length;
     _sjekkData.profilUtfylt    =[prof.bio,prof.tagline,prof.address].filter(function(v){return (v||'').trim();}).length;
