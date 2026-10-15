@@ -311,7 +311,7 @@ for (const bredde of [320, 375]) { // Passord: ikke satt / satt / glemt-lenken, 
         if (/fonts|jsdelivr|cdnjs/.test(u.hostname)) return r.continue(); return r.abort(); });
       await page.goto(`http://localhost:${PORT}/no/logg-inn.html`, { waitUntil: 'networkidle' });
       const info = await tekst(page, '.magic-info');
-      sjekk(info === 'Vi sender en lenke til e-posten din. Lenken virker i 30 minutter.' && errs.length === 0, `${bredde} logg-inn: «${info}»`);
+      sjekk(info === 'Vi sender en kode og en lenke til e-posten din. Koden virker i 10 minutter, lenka i 30.' && errs.length === 0, `${bredde} logg-inn: «${info}»`);
       await page.locator('.card').screenshot({ path: path.join(OUT, `logg-inn-${bredde}.png`) });
       // «Glemt passordet?» under passordfeltet
       await page.click('#pw-alt-btn'); await page.waitForTimeout(200);
@@ -330,7 +330,7 @@ for (const bredde of [320, 375]) { // Passord: ikke satt / satt / glemt-lenken, 
         `${bredde} glemt sendt: ${JSON.stringify(magic[0])} + «${await tekst(page, '#pw-glemt-msg')}»`);
       await page.locator('.card').screenshot({ path: path.join(OUT, `logg-inn-glemt-sendt-${bredde}.png`) });
       await page.click('#magic-submit'); await page.waitForTimeout(400);
-      sjekk(magic.length === 2 && JSON.stringify(magic[1]) === '{"email":"henrik@grandbarber.no"}', `${bredde} «Send meg innloggingslenke» sender fortsatt bare {email}: ${JSON.stringify(magic[1])}`);
+      sjekk(magic.length === 2 && JSON.stringify(magic[1]) === '{"email":"henrik@grandbarber.no"}', `${bredde} «Send meg kode og lenke» sender fortsatt bare {email}: ${JSON.stringify(magic[1])}`);
       sjekk(errs.length === 0, `${bredde} logg-inn: JS-feil ${errs.join(' | ')}`);
       await page.close();
     }

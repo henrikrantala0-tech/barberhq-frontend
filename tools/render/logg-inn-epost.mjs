@@ -1,6 +1,6 @@
 // tools/render/logg-inn-epost.mjs — e-postfeltet og kvitteringene i no/logg-inn.html (14.10.2026).
 //   1. Tom/ugyldig e-post stoppes FØR kallet: feil ved feltet, ingen request, ingen kvittering.
-//   2. «Send meg innloggingslenke»: kvittering + kodefelt KUN ved 2xx. 4xx/5xx/nettverksfeil → feilmelding.
+//   2. «Send meg kode og lenke»: kvittering + kodefelt KUN ved 2xx. 4xx/5xx/nettverksfeil → feilmelding.
 //   3. «Glemt passordet?»: samme regel.
 //   4. ?error=expired uten #expired-msg i markupen: resten av JS-en kjører likevel (knappen virker).
 //   5. Alle getElementById-oppslag i skriptet har et element (samme felle som 4, andre steder i fila).
@@ -52,10 +52,10 @@ const synlig = (page, sel) => page.$eval(sel, e => e.offsetParent !== null).catc
 const tekst  = (page, sel) => page.$eval(sel, e => e.offsetParent !== null ? e.textContent.trim().replace(/\s+/g, ' ') : '—').catch(() => '—');
 const rapport = []; const bilder = [];
 const push = (navn, f, errs) => rapport.push({ sjekk: navn, resultat: f.length ? '✗ ' + f.join(' | ') : 'OK ✓', jsfeil: errs.length ? errs.join('; ') : 'ingen' });
-const KVITT = 'Sjekk e-posten din. Hvis adressen er registrert, har vi sendt en lenke.';
+const KVITT = 'Sjekk e-posten din. Hvis adressen er registrert, har vi sendt en kode og en lenke.';
 
 for (const w of [320, 375]) {
-  // ── 1–2. Send meg innloggingslenke ──
+  // ── 1–2. Send meg kode og lenke ──
   const CASES = [
     { id: 'tom',      epost: '',          svar: 200,    kall: 0, feltFeil: 'Skriv inn e-posten din.', bilde: true },
     { id: 'ugyldig',  epost: 'henrik@',   svar: 200,    kall: 0, feltFeil: 'Sjekk e-postadressen. Den ser ikke riktig ut.', bilde: true },
@@ -78,7 +78,7 @@ for (const w of [320, 375]) {
     if ((await synlig(page, '#kode')) !== !!c.kvitt) f.push('kodefelt feil synlighet');
     const mf = await tekst(page, '#magic-feil');
     if (mf !== (c.feil || '—')) f.push(`feilmelding «${mf}»`);
-    if (await page.$eval('#magic-submit', b => b.disabled || b.textContent.trim() !== 'Send meg innloggingslenke')) f.push('knappen ikke tilbake');
+    if (await page.$eval('#magic-submit', b => b.disabled || b.textContent.trim() !== 'Send meg kode og lenke')) f.push('knappen ikke tilbake');
     if (c.feltFeil) {
       // Skriving i feltet fjerner feilen.
       await page.type('#email', 'x'); await page.waitForTimeout(50);

@@ -76,7 +76,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .magic-info{font-size:13px;color:#9a9a9a;margin-top:10px;text-align:center;line-height:1.5}
 .magic-ok{color:#5cb85c;font-size:13.5px;margin-top:10px;display:none;text-align:center;line-height:1.5}
 .magic-ok.show{display:block}
-/* Feil fra serveren/nettet ved «Send meg innloggingslenke» — står der kvitteringen ellers ville stått. */
+/* Feil fra serveren/nettet ved «Send meg kode og lenke» — står der kvitteringen ellers ville stått. */
 .magic-feil{color:#c0594a;font-size:13.5px;margin-top:10px;display:none;text-align:center;line-height:1.5}
 .magic-feil.show{display:block}
 /* Feil ved e-postfeltet (tom/ugyldig adresse) — stoppes før kallet. */
@@ -115,6 +115,8 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .card-foot{margin-top:22px;padding-top:18px;border-top:1px solid #1a1a1a;text-align:center;color:#8c8c8c;font-size:13.5px}
 .card-foot a{color:#4d8bff;white-space:nowrap}   /* lenka brekkes aldri midt i («Kom i» / «gang gratis» på 320) */
 .card-foot a:hover{text-decoration:underline}
+/* «e-post»/«e-posten» brekker aldri ved bindestreken («e-» / «posten» på 320). Span, ikke U+2011: den mangler i noen fonter. */
+.nobrk{white-space:nowrap}
 
 /* ── Footer ── */
 .foot{border-top:1px solid #1a1a1a;padding:22px 24px;text-align:center}
@@ -149,24 +151,24 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     </div>
 
     <!-- PRIMÆR: magisk lenke — ingen passord nødvendig, synlig uten å klikke noe. -->
-    <button class="btn-login btn-fill" id="magic-submit" type="button">Send meg innloggingslenke</button>
-    <p class="magic-info">Vi sender en lenke til e-posten din. Lenken virker i 30 minutter.</p>
+    <button class="btn-login btn-fill" id="magic-submit" type="button">Send meg kode og lenke</button>
+    <p class="magic-info">Vi sender en kode og en lenke til <span class="nobrk">e-posten</span> din. Koden virker i 10 minutter, lenka i 30.</p>
     <p class="magic-ok" id="magic-ok">
-      Sjekk e-posten din. Hvis adressen er registrert, har vi sendt en lenke.
+      Sjekk <span class="nobrk">e-posten</span> din. Hvis adressen er registrert, har vi sendt en kode og en lenke.
     </p>
     <p class="magic-feil" id="magic-feil" role="alert"></p>
 
-    <!-- Kode fra e-posten: vises etter «Send meg innloggingslenke» OG etter «Glemt passordet?» (JS flytter
+    <!-- Kode fra e-posten: vises etter «Send meg kode og lenke» OG etter «Glemt passordet?» (JS flytter
          blokken under riktig kvittering). POST /api/login-kode {email, kode} → {ok, redirect} | 400 | 429.
          Ingen maxlength: JS fjerner alt som ikke er siffer og beholder 6, så innliming med mellomrom,
          bindestrek eller linjeskift virker. -->
     <div class="kode" id="kode" hidden>
-      <p class="kode-intro" id="kodeIntro">Bruker du BarberHQ som app? Skriv inn koden fra e-posten her.</p>
+      <p class="kode-intro" id="kodeIntro">Skriv inn koden fra <span class="nobrk">e-posten</span>.</p>
       <div class="field">
         <input class="kode-input" id="loginKode" type="text" inputmode="numeric" autocomplete="one-time-code"
                placeholder="6 siffer fra e-posten" aria-labelledby="kodeIntro" aria-describedby="kodeHjelp kodeFeil">
       </div>
-      <p class="kode-hjelp" id="kodeHjelp">Sjekk e-posten din, kopier koden og lim den inn her.</p>
+      <p class="kode-hjelp" id="kodeHjelp">Sjekk <span class="nobrk">e-posten</span> din, kopier koden og lim den inn her.</p>
       <p class="kode-feil" id="kodeFeil" role="alert"></p>
       <button class="btn-login btn-fill" id="kodeSubmit" type="button">Logg inn med koden</button>
     </div>
@@ -191,7 +193,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
         </div>
       </div>
       <!-- Glemt passordet: innloggingslenke med formaal:'reset' → backend lar den lande på
-           opprett-passord.html?bytt=1 («Lag nytt passord»). «Send meg innloggingslenke» over sender
+           opprett-passord.html?bytt=1 («Lag nytt passord»). «Send meg kode og lenke» over sender
            fortsatt bare {email} og lander i dashbordet. -->
       <button class="pw-glemt" id="pw-glemt" type="button">Glemt passordet?</button>
       <p class="pw-glemt-msg" id="pw-glemt-msg" role="status"></p>
@@ -296,7 +298,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
       visKode(magicOk);
     }
     magicSubmit.disabled    = false;
-    magicSubmit.textContent = 'Send meg innloggingslenke';
+    magicSubmit.textContent = 'Send meg kode og lenke';
   }
   sendMagicLink = enOmGangen(sendMagicLink);   // vaktet binding → dekker både klikk under og Enter-pathen
   magicSubmit.addEventListener('click', sendMagicLink);
