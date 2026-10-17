@@ -5790,7 +5790,7 @@ async function lagreProfil(knappSel, flashSel){
     CONFIG.BARBER_NAME=displayName;
     settHeaderNavn(displayName);                 // nytt navn kan ha ny bredde → re-fit
     if(flashSel==="#navnSaved")kontoRadLagret('radNavn');   // Konto: lukk raden + vis nytt navn
-    else{_lagretNavn=$("#pf-name").value.trim();oppdaterNavnVerdi();}   // Profil sendte også navnet
+    else{_lagretNavn=_lagretProfil.name.trim();oppdaterNavnVerdi();}   // Profil sendte også navnet
     savedFlash(flashSel);
     invaliderPreview(); // tagline/bio/adresse står i preview-HTML-en (navn gjør IKKE — identitetsfelt)
     oppdaterSjekkliste(); // profil-haken (bio/spesialitet/adresse) kan ha endret seg
