@@ -300,7 +300,7 @@ for (const bredde of [320, 375]) { // Passord: ikke satt / satt / glemt-lenken, 
       }
       await page.close();
     }
-    { // logg-inn.html: lenkas levetid (backend: 30 min)
+    { // logg-inn.html: hjelpeteksten om levetid er fjernet i to-steg-flyten (17.10) — steg 1 er bare felt + knapp
       const page = await browser.newPage({ viewport: { width: bredde, height: 800 }, deviceScaleFactor: 2 });
       const errs = []; page.on('pageerror', e => errs.push(e.message));
       const magic = [];
@@ -310,8 +310,8 @@ for (const bredde of [320, 375]) { // Passord: ikke satt / satt / glemt-lenken, 
           return r.fulfill({ status: 200, contentType: 'application/json', body: '{"ok":true}' }); }
         if (/fonts|jsdelivr|cdnjs/.test(u.hostname)) return r.continue(); return r.abort(); });
       await page.goto(`http://localhost:${PORT}/no/logg-inn.html`, { waitUntil: 'networkidle' });
-      const info = await tekst(page, '.magic-info');
-      sjekk(info === 'Vi sender en kode og en lenke til e-posten din. Koden virker i 10 minutter, lenka i 30.' && errs.length === 0, `${bredde} logg-inn: «${info}»`);
+      const info = await page.$('.magic-info');
+      sjekk(!info && errs.length === 0, `${bredde} logg-inn: hjelpeteksten om levetid er borte`);
       await page.locator('.card').screenshot({ path: path.join(OUT, `logg-inn-${bredde}.png`) });
       // «Glemt passordet?» under passordfeltet
       await page.click('#pw-alt-btn'); await page.waitForTimeout(200);

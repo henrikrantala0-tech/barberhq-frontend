@@ -29,7 +29,6 @@ a{text-decoration:none;color:inherit}
 .main{flex:1;display:flex;align-items:center;justify-content:center;padding:40px 20px}
 .card{width:100%;max-width:400px;background:#0e0e0e;border:1px solid #1f1f1f;border-radius:20px;padding:36px 32px}
 
-.card-logo{font-size:22px;font-weight:800;letter-spacing:-.03em;color:#fff;display:block;margin-bottom:20px;text-align:center}
 .card h1{font-family:'Inter',-apple-system,system-ui,sans-serif;font-size:26px;font-weight:700;letter-spacing:-.03em;margin-bottom:4px;text-align:center}
 .card-sub{color:#9a9a9a;font-size:13.5px;text-align:center;margin-bottom:28px}
 
@@ -73,9 +72,12 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .btn-line:hover{border-color:#fff}
 
 /* ── Magisk lenke (primær) ── */
-.magic-info{font-size:13px;color:#9a9a9a;margin-top:10px;text-align:center;line-height:1.5}
-.magic-ok{color:#5cb85c;font-size:13.5px;margin-top:10px;display:none;text-align:center;line-height:1.5}
-.magic-ok.show{display:block}
+/* Steg 2 (etter vellykket sending): linja med adressen + «Endre» erstatter e-postfeltet og send-knappen. */
+.steg2[hidden],.steg1[hidden]{display:none}
+.sendt-til{font-size:14.5px;color:#e5e5e5;line-height:1.5;margin:0}
+.sendt-til b{font-weight:600;color:#fff;overflow-wrap:anywhere}
+.endre{display:inline-block;font:inherit;font-size:13.5px;color:#4d8bff;background:none;border:none;cursor:pointer;padding:6px 0;margin:2px 0 0}
+.endre:hover{text-decoration:underline}
 /* Feil fra serveren/nettet ved «Send meg kode og lenke» — står der kvitteringen ellers ville stått. */
 .magic-feil{color:#c0594a;font-size:13.5px;margin-top:10px;display:none;text-align:center;line-height:1.5}
 .magic-feil.show{display:block}
@@ -87,13 +89,13 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
    ÉN blokk; flyttes inn under kvitteringen den hører til (lenke eller glemt passord). ── */
 .kode{margin-top:16px;padding-top:16px;border-top:1px solid #1a1a1a;text-align:left}
 .kode[hidden]{display:none}
-.kode-intro{font-size:13.5px;color:#e5e5e5;font-weight:500;line-height:1.45;margin-bottom:10px}
+/* Rett under steg 2-linja: ingen skillelinje, linja over er overskriften. */
+.steg2 + .kode{margin-top:14px;padding-top:0;border-top:none}
 .kode .field{margin-bottom:6px}
 .field input.kode-input{font-size:18px;font-variant-numeric:tabular-nums}
 .field input.kode-input:not(:placeholder-shown){letter-spacing:.18em}
 .field input.kode-input::placeholder{font-size:15px;letter-spacing:0}
 .field input.kode-input.ugyldig{border-color:#c0594a}
-.kode-hjelp{font-size:12.5px;color:#8c8c8c;line-height:1.45}
 .kode-feil{display:none;color:#c0594a;font-size:13.5px;line-height:1.45;margin-top:8px}
 .kode-feil.show{display:block}
 /* «Send koden på nytt»: nedtonet lenke-knapp, samme stil som «Glemt passordet?». */
@@ -143,39 +145,42 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 
 <main class="main">
   <div class="card">
-    <a href="index.html" class="card-logo" aria-label="BarberHQ"><img src="logo/barberhq-ordmerke-mork-transparent.svg" alt="BarberHQ" width="117" height="24"></a>
     <h1>Logg inn</h1>
     <p class="card-sub">Velkommen tilbake.</p>
 
     <p class="notice" id="expired-msg"></p>
 
-    <div class="field">
-      <label for="email">E-post</label>
-      <input type="email" id="email" placeholder="din@epost.no"
-             autocomplete="username" inputmode="email" aria-describedby="email-feil">
-      <p class="felt-feil" id="email-feil" role="alert"></p>
+    <!-- STEG 1 (før sending): e-postfelt + magisk lenke. Skjules etter vellykket sending (steg 2). -->
+    <div class="steg1" id="steg1">
+      <div class="field">
+        <label for="email">E-post</label>
+        <input type="email" id="email" placeholder="din@epost.no"
+               autocomplete="username" inputmode="email" aria-describedby="email-feil">
+        <p class="felt-feil" id="email-feil" role="alert"></p>
+      </div>
+
+      <!-- PRIMÆR: magisk lenke — ingen passord nødvendig, synlig uten å klikke noe. -->
+      <button class="btn-login btn-fill" id="magic-submit" type="button">Send meg kode og lenke</button>
+      <p class="magic-feil" id="magic-feil" role="alert"></p>
     </div>
 
-    <!-- PRIMÆR: magisk lenke — ingen passord nødvendig, synlig uten å klikke noe. -->
-    <button class="btn-login btn-fill" id="magic-submit" type="button">Send meg kode og lenke</button>
-    <p class="magic-info">Vi sender en kode og en lenke til <span class="nobrk">e-posten</span> din. Koden virker i 10 minutter, lenka i 30.</p>
-    <p class="magic-ok" id="magic-ok">
-      Sjekk <span class="nobrk">e-posten</span> din. Hvis adressen er registrert, har vi sendt en kode og en lenke.
-    </p>
-    <p class="magic-feil" id="magic-feil" role="alert"></p>
+    <!-- STEG 2 (etter vellykket sending, eller gjenopprettet fra lagret request_id): adressen + «Endre»
+         (tilbake til steg 1, nullstiller request_id). Kodeblokka flyttes inn rett under. -->
+    <div class="steg2" id="steg2" hidden>
+      <p class="sendt-til" id="sendtTekst">Vi har sendt en kode og en lenke til <b id="sendtTil"></b> hvis det finnes en konto der.</p>
+      <button class="endre" id="endreEpost" type="button">Endre</button>
+    </div>
 
-    <!-- Kode fra e-posten: vises etter «Send meg kode og lenke» OG etter «Glemt passordet?» (JS flytter
-         blokken under riktig kvittering). POST /api/login-kode {email, kode, request_id} → {ok, redirect} | 400 {error, code} | 429.
+    <!-- Kode fra e-posten: vises i steg 2 OG etter «Glemt passordet?» (JS flytter blokken under riktig
+         melding). POST /api/login-kode {email, kode, request_id} → {ok, redirect} | 400 {error, code} | 429.
          request_id kommer fra /send-magic-link og lagres i localStorage (se docs/innlogging-kode.md).
          Ingen maxlength: JS fjerner alt som ikke er siffer og beholder 6, så innliming med mellomrom,
          bindestrek eller linjeskift virker. -->
     <div class="kode" id="kode" hidden>
-      <p class="kode-intro" id="kodeIntro">Skriv inn koden fra <span class="nobrk">e-posten</span>.</p>
       <div class="field">
         <input class="kode-input" id="loginKode" type="text" inputmode="numeric" autocomplete="one-time-code"
-               placeholder="6 siffer fra e-posten" aria-labelledby="kodeIntro" aria-describedby="kodeHjelp kodeFeil">
+               placeholder="6 siffer fra e-posten" aria-label="Kode fra e-posten" aria-describedby="kodeFeil kodeStatus">
       </div>
-      <p class="kode-hjelp" id="kodeHjelp">Koden virker bare i nettleseren du ba om den fra. På en annen enhet: bruk lenka i <span class="nobrk">e-posten</span>.</p>
       <p class="kode-feil" id="kodeFeil" role="alert"></p>
       <p class="kode-status" id="kodeStatus" role="status"></p>
       <button class="btn-login btn-fill" id="kodeSubmit" type="button">Logg inn med koden</button>
@@ -234,7 +239,9 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   var error  = document.getElementById('error');
 
   var magicSubmit = document.getElementById('magic-submit');
-  var magicOk     = document.getElementById('magic-ok');
+  var steg1       = document.getElementById('steg1');
+  var steg2       = document.getElementById('steg2');
+  var sendtTil    = document.getElementById('sendtTil');
   var pwAltBtn    = document.getElementById('pw-alt-btn');
   var pwPanel     = document.getElementById('pw-panel');
   var pwContext   = document.getElementById('pw-context');
@@ -297,10 +304,28 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     return rec;
   }
   async function lesJson(res) { try { return await res.json(); } catch (_) { return {}; } }
+  // Feiltekst for et ikke-2xx-svar fra /send-magic-link. 429 med code 'for_mange' har en melding ment for
+  // barberen (hvor lenge hen må vente) → vis serverens tekst. Alt annet → vår faste tekst.
+  async function sendFeiltekst(res, standard) {
+    var d = await lesJson(res);
+    return (res.status === 429 && d.code === 'for_mange' && typeof d.error === 'string' && d.error.trim()) ? d.error : standard;
+  }
+
+  // ── Steg 1 (e-post + send) ↔ steg 2 («Vi har sendt … til <adr>» + Endre + kodefeltet) ──
+  function visSteg2(adr) {
+    sendtTil.textContent = adr;
+    steg1.hidden = true;
+    steg2.hidden = false;
+    visKode(steg2);
+  }
+  function visSteg1() {
+    steg2.hidden = true;
+    steg1.hidden = false;
+    skjulKodeEtter(steg2);
+  }
 
   // ── PRIMÆR: magisk lenke (deler e-postfeltet med passord-innlogging) ──
   async function sendMagicLink() {
-    magicOk.classList.remove('show');
     magicFeil.classList.remove('show');
     error.classList.remove('show');   // symmetrisk: fjern ev. passord-feil så to meldinger ikke står samtidig
     var adr = sjekkEpost();
@@ -317,7 +342,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ email: adr }),
       });
-      if (!res.ok) feil = 'Vi fikk ikke sendt lenken. Prøv igjen om litt.';
+      if (!res.ok) feil = await sendFeiltekst(res, 'Vi fikk ikke sendt lenken. Prøv igjen om litt.');
       else { lagreForesporsel((await lesJson(res)).request_id, adr, null); kodeFormaal = null; }
     } catch (_) {
       feil = 'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.';
@@ -325,11 +350,9 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 
     if (feil) {
       magicFeil.textContent = feil;
-      magicFeil.classList.add('show');
-      skjulKodeEtter(magicOk);
+      magicFeil.classList.add('show');   // står under send-knappen; vi blir i steg 1
     } else {
-      magicOk.classList.add('show');
-      visKode(magicOk);
+      visSteg2(adr);
     }
     magicSubmit.disabled    = false;
     magicSubmit.textContent = 'Send meg kode og lenke';
@@ -353,9 +376,8 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   pwAltBtn.addEventListener('click', function () {
     pwPanel.classList.toggle('show');
     if (pwPanel.classList.contains('show')) {
-      magicOk.classList.remove('show');   // gått over på passord → skjul magisk-lenke-kvitteringen
-      magicFeil.classList.remove('show');
-      skjulKodeEtter(magicOk);
+      magicFeil.classList.remove('show');   // gått over på passord → tilbake til steg 1 (e-postfeltet trengs)
+      visSteg1();
       updatePwContext();
       // Tom e-post → fokuser feltet over (der hint-en peker); ellers rett i passord.
       if (email.value.trim()) pw.focus(); else email.focus();
@@ -391,7 +413,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify({ email: adr, formaal: 'reset' }),
       });
-      if (!res.ok) feil = 'Vi fikk ikke sendt lenken. Prøv igjen om litt.';
+      if (!res.ok) feil = await sendFeiltekst(res, 'Vi fikk ikke sendt lenken. Prøv igjen om litt.');
       else { lagreForesporsel((await lesJson(res)).request_id, adr, 'reset'); kodeFormaal = 'reset'; }
     } catch (_) {
       feil = 'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.';
@@ -416,9 +438,8 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 
   async function login() {
     error.classList.remove('show');
-    magicOk.classList.remove('show');   // gått over på passord → skjul magisk-lenke-kvitteringen
-    magicFeil.classList.remove('show');
-    skjulKodeEtter(magicOk);
+    magicFeil.classList.remove('show');   // gått over på passord → steg 1
+    visSteg1();
     submit.disabled     = true;
     submit.textContent  = 'Logger inn …';
 
@@ -475,7 +496,14 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   }
   function skjulKodeEtter(etter) { if (kode.previousElementSibling === etter) kode.hidden = true; }
   function visKodeFeil(tekst) {
-    kodeFeil.textContent = tekst;
+    // «e-post…» brekker aldri ved bindestreken (samme .nobrk som i markupen). DOM-noder, ikke innerHTML:
+    // teksten kan komme fra serveren.
+    kodeFeil.textContent = '';
+    String(tekst || '').split(/(e-post\w*)/).forEach(function (del, i) {
+      if (!del) return;
+      if (i % 2) { var sp = document.createElement('span'); sp.className = 'nobrk'; sp.textContent = del; kodeFeil.appendChild(sp); }
+      else kodeFeil.appendChild(document.createTextNode(del));
+    });
     kodeFeil.classList.toggle('show', !!tekst);
     kodeIn.classList.toggle('ugyldig', !!tekst);
   }
@@ -533,15 +561,19 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
         return;   // siden byttes — ikke slå på knappen igjen
       }
       if (res.status === 429) {
-        // Grensen gjelder e-posten i 15 min, også for en ny kode — lenka i e-posten virker fortsatt.
-        visKodeFeil('For mange forsøk. Bruk lenka i e-posten, eller vent et kvarter og prøv igjen.');
+        // code 'for_mange' (IP-grensen): serverens melding er ment for barberen → vis den. Forespørselen
+        // beholdes og vi blir i steg 2 — koden kan fortsatt brukes når grensen er ute.
+        // Uten code (eldre backend): grensen gjaldt e-posten i 15 min — lenka i e-posten virker fortsatt.
+        visKodeFeil((data.code === 'for_mange' && typeof data.error === 'string' && data.error.trim())
+          ? data.error
+          : 'For mange forsøk. Bruk lenka i e-posten, eller vent et kvarter og prøv igjen.');
       } else if (res.status === 400 && (data.code === 'ny_kode' || data.code === 'laast')) {
         // Forespørselen kan ikke brukes lenger (ny fane, utløpt, annen enhet / 5 forsøk): glem den og
         // tilby en NY kode. Styres på code, aldri på teksten.
         slettForesporsel();
         visKodeFeil(data.code === 'laast'
           ? 'For mange feil forsøk med denne koden. Be om en ny kode.'
-          : 'Koden virker ikke lenger. Be om en ny kode.');
+          : 'Koden virker ikke her. Bruk lenka i e-posten, eller be om en ny kode.');
         settNyKodeModus(true);
       } else if (res.status === 400) {
         // feil_kode (og 400 uten code fra en eldre backend): koden stemmer ikke, prøv igjen.
@@ -591,7 +623,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
         headers: { 'Content-Type': 'application/json' },
         body:    JSON.stringify(body),
       });
-      if (!res.ok) feil = 'Vi fikk ikke sendt koden. Prøv igjen om litt.';
+      if (!res.ok) feil = await sendFeiltekst(res, 'Vi fikk ikke sendt koden. Prøv igjen om litt.');
       else lagreForesporsel((await lesJson(res)).request_id || (rec && rec.request_id), adr, kodeFormaal);
     } catch (_) {
       feil = 'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.';
@@ -607,6 +639,15 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   kodeIgjen.addEventListener('click', function () { sendNyKode(true, kodeIgjen); });
   kodeNy.addEventListener('click', function () { sendNyKode(false, kodeNy); });
 
+  // «Endre»: tilbake til steg 1 med adressen i feltet. Forespørselen glemmes — en kode til en annen
+  // (eller rettet) adresse skal aldri bruke den gamle request_id-en.
+  document.getElementById('endreEpost').addEventListener('click', function () {
+    slettForesporsel();
+    kodeIn.value = ''; sistSendt = null; visKodeFeil(''); visKodeStatus('');
+    visSteg1();
+    email.focus();
+  });
+
   // Gjenoppretting: siden lastes på nytt (hjemskjerm-appen ble drept mens barberen hentet koden i Mail)
   // og det finnes en gyldig forespørsel → e-posten og kodefeltet står klare igjen. Ikke ved ?error=expired:
   // da kom barberen fra en død lenke og skal se den meldinga, ikke et gammelt kodefelt.
@@ -617,8 +658,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     if (!email.value.trim()) email.value = rec.email;
     else if (email.value.trim().toLowerCase() !== rec.email.toLowerCase()) return;
     kodeFormaal = rec.formaal || null;
-    magicOk.classList.add('show');
-    visKode(magicOk);
+    visSteg2(rec.email);
   }());
 }());
 </script>

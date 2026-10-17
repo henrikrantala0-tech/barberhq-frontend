@@ -7,6 +7,9 @@
 //   6. request_id (17.10): lagres i localStorage, følger /login-kode og «Send på nytt»; code ny_kode/laast →
 //      «Send meg en ny kode» + nullstilt forespørsel; feil_kode → prøv igjen; gjenoppretting etter omlasting;
 //      annen e-post / utløpt → ingen request_id; suksess sletter forespørselen. Skjermbilder 320/375.
+//   7. To steg (17.10): steg 1 = e-post + send; steg 2 = «Vi har sendt … til <adr>» + Endre + kodefeltet.
+//      Endre → steg 1 og nullstilt request_id. 429 code for_mange → serverens melding ved send-knappen,
+//      blir i steg 1 (gjelder også «Glemt passordet?» og «Send koden på nytt»).
 // /api/send-magic-link og /api/login-kode mockes; alt annet mot api.trybarberhq.com avbrytes og telles (skal være 0).
 //
 //   node tools/render/logg-inn-epost.mjs
@@ -44,6 +47,8 @@ async function nySide(bredde, svar, url = '/no/logg-inn.html', kodeSvar = []) {
     if (p === '/api/send-magic-link') {
       kall.push(JSON.parse(r.request().postData() || '{}'));
       if (svar === 'nett') return r.abort('failed');
+      if (svar === 'for_mange') return r.fulfill({ status: 429, contentType: 'application/json', body: JSON.stringify({ error: FOR_MANGE, code: 'for_mange' }) });
+      if (typeof svar === 'function') { const [st, b] = svar(kall.length); return r.fulfill({ status: st, contentType: 'application/json', body: JSON.stringify(st < 300 ? { ok: true, request_id: 'rid-' + (++rid) } : b) }); }
       return r.fulfill({ status: svar, contentType: 'application/json', body: svar < 300 ? JSON.stringify({ ok: true, request_id: 'rid-' + (++rid) }) : '{"error":"x"}' });
     }
     if (p === '/api/login-kode') {
@@ -60,7 +65,8 @@ const synlig = (page, sel) => page.$eval(sel, e => e.offsetParent !== null).catc
 const tekst  = (page, sel) => page.$eval(sel, e => e.offsetParent !== null ? e.textContent.trim().replace(/\s+/g, ' ') : '—').catch(() => '—');
 const rapport = []; const bilder = [];
 const push = (navn, f, errs) => rapport.push({ sjekk: navn, resultat: f.length ? '✗ ' + f.join(' | ') : 'OK ✓', jsfeil: errs.length ? errs.join('; ') : 'ingen' });
-const KVITT = 'Sjekk e-posten din. Hvis adressen er registrert, har vi sendt en kode og en lenke.';
+const SENDT = adr => 'Vi har sendt en kode og en lenke til ' + adr + ' hvis det finnes en konto der.';
+const FOR_MANGE = 'For mange forsøk. Vent 15 minutter og prøv igjen.';
 
 for (const w of [320, 375]) {
   // ── 1–2. Send meg kode og lenke ──
@@ -71,6 +77,7 @@ for (const w of [320, 375]) {
     { id: 'serverfeil', epost: 'h@g.no',  svar: 500,    kall: 1, feil: 'Vi fikk ikke sendt lenken. Prøv igjen om litt.', bilde: true },
     { id: 'for-mange',  epost: 'h@g.no',  svar: 429,    kall: 1, feil: 'Vi fikk ikke sendt lenken. Prøv igjen om litt.' },
     { id: 'nettfeil', epost: 'h@g.no',    svar: 'nett', kall: 1, feil: 'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.' },
+    { id: 'for_mange', epost: 'h@g.no',   svar: 'for_mange', kall: 1, feil: FOR_MANGE, bilde: true },
   ];
   for (const c of CASES) {
     const { page, errs, kall } = await nySide(w, c.svar);
@@ -81,12 +88,14 @@ for (const w of [320, 375]) {
     if (kall.length !== c.kall) f.push(`kall=${kall.length}`);
     const ff = await tekst(page, '#email-feil');
     if (ff !== (c.feltFeil || '—')) f.push(`feltfeil «${ff}»`);
-    const ok = await tekst(page, '#magic-ok');
-    if (ok !== (c.kvitt ? KVITT : '—')) f.push(`kvittering «${ok}»`);
+    const ok = await tekst(page, '#sendtTekst');
+    if (ok !== (c.kvitt ? SENDT(c.epost) : '—')) f.push(`steg 2 «${ok}»`);
+    if ((await synlig(page, '#steg1')) === !!c.kvitt) f.push('steg 1 feil synlighet');
     if ((await synlig(page, '#kode')) !== !!c.kvitt) f.push('kodefelt feil synlighet');
     const mf = await tekst(page, '#magic-feil');
     if (mf !== (c.feil || '—')) f.push(`feilmelding «${mf}»`);
     if (await page.$eval('#magic-submit', b => b.disabled || b.textContent.trim() !== 'Send meg kode og lenke')) f.push('knappen ikke tilbake');
+    if ((await page.$eval('.card', e => e.innerText)).includes('virker i 10 minutter')) f.push('gammel hjelpetekst står');
     if (c.feltFeil) {
       // Skriving i feltet fjerner feilen.
       await page.type('#email', 'x'); await page.waitForTimeout(50);
@@ -128,6 +137,7 @@ for (const w of [320, 375]) {
     const før = kall.length;
     await page.fill('#email', adr); await page.click('#magic-submit'); await page.waitForTimeout(250);
     const sendt = kall.length - før === 1, feltFeil = await synlig(page, '#email-feil');
+    if (await synlig(page, '#endreEpost')) await page.click('#endreEpost');   // steg 2 → tilbake til feltet
     if (GODTAS.includes(adr) && (!sendt || feltFeil)) f.push(`avviste «${adr}»`);
     if (AVVISES.includes(adr) && (sendt || !feltFeil)) f.push(`slapp gjennom «${adr}»`);
     // Chrome gjør IDN-domener om til punycode i <input type=email>.value (frisør.no → xn--frisr-yua.no),
@@ -152,7 +162,7 @@ for (const w of [320, 375]) {
   await page.fill('#email', 'h@g.no'); await page.click('#magic-submit'); await page.waitForTimeout(400);
   const f = [];
   if (await page.$('#expired-msg')) f.push('elementet ble ikke fjernet i testen');
-  if (kall.length !== 1 || !(await synlig(page, '#magic-ok'))) f.push('JS-en stoppet: knappen virker ikke');
+  if (kall.length !== 1 || !(await synlig(page, '#steg2'))) f.push('JS-en stoppet: knappen virker ikke');
   push('expired UTEN element', f, errs); await page.close();
 }
 
@@ -166,7 +176,6 @@ for (const w of [320, 375]) {
 
 // ── 6. request_id: lagring, kode, «Send på nytt», ny_kode/laast/feil_kode, gjenoppretting ──
 {
-  const HJELP = 'Koden virker bare i nettleseren du ba om den fra. På en annen enhet: bruk lenka i e-posten.';
   const lagret = page => page.evaluate(() => JSON.parse(localStorage.getItem('bhq-innlogging-kode') || 'null'));
   const skrivKode = async page => { await page.fill('#loginKode', '123456'); await page.waitForTimeout(400); };
   const bilde = async (page, navn) => { const fil = path.join(OUT, navn); await page.screenshot({ path: fil, fullPage: true }); bilder.push(fil); };
@@ -179,7 +188,9 @@ for (const w of [320, 375]) {
       await page.fill('#email', 'h@g.no'); await page.click('#magic-submit'); await page.waitForTimeout(400);
       let l = await lagret(page);
       if (!l || l.request_id !== 'rid-1' || l.email !== 'h@g.no' || !(l.utloper > Date.now() + 9 * 60e3)) f.push('lagret etter send ' + JSON.stringify(l));
-      if (await tekst(page, '#kodeHjelp') !== HJELP) f.push('hjelpetekst');
+      if (await page.$('#kodeHjelp') || await page.$('#kodeIntro') || await page.$('#magic-ok')) f.push('fjernede elementer står');
+      if (await page.$('.card img, .card .card-logo')) f.push('logo i kortet');
+      if (!(await synlig(page, 'nav .logo img'))) f.push('header-logo borte');
       await bilde(page, `kode-sendt-${w}.png`);
       await skrivKode(page);
       if (kodeKall[0]?.request_id !== 'rid-1' || kodeKall[0]?.kode !== '123456') f.push('login-kode ' + JSON.stringify(kodeKall[0]));
@@ -194,7 +205,7 @@ for (const w of [320, 375]) {
       await bilde(page, `kode-sendt-paa-nytt-${w}.png`);
       await skrivKode(page);
       if (kodeKall[1]?.request_id !== 'rid-2') f.push('andre login-kode ' + JSON.stringify(kodeKall[1]));
-      if (await tekst(page, '#kodeFeil') !== 'Koden virker ikke lenger. Be om en ny kode.') f.push('ny_kode-tekst');
+      if (await tekst(page, '#kodeFeil') !== 'Koden virker ikke her. Bruk lenka i e-posten, eller be om en ny kode.') f.push('ny_kode-tekst');
       if (await lagret(page)) f.push('ny_kode slettet ikke forespørselen');
       if (!(await synlig(page, '#kodeNy')) || await synlig(page, '#kodeSubmit') || await synlig(page, '#kodeIgjen')) f.push('ny_kode: knapper');
       await bilde(page, `kode-ny-kode-${w}.png`);
@@ -216,6 +227,54 @@ for (const w of [320, 375]) {
       push(`${w} kode: laast`, f, errs); await page.close();
     }
   }
+  // j: steg 1 slik sida åpner, og «Endre» → steg 1 med adressen i feltet, forespørselen nullstilt
+  for (const w of [320, 375]) {
+    const { page, errs } = await nySide(w, 200);
+    const f = [];
+    await bilde(page, `steg1-${w}.png`);
+    if (!(await synlig(page, '#steg1')) || await synlig(page, '#steg2') || await synlig(page, '#kode')) f.push('steg 1 ved åpning');
+    await page.fill('#email', 'h@g.no'); await page.click('#magic-submit'); await page.waitForTimeout(400);
+    await page.click('#endreEpost'); await page.waitForTimeout(100);
+    if (!(await synlig(page, '#steg1')) || await synlig(page, '#steg2') || await synlig(page, '#kode')) f.push('Endre: ikke steg 1');
+    if (await page.$eval('#email', e => e.value) !== 'h@g.no') f.push('Endre: adressen borte');
+    if (await lagret(page)) f.push('Endre: forespørselen står');
+    if (!(await page.evaluate(() => document.activeElement && document.activeElement.id === 'email'))) f.push('Endre: fokus ikke i feltet');
+    push(`${w} steg 1 + Endre`, f, errs); await page.close();
+  }
+  // k: 429 for_mange på «Send koden på nytt» (kodeFeil, blir i steg 2) og «Glemt passordet?» (pw-glemt-msg)
+  {
+    const { page, errs, kall } = await nySide(375, n => n === 1 ? [200] : [429, { error: FOR_MANGE, code: 'for_mange' }]);
+    const f = [];
+    await page.fill('#email', 'h@g.no'); await page.click('#magic-submit'); await page.waitForTimeout(400);
+    await page.click('#kodeIgjen'); await page.waitForTimeout(400);
+    if (await tekst(page, '#kodeFeil') !== FOR_MANGE) f.push('send på nytt: melding «' + await tekst(page, '#kodeFeil') + '»');
+    if (await synlig(page, '#kodeStatus')) f.push('send på nytt: «Ny kode sendt» ved 429');
+    if ((await lagret(page))?.request_id !== 'rid-1') f.push('send på nytt: forespørselen endret ved 429');
+    await page.click('#endreEpost');
+    await page.click('#pw-alt-btn'); await page.click('#pw-glemt'); await page.waitForTimeout(400);
+    const m = await page.$eval('#pw-glemt-msg', e => ({ k: e.className, t: e.textContent.trim() }));
+    if (m.k !== 'pw-glemt-msg feil' || m.t !== FOR_MANGE) f.push('glemt: ' + JSON.stringify(m));
+    if (kall.length !== 3) f.push('kall=' + kall.length);
+    push('429 for_mange: send på nytt + glemt', f, errs); await page.close();
+  }
+  // l: /login-kode 429 for_mange (IP-grensen) → serverens melding under kodefeltet, forespørselen står, steg 2 står
+  for (const w of [320, 375]) {
+    const IP = 'For mange forsøk fra denne tilkoblingen. Prøv igjen om 15 minutter.';
+    const { page, errs, kodeKall } = await nySide(w, 200, undefined,
+      [[429, { error: IP, code: 'for_mange' }], [429, { error: 'Too many' }]]);
+    const f = [];
+    await page.fill('#email', 'h@g.no'); await page.click('#magic-submit'); await page.waitForTimeout(400);
+    await skrivKode(page);
+    if (kodeKall[0]?.request_id !== 'rid-1') f.push('request_id ' + JSON.stringify(kodeKall[0]));
+    if (await tekst(page, '#kodeFeil') !== IP) f.push('melding «' + await tekst(page, '#kodeFeil') + '»');
+    if ((await lagret(page))?.request_id !== 'rid-1') f.push('forespørselen slettet ved 429');
+    if (!(await synlig(page, '#steg2')) || await synlig(page, '#steg1') || !(await synlig(page, '#kodeSubmit')) || await synlig(page, '#kodeNy')) f.push('ikke i steg 2 med innloggingsknappen');
+    await bilde(page, `kode-for-mange-${w}.png`);
+    // 429 uten code (eldre backend) → fast tekst
+    await page.click('#kodeSubmit'); await page.waitForTimeout(400);
+    if (await tekst(page, '#kodeFeil') !== 'For mange forsøk. Bruk lenka i e-posten, eller vent et kvarter og prøv igjen.') f.push('429 uten code: «' + await tekst(page, '#kodeFeil') + '»');
+    push(`${w} login-kode 429 for_mange`, f, errs); await page.close();
+  }
   // e: gjenoppretting etter omlasting (hjemskjerm-appen drept), ikke ved ?error=expired
   {
     const { page, errs, kodeKall } = await nySide(375, 200);
@@ -223,7 +282,7 @@ for (const w of [320, 375]) {
     await page.fill('#email', 'h@g.no'); await page.click('#magic-submit'); await page.waitForTimeout(400);
     await page.reload({ waitUntil: 'networkidle' });
     if (await page.$eval('#email', e => e.value) !== 'h@g.no') f.push('e-post ikke gjenopprettet');
-    if (!(await synlig(page, '#kode')) || await tekst(page, '#magic-ok') !== KVITT) f.push('kodefelt/kvittering ikke gjenopprettet');
+    if (!(await synlig(page, '#kode')) || await tekst(page, '#sendtTekst') !== SENDT('h@g.no') || await synlig(page, '#steg1')) f.push('steg 2 ikke gjenopprettet');
     await skrivKode(page);
     if (kodeKall[0]?.request_id !== 'rid-1') f.push('request_id etter omlasting ' + JSON.stringify(kodeKall[0]));
     await page.goto(`http://localhost:${PORT}/no/logg-inn.html?error=expired`, { waitUntil: 'networkidle' });
@@ -235,10 +294,11 @@ for (const w of [320, 375]) {
     const { page, errs, kodeKall } = await nySide(375, 200);
     const f = [];
     await page.fill('#email', 'h@g.no'); await page.click('#magic-submit'); await page.waitForTimeout(400);
-    await page.fill('#email', 'annen@g.no'); await skrivKode(page);
+    // Lagret forespørsel for en annen adresse enn den i feltet (feltet er skjult i steg 2).
+    await page.evaluate(() => { const k = 'bhq-innlogging-kode', r = JSON.parse(localStorage.getItem(k)); r.email = 'annen@g.no'; localStorage.setItem(k, JSON.stringify(r)); });
+    await skrivKode(page);
     if (!kodeKall[0] || 'request_id' in kodeKall[0]) f.push('annen e-post sendte request_id ' + JSON.stringify(kodeKall[0]));
-    await page.fill('#email', 'H@G.no');
-    await page.evaluate(() => { const k = 'bhq-innlogging-kode', r = JSON.parse(localStorage.getItem(k)); r.utloper = Date.now() - 1; localStorage.setItem(k, JSON.stringify(r)); });
+    await page.evaluate(() => { const k = 'bhq-innlogging-kode', r = JSON.parse(localStorage.getItem(k)); r.email = 'H@G.no'; r.utloper = Date.now() - 1; localStorage.setItem(k, JSON.stringify(r)); });
     await page.fill('#loginKode', ''); await page.fill('#loginKode', '654321'); await page.waitForTimeout(400);
     if (!kodeKall[1] || 'request_id' in kodeKall[1]) f.push('utløpt sendte request_id ' + JSON.stringify(kodeKall[1]));
     if (await lagret(page)) f.push('utløpt ikke slettet');

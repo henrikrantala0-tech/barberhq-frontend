@@ -5656,7 +5656,11 @@ $("#pwForgot").addEventListener("click",async function(){
   var feil=null;
   try{
     var r=await apiFetch('/api/send-magic-link',{method:'POST',body:JSON.stringify({email:epost,formaal:'reset'}),raw401:true});
-    if(!r||!r.ok) feil='Vi fikk ikke sendt lenken. Prøv igjen om litt.';
+    if(!r||!r.ok){
+      // 429 med code 'for_mange': serverens melding er ment for barbereren (hvor lenge hen må vente) → vis den.
+      var d=r?await r.json().catch(function(){return{};}):{};
+      feil=(r&&r.status===429&&d.code==='for_mange'&&typeof d.error==='string'&&d.error.trim())?d.error:'Vi fikk ikke sendt lenken. Prøv igjen om litt.';
+    }
   }catch(e){ feil=kontaktFeil(e); }
   btn.disabled=false;
   // Kvitteringen KUN ved 2xx (samme regel som logg-inn.html). 2xx er alltid likt for kjente og ukjente
