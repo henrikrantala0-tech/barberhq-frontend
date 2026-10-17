@@ -4398,7 +4398,8 @@ function renderGrid(){
     var head='<div class="cal-dayhead'+(k===todayKey?' is-today':'')+'">'+dayHead(new Date(k))+'</div>',h=dagTimer(k);
     var segs=dagSegmenter(k);
     // Stengt UTEN bookinger: bare «Stengt». Stengt MED bookinger (dagen satt til stengt etter at kunder
-    // booket): tegnes som en vanlig dag + dempet «Stengt»-merke, så barberen ser timene — før ble de borte.
+    // booket): stripene for stengt dag beholdes, bookingene tegnes oppå dem + dempet «Stengt»-merke i
+    // dagoverskriften, så barberen ser timene — før ble de borte.
     if(h.closed&&!segs.length){cols+='<div class="cal-day closed" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px"><div class="cal-closed">Stengt</div></div></div>';return;}
     // Time- + halvtimeslinjer fra SAMME tidsrom (y.min..y.max) via minToPx — halvlinja svakere (.cal-halfline).
     var lines='';for(var mm=y.min;mm<y.max;mm+=60){lines+='<div class="cal-hourline" style="top:'+minToPx(mm,y.min)+'px"></div>';var half=mm+30;if(half<y.max)lines+='<div class="cal-halfline" style="top:'+minToPx(half,y.min)+'px"></div>';}
@@ -4413,7 +4414,7 @@ function renderGrid(){
       var tid=timeOnly(o.b.start)+((o.w>60&&o.b.end)?'–'+timeOnly(o.b.end):'');
       blocks+='<div class="cal-block'+ns+'" data-id="'+o.b.id+'" style="top:'+o.top+'px;height:'+o.h+'px;left:'+o.left+'%;width:calc('+o.w+'% - 3px);--blk:'+svcFarge(o.b.service_id)+'"><div class="blk-top"><span class="blk-name">'+esc(o.b.name)+'</span><span class="blk-time">'+tid+'</span></div>'+svc+'</div>';
     });
-    cols+='<div class="cal-day'+(h.closed?' closed has-bk':'')+'" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px">'+lines+blocks+'</div></div>';
+    cols+='<div class="cal-day'+(h.closed?' closed':'')+'" data-key="'+k+'">'+head+'<div class="cal-daybody" style="height:'+dayH+'px">'+lines+blocks+'</div></div>';
   });
   $("#calDays").innerHTML=cols;
   oppdaterKalenderBannere(keys);   // Commit 2: «Lag story»-banner øverst i dagen når /ledige gir vis_banner
