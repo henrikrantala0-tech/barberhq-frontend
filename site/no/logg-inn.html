@@ -96,6 +96,12 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .kode-hjelp{font-size:12.5px;color:#8c8c8c;line-height:1.45}
 .kode-feil{display:none;color:#c0594a;font-size:13.5px;line-height:1.45;margin-top:8px}
 .kode-feil.show{display:block}
+/* «Send koden på nytt»: nedtonet lenke-knapp, samme stil som «Glemt passordet?». */
+.kode-igjen{display:block;font:inherit;font-size:13px;color:#8c8c8c;background:none;border:none;cursor:pointer;padding:6px 0;margin:10px 0 0;text-align:left}
+.kode-igjen:hover{color:#bbb;text-decoration:underline}
+.kode-igjen[hidden],.kode .btn-login[hidden]{display:none}
+.kode-status{display:none;color:#5cb85c;font-size:13.5px;line-height:1.45;margin-top:8px}
+.kode-status.show{display:block}
 /* ── Passord (sekundær, nedtonet + sammenlagt) ── */
 .pw-alt{text-align:center;margin-top:20px;padding-top:16px;border-top:1px solid #1a1a1a}
 .pw-alt-link{font:inherit;font-size:13px;color:#8c8c8c;background:none;border:none;cursor:pointer;padding:0}
@@ -159,7 +165,8 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     <p class="magic-feil" id="magic-feil" role="alert"></p>
 
     <!-- Kode fra e-posten: vises etter «Send meg kode og lenke» OG etter «Glemt passordet?» (JS flytter
-         blokken under riktig kvittering). POST /api/login-kode {email, kode} → {ok, redirect} | 400 | 429.
+         blokken under riktig kvittering). POST /api/login-kode {email, kode, request_id} → {ok, redirect} | 400 {error, code} | 429.
+         request_id kommer fra /send-magic-link og lagres i localStorage (se docs/innlogging-kode.md).
          Ingen maxlength: JS fjerner alt som ikke er siffer og beholder 6, så innliming med mellomrom,
          bindestrek eller linjeskift virker. -->
     <div class="kode" id="kode" hidden>
@@ -168,9 +175,13 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
         <input class="kode-input" id="loginKode" type="text" inputmode="numeric" autocomplete="one-time-code"
                placeholder="6 siffer fra e-posten" aria-labelledby="kodeIntro" aria-describedby="kodeHjelp kodeFeil">
       </div>
-      <p class="kode-hjelp" id="kodeHjelp">Sjekk <span class="nobrk">e-posten</span> din, kopier koden og lim den inn her.</p>
+      <p class="kode-hjelp" id="kodeHjelp">Koden virker bare i nettleseren du ba om den fra. På en annen enhet: bruk lenka i <span class="nobrk">e-posten</span>.</p>
       <p class="kode-feil" id="kodeFeil" role="alert"></p>
+      <p class="kode-status" id="kodeStatus" role="status"></p>
       <button class="btn-login btn-fill" id="kodeSubmit" type="button">Logg inn med koden</button>
+      <!-- Vises i stedet for kodeSubmit når koden ikke kan brukes lenger (code ny_kode / laast). -->
+      <button class="btn-login btn-fill" id="kodeNy" type="button" hidden>Send meg en ny kode</button>
+      <button class="kode-igjen" id="kodeIgjen" type="button">Send koden på nytt</button>
     </div>
 
     <!-- SEKUNDÆR: passord, nedtonet lenke som folder ut feltet + «Logg inn». -->
@@ -265,6 +276,28 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   function enOmGangen(fn){ var busy=false; return function(){ if(busy) return;
     busy=true; Promise.resolve(fn.apply(this, arguments)).finally(function(){ busy=false; }); }; }
 
+  // ── Kodeforespørselen (request_id fra /send-magic-link) ──
+  // localStorage, ikke sessionStorage: en hjemskjerm-app som drepes mens barberen er i Mail, mister
+  // sessionStorage, og da kan koden ikke brukes når appen åpnes igjen. Lagres sammen med e-posten (koden
+  // gjelder bare den adressen), formålet (reset → «Send på nytt» skal også være reset) og utløpet.
+  // Blokkert lagring (privat modus o.l.) gir bare ingen request_id → backend svarer ny_kode.
+  var KODE_KEY = 'bhq-innlogging-kode', KODE_LEVETID = 10 * 60 * 1000;
+  function lagreForesporsel(id, adr, formaal) {
+    if (!id) { slettForesporsel(); return; }   // eldre backend uten request_id: ingenting å huske
+    try { localStorage.setItem(KODE_KEY, JSON.stringify({ request_id: id, email: adr, formaal: formaal || null, utloper: Date.now() + KODE_LEVETID })); } catch (_) {}
+  }
+  function slettForesporsel() { try { localStorage.removeItem(KODE_KEY); } catch (_) {} }
+  // Gyldig forespørsel for adressen, ellers null. Utløpt slettes; annen adresse ligger urørt.
+  function hentForesporsel(adr) {
+    var rec = null;
+    try { rec = JSON.parse(localStorage.getItem(KODE_KEY) || 'null'); } catch (_) {}
+    if (!rec || typeof rec.request_id !== 'string' || typeof rec.email !== 'string') return null;
+    if (!(rec.utloper > Date.now())) { slettForesporsel(); return null; }
+    if (adr && rec.email.toLowerCase() !== adr.toLowerCase()) return null;
+    return rec;
+  }
+  async function lesJson(res) { try { return await res.json(); } catch (_) { return {}; } }
+
   // ── PRIMÆR: magisk lenke (deler e-postfeltet med passord-innlogging) ──
   async function sendMagicLink() {
     magicOk.classList.remove('show');
@@ -285,6 +318,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
         body:    JSON.stringify({ email: adr }),
       });
       if (!res.ok) feil = 'Vi fikk ikke sendt lenken. Prøv igjen om litt.';
+      else { lagreForesporsel((await lesJson(res)).request_id, adr, null); kodeFormaal = null; }
     } catch (_) {
       feil = 'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.';
     }
@@ -358,6 +392,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
         body:    JSON.stringify({ email: adr, formaal: 'reset' }),
       });
       if (!res.ok) feil = 'Vi fikk ikke sendt lenken. Prøv igjen om litt.';
+      else { lagreForesporsel((await lesJson(res)).request_id, adr, 'reset'); kodeFormaal = 'reset'; }
     } catch (_) {
       feil = 'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.';
     }
@@ -424,13 +459,19 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   var kodeIn     = document.getElementById('loginKode');
   var kodeFeil   = document.getElementById('kodeFeil');
   var kodeSubmit = document.getElementById('kodeSubmit');
+  var kodeStatus = document.getElementById('kodeStatus');
+  var kodeNy     = document.getElementById('kodeNy');
+  var kodeIgjen  = document.getElementById('kodeIgjen');
   var KODE_TEKST = 'Logg inn med koden';
   var sistSendt  = null;   // auto-innsending fyrer bare én gang per kode (ikke på nytt etter en feil)
+  var kodeFormaal = null;  // null = vanlig innlogging, 'reset' = fra «Glemt passordet?» (følger med «Send på nytt»)
 
   // Hoistet (function-deklarasjoner), så handlerne over kan kalle dem.
   function visKode(etter) {
     if (kode.previousElementSibling !== etter) etter.insertAdjacentElement('afterend', kode);
     kode.hidden = false;
+    // Ny forespørsel sendt fra knappene over → frisk start: ingen gammel feil, status eller ny-kode-modus.
+    settNyKodeModus(false); visKodeFeil(''); visKodeStatus(''); sistSendt = null;
   }
   function skjulKodeEtter(etter) { if (kode.previousElementSibling === etter) kode.hidden = true; }
   function visKodeFeil(tekst) {
@@ -471,26 +512,40 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     var adr = email.value.trim();
     if (!adr) { visKodeFeil('Skriv inn e-posten din over.'); email.focus(); return; }
     sistSendt = k;
-    visKodeFeil('');
+    visKodeFeil(''); visKodeStatus('');
+    // request_id KUN for samme adresse og innenfor 10 min. Mangler den, sendes kallet likevel —
+    // backend svarer da ny_kode, og barberen får knappen for ny kode.
+    var rec = hentForesporsel(adr);
+    var body = { email: adr, kode: k };
+    if (rec) body.request_id = rec.request_id;
     kodeSubmit.disabled = true; kodeSubmit.textContent = 'Logger inn …';
     try {
       var res = await fetch(API + '/api/login-kode', {
         method:      'POST',
         headers:     { 'Content-Type': 'application/json' },
         credentials: 'include',
-        body:        JSON.stringify({ email: adr, kode: k }),
+        body:        JSON.stringify(body),
       });
-      var data = {};
-      try { data = await res.json(); } catch (_) {}
+      var data = await lesJson(res);
       if (res.ok && data.ok) {
+        slettForesporsel();
         location.href = tryggMaal(data.redirect);
         return;   // siden byttes — ikke slå på knappen igjen
       }
       if (res.status === 429) {
         // Grensen gjelder e-posten i 15 min, også for en ny kode — lenka i e-posten virker fortsatt.
         visKodeFeil('For mange forsøk. Bruk lenka i e-posten, eller vent et kvarter og prøv igjen.');
+      } else if (res.status === 400 && (data.code === 'ny_kode' || data.code === 'laast')) {
+        // Forespørselen kan ikke brukes lenger (ny fane, utløpt, annen enhet / 5 forsøk): glem den og
+        // tilby en NY kode. Styres på code, aldri på teksten.
+        slettForesporsel();
+        visKodeFeil(data.code === 'laast'
+          ? 'For mange feil forsøk med denne koden. Be om en ny kode.'
+          : 'Koden virker ikke lenger. Be om en ny kode.');
+        settNyKodeModus(true);
       } else if (res.status === 400) {
-        visKodeFeil('Koden er feil eller utløpt. Be om en ny e-post.');
+        // feil_kode (og 400 uten code fra en eldre backend): koden stemmer ikke, prøv igjen.
+        visKodeFeil(data.code === 'feil_kode' ? 'Koden stemmer ikke. Sjekk e-posten og prøv igjen.' : 'Koden er feil eller utløpt. Be om en ny e-post.');
         kodeIn.select();
       } else {
         visKodeFeil('Noe gikk galt, prøv igjen.');
@@ -504,6 +559,67 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     kodeSubmit.disabled = false; kodeSubmit.textContent = KODE_TEKST;
   }
   sendKode = enOmGangen(sendKode);
+
+  function visKodeStatus(tekst) {
+    kodeStatus.textContent = tekst;
+    kodeStatus.classList.toggle('show', !!tekst);
+  }
+  // Ny-kode-modus: koden kan ikke brukes lenger → «Send meg en ny kode» står i stedet for innloggingsknappen
+  // og «Send koden på nytt» (to knapper for samme handling ville bare forvirret).
+  function settNyKodeModus(paa) {
+    kodeNy.hidden = !paa;
+    kodeSubmit.hidden = paa;
+    kodeIgjen.hidden = paa;
+  }
+
+  // «Send koden på nytt» (medId=true): samme forespørsel, request_id følger med.
+  // «Send meg en ny kode» (medId=false): forespørselen er nullstilt → en ny.
+  async function sendNyKode(medId, knapp) {
+    visKodeFeil(''); visKodeStatus('');
+    var adr = sjekkEpost();
+    if (!adr) return;
+    var rec = medId ? hentForesporsel(adr) : null;
+    var body = { email: adr };
+    if (rec) body.request_id = rec.request_id;
+    if (kodeFormaal) body.formaal = kodeFormaal;
+    var orig = knapp.textContent;
+    knapp.disabled = true; knapp.textContent = 'Sender …';
+    var feil = null;
+    try {
+      var res = await fetch(API + '/api/send-magic-link', {
+        method:  'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body:    JSON.stringify(body),
+      });
+      if (!res.ok) feil = 'Vi fikk ikke sendt koden. Prøv igjen om litt.';
+      else lagreForesporsel((await lesJson(res)).request_id || (rec && rec.request_id), adr, kodeFormaal);
+    } catch (_) {
+      feil = 'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.';
+    }
+    knapp.disabled = false; knapp.textContent = orig;
+    if (feil) { visKodeFeil(feil); return; }
+    settNyKodeModus(false);
+    kodeIn.value = ''; sistSendt = null;
+    visKodeStatus('Ny kode sendt. Sjekk e-posten din.');
+    kodeIn.focus();
+  }
+  sendNyKode = enOmGangen(sendNyKode);
+  kodeIgjen.addEventListener('click', function () { sendNyKode(true, kodeIgjen); });
+  kodeNy.addEventListener('click', function () { sendNyKode(false, kodeNy); });
+
+  // Gjenoppretting: siden lastes på nytt (hjemskjerm-appen ble drept mens barberen hentet koden i Mail)
+  // og det finnes en gyldig forespørsel → e-posten og kodefeltet står klare igjen. Ikke ved ?error=expired:
+  // da kom barberen fra en død lenke og skal se den meldinga, ikke et gammelt kodefelt.
+  (function () {
+    if (params.get('error')) return;
+    var rec = hentForesporsel(null);
+    if (!rec) return;
+    if (!email.value.trim()) email.value = rec.email;
+    else if (email.value.trim().toLowerCase() !== rec.email.toLowerCase()) return;
+    kodeFormaal = rec.formaal || null;
+    magicOk.classList.add('show');
+    visKode(magicOk);
+  }());
 }());
 </script>
 </body>
