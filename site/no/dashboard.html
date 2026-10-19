@@ -5439,12 +5439,21 @@ $("#themeGrid").addEventListener("keydown",function(e){
 });
 
 /* ---- Profil ---- */
+// Kodeforespørselen logg-inn.html lagrer (nøkkel bhq-innlogging-kode, 10 min) gjenopprettes der ved hver
+// innlasting som steg 2 («Vi har sendt en kode …» + kodefelt). Regel: EN AKTIV SESJON BETYR AT INGEN
+// INNLOGGING VENTER — så nøkkelen slettes når dashbordet starter med gyldig sesjon (dekker lenke-innlogging,
+// som aldri rører nøkkelen, og dermed 401 senere i økta) og ved utlogging. Uten dette viste logg-inn steg 2
+// etter utlogging/401 innen 10 min etter at lenka ble brukt. Ved 401 FØR sesjonen er bekreftet beholdes
+// nøkkelen med vilje: hjemskjerm-appen som ble drept mens koden hentes i Mail, skal finne den igjen.
+var INNLOGGING_KODE_KEY='bhq-innlogging-kode';   // samme nøkkel som KODE_KEY i logg-inn.html
+function glemInnloggingKode(){ try{ localStorage.removeItem(INNLOGGING_KODE_KEY); }catch(e){} }
 async function loadProfil(){
   let r;
   try{ r=await apiFetch('/api/dashboard/profile'); }catch(e){ settHeaderNavn(''); return; }   // nettverksfeil: ikke la skjelettet stå
   if(!r)return;
   if(!r.ok){ settHeaderNavn(''); return; }
   const p=await r.json();
+  glemInnloggingKode();   // sesjonen er gyldig → ingen innlogging venter
   // Redirect FJERNET (alt a): hasPassword:false blir værende på dashbordet og setter passord
   // inline i Konto → Innlogging (settInnloggingTilstand under). opprett-passord.html er
   // fortsatt landingssida for magisk lenke + reset — urørt.
@@ -5672,6 +5681,7 @@ $("#loggUt").addEventListener("click",async function(){
   // Serveren rydder sesjonen; vi går til login uansett utfall — å bli stående innlogget
   // i UI-et etter et mislykket utloggingskall er verre enn en overflødig redirect.
   try{ await apiFetch('/api/logout',{method:'POST',body:'{}',raw401:true}); }catch(e){}
+  glemInnloggingKode();   // utlogget → logg-inn skal vise steg 1, ikke en gammel kodeforespørsel
   location.href='/no/logg-inn.html';
 });
 // Profil («Din side») og Navn (Konto → Innlogging) deler PUT /api/dashboard/profile. Navn er

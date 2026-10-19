@@ -288,6 +288,8 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
   // sessionStorage, og da kan koden ikke brukes når appen åpnes igjen. Lagres sammen med e-posten (koden
   // gjelder bare den adressen), formålet (reset → «Send på nytt» skal også være reset) og utløpet.
   // Blokkert lagring (privat modus o.l.) gir bare ingen request_id → backend svarer ny_kode.
+  // Dashbordet sletter nøkkelen når det starter med gyldig sesjon og ved utlogging (glemInnloggingKode i
+  // dashboard.html, samme nøkkel): en aktiv sesjon betyr at ingen innlogging venter.
   var KODE_KEY = 'bhq-innlogging-kode', KODE_LEVETID = 10 * 60 * 1000;
   function lagreForesporsel(id, adr, formaal) {
     if (!id) { slettForesporsel(); return; }   // eldre backend uten request_id: ingenting å huske
