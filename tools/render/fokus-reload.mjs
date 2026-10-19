@@ -6,6 +6,7 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { gratis } from './fixtures/billing.mjs';
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
 fs.mkdirSync(OUT, { recursive: true });
@@ -31,8 +32,8 @@ function makeStatefulRouter() {
     if (p === '/api/dashboard/profile')       return json(PROFILE);
     if (p === '/api/dashboard/design')          return json(DESIGN);
     if (p === '/api/dashboard/preview')         return route.fulfill({ status:200, contentType:'text/html', body:PREVIEW });
-    if (p === '/api/dashboard/page-status') { if (req.method()==='PUT') state.live = true; return json({ page_status:'live', trial_start_at:NOW }); }
-    if (p === '/api/dashboard/billing/status')  return json({ subscription_status: state.live?'trialing':null, page_status: state.live?'live':'forhandsvist', trial_start_at: state.live?NOW:null, trial_days_left: state.live?30:null, needs_attention:false, attention_grunn:null });
+    if (p === '/api/dashboard/page-status') { if (req.method()==='PUT') state.live = true; return json(gratis({ page_status:'live' })); }   // full shape — et delvis svar avvises av erBillingShape
+    if (p === '/api/dashboard/billing/status')  return json(gratis({ page_status: state.live?'live':'forhandsvist' }));
     return json(/images|bookings|recent|services|hours|stats|attribution|winback|referrals|rebooking|sms-logg/.test(p) ? [] : {});
   };
 }

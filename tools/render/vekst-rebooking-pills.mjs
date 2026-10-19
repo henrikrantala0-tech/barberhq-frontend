@@ -17,12 +17,14 @@
 //   3. INGEN PLASSHOLDER SOM LYVER. #rebookPreview er tom til /sms-preview svarer. Der sto
 //      «SMS-utsending kobles på snart», som er usant nå — systemet sender.
 //
-// trial_days_left, ALDRI days_left (se advarselen over renderKonto i dashboard.html):
-//   null = ikke startet · 0 = utløpt · >0 = løper. Kun >0 skal vise ikonet.
+// Prøve-noten og info-ikonet (#rebookInfo/#rebookInfoWrap) ble FJERNET i 25638e3 (prismodell 09.10: ingen
+// prøveperiode for nye barbere). Testen asserter nå at ikonet aldri finnes; trial_days_left-casene står igjen
+// som billing-varianter (prøve løper / utløpt / aldri startet) så pillene måles i alle tre.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { prove, vekst } from './fixtures/billing.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -41,13 +43,12 @@ const PORT = server.address().port;
 const FEILTEKST = 'Kunne ikke hente innstillingene — last siden på nytt.';
 const NOTE = 'I prøveperioden sendes rebooking etter 28 dager. Valget ditt gjelder etter prøven.';
 
-// billing: kun feltene noten leser. page_status live så Konto ikke havner i en rar gren.
-const bill = (trialDaysLeft) => ({
-  subscription_status: trialDaysLeft > 0 ? null : 'active', page_status: 'live',
-  days_left: 99, trial_ends_at: null,            // Stripes felt — skal IKKE brukes av noten
-  trial_days_left: trialDaysLeft, myk_periode: false,
-  needs_attention: false, attention_grunn: null, nedtaking_dager_igjen: null,
-});
+// billing fra den delte mocken (fixtures/billing.mjs): prøve (trial_vindu) mens den løper, Vekst-abonnement
+// etterpå / uten prøve. days_left 99 = Stripes felt, skal IKKE brukes av noten. page_status live (standard)
+// så Konto ikke havner i en rar gren.
+const bill = (trialDaysLeft) => trialDaysLeft > 0
+  ? prove({ trial_days_left: trialDaysLeft, days_left: 99 })
+  : vekst({ trial_days_left: trialDaysLeft, days_left: 99 });
 
 const CASE = [
   { navn:'prove-loper',      trial:12,   settings:{ rebooking_interval_days:35 }, note:true,  pille:'35' },
@@ -189,8 +190,8 @@ for (const bredde of [320, 402, 1280]) {
       valgt: m.valgt,
       'valgt ok': m.valgt === (c.pille || '—') ? 'ok ✓' : 'AVVIK ✗',
       ikon: m.ikonSynlig ? 'vist' : 'skjult',
-      'ikon ok': m.ikonSynlig === c.note ? 'ok ✓' : 'AVVIK ✗',
-      'tip-tekst': m.tipTekstOk ? 'ok ✓' : 'AVVIK ✗',
+      'ikon ok': (!m.ikonSynlig && !m.harIkon) ? 'ok ✓' : 'AVVIK ✗',   // ikonet finnes ikke lenger (25638e3)
+      'tip-tekst': m.ikonSynlig ? (m.tipTekstOk ? 'ok ✓' : 'AVVIK ✗') : '—',
       'tip trykk': tipTrykk,
       'hint borte': m.hintFinnes ? 'FINNES ✗' : 'ok ✓',
       bryter: m.bryterUbestemt ? 'ubestemt' : (m.bryterAv ? 'av' : 'på/blandet'),
@@ -211,7 +212,7 @@ for (const bredde of [320, 402, 1280]) {
 
 console.table(rapport);
 const ok = rapport.every(r => r.låst === 'nei ✓' && r['valgt ok'] === 'ok ✓'
-  && r['ikon ok'] === 'ok ✓' && r['tip-tekst'] === 'ok ✓' && r['hint borte'] === 'ok ✓'
+  && r['ikon ok'] === 'ok ✓' && (r['tip-tekst'] === '—' || r['tip-tekst'] === 'ok ✓') && r['hint borte'] === 'ok ✓'
   && r['preview tom'] === 'ok ✓' && r['paam tom'] === 'ok ✓' && r['feil ok'] === 'ok ✓' && r['bryter ok'] === 'ok ✓'
   && (r['skriv v/feil'] === '—' || r['skriv v/feil'] === '0 ✓')
   && (r['holdt seg'] === '—' || r['holdt seg'] === 'ubestemt ✓') && r.jsfeil === 'ingen'
@@ -222,7 +223,7 @@ console.log('ingen oppdiktet 28: ', rapport.filter(r => r.case === 'settings-fei
   .every(r => r.valgt === '—') ? 'ja ✓' : 'NEI ✗');
 console.log('hint fjernet:       ', rapport.every(r => r['hint borte'] === 'ok ✓') ? 'ja ✓' : 'NEI ✗');
 console.log('plassholder borte:  ', rapport.every(r => r['preview tom'] === 'ok ✓' && r['paam tom'] === 'ok ✓') ? 'ja ✓ (begge)' : 'NEI ✗');
-console.log('ikon kun i prøve:   ', rapport.every(r => r['ikon ok'] === 'ok ✓') ? 'ja ✓' : 'NEI ✗');
+console.log('ikon/note borte:    ', rapport.every(r => r['ikon ok'] === 'ok ✓') ? 'ja ✓' : 'NEI ✗');
 console.log('feil sier fra:     ', rapport.every(r => r['feil ok'] === 'ok ✓') ? 'ja ✓' : 'NEI ✗');
 console.log('bryter ubestemt:    ', rapport.every(r => r['bryter ok'] === 'ok ✓') ? 'ja ✓' : 'NEI ✗');
 console.log('ingen skriv v/feil: ', rapport.every(r => r['skriv v/feil'] === '—' || r['skriv v/feil'] === '0 ✓') ? 'ja ✓' : 'NEI ✗');

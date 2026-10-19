@@ -3,6 +3,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { gratis } from './fixtures/billing.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css',
@@ -30,8 +31,7 @@ async function kjor(profil){
       return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(profil)});
     if(u.pathname==='/api/dashboard/billing/status')
       return route.fulfill({status:200,contentType:'application/json',
-        body:JSON.stringify({subscription_status:null,page_status:'forhandsvist',trial_start_at:null,
-                             trial_days_left:null,myk_periode:false,needs_attention:false,attention_grunn:null})});
+        body:JSON.stringify(gratis({page_status:'forhandsvist'}))});
     if(u.pathname==='/api/dashboard/preview')
       return route.fulfill({status:200,contentType:'text/html',body:'<html><body></body></html>'});
     route.fulfill({status:200,contentType:'application/json',

@@ -1,6 +1,6 @@
 // Lenke-blokka i Konto (#pubLink) etter at den ble tilstandsstyrt av page_status.
 // Tre tilstander skal falle ut av fem billing-svar:
-//   live         → hele URL-en + «Kopier lenke»
+//   live         → hele URL-en + kopi-ikonknapp (.pub-copy — lenkefeltet er delt med «Din side»)
 //   forhandsvist → «Se forhåndsvisning» + note, INGEN kopier-knapp
 //   nedtatt/draft→ ingenting
 // Verifiserer også at det som havner på utklippstavla starter med https:// — uten protokoll
@@ -9,6 +9,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { gratis, prove, vekst } from './fixtures/billing.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -29,48 +30,29 @@ const dager=n=>new Date(Date.now()-n*864e5).toISOString();
 // Grenene i renderKonto, navngitt som i koden. Alle fem sender page_status — det er DET
 // lenke-blokka leser, og poenget med testen er at billing-grenen ikke skal påvirke den.
 const TILSTANDER=[
-  ['B-live-trial',   {subscription_status:null,page_status:'live',trial_start_at:dager(18),
-                      trial_days_left:12,myk_periode:false,nedtaking_dager_igjen:null,
-                      needs_attention:false,attention_grunn:null,days_left:null,trial_ends_at:null},
-                     {lenke:true, kopier:true,  note:false}],
-  ['C-live-myk',     {subscription_status:null,page_status:'live',trial_start_at:dager(33),
-                      trial_days_left:0,myk_periode:true,nedtaking_dager_igjen:4,
-                      needs_attention:true,attention_grunn:'trial_utlopt',days_left:null,trial_ends_at:null},
-                     {lenke:true, kopier:true,  note:false}],
-  // Prøveperioden er ute, kortet er lagt inn, Stripe trekker — sluttilstanden for en
-  // betalende barberer. trial_days_left er 0, men myk_periode er false fordi Stripe dekker:
-  // uten den armen ville han fått «Prøveperioden er over» med kortet på plass.
-  ['F-active-live',  {subscription_status:'active',page_status:'live',trial_start_at:dager(40),
-                      trial_days_left:0,myk_periode:false,nedtaking_dager_igjen:null,
-                      needs_attention:false,attention_grunn:null,days_left:null,trial_ends_at:null},
-                     {lenke:true, kopier:true,  note:false}],
-  ['A-forhandsvist', {subscription_status:null,page_status:'forhandsvist',trial_start_at:null,
-                      trial_days_left:null,myk_periode:false,nedtaking_dager_igjen:null,
-                      needs_attention:false,attention_grunn:null,days_left:null,trial_ends_at:null},
-                     {lenke:true, kopier:false, note:true}],
-  ['D-nedtatt',      {subscription_status:null,page_status:'forhandsvist',trial_start_at:dager(40),
-                      trial_days_left:0,myk_periode:false,nedtaking_dager_igjen:null,
-                      needs_attention:true,attention_grunn:'trial_utlopt_nedtatt',
-                      days_left:null,trial_ends_at:null},
-                     {lenke:false,kopier:false, note:false}],
-  ['draft',          {subscription_status:null,page_status:'draft',trial_start_at:null,
-                      trial_days_left:null,myk_periode:false,nedtaking_dager_igjen:null,
-                      needs_attention:false,attention_grunn:null,days_left:null,trial_ends_at:null},
-                     {lenke:false,kopier:false, note:false}],
+  // Billing fra den delte mocken (fixtures/billing.mjs, prismodellen 09.10). Myk periode og nedtaking
+  // finnes ikke lenger: utløpt prøve = Gratis, og ingen side tas ned.
+  ['B-live-prove',        prove({page_status:'live'}),
+                          {lenke:true, kopier:true,  note:false}],
+  ['C-live-prove-utlopt', gratis({page_status:'live',trial_start_at:dager(33),trial_days_left:0}),
+                          {lenke:true, kopier:true,  note:false}],
+  // Betalende barberer — sluttilstanden.
+  ['F-active-live',       vekst({page_status:'live'}),
+                          {lenke:true, kopier:true,  note:false}],
+  ['A-forhandsvist',      gratis({page_status:'forhandsvist'}),
+                          {lenke:true, kopier:false, note:true}],
+  ['draft',               gratis({page_status:'draft'}),
+                          {lenke:false,kopier:false, note:false}],
   // Samme tilstand som B, men uten navigator.clipboard — usikker kontekst eller avvist
-  // tillatelse. Da skal knappen SI at han må kopiere selv og markere URL-teksten, ikke
-  // svare «Kopiert» på noe som aldri havnet på utklippstavla.
-  ['B-uten-clipboard',{subscription_status:null,page_status:'live',trial_start_at:dager(18),
-                      trial_days_left:12,myk_periode:false,nedtaking_dager_igjen:null,
-                      needs_attention:false,attention_grunn:null,days_left:null,trial_ends_at:null},
-                     {lenke:true, kopier:true,  note:false, utenClipboard:true}],
+  // tillatelse. Da går kopieringen via execCommand-fallbacken (kopierFallback), og haken skal
+  // vises bare når den faktisk lyktes.
+  ['B-uten-clipboard',    prove({page_status:'live'}),
+                          {lenke:true, kopier:true,  note:false, utenClipboard:true}],
   // Live, men /profile svarer uten slug. Vi kjenner ikke adressen og skal derfor ikke tegne
   // noen — en gjettet URL er verre enn ingen. Testen finnes fordi vakten er ETT `if` som er
   // lett å flytte feil vei ved neste endring, og fordi den skal holde uten å kaste.
-  ['live-uten-slug',{subscription_status:null,page_status:'live',trial_start_at:dager(18),
-                      trial_days_left:12,myk_periode:false,nedtaking_dager_igjen:null,
-                      needs_attention:false,attention_grunn:null,days_left:null,trial_ends_at:null},
-                     {lenke:false,kopier:false, note:false, utenSlug:true}],
+  ['live-uten-slug',      prove({page_status:'live'}),
+                          {lenke:false,kopier:false, note:false, utenSlug:true}],
 ];
 
 function ruter(page,billing,slug){
@@ -119,9 +101,10 @@ for(const bredde of [320,402]){
     const m=await page.evaluate(()=>{
       const boks=document.querySelector('#pubLink');
       const synlig=!!boks&&boks.style.display!=='none'&&!!boks.offsetParent;
-      const a=boks&&boks.querySelector('.pub-url-row>a');
-      const k=boks&&boks.querySelector('.pub-url-row>button');
-      return { lenke:synlig&&!!a, lenkeTekst:a?a.textContent:'—', href:a?a.href:'—',
+      const a=boks&&boks.querySelector('a');              // live: .pub-field>a.pub-url · forhandsvist: lenka rett i boksen
+      const k=boks&&boks.querySelector('button.pub-copy');
+      // Visningsteksten midt-forkortes (midtForkort) — den fulle visnings-URL-en står i data-full.
+      return { lenke:synlig&&!!a, lenkeTekst:a?(a.dataset.full||a.textContent):'—', href:a?a.href:'—',
                // Begge lenkene (live-URL og forhåndsvisning) er SAMME node — men testen
                // sjekker dem per tilstand, ikke på antakelsen om at de deler kode.
                mal:a?(a.target+'/'+a.rel):'—',
@@ -133,12 +116,12 @@ for(const bredde of [320,402]){
     // Uten clipboard leses MARKERINGEN i stedet — det er den som gjør manuell kopiering mulig.
     let kopiert='—', kvittering='—';
     if(m.kopier){
-      await page.click('#pubLink .pub-url-row>button');
+      await page.click('#pubLink button.pub-copy');
       await page.waitForTimeout(150);
-      kvittering=await page.$eval('#pubLink .pub-url-row>button',b=>b.textContent);
-      kopiert=vent.utenClipboard
-        ? await page.evaluate(()=>String(window.getSelection()))
-        : await page.evaluate(()=>navigator.clipboard.readText());
+      // Kvitteringen er haken i knappen selv (.ok i ~1,5 s), ikke tekst. Uten navigator.clipboard går kopieringen
+      // via execCommand('copy') (kopierFallback) og gir samme hake; utklippstavla kan da ikke leses herfra.
+      kvittering=await page.$eval('#pubLink button.pub-copy',b=>b.classList.contains('ok')?'ok':'ingen hake');
+      kopiert=vent.utenClipboard ? '—' : await page.evaluate(()=>navigator.clipboard.readText());
     }
 
     await page.locator('#abonnement').screenshot({path:`${OUT}/${bredde}-lenke-${navn}.png`});
@@ -150,10 +133,9 @@ for(const bredde of [320,402]){
     if(m.note!==vent.note)     feil.push(`note=${m.note} (ventet ${vent.note})`);
     if(m.lenke&&m.mal!=='_blank/noopener') feil.push(`target/rel="${m.mal}"`);
     if(m.lenke&&!/^https:\/\//.test(m.href)) feil.push(`href="${m.href}" mangler https://`);
-    if(m.kopier&&!/^https:\/\//.test(kopiert)) feil.push('kopiert/markert URL mangler https://');
-    const ventetKvittering=vent.utenClipboard?'Merket — kopier selv':'Kopiert';
-    if(m.kopier&&kvittering!==ventetKvittering) feil.push(`kvittering="${kvittering}" (ventet "${ventetKvittering}")`);
-    if(m.kopier&&m.kopierKlasse!=='btn-outline') feil.push(`kopier-knapp er .${m.kopierKlasse}, ikke .btn-outline`);
+    if(m.kopier&&!vent.utenClipboard&&!/^https:\/\//.test(kopiert)) feil.push('kopiert URL mangler https://');
+    if(m.kopier&&kvittering!=='ok') feil.push(`kvittering="${kvittering}" (ventet hake .ok)`);
+    if(m.kopier&&m.kopierKlasse!=='pub-copy') feil.push(`kopier-knapp er .${m.kopierKlasse}, ikke .pub-copy`);
 
     rapport.push({bredde,tilstand:navn,lenke:m.lenke?'ja':'nei',kopier:m.kopier?'ja':'nei',
       note:m.note?'ja':'nei',tekst:m.lenkeTekst.slice(0,30),'target/rel':m.mal,
@@ -168,4 +150,6 @@ console.table(rapport);
 console.log('avvik fra forventet tilstand:', rapport.some(r=>r.avvik!=='—')?'JA ✗':'nei');
 console.log('overflow:', rapport.some(r=>r.overflow!=='nei')?'JA ✗':'nei');
 console.log('jsfeil:',   rapport.some(r=>r.jsfeil!=='ingen')?'JA ✗':'ingen');
+// Rød = exit 1, så suiten ser det. (Før avsluttet testen med 0 også ved avvik — den sto rød i ukevis uten at noen så det.)
+if(rapport.some(r=>r.avvik!=='—'||r.overflow!=='nei'||r.jsfeil!=='ingen')) process.exitCode=1;
 await browser.close(); server.close();

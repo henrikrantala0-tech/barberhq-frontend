@@ -18,6 +18,7 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { gratis } from './fixtures/billing.mjs';
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
 fs.mkdirSync(OUT, { recursive: true });
@@ -37,7 +38,7 @@ function router(design) {
     const json = o => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify(o) });
     if (p === '/api/dashboard/profile')       return json(PROFILE);
     if (p === '/api/dashboard/design')         return json(design);
-    if (p === '/api/dashboard/billing/status') return json({ subscription_status:null, page_status:'forhandsvist', trial_start_at:null, trial_days_left:null, needs_attention:false });
+    if (p === '/api/dashboard/billing/status') return json(gratis({ page_status:'forhandsvist' }));
     if (p === '/api/dashboard/preview')        return route.fulfill({ status:200, contentType:'text/html', body:'<html><body style="background:#efe7d8"></body></html>' });
     return json(/images|bookings|recent|services|hours|stats|attribution|winback|referrals|rebooking|sms-logg/.test(p) ? [] : {});
   };

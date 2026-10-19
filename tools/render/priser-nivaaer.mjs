@@ -143,7 +143,7 @@ for(const bredde of [320,402,1280]){
     'pill hel': m.pillMalt===4&&m.pillInnenfor&&m.pillIKort?'ja ✓'
       :`NEI ✗ (${m.pillMalt}/4 malt, viewport=${m.pillInnenfor}, i kort=${m.pillIKort})`,
     'pill tekst/bredde': `${m.pillTekst} · ${m.pillBredde}px`,
-    'knapper B/V': `${m.basisKnapper}/${m.vekstKnapper}${m.basisKnapper===0&&m.vekstKnapper===1?' ✓':' ✗'}`,
+    'knapper B/V': `${m.basisKnapper}/${m.vekstKnapper}${m.basisKnapper===1&&m.vekstKnapper===0?' ✓':' ✗'}`,
     'basis-linje': m.basisLater,
     'skillepunkt': m.incLinje,
     'korthøyde B/V': m.hoyder, 'h1-linjer': m.h1linjer,
@@ -162,8 +162,8 @@ for(const bredde of [320,402,1280]){
 // Klikk-test: begge knappene, ekte klikk, på både mobil- og desktopoppsett.
 const klikk=[];
 for(const bredde of [402,1280]){
-  // Basis har ingen knapp lenger — Vekst er sidas eneste CTA, så den MÅ treffe.
-  for(const [navn,sel] of [['Prøv gratis i 30 dager','.pr-vekst .btn']]){
+  // Vekst-kortet har ingen knapp (prismodell 09.10): Gratis-kortet bærer sidas eneste kort-CTA, så den MÅ treffe.
+  for(const [navn,sel] of [['Kom i gang gratis','.pr-basis .btn']]){
     const page=await browser.newPage({viewport:{width:bredde,height:900},deviceScaleFactor:2});
     const errs=[]; page.on('pageerror',e=>errs.push(e.message));
     await page.goto(URL_PRISER,{waitUntil:'networkidle'});
@@ -189,5 +189,5 @@ console.log('overflow:     ', rapport.some(r=>r.overflow>0)?'JA ✗':'0 på alle
 console.log('pill hel:     ', rapport.every(r=>r['pill hel'].startsWith('ja'))?'ja ✓':'NEI ✗');
 console.log('kort-oppsett: ', rapport.every(r=>r['kort-oppsett'].endsWith('✓'))?'ja ✓':'NEI ✗');
 console.log('knapper:      ', klikk.every(r=>r.ok==='✓')?`alle ${klikk.length} → kom-i-gang.html ✓`:'NEI ✗');
-console.log('kort-CTA:     ', rapport.every(r=>r['knapper B/V'].endsWith('✓'))?'Basis 0 / Vekst 1 ✓':'NEI ✗');
+console.log('kort-CTA:     ', rapport.every(r=>r['knapper B/V'].endsWith('✓'))?'Gratis 1 / Vekst 0 ✓':'NEI ✗');
 await browser.close(); server.close();

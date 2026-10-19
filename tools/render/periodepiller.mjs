@@ -15,6 +15,7 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { vekst } from './fixtures/billing.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -40,7 +41,7 @@ function router() {
     const p = new URL(route.request().url()).pathname;
     const json = obj => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify(obj) });
     if (p === '/api/dashboard/profile') return json(PROFILE);
-    if (p === '/api/dashboard/billing/status') return json({ subscription_status:'active', plan:'vekst', effective_plan:'vekst', page_status:'live' });
+    if (p === '/api/dashboard/billing/status') return json(vekst());
     const listeAktig = /images|bookings|recent|services|hours|stats|attribution|winback|referrals|rebooking|sms-logg|ledige/.test(p);
     return json(listeAktig ? [] : {});
   };

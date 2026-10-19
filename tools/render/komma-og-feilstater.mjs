@@ -12,6 +12,7 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { prove } from './fixtures/billing.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -78,7 +79,7 @@ function mkRouter(cfg) {
     if (p === '/api/dashboard/profile')  return json(PROFILE);
     if (p === '/api/dashboard/services') return json(cfg.services || { hoved:[{name:'Klipp',price:300,min:30}], tillegg:[] });
     if (p === '/api/dashboard/hours')    return json(HOURS_OK);
-    if (p === '/api/dashboard/billing/status') return json({ subscription_status:'trialing', effective_plan:'vekst', plan:null });
+    if (p === '/api/dashboard/billing/status') return json(prove({ page_status:'live' }));
     const listeAktig = /images|bookings|recent|hours|stats|attribution|winback|referrals|rebooking|sms-logg|momentum/.test(p);
     return json(listeAktig ? [] : {});
   };

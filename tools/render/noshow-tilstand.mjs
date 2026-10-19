@@ -22,6 +22,7 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { vekst } from './fixtures/billing.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -59,7 +60,7 @@ function router(route){
   if (/^\/api\/dashboard\/bookings\//.test(p) && m === 'PATCH')            // toggle → feiler med vilje
     return route.fulfill({ status:500, contentType:'application/json', body:JSON.stringify({error:'nei'}) });
   if (p === '/api/dashboard/profile')       return json(PROFILE);
-  if (p === '/api/dashboard/billing/status') return json({ subscription_status:'trialing', page_status:'live', plan:'vekst', effective_plan:'vekst', needs_attention:false });
+  if (p === '/api/dashboard/billing/status') return json(vekst({ subscription_status:'trialing' }));
   const listeAktig = /images|bookings|recent|services|hours|stats|attribution|winback|referrals|rebooking|sms-logg/.test(p);
   return json(listeAktig ? [] : {});
 }

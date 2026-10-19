@@ -14,6 +14,7 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { gratis } from './fixtures/billing.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -36,9 +37,7 @@ const PROFILE = { slug: 'grand-barber', email: 'grand@barber.no', hasPassword: t
   name: 'Henrik', shop: 'Grand Barber', address: '', tagline: '', bio: '', booking_horizon_days: 28 };
 const DESIGN  = { palette: 'minimal', font: 'fraunces', layout: 'showcase', mode: 'mork' };
 const IMAGES  = [{ id: 1, slot: 'galleri', url: '/no/images/layout-showcase.webp', sort_order: 0 }];
-const BILLING = { subscription_status: null, page_status: 'forhandsvist', trial_start_at: null,
-  trial_days_left: null, nedtaking_dager_igjen: null, myk_periode: false, needs_attention: false,
-  attention_grunn: null, plan: null, effective_plan: null };
+const BILLING = gratis({ page_status: 'forhandsvist' });   // delt mock, se fixtures/billing.mjs
 
 const router = route => {
   const p = new URL(route.request().url()).pathname;

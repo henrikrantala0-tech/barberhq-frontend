@@ -10,6 +10,7 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { prove } from './fixtures/billing.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const MIME = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8',
@@ -57,7 +58,7 @@ function router(bk){ return route => {
   if (p === '/api/dashboard/services') return json(SERVICES);
   if (p === '/api/dashboard/hours')    return json(HOURS);
   if (p === '/api/dashboard/bookings') return json(bk);
-  if (p === '/api/dashboard/billing/status') return json({ subscription_status:'trialing', effective_plan:'vekst', plan:null });
+  if (p === '/api/dashboard/billing/status') return json(prove({ page_status:'live' }));
   const liste = /images|recent|winback|referrals|rebooking|sms-logg|momentum|loyalty|stats|attribution/.test(p);
   return json(liste ? [] : {});
 }; }

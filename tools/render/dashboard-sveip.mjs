@@ -21,6 +21,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { gratis, prove, vekst, pastDue } from './fixtures/billing.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -108,27 +109,12 @@ const SMS_PREVIEW={body:'Hei Markus! Minner om timen din i morgen kl 14:00 hos G
 // Konto-tilstandene — kopi fra konto-lenke.mjs, se filhodet.
 const dagerSiden=n=>iso(-n);
 const KONTO=[
-  ['B-live-trial',   {subscription_status:null,page_status:'live',trial_start_at:dagerSiden(18),
-                      trial_days_left:12,myk_periode:false,nedtaking_dager_igjen:null,
-                      needs_attention:false,attention_grunn:null,days_left:null,trial_ends_at:null}],
-  ['C-live-myk',     {subscription_status:null,page_status:'live',trial_start_at:dagerSiden(33),
-                      trial_days_left:0,myk_periode:true,nedtaking_dager_igjen:4,
-                      needs_attention:true,attention_grunn:'trial_utlopt',days_left:null,trial_ends_at:null}],
-  ['F-active-live',  {subscription_status:'active',page_status:'live',trial_start_at:dagerSiden(40),
-                      trial_days_left:0,myk_periode:false,nedtaking_dager_igjen:null,
-                      needs_attention:false,attention_grunn:null,days_left:null,trial_ends_at:null}],
-  ['E-past-due',     {subscription_status:'past_due',page_status:'live',trial_start_at:dagerSiden(60),
-                      trial_days_left:0,myk_periode:false,nedtaking_dager_igjen:null,
-                      needs_attention:true,attention_grunn:'past_due',days_left:null,trial_ends_at:null}],
-  ['A-forhandsvist', {subscription_status:null,page_status:'forhandsvist',trial_start_at:null,
-                      trial_days_left:null,myk_periode:false,nedtaking_dager_igjen:null,
-                      needs_attention:false,attention_grunn:null,days_left:null,trial_ends_at:null}],
-  ['D-nedtatt',      {subscription_status:null,page_status:'forhandsvist',trial_start_at:dagerSiden(40),
-                      trial_days_left:0,myk_periode:false,nedtaking_dager_igjen:null,
-                      needs_attention:true,attention_grunn:'trial_utlopt_nedtatt',days_left:null,trial_ends_at:null}],
-  ['draft',          {subscription_status:null,page_status:'draft',trial_start_at:null,
-                      trial_days_left:null,myk_periode:false,nedtaking_dager_igjen:null,
-                      needs_attention:false,attention_grunn:null,days_left:null,trial_ends_at:null}],
+  ['B-live-prove',        prove({page_status:'live'})],
+  ['C-live-prove-utlopt', gratis({page_status:'live',trial_start_at:dagerSiden(33),trial_days_left:0})],
+  ['F-active-live',       vekst({page_status:'live'})],
+  ['E-past-due',          pastDue({page_status:'live'})],
+  ['A-forhandsvist',      gratis({page_status:'forhandsvist'})],
+  ['draft',               gratis({page_status:'draft'})],
 ];
 const STANDARD_BILLING=KONTO.find(k=>k[0]==='F-active-live')[1];
 

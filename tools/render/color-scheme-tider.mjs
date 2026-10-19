@@ -16,6 +16,7 @@
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import os from 'node:os';
 import { chromium, webkit } from 'playwright';
+import { gratis } from './fixtures/billing.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -42,9 +43,7 @@ const SERVICES = { hoved: [{ name: 'Herreklipp', price: 350, min: 30 }, { name: 
   tillegg: [{ name: 'Hårvask', price: 80, min: 0 }] };
 const HOURS = [1,2,3,4,5].map(wd => ({ weekday: wd, is_closed: false, open_time: '10:00', close_time: '18:00', breaks: [] }))
   .concat([6,0].map(wd => ({ weekday: wd, is_closed: true, open_time: '10:00', close_time: '18:00', breaks: [] })));
-const BILLING = { subscription_status: null, page_status: 'forhandsvist', trial_start_at: null,
-  trial_days_left: null, nedtaking_dager_igjen: null, myk_periode: false, needs_attention: false,
-  attention_grunn: null, plan: null, effective_plan: null };
+const BILLING = gratis({ page_status: 'forhandsvist' });   // delt mock, se fixtures/billing.mjs
 const GOOGLE = { connected: false, scope_ok: true };
 
 const router = route => {

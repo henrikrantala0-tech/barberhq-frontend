@@ -83,7 +83,7 @@ for (const [navn, attr] of Object.entries(STATES)) {
       const armer = [...document.querySelectorAll('#drivenBy .di-row .di-arm')].map(a=>a.textContent.trim());
       // Lojalitet skal ALDRI finnes: ingen «Lojalitet»-arm, ingen .di-setup i panelet.
       const lojFinnes = armer.includes('Lojalitet') || !!document.querySelector('#drivenBy .di-setup');
-      return { rebooking:finn('Gjenbesøk'), armer, lojFinnes };
+      return { rebooking:finn('Rebooking'), armer, lojFinnes };
     });
     const node = await page.$('#drivenBy'); if (node && bredde===375) await node.screenshot({ path:`${OUT}/aktivert-${navn}-375.png` });
 
@@ -107,7 +107,7 @@ console.table(rapport);
 const ok = rapport.every(r => r.ok==='✓');
 console.log('Tall BEHOLDES + «SMS av»-badge ved aktivert=false (grand-barber):', rapport.filter(r=>r.konto==='grand-barber').every(r=>/6 klipp · 2 048 kr.*\[SMS av\]/.test(r.rebooking.replace(/[\s  ]+/g,' '))) ? 'ja ✓':'NEI ✗');
 console.log('Lojalitet ALDRI i panelet (biter hvis raden kommer tilbake):', rapport.every(r=>r.lojalitet==='borte') ? 'ja ✓':'NEI ✗');
-console.log('Armer = kun Verving/Vinn tilbake/Gjenbesøk:', rapport.every(r=>r.armer==='Verving,Vinn tilbake,Gjenbesøk') ? 'ja ✓':'NEI ✗');
+console.log('Armer = kun Verving/Vinn tilbake/Rebooking:', rapport.every(r=>r.armer==='Verving,Vinn tilbake,Rebooking') ? 'ja ✓':'NEI ✗');
 console.log('SAMLET:', ok ? 'GRØNT ✓' : 'NOE FEILER ✗');
 await browser.close(); server.close();
 process.exit(ok ? 0 : 1);
