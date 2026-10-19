@@ -120,8 +120,15 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
 - **Ingen falsk social proof** — null kunder nå; alle påstander må være ærlige.
 - **Font:** valg fjernet fra onboarding (alle får Fraunces). Font velges i
   dashbordet etterpå.
-- Design er låst: 6 paletter, 4 layouter (Profil/Showcase/Hero/Direkte).
-  Ikke endre uten å spørre.
+- **Designmodell — LÅST 19.10.2026 (erstatter «Design er låst: 6 paletter, 4 layouter»):**
+  - **v1 (utgående):** dagens palett/layout/stil-velger i «Din side». Beholdes for eksisterende barbere
+    til alle er flyttet.
+  - **v2 (ny, bak `barbers.sidemal='v2'` i backend):** ÉN fast mal. Fonten påvirker KUN sjappenavnet
+    (Inter ellers). Aksent blå `#0071E3` / gull `#B08C32` / rød `#B83A42` / egen; lys/mørk. Ingen layout,
+    ingen hero. «Din side» blir fire steg: Profil → Utseende → Bilder → Kontakt, «Se siden» hele veien,
+    «Lagre endringer» gjør alt live (ingen publiser-knapp, ingen sjekkliste-sperre). Mobil først; render
+    320/375/402/1280. Egen farge med knappkontrast under 3,0 → varsel, lagring tillatt.
+  - Nye barbere får v1 til Grand Barber er godkjent på v2; deretter v2.
 - **Oversikt = uke-rekord-akse; Vekst = måned-rekord-akse.** Persentil + progress-bar bor
   på Oversikt og er UKE-relative (måned har for få datapunkter for meningsfull persentil;
   uke-jakt gir hyppigere motivasjon). «Beste måned» (+ gullstolpe-på-rekord-måned) hører til
