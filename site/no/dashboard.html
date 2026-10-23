@@ -471,12 +471,27 @@
      (~20 tegn ≈ 170px hver) → gruppa ballonerte til 508px og sprengte viewporten; og lar man den
      krympe (min-width:0), klemmes barna i stedet ut av boksen i header-raden. Begge forsvinner med en
      fast basis lik barnas sum. (Chromium respekterer barnas flex-basis i auto-beregningen → kun iOS-bug.) */
-  .svc-tall{display:flex;gap:8px;align-items:center;flex:0 0 184px;min-width:0}
+  .svc-tall{display:flex;gap:8px;align-items:center;flex:0 0 218px;min-width:0}   /* 88 + 80 + 34 + 2×8 */
   /* Faste, men strammet ~24px fra 96/66: pris rommer 4-sifret (1500), min. 3-sifret (120) uten klem.
      min-width:0 er PÅKREVD: number-inputs har stor min-content, og flex-defaulten min-width:auto
      gulver dem der (målt 201px) → tall-gruppa blåser opp og alt brekker. */
   .svc-pris{flex:0 0 78px;min-width:0}
   .svc-min{flex:0 0 56px;min-width:0}
+  /* Fast enhet inni feltet («kr»/«min», ikke redigerbar) når feltet har en verdi; tomt felt viser bare plassholderen. Wrapperen eier flex-basisen (88/80 rommer
+     «1200 kr» og «120 min» på 320 uten klem); inputen fyller den og har padding-right forbi enheten, så tallet aldri går under. */
+  .svc-enhet{position:relative;display:block;min-width:0}
+  .svc-enhet-pris{flex:0 0 88px}
+  .svc-enhet-min{flex:0 0 80px}
+  .svc-enhet>input{width:100%}
+  .svc-enhet-pris>input{padding-right:2em}     /* «kr»: plass til 4 siffer (1200) uten intern scroll */
+  .svc-enhet-min>input{padding-right:2.6em}    /* «min»: plass til 3 siffer (120) */
+  .svc-enhet-tekst{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--mut);pointer-events:none}
+  /* Tomt felt: bare plassholderen («Pris»/«Min»). Enheten kommer først når feltet har en verdi — ren CSS, ingen JS. */
+  .svc-enhet>input:placeholder-shown+.svc-enhet-tekst{display:none}
+  .svc-head-h .svc-pris,.svc-head-t .svc-pris{flex-basis:88px}
+  .svc-head-h .svc-min,.svc-head-t .svc-min{flex-basis:80px}
+  /* Overskriftsraden står bare når den faktisk står over kolonnene: skjules (oppdaterSvcHode) når en rad har brukket. */
+  .svc-head-h[hidden],.svc-head-t[hidden]{display:none}
   /* Pris-0-markør: navngitt tjeneste uten pris → rød pris-kant + full-bredde «Sett pris»-linje
      under raden. Parallell til kundesidens prisTekst-vern; gå-live blokkeres uansett server-side.
      .svc-flag ligger som eget flex-barn (flex-basis:100%) → egen linje under tall-gruppa. */
@@ -1613,6 +1628,10 @@
   .suksess-lenke .pub-field{background:var(--bg)}
   .suksess-linje{font-size:14px;color:var(--ink);margin-top:6px;font-weight:600}
   .suksess-linje.sub{color:var(--mut);font-size:13px;font-weight:400}
+/* v2: beskrivelse under hovedtjenesten — tydelig underordnet navnefeltet: mindre tekst, dempet farge, svak kant, tett på raden
+   (radens egen 8px-gap, ingen ekstra luft). Relative enheter og dashbordets farge-tokens. */
+#hovedList .svc-description{flex:1 0 100%;width:100%;font-size:.875em;color:var(--ink-2);border-color:var(--line);background:transparent}
+#hovedList .svc-description::placeholder{color:var(--mut)}
 </style>
 <link rel="stylesheet" href="dinside-v2.css">
 </head>
@@ -2319,7 +2338,7 @@
 
     <p class="svc-group-h">Hovedtjenester</p>
     <p class="svc-group-s">Kunden velger én. Minst én kreves.</p>
-    <div class="svc-head-h"><span class="svc-navn">Tjeneste</span><div class="svc-tall"><span class="svc-pris">Pris (kr)</span><span class="svc-min">Min.</span><span class="svc-rm-h"></span></div></div>
+    <div class="svc-head-h" id="svcHodeH"><span class="svc-navn">Tjeneste</span><div class="svc-tall"><span class="svc-pris">Pris (kr)</span><span class="svc-min">Min.</span><span class="svc-rm-h"></span></div></div>
     <div id="hovedList"></div>
     <button class="addbtn" id="addHoved">+ Legg til hovedtjeneste</button>
 
@@ -2327,7 +2346,7 @@
 
     <p class="svc-group-h">Tillegg</p>
     <p class="svc-group-s">Kunden kan huke av flere. Valgfritt.</p>
-    <div class="svc-head-t"><span class="svc-navn">Tillegg</span><div class="svc-tall"><span class="svc-pris">Pris (kr)</span><span class="svc-min">Min.</span><span class="svc-rm-h"></span></div></div>
+    <div class="svc-head-t" id="svcHodeT"><span class="svc-navn">Tillegg</span><div class="svc-tall"><span class="svc-pris">Pris (kr)</span><span class="svc-min">Min.</span><span class="svc-rm-h"></span></div></div>
     <div id="tilleggList"></div>
     <button class="addbtn" id="addTillegg">+ Legg til tillegg</button>
 
@@ -6794,9 +6813,27 @@ function svcMangler(s){return (s.name||'').trim()!=='' && !(Number(s.price)>0);}
 // Varighet kreves KUN for hovedtjenester (tillegg kan ha 0 min, f.eks. et produkt). L-12.
 function svcMinMangler(s){return (s.name||'').trim()!=='' && !(Number(s.min)>0);}
 function svcFlagTxt(mp,mm){return mp&&mm?'Sett pris og varighet':mp?'Sett pris':mm?'Sett varighet':'';}
-function hovedRow(s,i){var mp=svcMangler(s),mm=svcMinMangler(s),ft=svcFlagTxt(mp,mm);return '<div class="svc-row-h"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="h" data-i="'+i+'" data-f="name" placeholder="F.eks. Fade"><div class="svc-tall"><input class="svc-pris'+(mp?' pris-0':'')+'" type="text" inputmode="decimal" value="'+esc(String(s.price))+'" data-l="h" data-i="'+i+'" data-f="price"><input class="svc-min'+(mm?' min-0':'')+'" type="text" inputmode="decimal" value="'+esc(String(s.min))+'" data-l="h" data-i="'+i+'" data-f="min"><button class="svc-rm" data-l="h" data-i="'+i+'" aria-label="Fjern">&times;</button></div><span class="svc-flag"'+(ft?'':' hidden')+'>'+ft+'</span></div>';}
-function tilleggRow(s,i){var mp=svcMangler(s);return '<div class="svc-row-t"><input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="t" data-i="'+i+'" data-f="name" placeholder="F.eks. Skjegg"><div class="svc-tall"><input class="svc-pris'+(mp?' pris-0':'')+'" type="text" inputmode="decimal" value="'+esc(String(s.price))+'" data-l="t" data-i="'+i+'" data-f="price"><input class="svc-min" type="text" inputmode="decimal" value="'+esc(String(s.min))+'" data-l="t" data-i="'+i+'" data-f="min"><button class="svc-rm" data-l="t" data-i="'+i+'" aria-label="Fjern">&times;</button></div><span class="svc-flag"'+(mp?'':' hidden')+'>Sett pris</span></div>';}
-function renderSvc(){$("#hovedList").innerHTML=hoved.map(hovedRow).join("");$("#tilleggList").innerHTML=tillegg.map(tilleggRow).join("");validateSvc();}
+// Beskrivelsen vises bare på v2-bookingsiden → feltet bare for v2 (erV2 = billing.sidemal). v1 beholder verdien urørt i dataene.
+// Felles felt. Pris/min: fast enhet inni boksen («kr»/«min», .svc-enhet-tekst, aria-hidden) + aria-label; tomt felt viser bare plassholderen.
+// Verdien er alltid bare tallet — enheten er CSS, aldri en del av value (lagring sender rene tall, se #saveSvc).
+function svcVerdi(v){return v===''||v==null?'':String(v);}
+function svcNavnFelt(s,l,i){return '<input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="'+l+'" data-i="'+i+'" data-f="name" placeholder="Navn på tjenesten" aria-label="Navn på tjenesten">';}
+function svcTallFelt(s,l,i,prisKl,minKl){return '<div class="svc-tall">'
+  +'<span class="svc-enhet svc-enhet-pris"><input class="svc-pris'+prisKl+'" type="text" inputmode="decimal" value="'+esc(svcVerdi(s.price))+'" data-l="'+l+'" data-i="'+i+'" data-f="price" placeholder="Pris" aria-label="Pris i kroner"><span class="svc-enhet-tekst" aria-hidden="true">kr</span></span>'
+  +'<span class="svc-enhet svc-enhet-min"><input class="svc-min'+minKl+'" type="text" inputmode="decimal" value="'+esc(svcVerdi(s.min))+'" data-l="'+l+'" data-i="'+i+'" data-f="min" placeholder="Min" aria-label="Varighet i minutter"><span class="svc-enhet-tekst" aria-hidden="true">min</span></span>'
+  +'<button class="svc-rm" data-l="'+l+'" data-i="'+i+'" aria-label="Fjern">&times;</button></div>';}
+function hovedRow(s,i){var mp=svcMangler(s),mm=svcMinMangler(s),ft=svcFlagTxt(mp,mm);return '<div class="svc-row-h">'+svcNavnFelt(s,'h',i)+svcTallFelt(s,'h',i,mp?' pris-0':'',mm?' min-0':'')+'<span class="svc-flag"'+(ft?'':' hidden')+'>'+ft+'</span>'+(erV2()?'<input class="svc-description" data-l="h" data-i="'+i+'" data-f="description" maxlength="120" aria-label="Kort beskrivelse av '+esc((s.name||'').trim()||'tjenesten')+'" placeholder="Hva inngår? (valgfritt)" value="'+esc(s.description||'')+'">':'')+'</div>';}
+function tilleggRow(s,i){var mp=svcMangler(s);return '<div class="svc-row-t">'+svcNavnFelt(s,'t',i)+svcTallFelt(s,'t',i,mp?' pris-0':'','')+'<span class="svc-flag"'+(mp?'':' hidden')+'>Sett pris</span></div>';}
+function renderSvc(){$("#hovedList").innerHTML=hoved.map(hovedRow).join("");$("#tilleggList").innerHTML=tillegg.map(tilleggRow).join("");validateSvc();oppdaterSvcHode();}
+// Overskriftsraden (Tjeneste / Pris / Min.) står bare når den faktisk står over kolonnene: skjules når lista er tom eller
+// minst én rad har brukket tall-gruppa til linje 2 (innholdsstyrt — avhenger av navnelengde, ikke av en breakpoint).
+// Måles kun når lista er synlig; ResizeObserver tar fanebytte, bredde og navn som får raden til å brekke.
+function oppdaterSvcHode(){[['#svcHodeH','#hovedList'],['#svcHodeT','#tilleggList']].forEach(function(p){
+  var hode=$(p[0]),liste=$(p[1]); if(!hode||!liste||liste.offsetParent===null)return;
+  var rader=liste.children, brukket=!rader.length;
+  for(var k=0;k<rader.length&&!brukket;k++){var n=rader[k].querySelector('.svc-navn'),t=rader[k].querySelector('.svc-tall'); if(n&&t&&t.offsetTop>n.offsetTop+2)brukket=true;}
+  hode.hidden=brukket; });}
+if(window.ResizeObserver){var _svcHodeRO=new ResizeObserver(function(){oppdaterSvcHode();}); ['#hovedList','#tilleggList'].forEach(function(s){var e=$(s); if(e)_svcHodeRO.observe(e);});}
 function validateSvc(){
   const named=hoved.filter(s=>s.name.trim());
   const btn=$("#saveSvc"),err=$("#svcErr");
@@ -6818,17 +6855,19 @@ async function loadTjenester(){
   // L-3: tving pris/min til tall (fallback 0) allerede ved innlasting — en ikke-numerisk verdi fra
   // backend kan ellers nå value="…"-attributtet uendret (attributt-injeksjon). esc() i radene er
   // andrelinjeforsvar; Number()||0 kutter kilden.
-  hoved=(d.hoved||[]).map(function(s){return{name:s.name,price:Number(s.price)||0,min:Number(s.min)||0};});
-  tillegg=(d.tillegg||[]).map(function(s){return{name:s.name,price:Number(s.price)||0,min:Number(s.min)||0};});
+  hoved=(d.hoved||[]).map(function(s){return{name:s.name,description:s.description||'',price:Number(s.price)||0,min:Number(s.min)||0};});
+  tillegg=(d.tillegg||[]).map(function(s){return{name:s.name,description:s.description||'',price:Number(s.price)||0,min:Number(s.min)||0};});
   _svcHentet=true; settSvcKontroller(true); _ulagret.svc=false;
   renderSvc();
 }
-$("#addHoved").addEventListener("click",()=>{hoved.push({name:"",price:0,min:30});renderSvc();});
-$("#addTillegg").addEventListener("click",()=>{tillegg.push({name:"",price:0,min:0});renderSvc();});
+// Ny rad starter tom (plassholderne «Pris»/«Min» synes); lagring gjør tomt til 0 (rene tall).
+$("#addHoved").addEventListener("click",()=>{hoved.push({name:"",description:"",price:"",min:""});renderSvc();});
+$("#addTillegg").addEventListener("click",()=>{tillegg.push({name:"",description:"",price:"",min:""});renderSvc();});
 $("#hovedList").addEventListener("input",svcInput);
 $("#tilleggList").addEventListener("input",svcInput);
 function svcInput(e){const l=e.target.dataset.l,i=+e.target.dataset.i,f=e.target.dataset.f;if(f==null)return;const arr=l==="h"?hoved:tillegg;
   if(f==="name"){arr[i].name=e.target.value;e.target.size=svcSize(e.target.value);}
+  else if(f==="description"){arr[i].description=e.target.value;}
   else if(f==="price"){
     // Prisfeltet er type=text inputmode=decimal → JS ser råstrengen, også kommaet (type=number avviste
     // det til value="" før JS så det). Norske brukere taster «45,5»: komma→punktum, rund til nærmeste
@@ -6865,8 +6904,9 @@ $("#saveSvc").addEventListener("click",function(){
   if(!validateSvc())return;
   medLagreKnapp(async()=>{
     const r=await apiFetch('/api/dashboard/services',{method:'PUT',body:JSON.stringify({
-      hoved:   hoved.filter(s=>s.name.trim()),
-      tillegg: tillegg.filter(s=>s.name.trim()),
+      // Rene tall til backend: enheten er CSS, og en tom ny rad har '' → 0.
+      hoved:   hoved.filter(s=>s.name.trim()).map(s=>({...s,price:Number(s.price)||0,min:Number(s.min)||0})),
+      tillegg: tillegg.filter(s=>s.name.trim()).map(s=>({...s,price:Number(s.price)||0,min:Number(s.min)||0})),
     })});
     if(!r)return;
     if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre tjenester. Prøv igjen.');return;}
