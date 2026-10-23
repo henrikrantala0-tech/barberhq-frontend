@@ -1,0 +1,486 @@
+<!doctype html>
+<!-- PROTOTYPE — ikke en del av siten (ligger utenfor site/ og publiseres aldri). «Din side» v2, til Henriks valg 22.10.2026.
+     Rendres av tools/render/dinside-v2-oppsett.mjs mot den LOKALE e2e-backenden (npm run e2e:backend, 127.0.0.1:3100):
+     ekte data fra GET /api/dashboard/din-side, ekte forhåndsvisning fra POST /api/dashboard/preview (samme rute som
+     dinside-v2.js, med ulagrede verdier), ekte lagring med PUT /api/dashboard/din-side. Prototypen må serveres fra
+     127.0.0.1 (ikke localhost) — ellers sendes ikke sesjons-cookien (SameSite=Lax, vertsbundet lokalt).
+
+     URL-parametere:
+       api=http://127.0.0.1:3100   API-et (påkrevd)
+       modus=A          Oppsett: ingen hovedfaner, ingen bunn-nav, X øverst til høyre (bekrefter ved ulagret).
+       modus=B          Etter oppsettet: hovedfanene synes, Din side har samme steg.
+       (Om siden er live, leses fra GET /billing/status. Ikke live: «Fullfør siden din» på Oversikt, lenke til oppsettet.)
+       hjelp=1          vis forslaget til hjelpelinje under «Lagre endringer» (bare mens siden ikke er live)
+       visning=oversikt (B) vis Oversikt.     steg=0..3   tema=lys|mork   egen=#rrggbb (velg «Din egen» med fargen)
+       pv=1 (mobil: forhåndsvisningen åpen)
+
+     Farger: dashbordets tokens hentes fra site/no/dashboard.html ved lasting (én kilde). Avstander og felt:
+     site/no/dinside-v2.css (--dv2-s1…s5, --dv2-felt, .dv2-prover …). Nye størrelser her er tokens på #dinsideV2. -->
+<html lang="no" data-theme="dark">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Prototype — Din side v2 oppsett</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style id="tokens">/* fylles fra dashboard.html */</style>
+<link rel="stylesheet" href="/site/no/dinside-v2.css">
+<style>
+  #dinsideV2{ --pt-trykk:44px; --pt-tekst:.9375rem; --pt-liten:.8125rem; --pt-tittel:1.5rem; --pt-radius:12px;
+    --pt-pv-bredde:360px; --pt-innhold:680px; --pt-bunnnav-h:52px; --pt-bar-h:calc(var(--pt-trykk) + var(--dv2-s2) * 2 + 1px);
+    --pt-felt-h:160px; --pt-baand-h:var(--dv2-s3); --pt-tommel:22px; }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{background:var(--bg);color:var(--ink);font-family:Inter,system-ui,sans-serif;-webkit-font-smoothing:antialiased}
+  button,select,input,textarea{font:inherit}
+  #dinsideV2{min-height:100dvh;display:flex;flex-direction:column}
+  #dinsideV2 [hidden]{display:none!important}
+
+  /* ── Dashbord-rammen ─────────────────────────────────────────────────────────────────── */
+  .pt-topp{display:flex;align-items:center;justify-content:space-between;gap:var(--dv2-s2);padding:var(--dv2-s2) var(--dv2-s3);border-bottom:1px solid var(--line);min-height:calc(var(--pt-trykk) + var(--dv2-s2) * 2)}
+  .pt-topp b{font-size:1.0625rem;font-weight:700;letter-spacing:-.01em}
+  .pt-x{appearance:none;width:var(--pt-trykk);height:var(--pt-trykk);border-radius:var(--pt-radius);border:1px solid var(--line-2);background:var(--surface);color:var(--ink);font-size:1.25rem;cursor:pointer;display:grid;place-items:center}
+  .pt-faner{display:none;gap:var(--dv2-s4);padding:0 var(--dv2-s3);border-bottom:1px solid var(--line)}
+  .pt-faner button{appearance:none;border:0;background:0;color:var(--mut);font-size:var(--pt-liten);font-weight:500;min-height:var(--pt-trykk);border-bottom:2px solid transparent;margin-bottom:-1px;cursor:pointer}
+  .pt-faner button[aria-selected="true"]{color:var(--ink);border-bottom-color:var(--ink)}
+  .pt-bunnnav{position:fixed;left:0;right:0;bottom:0;z-index:30;display:flex;background:var(--surface);border-top:1px solid var(--line);padding-bottom:env(safe-area-inset-bottom)}
+  .pt-bunnnav button{flex:1;appearance:none;border:0;background:0;min-height:var(--pt-bunnnav-h);font-size:var(--pt-liten);font-weight:600;color:var(--mut);cursor:pointer}
+  .pt-bunnnav button[aria-selected="true"]{color:var(--info)}
+  @media(min-width:720px){ body.B .pt-faner{display:flex} .pt-bunnnav{display:none} }
+  body.A .pt-faner, body.A .pt-bunnnav{display:none!important}
+
+  /* ── Oppsett: innhold + (desktop) fast telefonramme til høyre ──────────────────────────────── */
+  .pt-oppsett{flex:1;display:grid;grid-template-columns:minmax(0,1fr);width:100%;max-width:var(--pt-innhold);margin:0 auto}
+  @media(min-width:1024px){ .pt-oppsett{max-width:calc(var(--pt-innhold) + var(--pt-pv-bredde) + var(--dv2-s5));grid-template-columns:minmax(0,1fr) var(--pt-pv-bredde);gap:var(--dv2-s5);padding:0 var(--dv2-s3)} }
+  .pt-redig{min-width:0;display:flex;flex-direction:column}
+  .pt-fast{position:sticky;top:0;z-index:20;background:var(--bg);padding:var(--dv2-s2) var(--dv2-s3)}
+  @media(min-width:1024px){ .pt-fast,.pt-innhold{padding-left:0;padding-right:0} }
+  .pt-tittelrad{display:flex;align-items:center;justify-content:space-between;gap:var(--dv2-s2);margin-bottom:var(--dv2-s2)}
+  .pt-tittelrad h2{font-size:var(--pt-tittel);line-height:1.2;font-weight:700;letter-spacing:-.025em}
+  .pt-pvknapp{min-height:var(--pt-trykk)}
+  @media(min-width:1024px){ .pt-pvknapp{display:none!important} }
+
+  .pt-seg{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:2px;border-radius:var(--pt-radius);background:var(--line);border:1px solid var(--line)}
+  .pt-seg button{appearance:none;border:0;border-radius:calc(var(--pt-radius) - 2px);background:transparent;color:var(--mut);min-height:var(--pt-trykk);
+    font-size:var(--pt-liten);font-weight:600;letter-spacing:-.01em;cursor:pointer;position:relative;padding:0 2px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .pt-seg button:hover{color:var(--ink)}
+  .pt-seg button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px color-mix(in srgb,var(--ink) 12%,transparent)}
+  .pt-seg .feilpunkt{position:absolute;top:.45em;right:.5em;width:.45em;height:.45em;border-radius:50%;background:var(--bad)}
+  #dinsideV2 :focus-visible{outline:2px solid var(--info);outline-offset:2px}
+
+  /* Innholdet slutter over bunnbaren: padding = barens høyde + safe-area (+ bunn-nav i B på mobil). */
+  .pt-innhold{padding:0 var(--dv2-s3) calc(var(--pt-bar-h) + env(safe-area-inset-bottom) + var(--dv2-s3));flex:1}
+  body.B .pt-innhold{padding-bottom:calc(var(--pt-bar-h) + var(--pt-bunnnav-h) + env(safe-area-inset-bottom) + var(--dv2-s3))}
+  @media(min-width:720px){ body.B .pt-innhold{padding-bottom:calc(var(--pt-bar-h) + env(safe-area-inset-bottom) + var(--dv2-s3))} }
+  @media(min-width:1024px){ .pt-innhold, body.B .pt-innhold{padding-bottom:var(--dv2-s3)} }
+  .pt-sek>h3{font-size:1.25rem;line-height:1.25;font-weight:700;letter-spacing:-.02em;margin:var(--dv2-s3) 0 var(--dv2-s1)}
+  .pt-sek>.pt-hjelp{font-size:var(--pt-tekst);line-height:1.55;color:var(--mut);margin-bottom:var(--dv2-s2)}
+  .pt-del{border-top:1px solid var(--line);padding:var(--dv2-s3) 0}
+  .pt-del.dv2-fld{margin:0}
+  .pt-del .etikett{display:block;font-size:var(--pt-tekst);font-weight:600;color:var(--ink);margin-bottom:var(--dv2-s1)}
+  .pt-del input[type=text],.pt-del input[type=tel],.pt-del select,.pt-del textarea{width:100%;min-height:var(--dv2-felt);border:1px solid var(--line-2);border-radius:var(--pt-radius);background:var(--surface);color:var(--ink);font-size:1rem;padding:0 var(--dv2-s2)}
+  .pt-felthjelp{font-size:var(--pt-liten);line-height:1.45;color:var(--mut);margin:calc(var(--dv2-s1) * -1) 0 var(--dv2-s1)}
+  .pt-del textarea{padding:var(--dv2-s2);min-height:calc(var(--dv2-felt) * 2);resize:vertical;line-height:1.5}
+  .pt-del input[aria-invalid="true"]{border-color:var(--bad)}
+  .pt-galleri{display:grid;grid-template-columns:repeat(3,1fr);gap:var(--dv2-s1);margin-bottom:var(--dv2-s2)}
+  .pt-flis{aspect-ratio:1/1;border-radius:var(--dv2-s1);background:var(--surface);border:1px dashed var(--line-2)}
+
+  /* Aksent: fire brikker på én rad (blå, gull, rød, Din egen) — samme brikke og størrelse som dagens .dv2-prover.
+     «Din egen» uten valgt farge vises som et fargehjul, så det synes at den åpner en velger. */
+  #dinsideV2 .dv2-prover{max-width:none}
+  .dv2-prover .prove.egen-tom{background:conic-gradient(from 90deg,#f43f5e,#f59e0b,#84cc16,#06b6d4,#6366f1,#d946ef,#f43f5e)}
+
+  /* Fargevelger: fargefelt (metning × lysstyrke), fargebånd (kulør) og HEX-felt. Peker + berøring + tastatur. */
+  .pt-velger{margin-top:var(--dv2-s3);display:flex;flex-direction:column;gap:var(--dv2-s2)}
+  .pt-sv,.pt-hue{position:relative;border-radius:var(--pt-radius);touch-action:none;cursor:crosshair}
+  .pt-sv{height:var(--pt-felt-h);background:linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,hsl(var(--hue,210) 100% 50%))}
+  .pt-hue{height:var(--pt-baand-h);background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);cursor:ew-resize}
+  .pt-tommel{position:absolute;width:var(--pt-tommel);height:var(--pt-tommel);border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.35);
+    transform:translate(-50%,-50%);pointer-events:none;background:var(--valgt,transparent)}
+  .pt-hue .pt-tommel{top:50%}
+  .pt-hexrad{display:flex;gap:var(--dv2-s1);align-items:center}
+  .pt-hexrad .smak{width:var(--dv2-felt);height:var(--dv2-felt);border-radius:var(--pt-radius);border:1px solid var(--line-2);flex:0 0 auto;background:var(--valgt,transparent)}
+  .pt-hexrad input{font-variant-numeric:tabular-nums;text-transform:lowercase}
+  .pt-varsel{font-size:var(--pt-liten);line-height:1.5;color:var(--ink-2);border-left:2px solid var(--warn);padding-left:var(--dv2-s1)}
+  .pt-feil{font-size:var(--pt-liten);color:var(--bad)}
+
+  /* ── Bunnbar: én rad, fast nederst (over bunn-navet i B) ─────────────────────────────────── */
+  .pt-bar{position:fixed;left:0;right:0;bottom:0;z-index:25;background:var(--bg);border-top:1px solid var(--line);
+    padding:var(--dv2-s2) var(--dv2-s3) calc(var(--dv2-s2) + env(safe-area-inset-bottom))}
+  body.B .pt-bar{bottom:calc(var(--pt-bunnnav-h) + env(safe-area-inset-bottom));padding-bottom:var(--dv2-s2)}
+  @media(min-width:720px){ body.B .pt-bar{bottom:0;padding-bottom:calc(var(--dv2-s2) + env(safe-area-inset-bottom))} }
+  @media(min-width:1024px){ .pt-bar,body.B .pt-bar{position:sticky;left:auto;right:auto;padding-left:0;padding-right:0} }
+  .pt-bar-inn{max-width:calc(var(--pt-innhold) - var(--dv2-s3) * 2);margin:0 auto}
+  .pt-rad{display:flex;gap:var(--dv2-s1)}
+  .pt-rad .dv2-btn{flex:1 1 0;min-width:0;min-height:var(--pt-trykk);white-space:nowrap;padding:0 var(--dv2-s1)}
+  .pt-rad .hoved{flex-grow:1.6}
+  .pt-status{font-size:var(--pt-liten);line-height:1.45;color:var(--mut);text-align:center;margin-bottom:var(--dv2-s1)}
+  .pt-status.feil{color:var(--bad)} .pt-status.ok{color:var(--good);font-weight:600}
+  .pt-status:empty{display:none}
+
+  /* ── Forhåndsvisning (ekte bookingside i iframe) ───────────────────────────────────────── */
+  .pt-pv{display:none}
+  @media(min-width:1024px){ .pt-pv{display:block;position:sticky;top:var(--dv2-s2);align-self:start;padding-top:var(--dv2-s2)} .pt-pv .pt-pv-lukk{display:none} }
+  @media(max-width:1023.98px){ .pt-pv.apen{display:flex;flex-direction:column;position:fixed;inset:0;z-index:60;background:var(--bg);padding:var(--dv2-s2) var(--dv2-s3) calc(var(--dv2-s2) + env(safe-area-inset-bottom))} }
+  .pt-pv-topp{display:flex;justify-content:space-between;align-items:center;gap:var(--dv2-s2);margin-bottom:var(--dv2-s2);font-size:var(--pt-liten);color:var(--mut);font-weight:600;letter-spacing:.06em;text-transform:uppercase}
+  .pt-telefon{position:relative;border:1px solid var(--line-2);border-radius:calc(var(--pt-radius) * 2.5);overflow:hidden;background:#000;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+  @media(min-width:1024px){ .pt-telefon{aspect-ratio:9/19.5;max-height:calc(100dvh - var(--dv2-s5) * 2)} }
+  @media(max-width:1023.98px){ .pt-pv.apen .pt-telefon{flex:1;min-height:0;border-radius:calc(var(--pt-radius) * 1.5)} }
+  .pt-telefon iframe{display:block;width:100%;height:100%;border:0;background:#fff}
+  .pt-pv-melding{position:absolute;left:var(--dv2-s1);right:var(--dv2-s1);bottom:var(--dv2-s1);padding:var(--dv2-s1);border-radius:var(--dv2-s1);background:var(--surface);border:1px solid var(--line-2);font-size:var(--pt-liten);color:var(--ink)}
+  .pt-pv-melding:empty{display:none}
+
+  /* Hjelpelinje under «Lagre endringer» (bare mens siden ikke er live; Henrik kan stryke den) */
+  .pt-hjelpelinje{font-size:var(--pt-liten);line-height:1.45;color:var(--mut);text-align:center;margin-top:var(--dv2-s1)}
+  .pt-status.info{color:var(--ink-2)}
+  /* Forhåndsvisning: «Laster» som tynn linje øverst i rammen (som dagens .dv2-lastelinje) */
+  .pt-lastelinje{position:absolute;left:0;right:0;top:0;height:3px;background:var(--info);transform-origin:left;animation:ptLast 1.1s ease-in-out infinite}
+  @keyframes ptLast{0%{transform:scaleX(0)}60%{transform:scaleX(.8)}100%{transform:scaleX(1);opacity:0}}
+  @media(prefers-reduced-motion:reduce){ .pt-lastelinje{animation:none;transform:scaleX(.4)} }
+  /* Bildeutkast */
+  .pt-flis{position:relative;overflow:hidden}
+  .pt-flis img{width:100%;height:100%;object-fit:cover;display:block}
+  .pt-flis .fjern{position:absolute;top:var(--dv2-s1);right:var(--dv2-s1);width:var(--pt-trykk);height:var(--pt-trykk);border-radius:50%;border:0;background:rgba(0,0,0,.6);color:#fff;font-size:1.1rem;cursor:pointer}
+  .pt-flis .merke{position:absolute;left:var(--dv2-s1);bottom:var(--dv2-s1);font-size:var(--pt-liten);background:rgba(0,0,0,.6);color:#fff;padding:0 var(--dv2-s1);border-radius:var(--dv2-s1)}
+  /* Bekreftelse etter første publisering */
+  .pt-bekreft{flex:1;width:100%;max-width:var(--pt-innhold);margin:0 auto;padding:var(--dv2-s5) var(--dv2-s3);display:flex;flex-direction:column;gap:var(--dv2-s2)}
+  .pt-bekreft h2{font-size:var(--pt-tittel);font-weight:700;letter-spacing:-.025em}
+  .pt-hake{width:calc(var(--pt-trykk) + var(--dv2-s2));height:calc(var(--pt-trykk) + var(--dv2-s2));border-radius:50%;display:grid;place-items:center;font-size:1.5rem;font-weight:700;background:var(--good-bg);color:var(--good)}
+  .pt-lenkerad{border:1px solid var(--line-2);border-radius:var(--pt-radius);background:var(--surface);min-height:var(--dv2-felt);display:flex;align-items:center;padding:0 var(--dv2-s2);overflow:hidden}
+  .pt-lenke{font-size:1rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+
+  /* ── Oversikt (B, ikke live): «Fullfør siden din» = lenke tilbake til oppsettet ──────────────── */
+  .pt-oversikt{flex:1;width:100%;max-width:var(--pt-innhold);margin:0 auto;padding:var(--dv2-s3)}
+  .pt-fullfor{display:flex;align-items:center;justify-content:space-between;gap:var(--dv2-s2);border:1px solid var(--line-2);border-left:3px solid var(--info);border-radius:var(--pt-radius);padding:var(--dv2-s2) var(--dv2-s3);background:var(--surface);margin-bottom:var(--dv2-s4);color:var(--ink);text-decoration:none;min-height:calc(var(--pt-trykk) + var(--dv2-s2) * 2)}
+  .pt-fullfor strong{display:block;font-size:1.0625rem}
+  .pt-fullfor .under{display:block;font-size:var(--pt-liten);color:var(--mut)}
+  .pt-fullfor .pil{font-size:1.25rem;color:var(--info)}
+  .pt-plass{border-top:1px solid var(--line);padding:var(--dv2-s3) 0;color:var(--mut);font-size:var(--pt-tekst)}
+</style>
+</head>
+<body>
+<div id="dinsideV2">
+  <header class="pt-topp"><b id="shopNavn">…</b><button type="button" class="pt-x" id="lukkOppsett" aria-label="Lukk oppsettet og vis hele dashbordet">×</button></header>
+  <nav class="pt-faner" role="tablist" aria-label="Hovedfaner">
+    <button role="tab" data-fane="oversikt">Oversikt</button><button role="tab" data-fane="vekst">Vekst</button><button role="tab" data-fane="tjenester">Tjenester &amp; tider</button><button role="tab" data-fane="dinside">Din side</button><button role="tab" data-fane="konto">Konto</button>
+  </nav>
+
+  <main class="pt-oversikt" id="oversikt" hidden>
+    <a href="#" class="pt-fullfor" id="fullforKort"><span><strong>Fullfør siden din</strong><span class="under">Fortsett oppsettet der du slapp.</span></span><span class="pil" aria-hidden="true">→</span></a>
+    <div class="pt-plass">Kommende bookinger · Omsetning · … (resten av Oversikt)</div>
+  </main>
+
+  <div class="pt-oppsett" id="oppsett">
+    <div class="pt-redig">
+      <div class="pt-fast">
+        <div class="pt-tittelrad"><h2 id="tittel">Din side</h2><button type="button" class="dv2-btn liten pt-pvknapp" id="pvKnapp">Forhåndsvis</button></div>
+        <div class="pt-seg" role="tablist" aria-label="Steg" id="seg"></div>
+      </div>
+
+      <form class="pt-innhold" id="skjema" novalidate>
+        <section class="pt-sek" data-sek="0" aria-labelledby="h0">
+          <h3 id="h0">Profil</h3><p class="pt-hjelp">Det kundene leser om deg. Alt er valgfritt.</p>
+          <div class="pt-del dv2-fld" data-felt="tagline"><label class="etikett" for="f-tagline">Spesialitet</label><input id="f-tagline" type="text" maxlength="60"><p class="dv2-feil" role="alert" hidden></p></div>
+          <div class="pt-del dv2-fld" data-felt="address"><label class="etikett" for="f-address">Adresse</label><input id="f-address" type="text"><p class="dv2-feil" role="alert" hidden></p></div>
+          <div class="pt-del dv2-fld" data-felt="bio"><label class="etikett" for="f-bio">Kort beskrivelse</label><textarea id="f-bio" rows="3"></textarea><p class="dv2-feil" role="alert" hidden></p></div>
+          <div class="pt-del dv2-fld" data-felt="om"><label class="etikett" for="f-om">Mer info</label><p class="pt-felthjelp" id="f-om-hjelp">Vises i Om-fanen på siden din.</p><textarea id="f-om" rows="6" maxlength="4000" aria-describedby="f-om-hjelp" placeholder="F.eks. priser, parkering, hvordan du jobber"></textarea><p class="dv2-feil" role="alert" hidden></p></div>
+        </section>
+
+        <section class="pt-sek" data-sek="1" aria-labelledby="h1" hidden>
+          <h3 id="h1">Utseende</h3><p class="pt-hjelp">Bakgrunn, farge og font på navnet ditt.</p>
+          <div class="pt-del"><span class="etikett">Bakgrunn</span>
+            <div class="dv2-brikker" role="radiogroup" aria-label="Bakgrunn" id="f-modus">
+              <button type="button" role="radio" data-mode="lys"><span class="brikke" data-m="lys"><i class="b1"></i><i class="b2"></i><i class="b3"></i></span><span class="navn">Lys</span></button>
+              <button type="button" role="radio" data-mode="mork"><span class="brikke" data-m="mork"><i class="b1"></i><i class="b2"></i><i class="b3"></i></span><span class="navn">Mørk</span></button>
+            </div></div>
+          <div class="pt-del" data-felt="custom_accent"><span class="etikett" id="aksentEtikett">Aksentfarge</span>
+            <div class="dv2-prover" role="radiogroup" aria-labelledby="aksentEtikett" id="f-aksent"></div>
+            <div class="pt-velger" id="velger" hidden>
+              <div class="pt-sv" id="sv" role="slider" tabindex="0" aria-label="Metning og lysstyrke" aria-valuemin="0" aria-valuemax="100"><span class="pt-tommel" id="svTommel"></span></div>
+              <div class="pt-hue" id="hue" role="slider" tabindex="0" aria-label="Fargetone" aria-valuemin="0" aria-valuemax="360"><span class="pt-tommel" id="hueTommel"></span></div>
+              <div><label class="etikett" for="f-hex">Fargekode (HEX)</label>
+                <div class="pt-hexrad"><span class="smak" aria-hidden="true"></span><input id="f-hex" type="text" inputmode="text" autocapitalize="none" autocomplete="off" spellcheck="false" maxlength="7" aria-describedby="hexFeil kontrast"></div></div>
+              <p class="pt-feil" id="hexFeil" role="alert" hidden></p>
+              <p class="pt-varsel" id="kontrast" role="status" hidden></p>
+            </div></div>
+          <div class="pt-del"><label class="etikett" for="f-font">Font på sjappenavnet</label><select id="f-font"></select></div>
+        </section>
+
+        <section class="pt-sek" data-sek="2" aria-labelledby="h2" hidden>
+          <h3 id="h2">Bilder</h3><p class="pt-hjelp">Valgfritt. Siden ser ferdig ut også uten. Nye bilder er utkast til du lagrer.</p>
+          <div class="pt-del"><span class="etikett">Arbeidene dine</span>
+            <div class="pt-galleri" id="galleri"></div>
+            <input type="file" id="f-bilder" accept="image/*" multiple hidden>
+            <button type="button" class="dv2-btn liten" id="leggTilBilder">Legg til bilder</button></div>
+        </section>
+
+        <section class="pt-sek" data-sek="3" aria-labelledby="h3" hidden>
+          <h3 id="h3">Kontakt</h3><p class="pt-hjelp">Hvor kundene finner deg. Telefonen vises bare i bookingbekreftelsen.</p>
+          <div class="pt-del dv2-fld" data-felt="instagram"><label class="etikett" for="f-instagram">Instagram</label><input id="f-instagram" type="text" placeholder="@brukernavn"><p class="dv2-feil" role="alert" hidden></p></div>
+          <div class="pt-del dv2-fld" data-felt="tiktok"><label class="etikett" for="f-tiktok">TikTok</label><input id="f-tiktok" type="text" placeholder="@brukernavn"><p class="dv2-feil" role="alert" hidden></p></div>
+          <div class="pt-del dv2-fld" data-felt="snapchat"><label class="etikett" for="f-snapchat">Snapchat</label><input id="f-snapchat" type="text" placeholder="@brukernavn"><p class="dv2-feil" role="alert" hidden></p></div>
+          <div class="pt-del dv2-fld" data-felt="contact_phone"><label class="etikett" for="f-contact_phone">Telefon</label><input id="f-contact_phone" type="tel" inputmode="tel"><p class="dv2-feil" role="alert" hidden></p></div>
+        </section>
+      </form>
+
+      <div class="pt-bar" id="bar"><div class="pt-bar-inn">
+        <p class="pt-status" id="status" role="status" aria-live="polite"></p>
+        <div class="pt-rad"><button type="button" class="dv2-btn" id="tilbake">← Tilbake</button><button type="button" class="dv2-btn prim hoved" id="neste">Neste →</button></div>
+        <p class="pt-hjelpelinje" id="hjelpelinje" hidden>Når du lagrer, går siden live og kundene kan booke.</p>
+      </div></div>
+    </div>
+
+    <aside class="pt-pv" id="pv" aria-label="Forhåndsvisning av siden din">
+      <div class="pt-pv-topp"><button type="button" class="dv2-btn liten pt-pv-lukk" id="pvLukk">← Tilbake</button><span>Forhåndsvisning</span></div>
+      <div class="pt-telefon" id="pvTelefon"><iframe id="pvRamme" title="Forhåndsvisning av siden din" sandbox="allow-scripts"></iframe><div class="pt-lastelinje" id="pvLaster" hidden></div><p class="pt-pv-melding" id="pvMelding" role="status"></p></div>
+    </aside>
+  </div>
+
+  <!-- Etter første lagring som publiserer: enkel bekreftelse, så Oversikt (der «Få din første booking» tar over i dag). -->
+  <main class="pt-bekreft" id="bekreft" hidden aria-labelledby="bekreftH">
+    <div class="pt-hake" aria-hidden="true">✓</div>
+    <h2 id="bekreftH" tabindex="-1">Siden din er live</h2>
+    <p class="pt-hjelp">Kundene kan booke nå. Del lenken der de finner deg.</p>
+    <div class="pt-lenkerad"><span class="pt-lenke" id="lenke"></span></div>
+    <div class="pt-rad"><button type="button" class="dv2-btn" id="kopier">Kopier lenke</button><button type="button" class="dv2-btn prim hoved" id="tilOversikt">Gå til Oversikt</button></div>
+    <p class="pt-status" id="kopiert" role="status" aria-live="polite"></p>
+  </main>
+
+  <nav class="pt-bunnnav" aria-label="Hovedfaner (mobil)">
+    <button data-fane="oversikt">Oversikt</button><button data-fane="vekst">Vekst</button><button data-fane="tjenester">Tjenester</button><button data-fane="dinside">Din side</button><button data-fane="konto">Konto</button>
+  </nav>
+</div>
+
+<script>
+(async function(){
+  try{ const t=await (await fetch('/site/no/dashboard.html')).text();
+    const rot=t.match(/:root\{[^}]*--bg:[^}]*\}/), mork=t.match(/html\[data-theme="dark"\]\{[^}]*\}/);
+    document.getElementById('tokens').textContent=(rot?rot[0]:'')+'\n'+(mork?mork[0]:''); }catch(e){}
+
+  const q=new URLSearchParams(location.search), $=s=>document.querySelector(s), $$=s=>[...document.querySelectorAll(s)];
+  const API=q.get('api')||'http://127.0.0.1:3100';
+  const api=(sti,o={})=>fetch(API+sti,{credentials:'include',...o,headers:{...(typeof o.body==='string'?{'Content-Type':'application/json'}:{}),...(o.headers||{})}});
+  const HJELP=q.get('hjelp')==='1';   // forslag: hjelpelinja under «Lagre endringer» mens siden ikke er live
+  document.body.className=q.get('modus')==='B'?'B':'A';
+  document.documentElement.dataset.theme=q.get('tema')==='lys'?'light':'dark';
+  // live = ekte page_status fra billing (ikke en URL-parameter).
+  let live=false;
+  try{ live=(await (await api('/api/dashboard/billing/status')).json()).page_status==='live'; }catch(e){}
+  let fane=q.get('visning')==='oversikt'?'oversikt':'dinside';
+  const STEG=['Profil','Utseende','Bilder','Kontakt'];
+  const FELT_STEG={tagline:0,address:0,bio:0,om:0,aksent:1,custom_accent:1,color_mode:1,font:1,instagram:3,tiktok:3,snapchat:3,contact_phone:3};
+  const NAVN={blaa:'Blå',gull:'Gull',roed:'Rød',egen:'Din egen'};
+
+  // Ekte data fra den lokale backenden (samme rute som dinside-v2.js).
+  const d=await (await api('/api/dashboard/din-side')).json();
+  $('#shopNavn').textContent=d.profil.shop;
+  const AKSENTER=d.valg.aksenter;      // [{key,hex}] — egen har hex:null
+  const fra=x=>({tagline:x.profil.tagline||'',address:x.profil.address||'',bio:x.profil.bio||'',om:x.profil.om||'',
+    instagram:x.kontakt.instagram||'',tiktok:x.kontakt.tiktok||'',snapchat:x.kontakt.snapchat||'',contact_phone:x.kontakt.contact_phone||'',
+    aksent:x.utseende.aksent||'blaa',custom_accent:x.utseende.custom_accent||'',mode:x.utseende.color_mode||'mork',font:x.utseende.font||'jakarta'});
+  let lagret=fra(d); const utkast={...lagret};
+  // Lenken til siden (lokalt er kundesidens base = API-et, PUBLIC_BASE) og bildene (serverens sannhet).
+  const prof=await (await api('/api/dashboard/profile')).json().catch(()=>({}));
+  const SIDELENKE=API.replace(/\/+$/,'')+'/'+(prof.slug||'');
+  let bilderLagret=[], imageVersion='';
+  async function hentBilder(){ const r=await api('/api/dashboard/images'); bilderLagret=r.ok?(await r.json()):[];
+    // Samme stempel som backend imageVersion() (se dinside-v2.js bildeVersjon).
+    imageVersion=bilderLagret.filter(b=>b.slot==='portrett'||b.slot==='galleri').map(b=>b.id+':'+Number(String(b.url).split('?v=')[1]||'0')+':'+b.slot+':'+b.sort_order).sort().join('|'); }
+  await hentBilder();
+  let nyeBilder=[], fjernet=new Set();   // bildeutkast: nye filer (med objekt-URL) og fjernede eksisterende
+  if(q.get('egen')){ utkast.aksent='egen'; utkast.custom_accent=q.get('egen'); }
+  let steg=Math.max(0,Math.min(3,+(q.get('steg')||0))), feil=null, status='', statusType='';
+  const bilderEndret=()=>nyeBilder.length>0||fjernet.size>0;
+  const endret=()=>bilderEndret()||Object.keys(lagret).some(k=>String(utkast[k]).trim().toLowerCase()!==String(lagret[k]).trim().toLowerCase());
+  $('#f-font').innerHTML=d.valg.fonter.map(f=>`<option value="${f.key}">${f.navn}</option>`).join('');
+
+  // ── Farge: hex ↔ hsv, kontrast (samme regel som dinside-v2.js: knappen mot sidens bakgrunn, varsel under 3,0) ──
+  const normHex=v=>{ v=String(v||'').trim(); if(v&&v[0]!=='#')v='#'+v; if(/^#[0-9a-f]{3}$/i.test(v))v='#'+v[1]+v[1]+v[2]+v[2]+v[3]+v[3]; return /^#[0-9a-f]{6}$/i.test(v)?v.toLowerCase():null; };
+  const tilRgb=h=>[1,3,5].map(i=>parseInt(h.substr(i,2),16));
+  const tilHex=(r,g,b)=>'#'+[r,g,b].map(x=>Math.round(x).toString(16).padStart(2,'0')).join('');
+  function hsvTilHex(h,s,v){ const f=n=>{const k=(n+h/60)%6; return v-v*s*Math.max(0,Math.min(k,4-k,1));}; return tilHex(f(5)*255,f(3)*255,f(1)*255); }
+  function hexTilHsv(hex){ const [r,g,b]=tilRgb(hex).map(x=>x/255), mx=Math.max(r,g,b), mn=Math.min(r,g,b), dd=mx-mn;
+    let h=0; if(dd){ h=mx===r?((g-b)/dd)%6:mx===g?(b-r)/dd+2:(r-g)/dd+4; h*=60; if(h<0)h+=360; } return {h,s:mx?dd/mx:0,v:mx}; }
+  const lum=h=>{const c=tilRgb(h).map(x=>{x/=255;return x<=.04045?x/12.92:Math.pow((x+.055)/1.055,2.4);}); return .2126*c[0]+.7152*c[1]+.0722*c[2];};
+  const kontrast=(a,b)=>{const x=lum(a),y=lum(b);return (Math.max(x,y)+.05)/(Math.min(x,y)+.05);};
+  const SIDE_BG={lys:'#fafafa',mork:'#0c0c0c'};
+  let hsv=hexTilHsv(normHex(utkast.custom_accent)||'#0071e3');
+
+  // ── Segmentert kontroll ──
+  $('#seg').innerHTML=STEG.map((n,i)=>`<button type="button" role="tab" data-steg="${i}" aria-controls="h${i}">${n}<span class="feilpunkt" hidden></span></button>`).join('');
+  $('#seg').addEventListener('click',e=>{const b=e.target.closest('[data-steg]'); if(b) gaaTil(+b.dataset.steg);});
+  $('#seg').addEventListener('keydown',e=>{ if(!['ArrowLeft','ArrowRight'].includes(e.key))return; e.preventDefault(); gaaTil((steg+(e.key==='ArrowRight'?1:3))%4); $('#seg [aria-selected="true"]').focus(); });
+
+  // ── Felt ──
+  ['tagline','address','bio','om','instagram','tiktok','snapchat','contact_phone'].forEach(k=>{const el=$('#f-'+k); el.value=utkast[k];
+    el.addEventListener('input',()=>{utkast[k]=el.value; if(feil&&feil.felt===k)visFeil(null); status=''; tegn(); pvSnart();});});
+  $('#f-modus').addEventListener('click',e=>{const b=e.target.closest('[data-mode]'); if(b){utkast.mode=b.dataset.mode; status=''; tegn(); pvSnart();}});
+  $('#f-font').addEventListener('change',e=>{utkast.font=e.target.value; status=''; tegn(); pvSnart();});
+  $('#f-aksent').innerHTML=AKSENTER.map(a=>`<button type="button" role="radio" data-aksent="${a.key}"><span class="prove" style="${a.hex?`--palett-aksent:${a.hex}`:''}"></span><span class="navn">${NAVN[a.key]||a.key}</span></button>`).join('');
+  $('#f-aksent').addEventListener('click',e=>{const b=e.target.closest('[data-aksent]'); if(!b)return; utkast.aksent=b.dataset.aksent;
+    if(utkast.aksent==='egen'&&!normHex(utkast.custom_accent)){ utkast.custom_accent=hsvTilHex(hsv.h,hsv.s,hsv.v); }
+    status=''; tegn(); pvSnart();});
+  $('#f-aksent').addEventListener('keydown',e=>{ if(!['ArrowLeft','ArrowRight'].includes(e.key))return; e.preventDefault();
+    const bs=$$('#f-aksent [role=radio]'), i=bs.findIndex(b=>b.dataset.aksent===utkast.aksent), n=bs[(i+(e.key==='ArrowRight'?1:bs.length-1))%bs.length]; n.click(); n.focus(); });
+
+  // ── Fargevelger: peker/berøring (setPointerCapture) + tastatur (piltaster, Shift = større steg) ──
+  function settFraHsv(){ utkast.custom_accent=hsvTilHex(hsv.h,hsv.s,hsv.v); status=''; tegn(); pvSnart(); }
+  function dra(el,fn){ el.addEventListener('pointerdown',e=>{ el.setPointerCapture(e.pointerId); fn(e); el.focus({preventScroll:true});
+    const flytt=ev=>fn(ev), slipp=()=>{el.removeEventListener('pointermove',flytt); el.removeEventListener('pointerup',slipp); el.removeEventListener('pointercancel',slipp);};
+    el.addEventListener('pointermove',flytt); el.addEventListener('pointerup',slipp); el.addEventListener('pointercancel',slipp); }); }
+  const klem=x=>Math.max(0,Math.min(1,x));
+  dra($('#sv'),e=>{const r=$('#sv').getBoundingClientRect(); hsv.s=klem((e.clientX-r.left)/r.width); hsv.v=1-klem((e.clientY-r.top)/r.height); settFraHsv();});
+  dra($('#hue'),e=>{const r=$('#hue').getBoundingClientRect(); hsv.h=klem((e.clientX-r.left)/r.width)*360; settFraHsv();});
+  $('#sv').addEventListener('keydown',e=>{const t=e.shiftKey?.1:.02, m={ArrowLeft:['s',-t],ArrowRight:['s',t],ArrowUp:['v',t],ArrowDown:['v',-t]}[e.key]; if(!m)return; e.preventDefault(); hsv[m[0]]=klem(hsv[m[0]]+m[1]); settFraHsv();});
+  $('#hue').addEventListener('keydown',e=>{const t=e.shiftKey?30:5, m={ArrowLeft:-t,ArrowDown:-t,ArrowRight:t,ArrowUp:t}[e.key]; if(m==null)return; e.preventDefault(); hsv.h=(hsv.h+m+360)%360; settFraHsv();});
+  $('#f-hex').addEventListener('input',e=>{ utkast.custom_accent=e.target.value; const h=normHex(e.target.value); if(h) hsv=hexTilHsv(h); status=''; tegn(true); if(h) pvSnart(); });
+
+  // ── Navigasjon og lagring (ekte PUT /din-side; 400 {felt} → riktig steg) ──
+  function gaaTil(n){ steg=Math.max(0,Math.min(3,n)); tegn(); scrollTo(0,0); }
+  $('#tilbake').addEventListener('click',()=>gaaTil(steg-1));
+  $('#neste').addEventListener('click',()=>{ if(steg<3) gaaTil(steg+1); else lagre(); });
+  function visFeil(f){ feil=f;
+    $$('.dv2-fld.har-feil').forEach(w=>{w.classList.remove('har-feil'); const p=w.querySelector('.dv2-feil'); if(p){p.hidden=true; p.textContent='';}});
+    if(!f) return; const w=$(`[data-felt="${f.felt}"]`); if(!w) return; w.classList.add('har-feil'); const p=w.querySelector('.dv2-feil'); if(p){p.hidden=false; p.textContent=f.tekst;} }
+  function body(forPreview){ const u=utkast, hx=normHex(u.custom_accent);
+    const b={profil:{tagline:u.tagline,address:u.address,bio:u.bio,om:u.om},utseende:{color_mode:u.mode,font:u.font,aksent:u.aksent},kontakt:{instagram:u.instagram,tiktok:u.tiktok,snapchat:u.snapchat}};
+    if(u.aksent==='egen'){ if(hx) b.utseende.custom_accent=hx; else if(forPreview) b.utseende.aksent=lagret.aksent==='egen'?'blaa':lagret.aksent; }
+    if(!forPreview) b.kontakt.contact_phone=u.contact_phone;   // telefon bare ved lagring (som dinside-v2.js)
+    return b; }
+  // Bildeutkast som multipart (samme form som dinside-v2.js draftForm): draft-JSON + images-manifest + filer.
+  function bildeManifest(fd){ const imgs=bilderLagret.filter(b=>(b.slot==='portrett'||b.slot==='galleri')&&!fjernet.has(b.id)).map(b=>({id:b.id,slot:b.slot,cropRect:b.cropRect||null}));
+    nyeBilder.forEach((n,i)=>{ const navn='image'+i; fd.append('images',n.file,navn); imgs.push({slot:'galleri',file:navn,cropRect:null}); }); return imgs; }
+  function utkastBody(forPreview){ const b={...body(forPreview)};
+    if(!bilderEndret()) return { json: JSON.stringify(b) };
+    const fd=new FormData(); b.images=bildeManifest(fd); b.imageVersion=imageVersion; fd.append('draft',JSON.stringify(b)); return { fd }; }
+
+  // Kontrakt: POST /din-side/lagre { …, publiser: !live } → alltid 200 når lagret:
+  //   { lagret:true, publisering:{ publisert, forste_gang, page_status, grunn, mangler[], melding? } }. 400 {felt} = valideringsfeil.
+  async function lagre(){
+    status='Lagrer …'; statusType=''; tegn();
+    const u=utkastBody(false); let r, j={};
+    try{
+      if(u.json){ const b=JSON.parse(u.json); b.publiser=!live; r=await api('/api/dashboard/din-side/lagre',{method:'POST',body:JSON.stringify(b)}); }
+      else { const d0=JSON.parse(u.fd.get('draft')); d0.publiser=!live; u.fd.set('draft',JSON.stringify(d0)); r=await api('/api/dashboard/din-side/lagre',{method:'POST',body:u.fd}); }
+      j=await r.json().catch(()=>({}));
+    } catch(e){ status='Fikk ikke kontakt med serveren. Ingenting er lagret.'; statusType='feil'; return tegn(); }
+    if(r.status===400&&j.felt){ visFeil({felt:j.felt,tekst:j.error}); status=`Ikke lagret. Se feltet under «${STEG[FELT_STEG[j.felt]??3]}».`; statusType='feil';
+      gaaTil(FELT_STEG[j.felt]??3); setTimeout(()=>{const el=$('#f-'+j.felt)||$('#f-hex'); if(el){el.focus({preventScroll:true}); el.scrollIntoView({block:'center'});}},30); return; }
+    if(!r.ok||!j.lagret){ status=j.error||`Kunne ikke lagre (feil ${r.status}).`; statusType='feil'; return tegn(); }
+    lagret=fra(j); Object.assign(utkast,lagret); visFeil(null);
+    if(bilderEndret()){ nyeBilder.forEach(n=>URL.revokeObjectURL(n.url)); nyeBilder=[]; fjernet=new Set(); await hentBilder(); tegnBilder(); }
+    const p=j.publisering||{};
+    if(p.publisert){ live=true; status=''; return visBekreftelse(); }       // første lagring som publiserer
+    live=(p.page_status||j.page_status)==='live';
+    if(p.melding){ status=p.melding; statusType='info'; }               // lagret, men ikke publisert — vis meldingen som den er
+    else { status='✓ Lagret. Kundene ser endringene nå.'; statusType='ok'; }
+    tegn(); }
+
+  // Bekreftelse etter første publisering → Oversikt
+  function visBekreftelse(){ $('#oppsett').hidden=true; $('#oversikt').hidden=true; $('#lukkOppsett').hidden=true; $('#bekreft').hidden=false;
+    $('#lenke').textContent=SIDELENKE.replace(/^https?:\/\//,''); $('#bekreftH').focus(); document.body.dataset.bekreftet='1'; }
+  $('#kopier').addEventListener('click',async()=>{ try{ await navigator.clipboard.writeText(SIDELENKE); $('#kopiert').textContent='Lenken er kopiert.'; }
+    catch(e){ const rng=document.createRange(); rng.selectNodeContents($('#lenke')); const s=getSelection(); s.removeAllRanges(); s.addRange(rng); $('#kopiert').textContent='Lenken er markert. Kopier den med Ctrl+C.'; } });
+  $('#tilOversikt').addEventListener('click',()=>{ $('#bekreft').hidden=true; document.body.className='B'; fane='oversikt'; tegn(); });
+
+  // Bilder-steget: serverens bilder + utkast (nye filer, fjernede). Ingenting skrives før «Lagre endringer».
+  function tegnBilder(){ const g=$('#galleri'), eks=bilderLagret.filter(b=>b.slot==='galleri'&&!fjernet.has(b.id));
+    g.innerHTML=eks.map(b=>`<div class="pt-flis"><img src="${API+b.url}" alt=""><button type="button" class="fjern" data-fjern="${b.id}" aria-label="Fjern bildet">×</button></div>`).join('')
+      +nyeBilder.map((n,i)=>`<div class="pt-flis"><img src="${n.url}" alt=""><span class="merke">Ny</span><button type="button" class="fjern" data-fjern-ny="${i}" aria-label="Fjern det nye bildet">×</button></div>`).join('')
+      +(eks.length+nyeBilder.length===0?'<div class="pt-flis"></div><div class="pt-flis"></div><div class="pt-flis"></div>':''); }
+  $('#leggTilBilder').addEventListener('click',()=>$('#f-bilder').click());
+  $('#f-bilder').addEventListener('change',e=>{ [...e.target.files].forEach(f=>nyeBilder.push({file:f,url:URL.createObjectURL(f)})); e.target.value=''; status=''; tegnBilder(); tegn(); pvSnart(0); });
+  $('#galleri').addEventListener('click',e=>{ const a=e.target.closest('[data-fjern]'), n=e.target.closest('[data-fjern-ny]');
+    if(a) fjernet.add(a.dataset.fjern); else if(n){ const [x]=nyeBilder.splice(+n.dataset.fjernNy,1); URL.revokeObjectURL(x.url); } else return;
+    status=''; tegnBilder(); tegn(); pvSnart(0); });
+  tegnBilder();
+
+  // X (A): ulagret → bekreft; ellers rett til hele dashbordet.
+  $('#lukkOppsett').addEventListener('click',async()=>{ if(endret()){ if(!await dialog()) return; Object.assign(utkast,lagret); }
+    document.body.className='B'; fane='oversikt'; tegn(); });
+  function dialog(){ return new Promise(res=>{ const bak=document.createElement('div'); bak.className='dv2-dialog-bak';
+    bak.innerHTML='<div class="dv2-dialog" role="alertdialog" aria-modal="true" aria-labelledby="dT" aria-describedby="dP"><h4 id="dT">Du har ulagrede endringer</h4><p id="dP">Endringene på siden din er ikke lagret. Lukker du nå, forsvinner de.</p><div class="rad"><button type="button" class="dv2-btn farlig" id="dJa">Forkast</button><button type="button" class="dv2-btn" id="dNei">Bli her</button></div></div>';
+    document.getElementById('dinsideV2').appendChild(bak); const lukk=v=>{bak.remove(); res(v);};
+    bak.querySelector('#dJa').onclick=()=>lukk(true); bak.querySelector('#dNei').onclick=()=>lukk(false); bak.querySelector('#dNei').focus(); }); }
+  $$('[data-fane]').forEach(b=>b.addEventListener('click',()=>{ if(['oversikt','dinside'].includes(b.dataset.fane)){ fane=b.dataset.fane; tegn(); }}));
+  $('#fullforKort').addEventListener('click',e=>{ e.preventDefault(); document.body.className='A'; fane='dinside'; tegn(); });   // lenke tilbake til oppsettet
+
+  // ── Forhåndsvisning: ekte POST /api/dashboard/preview (ulagrede verdier), debounce + sekvensvakt ──
+  // Gjenbrukt fra dinside-v2.js: debounce, sekvensvakt, rulleposisjon mellom oppdateringer (iframen poster scrollY,
+  // ny srcdoc ruller dit), «Laster»-linje og feilmelding i rammen, bildeutkast via /din-side/preview (multipart).
+  let pvT=null, pvSeq=0, pvScroll=0;
+  const pvSnart=(ms=300)=>{ clearTimeout(pvT); pvT=setTimeout(hentPv,ms); };
+  const rulleSkript=y=>'<script>(function(){var y='+(+y||0)+';function s(){scrollTo(0,y)}s();addEventListener("load",s);'
+    +'addEventListener("scroll",function(){parent.postMessage({bhq:"scroll",y:scrollY},"*")},{passive:true});'
+    // Escape inne i bookingsiden (fokus i iframen) når ikke dashbordets tastelytter — send den videre.
+    +'addEventListener("keydown",function(e){if(e.key==="Escape")parent.postMessage({bhq:"escape"},"*")})})()<\/script>';
+  addEventListener('message',e=>{ if(e.source!==$('#pvRamme').contentWindow||!e.data) return;
+    if(e.data.bhq==='scroll') pvScroll=e.data.y||0;
+    if(e.data.bhq==='escape'&&pvApen()&&!matchMedia('(min-width:1024px)').matches) lukkPv(); });
+  async function hentPv(){ const mitt=++pvSeq; let html=null, feilTekst=''; $('#pvLaster').hidden=false;
+    try{ const u=utkastBody(true);
+      const r=u.json ? await api('/api/dashboard/preview',{method:'POST',body:JSON.stringify({side:'forside',...JSON.parse(u.json)})})
+                     : await api('/api/dashboard/din-side/preview',{method:'POST',body:u.fd});
+      if(r.ok) html=await r.text(); else { const j=await r.json().catch(()=>({})); feilTekst=j.error||`Forhåndsvisningen feilet (${r.status}).`; } }
+    catch(e){ feilTekst='Fikk ikke kontakt med serveren. Forhåndsvisningen er ikke oppdatert.'; }
+    if(mitt!==pvSeq) return;                       // et nyere kall har overtatt
+    $('#pvLaster').hidden=true;
+    if(html!=null){ const s=rulleSkript(pvScroll); $('#pvRamme').srcdoc=html.includes('</body>')?html.replace('</body>',s+'</body>'):html+s; $('#pvMelding').textContent=''; }
+    else $('#pvMelding').textContent=feilTekst;
+    document.body.dataset.pvSeq=String(mitt); }
+  // Mobil fullskjerm: «← Tilbake», Escape lukker, Tab holdes inne i flaten (fokusfelle), fokus tilbake til knappen.
+  const pvApen=()=>$('#pv').classList.contains('apen');
+  function lukkPv(){ $('#pv').classList.remove('apen'); $('#pvKnapp').focus(); }
+  $('#pvKnapp').addEventListener('click',()=>{ $('#pv').classList.add('apen'); $('#pvLukk').focus(); });
+  $('#pvLukk').addEventListener('click',lukkPv);
+  document.addEventListener('keydown',e=>{ if(!pvApen()||matchMedia('(min-width:1024px)').matches) return;
+    if(e.key==='Escape'){ e.preventDefault(); lukkPv(); } });
+  // Fokusfelle: Tab går fritt mellom «← Tilbake» og bookingsiden i iframen (også inni den), men havner fokus utenfor
+  // fullskjermflaten, hentes det tilbake. (Tastetrykk inne i iframen når ikke dashbordet — derfor focusin, ikke keydown.)
+  document.addEventListener('focusin',e=>{ if(pvApen()&&!matchMedia('(min-width:1024px)').matches&&!$('#pv').contains(e.target)) $('#pvLukk').focus(); });
+
+  function tegn(medHex){
+    const B=document.body.classList.contains('B');
+    $('#lukkOppsett').hidden=B;
+    $$('[data-fane]').forEach(b=>b.setAttribute('aria-selected',String(b.dataset.fane===(B?fane:'dinside'))));
+    $('#oversikt').hidden=!(B&&fane==='oversikt'); $('#oppsett').hidden=B&&fane==='oversikt';
+    $('#fullforKort').hidden=live;
+    $('#tittel').textContent=B?'Din side':'Sett opp siden din';
+    $$('.pt-sek').forEach(s=>s.hidden=+s.dataset.sek!==steg);
+    $$('#seg [data-steg]').forEach(b=>{const i=+b.dataset.steg; b.setAttribute('aria-selected',String(i===steg)); b.tabIndex=i===steg?0:-1;
+      b.querySelector('.feilpunkt').hidden=!(feil&&FELT_STEG[feil.felt]===i);});
+    $$('#f-modus [data-mode]').forEach(b=>b.setAttribute('aria-checked',String(b.dataset.mode===utkast.mode)));
+    $('#f-font').value=utkast.font;
+    // Aksentbrikker + fargevelger
+    const hx=normHex(utkast.custom_accent), egen=utkast.aksent==='egen';
+    $$('#f-aksent [data-aksent]').forEach(b=>{const på=b.dataset.aksent===utkast.aksent; b.setAttribute('aria-checked',String(på)); b.tabIndex=på?0:-1;
+      if(b.dataset.aksent==='egen'){ const p=b.querySelector('.prove'); const vis=egen&&hx; p.classList.toggle('egen-tom',!vis); if(vis) p.style.setProperty('--palett-aksent',hx); b.style.setProperty('--ring',vis?hx:'var(--ink)'); }
+      else b.style.setProperty('--ring',(AKSENTER.find(a=>a.key===b.dataset.aksent)||{}).hex||'var(--ink)'); });
+    $('#velger').hidden=!egen;
+    if(egen){ const vis=hx||hsvTilHex(hsv.h,hsv.s,hsv.v);
+      $('#velger').style.setProperty('--valgt',vis); $('#sv').style.setProperty('--hue',Math.round(hsv.h));
+      $('#svTommel').style.left=(hsv.s*100)+'%'; $('#svTommel').style.top=((1-hsv.v)*100)+'%'; $('#hueTommel').style.left=(hsv.h/360*100)+'%';
+      $('#sv').setAttribute('aria-valuenow',Math.round(hsv.s*100)); $('#sv').setAttribute('aria-valuetext',`Metning ${Math.round(hsv.s*100)} %, lysstyrke ${Math.round(hsv.v*100)} %`);
+      $('#hue').setAttribute('aria-valuenow',Math.round(hsv.h)); $('#hue').setAttribute('aria-valuetext',`${Math.round(hsv.h)} grader`);
+      if(!medHex) $('#f-hex').value=hx||utkast.custom_accent;
+      const ugyldig=!!utkast.custom_accent&&!hx; $('#f-hex').setAttribute('aria-invalid',String(ugyldig));
+      $('#hexFeil').hidden=!ugyldig; $('#hexFeil').textContent=ugyldig?'Skriv en gyldig fargekode, for eksempel #1e40af.':'';
+      const k=hx?kontrast(hx,SIDE_BG[utkast.mode]||SIDE_BG.mork):null;
+      $('#kontrast').hidden=!(k&&k<3);
+      $('#kontrast').textContent=k&&k<3?`Knappene kan bli vanskelige å se mot ${utkast.mode==='lys'?'den lyse':'den mørke'} bakgrunnen (kontrast ${k.toFixed(1).replace('.',',')} av minst 3,0). Du kan bruke fargen likevel.`:''; }
+    // Bunnbar: én rad. Steg 1–3 Tilbake/Neste. Siste steg Tilbake/«Lagre endringer» (live: aktiv bare ved endring; ikke live: alltid).
+    const sist=steg===3;
+    $('#tilbake').disabled=steg===0;
+    $('#neste').textContent=sist?'Lagre endringer':'Neste →';
+    $('#neste').disabled=sist&&live&&!endret();
+    $('#hjelpelinje').hidden=!(HJELP&&sist&&!live);
+    $('#status').textContent=status; $('#status').className='pt-status'+(statusType?' '+statusType:'');
+  }
+  // Innholdets bunnpadding følger barens FAKTISKE høyde (hjelpelinja/statuslinja gjør den høyere enn standardtokenet).
+  if(window.ResizeObserver) new ResizeObserver(()=>{ const b=$('#bar'); if(b.offsetHeight) $('#dinsideV2').style.setProperty('--pt-bar-h',b.offsetHeight+'px'); }).observe($('#bar'));
+  tegn(); await hentPv();
+  if(q.get('pv')==='1') $('#pv').classList.add('apen');
+  document.body.dataset.klar='1';
+})();
+</script>
+</body>
+</html>

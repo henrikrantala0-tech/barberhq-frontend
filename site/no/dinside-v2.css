@@ -1,0 +1,229 @@
+/* «Din side» for v2-barbere (sidemal='v2'). Lastes av dashboard.html, brukes av dinside-v2.js.
+   Godkjent 22.10.2026 (prototype tools/render/prototyper/dinside-v2-oppsett.html). Mobil først:
+     • fast topp: tittel + «Forhåndsvis» (under 1024 px) og en segmentert kontroll med fire like celler (min. 44 px)
+     • steginnhold: tittel, én hjelpelinje, etiketter over feltene, hårlinjer mellom delene
+     • fast bunnbar i én rad («← Tilbake» + «Neste →» / «Lagre endringer»); innholdet får bunnpadding lik barens høyde
+     • fra 1024 px: fast telefonramme med forhåndsvisningen til høyre; under det åpner «Forhåndsvis» en fullskjermflate
+   Dashbordets tokens (--ink, --mut, --line, --surface, --info …); egne farger bare i fargeprøvene og velgeren.
+   Avstander fra skalaen under — ingen løse px utenom hårlinjer og skygger. */
+
+/* ── Grein v1/v2 ─────────────────────────────────────────────────────────────
+   Tre tilstander, og v1-flaten vises KUN i den ene:
+     body.sm-v1   billing er kjent og barberen er v1  → v1-flaten, v2 skjult
+     body.sm-v2   billing er kjent og barberen er v2  → v2-flaten, v1-flaten skjult
+     (ingen)      billing er ikke kjent ennå / feilet → verken eller; v2-beholderen viser «Laster …».
+   Tidligere sto den siste tilstanden som v1 (v1-flaten var standard), så en v2-barber så v1-flaten til billing svarte. */
+body.sm-v1 #dinsideV2,body.sm-v1 .dv2-fullfor{display:none!important}
+body:not(.sm-v1) #design .v1-kun{display:none!important}
+
+#dinsideV2,.dv2-fullfor{--dv2-s1:8px;--dv2-s2:16px;--dv2-s3:24px;--dv2-s4:32px;--dv2-s5:40px;--dv2-felt:52px;--dv2-trykk:44px;
+  --dv2-radius:12px;--dv2-tekst:.9375rem;--dv2-liten:.8125rem;--dv2-tittel:1.5rem;--dv2-innhold:680px;--dv2-pv-bredde:360px;
+  --dv2-velger-h:160px;--dv2-baand-h:24px;--dv2-tommel:22px}
+/* Over 1024 px: redigering + telefonramme side om side (panelet utvides fra 680 til 680 + 40 + 360). */
+@media(min-width:1024px){ body.sm-v2 #design{max-width:1080px;margin-left:auto;margin-right:auto} }
+#dinsideV2 *,.dv2-dialog,.dv2-dialog *{box-sizing:border-box}
+#dinsideV2 [hidden]{display:none!important}
+.dv2-lasting{padding:var(--dv2-s4) 0;color:var(--mut);font-size:var(--dv2-tekst);line-height:1.6}
+.dv2-lasting.feil{color:var(--bad)}
+
+/* ── Knapper ─────────────────────────────────────────────────────────────── */
+.dv2-btn{appearance:none;font:inherit;font-weight:600;font-size:var(--dv2-tekst);min-height:var(--dv2-trykk);padding:0 var(--dv2-s2);border-radius:var(--dv2-radius);cursor:pointer;border:1px solid var(--line-2);background:transparent;color:var(--ink);letter-spacing:-.01em;display:inline-flex;align-items:center;justify-content:center;gap:6px}
+.dv2-btn:hover{border-color:var(--ink)}
+.dv2-btn:focus-visible,#dinsideV2 :focus-visible,.dv2-dialog button:focus-visible,.dv2-fullfor:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+.dv2-btn[disabled]{opacity:.4;cursor:default}
+.dv2-btn.prim{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.dv2-btn.prim:hover{opacity:.9}
+.dv2-btn.prim[disabled]{opacity:.35}
+.dv2-btn.farlig{color:var(--bad);border-color:var(--bad)}
+.dv2-btn.liten{font-size:var(--dv2-liten);padding:0 var(--dv2-s2)}
+
+/* ── Layout ──────────────────────────────────────────────────────────────── */
+.dv2-grid{display:block}
+@media(min-width:1024px){ .dv2-grid{display:grid;grid-template-columns:minmax(0,1fr) var(--dv2-pv-bredde);gap:var(--dv2-s5);align-items:start} }
+.dv2-edit{min-width:0}
+
+/* ── Fast topp: tittel + «Forhåndsvis», segmentert kontroll ──────────────── */
+.dv2-fast{position:sticky;top:0;z-index:20;background:var(--bg);padding:var(--dv2-s2) 0}
+.dv2-tittelrad{display:flex;align-items:center;justify-content:space-between;gap:var(--dv2-s2);margin-bottom:var(--dv2-s2)}
+.dv2-tittelrad h2{margin:0;font-size:var(--dv2-tittel);line-height:1.2;font-weight:700;letter-spacing:-.025em;color:var(--ink)}
+.dv2-pvknapp{flex:0 0 auto}
+@media(min-width:1024px){ #dinsideV2 .dv2-pvknapp{display:none} }
+.dv2-steg{display:grid;grid-template-columns:repeat(4,1fr);gap:2px;padding:2px;border-radius:var(--dv2-radius);background:var(--line);border:1px solid var(--line)}
+.dv2-steg button{appearance:none;border:0;border-radius:calc(var(--dv2-radius) - 2px);background:transparent;color:var(--mut);min-height:var(--dv2-trykk);font:inherit;font-size:var(--dv2-liten);font-weight:600;letter-spacing:-.01em;cursor:pointer;position:relative;padding:0 2px;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dv2-steg button:hover{color:var(--ink)}
+.dv2-steg button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px color-mix(in srgb,var(--ink) 12%,transparent)}
+.dv2-steg .feilpunkt{position:absolute;top:.45em;right:.5em;width:.45em;height:.45em;border-radius:50%;background:var(--bad)}
+
+/* ── Steginnhold ─────────────────────────────────────────────────────────── */
+/* Bunnpadding = bunnbarens FAKTISKE høyde (--dv2-bar-h, målt i JS) + safe-area, så siste felt aldri havner bak baren. */
+.dv2-innhold{padding-bottom:calc(var(--dv2-bar-h,77px) + env(safe-area-inset-bottom,0px) + var(--dv2-s3))}
+@media(min-width:1024px){ .dv2-innhold{padding-bottom:var(--dv2-s3)} }
+.dv2-sek>h3{margin:var(--dv2-s3) 0 var(--dv2-s1);font-size:1.25rem;line-height:1.25;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+.dv2-sek>.ingress{margin:0 0 var(--dv2-s2);font-size:var(--dv2-tekst);color:var(--mut);line-height:1.55}
+.dv2-del{border-top:1px solid var(--line);padding:var(--dv2-s3) 0;margin:0}
+.dv2-fld>label,.dv2-fld>.etikett,.dv2-gruppe>legend,.dv2-etikett{display:block;font-size:var(--dv2-tekst);font-weight:600;color:var(--ink);margin:0 0 var(--dv2-s1);letter-spacing:-.01em;padding:0;line-height:1.4}
+.dv2-felthjelp{font-size:var(--dv2-liten);line-height:1.45;color:var(--mut);margin:calc(var(--dv2-s1) * -1) 0 var(--dv2-s1)}
+.dv2-fld input[type=text],.dv2-fld input[type=tel],.dv2-fld textarea,.dv2-hex,#dinsideV2 .dv2-fontvalg{width:100%;font:inherit;font-size:1rem;padding:0 var(--dv2-s2);min-height:var(--dv2-felt);border:1px solid var(--line-2);border-radius:var(--dv2-radius);background:var(--surface);color:var(--ink);line-height:1.5}
+.dv2-fld textarea{resize:vertical;min-height:calc(var(--dv2-felt) * 2);padding:var(--dv2-s2)}
+.dv2-fld input,.dv2-fld textarea{scroll-margin-bottom:calc(var(--dv2-bar-h,77px) + var(--dv2-s3));scroll-margin-top:140px}
+.dv2-fld input:focus,.dv2-fld textarea:focus,.dv2-hex:focus{outline:none;border-color:var(--info);box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 18%,transparent)}
+.dv2-fld.har-feil input,.dv2-fld.har-feil textarea,.dv2-hex[aria-invalid="true"]{border-color:var(--bad)}
+.dv2-teller{float:right;font-size:var(--dv2-liten);font-weight:400;color:var(--mut);font-variant-numeric:tabular-nums}
+.dv2-teller.nær{color:var(--ink-2)}
+.dv2-teller.over{color:var(--bad)}
+.dv2-feil{font-size:var(--dv2-liten);color:var(--bad);margin:var(--dv2-s1) 0 0;line-height:1.55}
+.dv2-handle{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--dv2-radius);background:var(--surface);padding-left:var(--dv2-s2);min-height:var(--dv2-felt)}
+.dv2-handle:focus-within{border-color:var(--info);box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 18%,transparent)}
+.dv2-handle span{color:var(--mut);font-size:1rem}
+.dv2-handle input{border:0!important;box-shadow:none!important;background:transparent!important;min-width:0}
+.dv2-fld.har-feil .dv2-handle{border-color:var(--bad)}
+.dv2-gruppe{border:0;border-top:1px solid var(--line);padding:var(--dv2-s3) 0;margin:0;min-width:0}
+.dv2-gruppe>legend{float:left;width:100%;margin-bottom:var(--dv2-s2)}
+.dv2-gruppe>legend+*{clear:both}
+
+/* Lys/mørk: to små forhåndsvisningsbrikker (sidens bakgrunn + aksentknappen i valgt farge) */
+.dv2-brikker{display:flex;gap:var(--dv2-s3)}
+.dv2-brikker button{appearance:none;background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--ink);width:120px;text-align:center}
+.dv2-brikker .brikke{display:flex;flex-direction:column;justify-content:center;gap:7px;width:100%;aspect-ratio:3/2;border-radius:var(--dv2-radius);border:1px solid var(--line-2);padding:14px;margin-bottom:var(--dv2-s1)}
+.dv2-brikker .brikke[data-m="lys"]{background:#fafafa}
+.dv2-brikker .brikke[data-m="mork"]{background:#0c0c0c;border-color:#3a3a3a}
+.dv2-brikker .b1,.dv2-brikker .b2,.dv2-brikker .b3{display:block;border-radius:3px}
+.dv2-brikker .b1{height:8px;width:52%}
+.dv2-brikker .b2{height:5px;width:82%}
+.dv2-brikker .b3{height:14px;width:100%;border-radius:5px;background:var(--aks,#0071e3);margin-top:3px}
+.dv2-brikker [data-m="lys"] .b1{background:#171717}.dv2-brikker [data-m="lys"] .b2{background:#d4d4d4}
+.dv2-brikker [data-m="mork"] .b1{background:#f5f5f5}.dv2-brikker [data-m="mork"] .b2{background:#3a3a3a}
+.dv2-brikker .navn{display:block;font-size:var(--dv2-liten);color:var(--mut);font-weight:500}
+.dv2-brikker button[aria-checked="true"] .brikke{box-shadow:0 0 0 3px var(--bg),0 0 0 5px var(--ink)}
+.dv2-brikker button[aria-checked="true"] .navn{color:var(--ink);font-weight:700}
+
+/* Aksentfarge: fire prøver på én rad (Blå, Gull, Rød, Din egen). «Din egen» uten farge = fargehjul (åpner velgeren). */
+.dv2-prover{display:flex;justify-content:space-between;gap:var(--dv2-s1)}
+.dv2-prover button{appearance:none;background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--ink);display:flex;flex-direction:column;align-items:center;gap:var(--dv2-s2);min-width:56px}
+.dv2-prover .prove{width:60px;height:34px;border-radius:7px;background:linear-gradient(to right,#fff 0 33.333%,var(--palett-aksent,#0071e3) 33.333% 66.667%,#090909 66.667% 100%);border:1px solid var(--line-2);display:grid;place-items:center;transition:box-shadow .15s ease}
+.dv2-prover .prove.egen-tom{background:conic-gradient(from 90deg,#f43f5e,#f59e0b,#84cc16,#06b6d4,#6366f1,#d946ef,#f43f5e)}
+.dv2-prover .prove svg{width:16px;height:16px;opacity:0;transition:opacity .15s ease}
+.dv2-prover .navn{font-size:var(--dv2-liten);color:var(--mut);font-weight:500;line-height:1.2}
+.dv2-prover button[aria-checked="true"] .prove{box-shadow:0 0 0 4px var(--bg),0 0 0 6px var(--ring,var(--ink))}
+.dv2-prover button[aria-checked="true"] .prove svg{opacity:1}
+.dv2-prover button[aria-checked="true"] .navn{color:var(--ink);font-weight:700}
+@media(prefers-reduced-motion:reduce){ .dv2-prover .prove,.dv2-prover .prove svg{transition:none} }
+
+/* Fargevelger («Din egen»): fargefelt (metning × lysstyrke), fargebånd (kulør) og HEX-felt. Godkjent — endres ikke. */
+.dv2-velger{margin-top:var(--dv2-s3);display:flex;flex-direction:column;gap:var(--dv2-s2)}
+.dv2-sv,.dv2-hue{position:relative;border-radius:var(--dv2-radius);touch-action:none;cursor:crosshair}
+.dv2-sv{height:var(--dv2-velger-h);background:linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,hsl(var(--hue,210) 100% 50%))}
+.dv2-hue{height:var(--dv2-baand-h);background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00);cursor:ew-resize}
+.dv2-tommel{position:absolute;width:var(--dv2-tommel);height:var(--dv2-tommel);border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 1px rgba(0,0,0,.35),0 2px 6px rgba(0,0,0,.35);transform:translate(-50%,-50%);pointer-events:none;background:var(--valgt,transparent)}
+.dv2-hue .dv2-tommel{top:50%}
+.dv2-hexrad{display:flex;gap:var(--dv2-s1);align-items:center}
+.dv2-hexrad .smak{width:var(--dv2-felt);height:var(--dv2-felt);border-radius:var(--dv2-radius);border:1px solid var(--line-2);flex:0 0 auto;background:var(--valgt,transparent)}
+.dv2-hex{font-variant-numeric:tabular-nums;text-transform:lowercase}
+.dv2-velger .dv2-feil{margin:0}
+.dv2-varsel{margin:0;font-size:var(--dv2-liten);line-height:1.5;color:var(--ink-2);border-left:2px solid var(--warn);padding-left:var(--dv2-s1)}
+
+/* Font: nedtrekksliste med seks fonter, sjappenavnet vist i valgt font rett under. */
+#dinsideV2 .dv2-fontvalg{padding:0 var(--dv2-s2)}
+#dinsideV2 .dv2-fontprove{margin-top:var(--dv2-s2);padding:var(--dv2-s3) var(--dv2-s2);border:1px solid var(--line);border-radius:var(--dv2-radius);background:var(--surface);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:1.875rem;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+.dv2-fontstatus{font-size:var(--dv2-liten);color:var(--mut);margin:var(--dv2-s2) 0 0;line-height:1.6}
+.dv2-fontstatus:empty{display:none}
+
+/* ── Bilder ──────────────────────────────────────────────────────────────── */
+.dv2-info{margin:0 0 var(--dv2-s4);padding:0 0 var(--dv2-s3);border-bottom:1px solid var(--line);font-size:var(--dv2-tekst);line-height:1.6;color:var(--mut)}
+.dv2-bildeboks{border-top:1px solid var(--line);border-bottom:1px solid var(--line);padding:var(--dv2-s3) 0;display:flex;align-items:center;gap:var(--dv2-s3)}
+.dv2-portrett{width:80px;height:80px;border-radius:50%;background:var(--surface);border:1px solid var(--line);flex:0 0 auto;overflow:hidden;display:grid;place-items:center;color:var(--mut-2);font-size:var(--dv2-liten)}
+.dv2-portrett img{width:100%;height:100%;object-fit:cover;display:block}
+.dv2-bildeboks .tekst{flex:1;min-width:0}
+.dv2-bildeboks .tekst strong{display:block;font-size:var(--dv2-tekst);margin-bottom:4px;line-height:1.4}
+.dv2-bildeboks .tekst span{font-size:var(--dv2-liten);color:var(--mut);line-height:1.55;display:block}
+.dv2-handl{display:flex;flex-wrap:wrap;gap:var(--dv2-s1);margin-top:var(--dv2-s2)}
+.dv2-galleri{display:grid;grid-template-columns:1fr 1fr;gap:0;background:var(--line);margin:0}
+.dv2-galleri .flis{appearance:none;border:0;padding:0;margin:0;background:var(--surface);position:relative;aspect-ratio:1/1;overflow:hidden;cursor:pointer;display:block}
+.dv2-galleri .flis img{position:absolute;inset:0;width:calc(100% + 1px);height:calc(100% + 1px);object-fit:cover;display:block}
+.dv2-galleri .flis.hjørne-tv{border-top-left-radius:var(--dv2-radius)}
+.dv2-galleri .flis.hjørne-th{border-top-right-radius:var(--dv2-radius)}
+.dv2-galleri .flis.hjørne-bv{border-bottom-left-radius:var(--dv2-radius)}
+.dv2-galleri .flis.hjørne-bh{border-bottom-right-radius:var(--dv2-radius)}
+.dv2-galleri .flis[aria-pressed="true"]{outline:3px solid var(--info);outline-offset:-3px;z-index:1}
+.dv2-galleri .flis .nr{position:absolute;left:var(--dv2-s1);top:var(--dv2-s1);min-width:24px;height:24px;border-radius:12px;background:rgba(0,0,0,.62);color:#fff;font-size:12px;font-weight:600;display:grid;place-items:center;padding:0 6px}
+.dv2-galleri-ramme{background:transparent}
+.dv2-verktoy{margin-top:var(--dv2-s2);padding-top:var(--dv2-s2);border-top:1px solid var(--line)}
+.dv2-verktoy p{margin:0;font-size:var(--dv2-liten);color:var(--mut);line-height:1.6}
+.dv2-verktoy .dv2-handl{margin-top:var(--dv2-s2)}
+.dv2-tomt{padding:var(--dv2-s4) 0;text-align:center;color:var(--mut);font-size:var(--dv2-tekst);border-top:1px solid var(--line);border-bottom:1px solid var(--line);line-height:1.6}
+.dv2-teller-rad{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 var(--dv2-s2);font-size:var(--dv2-tekst);font-weight:600}
+.dv2-teller-rad span{font-weight:400;color:var(--mut)}
+.dv2-opplast{margin:var(--dv2-s2) 0 0;font-size:var(--dv2-liten);color:var(--mut)}
+
+/* ── Bunnbar: én rad, fast nederst ───────────────────────────────────────────
+   Mobil: over bunn-navet (i oppsettet/fokusmodus er bunn-navet borte → helt nederst). 720–1023: nederst i vinduet.
+   Fra 1024: sticky i redigeringskolonnen. */
+.dv2-bar{position:fixed;left:0;right:0;bottom:0;z-index:110;background:var(--bg);border-top:1px solid var(--line);padding:var(--dv2-s2) var(--dv2-s3) calc(var(--dv2-s2) + env(safe-area-inset-bottom,0px))}
+@media(max-width:719px){ body:not(.fokus) .dv2-bar{bottom:calc(var(--bunn-nav-h) + env(safe-area-inset-bottom,0px));padding-bottom:var(--dv2-s2)} }
+@media(min-width:1024px){ .dv2-bar{position:sticky;left:auto;right:auto;padding-left:0;padding-right:0} }
+.dv2-bar-inn{max-width:calc(var(--dv2-innhold) - var(--dv2-s3) * 2);margin:0 auto}
+@media(min-width:1024px){ .dv2-bar-inn{max-width:none} }
+.dv2-bar-rad{display:flex;gap:var(--dv2-s1)}
+.dv2-bar-rad .dv2-btn{flex:1 1 0;min-width:0;white-space:nowrap;padding:0 var(--dv2-s1)}
+.dv2-bar-rad .hoved{flex-grow:1.6}
+.dv2-status{margin:0 0 var(--dv2-s1);font-size:var(--dv2-liten);line-height:1.45;color:var(--mut);text-align:center}
+.dv2-status:empty{display:none}
+.dv2-status.ok{color:var(--good);font-weight:600}
+.dv2-status.feil{color:var(--bad)}
+.dv2-status.info{color:var(--ink-2)}
+.dv2-hjelpelinje{margin:var(--dv2-s1) 0 0;font-size:var(--dv2-liten);line-height:1.45;color:var(--mut);text-align:center}
+
+/* ── Forhåndsvisning ─────────────────────────────────────────────────────── */
+.dv2-pv-topp{display:flex;align-items:center;justify-content:space-between;gap:var(--dv2-s2);margin:0 0 var(--dv2-s2);flex-wrap:wrap}
+.dv2-pv-tittel{font-size:var(--dv2-liten);letter-spacing:.06em;color:var(--mut);font-weight:600;text-transform:uppercase}
+.dv2-visning{display:inline-grid;grid-template-columns:1fr 1fr;border:1px solid var(--line-2);border-radius:var(--dv2-radius);overflow:hidden}
+.dv2-visning button{appearance:none;border:0;background:transparent;color:var(--mut);font:inherit;font-size:var(--dv2-liten);font-weight:600;min-height:var(--dv2-trykk);padding:0 var(--dv2-s2);cursor:pointer}
+.dv2-visning button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.dv2-ramme{position:relative;border:1px solid var(--line-2);border-radius:calc(var(--dv2-radius) * 2.5);overflow:hidden;background:#000;box-shadow:0 8px 30px rgba(0,0,0,.18)}
+.dv2-ramme iframe{display:block;width:100%;height:100%;border:0;background:#fff}
+.dv2-ramme-melding{position:absolute;left:var(--dv2-s1);right:var(--dv2-s1);bottom:var(--dv2-s1);padding:var(--dv2-s1);border-radius:var(--dv2-s1);background:var(--surface);border:1px solid var(--line-2);font-size:var(--dv2-liten);color:var(--ink);line-height:1.45;box-shadow:0 4px 14px rgba(0,0,0,.18)}
+.dv2-lastelinje{position:absolute;left:0;right:0;top:0;height:3px;background:var(--info);transform-origin:left;animation:dv2last 1.1s ease-in-out infinite;z-index:1}
+@keyframes dv2last{0%{transform:scaleX(0)}60%{transform:scaleX(.8)}100%{transform:scaleX(1);opacity:0}}
+@media(prefers-reduced-motion:reduce){ .dv2-lastelinje{animation:none;transform:scaleX(.4)} }
+.dv2-pv-lukk{display:none}
+/* Under 1024: «Forhåndsvis» åpner en fullskjermflate med «← Tilbake», fokusfelle og Escape. Redigeringen under står urørt. */
+@media(max-width:1023.98px){
+  .dv2-pv{display:none}
+  .dv2-pv.apen{display:flex;flex-direction:column;position:fixed;inset:0;z-index:300;background:var(--bg);padding:var(--dv2-s2) var(--dv2-s3) calc(var(--dv2-s2) + env(safe-area-inset-bottom,0px))}
+  .dv2-pv.apen .dv2-pv-lukk{display:inline-flex}
+  .dv2-pv.apen .dv2-ramme{flex:1;min-height:0;border-radius:calc(var(--dv2-radius) * 1.5)}
+  body.dv2-pv-laas{overflow:hidden}
+}
+/* Fra 1024: fast telefonramme til høyre. */
+@media(min-width:1024px){
+  .dv2-pv{position:sticky;top:var(--dv2-s2);padding-top:var(--dv2-s2)}
+  .dv2-ramme{aspect-ratio:9/19.5;max-height:calc(100dvh - var(--dv2-s5) * 2)}
+  .dv2-pv-lukk{display:none!important}
+}
+
+/* ── «Siden din er live» (etter første lagring som publiserer) ───────────── */
+.dv2-bekreft{padding:var(--dv2-s5) 0;display:flex;flex-direction:column;gap:var(--dv2-s2);max-width:var(--dv2-innhold)}
+.dv2-bekreft h2{margin:0;font-size:var(--dv2-tittel);font-weight:700;letter-spacing:-.025em;color:var(--ink)}
+.dv2-bekreft h2:focus{outline:none}
+.dv2-bekreft .ingress{margin:0;font-size:var(--dv2-tekst);color:var(--mut);line-height:1.55}
+.dv2-hake{width:calc(var(--dv2-trykk) + var(--dv2-s2));height:calc(var(--dv2-trykk) + var(--dv2-s2));border-radius:50%;display:grid;place-items:center;font-size:1.5rem;font-weight:700;background:var(--good-bg);color:var(--good)}
+.dv2-lenkerad{border:1px solid var(--line-2);border-radius:var(--dv2-radius);background:var(--surface);min-height:var(--dv2-felt);display:flex;align-items:center;padding:0 var(--dv2-s2);overflow:hidden}
+#dv2Lenke{font-size:1rem;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.dv2-bekreft .dv2-status{text-align:left}
+
+/* ── Oversikt: «Fullfør siden din» (v2, siden ikke live) = lenke tilbake til oppsettet, ingen publiser-knapp ── */
+.dv2-fullfor{display:flex;align-items:center;justify-content:space-between;gap:var(--dv2-s2);width:100%;border:1px solid var(--line-2);border-left:3px solid var(--info);border-radius:var(--dv2-radius);padding:var(--dv2-s2) var(--dv2-s3);background:var(--surface);margin:0 0 var(--dv2-s4);color:var(--ink);text-decoration:none;text-align:left;font:inherit;cursor:pointer;min-height:calc(var(--dv2-trykk) + var(--dv2-s2) * 2)}
+.dv2-fullfor[hidden]{display:none}
+.dv2-fullfor strong{display:block;font-size:1.0625rem}
+.dv2-fullfor .under{display:block;font-size:var(--dv2-liten);color:var(--mut);margin-top:2px}
+.dv2-fullfor .pil{font-size:1.25rem;color:var(--info)}
+
+/* ── Dialog (ulagrede endringer, slett bilde) ────────────────────────────── */
+.dv2-dialog-bak{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:20px}
+.dv2-dialog{width:100%;max-width:380px;background:var(--surface);color:var(--ink);border-radius:16px;padding:24px 20px 20px;box-shadow:0 20px 60px rgba(0,0,0,.35)}
+.dv2-dialog h4{margin:0 0 8px;font-size:18px;font-weight:700;letter-spacing:-.02em}
+.dv2-dialog p{margin:0 0 24px;font-size:15px;line-height:1.6;color:var(--ink-2)}
+.dv2-dialog .rad{display:flex;flex-direction:column;gap:8px}
+@media(min-width:420px){ .dv2-dialog .rad{flex-direction:row-reverse} .dv2-dialog .rad .dv2-btn{flex:1} }
+
+#dv2Varsler:empty{display:none}

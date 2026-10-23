@@ -1614,6 +1614,7 @@
   .suksess-linje{font-size:14px;color:var(--ink);margin-top:6px;font-weight:600}
   .suksess-linje.sub{color:var(--mut);font-size:13px;font-weight:400}
 </style>
+<link rel="stylesheet" href="dinside-v2.css">
 </head>
 <body>
 <!-- ── Bunn-nav ikonsprite (kilde: docs/bunn-nav/ikoner-sprite.svg). Usynlig (0×0); definerer fem
@@ -1730,6 +1731,10 @@
 
   <!-- OVERSIKT -->
   <section class="panel active" id="oversikt">
+
+    <!-- v2, siden ikke live: lenke tilbake til oppsettet (fokusmodus). Ingen publiser-knapp — «Lagre endringer» i
+         oppsettet publiserer. Synlighet: DinSideV2.tegnFullfor (fra billing). Stil: dinside-v2.css. -->
+    <button type="button" class="dv2-fullfor" id="dv2Fullfor" hidden><span><strong>Fullfør siden din</strong><span class="under">Fortsett oppsettet der du slapp.</span></span><span class="pil" aria-hidden="true">→</span></button>
 
     <!-- «Få din første booking» (13.10). Vises KUN når page_status==='live' og GET /aktivering gir
          har_booking===false — feiler kallet eller mangler feltet, vises ingenting. Forsvinner av seg selv
@@ -2360,12 +2365,16 @@
        tagline like mye som palett og bilder. Den skal ALDRI flyttes inn i en .acc-body — da
        forsvinner den når trekkspillet lukkes, og de to andre mister forhåndsvisningen sin. -->
   <section class="panel" id="design">
-    <p class="panel-h">Din side</p>
-    <p class="block-s">Design siden din. Endringer vises i forhåndsvisningen.</p>
+    <!-- v1 (sidemal='v1'): alt merket «v1-kun» under er dagens Din side, uendret. v2: #dinsideV2 (dinside-v2.js) viser fire steg i stedet.
+         v1-flaten vises KUN når body.sm-v1 (billing er kjent og barberen er v1). Ukjent sidemal (billing ikke svart ennå / feilet)
+         viser verken v1 eller v2, bare «Laster …» — ellers så en v2-barber v1-flaten til billing svarte. Se dinside-v2.css. -->
+    <div id="dinsideV2"><p class="dv2-lasting" id="dv2Start" role="status">Laster Din side …</p></div>
+    <p class="panel-h v1-kun">Din side</p>
+    <p class="block-s v1-kun">Design siden din. Endringer vises i forhåndsvisningen.</p>
     <!-- Publiser-CTA: KUN i forhandsvist (styres av renderDinsideCta via _billing.page_status).
          Gjenbruker settSideStatus('live') — samme dispatch som Konto-knappens _kontoAksjon==='publiser'.
          Konto-knappen er urørt. -->
-    <div class="dinside-cta" id="dinsideCta" hidden>
+    <div class="dinside-cta v1-kun" id="dinsideCta" hidden>
       <div class="dinside-cta-tekst">
         <strong>Siden din er ikke publisert ennå</strong>
       </div>
@@ -2380,10 +2389,10 @@
     <!-- Live-tilstand: erstatter CTA-en når page_status==='live'. Liten grønn prikk + «Live» i
          vanlig tekstfarge (ingen bakgrunn/kant/hover). Kopiering skjer via den permanente
          kopierbare lenka i headeren (#headerLenke/settHeaderLenke). -->
-    <div class="dinside-live" id="dinsideLive" hidden>
+    <div class="dinside-live v1-kun" id="dinsideLive" hidden>
       <span class="live-dot"></span>Live
     </div>
-    <div class="side-wrap">
+    <div class="side-wrap v1-kun">
       <!-- data-single: ETT trekkspill åpent om gangen. Markøren er på lista, ikke global —
            Vekst-fanens .acc-list er umerket og beholder flere åpne samtidig. -->
       <div class="acc-list side-accs" id="sideAccs" data-single>
@@ -2510,7 +2519,7 @@
     <!-- Bunnknapper — STATISKE nederst i «Din side», kun synlige i fokusmodus (body.fokus).
          «Publiser siden» gjenbruker settSideStatus('live') (samme dispatch som #dinsidePubliser);
          «Utforsk dashbordet» = X = avslutt fokus. -->
-    <div class="fokus-bar" id="fokusBar">
+    <div class="fokus-bar v1-kun" id="fokusBar">
       <p class="pub-err fokus-pub-err" id="fokusPubErr" role="alert"></p>
       <button class="btn" id="fokusPubliser" type="button" data-pub-err="#fokusPubErr">Publiser siden</button>
       <button class="btn-outline" id="fokusUtforsk" type="button">Utforsk dashbordet</button>
@@ -4798,6 +4807,7 @@ async function loadBilder(){
 // invaliderPreview() inn i loadBilder() selv ville vært feil: den kalles også ved fane-inngang,
 // og da hadde cachen blitt nullet hver eneste gang barbereren åpner «Din side».
 async function bilderEndret(){
+  if(erV2()){ await DinSideV2.bilderEndret(); return; }   // v2: Din side-steget Bilder eier visningen
   await loadBilder();
   invaliderPreview();
   oppdaterSjekkliste(); // galleri-haken (≥2 bilder) kan ha endret seg
@@ -5113,6 +5123,8 @@ window.addEventListener('hashchange',anvendHash);
 /* events */
 document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",()=>{
   const id=t.dataset.panel;if(!id)return; // «Mer»-toggle er også .nav button, men har ingen panel
+  if(window.DinSideV2&&DinSideV2.fangBytte(t))return;   // v2: ulagrede endringer på Din side → dialog, bytte stoppet
+  if(id!=="design"&&window.DinSideV2)DinSideV2.forlat();
   document.querySelectorAll(".nav button").forEach(x=>x.setAttribute("aria-selected","false"));
   t.setAttribute("aria-selected","true");
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
@@ -5125,7 +5137,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   // «Din side» laster alle tre trekkspillene. loadProfil FØRST — den fyller Profil-feltene
   // (navn/adresse/bio/tagline) som bor i dette panelet, før vi bruker tid på design + bilder.
   // loadProfil hentes alltid (header/slug/_lagretProfil), men fyller bare felt uten ulagrede endringer.
-  if(id==="design"){loadProfil(); if(!_ulagret.design)loadDesign().then(loadBilder); else loadBilder();}
+  if(id==="design"){lastDinSide();}
   // Konto (id fortsatt "abonnement"): SMS-loggen lastes ved fane-åpning. Billing lastes
   // separat ved init + Stripe-retur, ikke her — derfor egen, ny gren.
   if(id==="abonnement"){loadSmsLogg();}
@@ -5222,7 +5234,8 @@ function _openCropModal(imgId,slot,fallbackSrc){
   document.getElementById('cropSave').disabled=true;
   imgEl.parentElement.classList.add('laster');   // «Laster bildet …» til bildet er lastet (onload) / onerror
   if(_cropper){_cropper.destroy();_cropper=null;}
-  const ratio=slot==='portrett'?1:slot==='hero'?9/19.5:3/4;
+  // v2: portrett OG galleri er 1:1 (galleriet er kvadratisk på siden). v1 uendret.
+  const ratio=(slot==='portrett'||(slot==='galleri'&&erV2()))?1:slot==='hero'?9/19.5:3/4;
   // Bevar original + re-crop fra original: last originalUrl når backend gir den (ny backend), ellers
   // /images/raw/:id som før (gammel backend serverer det destruktivt beskårne bildet). cropRect (forrige
   // utsnitt) finnes bare på ny backend; null ⇒ ikke kall setData, boksen åpner på min-zoom som før.
@@ -5231,7 +5244,7 @@ function _openCropModal(imgId,slot,fallbackSrc){
   const cropRect=rec?(rec.cropRect||rec.crop_rect||null):null;
   // Badge: fast slott-format (samme rolle som plakatens aspekt-badge). Kun visning — ikke i cropData.
   const badge=document.getElementById('cropAspektBadge');
-  if(badge) badge.textContent=slot==='portrett'?'Portrett 1:1':slot==='hero'?'Hero 9:19,5':'Galleri 3:4';
+  if(badge) badge.textContent=slot==='portrett'?'Portrett 1:1':slot==='hero'?'Hero 9:19,5':(erV2()?'Galleri 1:1':'Galleri 3:4');
   imgEl.onload=function(){
     // Lastetilstanden av FØR Cropper bygges: Cropper måler beholderen ved oppstart, og minstehøyden ville endret geometrien.
     imgEl.parentElement.classList.remove('laster');
@@ -5271,6 +5284,7 @@ document.getElementById('cropSave').addEventListener('click',async()=>{
     const rect=_cropper.getData();
     const canvas=_cropper.getCroppedCanvas();
     const blob=await new Promise((res,rej)=>canvas.toBlob(b=>b?res(b):rej(new Error('toBlob feilet')),'image/jpeg',0.92));
+    if(erV2() && window.DinSideV2 && window.DinSideV2.stageCrop(_activeImgId,blob,rect)){_closeCropModal();return;}
     const fd=new FormData();fd.append('image',blob,'crop.jpg');fd.append('op','crop');fd.append('crop_rect',JSON.stringify(rect));
     const r=await apiFetch('/api/dashboard/images/'+_activeImgId,{method:'PUT',body:fd,timeout:API_TIMEOUT_TUNG_MS});
     // 413 = for stort. 415 (og annen feil): serverens egen melding ordrett («Bildeformatet støttes ikke …»).
@@ -5701,6 +5715,7 @@ $("#loggUt").addEventListener("click",async function(){
   // i UI-et etter et mislykket utloggingskall er verre enn en overflødig redirect.
   try{ await apiFetch('/api/logout',{method:'POST',body:'{}',raw401:true}); }catch(e){}
   glemInnloggingKode();   // utlogget → logg-inn skal vise steg 1, ikke en gammel kodeforespørsel
+  settOppsettLukket(false);   // neste innlogging åpner oppsettet igjen (v2, siden ikke live)
   location.href='/no/logg-inn.html';
 });
 // Profil («Din side») og Navn (Konto → Innlogging) deler PUT /api/dashboard/profile. Navn er
@@ -7145,7 +7160,7 @@ function billingUkjent(){ return !_billingKjent; }
 // og ALDRI fetche (lekkasje-vernet står — vi vet fortsatt ikke planen). I stedet: synlig feil +
 // «Prøv igjen» som re-kjører loadBilling. Ikke fail-open til ugatet fetch.
 function visBillingFeil(el){ if(el) el.innerHTML='<p class="wb-empty">Kunne ikke laste akkurat nå. <button type="button" class="retry-lenke" data-billing-retry>Prøv igjen</button></p>'; }
-function billingFeilRender(){ ['#wbList','#vervSendList','#loyalOversikt'].forEach(function(s){ visBillingFeil($(s)); });
+function billingFeilRender(){ if(window.DinSideV2)DinSideV2.billingFeilet(); ['#wbList','#vervSendList','#loyalOversikt'].forEach(function(s){ visBillingFeil($(s)); });
   if(typeof oppdaterHjemskjermKort==='function') oppdaterHjemskjermKort(); }   // første booking avgjort (skjult) → kortet kan vises
 document.addEventListener('click',function(e){ var b=e.target.closest('[data-billing-retry]'); if(!b)return; e.preventDefault();
   ['#wbList','#vervSendList','#loyalOversikt'].forEach(function(s){ var el=$(s); if(el)el.innerHTML='<p class="wb-empty">Laster …</p>'; });
@@ -7162,6 +7177,18 @@ async function loadBilling(){
   if(!erBillingShape(d)){ console.error('loadBilling: ufullstendig billing-shape'); _billingFeilet=true; billingFeilRender(); return; }
   settBilling(d);
 }
+// v1/v2-greinen: billing-shapen bærer sidemal (backend billingShape.js). ÉN kilde — ikke gjett ut fra noe annet.
+function erV2(){ return !!(_billing&&_billing.sidemal==='v2'); }
+// «Din side»-fanen åpnes. v2: egen flyt. v1: dagens lasting. Før billing er kjent vet vi ikke hvilken — da venter
+// vi (DinSideV2.billing kjører lastingen når svaret lander) i stedet for å laste v1-data for en v2-barber.
+// Oppstart med #dinside i URL-en åpner panelet FØR dinside-v2.js er lastet og før billing har svart: da settes
+// _ventDinSide, og settBilling (eller modulen, hvis billing alt er kjent) kjører lastingen.
+var _ventDinSide=false;
+function lastDinSide(){
+  if(!window.DinSideV2||!_billingKjent){ _ventDinSide=true; if(_billingFeilet&&window.DinSideV2)DinSideV2.billingFeilet(); return; }
+  if(erV2()){ DinSideV2.last(); return; }
+  loadProfil(); if(!_ulagret.design)loadDesign().then(loadBilder); else loadBilder();
+}
 // Er dette en FULL billing-shape? Delt vakt for alle tre veiene inn (loadBilling, PUT /page-status,
 // sync-checkout). Et svar med page_status men uten plan-feltene skal ALDRI overskrive _billing —
 // renderKonto ville da falt til reserve-tilstanden og skjoldene til Gratis på et delvis svar.
@@ -7175,6 +7202,9 @@ function settBilling(d){
   var forrige=_billing, varFeilet=_billingFeilet;
   _billing=d;
   _billingKjent=true; _billingFeilet=false;   // ÅPNE billing-gaten: kundedata-loaderne kan nå fetche
+  if(window.DinSideV2)DinSideV2.billing(d);   // sidemal v1/v2 (body.sm-v2)
+  if(_svcHentet && (!forrige || forrige.sidemal!==d.sidemal)) renderSvc();   // tjenestene kan være tegnet før sidemal var kjent (beskrivelsesfeltet er v2-kun)
+  if(_ventDinSide&&aktivtPanel()==='design'){ _ventDinSide=false; lastDinSide(); }   // Din side ble åpnet før billing var kjent
   renderKonto(_billing);
   // Skjoldede flater + kundedata-loaderne avhenger KUN av planen. Kjør dem når planen kom første gang,
   // når den endret seg (synk, oppsigelse) eller når forrige lasting feilet (listene står da på
@@ -7598,14 +7628,20 @@ function lukkSuksess(){ var ov=$('#suksessOverlay'); if(ov)ov.hidden=true; }
 var FOKUS_FLAG='fokusAktiv';
 function fokusFlaggSatt(){ try{ return sessionStorage.getItem(FOKUS_FLAG)==='1'; }catch(e){ return false; } }
 function settFokusFlagg(på){ try{ på?sessionStorage.setItem(FOKUS_FLAG,'1'):sessionStorage.removeItem(FOKUS_FLAG); }catch(e){} }
+// v2: oppsettet (fokusmodus) åpnes ved hver innlogging så lenge siden ikke er live. X lukker det for resten av
+// økta (sessionStorage); «Fullfør siden din» på Oversikt og utlogging nullstiller.
+var OPPSETT_LUKKET='dv2OppsettLukket';
+function oppsettLukket(){ try{ return sessionStorage.getItem(OPPSETT_LUKKET)==='1'; }catch(e){ return false; } }
+function settOppsettLukket(på){ try{ på?sessionStorage.setItem(OPPSETT_LUKKET,'1'):sessionStorage.removeItem(OPPSETT_LUKKET); }catch(e){} }
 function applyFokusModus(b){
   b=b||_billing||{};
   var params=new URLSearchParams(location.search);
   var viaParam=params.get('velkommen')==='1';
   var forhV=b.page_status==='forhandsvist';
-  // Vis fokus hvis forhandsvist OG (førstegangs-param ELLER flagget står fra før). Begge veier
-  // KREVER forhandsvist — publisert side får aldri fokus.
-  if(forhV && (viaParam || fokusFlaggSatt())){
+  var v2Oppsett=b.sidemal==='v2' && !oppsettLukket();
+  // Vis fokus hvis forhandsvist OG (førstegangs-param ELLER flagget står fra før ELLER v2 uten lukket oppsett).
+  // Alle veier KREVER forhandsvist — publisert side får aldri fokus.
+  if(forhV && (viaParam || fokusFlaggSatt() || v2Oppsett)){
     document.body.classList.add('fokus');
     settFokusFlagg(true); // persister → reload beholder fokus selv når param er strippet
     if(typeof aktivtPanel==='function' && aktivtPanel()!=='design') switchPanel('design');
@@ -7623,10 +7659,13 @@ function applyFokusModus(b){
     document.body.classList.remove('fokus');
     settFokusFlagg(false);
   }
+  if(window.DinSideV2)DinSideV2.fokusEndret();   // v2: tittelen følger fokusmodus
 }
-function avsluttFokus(){ document.body.classList.remove('fokus'); settFokusFlagg(false); renderSjekkliste(); }
+function avsluttFokus(){ document.body.classList.remove('fokus'); settFokusFlagg(false); renderSjekkliste(); if(window.DinSideV2)DinSideV2.fokusEndret(); }
 (function(){
-  var x=document.getElementById('fokusX');        if(x)x.addEventListener('click',avsluttFokus);
+  // v2: X spør først ved ulagrede endringer («Forkast» / «Bli her») og lukker oppsettet til Oversikt (dinside-v2.js).
+  var x=document.getElementById('fokusX');        if(x)x.addEventListener('click',function(){ if(window.DinSideV2&&DinSideV2.erV2()){ DinSideV2.lukkOppsett(); return; } avsluttFokus(); });
+  var fu=document.getElementById('dv2Fullfor');    if(fu)fu.addEventListener('click',function(){ if(window.DinSideV2)DinSideV2.startOppsett(); });
   var u=document.getElementById('fokusUtforsk');   if(u)u.addEventListener('click',avsluttFokus);
   var p=document.getElementById('fokusPubliser');
   if(p)p.addEventListener('click',function(){ if(IS_DEMO)return; settSideStatus('live',this); });
@@ -7693,7 +7732,7 @@ function renderSjekkliste(){
   // ville kollidert med den). Synlig kun ved forhandsvist.
   var pill=$('#sjekkPill');
   if(pill){
-    var visPill=forhV&&!iFokus;
+    var visPill=forhV&&!iFokus&&b.sidemal!=='v2';   // v2 har ingen sjekkliste: «Fullfør siden din» er et kort på Oversikt
     document.body.classList.toggle('har-sjekkpill',visPill);   // ekstra bunnklaring mens pillen står (se CSS)
     if(visPill){
       pill.hidden=false;
@@ -8127,8 +8166,11 @@ function ulagretLagret(){
   _ulagrede.forEach(function(el){ if(sek.contains(el))_ulagrede.delete(el); });
 }
 function harUlagret(){
-  var n=0; _ulagrede.forEach(function(el){ if(el.isConnected)n++; else _ulagrede.delete(el); });
-  return n>0;
+  // v2 «Din side»: utkastet (tekst, farger, font, bilder) er ÉN kilde — DinSideV2.ulagret(). Felt der telles derfor ikke her
+  // (og tas ut av settet), så flagget faller av seg selv ved vellykket v2-lagring og «Forkast». Bilder og fargevalg gir ingen
+  // input-hendelse og ble før aldri sett → auto-reload etter deploy kunne kaste et ulagret utkast.
+  var n=0; _ulagrede.forEach(function(el){ if(el.isConnected&&!el.closest('#dinsideV2'))n++; else _ulagrede.delete(el); });
+  return n>0 || !!(window.DinSideV2&&DinSideV2.ulagret());
 }
 
 /* ---- Ny versjon etter deploy (hurtigminnet) ----
@@ -9434,5 +9476,6 @@ window.hqDel = (function(){
     <button class="tab" type="button" role="tab" data-panel="abonnement"><svg class="nav-ico" aria-hidden="true"><use href="#ic-konto"></use></svg><span class="tab-lbl">Konto</span><span class="nav-dot" id="kontoBunnDot" hidden></span></button>
   </div>
 </nav>
+<script src="dinside-v2.js"></script>
 </body>
 </html>
