@@ -1,4 +1,4 @@
-// Tre bokser, én handler: verifiser at hver sender RIKTIG payload til /api/feedback.
+// To bokser (Konto-support + idé på «Din side»), én handler: verifiser at hver sender RIKTIG payload til /api/feedback.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -31,7 +31,7 @@ async function kjor(profil){
       return route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(profil)});
     if(u.pathname==='/api/dashboard/billing/status')
       return route.fulfill({status:200,contentType:'application/json',
-        body:JSON.stringify(gratis({page_status:'forhandsvist'}))});
+        body:JSON.stringify(gratis({page_status:'live'}))});
     if(u.pathname==='/api/dashboard/preview')
       return route.fulfill({status:200,contentType:'text/html',body:'<html><body></body></html>'});
     route.fulfill({status:200,contentType:'application/json',
@@ -47,12 +47,10 @@ async function kjor(profil){
   const supportFeil=await page.$eval('#fbErr-konto-support',
     e=>e.offsetParent!==null?e.textContent.trim():'(ingen)');
 
-  await page.fill('#fbBox-konto-ide','Ønsker mørkere palett');
-  await page.click('#fbSend-konto-ide'); await page.waitForTimeout(800);
-
-  // Idé-boksen på «Din side»
+  // Idé-boksen på «Din side» står under Lagre på Kontakt-steget (dinside-v2.js)
   await page.$eval('button[data-panel="design"]',b=>b.click());
   await page.waitForTimeout(1200);
+  await page.click('#dv2Steg [data-steg="3"]'); await page.waitForTimeout(400);
   await page.fill('#fbBox-side','Idé fra Din side');
   await page.click('#fbSend-side'); await page.waitForTimeout(800);
 

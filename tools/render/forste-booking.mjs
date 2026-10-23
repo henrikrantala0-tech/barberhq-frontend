@@ -75,6 +75,9 @@ async function nySide(bredde,tema,state,{userAgent,hsLukket}={}){
     permissions:['clipboard-read','clipboard-write']});
   const page=await ctx.newPage();
   await page.addInitScript(t=>{ try{ localStorage.setItem('bhq-theme',t); }catch(e){} },tema);
+  // Ikke live → oppsettet av Din side (fokusmodus) åpnes ved innlasting og dekker Oversikt. Testen gjelder Oversikt,
+  // så oppsettet regnes som lukket i økta (som etter X).
+  await page.addInitScript(()=>{ try{ sessionStorage.setItem('dv2OppsettLukket','1'); }catch(e){} });
   if(hsLukket) await page.addInitScript(()=>{ try{ localStorage.setItem('bhq-hjemskjerm-skjult',JSON.stringify({t:Date.now(),n:1})); }catch(e){} });
   const errs=[]; page.on('pageerror',e=>errs.push(e.message)); page.on('dialog',d=>d.dismiss());
   await stubApi(page,state);

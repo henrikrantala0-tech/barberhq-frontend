@@ -10,11 +10,11 @@
 // Skriv mot prod er forbudt: ALT under api.trybarberhq.com og /api/ fanges her (CLAUDE.md, Playwright-regelen).
 import fs from 'node:fs';
 import path from 'node:path';
-import { v2, gratis } from './billing.mjs';
+import { v2 } from './billing.mjs';
 
 const HER = import.meta.dirname;
-const BILDER = ['layout-showcase.webp', 'layout-profil.webp', 'layout-hero.webp', 'layout-direkte.webp', 'preview-grand-barber.webp']
-  .map(f => path.resolve(HER, '../../../site/no/images', f));
+const BILDER = ['bilde-1.webp', 'bilde-2.webp', 'bilde-3.webp', 'bilde-4.webp', 'bilde-1.webp']
+  .map(f => path.resolve(HER, 'bilder', f));
 
 export const FONTER = [
   { key: 'jakarta',  navn: 'Plus Jakarta Sans', family: "'PlusJakartaSans'", url: 'https://api.trybarberhq.com/fonts/PlusJakartaSans.woff2', vekt: 700 },
@@ -27,7 +27,7 @@ export const FONTER = [
 // Fontfilene er kopier av backendens fonts/*.woff2 (origin/main, 23.10.2026) — alle seks, ingen stand-ins. Før lå Oswald,
 // Josefin Sans og Jost som stand-ins (Bebas / Plus Jakarta), så de SÅ like ut i skjermbildene uten at noe var feil i prod.
 
-export const MAKS = { shop: 100, tagline: 60, address: 200, bio: 2000, om: 4000, bilder: { portrett: 1, hero: 1, galleri: 10 } };
+export const MAKS = { shop: 100, tagline: 60, address: 200, bio: 2000, om: 4000, bilder: { portrett: 1, galleri: 10 } };
 const AKSENTER = [{ key: 'blaa', hex: '#0071e3' }, { key: 'gull', hex: '#b08c32' }, { key: 'roed', hex: '#b83a42' }, { key: 'egen', hex: null }];
 
 export function startTilstand(o = {}) {
@@ -96,7 +96,8 @@ function parseMultipart(req) {
     const i = d.indexOf('\r\n\r\n'); if (i < 0) continue;
     const hode = d.slice(0, i), innhold = d.slice(i + 4, d.length - 2);
     const navn = (hode.match(/name="([^"]*)"/) || [])[1], filnavn = (hode.match(/filename="([^"]*)"/) || [])[1];
-    if (filnavn != null) ut.filer.push({ navn, filnavn, str: innhold.length });
+    // type = delens Content-Type, sig = de fire første bytene (hex: 8950 = PNG), script = om <script finnes i innholdet.
+    if (filnavn != null) ut.filer.push({ navn, filnavn, str: innhold.length, type: (hode.match(/Content-Type:\s*([^\r\n]+)/i) || [])[1] || '', sig: Buffer.from(innhold.slice(0, 4), 'latin1').toString('hex'), script: /<script/i.test(innhold) });
     else ut.felt[navn] = Buffer.from(innhold, 'latin1').toString('utf8');
   }
   return ut;
@@ -105,7 +106,7 @@ function parseMultipart(req) {
 // b.v = updated_at-ms (standard 1). ?? og ikke ||: v=0 betyr updated_at null og skal stå som 0, som i backend.
 export const bildeVersjon = bilder => bilder.filter(b => b.slot === 'portrett' || b.slot === 'galleri').map(b => `${b.id}:${b.v ?? 1}:${b.slot}:${b.sort_order}`).sort().join('|');
 
-// opts: { tilstand, billing, fontModus:'ok'|'sen'|'feil', putFeil:{felt,error,status?}, previewTreg:ms, sidemal:'v2'|'v1',
+// opts: { tilstand, billing, fontModus:'ok'|'sen'|'feil', putFeil:{felt,error,status?}, previewTreg:ms,
 //         billingForsinkelse:ms, billingStatus:500 (billing-kallet feiler), bilderForsinkelse:ms (GET /images),
 //         tjenester:{hoved,tillegg} (GET /services; ellers tom),
 //         lagreFeil:{status,error,felt?} | 'nett' (utkast-lagringen feiler / avbrytes), konflikt:true (bildene endret i annen fane → 409) }
@@ -114,7 +115,7 @@ export async function installerDinSideMock(page, opts = {}) {
   const t = opts.tilstand || startTilstand();
   const m = { tilstand: t, kall: [], prod: 0, fontForesp: 0, previewHtml: [], utkast: [] };
   const fontModus = opts.fontModus || 'ok';
-  const billing = opts.billing || (opts.sidemal === 'v1' ? gratis({ page_status: 'live' }) : v2());
+  const billing = opts.billing || v2();
   const PROFIL = { slug: 'grand-barber', email: 'g@b.no', hasPassword: true, name: 'Henrik', shop: t.profil.shop, address: t.profil.address,
                    tagline: t.profil.tagline, bio: t.profil.bio, booking_horizon_days: 28 };
   let nyId = 0;
@@ -142,15 +143,14 @@ export async function installerDinSideMock(page, opts = {}) {
       return json(billing);
     }
     if (p === '/api/dashboard/din-side') {
-      if (billing.sidemal !== 'v2') return json({ error: 'Denne siden bruker den gamle malen (v1). Bruk de gamle rutene.', sidemal: 'v1' }, 409);
-      if (metode === 'GET') return json({ sidemal: 'v2', ...dinSideShape(t), profil: { ...t.profil }, publisert_at: billing.publisert_at,
+      if (metode === 'GET') return json({ ...dinSideShape(t), profil: { ...t.profil }, publisert_at: billing.publisert_at,
         valg: { aksenter: AKSENTER, fonter: FONTER, maks: MAKS } });
       if (opts.putFeil) return json({ error: opts.putFeil.error, felt: opts.putFeil.felt }, opts.putFeil.status || 400);
       const f = valider(body || {}, t); if (f) return json(f, 400);
       const b = body || {};
       Object.assign(t.profil, b.profil || {}); Object.assign(t.utseende, b.utseende || {}); Object.assign(t.kontakt, b.kontakt || {});
       for (const k of ['instagram', 'tiktok', 'snapchat']) if (typeof t.kontakt[k] === 'string') t.kontakt[k] = t.kontakt[k].replace(/^https?:\/\/(www\.)?[^/]+\//, '').replace(/^@/, '').replace(/\/$/, '').trim();
-      return json({ ok: true, sidemal: 'v2', ...dinSideShape(t), ...billing });
+      return json({ ok: true, ...dinSideShape(t), ...billing });
     }
     if (p === '/api/dashboard/preview' && metode === 'POST') {
       if (opts.previewTreg) await new Promise(r => setTimeout(r, opts.previewTreg));
@@ -208,7 +208,7 @@ export async function installerDinSideMock(page, opts = {}) {
           }
         }
       }
-      return json({ ok: true, lagret: true, publisering, sidemal: 'v2', ...dinSideShape(t), ...billing });
+      return json({ ok: true, lagret: true, publisering, ...dinSideShape(t), ...billing });
     }
     if (p === '/api/dashboard/images' && metode === 'GET') {
       if (opts.bilderForsinkelse) await new Promise(r => setTimeout(r, opts.bilderForsinkelse));

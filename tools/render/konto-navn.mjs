@@ -1,11 +1,10 @@
 // tools/render/konto-navn.mjs — «Lagre navn» i Konto endrer KUN navnet (14.10.2026).
 // PUT /profile skriver alle fem feltene (backend full erstatning), så hver lagring sender sine egne felt + de sist
 // LAGREDE verdiene for resten — aldri ulagret tekst fra en annen fane.
-//   1. Ulagret bio-utkast i Din side + «Lagre navn» → ÉN PUT /profile med nytt navn og LAGRET bio; ingen /settings.
+//   1. «Lagre navn» → ÉN PUT /profile med nytt navn og de LAGREDE verdiene for resten (fra GET /profile); ingen /settings.
 //      Raden lukkes, Navn-verdien viser det nye navnet.
 //   2. PUT /profile 400 → backendens melding i #navnErr i Konto; raden står åpen; fanen er fortsatt Konto.
 //   3. Nettverksfeil → «Fikk ikke kontakt med serveren …» i #navnErr; knappen tilbake.
-//   4. Ulagret navn i Konto + «Lagre profil» i Din side → PUT /profile sender det LAGREDE navnet.
 // Alt under /api/** mockes; ingen request når api.trybarberhq.com (forsøk === fanget).
 import http from 'node:http';
 import fs from 'node:fs';
@@ -52,18 +51,15 @@ async function nySide(bredde,profilSvar='ok'){
   await page.waitForTimeout(300);
   return {page,errs,dialoger,logg};
 }
-const aapneProfil=async page=>{ await page.$eval('button[data-panel="design"]',b=>b.click()); await page.waitForTimeout(200);
-  await page.$eval('#accProfil .acc-head',h=>{ if(h.getAttribute('aria-expanded')!=='true') h.click(); }); await page.waitForTimeout(200); };
 const aapneNavn=async page=>{ await page.$eval('button[data-panel="abonnement"]',b=>b.click()); await page.waitForTimeout(200);
   await page.$eval('[data-endre="radNavn"]',b=>b.click()); await page.waitForTimeout(150); };
 const navnErr=page=>page.$eval('#navnErr',e=>(!e.hidden&&e.offsetParent!==null)?e.textContent:null);
 const rapport=[]; const bilder=[];
 const push=(n,f,errs)=>rapport.push({sjekk:n,resultat:f.length?'✗ '+f.join(' | '):'OK ✓',jsfeil:errs.length?errs.join('; '):'ingen'});
 
-// 1. Ulagret bio-utkast lekker ikke
+// 1. «Lagre navn» sender bare navnet + lagrede verdier
 {
   const {page,errs,dialoger,logg}=await nySide(375);
-  await aapneProfil(page); await page.fill('#pf-bio','ULAGRET UTKAST');
   await aapneNavn(page); await page.fill('#pf-name','Nytt Navn');
   await page.$eval('#saveNavn',b=>b.click()); await page.waitForTimeout(500);
   const f=[];
@@ -75,7 +71,7 @@ const push=(n,f,errs)=>rapport.push({sjekk:n,resultat:f.length?'✗ '+f.join(' |
   if(!(await page.$eval('#radNavnRed',e=>e.hidden))) f.push('raden ikke lukket');
   if(await page.$eval('#navnVerdi',e=>e.textContent.trim())!=='Nytt Navn') f.push('Navn-verdien ikke oppdatert');
   if(dialoger.length) f.push(`alert ${dialoger.join()}`);
-  push('ulagret bio sendes ikke med «Lagre navn»',f,errs); await page.close();
+  push('«Lagre navn»: nytt navn + lagrede verdier',f,errs); await page.close();
 }
 // 2–3. Feil vises i Konto
 for(const w of [320,375]) for(const [id,svar,vent] of [['400',400,'Navnet er for langt (maks 100 tegn).'],['nett','nett','Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.']]){
@@ -96,17 +92,6 @@ for(const w of [320,375]) for(const [id,svar,vent] of [['400',400,'Navnet er for
   if(await page.$eval('#navnErr',e=>!e.hidden)) f.push('feilen står etter Avbryt');
   push(`${w} «Lagre navn» ${id} → feil i Konto`,f,errs.filter(e=>!/Failed to fetch/.test(e))); await page.close();
 }
-// 4. «Lagre profil» tar ikke med ulagret navn fra Konto
-{
-  const {page,errs,logg}=await nySide(375);
-  await aapneNavn(page); await page.fill('#pf-name','ULAGRET NAVN');
-  await aapneProfil(page); await page.fill('#pf-phone','91234567');
-  await page.$eval('#saveProfil',b=>b.click()); await page.waitForTimeout(600);
-  const f=[]; const pr=logg.find(x=>x.kall==='profile');
-  if(!pr) f.push('ingen PUT /profile'); else if(pr.body.name!=='Sander Saxe') f.push(`name sendt «${pr.body.name}»`);
-  push('«Lagre profil» sender lagret navn, ikke ulagret',f,errs); await page.close();
-}
-
 await browser.close(); server.close();
 rapport.push({sjekk:'ingen request når prod',resultat:prodForsok===prodFanget?'OK ✓':`✗ ${prodForsok} forsøk, ${prodFanget} fanget`,jsfeil:'—'});
 console.table(rapport);

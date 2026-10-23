@@ -1,7 +1,7 @@
 # BarberHQ — ruting og proxy.
 # Rekkefølge er kritisk: første match vinner.
 
-# Publish = kun site/. Selve siden (no/ sv/ da/ en/) bor der; alt annet på repo-roten
+# Publish = kun site/. Selve siden (no/) bor der; alt annet på repo-roten
 # (CLAUDE.md, tools/, .claude/, _utkast/, assets/, config) ligger UTENFOR publish og kan
 # strukturelt ikke serveres. Dette er PRIMÆRVERNET mot lekkasje av interne filer.
 # Bakgrunn: redirect-guards alene er IKKE vanntette — Netlifys fil-serving er
@@ -74,27 +74,62 @@
   to = "/no/"
   status = 301
 
-# 2. Bare språk-koder uten trailing slash → redirect til katalog.
-#    Hindrer at /no, /sv, /da, /en fanges av proxy-regelen under.
+# 2. /no uten trailing slash → katalog. Hindrer at /no fanges av proxy-regelen under.
 [[redirects]]
   from = "/no"
   to = "/no/"
   status = 301
 
+# 2b. sv/, da/ og en/ er SLETTET (23.10.2026): de var utdaterte v1-kopier (gammel layout-/palett-velger) som kunne
+#     sende v1-felt til API-et. Gamle lenker og bokmerker får 301 til tilsvarende side i /no/. en/privacy.html het
+#     personvern i no/. Må stå FØR /:slug-proxyen (ellers går /sv, /da, /en til backend som barber-slug).
+[[redirects]]
+  from = "/en/privacy.html"
+  to = "/no/personvern.html"
+  status = 301
+  force = true
+
+[[redirects]]
+  from = "/en/privacy"
+  to = "/no/personvern"
+  status = 301
+  force = true
+
 [[redirects]]
   from = "/sv"
-  to = "/sv/"
+  to = "/no/"
   status = 301
+  force = true
+
+[[redirects]]
+  from = "/sv/*"
+  to = "/no/:splat"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/da"
-  to = "/da/"
+  to = "/no/"
   status = 301
+  force = true
+
+[[redirects]]
+  from = "/da/*"
+  to = "/no/:splat"
+  status = 301
+  force = true
 
 [[redirects]]
   from = "/en"
-  to = "/en/"
+  to = "/no/"
   status = 301
+  force = true
+
+[[redirects]]
+  from = "/en/*"
+  to = "/no/:splat"
+  status = 301
+  force = true
 
 # 3. API- og book-proxy → Railway backend.
 #    Må komme FØR /:slug-regelen — Netlify tar første treff.
@@ -160,41 +195,6 @@
   status = 200
   force = false
 
-# 5. noindex for sv/da/en (bevisst utdaterte — ventes til oversettelsesfasen).
-#    no/ nevnes ALDRI → forblir indekserbar. Tillater crawling og sender noindex,
-#    så Google leser headeren og holder de tre språkene ute av indeksen.
-#    Fjern språkets blokk-par når det er ferdig oversatt ved lansering.
-#    Splat + bar-katalog per språk (belte-og-seler: /sv/ uten filnavn dekkes også).
-[[headers]]
-  for = "/sv/*"
-  [headers.values]
-    X-Robots-Tag = "noindex"
-
-[[headers]]
-  for = "/sv/"
-  [headers.values]
-    X-Robots-Tag = "noindex"
-
-[[headers]]
-  for = "/da/*"
-  [headers.values]
-    X-Robots-Tag = "noindex"
-
-[[headers]]
-  for = "/da/"
-  [headers.values]
-    X-Robots-Tag = "noindex"
-
-[[headers]]
-  for = "/en/*"
-  [headers.values]
-    X-Robots-Tag = "noindex"
-
-[[headers]]
-  for = "/en/"
-  [headers.values]
-    X-Robots-Tag = "noindex"
-
 # 6. noindex på interne stier — belte-og-seler bak guardene i seksjon 0.
 #    Hvis en guard-regel ryker ved en senere netlify.toml-endring og fila serveres
 #    med 200, sikrer denne headeren at søkemotorer ikke indekserer den likevel.
@@ -225,7 +225,7 @@
     X-Robots-Tag = "noindex"
 
 # 7. noindex på interne /no/-sider som ikke skal i søk (SEO 25.09). dashboard.html har
-#    ingen robots-meta, preview-tjenester.html er en intern iframe-fil («Grand Barber»).
+#    ingen robots-meta.
 #    logg-inn/opprett-passord har allerede robots-meta i HTML-en. Header dekker begge former
 #    (med og uten .html) belte-og-seler.
 [[headers]]
@@ -238,12 +238,3 @@
   [headers.values]
     X-Robots-Tag = "noindex"
 
-[[headers]]
-  for = "/no/preview-tjenester.html"
-  [headers.values]
-    X-Robots-Tag = "noindex"
-
-[[headers]]
-  for = "/no/preview-tjenester"
-  [headers.values]
-    X-Robots-Tag = "noindex"

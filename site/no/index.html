@@ -26,7 +26,7 @@
 <link rel="canonical" href="https://trybarberhq.com/no/">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Plus+Jakarta+Sans:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.1.0/dist/tabler-icons.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -902,256 +902,219 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 #produkt .ks-cal .ks-blk-svc{display:block;font-size:10.5px;color:var(--mut);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(prefers-reduced-motion:reduce){#produkt .ks-cal .ks-block,#produkt .ks-cal .ks-now{transition:none}}
 
-/* ===== KLONET: bookingsida ====================================================
-   Kilde: den publiserte /henrik-fades, hentet 9. august 2026 — cover-seksjon +
-   booking-modul. CSS-en er valgt MASKINELT: hele sidas stilark lastes mot klon-markupen
-   i en ekte nettleser, og kun regler som treffer et element beholdes (2 039 kB → 18 kB).
-
-   TO PASS. Andre pass legger alle klasser modulen setter i drift på alle elementer.
-   Uten det forsvant 26 regler — .svc-card.sel, .slot-btn.sel, .acc-section.done .acc-*,
-   .sheet.open, .date-chip.sel — og klonen viste valgt tjeneste, valgt dato og valgt tid
-   HELT uten valgt-styling.
-   Klassene leses maskinelt ut av sidas JS på TRE måter, og alle tre er nødvendige:
-   classList-kall, className-tilordninger, OG hver enkelt strengliteral. Bare de to
-   første var med i første runde, og da manglet fortsatt .date-chip.month-start og
-   .date-chip.today: modulen skriver dem inn i markup-strengen som en løs ternær
-   (` ? ' month-start' : ''`), langt fra nærmeste «class=». Kandidatene snittes mot
-   klassenavnene stilarket faktisk styler, så støyen fra literal-utvinningen koster
-   ingenting. MERK: `.date-chip.today .dc-d` er DØD også på ekte side — klassenavnet
-   finnes ikke i sidas JS i det hele tatt. Regelen er med fordi den er kildens, men
-   klonen setter den ikke, for da ville den vist et signal produktet ikke har.
-
-   @media er droppet, og vw/vh er regnet om mot designbredden (320×693): begge er
-   viewport-baserte og ville ellers løst seg mot landingssidas viewport. Uten omregningen
-   valgte .cover h1 sitt clamp-tak (54px) i stedet for gulvet (38px) og brakk til to linjer.
-
-   ⚠ SYNKPUNKT — TO ANKERE:
-     1. Paletten under er hentet ORDRETT fra :root på den publiserte sida.
-        Bytter barbereren palett eller lys/mørk, må den hentes på nytt.
-     2. Samme verdier faller ut av buildPalette('oransje','mork') i site/no/palett.js
-        (som holdes i synk med backendens fyll.cjs). Avviker de to, er det palett.js
-        eller den publiserte sida som har flyttet seg — ikke klonen.
-   Ingen oppfunne variabler: --r/--r-sm/--success finnes ikke på sida heller, reglene
-   bærer sine egne fallbacks. Innholdet er VÅRT (Grand Barber, norsk adresse, lokale
-   bilder); kun struktur og stil er klonet.
-
-   ⚠ SYNKPUNKT — SMS-SAMTYKKE. Klonen viser samtykkeboksen BEVISST: markupen har
-   class="consent-slot shown", altså modulens shown-tilstand. Produktets standard er
-   display:none — boksen avsløres først når sms-consent-check svarer show_consent:true
-   på blur av telefonfeltet, og det er den tilstanden en NY kunde møter. En statisk klon
-   kan ikke gjøre det oppslaget, så tilstanden velges her i stedet for å oppstå.
-   Endres flyten — nytt endepunkt, ny betingelse, eller boksen fjernes — må klonen synkes.
-   Teksten inne i boksen bruker barberens navn (${esc(shopName)} i modulen); her står
-   «Grand Barber», klonens demobarber. ======================================== */
-#produkt .pv-book{--bg:#ffffff;--surface:#f4f4f4;--ink:#0a0a0a;--ink-soft:#717171; --accent:#0071e3;--accent-ink:#ffffff;--accent-text:#0068d1;--line:#e2e2e2; --fs-hero:26px;--fs-title:22px;--fs-section:16px;--fs-body:14px;--fs-small:13px;--fs-micro:11px;--fw-bold:700;--fw-medium:600;--fw-regular:400;--radius-card:13px;--radius-pill:99px;--badge-bg:color-mix(in srgb,var(--ink) 8%,transparent);--badge-ink:var(--ink);
-  position:relative;
-  background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;
-  line-height:1.5;height:100%;overflow:hidden}
-#produkt .pv-book{--bg: #ffffff; --surface: #f4f4f4; --ink: #0a0a0a; --ink-soft: #717171; --accent: #0071e3; --accent-ink: #ffffff; --accent-text: #0068d1; --line: #e2e2e2; --fs-hero: 26px; --fs-title: 22px; --fs-section: 16px; --fs-body: 14px; --fs-small: 13px; --fs-micro: 11px; --fw-bold: 700; --fw-medium: 600; --fw-regular: 400; --radius-card: 13px; --radius-pill: 99px; --badge-bg: color-mix(in srgb,var(--ink) 8%,transparent); --badge-ink: var(--ink);}
-#produkt .pv-book *{margin: 0px; padding: 0px; box-sizing: border-box;}
+/* <bookingklon-v2:css> — GENERERT av tools/render/bygg-bookingklon-v2.mjs (2026-10-23). Ikke rediger for hånd;
+   endre skriptet eller v2-malen i backend og bygg på nytt.
+   ===== KLONET: bookingsida, v2-malen =========================================================
+   Kilde: backendens v2-mal (forside.v2 + book.v2 + v2-css.cjs + booking-flow.cjs), rendret lokalt med
+   fillV2/fillBookV2 for demobarberen Grand Barber: lys modus, aksent blå (#0071e3), sjappenavn i
+   standardfonten (Plus Jakarta Sans 700, V2_STANDARD_FONT). Fire tilstander hentet fra DOM-en etter at
+   flyt-JS-en har rendret dem. CSS valgt maskinelt mot klon-markupen (begge tilstandsvarianter), scopet
+   under #produkt .pv-book; :root/html/body → roten. @media avgjort ved 320px, vw/vh regnet om mot 320×693.
+   Fonter: Inter + Plus Jakarta Sans fra Google Fonts-lenka i <head> (ingen @font-face her).
+   Innholdet er klonens demodata; stil og struktur er v2-malens. */
+#produkt .pv-book{--bg: #fafafa; --surface: #ffffff; --ink: #171717; --muted: #626262; --line: #e3e3e3; --line-2: #d4d4d4; --accent: #0071e3; --accent-ink: #ffffff; --accent-text: #026ad3; --accent-soft: #dceaf7; --danger: #d94b3f; --r: 12px; --r-sm: 10px; --bilde-kant: rgba(0,0,0,.08); color-scheme: light;}
+#produkt .pv-book{--space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-7: 32px; --fs-display: 34px; --fs-title: 22px; --fs-small: 13px; --fs-micro: 12px; --touch-min: 44px; --valgt-flate: color-mix(in srgb,var(--accent) 16%,transparent); --valgt-kant: color-mix(in srgb,var(--accent) 45%,transparent);}
+#produkt .pv-book *{box-sizing: border-box; margin: 0px; padding: 0px;}
 #produkt .pv-book{text-size-adjust: 100%;}
-#produkt .pv-book{background: var(--bg); color: var(--ink); font-family: Inter, -apple-system, system-ui, sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased; min-height: 693px; overflow-x: hidden;}
-#produkt .pv-book .cover{position: relative; min-height: 693px; display: flex; flex-direction: column; text-align: center; padding: 56px 0px 0px; transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s, filter 0.55s;}
-#produkt .pv-book .cover.pushed{transform: scale(0.94); opacity: 0.5; filter: blur(2px);}
-#produkt .pv-book .cover > h1, #produkt .pv-book .cover > .sub, #produkt .pv-book .cover > .see, #produkt .pv-book .cover > .bio{margin-left: 28px; margin-right: 28px;}
-#produkt .pv-book .cover h1, #produkt .pv-book .cover .pv-cover-h1{font-family: "Bebas Neue", "Oswald", Impact, sans-serif; font-weight: 400; font-synthesis: none; font-size: 35.2px; letter-spacing: 0.05em; line-height: 1; color: var(--ink);}
-#produkt .pv-book .cover .sub{margin-top: 14px; font-size: var(--fs-small); letter-spacing: 0.1em; color: var(--ink-soft); text-transform: uppercase; font-weight: var(--fw-medium);}
-#produkt .pv-book .cover .bio{margin: 16px auto 0px; max-width: 340px; font-size: 15.5px; line-height: 1.55; color: var(--ink); opacity: 0.86; font-family: Inter, sans-serif;}
-#produkt .pv-book .cover-gallery{display: grid; grid-template-columns: repeat(2, 1fr); gap: 0px; width: 100%; margin: 34px 0px 0px; position: relative; border-radius: 6px; overflow: hidden;}
-#produkt .pv-book .cover-gallery img{width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block;}
-#produkt .pv-book .cover-gallery::before{content: ""; position: absolute; top: 0px; left: 0px; right: 0px; height: 90px; z-index: 2; pointer-events: none; background: linear-gradient(to bottom,var(--bg),transparent);}
-#produkt .pv-book .cover-gallery::after{content: ""; position: absolute; bottom: 0px; left: 0px; right: 0px; height: 90px; z-index: 2; pointer-events: none; background: linear-gradient(to top,var(--bg),transparent);}
-#produkt .pv-book .addr{display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; font-size: var(--fs-body); color: var(--ink-soft); font-weight: 500; line-height: 1.4; text-decoration: none;}
-#produkt .pv-book .addr svg{opacity: 0.85;}
-#produkt .pv-book a.addr{color: var(--accent-text); transition: opacity 0.15s;}
-#produkt .pv-book a.addr:hover{opacity: 0.8;}
-#produkt .pv-book .cover > .addr{align-self: center;}
-#produkt .pv-book .sheet{position: fixed; inset: 0px; z-index: 20; background: var(--bg); transform: translateY(100%); transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto;}
-#produkt .pv-book .sheet.open{transform: translateY(0px);}
-#produkt .pv-book .sheet-inner{max-width: 480px; margin: 0px auto; padding: max(56px,env(safe-area-inset-top)) 24px 56px;}
-#produkt .pv-book .back-sheet{display: inline-flex; align-items: center; gap: 7px; background: none; border: 0px; cursor: pointer; color: var(--ink-soft); font-style: inherit; font-variant: inherit; font-stretch: inherit; line-height: inherit; font-family: inherit; font-optical-sizing: inherit; font-size-adjust: inherit; font-kerning: inherit; font-feature-settings: inherit; font-variation-settings: inherit; font-language-override: inherit; font-size: var(--fs-body); font-weight: var(--fw-medium); padding: 10px 0px; margin-bottom: 18px; transition: color 0.15s;}
-#produkt .pv-book .back-sheet:hover{color: var(--ink);}
-#produkt .pv-book .see-float{white-space: nowrap; position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 15; display: inline-flex; align-items: center; justify-content: center; gap: 9px; background: color-mix(in srgb,var(--accent) 92%,transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: var(--accent-ink); font-family: Inter, sans-serif; font-size: var(--fs-section); font-weight: var(--fw-medium); border: 0px; border-radius: var(--radius-pill); padding: 15px 40px; cursor: pointer; box-shadow: rgba(0, 113, 227, 0.32) 0px 12px 34px -8px; transition: opacity 0.15s, transform 0.15s;}
-#produkt .pv-book .see-float:hover{transform: translateX(-50%) translateY(-2px);}
-#produkt .pv-book .acc-wrap{}
-#produkt .pv-book .acc-section{border-bottom: 1px solid var(--line);}
-#produkt .pv-book .acc-section:first-child{border-top: 1px solid var(--line);}
-#produkt .pv-book .acc-hd{display: flex; align-items: center; gap: 10px; padding: 15px 20px; min-height: 54px; user-select: none;}
-#produkt .pv-book .acc-section.locked .acc-hd{opacity: 0.38; pointer-events: none;}
-#produkt .pv-book .acc-n{width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--accent); color: var(--accent-ink);}
-#produkt .pv-book .acc-section.locked .acc-n{background: var(--line); color: var(--ink-soft);}
-#produkt .pv-book .acc-t{font-size: var(--fs-body); font-weight: var(--fw-bold); flex: 1 1 0%; color: var(--ink);}
-#produkt .pv-book .acc-sum{font-size: var(--fs-small); color: var(--ink-soft); flex: 1 1 0%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: none;}
-#produkt .pv-book .acc-chk{color: var(--accent); font-size: 16px; flex-shrink: 0; display: none;}
-#produkt .pv-book .acc-endre{font-size: var(--fs-small); color: var(--accent); font-weight: var(--fw-medium); background: none; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; font-family: Inter, sans-serif; flex-shrink: 0; padding: 4px 0px 4px 8px; display: none;}
-#produkt .pv-book .acc-section.done .acc-t{display: none;}
-#produkt .pv-book .acc-section.done .acc-sum{display: block;}
-#produkt .pv-book .acc-section.done .acc-chk{display: inline;}
-#produkt .pv-book .acc-section.done .acc-endre{display: inline;}
-#produkt .pv-book .acc-bd{display: grid; grid-template-rows: 0fr; transition: grid-template-rows 250ms;}
-#produkt .pv-book .acc-bd.open{grid-template-rows: 1fr;}
-#produkt .pv-book .acc-in{overflow: hidden; min-height: 0px;}
-#produkt .pv-book .acc-content{padding: 0px 20px 24px;}
-#produkt .pv-book .bk-svc-lbl{font-size: var(--fs-micro); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); font-weight: var(--fw-medium); margin: 0px 0px 10px;}
-#produkt .pv-book .svc-card{display: flex; align-items: center; width: 100%; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r,12px); padding: 12px 13px; cursor: pointer; transition: border-color 0.12s; text-align: left; margin-bottom: 8px; font-family: Inter, sans-serif;}
-#produkt .pv-book .svc-card.sel{border-color: var(--accent);}
-#produkt .pv-book .svc-lft{flex: 1 1 0%; display: flex; flex-direction: column; gap: 2px;}
-#produkt .pv-book .svc-nm{font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--ink);}
-#produkt .pv-book .svc-meta{font-size: var(--fs-micro); color: var(--ink-soft);}
-#produkt .pv-book .chk{font-size: var(--fs-section); color: var(--line); flex-shrink: 0; margin-left: 10px; transition: color 0.12s; font-style: normal;}
-#produkt .pv-book .svc-card.sel .chk{color: var(--accent);}
-#produkt .pv-book .addon-group{margin: 12px 0px 16px; padding-left: 12px; border-left: 2px solid var(--line); display: flex; flex-direction: column; gap: 11px;}
-#produkt .pv-book .addon-group[hidden]{display: none;}
-#produkt .pv-book .addon-lbl{font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin: 0px;}
-#produkt .pv-book .addon-row{display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; padding: 0px; cursor: pointer; font-family: Inter, sans-serif; -webkit-tap-highlight-color: transparent;}
-#produkt .pv-book .addon-box{width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--line); flex: 0 0 auto; display: flex; align-items: center; justify-content: center; transition: background 0.12s, border-color 0.12s;}
-#produkt .pv-book .addon-row.sel .addon-box{background: var(--accent); border-color: var(--accent);}
-#produkt .pv-book .addon-tick{display: none; font-size: 12px; line-height: 1; color: var(--accent-ink); font-weight: var(--fw-bold);}
-#produkt .pv-book .addon-row.sel .addon-tick{display: block;}
-#produkt .pv-book .addon-nm{flex: 1 1 0%; font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--ink);}
-#produkt .pv-book .addon-pr{font-size: var(--fs-small); color: var(--ink-soft);}
-#produkt .pv-book .acc-next, #produkt .pv-book .next2-btn{display: block; width: 100%; margin-top: 20px; background: var(--accent); color: var(--accent-ink); border-radius: var(--r,12px); padding: 13px; font-size: var(--fs-section); font-weight: var(--fw-bold); letter-spacing: 0.02em; transition: opacity 0.12s; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; font-family: Inter, sans-serif;}
-#produkt .pv-book .acc-next:disabled, #produkt .pv-book .next2-btn:disabled{background: color-mix(in srgb,var(--ink) 12%,var(--bg)); color: var(--ink); cursor: not-allowed;}
-#produkt .pv-book .acc-next:active:not(:disabled), #produkt .pv-book .next2-btn:active:not(:disabled){opacity: 0.82;}
-#produkt .pv-book .date-strip{display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; scrollbar-width: none; scroll-snap-type: x;}
-#produkt .pv-book .date-strip::-webkit-scrollbar{display: none;}
-#produkt .pv-book .date-chip{flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 7px 9px; border: 1.5px solid var(--line); border-radius: var(--r-sm,8px); cursor: pointer; min-width: 44px; transition: border-color 0.12s, background 0.12s; background: none; font-family: Inter, sans-serif; scroll-snap-align: start;}
-#produkt .pv-book .date-chip.sel{border-color: var(--accent); background: color-mix(in srgb,var(--accent) 12%,transparent);}
-#produkt .pv-book .date-chip.closed, #produkt .pv-book .date-chip:disabled{opacity: 0.3; cursor: not-allowed;}
-#produkt .pv-book .dc-wd{font-size: var(--fs-micro); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft);}
-#produkt .pv-book .dc-mo{font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); display: none;}
-#produkt .pv-book .date-chip.month-start .dc-wd{display: none;}
-#produkt .pv-book .date-chip.month-start .dc-mo{display: block;}
-#produkt .pv-book .date-chip.today .dc-d{color: var(--accent);}
-#produkt .pv-book .dc-d{font-size: var(--fs-section); font-weight: var(--fw-bold); line-height: 1.2; color: var(--ink);}
-#produkt .pv-book .dc-dot{width: 4px; height: 4px; border-radius: 50%; background: var(--accent); margin: 2px auto 0px; visibility: hidden;}
-#produkt .pv-book .date-chip.open .dc-dot{visibility: visible;}
-#produkt .pv-book .dc-full{font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-soft); margin: 1px auto 0px; display: none;}
-#produkt .pv-book .date-chip.full .dc-full{display: block;}
-#produkt .pv-book .date-chip.full{opacity: 0.5;}
-#produkt .pv-book .slots-hdr{font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 10px;}
-#produkt .pv-book .slots-grid{display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px;}
-#produkt .pv-book .slot-btn{background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r-sm,8px); padding: 10px 4px; font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--ink); transition: border-color 0.12s; font-family: Inter, sans-serif; cursor: pointer;}
-#produkt .pv-book .slot-btn.sel{border-color: var(--accent); color: var(--accent);}
-#produkt .pv-book .slot-skel{background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r-sm,8px); padding: 10px 4px; animation: 1.2s ease-in-out 0s infinite normal none running bk-pulse;}
-@keyframes bk-pulse { 
-  0%, 100% { opacity: 0.35; }
-  50% { opacity: 0.75; }
+#produkt .pv-book{font-family: Inter, system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.5; font-size: 15px; -webkit-font-smoothing: antialiased; min-height: 693px;}
+#produkt .pv-book button{font: inherit; color: inherit; background: none; border: 0px; cursor: pointer;}
+#produkt .pv-book button:disabled{cursor: default;}
+#produkt .pv-book a{color: inherit; text-decoration: none;}
+#produkt .pv-book a:focus-visible, #produkt .pv-book button:focus-visible, #produkt .pv-book input:focus-visible, #produkt .pv-book [tabindex]:focus-visible{outline: 2px solid var(--accent-text); outline-offset: 2px; border-radius: 6px;}
+#produkt .pv-book input{font: inherit;}
+#produkt .pv-book img{display: block; max-width: 100%;}
+#produkt .pv-book .frame{width: 100%; max-width: 520px; margin: 0px auto; padding: 0px 16px 40px;}
+#produkt .pv-book .v2-footer{margin: 32px 0px 0px; text-align: center; font-size: 12px; color: var(--muted);}
+#produkt .pv-book .v2-footer a{color: var(--muted);}
+#produkt .pv-book .v2-footer a:hover{color: var(--ink);}
+#produkt .pv-book .v2-top{display: flex; justify-content: flex-end; padding: 14px 0px 6px;}
+#produkt .pv-book .v2-manage{display: inline-flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--ink); background: color-mix(in srgb,var(--ink) 7%,transparent); padding: 8px 12px; border-radius: 999px; text-decoration: none;}
+#produkt .pv-book .v2-manage:hover{background: color-mix(in srgb,var(--ink) 11%,transparent);}
+#produkt .pv-book .v2-head{display: flex; gap: 16px; align-items: flex-start; padding: 8px 0px 20px;}
+#produkt .pv-book .v2-head.har-portrett{align-items: center;}
+#produkt .pv-book .v2-portrett{width: 72px; height: 72px; border-radius: 50%; object-fit: cover; flex: 0 0 auto; border: 1px solid var(--line);}
+#produkt .pv-book .v2-head-tekst{min-width: 0px; flex: 1 1 0%;}
+#produkt .pv-book .v2-navn{font-family: "Plus Jakarta Sans", Inter, sans-serif; font-weight: 700; font-size: clamp(24px, 22.4px, 32px); line-height: 1.1; letter-spacing: -0.01em; overflow-wrap: anywhere; margin: 0px;}
+#produkt .pv-book .v2-spes{font-size: 14px; color: var(--muted); margin-top: 6px;}
+#produkt .pv-book .v2-adr{display: inline-flex; align-items: center; gap: 6px; font-size: 13px; color: var(--muted); margin-top: 8px;}
+#produkt .pv-book .v2-adr svg{width: 14px; height: 14px; flex: 0 0 auto;}
+#produkt .pv-book .v2-adr:hover{color: var(--ink);}
+#produkt .pv-book .v2-bio{font-size: 14px; color: var(--ink); line-height: 1.55; margin: 0px 0px 16px;}
+#produkt .pv-book .v2-sosial{margin: 0px 0px 20px;}
+#produkt .pv-book .v2-sosial .social{display: flex; gap: 16px;}
+#produkt .pv-book .v2-sosial .social-link{display: inline-flex; color: var(--muted);}
+#produkt .pv-book .v2-sosial .social-link:hover{color: var(--ink);}
+#produkt .pv-book .v2-sosial svg{width: 20px; height: 20px;}
+#produkt .pv-book .v2-h2{font-size: 22px; font-weight: 600; letter-spacing: -0.01em; margin: 0px 0px 4px;}
+#produkt .pv-book .v2-bestill{padding-top: 4px;}
+#produkt .pv-book .v2-tabs{position: relative;}
+#produkt .pv-book .v2-tabs::after{content: ""; position: absolute; left: 0px; bottom: -1px; height: 2px; width: var(--line-w,0px); transform: translateX(var(--line-x,0px)); background: var(--accent); pointer-events: none; transition: transform 0.26s cubic-bezier(0.22, 0.61, 0.36, 1), width 0.26s cubic-bezier(0.22, 0.61, 0.36, 1);}
+@media (prefers-reduced-motion: reduce){
+#produkt .pv-book .v2-tabs::after{transition: none;}
 }
-#produkt .pv-book .slot-msg{font-size: var(--fs-small); color: var(--ink-soft); padding: 12px 0px; text-align: center;}
-#produkt .pv-book .hidden{display: none;}
-#produkt .pv-book .full-card{background: var(--surface); border: 1px solid var(--line); border-radius: var(--r,12px); padding: 14px 16px; margin-bottom: 12px; display: none;}
-#produkt .pv-book .full-card.visible{display: block;}
-#produkt .pv-book .full-card-msg{font-size: var(--fs-small); color: var(--ink-soft); margin-bottom: 8px;}
-#produkt .pv-book .full-card-next{display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--accent); background: none; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; font-family: Inter, sans-serif; padding: 0px;}
-#produkt .pv-book .sum-box{background: var(--surface); border: 1px solid var(--line); border-radius: var(--r,12px); padding: 13px 14px; margin-bottom: 14px;}
-#produkt .pv-book .sum-row{display: flex; justify-content: space-between; font-size: var(--fs-small); color: var(--ink-soft); padding: 3px 0px;}
-#produkt .pv-book .sum-row strong{color: var(--ink); font-weight: var(--fw-medium);}
-#produkt .pv-book .sum-strike{text-decoration: line-through; color: var(--ink-soft); font-weight: var(--fw-regular); margin-right: 3px;}
-#produkt .pv-book .fld{display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;}
-#produkt .pv-book .fld label{font-size: var(--fs-small); font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft);}
-#produkt .pv-book .fld input{background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r,12px); padding: 12px 14px; font-size: var(--fs-section); font-family: Inter, sans-serif; color: var(--ink); outline: none; -webkit-text-fill-color: var(--ink);}
-#produkt .pv-book .fld input:focus{border-color: var(--accent);}
-#produkt .pv-book .fld input::placeholder{color: var(--ink-soft); opacity: 0.5; -webkit-text-fill-color: var(--ink-soft);}
-#produkt .pv-book .form-err{color: rgb(224, 92, 75); font-size: var(--fs-small); margin-bottom: 10px; display: none;}
-#produkt .pv-book .consent-slot{display: none; margin-bottom: 12px;}
-#produkt .pv-book .consent-slot.loading, #produkt .pv-book .consent-slot.shown{display: block;}
-#produkt .pv-book .consent-slot.loading .consent-box{visibility: hidden;}
-#produkt .pv-book .consent-box{display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r,12px); cursor: pointer;}
-#produkt .pv-book .consent-box input{margin-top: 1px; width: 18px; height: 18px; accent-color: var(--accent); flex: 0 0 auto;}
-#produkt .pv-book .consent-txt{font-size: var(--fs-small); color: var(--ink); line-height: 1.45;}
-#produkt .pv-book .ref-slot{display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;}
-#produkt .pv-book .ref-line{font-size: var(--fs-small); line-height: 1.45; padding: 10px 13px; border-radius: var(--r,12px); background: var(--surface); border: 1.5px solid var(--line); color: var(--ink);}
-#produkt .pv-book .ref-invite, #produkt .pv-book .ref-bonus{border-color: var(--accent);}
-#produkt .pv-book .ref-note{color: var(--ink-soft,var(--ink));}
-#produkt .pv-book .sub-btn{display: block; width: 100%; background: var(--accent); color: var(--accent-ink); border-radius: var(--r,12px); padding: 14px; font-size: var(--fs-section); font-weight: var(--fw-bold); letter-spacing: 0.02em; transition: opacity 0.12s; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; font-family: Inter, sans-serif;}
-#produkt .pv-book .sub-btn:active{opacity: 0.85;}
-#produkt .pv-book .sub-btn:disabled{opacity: 0.5; cursor: not-allowed;}
-#produkt .pv-book .pay-note{font-size: var(--fs-micro); color: var(--ink-soft); text-align: center; margin-top: 10px; line-height: 1.4;}
-#produkt .pv-book .success-wrap{text-align: center; padding: 40px 20px;}
-#produkt .pv-book .success-ico{width: 64px; height: 64px; border-radius: 50%; background: rgb(62, 207, 126); display: flex; align-items: center; justify-content: center; margin: 0px auto 18px;}
-#produkt .pv-book .success-h{font-family: "Bebas Neue", "Oswald", Impact, sans-serif; font-size: var(--fs-hero); font-weight: var(--fw-bold); letter-spacing: 0.02em; margin-bottom: 6px; color: var(--ink);}
-#produkt .pv-book .success-sub{font-size: var(--fs-small); color: var(--ink-soft); margin-bottom: 22px;}
-#produkt .pv-book .success-det{background: var(--surface); border: 1px solid var(--line); border-radius: var(--r,12px); padding: 14px 16px; text-align: left; margin-bottom: 18px;}
-#produkt .pv-book .det-row{display: flex; justify-content: space-between; align-items: flex-start; font-size: var(--fs-small); padding: 5px 0px; border-bottom: 1px solid var(--line);}
-#produkt .pv-book .det-row:last-child{border-bottom-width: medium; border-bottom-style: none; border-bottom-color: currentcolor; padding-bottom: 0px;}
-#produkt .pv-book .det-lbl{color: var(--ink-soft); flex-shrink: 0; margin-right: 10px;}
-#produkt .pv-book .det-val{font-size: var(--fs-section); font-weight: var(--fw-medium); text-align: right; color: var(--ink);}
-#produkt .pv-book .det-row:first-child{padding-top: 0px;}
-#produkt .pv-book .conf-adr{display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-small); color: var(--ink-soft); text-decoration: none; margin: 0px 0px 10px;}
-#produkt .pv-book .conf-adr span{border-bottom: 1px solid var(--line);}
-#produkt .pv-book .conf-tel{display: flex; justify-content: center; align-items: center; gap: 5px; font-size: var(--fs-small); color: var(--ink-soft); text-decoration: none; margin: 0px 0px 10px;}
-#produkt .pv-book .conf-tel span{border-bottom: 1px solid var(--line);}
-#produkt .pv-book .manage-badge{position: absolute; top: 16px; right: 16px; z-index: 5; display: inline-flex; align-items: center; padding: 7px 14px; border-radius: var(--radius-pill); background: var(--badge-bg); color: var(--badge-ink); font-size: var(--fs-small); font-weight: var(--fw-medium); text-decoration: none; line-height: 1; white-space: nowrap; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);}
-#produkt .pv-book .social{display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 8px; align-self: center;}
-#produkt .pv-book .social-link{display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; color: var(--ink); transition: opacity 0.15s ease;}
-#produkt .pv-book .social-link:hover{opacity: 0.6;}
-#produkt .pv-book .manage-link-btn{display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-small); color: var(--ink-soft); cursor: pointer; background: none; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; padding: 4px 0px; font-family: Inter, sans-serif;}
-#produkt .pv-book .manage-mode #bk-book, #produkt .pv-book .manage-mode .bk-footer{display: none !important;}
-#produkt .pv-book .bk-card{background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r,12px); padding: 16px; margin: 0px 0px 12px;}
-#produkt .pv-book .bk-svc{font-size: var(--fs-section); font-weight: var(--fw-bold); margin-bottom: 3px;}
-#produkt .pv-book .bk-when{font-size: var(--fs-small); color: var(--ink-soft); margin-bottom: 14px;}
-#produkt .pv-book .bk-actions{display: flex; gap: 8px;}
-#produkt .pv-book .bk-act{flex: 1 1 0%; padding: 10px 8px; border-radius: var(--r-sm,8px); font-size: var(--fs-small); font-weight: var(--fw-bold); font-family: Inter, sans-serif; border: 1.5px solid var(--line); background: none; color: var(--ink); cursor: pointer; transition: border-color 0.12s;}
-#produkt .pv-book .bk-act.primary{background: var(--accent); color: var(--accent-ink); border-color: var(--accent);}
-#produkt .pv-book .bk-act.danger{border-color: var(--danger,#e05c4b); color: var(--danger,#e05c4b);}
-#produkt .pv-book .bk-confirm{margin-top: 12px; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-sm,8px); display: none;}
-#produkt .pv-book .bk-confirm.open{display: block;}
-#produkt .pv-book .bk-confirm-btns{display: flex; gap: 8px;}
-#produkt .pv-book .bk-footer{text-align: center; margin-top: 28px; font-size: 12.5px; color: var(--ink-soft);}
-#produkt .pv-book .bk-footer a{color: var(--ink-soft); text-decoration: none; border-bottom: 1px solid var(--line);}
-@keyframes fi { 
-  0% { opacity: 0; transform: translateY(5px); }
-  100% { opacity: 1; transform: none; }
+#produkt .pv-book .v2-tabs{display: flex; gap: 6px; margin: 4px 0px 16px; border-bottom: 1px solid var(--line);}
+#produkt .pv-book .v2-tab{flex: 0 0 auto; padding: 10px 4px; margin-right: 14px; font-size: 14px; font-weight: 500; color: var(--muted); border-bottom: 2px solid transparent; margin-bottom: -1px;}
+#produkt .pv-book .v2-tab[aria-selected="true"]{color: var(--ink); border-bottom-color: transparent;}
+#produkt .pv-book .v2-tjenester{display: flex; flex-direction: column; gap: 0px;}
+#produkt .pv-book .v2-tj{display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 0px; border-top: 0px; border-right: 0px; border-left: 0px; border-image: initial; border-bottom: 1px solid var(--line); background: none; text-decoration: none; color: inherit; text-align: left; border-radius: 0px;}
+#produkt .pv-book .v2-tjenester > .v2-tj:last-of-type{border-bottom: 0px;}
+#produkt .pv-book .v2-tj-navn{flex: 1 1 0%; min-width: 0px; font-weight: 500; font-size: 15px; color: var(--ink); overflow-wrap: anywhere;}
+#produkt .pv-book .v2-tj-min{display: block; font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px;}
+#produkt .pv-book .v2-tj-pris{font-weight: 600; font-size: 14px; color: var(--ink); white-space: nowrap;}
+#produkt .pv-book .v2-tj-hake{display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--line-2); background: transparent; flex: 0 0 auto; font-size: 12px; font-weight: 700; color: transparent;}
+#produkt .pv-book .service.selected .v2-tj-hake, #produkt .pv-book .flow-addon.sel .v2-tj-hake{background: var(--valgt-flate); border-color: var(--valgt-kant); color: var(--accent-text);}
+#produkt .pv-book .service.selected .v2-tj-navn{font-weight: 600;}
+#produkt .pv-book .service.selected .v2-tj-pris{font-weight: 700;}
+#produkt .pv-book .v2-note{font-size: 12px; color: var(--muted); text-align: center; margin: 14px 0px 0px;}
+#produkt .pv-book.v2-lb-laast, #produkt .pv-book.v2-lb-laast body{overflow: hidden; overscroll-behavior: none;}
+#produkt .pv-book .flow{padding-bottom: 8px;}
+#produkt .pv-book .flow-nav{display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0px 10px;}
+#produkt .pv-book .back-link{display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--muted); padding: 6px 0px;}
+#produkt .pv-book .back-link:hover{color: var(--ink);}
+#produkt .pv-book .flow-brand{font-family: "Plus Jakarta Sans", Inter, sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0px; max-width: 62%; text-align: right;}
+#produkt .pv-book .steps{display: flex; align-items: center; gap: var(--space-2); list-style: none; padding: var(--space-3) 0 var(--space-5); font-size: var(--fs-micro); color: var(--muted); overflow: hidden;}
+#produkt .pv-book .steps li{display: flex; align-items: center; gap: var(--space-2); min-width: 0px; white-space: nowrap;}
+#produkt .pv-book .steps li + li::before{content: "→" / ""; font-weight: 400; color: var(--muted);}
+#produkt .pv-book .steps .active{color: var(--ink); font-weight: 600;}
+#produkt .pv-book .v2-skjult{position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0px; border: 0px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;}
+#produkt .pv-book .flow-title{font-size: 22px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; margin: 4px 0px 20px; outline: none;}
+#produkt .pv-book .flow-intro{font-size: 14px; color: var(--muted); margin: 0px 0px 18px;}
+#produkt .pv-book .v2-tillegg{display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 0.22s, opacity 0.18s;}
+#produkt .pv-book .v2-tillegg.open{grid-template-rows: 1fr; opacity: 1;}
+#produkt .pv-book .v2-tillegg-inner{overflow: hidden; min-height: 0px;}
+#produkt .pv-book .v2-tillegg-panel{background: color-mix(in srgb,var(--ink) 7%,var(--bg)); border-radius: var(--r-sm); padding: 0 var(--space-4);}
+#produkt .pv-book .service[aria-expanded="true"]{border-bottom-color: transparent;}
+#produkt .pv-book .v2-tillegg.open{padding-bottom: var(--space-3); border-bottom: 1px solid var(--line);}
+#produkt .pv-book .v2-tillegg-lbl{display: flex; justify-content: space-between; gap: var(--space-2); font-size: var(--fs-small); font-weight: 500; color: var(--ink); padding: var(--space-3) 0 var(--space-1);}
+#produkt .pv-book .v2-tillegg-lbl span{font-size: 12px; font-weight: 400; color: var(--muted);}
+#produkt .pv-book .v2-tj-tillegg{padding: 10px 0px; gap: 10px;}
+#produkt .pv-book .v2-tj-tillegg .v2-tj-navn{font-size: 14px; font-weight: 500;}
+#produkt .pv-book .v2-tj-meta{font-size: 13px; color: var(--muted); white-space: nowrap;}
+#produkt .pv-book .v2-tj-hake.liten{width: 22px; height: 22px; font-size: 12px; border: 1px solid var(--line-2); border-radius: 6px;}
+#produkt .pv-book .v2-tj-tillegg{min-height: 52px; flex-wrap: wrap;}
+#produkt .pv-book .v2-tj-meta{white-space: normal;}
+#produkt .pv-book .v2-valg-total{display: flex; justify-content: center; font-size: 14px; font-weight: 500; margin-top: 20px;}
+#produkt .pv-book .v2-valg-total[hidden]{display: none;}
+#produkt .pv-book .v2-tillegg .v2-tj:last-of-type{border-bottom: 0px;}
+@media (prefers-reduced-motion: reduce){
+#produkt .pv-book .v2-tillegg{transition: none;}
 }
-/* ↑ Klonet CSS slutter her. Under: NØYTRALISERING, ikke endring.
-   Reglene her retter bare det som er meningsløst i en fastbreddet klon. De legger
-   ALDRI på spacing: forrige runde ga .cover 20px padding (kilden har «56px 0 120px» —
-   null horisontalt, innrykket kommer fra h1{margin:0 28px}) og .sheet-inner 20px der
-   kilden har 24px. Til sammen 86px mindre plass til tittelen enn produktet gir. */
-/* position:fixed inne i et transformert element forankres til DET, ikke viewporten —
-   arket ble en grå flate på størrelse med hele sida. */
-#produkt .pv-book .sheet{position:static;transform:none;inset:auto;z-index:auto;transition:none;display:none}
-#produkt .pv-book .sheet-inner{max-width:none}
-/* Samme felle for CTA-en og «endre/avbestill»: begge er position:fixed. Å gi .pv-scale
-   riktig høyde er IKKE nok — fixed forankres til nærmeste transformerte forfar, og hvilken
-   det er, avhenger av hvor transform/will-change tilfeldigvis står. Målt havnet knappen
-   52px UNDER skjermen. Vi gjør forankringen eksplisitt i stedet for å gjette. */
-/* Skjermflatens origo pinnes. Kildens body er sentrerende, og siden body mappes til
-   klonens rot, ble det 320px brede innholdet SENTRERT i en 236px boks — 42px overflyt på
-   hver side, altså 57 designpiksler skjevt, og høyre kant klippet. Målt mot fasiten:
-   galleriet lå på 57..377 i stedet for 0..320. */
+#produkt .pv-book .primary{position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 52px; padding: 14px 48px; border-radius: 12px; background: var(--accent); color: var(--accent-ink); font-weight: 500; font-size: 15px; line-height: 1.4; margin-top: 18px; transition: filter 0.16s, transform 0.16s;}
+#produkt .pv-book .primary > span[aria-hidden="true"]{position: absolute; right: 20px; font-size: 20px; line-height: 1; font-weight: 400;}
+#produkt .pv-book .primary:active:not(:disabled){transform: translateY(1px); filter: brightness(0.94);}
+@media (prefers-reduced-motion: reduce){
+#produkt .pv-book .primary{transition: none;}
+#produkt .pv-book .primary:active:not(:disabled){transform: none;}
+}
+#produkt .pv-book .primary:hover:not(:disabled){filter: brightness(1.05);}
+#produkt .pv-book .primary:disabled{background: var(--line); color: var(--muted); opacity: 1; filter: none;}
+#produkt .pv-book .text-link{font-size: 13px; font-weight: 500; color: var(--accent-text); padding: 4px 0px;}
+#produkt .pv-book .flow-action{margin-top: 4px;}
+#produkt .pv-book .flow-foot{font-size: 12px; color: var(--muted); text-align: center; margin-top: 14px;}
+#produkt .pv-book .service-recap{display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0px 0px 18px; border: 0px; background: transparent; margin: 0px;}
+#produkt .pv-book .service-recap .text-link{min-height: 44px; flex-shrink: 0;}
+#produkt .pv-book .month-arrows button{min-width: 44px; min-height: 44px;}
+#produkt .pv-book .service-recap strong{display: block; font-size: 14px; font-weight: 500;}
+#produkt .pv-book .service-recap small{font-size: 12px; color: var(--muted);}
+#produkt .pv-book .calendar{padding: 14px 0px 10px; border-right: 0px; border-bottom: 0px; border-left: 0px; border-image: initial; border-top: 1px solid var(--line); border-radius: 0px; background: transparent; margin-bottom: 14px;}
+#produkt .pv-book .calendar-top{display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;}
+#produkt .pv-book .calendar-top h3{font-size: 15px; font-weight: 600;}
+#produkt .pv-book .month-arrows{display: flex; gap: 6px;}
+#produkt .pv-book .month-arrows button{width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); display: grid; place-items: center; font-size: 14px; color: var(--ink);}
+#produkt .pv-book .month-arrows button:disabled{opacity: 0.3;}
+#produkt .pv-book .weekdays, #produkt .pv-book .days{display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;}
+#produkt .pv-book .weekdays span{text-align: center; font-size: 11px; color: var(--muted); padding: 4px 0px;}
+#produkt .pv-book .day{aspect-ratio: 1 / 1; border-radius: 50%; font-size: 14px; font-weight: 500; display: grid; place-items: center; color: var(--ink);}
+#produkt .pv-book .day:hover:not(:disabled):not(.chosen){background: var(--accent-soft);}
+#produkt .pv-book .day:disabled{color: var(--muted); opacity: 0.35;}
+#produkt .pv-book .day.today:not(.chosen){box-shadow: inset 0 0 0 1px var(--line-2);}
+#produkt .pv-book .day.chosen{background: var(--valgt-flate); color: var(--accent-text); box-shadow: inset 0 0 0 1px var(--valgt-kant); font-weight: 600;}
+#produkt .pv-book .blank{display: block;}
+#produkt .pv-book .calendar-foot{font-size: 12px; color: var(--muted); margin-top: 10px; text-align: center;}
+#produkt .pv-book .time-panel{margin-bottom: 8px;}
+#produkt .pv-book .time-heading{display: flex; align-items: baseline; justify-content: space-between; margin: 0px 0px 10px;}
+#produkt .pv-book .time-heading h3{font-size: 15px; font-weight: 600;}
+#produkt .pv-book .time-heading span{font-size: 12px; color: var(--muted);}
+#produkt .pv-book .time-grid{display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;}
+#produkt .pv-book .time{padding: 11px 0px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); font-size: 14px; font-weight: 500; text-align: center; color: var(--ink);}
+#produkt .pv-book .time:hover{border-color: var(--line-2);}
+#produkt .pv-book .time.chosen{background: var(--valgt-flate); border-color: var(--valgt-kant); color: var(--accent-text); font-weight: 600;}
+#produkt .pv-book .selection-line{font-size: 13px; color: var(--muted); margin-top: 12px;}
+#produkt .pv-book .appointment{padding: 14px 16px; border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); margin: 0px 0px 18px;}
+#produkt .pv-book .appointment .label{font-size: 11px; font-weight: 600; letter-spacing: 0.06em; text-transform: uppercase; color: var(--muted); margin-bottom: 6px;}
+#produkt .pv-book .appointment .date-line{font-size: 16px; font-weight: 600;}
+#produkt .pv-book .appointment .time-line{font-size: 13px; color: var(--muted); margin-top: 2px;}
+#produkt .pv-book .appointment .detail-line{display: flex; justify-content: space-between; gap: 12px; font-size: 14px; margin-top: 10px; padding-top: 10px; border-top: 1px solid var(--line);}
+#produkt .pv-book .flow-ref{display: flex; flex-direction: column; gap: 8px; margin: 0px 0px 14px;}
+#produkt .pv-book .form-total{display: flex; justify-content: space-between; align-items: baseline; font-size: 14px; color: var(--muted); margin: 0px 0px 18px;}
+#produkt .pv-book .form-total strong{font-size: 16px; color: var(--ink); font-weight: 600;}
+#produkt .pv-book .form-row{margin: 0px 0px 14px;}
+#produkt .pv-book .form-row label{display: block; font-size: 13px; font-weight: 500; margin-bottom: 6px;}
+#produkt .pv-book .form-row input{width: 100%; padding: 13px 14px; border: 1px solid var(--line-2); border-radius: var(--r-sm); background: var(--surface); color: var(--ink); font-size: 16px;}
+#produkt .pv-book .form-row input::placeholder{color: var(--muted);}
+#produkt .pv-book .form-row input:focus{border-color: var(--accent); outline: none;}
+#produkt .pv-book .field-note{font-size: 12px; color: var(--muted); margin-top: 6px;}
+#produkt .pv-book .flow-consent-slot{display: none; margin: 0px 0px 16px;}
+#produkt .pv-book .flow-consent-slot.shown{display: block;}
+#produkt .pv-book .opt-in{display: flex; gap: 10px; align-items: flex-start; font-size: 13px; line-height: 1.45; padding: 12px 14px; border: 1px solid var(--line); border-radius: var(--r-sm);}
+#produkt .pv-book .opt-in input{width: 18px; height: 18px; margin-top: 2px; accent-color: var(--accent);}
+#produkt .pv-book .flow-err{color: var(--danger); font-size: 13px; margin: 0px 0px 10px; display: none;}
+#produkt .pv-book .confirmation-mark{width: 52px; height: 52px; border-radius: 50%; background: var(--accent); color: var(--accent-ink); display: grid; place-items: center; font-size: 24px; font-weight: 700; margin: 8px 0px 16px;}
+#produkt .pv-book .confirmation-title{font-size: 26px; font-weight: 600; line-height: 1.15; letter-spacing: -0.01em; margin: 0px 0px 6px; outline: none;}
+#produkt .pv-book .receipt{padding: var(--space-5) var(--space-4) var(--space-1); border: 1px solid var(--line); border-radius: var(--r); background: var(--surface); margin: 0 0 var(--space-4);}
+#produkt .pv-book .receipt-lead{padding: 0 0 var(--space-5);}
+#produkt .pv-book .receipt-lead p{font-size: var(--fs-micro); color: var(--muted); margin: 0 0 var(--space-2);}
+#produkt .pv-book .receipt-lead > strong{display: block; font-size: var(--fs-display); font-weight: 500; line-height: 1; letter-spacing: -0.04em; color: var(--accent); font-variant-numeric: tabular-nums;}
+#produkt .pv-book .receipt dl{display: block;}
+#produkt .pv-book .receipt dl > div{display: grid; grid-template-columns: auto minmax(0px, 1fr); gap: var(--space-4); align-items: baseline; padding: var(--space-3) 0; border-top: 1px solid var(--line);}
+#produkt .pv-book .receipt dt{font-size: var(--fs-micro); color: var(--muted);}
+#produkt .pv-book .receipt dd{text-align: right; font-size: var(--fs-small); font-weight: 500; color: var(--ink); overflow-wrap: anywhere;}
+#produkt .pv-book .visit-details{display: flex; flex-direction: column; margin: 0 0 var(--space-4);}
+#produkt .pv-book .visit-details a{display: flex; align-items: center; gap: var(--space-3); min-height: var(--touch-min); color: var(--ink);}
+#produkt .pv-book .visit-details svg{width: var(--space-5); height: var(--space-5); fill: none; stroke: currentcolor; stroke-width: 1.6; flex: 0 0 auto; color: var(--accent);}
+#produkt .pv-book .visit-details a > span{flex: 1 1 0%; min-width: 0px; overflow-wrap: anywhere; text-decoration: underline color-mix(in srgb, currentcolor 35%, transparent); text-underline-offset: 0.2em;}
+#produkt .pv-book .flow-secondary{display: flex; align-items: center; justify-content: center; width: 100%; min-height: 52px; margin-top: var(--space-4); padding: var(--space-3) var(--space-4); border-radius: var(--r); background: color-mix(in srgb,var(--ink) 7%,transparent); color: var(--ink); font-weight: 500; text-align: center; text-decoration: none;}
+#produkt .pv-book .flow-secondary:hover{background: color-mix(in srgb,var(--ink) 11%,transparent);}
+#produkt .pv-book .primary.flow-cal{margin-top: 0px;}
+#produkt .pv-book .confirmation-head{--hake: calc(var(--space-7) + var(--space-1)); display: flex; align-items: flex-start; gap: var(--space-3); margin: var(--space-2) 0 var(--space-5);}
+#produkt .pv-book .confirmation-head .confirmation-mark{flex: 0 0 auto; width: var(--hake); height: var(--hake); margin: 0px; border-radius: 50%; background: var(--ink); color: var(--bg); font-size: var(--fs-title);}
+#produkt .pv-book .confirmation-head .confirmation-title{flex: 1 1 0%; min-width: 0px; margin: 0px; font-size: var(--fs-title); line-height: 1.2; padding-top: calc((var(--hake) - 1.2em) / 2); text-wrap: balance;}
+#produkt .pv-book .v2-manage, #produkt .pv-book .manage-appointment, #produkt .pv-book .bk-act{min-height: 48px; border-radius: 12px; align-items: center; justify-content: center;}
+#produkt .pv-book .v2-sosial .social-link{min-width: 44px; min-height: 44px; align-items: center; justify-content: center;}
+#produkt .pv-book .confirmation-mark{background: var(--accent-soft); color: var(--accent-text); border-radius: 12px; font-size: 28px;}
+#produkt .pv-book .confirmation-title{font-size: 28px; line-height: 1.15;}
+#produkt .pv-book .day{min-height: 44px; aspect-ratio: auto; border-radius: 10px;}
+#produkt .pv-book .time{min-height: 48px;}
+#produkt .pv-book .form-row{margin-bottom: 24px;}
+#produkt .pv-book .form-row label{font-size: 14px; margin-bottom: 8px;}
+#produkt .pv-book .form-row input:focus-visible{outline: 3px solid var(--accent-text); outline-offset: 3px; border-color: var(--accent-text);}
+#produkt .pv-book .flow-info{margin-top: var(--space-4); display: flex; flex-direction: column; gap: var(--space-1); text-align: center; font-size: var(--fs-small); line-height: 1.5; color: color-mix(in srgb,var(--ink) 35%,var(--muted));}
+#produkt .pv-book .flow-info p{text-wrap: balance;}
+#produkt .pv-book .flow-info-lead{color: var(--ink); font-weight: 600;}
+#produkt .pv-book .flow-footer{margin: calc(var(--space-7) + var(--space-2)) 0 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; column-gap: var(--space-1); font-size: var(--fs-micro); color: var(--muted);}
+#produkt .pv-book .flow-footer a{display: inline-flex; align-items: center; min-height: var(--touch-min); color: inherit; text-decoration: underline color-mix(in srgb, currentcolor 40%, transparent); text-underline-offset: 0.2em;}
+#produkt .pv-book .flow-footer a:hover{color: var(--ink);}
+/* ↑ Klonet CSS slutter her. Under: klonens egne regler — tilstander og nøytralisering, ingen spacing. */
+#produkt .pv-book{position:relative;height:100%;overflow:hidden;min-height:0}
+/* Skjermflatens origo pinnes (samme grunn som før: roten er sentrerende i kilden). */
 #produkt .pv-book .pv-scale{position:absolute;top:0;left:0}
-/* «Se tjenester» er nå en INLINE knapp nederst i cover (sticky→static i klonen), og
-   «Endre/avbestill» er flyttet til en .manage-badge absolutt-posisjonert i cover (som er
-   position:relative). Ingen av dem er lenger fixed, så den gamle absolute-forankringen
-   trengs ikke — snapshot-layouten (Kraftig/showcase) har knappen i dokumentflyten. */
-/* «Scroll» i en klon som ikke KAN scrolle. Ekte side har overflow-y:auto på det
-   fixed arket, og modulen scroller til trinn 3 når det åpnes. Her er arket statisk inne
-   i overflow:hidden, så trinn 3 ble klippet rett under samtykkeboksen: «Bekreft booking»
-   og betalingsnoten lå utenfor skjermen, og bildet så ut som om knappen manglet.
-   Arket flyttes i stedet, styrt av én variabel — da kan animasjonen «scrolle» til
-   skjemaet slik produktet gjør. Transformen ligger bak .vis-scroll, ikke på .sheet rett
-   fram: en transform lager en containing block for absolutt-posisjonerte etterkommere,
-   og den skal ikke oppstå i tilstander som ikke trenger den. */
-#produkt .pv-book.vis-scroll .sheet{transform:translateY(var(--pv-scroll,0px));
-  transition:transform .55s cubic-bezier(.4,0,.2,1)}
-@media (prefers-reduced-motion:reduce){#produkt .pv-book.vis-scroll .sheet{transition:none}}
-
-/* «Se tjenester» sentreres med translateX(-50%). Den generelle .pv-anim-btn.pv-press-
-   regelen ville satt transform:scale(.96) og slettet sentreringen — egen regel beholder begge. */
-#produkt .pv-book .see-float.pv-press{transform:translateX(-50%) scale(.96)}
-
-/* Tilstandene styres av én klasse på .pv-book — samme klasser render-testen setter. */
-#produkt .pv-book.vis-sheet .cover,
-#produkt .pv-book.vis-sheet .see-float{display:none}
-#produkt .pv-book.vis-sheet .sheet{display:block}
-#produkt .pv-book .success-wrap{display:none}
-/* Success: skjul trinn-lista OG «Tilbake» (snapshot 6 har back-sheet display:none), men
-   BEHOLD «Bygget med BarberHQ»-footeren — den er synlig i bekreftelsen i snapshotet. */
-#produkt .pv-book.vis-success .acc-wrap,
-#produkt .pv-book.vis-success .back-sheet{display:none}
-#produkt .pv-book.vis-success .success-wrap{display:block}
+#produkt .pv-book .pv-stage{width:320px;background:var(--bg)}
+/* Tilstander — én klasse på .pv-book, samme som scene-JS-en og render-testene setter:
+   (ingen) forsiden · vis-sheet bookingflyten, steg «Dato og tid» · vis-skjema steg «Opplysninger» ·
+   vis-success kvitteringen (sluttilstand; vinner over de andre). vis-sheet beholder navnet fra v1-klonen
+   så frysBooking/testene ikke må lære et nytt ord for «flyten er åpen». */
+#produkt .pv-book .pv-v2-flyt, #produkt .pv-book .pv-v2-skjema, #produkt .pv-book .pv-v2-kvittering{display:none}
+#produkt .pv-book.vis-sheet .pv-v2-forside, #produkt .pv-book.vis-success .pv-v2-forside{display:none}
+#produkt .pv-book.vis-sheet .pv-v2-flyt, #produkt .pv-book.vis-success .pv-v2-flyt{display:block}
+#produkt .pv-book.vis-skjema .pv-v2-dato{display:none}
+#produkt .pv-book.vis-skjema .pv-v2-skjema{display:block}
+#produkt .pv-book.vis-success .pv-v2-dato, #produkt .pv-book.vis-success .pv-v2-skjema{display:none}
+#produkt .pv-book.vis-success .pv-v2-kvittering{display:block}
+/* «Scroll» i en klon som ikke kan scrolle: flyten flyttes, styrt av --pv-scroll (målt i scene-JS-en). */
+#produkt .pv-book.vis-scroll .pv-v2-flyt{transform:translateY(var(--pv-scroll,0px));transition:transform .55s cubic-bezier(.4,0,.2,1)}
+#produkt .pv-book.pv-hopp .pv-v2-flyt{transition:none}
+@media (prefers-reduced-motion:reduce){#produkt .pv-book.vis-scroll .pv-v2-flyt{transition:none}}
+/* </bookingklon-v2:css> */
 
 /* ===== KLONET: dashbordets Oversikt-flate ====================================
    Kilde: site/no/dashboard.html — hentet 9. august 2026. CSS-en er valgt MASKINELT:
@@ -1880,35 +1843,22 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 
       <div class="mock pv-phone pv-phoneframe" data-i="2" role="button" tabindex="0" aria-label="Bookingside">
         <div class="iph"><i class="iph-btn la action"></i><i class="iph-btn la volup"></i><i class="iph-btn la voldn"></i><i class="iph-btn ra power"></i><div class="iph-screen" aria-hidden="true">
-          <div class="pv-book" id="pvBook"><div class="pv-scale">
-            <div class="pv-stage">
-              <section class="cover">
-                <a class="manage-badge" href="#" onclick="return false">Endre / avbestill</a>
-                <div class="pv-cover-h1">Grand Barber</div>
-                <p class="sub">Fades og skjeggtrim</p>
-                <a class="addr" href="#" onclick="return false">
-                  <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" style="flex-shrink:0"><path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"/><circle cx="12" cy="10" r="3"/></svg>
-                  <span>Storgata 33, 0184 Oslo</span>
-                </a>
-                <div class="social" aria-label="Sosiale medier">
-                  <a class="social-link" href="#" onclick="return false" aria-label="Instagram"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12 2.16c3.2 0 3.58.01 4.85.07 1.17.05 1.8.25 2.23.41.56.22.96.48 1.38.9.42.42.68.82.9 1.38.16.42.36 1.06.41 2.23.06 1.27.07 1.65.07 4.85s-.01 3.58-.07 4.85c-.05 1.17-.25 1.8-.41 2.23-.22.56-.48.96-.9 1.38-.42.42-.82.68-1.38.9-.42.16-1.06.36-2.23.41-1.27.06-1.65.07-4.85.07s-3.58-.01-4.85-.07c-1.17-.05-1.8-.25-2.23-.41a3.72 3.72 0 0 1-1.38-.9 3.72 3.72 0 0 1-.9-1.38c-.16-.42-.36-1.06-.41-2.23-.06-1.27-.07-1.65-.07-4.85s.01-3.58.07-4.85c.05-1.17.25-1.8.41-2.23.22-.56.48-.96.9-1.38.42-.42.82-.68 1.38-.9.42-.16 1.06-.36 2.23-.41C8.42 2.17 8.8 2.16 12 2.16zm0 3.68a6.16 6.16 0 1 0 0 12.32 6.16 6.16 0 0 0 0-12.32zm0 10.16a4 4 0 1 1 0-8 4 4 0 0 1 0 8zm6.4-10.4a1.44 1.44 0 1 1-2.88 0 1.44 1.44 0 0 1 2.88 0z"/></svg></a>
-                  <a class="social-link" href="#" onclick="return false" aria-label="TikTok"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"/></svg></a>
-                  <a class="social-link" href="#" onclick="return false" aria-label="Snapchat"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.39.839-1.213 1.168-.089.029-.209.075-.344.119-.45.135-1.139.36-1.333.81-.09.224-.061.524.12.868l.015.015c.06.136 1.526 3.475 4.791 4.014.255.044.435.27.42.509 0 .075-.015.149-.045.225-.24.569-1.273.988-3.146 1.271-.059.091-.12.375-.164.57-.029.179-.074.36-.134.553-.076.271-.27.405-.555.405h-.03c-.135 0-.313-.031-.538-.074-.36-.075-.765-.135-1.273-.135-.3 0-.599.015-.913.074-.6.104-1.123.464-1.723.884-.853.599-1.826 1.288-3.294 1.288-.06 0-.119-.015-.18-.015h-.149c-1.468 0-2.427-.675-3.279-1.288-.599-.42-1.107-.779-1.707-.884-.314-.045-.629-.074-.928-.074-.54 0-.958.089-1.272.149-.211.043-.391.074-.54.074-.374 0-.523-.224-.583-.42-.061-.192-.09-.389-.135-.567-.046-.181-.105-.494-.166-.57-1.918-.222-2.95-.642-3.189-1.226-.031-.063-.052-.15-.055-.225-.015-.243.165-.465.42-.509 3.264-.54 4.73-3.879 4.791-4.02l.016-.029c.18-.345.224-.645.119-.869-.195-.434-.884-.658-1.332-.809-.121-.029-.24-.074-.346-.119-1.107-.435-1.257-.93-1.197-1.273.09-.479.674-.793 1.168-.793.146 0 .27.029.383.074.42.194.789.3 1.104.3.234 0 .384-.06.465-.105l-.046-.569c-.098-1.626-.225-3.651.307-4.837C7.392 1.077 10.739.807 11.727.807l.419-.015h.06z"/></svg></a>
-                </div>
-                <p class="bio">Sitter i sentrum og har klippet siden 2019.</p>
-                <div class="cover-gallery">
-                  <img src="images/produkt/galleri-1.webp" alt="">
-                  <img src="images/produkt/galleri-2.webp" alt="">
-                  <img src="images/produkt/galleri-3.webp" alt="">
-                  <img src="images/produkt/galleri-4.webp" alt="">
-                </div>
-              </section>
-              <button class="see-float" type="button">Se tjenester <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M5 12h14M13 6l6 6-6 6"/></svg></button>
-              <section class="sheet" aria-hidden="false"><div class="sheet-inner"><button class="back-sheet" type="button"><svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M19 12H5M12 5l-7 7 7 7"/></svg> Tilbake</button><div class="acc-wrap"><div class="acc-section done"><div class="acc-hd"><span class="acc-n">1</span><span class="acc-t">Velg tjeneste</span><span class="acc-chk">&#10003;</span><span class="acc-sum">Skinfade · 350 kr</span><button class="acc-endre" type="button">Endre</button></div><div class="acc-bd"><div class="acc-in"><div class="acc-content"><p class="bk-svc-lbl">Velg tjeneste</p><div><button class="svc-card" data-min="30" data-price="350" data-name="Skinfade" type="button"><div class="svc-lft"><div class="svc-nm">Skinfade</div><div class="svc-meta">30 min · 350 kr</div></div><span class="chk">◯</span></button><div class="addon-group" hidden><p class="addon-lbl">Legg til</p><button class="addon-row" data-min="15" data-price="150" data-name="Skjegg" type="button"><span class="addon-box"><span class="addon-tick" aria-hidden="true">✓</span></span><span class="addon-nm">Skjegg</span><span class="addon-pr">+15 min · +150 kr</span></button></div><button class="svc-card" data-min="30" data-price="399" data-name="Saksklipp" type="button"><div class="svc-lft"><div class="svc-nm">Saksklipp</div><div class="svc-meta">30 min · 399 kr</div></div><span class="chk">◯</span></button><button class="svc-card" data-min="30" data-price="300" data-name="BarneKlipp" type="button"><div class="svc-lft"><div class="svc-nm">BarneKlipp</div><div class="svc-meta">30 min · 300 kr</div></div><span class="chk">◯</span></button></div><button class="acc-next pv-anim-btn" type="button" disabled>Velg time</button><p class="slot-msg" style="text-align:left;padding:8px 0 0">Velg minst &eacute;n tjeneste for &aring; booke</p></div></div></div></div><div class="acc-section"><div class="acc-hd"><span class="acc-n">2</span><span class="acc-t">Dato og tid</span><span class="acc-chk">&#10003;</span><span class="acc-sum">fre 25. sep · 11:00</span><button class="acc-endre" type="button">Endre</button></div><div class="acc-bd open"><div class="acc-in"><div class="acc-content"><div class="full-card"><p class="full-card-msg"></p><button class="full-card-next" type="button" style="display:none"></button></div><div class="date-strip"><button class="date-chip today open pv-dag" type="button"><span class="dc-wd">fre</span><span class="dc-mo">sep</span><span class="dc-d">25</span><span class="dc-dot"></span></button><button class="date-chip closed" type="button" disabled><span class="dc-wd">lør</span><span class="dc-mo">sep</span><span class="dc-d">26</span><span class="dc-dot"></span></button><button class="date-chip open" type="button"><span class="dc-wd">søn</span><span class="dc-mo">sep</span><span class="dc-d">27</span><span class="dc-dot"></span></button><button class="date-chip open" type="button"><span class="dc-wd">man</span><span class="dc-mo">sep</span><span class="dc-d">28</span><span class="dc-dot"></span></button><button class="date-chip open" type="button"><span class="dc-wd">tir</span><span class="dc-mo">sep</span><span class="dc-d">29</span><span class="dc-dot"></span></button><button class="date-chip open" type="button"><span class="dc-wd">ons</span><span class="dc-mo">sep</span><span class="dc-d">30</span><span class="dc-dot"></span></button><button class="date-chip month-start open" type="button"><span class="dc-wd">tor</span><span class="dc-mo">okt</span><span class="dc-d">1</span><span class="dc-dot"></span></button><button class="date-chip open" type="button"><span class="dc-wd">fre</span><span class="dc-mo">okt</span><span class="dc-d">2</span><span class="dc-dot"></span></button><button class="date-chip closed" type="button" disabled><span class="dc-wd">lør</span><span class="dc-mo">okt</span><span class="dc-d">3</span><span class="dc-dot"></span></button></div><p class="slot-msg pv-slothint" style="display:none">Velg en dato for å se ledige tider</p><p class="slots-hdr pv-slotshdr">Ledige tider</p><div class="slots-grid"><button class="slot-btn pv-slot pv-anim-slot" type="button">11:00</button><button class="slot-btn" type="button">11:30</button><button class="slot-btn" type="button">13:30</button><button class="slot-btn" type="button">14:00</button><button class="slot-btn" type="button">14:30</button><button class="slot-btn" type="button">15:00</button><button class="slot-btn" type="button">15:30</button><button class="slot-btn" type="button">16:00</button><button class="slot-btn" type="button">16:30</button><button class="slot-btn" type="button">17:00</button><button class="slot-btn" type="button">17:30</button><button class="slot-btn" type="button">18:00</button><button class="slot-btn" type="button">18:30</button><button class="slot-btn" type="button">20:00</button><button class="slot-btn" type="button">20:30</button><button class="slot-btn" type="button">21:00</button><button class="slot-btn" type="button">22:30</button></div><p class="slot-msg hidden"></p><button class="next2-btn pv-next2 pv-anim-btn" type="button">Til bekreftelse · 30 min · 350 kr</button></div></div></div></div><div class="acc-section locked"><div class="acc-hd"><span class="acc-n">3</span><span class="acc-t">Dine opplysninger</span><span class="acc-chk">&#10003;</span><span class="acc-sum"></span></div><div class="acc-bd"><div class="acc-in"><div class="acc-content"><div class="ref-slot"></div><div class="sum-box"><div class="sum-row"><span>Tjeneste</span><strong>Skinfade</strong></div><div class="sum-row"><span>Tid</span><strong>fredag 25. sep, 11:00</strong></div><div class="sum-row"><span>Total</span><strong>30 min · 350 kr</strong></div></div><div class="fld"><label for="cname">Navn</label><input type="text" placeholder="Fornavn Etternavn" autocomplete="name" enterkeyhint="next"></div><div class="fld"><label for="cphone">Telefon</label><input type="tel" placeholder="91 23 45 67" autocomplete="tel" inputmode="tel" enterkeyhint="done"></div><div class="consent-slot"><label class="consent-box"><input type="checkbox"><span class="consent-txt">Ja, send meg SMS fra Grand Barber om ny klipp og verve-bonuser. Meld av n&aring;r som helst.</span></label></div><p class="form-err"></p><button class="sub-btn pv-anim-btn" type="button">Bekreft booking</button><p class="pay-note">Ingen betaling n&aring;. Du betaler med Vipps eller kontant hos barbereren.</p></div></div></div></div></div><div class="success-wrap"><div class="success-ico"><svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="#0a0a0a" stroke-width="2.8" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg></div><div class="success-h">Booking bekreftet!</div><p class="success-sub">Vi gleder oss til å se deg hos Grand barber.</p><div class="success-det"><div class="det-row"><span class="det-lbl">Navn</span><span class="det-val">Marcus</span></div><div class="det-row"><span class="det-lbl">Tjeneste</span><span class="det-val">Skinfade</span></div><div class="det-row"><span class="det-lbl">Tid</span><span class="det-val">fredag 25. september, 11:00</span></div><div class="det-row"><span class="det-lbl">Total</span><span class="det-val">30 min · 350 kr</span></div></div><a class="conf-adr" href="#" onclick="return false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 10c0 7-9 12-9 12s-9-5-9-12a9 9 0 0118 0z"/><circle cx="12" cy="10" r="3"/></svg><span>Storgata 33, 0184 Oslo</span></a><a class="conf-tel" href="#" onclick="return false"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"/></svg><span>91 23 45 23</span></a><button class="manage-link-btn" type="button"><svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M11 4H4a2 2 0 00-2 2v14a2 2 0 002 2h14a2 2 0 002-2v-7"/><path d="M18.5 2.5a2.121 2.121 0 013 3L12 15l-4 1 1-4 9.5-9.5z"/></svg> Endre/avbestill</button></div><p class="bk-footer" style="padding:0 0 4px">Bygget med <a href="https://trybarberhq.com">BarberHQ</a></p></div>
-              </section>
+          <!-- <bookingklon-v2:markup> — GENERERT av tools/render/bygg-bookingklon-v2.mjs (2026-10-23). Ikke rediger for hånd. -->
+          <div class="pv-book" id="pvBook"><div class="pv-scale"><div class="pv-stage">
+            <div class="pv-v2-forside"><main class="frame v2">
+  <div class="v2-top"><a class="v2-manage">Endre / avbestill</a></div>
+  <header class="v2-head har-portrett"><img class="v2-portrett" src="images/produkt/portrett.webp" alt="" width="72" height="72"><div class="v2-head-tekst"><h1 class="v2-navn">Grand Barber</h1><p class="v2-spes">Fades og skjeggtrim</p><a class="v2-adr"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg><span>Storgata 33, 0184 Oslo</span></a></div></header><p class="v2-bio">Sitter i sentrum og har klippet siden 2019.</p><div class="v2-sosial"><div class="social" aria-label="Sosiale medier"><a class="social-link" aria-label="Instagram"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M7.0301.084c-1.2768.0602-2.1487.264-2.911.5634-.7888.3075-1.4575.72-2.1228 1.3877-.6652.6677-1.075 1.3368-1.3802 2.127-.2954.7638-.4956 1.6365-.552 2.914-.0564 1.2775-.0689 1.6882-.0626 4.947.0062 3.2586.0206 3.6671.0825 4.9473.061 1.2765.264 2.1482.5635 2.9107.308.7889.72 1.4573 1.388 2.1228.6679.6655 1.3365 1.0743 2.1285 1.38.7632.295 1.6361.4961 2.9134.552 1.2773.056 1.6884.069 4.9462.0627 3.2578-.0062 3.668-.0207 4.9478-.0814 1.28-.0607 2.147-.2652 2.9098-.5633.7889-.3086 1.4578-.72 2.1228-1.3881.665-.6682 1.0745-1.3378 1.3795-2.1284.2957-.7632.4966-1.636.552-2.9124.056-1.2809.0692-1.6898.063-4.948-.0063-3.2583-.021-3.6668-.0817-4.9465-.0607-1.2797-.264-2.1487-.5633-2.9117-.3084-.7889-.72-1.4568-1.3876-2.1228C21.2982 1.33 20.628.9208 19.8378.6165 19.074.321 18.2017.1197 16.9244.0645 15.6471.0093 15.236-.005 11.977.0014 8.718.0076 8.31.0215 7.0301.0839m.1402 21.6932c-1.17-.0509-1.8053-.2453-2.2287-.408-.5606-.216-.96-.4771-1.3819-.895-.422-.4178-.6811-.8186-.9-1.378-.1644-.4234-.3624-1.058-.4171-2.228-.0595-1.2645-.072-1.6442-.079-4.848-.007-3.2037.0053-3.583.0607-4.848.05-1.169.2456-1.805.408-2.2282.216-.5613.4762-.96.895-1.3816.4188-.4217.8184-.6814 1.3783-.9003.423-.1651 1.0575-.3614 2.227-.4171 1.2655-.06 1.6447-.072 4.848-.079 3.2033-.007 3.5835.005 4.8495.0608 1.169.0508 1.8053.2445 2.228.408.5608.216.96.4754 1.3816.895.4217.4194.6816.8176.9005 1.3787.1653.4217.3617 1.056.4169 2.2263.0602 1.2655.0739 1.645.0796 4.848.0058 3.203-.0055 3.5834-.061 4.848-.051 1.17-.245 1.8055-.408 2.2294-.216.5604-.4763.96-.8954 1.3814-.419.4215-.8181.6811-1.3783.9-.4224.1649-1.0577.3617-2.2262.4174-1.2656.0595-1.6448.072-4.8493.079-3.2045.007-3.5825-.006-4.848-.0608M16.953 5.5864A1.44 1.44 0 1 0 18.39 4.144a1.44 1.44 0 0 0-1.437 1.4424M5.8385 12.012c.0067 3.4032 2.7706 6.1557 6.173 6.1493 3.4026-.0065 6.157-2.7701 6.1506-6.1733-.0065-3.4032-2.771-6.1565-6.174-6.1498-3.403.0067-6.156 2.771-6.1496 6.1738M8 12.0077a4 4 0 1 1 4.008 3.9921A3.9996 3.9996 0 0 1 8 12.0077"></path></svg></a><a class="social-link" aria-label="TikTok"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12.525.02c1.31-.02 2.61-.01 3.91-.02.08 1.53.63 3.09 1.75 4.17 1.12 1.11 2.7 1.62 4.24 1.79v4.03c-1.44-.05-2.89-.35-4.2-.97-.57-.26-1.1-.59-1.62-.93-.01 2.92.01 5.84-.02 8.75-.08 1.4-.54 2.79-1.35 3.94-1.31 1.92-3.58 3.17-5.91 3.21-1.43.08-2.86-.31-4.08-1.03-2.02-1.19-3.44-3.37-3.65-5.71-.02-.5-.03-1-.01-1.49.18-1.9 1.12-3.72 2.58-4.96 1.66-1.44 3.98-2.13 6.15-1.72.02 1.48-.04 2.96-.04 4.44-.99-.32-2.15-.23-3.02.37-.63.41-1.11 1.04-1.36 1.75-.21.51-.15 1.07-.14 1.61.24 1.64 1.82 3.02 3.5 2.87 1.12-.01 2.19-.66 2.77-1.61.19-.33.4-.67.41-1.06.1-1.79.06-3.57.07-5.36.01-4.03-.01-8.05.02-12.07z"></path></svg></a><a class="social-link" aria-label="Snapchat"><svg viewBox="0 0 24 24" width="20" height="20" fill="currentColor" aria-hidden="true"><path d="M12.206.793c.99 0 4.347.276 5.93 3.821.529 1.193.403 3.219.299 4.847l-.003.06c-.012.18-.022.345-.03.51.075.045.203.09.401.09.3-.016.659-.12 1.033-.301.165-.088.344-.104.464-.104.182 0 .359.029.509.09.45.149.734.479.734.838.015.449-.39.839-1.213 1.168-.089.029-.209.075-.344.119-.45.135-1.139.36-1.333.81-.09.224-.061.524.12.868l.015.015c.06.136 1.526 3.475 4.791 4.014.255.044.435.27.42.509 0 .075-.015.149-.045.225-.24.569-1.273.988-3.146 1.271-.059.091-.12.375-.164.57-.029.179-.074.36-.134.553-.076.271-.27.405-.555.405h-.03c-.135 0-.313-.031-.538-.074-.36-.075-.765-.135-1.273-.135-.3 0-.599.015-.913.074-.6.104-1.123.464-1.723.884-.853.599-1.826 1.288-3.294 1.288-.06 0-.119-.015-.18-.015h-.149c-1.468 0-2.427-.675-3.279-1.288-.599-.42-1.107-.779-1.707-.884-.314-.045-.629-.074-.928-.074-.54 0-.958.089-1.272.149-.211.043-.391.074-.54.074-.374 0-.523-.224-.583-.42-.061-.192-.09-.389-.135-.567-.046-.181-.105-.494-.166-.57-1.918-.222-2.95-.642-3.189-1.226-.031-.063-.052-.15-.055-.225-.015-.243.165-.465.42-.509 3.264-.54 4.73-3.879 4.791-4.02l.016-.029c.18-.345.224-.645.119-.869-.195-.434-.884-.658-1.332-.809-.121-.029-.24-.074-.346-.119-1.107-.435-1.257-.93-1.197-1.273.09-.479.674-.793 1.168-.793.146 0 .27.029.383.074.42.194.789.3 1.104.3.234 0 .384-.06.465-.105l-.046-.569c-.098-1.626-.225-3.651.307-4.837C7.392 1.077 10.739.807 11.727.807l.419-.015h.06z"></path></svg></a></div></div>
+  
+  <div class="v2-tabs" role="tablist" style="--line-x: 0px; --line-w: 71.34375px;"><button class="v2-tab" role="tab" aria-selected="true" type="button">Tjenester</button><button class="v2-tab" role="tab" aria-selected="false" type="button">Bilder</button><button class="v2-tab" role="tab" aria-selected="false" type="button">Om</button></div><div class="v2-pane" role="tabpanel"><section class="v2-bestill" aria-label="Tjenester"><h2 class="v2-h2">Velg tjeneste</h2><div class="v2-tjenester services"><button class="v2-tj service pv-svc" type="button" role="radio" aria-checked="false" aria-expanded="false" data-id="svc-skinfade" data-min="30" data-price="350" data-name="Skinfade"><span class="v2-tj-navn">Skinfade<span class="v2-tj-min">30 min</span></span><span class="v2-tj-pris">350&nbsp;kr</span><span class="v2-tj-hake" aria-hidden="true">✓</span></button><div class="v2-tillegg pv-tillegg" aria-hidden="true" inert=""><div class="v2-tillegg-inner"><div class="v2-tillegg-panel"><p class="v2-tillegg-lbl">Legg til <span>Valgfritt</span></p><button class="v2-tj v2-tj-tillegg flow-addon" type="button" aria-pressed="false" data-id="svc-skjegg" data-min="15" data-price="150" data-name="Skjegg"><span class="v2-tj-navn">Skjegg</span><span class="v2-tj-meta">+15 min · +150&nbsp;kr</span><span class="v2-tj-hake liten" aria-hidden="true">✓</span></button></div></div></div><button class="v2-tj service" type="button" role="radio" aria-checked="false" aria-expanded="false" data-id="svc-saksklipp" data-min="30" data-price="399" data-name="Saksklipp"><span class="v2-tj-navn">Saksklipp<span class="v2-tj-min">30 min</span></span><span class="v2-tj-pris">399&nbsp;kr</span><span class="v2-tj-hake" aria-hidden="true">✓</span></button><button class="v2-tj service" type="button" role="radio" aria-checked="false" aria-expanded="false" data-id="svc-barn" data-min="30" data-price="300" data-name="BarneKlipp"><span class="v2-tj-navn">BarneKlipp<span class="v2-tj-min">30 min</span></span><span class="v2-tj-pris">300&nbsp;kr</span><span class="v2-tj-hake" aria-hidden="true">✓</span></button></div><div class="v2-valg-total pv-total" hidden="">Totalt 350 kr · 30 min</div><button class="primary pv-neste1 pv-anim-btn" type="button" disabled="">Velg dato og tid <span aria-hidden="true">→</span></button><p class="v2-note">Betales på stedet · Vipps, Cash</p></section></div>
+  <footer class="v2-footer">Bygget med <a>BarberHQ</a> · <a>Personvern</a></footer>
+</main></div>
+            <div class="pv-v2-flyt">
+              <div class="pv-v2-dato"><main class="frame"><section class="flow"><nav class="flow-nav" aria-label="Booking"><button class="back-link" type="button"><span aria-hidden="true">←</span>Tilbake</button><div class="flow-brand" aria-label="Grand Barber">Grand Barber</div></nav><div><ol class="steps" aria-label="Bookingsteg"><li class="done">Tjeneste</li><li class="active" aria-current="step"><span class="v2-skjult">Steg 2 av 3: </span>Dato og tid</li><li class="">Opplysninger</li></ol></div><div><div style="animation: 0.22s cubic-bezier(0.4, 0, 0.2, 1) 0s 1 normal none running flow-rise;"><h1 class="flow-title">Velg dato og tid</h1><div class="service-recap"><div><strong>Skinfade</strong><small>30 min · 350&nbsp;kr</small></div><button class="text-link" type="button">Endre tjeneste</button></div><section class="calendar" aria-label="Velg dato"><div class="calendar-top"><h3>September 2026</h3><div class="month-arrows"><button type="button" data-mon="-1" aria-label="Forrige måned" disabled="">←</button><button type="button" data-mon="1" aria-label="Neste måned">→</button></div></div><div class="weekdays" aria-hidden="true"><span>M</span><span>T</span><span>O</span><span>T</span><span>F</span><span>L</span><span>S</span></div><div class="days"><span class="blank" aria-hidden="true"></span><button class="day " type="button" data-date="2026-09-01" aria-label="tirsdag 1. sep" aria-pressed="false" disabled="">1</button><button class="day " type="button" data-date="2026-09-02" aria-label="onsdag 2. sep" aria-pressed="false" disabled="">2</button><button class="day " type="button" data-date="2026-09-03" aria-label="torsdag 3. sep" aria-pressed="false" disabled="">3</button><button class="day " type="button" data-date="2026-09-04" aria-label="fredag 4. sep" aria-pressed="false" disabled="">4</button><button class="day " type="button" data-date="2026-09-05" aria-label="lørdag 5. sep" aria-pressed="false" disabled="">5</button><button class="day " type="button" data-date="2026-09-06" aria-label="søndag 6. sep" aria-pressed="false" disabled="">6</button><button class="day " type="button" data-date="2026-09-07" aria-label="mandag 7. sep" aria-pressed="false" disabled="">7</button><button class="day " type="button" data-date="2026-09-08" aria-label="tirsdag 8. sep" aria-pressed="false" disabled="">8</button><button class="day " type="button" data-date="2026-09-09" aria-label="onsdag 9. sep" aria-pressed="false" disabled="">9</button><button class="day " type="button" data-date="2026-09-10" aria-label="torsdag 10. sep" aria-pressed="false" disabled="">10</button><button class="day " type="button" data-date="2026-09-11" aria-label="fredag 11. sep" aria-pressed="false" disabled="">11</button><button class="day " type="button" data-date="2026-09-12" aria-label="lørdag 12. sep" aria-pressed="false" disabled="">12</button><button class="day " type="button" data-date="2026-09-13" aria-label="søndag 13. sep" aria-pressed="false" disabled="">13</button><button class="day " type="button" data-date="2026-09-14" aria-label="mandag 14. sep" aria-pressed="false" disabled="">14</button><button class="day " type="button" data-date="2026-09-15" aria-label="tirsdag 15. sep" aria-pressed="false" disabled="">15</button><button class="day " type="button" data-date="2026-09-16" aria-label="onsdag 16. sep" aria-pressed="false" disabled="">16</button><button class="day " type="button" data-date="2026-09-17" aria-label="torsdag 17. sep" aria-pressed="false" disabled="">17</button><button class="day " type="button" data-date="2026-09-18" aria-label="fredag 18. sep" aria-pressed="false" disabled="">18</button><button class="day " type="button" data-date="2026-09-19" aria-label="lørdag 19. sep" aria-pressed="false" disabled="">19</button><button class="day " type="button" data-date="2026-09-20" aria-label="søndag 20. sep" aria-pressed="false" disabled="">20</button><button class="day " type="button" data-date="2026-09-21" aria-label="mandag 21. sep" aria-pressed="false" disabled="">21</button><button class="day " type="button" data-date="2026-09-22" aria-label="tirsdag 22. sep" aria-pressed="false" disabled="">22</button><button class="day " type="button" data-date="2026-09-23" aria-label="onsdag 23. sep" aria-pressed="false" disabled="">23</button><button class="day " type="button" data-date="2026-09-24" aria-label="torsdag 24. sep" aria-pressed="false" disabled="">24</button><button class="day today pv-dag" type="button" data-date="2026-09-25" aria-label="fredag 25. sep" aria-pressed="false">25</button><button class="day " type="button" data-date="2026-09-26" aria-label="lørdag 26. sep" aria-pressed="false" disabled="">26</button><button class="day " type="button" data-date="2026-09-27" aria-label="søndag 27. sep" aria-pressed="false">27</button><button class="day " type="button" data-date="2026-09-28" aria-label="mandag 28. sep" aria-pressed="false">28</button><button class="day " type="button" data-date="2026-09-29" aria-label="tirsdag 29. sep" aria-pressed="false">29</button><button class="day " type="button" data-date="2026-09-30" aria-label="onsdag 30. sep" aria-pressed="false">30</button></div><p class="calendar-foot">Velg en dag som passer deg.</p></section><div><section class="time-panel pv-tider" aria-label="Velg klokkeslett" hidden=""><div class="time-heading"><h3>fre 25. sep</h3><span>Ledige klokkeslett</span></div><div class="time-grid"><button class="time pv-slot pv-anim-slot" type="button" aria-pressed="false" data-label="11:00" data-start="2026-09-25T11:00:00+02:00">11:00</button><button class="time" type="button" aria-pressed="false" data-label="11:30" data-start="2026-09-25T11:30:00+02:00">11:30</button><button class="time" type="button" aria-pressed="false" data-label="13:30" data-start="2026-09-25T13:30:00+02:00">13:30</button><button class="time" type="button" aria-pressed="false" data-label="14:00" data-start="2026-09-25T14:00:00+02:00">14:00</button><button class="time" type="button" aria-pressed="false" data-label="14:30" data-start="2026-09-25T14:30:00+02:00">14:30</button><button class="time" type="button" aria-pressed="false" data-label="15:00" data-start="2026-09-25T15:00:00+02:00">15:00</button><button class="time" type="button" aria-pressed="false" data-label="15:30" data-start="2026-09-25T15:30:00+02:00">15:30</button><button class="time" type="button" aria-pressed="false" data-label="16:00" data-start="2026-09-25T16:00:00+02:00">16:00</button><button class="time" type="button" aria-pressed="false" data-label="16:30" data-start="2026-09-25T16:30:00+02:00">16:30</button><button class="time" type="button" aria-pressed="false" data-label="17:00" data-start="2026-09-25T17:00:00+02:00">17:00</button><button class="time" type="button" aria-pressed="false" data-label="17:30" data-start="2026-09-25T17:30:00+02:00">17:30</button><button class="time" type="button" aria-pressed="false" data-label="18:00" data-start="2026-09-25T18:00:00+02:00">18:00</button><button class="time" type="button" aria-pressed="false" data-label="18:30" data-start="2026-09-25T18:30:00+02:00">18:30</button><button class="time" type="button" aria-pressed="false" data-label="20:00" data-start="2026-09-25T20:00:00+02:00">20:00</button><button class="time" type="button" aria-pressed="false" data-label="20:30" data-start="2026-09-25T20:30:00+02:00">20:30</button><button class="time" type="button" aria-pressed="false" data-label="21:00" data-start="2026-09-25T21:00:00+02:00">21:00</button><button class="time" type="button" aria-pressed="false" data-label="22:30" data-start="2026-09-25T22:30:00+02:00">22:30</button></div><p class="selection-line pv-selline" data-pv-valgt="Valgt: fre 25. sep kl. 11:00" data-pv-tom="Velg et klokkeslett for å fortsette.">Velg et klokkeslett for å fortsette.</p></section></div><div class="flow-action"><button class="primary pv-next2 pv-anim-btn" type="button" disabled="">Opplysninger <span aria-hidden="true">→</span></button></div><p class="flow-foot">30 min · 350&nbsp;kr · Betales på stedet</p></div></div><footer class="flow-footer">Bygget med <a>BarberHQ</a> · <a>Personvern</a></footer></section></main></div>
+              <div class="pv-v2-skjema"><main class="frame"><section class="flow"><nav class="flow-nav" aria-label="Booking"><button class="back-link" type="button"><span aria-hidden="true">←</span>Tilbake</button><div class="flow-brand" aria-label="Grand Barber">Grand Barber</div></nav><div><ol class="steps" aria-label="Bookingsteg"><li class="done">Tjeneste</li><li class="done">Dato og tid</li><li class="active" aria-current="step"><span class="v2-skjult">Steg 3 av 3: </span>Opplysninger</li></ol></div><div><div style="animation: 0.22s cubic-bezier(0.4, 0, 0.2, 1) 0s 1 normal none running flow-rise;"><h1 class="flow-title">Opplysninger</h1><p class="flow-intro">Bare navn og mobilnummer, så er vi klare.</p><div class="appointment"><p class="label">Din time</p><p class="date-line">Fredag 25. september</p><p class="time-line">Kl. 11:00 · 30 minutter</p><div class="detail-line"><span>Skinfade</span><span>350&nbsp;kr</span></div></div><div class="flow-ref"></div><div class="form-total"><span>Total</span><strong>350&nbsp;kr</strong></div><div style="display:contents"><div class="form-row"><label>Fullt navn</label><input autocomplete="name" placeholder="Fornavn og etternavn"></div><div class="form-row"><label>Mobilnummer</label><input type="tel" inputmode="tel" autocomplete="tel" placeholder="Mobilnummer"></div><div class="flow-consent-slot shown"><label class="opt-in"><input type="checkbox">Ja, send meg SMS fra Grand Barber om ny klipp. Meld av når som helst.</label></div><p class="flow-err" role="alert"></p><div class="flow-action"><button class="primary pv-send pv-anim-btn" type="button">Bekreft time <span aria-hidden="true">→</span></button></div></div><div class="flow-info"><p><span class="flow-info-lead">Ingen betaling nå.</span> Du betaler med Vipps eller kontant hos barberen.</p><p>Endre eller avbestill senest 2 timer før timen.</p></div></div></div><footer class="flow-footer">Bygget med <a>BarberHQ</a> · <a>Personvern</a></footer></section></main></div>
+              <div class="pv-v2-kvittering"><main class="frame"><section class="flow"><nav class="flow-nav" aria-label="Booking"><button class="back-link" type="button"><span aria-hidden="true">←</span>Forsiden</button><div class="flow-brand" aria-label="Grand Barber">Grand Barber</div></nav><div></div><div><div style="animation: 0.22s cubic-bezier(0.4, 0, 0.2, 1) 0s 1 normal none running flow-rise;"><div class="confirmation-head"><div class="confirmation-mark" aria-hidden="true">✓</div><h1 class="confirmation-title">Timen er bekreftet</h1></div><section class="receipt" aria-label="Bookingdetaljer"><div class="receipt-lead"><p>Fredag 25. september</p><strong>11:00</strong></div><dl><div><dt>Navn</dt><dd>Marcus</dd></div><div><dt>Tjeneste</dt><dd>Skinfade</dd></div><div><dt>Total</dt><dd>30 min · 350&nbsp;kr</dd></div></dl></section><section class="visit-details" aria-label="Besøksinformasjon"><a><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"></path><circle cx="12" cy="10" r="2.5"></circle></svg><span>Storgata 33, 0184 Oslo</span></a><a><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 3 3 5-2 2c1 3 3 5 6 6l2-2 5 3c0 3-2 4-4 4C10 21 3 14 3 7c0-2 1-4 4-4Z"></path></svg><span>91 23 45 23</span></a></section><button class="primary flow-cal" type="button">Legg i kalender</button><p class="field-note">Endre eller avbestill senest 2 timer før timen. Kalenderoppføringen oppdateres ikke automatisk ved endring.</p><button class="flow-secondary" type="button">Endre / avbestill</button></div></div><footer class="flow-footer">Bygget med <a>BarberHQ</a> · <a>Personvern</a></footer></section></main></div>
             </div>
-          </div>
-          </div>
+          </div></div></div>
+          <!-- </bookingklon-v2:markup> -->
         </div></div>
       </div>
     </div>
@@ -2954,57 +2904,82 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     if(window.kalenderScene) window.kalenderScene.start();
   }
 
-  // Bookingdemoen spiller HELE reisen: velg tid → åpne «Dine opplysninger» → skriv navn
-  // → skriv telefon → bekreft → kvittering. Utfyllingen er et eget steg, ikke noe som
-  // bare er der: det er selve poenget at kunden fyller inn to felter og er ferdig.
+  // Bookingdemoen spiller HELE reisen på v2-sida: forsiden → velg tjeneste → «Velg dato og tid»
+  // → dato → klokkeslett → «Opplysninger» → skriv navn → skriv telefon → bekreft → kvittering.
+  // Utfyllingen er et eget steg, ikke noe som bare er der: det er selve poenget at kunden fyller
+  // inn to felter og er ferdig.
   //
   // Tegn-for-tegn med vilje. Rolig tempo er premisset — en kunde som ser demoen skal
   // rekke å lese hva som skjer, ikke gjette. Det koster sekunder, og de sekundene er
   // grunnen til at kortet får lengre dvelding enn de to andre (se SEKV/HVILE).
   //
-  // Klonen kan ikke scrolle (statisk ark inne i overflow:hidden), så «scrollingen» til
-  // skjemaet gjøres med --pv-scroll. Verdien MÅLES etter at trekkspillet har åpnet seg:
-  // .acc-bd bruker grid-template-rows 0fr→1fr over 250ms, og måler man før den er ferdig,
-  // er trinn 3 fortsatt null høyt og svaret blir «ingen overflyt».
+  // Klonen kan ikke scrolle (statisk innhold i overflow:hidden), så «scrollingen» gjøres med
+  // --pv-scroll på .pv-v2-flyt (settScroll). Ved hvert stegbytte hopper den til 0 uten
+  // overgang (hopp) — ekte side gjør window.scrollTo(0,0) i showStep.
+  // Markupen og hook-klassene (pv-svc, pv-dag, pv-tider, pv-slot …) lages av
+  // tools/render/bygg-bookingklon-v2.mjs. Tilstandsklassene på .pv-book: vis-sheet (flyten,
+  // «Dato og tid»), vis-skjema («Opplysninger»), vis-success (kvitteringen).
   // Til bekreftelsen står på skjermen. Der ENDER reisen; den nullstilles først når kortet
   // får fokus igjen, ikke mens ingen ser på.
   var BOOK_SEKV=11500;
   function bookingLoop(){
     if(REDUSERT) return;
     var b=document.getElementById('pvBook');
-    var slot=b.querySelector('.pv-anim-slot'), btn=b.querySelector('.pv-next2');
-    var sek=b.querySelectorAll('.acc-section');
-    var navn=b.querySelector('input[autocomplete="name"]'),
+    var svc=b.querySelector('.pv-svc'), tillegg=b.querySelector('.pv-tillegg'),
+        total=b.querySelector('.pv-total'), neste1=b.querySelector('.pv-neste1'),
+        dag=b.querySelector('.pv-dag'), tider=b.querySelector('.pv-tider'),
+        slot=b.querySelector('.pv-anim-slot'), linje=b.querySelector('.pv-selline'),
+        btn=b.querySelector('.pv-next2'),
+        navn=b.querySelector('input[autocomplete="name"]'),
         tlf =b.querySelector('input[autocomplete="tel"]'),
-        send=b.querySelector('.sub-btn'),
-        seKnapp=b.querySelector('.see-float'),
-        neste1=b.querySelector('.acc-next'),
-        svc=b.querySelector('.svc-card'),
-        addon=b.querySelector('.addon-group'),
-        dag=b.querySelector('.pv-dag'),
-        hint=b.querySelector('.pv-slothint'),
-        hdr=b.querySelector('.pv-slotshdr'),
-        rutenett=b.querySelector('.slots-grid');
-    if(!slot||!btn||sek.length<3||!navn||!tlf||!send||!seKnapp||!neste1||!svc||!dag)return;
+        send=b.querySelector('.pv-send');
+    if(!svc||!neste1||!dag||!tider||!slot||!btn||!navn||!tlf||!send)return;
     function T(fn,ms){ tBook.push(setTimeout(fn,ms)); }
 
-    // Tilbake til FORSIDEN, ikke til datosteget: reisen starter der en kunde starter.
+    // Tilbake til FORSIDEN: reisen starter der en kunde starter.
     function nullstill(){
-      b.classList.remove('vis-sheet','vis-success','vis-scroll');
-      b.style.setProperty('--pv-scroll','0px');
-      slot.classList.remove('pv-on','sel');
-      svc.classList.remove('sel'); neste1.disabled=true;
-      var chk0=svc.querySelector('.chk'); if(chk0) chk0.textContent='◯';
-      if(addon) addon.hidden=true;
-      sek[0].classList.remove('done');
-      sek[0].querySelector('.acc-bd').classList.add('open');
-      sek[1].classList.add('locked');
-      sek[1].querySelector('.acc-bd').classList.remove('open');
-      sek[2].classList.add('locked');
-      sek[2].querySelector('.acc-bd').classList.remove('open');
-      velgDato(false);
+      b.classList.remove('vis-sheet','vis-skjema','vis-success','vis-scroll');
+      hopp();
+      velgTjeneste(false); velgDato(false);
+      slot.classList.remove('pv-on');
       navn.value=''; tlf.value='';
-      [seKnapp,neste1,btn,send].forEach(function(x){ if(x)x.classList.remove('pv-press'); });
+      [neste1,btn,send].forEach(function(x){ x.classList.remove('pv-press'); });
+    }
+    // Samme DOM-steg som forsidens skript: valgt rad + hake, tilleggene foldes ut, totalen vises,
+    // «Velg dato og tid» blir klikkbar (disabled i markupen, som på sida).
+    function velgTjeneste(på){
+      svc.classList.toggle('selected',på); svc.setAttribute('aria-checked',String(på));
+      svc.setAttribute('aria-expanded',String(på));   // .service[aria-expanded=true] skjuler skillelinja over tilleggene
+      if(tillegg) tillegg.classList.toggle('open',på);
+      if(total) total.hidden=!på;
+      neste1.disabled=!på;
+    }
+    // Dato valgt ⇒ tidspanelet kommer fram (ingen tid valgt ennå); uten dato ⇒ bare kalenderen.
+    function velgDato(på){
+      dag.classList.toggle('chosen',på); dag.setAttribute('aria-pressed',String(på));
+      tider.hidden=!på;
+      velgTid(false);
+    }
+    function velgTid(på){
+      slot.classList.toggle('chosen',på); slot.setAttribute('aria-pressed',String(på));
+      if(linje) linje.textContent = på ? linje.dataset.pvValgt : linje.dataset.pvTom;
+      btn.disabled=!på;                    // tid må velges før «Opplysninger»
+    }
+    function hopp(){
+      b.classList.add('pv-hopp'); b.style.setProperty('--pv-scroll','0px');
+      void b.offsetHeight; b.classList.remove('pv-hopp');
+    }
+    // Flytter flyten så målets underkant står 24 designpx over skjermkanten. Skalaen leses av
+    // .pv-scale sin faktiske bredde (dekker --ph-s OG ringens skalering i ett), og nåværende
+    // forskyvning trekkes fra så målingen ikke avhenger av forrige scroll.
+    function settScroll(maal){
+      var skjerm=b.closest('.iph-screen'), sc=b.querySelector('.pv-scale');
+      if(!skjerm||!maal||!sc)return;
+      var sk=sc.getBoundingClientRect().width/320||1;
+      var naa=parseFloat(b.style.getPropertyValue('--pv-scroll'))||0;
+      var bunn=maal.getBoundingClientRect().bottom-naa*sk;
+      var overflyt=(bunn-(skjerm.getBoundingClientRect().bottom-24*sk))/sk;
+      b.style.setProperty('--pv-scroll', (overflyt>0?-Math.ceil(overflyt):0)+'px');
     }
     // Skriver ett tegn av gangen. Hver timeout legges i tBook, så stoppMikro() rydder
     // dem når kortet går ut av syne midt i en setning.
@@ -3017,74 +2992,30 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
       T(function(){ felt.value=tekst; }, start+tekst.length*tegnMs+450);
       return start+tekst.length*tegnMs;
     }
-    // Tjenestevalget: kortet hukes av, og «Velg time» blir klikkbar — akkurat som når
-    // en kunde velger. Knappen ligger disabled i markupen, som i modulen.
-    function velgTjeneste(på){
-      svc.classList.toggle('sel',på);
-      var chk=svc.querySelector('.chk'); if(chk) chk.textContent = på ? '✓' : '◯';  // ring → hake ved valg
-      if(addon) addon.hidden=!på;      // «Legg til Skjegg» avdekkes ved valg, som i snapshot 3
-      neste1.disabled=!på;
-    }
-    // Datosteget: ingen dato valgt ⇒ hjelpetekst framme, ingen tider, videre-knapp av.
-    function tilDatoSteg(){
-      sek[0].classList.add('done');
-      sek[0].querySelector('.acc-bd').classList.remove('open');
-      sek[1].classList.remove('locked');
-      sek[1].querySelector('.acc-bd').classList.add('open');
-      velgDato(false);
-    }
-    function velgDato(på){
-      dag.classList.toggle('sel',på);
-      if(hint) hint.style.display = på?'none':'';
-      if(hdr) hdr.style.display = på?'':'none';
-      if(rutenett) rutenett.style.display = på?'':'none';
-      btn.disabled=true;                    // tid må velges før «Til bekreftelse»
-    }
-    function tilSkjemaet(){
-      sek[1].classList.add('done');
-      sek[1].querySelector('.acc-bd').classList.remove('open');
-      sek[2].classList.remove('locked');
-      sek[2].querySelector('.acc-bd').classList.add('open');
-      b.classList.add('vis-scroll');
-    }
-    function settScroll(){
-      var skjerm=b.closest('.iph-screen'), notat=b.querySelector('.pay-note');
-      if(!skjerm||!notat)return;
-      var s0=skjerm.getBoundingClientRect(), bunn=notat.getBoundingClientRect().bottom;
-      var sk=1, e=b;
-      while(e&&e!==document.body){ var tr=getComputedStyle(e).transform;
-        if(tr&&tr!=='none') sk*=parseFloat(tr.split(/[(,]/)[1])||1; e=e.parentElement; }
-      var overflyt=(bunn-(s0.bottom-24))/sk;
-      b.style.setProperty('--pv-scroll', (overflyt>0?-Math.ceil(overflyt):0)+'px');
-    }
 
     // ── Reisen, tilstand for tilstand ────────────────────────────────────────
-    // Sekvensen hoppet før rett inn på datosteget: forsiden og tjenestevalget ble
-    // aldri vist, selv om de er to av de seks godkjente tilstandene. Nå spilles alle
-    // seks — showcase → se tjenester → tjenestevalg → dato → tid → opplysninger →
-    // bekreftelse — og hvert trykk har en synlig knapperespons før tilstanden skifter,
-    // så det leses som at NOEN bruker sida, ikke som at skjermer byttes ut.
+    // Hvert trykk har en synlig knapperespons før tilstanden skifter, så det leses som at
+    // NOEN bruker sida, ikke som at skjermer byttes ut.
     var trykk=function(el,ms){ if(!el)return;
       T(function(){ el.classList.add('pv-press'); },ms);
       T(function(){ el.classList.remove('pv-press'); },ms+250); };
 
     nullstill();
-    //  0,0–2,0  forsiden (showcase) står
-    trykk(seKnapp,2000);
-    T(function(){ b.classList.add('vis-sheet'); },2400);          // → tjenestevalg
-    T(function(){ velgTjeneste(true); },3200);                    // kortet hukes av
-    trykk(neste1,4000);
-    T(function(){ tilDatoSteg(); },4400);                         // → dato, ingen valgt
-    T(function(){ velgDato(true); },5200);                        // → tider kommer fram
-    T(function(){ slot.classList.add('pv-on','sel'); btn.disabled=false; },6000);  // → tid valgt
-    T(function(){ slot.classList.remove('pv-on'); },6400);
+    //  0,0–2,0  forsiden står
+    T(function(){ velgTjeneste(true); },2000);                    // Skinfade hukes av
+    trykk(neste1,3200);
+    T(function(){ hopp(); b.classList.add('vis-sheet','vis-scroll'); },3600);   // → dato og tid
+    T(function(){ velgDato(true); },4600);                        // → tidene kommer fram
+    T(function(){ settScroll(btn); },4700);                       // «scroll» ned til tidene
+    T(function(){ slot.classList.add('pv-on'); velgTid(true); },5800);          // → tid valgt
+    T(function(){ slot.classList.remove('pv-on'); },6200);
     trykk(btn,6800);
-    T(tilSkjemaet,7200);                                          // → dine opplysninger
-    T(settScroll,7600);                    // etter trekkspillets 250ms, ikke før
+    T(function(){ hopp(); b.classList.add('vis-skjema'); },7200);              // → opplysninger
+    T(function(){ settScroll(b.querySelector('.pv-v2-skjema .flow-info')); },7600);
     skriv(navn,'Marcus',8000,50);          // 8000 → 8300 (caret vekk 8750)
     skriv(tlf,'900 00 000',9200,50);       // 9200 → 9700 (caret vekk 10150)
     trykk(send,11000);
-    T(function(){ b.classList.add('vis-success'); },11500);       // → bekreftelse
+    T(function(){ hopp(); b.classList.add('vis-success'); },11500);           // → bekreftelse
     // Ingen T(nullstill) og ingen ny runde her: kortet skal BLI stående på bekreftelsen.
     // Nullstillingen skjer øverst i denne funksjonen, altså neste gang kortet får fokus.
   }
@@ -3451,7 +3382,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   }
   function frysBooking(k){
     var bok=k.querySelector('.pv-book');
-    if(bok){ bok.classList.remove('vis-sheet','vis-scroll'); bok.classList.add('vis-success'); }
+    if(bok){ bok.classList.remove('vis-sheet','vis-skjema','vis-scroll'); bok.style.setProperty('--pv-scroll','0px'); bok.classList.add('vis-success'); }
   }
   // Sluttilstand for kort i. Virker på BÅDE klon (ved bygging) og original (ved hopp).
   // På en original legger den bare sluttilstanden oppå — startSekvens() nullstiller og

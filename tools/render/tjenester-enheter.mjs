@@ -45,15 +45,14 @@ const MAAL = () => [...document.querySelectorAll('#hovedList .svc-enhet, #tilleg
 });
 
 for (const bredde of [320, 375, 1280]) {
-  for (const sm of ['v2', 'v1']) {
-    if (sm === 'v1' && bredde === 1280) continue;
+  {
     const ctx = await browser.newContext({ viewport: { width: bredde, height: 900 }, deviceScaleFactor: 2 });
     await ctx.addInitScript(() => { try { localStorage.setItem('bhq-theme', 'dark'); } catch (_) {} });
     const page = await ctx.newPage(); const errs = []; page.on('pageerror', e => errs.push(e.message));
-    const m = await installerDinSideMock(page, { sidemal: sm, tjenester: TJ });
+    const m = await installerDinSideMock(page, { tjenester: TJ });
     await page.goto(URL_, { waitUntil: 'networkidle' });
     await page.evaluate(() => document.querySelector('.nav button[data-panel="tjenester"]').click()); await page.waitForTimeout(1000);
-    const k = `${bredde} ${sm}`;
+    const k = `${bredde}`;
 
     // Enhet + luft + aria på utfylte felt
     const f = await page.evaluate(MAAL);
@@ -79,10 +78,9 @@ for (const bredde of [320, 375, 1280]) {
     if (bredde <= 375) sjekk(hode.every(x => !x.synlig), `${k}: overskriftsraden er borte på mobil`, JSON.stringify(hode));
     else sjekk(hode.every(x => x.synlig), `${k}: overskriftsraden står på desktop`, JSON.stringify(hode));
 
-    // Beskrivelse (v2-kun) og v1 uten
+    // Beskrivelse ved hver hovedtjeneste
     const besk = await page.$$eval('.svc-description', es => es.map(e => ({ aria: e.getAttribute('aria-label'), fs: parseFloat(getComputedStyle(e).fontSize), navnFs: parseFloat(getComputedStyle(e.closest('.svc-row-h').querySelector('.svc-navn')).fontSize) })));
-    if (sm === 'v2') sjekk(besk.length === 2 && besk.every(x => x.fs < x.navnFs) && besk[0].aria === 'Kort beskrivelse av Skin fade', `${k}: beskrivelse mindre enn navnet, aria-label med tjenestenavn`, JSON.stringify(besk));
-    else sjekk(besk.length === 0, `${k}: v1 uten beskrivelsesfelt`);
+    sjekk(besk.length === 2 && besk.every(x => x.fs < x.navnFs) && besk[0].aria === 'Kort beskrivelse av Skin fade', `${k}: beskrivelse mindre enn navnet, aria-label med tjenestenavn`, JSON.stringify(besk));
 
     // Ny tom rad i begge lister: tomme verdier + plassholdere, enheten står
     await page.click('#addHoved'); await page.click('#addTillegg'); await page.waitForTimeout(200);
@@ -101,9 +99,9 @@ for (const bredde of [320, 375, 1280]) {
     const ov = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
     sjekk(ov <= 0, `${k}: ingen horisontal overflow`, ov + ' px');
     await page.evaluate(() => document.querySelector('#hovedList').scrollIntoView({ block: 'start' })); await page.evaluate(() => scrollBy(0, -140));
-    await page.screenshot({ path: `${OUT}/${bredde}-${sm}-hoved.png` });
+    await page.screenshot({ path: `${OUT}/${bredde}-hoved.png` });
     await page.evaluate(() => document.querySelector('#tilleggList').scrollIntoView({ block: 'center' }));
-    await page.screenshot({ path: `${OUT}/${bredde}-${sm}-tillegg.png` });
+    await page.screenshot({ path: `${OUT}/${bredde}-tillegg.png` });
 
     // Lagring: fyll den nye hovedraden, la den nye tilleggsraden stå uten navn → rene tall, tom rad sendes ikke
     if (bredde === 375) {

@@ -9,6 +9,7 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { TESTBILDER, rutTestbilder } from './fixtures/testbilder.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -29,11 +30,10 @@ const PORT = server.address().port;
 
 const PROFILE = { slug:'grand-barber', email:'grand@barber.no', hasPassword:true, name:'Henrik',
   shop:'Grand Barber', address:'Storgata 1, 0155 Oslo', tagline:'Fades & klassisk', bio:'Presisjon i hvert klipp. Skarpe fades, rene linjer, ingen stress.', booking_horizon_days:28 };
-const DESIGN = { palette:'minimal', font:'fraunces', layout:'showcase', mode:'mork' };
 const IMAGES = [
-  { id:1, slot:'galleri', url:'/no/images/layout-showcase.webp', sort_order:0 },
-  { id:2, slot:'galleri', url:'/no/images/layout-profil.webp',   sort_order:1 },
-  { id:3, slot:'galleri', url:'/no/images/layout-hero.webp',     sort_order:2 },
+  { id:1, slot:'galleri', url:'/testbilder/bilde-1.webp', sort_order:0 },
+  { id:2, slot:'galleri', url:'/testbilder/bilde-2.webp',   sort_order:1 },
+  { id:3, slot:'galleri', url:'/testbilder/bilde-3.webp',     sort_order:2 },
 ];
 const SERVICES = { hoved:[ { name:'Herreklipp', price:350, min:30 }, { name:'Skjeggtrim', price:0, min:20 }, { name:'Klipp & skjegg', price:500, min:45 } ], tillegg:[ { name:'Hårvask', price:80, min:10 } ] };
 const HOURS = [1,2,3,4,5].map(wd => ({ weekday:wd, is_closed:false, open_time:'10:00', close_time:'18:00', breaks:[] }))
@@ -59,7 +59,6 @@ function router(shape){
     const u=new URL(route.request().url()); const p=u.pathname;
     const json=o=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(o)});
     if(p==='/api/dashboard/profile')        return json(PROFILE);
-    if(p==='/api/dashboard/design')          return json(DESIGN);
     if(p==='/api/dashboard/images')          return json(IMAGES);
     if(p==='/api/dashboard/services')        return json(SERVICES);
     if(p==='/api/dashboard/hours')           return json(HOURS);
@@ -106,7 +105,7 @@ for (const shape of ['trial','basis']) {
   for (const bredde of [320,375,390]) {
     const page = await browser.newPage({ viewport:{ width:bredde, height:900 }, deviceScaleFactor:2 });
     const errs=[]; page.on('pageerror',e=>errs.push(e.message));
-    await page.route('**/api/**', router(shape));
+    await page.route('**/api/**', router(shape)); await rutTestbilder(page);
     await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
     await page.waitForTimeout(1500);
     for (const [pid,navn] of PANELS) {
@@ -128,9 +127,9 @@ console.log('\n=== FLAGGEDE (overflow / offenders / JS-feil) ===');
 if (brukket.length) console.table(brukket); else console.log('Ingen objektive brudd målt — «stygt» vurderes visuelt på screenshotene.');
 console.log('\nScreenshots: .render-ut/mob-<shape>-<panel>-<bredde>.png ('+rad.length+' stk)');
 
-// ── Ekspandert runde: accordion-innhold (Din side / Konto / Vekst) + custom-velger @320 ──────────
-// Kollapsede kort skjuler de tetteste flatene (palett-grid, HSV-velger, slot-bokser, profilfelt,
-// SMS-knotter, billing). Åpne alt og mål/screenshot på nytt.
+// ── Ekspandert runde: accordion-innhold (Din side / Konto / Vekst) @320 ──────────
+// Kollapsede kort skjuler de tetteste flatene (SMS-knotter, billing). Åpne alt og mål/screenshot på nytt.
+// Din side (fire steg, fargevelgeren i Utseende) måles i dinside-v2.mjs (320/375/402/1280).
 const radX = [];
 async function ekspander(page, panelSel){
   await page.evaluate((sel)=>{ document.querySelectorAll(sel+' .acc-head').forEach(h=>{ if(h.getAttribute('aria-expanded')!=='true') h.click(); }); }, panelSel);
@@ -140,7 +139,7 @@ async function maalPanel(page, bredde){ return page.evaluate(eval(MAAL), bredde)
 for (const shape of ['trial','basis']) {
   const page = await browser.newPage({ viewport:{ width:320, height:900 }, deviceScaleFactor:2 });
   const errs=[]; page.on('pageerror',e=>errs.push(e.message));
-  await page.route('**/api/**', router(shape));
+  await page.route('**/api/**', router(shape)); await rutTestbilder(page);
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
   await page.waitForTimeout(1500);
   for (const [pid,navn] of [['design','Din side'],['abonnement','Konto'],['vekst','Vekst']]) {
@@ -151,25 +150,6 @@ for (const shape of ['trial','basis']) {
     await page.evaluate(()=>window.scrollTo(0,0));
     await page.screenshot({ path:`${OUT}/mobx-${shape}-${pid}-320.png`, fullPage:true });
     radX.push({ shape, fane:navn+' (åpen)', docOverflow:m.docOverflow,
-      offenders:m.offenders.length?m.offenders.map(o=>o.el+'→'+o.right).join(' '):'—', jsfeil:errs.length?errs.join(';').slice(0,50):'ingen' });
-  }
-  // Din side → åpne KUN Design-accordionen (data-single) → velg «Din egen» → HSV-velger @320
-  await page.evaluate(()=>switchPanel('design'));
-  await page.waitForTimeout(800);
-  const harCustom = await page.evaluate(()=>{
-    var grid=document.querySelector('#paletteGrid'); if(!grid)return false;
-    var acc=grid.closest('.acc'); if(acc){ var h=acc.querySelector('.acc-head'); if(h && h.getAttribute('aria-expanded')!=='true')h.click(); }
-    return true;
-  });
-  await page.waitForTimeout(500);
-  await page.evaluate(()=>{ var b=document.querySelector('.preset[data-key="custom"]'); if(b)b.click(); });
-  await page.waitForTimeout(500);
-  if (harCustom) {
-    const m = await maalPanel(page, 320);
-    await page.evaluate(()=>{const e=document.querySelector('#customPanel')||document.querySelector('#paletteGrid');if(e)e.scrollIntoView({block:'center'});});
-    await page.waitForTimeout(150);
-    await page.screenshot({ path:`${OUT}/mobx-${shape}-custom-320.png`, fullPage:false });
-    radX.push({ shape, fane:'Din egen (HSV-velger)', docOverflow:m.docOverflow,
       offenders:m.offenders.length?m.offenders.map(o=>o.el+'→'+o.right).join(' '):'—', jsfeil:errs.length?errs.join(';').slice(0,50):'ingen' });
   }
   // Konto → abonnementskortet (alltid åpent på innstillingssiden) @320

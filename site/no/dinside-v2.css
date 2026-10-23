@@ -1,4 +1,4 @@
-/* «Din side» for v2-barbere (sidemal='v2'). Lastes av dashboard.html, brukes av dinside-v2.js.
+/* «Din side». Lastes av dashboard.html, brukes av dinside-v2.js.
    Godkjent 22.10.2026 (prototype tools/render/prototyper/dinside-v2-oppsett.html). Mobil først:
      • fast topp: tittel + «Forhåndsvis» (under 1024 px) og en segmentert kontroll med fire like celler (min. 44 px)
      • steginnhold: tittel, én hjelpelinje, etiketter over feltene, hårlinjer mellom delene
@@ -11,21 +11,18 @@
    Tekst: tittel 24 / tekst 15 / liten 13. Unntak: tekstfelt er 16 (under 16 zoomer iOS inn ved fokus).
    Valgt (bakgrunn, farge) markeres likt: ring i --ink utenfor flaten + uthevet navn. */
 
-/* ── Grein v1/v2 ─────────────────────────────────────────────────────────────
-   Tre tilstander, og v1-flaten vises KUN i den ene:
-     body.sm-v1   billing er kjent og barberen er v1  → v1-flaten, v2 skjult
-     body.sm-v2   billing er kjent og barberen er v2  → v2-flaten, v1-flaten skjult
-     (ingen)      billing er ikke kjent ennå / feilet → verken eller; v2-beholderen viser «Laster …».
-   Tidligere sto den siste tilstanden som v1 (v1-flaten var standard), så en v2-barber så v1-flaten til billing svarte. */
-body.sm-v1 #dinsideV2,body.sm-v1 .dv2-fullfor{display:none!important}
-body:not(.sm-v1) #design .v1-kun{display:none!important}
-body.sm-v2 #design .ideacard{display:none!important}   /* v2: «Ideer & ønsker» bor i Konto (sammenfoldet rad), ikke i flyten */
+/* «Ideer & ønsker» er flyttet inn under Lagre-knappen (dinside-v2.js bygg) og vises bare på Kontakt-steget (.dv2-siste).
+   I oppsettet (fokusmodus) står den ikke: der er Lagre fast nederst, og dashbordets body.fokus-regel skjuler den. */
+#dinsideV2 .ideacard{display:none}
+body:not(.fokus) #dinsideV2.dv2-siste .ideacard{display:block}
+#dinsideV2 .ideacard .btn{min-height:var(--dv2-trykk)}   /* trykkflaten i v2-flyten (minst 44 px); dashbordets .btn er 39 px på PC */
 
-#dinsideV2,.dv2-fullfor{--dv2-s05:4px;--dv2-s1:8px;--dv2-s15:12px;--dv2-s2:16px;--dv2-s3:24px;--dv2-s4:32px;--dv2-s5:48px;--dv2-felt:52px;--dv2-trykk:44px;
+/* .dv2-dialog-bak: dialogen legges på <body>, utenfor #dinsideV2 — uten tokenene der ble knappene 21 px høye og kantete. */
+#dinsideV2,.dv2-fullfor,.dv2-dialog-bak{--dv2-s05:4px;--dv2-s1:8px;--dv2-s15:12px;--dv2-s2:16px;--dv2-s3:24px;--dv2-s4:32px;--dv2-s5:48px;--dv2-felt:52px;--dv2-trykk:44px;
   --dv2-radius:12px;--dv2-tekst:.9375rem;--dv2-liten:.8125rem;--dv2-tittel:1.5rem;--dv2-innhold:680px;--dv2-pv-bredde:360px;
   --dv2-velger-h:160px;--dv2-baand-h:24px;--dv2-tommel:22px}
 /* Over 1024 px: redigering + telefonramme side om side (panelet utvides fra 680 til 680 + 40 + 360). */
-@media(min-width:1024px){ body.sm-v2 #design{max-width:1080px;margin-left:auto;margin-right:auto} }
+@media(min-width:1024px){ #design{max-width:1080px;margin-left:auto;margin-right:auto} }
 #dinsideV2 *,.dv2-dialog,.dv2-dialog *{box-sizing:border-box}
 #dinsideV2 [hidden]{display:none!important}
 .dv2-lasting{padding:var(--dv2-s4) 0;color:var(--mut);font-size:var(--dv2-tekst);line-height:1.6}
@@ -86,6 +83,7 @@ body.fokus .dv2-fld input,body.fokus .dv2-fld textarea{scroll-margin-bottom:calc
 .dv2-handle:focus-within{border-color:var(--info);box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 18%,transparent)}
 .dv2-handle span{color:var(--mut);font-size:1rem}
 .dv2-handle input{border:0!important;box-shadow:none!important;background:transparent!important;min-width:0}
+#dinsideV2 .dv2-handle input:focus,#dinsideV2 .dv2-handle input:focus-visible{outline:none}   /* ÉN ramme: :focus-within på wrapperen, ingen egen på feltet */
 .dv2-fld.har-feil .dv2-handle{border-color:var(--bad)}
 .dv2-gruppe{border:0;padding:0;min-width:0}   /* margin fra .dv2-del (fieldset har ellers egen) */
 .dv2-gruppe>legend{float:left;width:100%;margin-bottom:var(--dv2-s15)}
@@ -110,7 +108,7 @@ body.fokus .dv2-fld input,body.fokus .dv2-fld textarea{scroll-margin-bottom:calc
 /* Aksentfarge: fire prøver på én rad (Blå, Gull, Rød, Din egen). «Din egen» uten farge = fargehjul (åpner velgeren). */
 .dv2-prover{display:grid;grid-template-columns:repeat(4,1fr);gap:var(--dv2-s15)}
 .dv2-prover button{appearance:none;background:none;border:0;padding:0;font:inherit;cursor:pointer;color:var(--ink);display:flex;flex-direction:column;align-items:stretch;gap:var(--dv2-s1);min-width:0;text-align:center}
-.dv2-prover .prove{width:100%;height:var(--dv2-trykk);border-radius:var(--dv2-s1);background:linear-gradient(to right,#fff 0 33.333%,var(--palett-aksent,#0071e3) 33.333% 66.667%,#090909 66.667% 100%);border:1px solid var(--line-2);display:grid;place-items:center;transition:box-shadow .15s ease}
+.dv2-prover .prove{width:100%;height:var(--dv2-trykk);border-radius:var(--dv2-s1);background:linear-gradient(to right,#fff 0 33.333%,var(--prove-aksent,#0071e3) 33.333% 66.667%,#090909 66.667% 100%);border:1px solid var(--line-2);display:grid;place-items:center;transition:box-shadow .15s ease}
 .dv2-prover .prove.egen-tom{background:conic-gradient(from 90deg,#f43f5e,#f59e0b,#84cc16,#06b6d4,#6366f1,#d946ef,#f43f5e)}
 .dv2-prover .prove svg{width:16px;height:16px;opacity:0;transition:opacity .15s ease}
 .dv2-prover .navn{font-size:var(--dv2-liten);color:var(--mut);font-weight:500;line-height:1.2}
@@ -173,7 +171,7 @@ body.fokus .dv2-fld input,body.fokus .dv2-fld textarea{scroll-margin-bottom:calc
 .dv2-bar{margin-top:var(--dv2-s5)}
 body.fokus .dv2-bar{position:fixed;left:0;right:0;bottom:0;z-index:110;margin:0;background:var(--bg);border-top:1px solid var(--line);padding:var(--dv2-s2) var(--dv2-s3) calc(var(--dv2-s2) + env(safe-area-inset-bottom,0px))}
 /* 24 px er skrevet ut: --dv2-*-tokenene bor på #dinsideV2, INNI panelet, og finnes ikke på #design (var() ville gjort hele calc() ugyldig → 0). */
-@media(max-width:1023.98px){ body.fokus.sm-v2 #design{padding-bottom:calc(var(--dv2-bar-h,77px) + env(safe-area-inset-bottom,0px) + 24px)} }
+@media(max-width:1023.98px){ body.fokus #design{padding-bottom:calc(var(--dv2-bar-h,77px) + env(safe-area-inset-bottom,0px) + 24px)} }
 @media(min-width:1024px){ body.fokus .dv2-bar{position:sticky;left:auto;right:auto;padding-left:0;padding-right:0} }
 body.fokus .dv2-bar-inn{max-width:calc(var(--dv2-innhold) - var(--dv2-s3) * 2);margin:0 auto}
 @media(min-width:1024px){ body.fokus .dv2-bar-inn{max-width:none} }
@@ -238,6 +236,7 @@ body.fokus .dv2-bar-inn{max-width:calc(var(--dv2-innhold) - var(--dv2-s3) * 2);m
 .dv2-dialog h4{margin:0 0 8px;font-size:1.5rem;font-weight:700;letter-spacing:-.02em;line-height:1.2}
 .dv2-dialog p{margin:0 0 24px;font-size:15px;line-height:1.6;color:var(--ink-2)}
 .dv2-dialog .rad{display:flex;flex-direction:column;gap:8px}
+.dv2-dialog:focus{outline:none}   /* dialogen selv får fokus når den åpnes med trykk — ingen ring (knappene har :focus-visible) */
 @media(min-width:420px){ .dv2-dialog .rad{flex-direction:row-reverse} .dv2-dialog .rad .dv2-btn{flex:1} }
 
 #dv2Varsler:empty{display:none}

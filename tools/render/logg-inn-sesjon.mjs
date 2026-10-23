@@ -39,7 +39,7 @@ const U = `http://localhost:${PORT}/no`;
 const KEY = 'bhq-innlogging-kode';
 const PROFILE = { slug:'grand-barber', email:'g@b.no', hasPassword:true, name:'Henrik', shop:'Grand Barber',
                   address:'', tagline:'', bio:'', booking_horizon_days:28 };
-const DESIGN  = { palette:'minimal', font:'fraunces', layout:'showcase', mode:'mork' };
+const DESIGN  = { mode: 'mork', font: 'jakarta' };
 
 // Mock-ruter. sesjon=false → alt svarer 401 (ingen sesjon). sperr401 settes i case B: /services svarer 401.
 function ruter(opts) {

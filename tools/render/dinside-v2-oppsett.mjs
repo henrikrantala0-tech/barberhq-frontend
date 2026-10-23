@@ -14,6 +14,7 @@
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path'; import { spawnSync } from 'node:child_process';
 import { chromium } from 'playwright';
 import { sjekk, ferdig } from './fixtures/sjekk.mjs';
+import { TESTBILDER, rutTestbilder } from './fixtures/testbilder.mjs';
 
 const { E2E_EPOST, E2E_PASSORD } = process.env;
 if (!E2E_EPOST || !E2E_PASSORD) { console.error('Mangler E2E_EPOST/E2E_PASSORD (lokal v2-barber). Se toppen av fila.'); process.exit(2); }
@@ -43,7 +44,7 @@ const ORIGIN = `http://127.0.0.1:${PORT}`;
 const BASE = `${ORIGIN}/tools/render/prototyper/dinside-v2-oppsett.html?api=${encodeURIComponent(API)}`;
 const browser = await chromium.launch();
 let utenfor = 0;
-const BILDE = path.resolve(REPO, 'site/no/images/layout-hero.webp');
+const BILDE = TESTBILDER[2];
 
 // Logg inn ÉN gang og gjenbruk sesjonen (backendens passordvern gir 429 ved mange innlogginger på rad).
 const okt = await (async () => {

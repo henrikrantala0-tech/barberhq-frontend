@@ -14,6 +14,7 @@
 //   node tools/render/plakat-editor.mjs
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { TESTBILDER, rutTestbilder } from './fixtures/testbilder.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -27,7 +28,7 @@ await new Promise(r => server.listen(0, r));
 const PORT = server.address().port;
 // Kryss-origin bilde-server UTEN Access-Control-Allow-Origin — simulerer R2 (som ikke sender CORS).
 // Regresjonsvern for crossOrigin-fella: et slikt bilde MÅ fortsatt gi cropperInit=true (crop rect-only).
-const IMG_WEBP = fs.readFileSync(path.join(ROOT, 'no/images/layout-profil.webp'));
+const IMG_WEBP = fs.readFileSync(TESTBILDER[1]);
 const noCorsServer = http.createServer((q, r) => { r.writeHead(200, { 'Content-Type':'image/webp' }); r.end(IMG_WEBP); });
 await new Promise(r => noCorsServer.listen(0, r));
 const NOCORS_PORT = noCorsServer.address().port;
@@ -76,9 +77,9 @@ const MALER_KREM = {
   mal4:         { bilder:3, formater:{ '4:5':{ bakgrunner:['mork','beige'], qr:true } } },
   'fire-bilder':{ bilder:4, formater:{ '4:5':{ bakgrunner:['mork','beige'], qr:true } } },
 };
-const OPPLAST = path.resolve(ROOT, 'no/images/layout-profil.webp'); // ekte fil å «velge fra kamerarull»
+const OPPLAST = TESTBILDER[1]; // ekte fil å «velge fra kamerarull»
 // Ekte webp → Cropper får naturlige pikseldimensjoner i lag-3c-beskjæringen (data-URI ville gitt 0 el. feil).
-const IMAGES4 = ['bilde-1','bilde-2','bilde-3','bilde-4'].map((_,i)=>({ id:`${i+1}1111111-1111-1111-1111-111111111111`, url:'/no/images/layout-profil.webp', slot:'galleri', sort_order:i }));
+const IMAGES4 = ['bilde-1','bilde-2','bilde-3','bilde-4'].map((_,i)=>({ id:`${i+1}1111111-1111-1111-1111-111111111111`, url:'/testbilder/bilde-2.webp', slot:'galleri', sort_order:i }));
 // /layout-mock: celle-geometri i lerret-piksler per antall (2×2 for fire, én stor for ett-bilde) + aspect.
 function mockLayout(antall){
   const CV = { w:1080, h:1350 };
@@ -159,6 +160,7 @@ const rad = [];
 for (const bredde of [320, 375]) {
   const ctr = { n:0 };
   const page = await browser.newPage({ viewport:{ width:bredde, height:820 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   await page.route('**/api/**', router('vekst', 200, ctr));
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
@@ -184,6 +186,7 @@ for (const bredde of [320, 375]) {
 // mal 1 («Uten bilde») → INGEN skjoldstyrke-slider
 {
   const page = await browser.newPage({ viewport:{ width:375, height:820 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   await page.route('**/api/**', router('vekst', 200));
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
   await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
@@ -197,6 +200,7 @@ for (const bredde of [320, 375]) {
 // 403 → forståelig feil i stedet for tom iframe
 {
   const page = await browser.newPage({ viewport:{ width:375, height:820 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   await page.route('**/api/**', router('vekst', 403));
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
   await page.evaluate(() => switchPanel('vekst')); await page.waitForTimeout(900);
@@ -211,6 +215,7 @@ for (const bredde of [320, 375]) {
 // Lag 3a — 2×2: fire trykkflater over iframen, samme s (align < 2px), tap treffer riktig celle (bilde-2).
 {
   const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   await page.route('**/api/**', router('vekst', 200, null, IMAGES4));
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
@@ -229,6 +234,7 @@ for (const bredde of [320, 375]) {
 // per piksel), én reload ved slipp (2 req: status-fetch + iframe-src), gjennomsiktig håndtak. @320/375.
 for (const bredde of [320, 375]) {
   const page = await browser.newPage({ viewport:{ width:bredde, height:1000 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   let prev = 0; page.on('request', r => { if (r.url().includes('/plakat/preview')) prev++; });
   await page.route('**/api/**', router('vekst', 200, null, IMAGES4));
@@ -279,6 +285,7 @@ for (const bredde of [320, 375]) {
 {
   const ASP = Math.round((468/543)*10000)/10000;
   const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   await page.route('**/api/**', router('vekst', 200, null, IMAGES4));
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
@@ -310,6 +317,7 @@ for (const bredde of [320, 375]) {
 // Beslutning 7 — «Endre bilde»: bytt-ikon per celle → velger (på <body>) → valgt bilde lagres i p.bilder.
 {
   const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   await page.route('**/api/**', router('vekst', 200, null, IMAGES4));
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
@@ -332,6 +340,7 @@ for (const bredde of [320, 375]) {
 // Del 2 — kamerarull: «Velg bilde» har en Kamerarull-flis → opplasting blir nedskalert base64 i cellen (POST).
 {
   const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   let post = 0; page.on('request', r => { if (r.method()==='POST' && r.url().includes('/plakat/preview')) post++; });
   await page.route('**/api/**', router('vekst', 200, null, IMAGES4));
@@ -356,6 +365,7 @@ for (const bredde of [320, 375]) {
 const DESIGN_LYS = { ...DESIGN, mode:'lys' };
 for (const bredde of [320, 375]) {
   const page = await browser.newPage({ viewport:{ width:bredde, height:1000 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   const miniByCount = {}; const previewBg = {};
   page.on('request', r => { const u=r.url();
@@ -399,6 +409,7 @@ for (const bredde of [320, 375]) {
   const FIX_HTML = fs.readFileSync(path.resolve(import.meta.dirname, 'fixtures/plakat-mal2-preview.html'), 'utf8');
   for (const bredde of [320, 375]) {
     const page = await browser.newPage({ viewport:{ width:bredde, height:1000 }, deviceScaleFactor:2 });
+    await rutTestbilder(page);
     const errs = []; page.on('pageerror', e => errs.push(e.message));
     const base = router('vekst', 200, null, IMAGES, DESIGN);   // mørk barber, 2 galleri → «Ett bilde» tilgjengelig
     await page.route('**/api/**', route => { const u = new URL(route.request().url()); const pth = u.pathname;
@@ -433,6 +444,7 @@ for (const bredde of [320, 375]) {
 // crop er rect-only og trenger ikke ren canvas. Med crossOrigin ville dette gitt naturalWidth=0 → død crop.
 for (const bredde of [320, 375, 1280]) {
   const page = await browser.newPage({ viewport:{ width:bredde, height:1000 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   const XIMG = ['a','b','c','d'].map((_,i)=>({ id:`${i+1}0000000-0000-0000-0000-000000000000`, url:`http://localhost:${NOCORS_PORT}/x.webp`, slot:'galleri', sort_order:i }));
   await page.route('**/api/**', router('vekst', 200, null, XIMG, DESIGN));
@@ -458,6 +470,7 @@ for (const bredde of [320, 375, 1280]) {
 // valgt celle. Celle-ikonene skal være borte; knappene virker på valgt celle; ≥768px = to kolonner.
 for (const bredde of [320, 375, 1280]) {
   const page = await browser.newPage({ viewport:{ width:bredde, height:1100 }, deviceScaleFactor:1 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   await page.route('**/api/**', router('vekst', 200, null, IMAGES4, DESIGN));   // 4 galleri → alle tre maler tilgjengelige
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
@@ -502,6 +515,7 @@ for (const bredde of [320, 375, 1280]) {
 // INGEN ny render (skjoldet står som før), og styrke-param bærer ingen celle-referanse. Fullflate over alt.
 {
   const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   const styrkeParams = []; let celleParam = false;
   page.on('request', r => { const u=r.url(); if(u.includes('/plakat/preview')||u.includes('/plakat/render')){
@@ -530,6 +544,7 @@ for (const bredde of [320, 375, 1280]) {
 const DESIGN_SAND = { ...DESIGN, palette:'sand', mode:'lys' };   // sand-paletten er lys-only
 for (const bredde of [320, 375]) {
   const page = await browser.newPage({ viewport:{ width:bredde, height:900 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   let bgParam=null;
   page.on('request', r => { const u=r.url(); if(u.includes('/plakat/preview')){ if(r.method()==='POST'){ let b={}; try{ b=r.postDataJSON(); }catch(e){} bgParam=b.background; } else bgParam=new URL(u).searchParams.get('background'); } });
@@ -552,6 +567,7 @@ for (const bredde of [320, 375]) {
 // (b) boksen er faktisk DRAGBAR etter swap (tdy endres). Uten fiksen fanges cellene peker-eventene → FEIL.
 for (const bredde of [320, 375, 1280]) {
   const page = await browser.newPage({ viewport:{ width:bredde, height:1100 }, deviceScaleFactor:1 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   await page.route('**/api/**', router('vekst', 200, null, IMAGES4, DESIGN));
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
@@ -582,6 +598,7 @@ for (const bredde of [320, 375, 1280]) {
 // Med fiksen (behold gammel _layout + sekvensér preview etter layout) bærer preview alltid nytt bilde-id.
 for (const bredde of [320, 375]) {
   const page = await browser.newPage({ viewport:{ width:bredde, height:1000 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   const previewPlasser = [];   // image_id-lister fra hvert GET /preview
   page.on('request', r => { const u=r.url(); if(u.includes('/plakat/preview') && r.method()==='GET'){
@@ -609,6 +626,7 @@ for (const bredde of [320, 375]) {
 // (qrTillatt = 4:5-only) slo den feilaktig av. mal2: 4:5 QR aktiv → bytt til 9:16 → QR fortsatt aktiv.
 for (const bredde of [320, 375, 1280]) {
   const page = await browser.newPage({ viewport:{ width:bredde, height:1000 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   await page.route('**/api/**', router('vekst', 200, null, IMAGES4, DESIGN));
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
@@ -630,6 +648,7 @@ for (const bredde of [320, 375, 1280]) {
 // gjenåpne → miniatyr v=V2 (endret). Uten fiksen ville v= forblitt V1.
 {
   const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   let regVer = 1000;                       // V1
   const renderV = [];                      // v= fra hvert bredde=400 miniatyr-kall
@@ -657,6 +676,7 @@ for (const bredde of [320, 375, 1280]) {
 // assert crop-bildet er en data-URI + Cropper bygger (.cropper-container) + naturalWidth>0.
 {
   const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   await page.route('**/api/**', router('vekst', 200, null, IMAGES4, DESIGN));
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
@@ -681,6 +701,7 @@ for (const bredde of [320, 375, 1280]) {
 {
   const V_PUT = UTSEENDE_V + 1000;
   const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   const renderV = [], previewV = [];
   page.on('request', r => { const u=r.url();
@@ -711,6 +732,7 @@ for (const bredde of [320, 375, 1280]) {
 // dekket av bug4b (v='1000'→'2000') og B (v=String(V_PUT)); de blir stående som bevis på at tall funker.
 {
   const page = await browser.newPage({ viewport:{ width:375, height:900 }, deviceScaleFactor:1 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   await page.route('**/api/**', router('vekst', 200, null, IMAGES4, DESIGN));
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
@@ -744,6 +766,7 @@ for (const bredde of [320, 375, 1280]) {
 {
   const V_STR = '1789041600000-7';
   const page = await browser.newPage({ viewport:{ width:375, height:1000 }, deviceScaleFactor:2 });
+  await rutTestbilder(page);
   const errs = []; page.on('pageerror', e => errs.push(e.message));
   const renderV = [];
   page.on('request', r => { const u=r.url(); if(u.includes('/plakat/render')){ const q=new URL(u).searchParams; if(q.get('bredde')==='400') renderV.push(q.get('v')); } });

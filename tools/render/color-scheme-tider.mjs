@@ -41,12 +41,13 @@ const PORT = server.address().port;
 
 const PROFILE = { slug: 'grand-barber', email: 'g@b.no', hasPassword: true, name: 'Henrik',
   shop: 'Grand Barber', address: '', tagline: '', bio: '', booking_horizon_days: 28 };
-const DESIGN  = { palette: 'minimal', font: 'fraunces', layout: 'showcase', mode: 'mork' };
+const DESIGN  = { mode: 'mork', font: 'jakarta' };
 const SERVICES = { hoved: [{ name: 'Herreklipp', price: 350, min: 30 }, { name: 'Skjeggtrim', price: 200, min: 20 }],
   tillegg: [{ name: 'Hårvask', price: 80, min: 0 }] };
 const HOURS = [1,2,3,4,5].map(wd => ({ weekday: wd, is_closed: false, open_time: '10:00', close_time: '18:00', breaks: [] }))
   .concat([6,0].map(wd => ({ weekday: wd, is_closed: true, open_time: '10:00', close_time: '18:00', breaks: [] })));
-const BILLING = gratis({ page_status: 'forhandsvist' });   // delt mock, se fixtures/billing.mjs
+// live: en upublisert barber lander i oppsettet (fokusmodus, Din side) ved innlogging og ville dekket Tjenester-fanen.
+const BILLING = gratis({ page_status: 'live' });   // delt mock, se fixtures/billing.mjs
 const GOOGLE = { connected: false, scope_ok: true };
 
 const router = route => {

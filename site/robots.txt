@@ -6,7 +6,6 @@ Disallow: /no/dashboard.html
 Disallow: /no/dashboard
 Disallow: /no/logg-inn.html
 Disallow: /no/opprett-passord.html
-Disallow: /no/preview-tjenester.html
 
 Sitemap: https://trybarberhq.com/sitemap.xml
 

@@ -45,7 +45,7 @@ async function nySide(bredde, svar){
     if(p==='/api/dashboard/profile') return json(PROFIL);
     if(p==='/api/dashboard/services') return json({hoved:[],tillegg:[]});
     if(p==='/api/dashboard/hours') return json([]);
-    if(p==='/api/dashboard/design') return json({palette:'minimal',mode:'mork',font:'fraunces',layout:'showcase'});
+    if(p==='/api/dashboard/design') return json({ mode: 'mork', font: 'jakarta' });
     if(p==='/api/dashboard/preview') return route.fulfill({status:200,contentType:'text/html',body:'<html></html>'});
     return json(/images|recent|referrals|winback|rebooking|bookings/.test(p)?[]:{});
   });

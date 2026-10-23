@@ -33,18 +33,16 @@ const PORT = server.address().port;
 
 const PROFILE = { slug: 'grand-barber', email: 'g@b.no', hasPassword: true, name: 'Henrik',
   shop: 'Grand Barber', address: '', tagline: '', bio: '', booking_horizon_days: 28 };
-const DESIGN  = { palette: 'minimal', font: 'fraunces', layout: 'showcase', mode: 'mork' };
 const SERVICES = { hoved: [{ name: 'Herreklipp', price: 350, min: 30 }, { name: 'Skjeggtrim', price: 200, min: 20 }],
   tillegg: [{ name: 'Hårvask', price: 80, min: 0 }] };
 const HOURS = [1,2,3,4,5].map(wd => ({ weekday: wd, is_closed: false, open_time: '10:00', close_time: '18:00', breaks: [] }))
   .concat([6,0].map(wd => ({ weekday: wd, is_closed: true, open_time: '10:00', close_time: '18:00', breaks: [] })));
-const BILLING = gratis({ page_status: 'forhandsvist' });   // delt mock, se fixtures/billing.mjs
+const BILLING = gratis({ page_status: 'live' });   // delt mock, se fixtures/billing.mjs
 
 const router = route => {
   const p = new URL(route.request().url()).pathname;
   const json = obj => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(obj) });
   if (p === '/api/dashboard/profile')        return json(PROFILE);
-  if (p === '/api/dashboard/design')         return json(DESIGN);
   if (p === '/api/dashboard/services')       return json(SERVICES);
   if (p === '/api/dashboard/hours')          return json(HOURS);
   if (p === '/api/dashboard/billing/status') return json(BILLING);

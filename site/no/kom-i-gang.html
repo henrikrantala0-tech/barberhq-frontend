@@ -556,8 +556,8 @@ async function submitFinal(){
     // slug:null — skill de tre tilstandene på status-feltet:
     if(parseOk && data && data.status==='email_taken'){ visObError(data.melding, true); return; }        // konto finnes → Logg inn
     // Merk: 'timezone_required' håndteres IKKE her — den kan ikke oppstå fra no/. market utledes
-    // til 'NO' (L2M[lang='no']), og US-onboarding går via en/kom-i-gang.html (egen land-velger +
-    // #o-tz, market fra valget). En uventet slik status faller trygt til fail-closed under.
+    // til 'NO' (L2M[lang='no']). (en/kom-i-gang.html med land-velger for US/UK er slettet 23.10.2026 sammen med sv/da/en.)
+    // En uventet slik status faller trygt til fail-closed under.
     // FAIL-CLOSED: parse-feil ELLER 2xx uten slug og uten kjent status (bygget kastet). Vi kan IKKE
     // bekrefte at siden ble bygd → det er en FEIL, aldri #obDone. (#obDone er nå unådd — se rapport.)
     visObError(SUBMIT_ERR.byggfeil, false);

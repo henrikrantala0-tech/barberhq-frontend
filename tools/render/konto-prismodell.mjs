@@ -14,8 +14,8 @@
 //   • «Oppgrader til Vekst» → POST /billing/checkout med {plan:'vekst'} → navigerer til url
 //   • Stripe-retur: session_id → ÉN synk, «Aktiverer Vekst …» mens den går, suksess-/ventebanner;
 //     live=1 uten session_id → ventebanner, INGEN synk; avbrutt → «Du kan oppgradere når som helst.»
-//   • trial-nudgen og info-ikonet ved «Send etter» er FJERNET; «Drevet av»-prislinja, «Din side»-CTA,
-//     suksesskortet etter publisering og lås-flatene (Gratis) har ny tekst
+//   • trial-nudgen og info-ikonet ved «Send etter» er FJERNET; «Drevet av»-prislinja,
+//     lås-flatene (Gratis) har ny tekst; publisering viser INGEN suksessdialog (kortet er slettet)
 //   • INGEN request når prod (api.trybarberhq.com): alt under /api/** mockes, resten avbrytes
 //
 // page.on('pageerror') er syntaks-vakten: en parse-feil i dashboard-JS-en tar ned ALT stille.
@@ -326,32 +326,15 @@ for(const b of [320,375]){
     await g.page.locator('#attrKort').screenshot({path:path.join(OUT,`${b}-hentet-inn-gratis.png`)});
     await g.page.close();
   }
-  { // «Din side»-CTA (forhandsvist) + suksesskortet etter publisering
-    const {page,errs}=await nySide(b,{billing:()=>gratis({page_status:'forhandsvist'}), put:()=>({ok:true,...gratis()})},'/no/dashboard.html#dinside');
-    await page.waitForTimeout(900);
-    const note=await tekstAv(page,'.dinside-cta-note');
-    if(b===375) push('Din side-CTA: note', note==='Publiser når du er fornøyd. Det er gratis, uten kort.'?[]:[`«${note}»`], errs);
-    await page.locator('#dinsideCta').screenshot({path:path.join(OUT,`${b}-dinside-cta.png`)});
-    await page.click('#dinsidePubliser'); await page.waitForTimeout(700);
-    const kort=await page.$eval('#suksessOverlay .suksess-kort',e=>e.innerText.replace(/\s*\n+\s*/g,' | ').trim()).catch(()=>'—');
-    const tittel=await tekstAv(page,'#suksessTittel'), sub=await tekstAv(page,'#suksessOverlay .suksess-linje.sub');
-    if(b===375){
-      push('suksesskort: tekst', [...(tittel==='Siden din er klar.'?[]:[`tittel «${tittel}»`]),
-        ...(sub==='Nå får vi første booking gjennom den.'?[]:[`undertekst «${sub}»`]),
-        ...(/30 dager|prøve/i.test(kort)?[`gammel tekst i kortet «${kort}»`]:[])], errs);
-      console.log('SUKSESSKORT (hele teksten):', kort);
-    }
-    // Uthevet linje + linjebrekk: ingen enkeltord alene på siste linje i noen av kortets tekster (320 og 375).
-    const brekk=await page.$$eval('#suksessTittel, #suksessOverlay .suksess-linje',l=>l.map(e=>{
-      const out=[]; let y=null; const w=document.createTreeWalker(e,NodeFilter.SHOW_TEXT); let n;
-      while((n=w.nextNode())){ const re=/\S+/g; let m; while((m=re.exec(n.data))){ const r=document.createRange(); r.setStart(n,m.index); r.setEnd(n,m.index+m[0].length);
-        const top=Math.round(r.getBoundingClientRect().top); if(y===null||Math.abs(top-y)>4){out.push([]);y=top;} out.at(-1).push(m[0]); } }
-      return out.map(x=>x.join(' '));}));
-    const linja=await tekstAv(page,'#suksessOverlay .suksess-linje:not(.sub)');
-    push(`suksesskort @${b}: linjer`, [...(linja==='Legg lenka i bioen og del den på story'?[]:[`uthevet linje «${linja}»`]),
-      ...brekk.filter(l=>l.length>1&&!l.at(-1).includes(' ')).map(l=>`enkeltord alene: ${l.map(x=>'«'+x+'»').join(' / ')}`)], errs);
-    console.log(`SUKSESSKORT @${b} linjebrekk:`, JSON.stringify(brekk));
-    await page.locator('#suksessOverlay .suksess-kort').screenshot({path:path.join(OUT,`${b}-suksesskort.png`)});
+  { // Publisering fra Konto (tilstand 0): det gamle suksesskortet («Siden din er klar.») er SLETTET (23.10) —
+    // ingen dialog etter publisering; Konto tegnes på nytt fra PUT-svaret.
+    const {page,errs}=await nySide(b,{billing:()=>gratis({page_status:'forhandsvist'}), put:()=>({ok:true,...gratis()})});
+    await aapneKonto(page);
+    await page.click('#kontoAksjon'); await page.waitForTimeout(700);
+    const rest=await page.evaluate(()=>({ overlay:!!document.querySelector('#suksessOverlay,.suksess-kort'), fn:typeof window.visSuksesskort,
+      dialog:[...document.querySelectorAll('[role=dialog]')].some(d=>d.getClientRects().length>0&&getComputedStyle(d).visibility!=='hidden') }));
+    push(`publiser @${b}: ingen suksessdialog`, [...(rest.overlay?['#suksessOverlay finnes']:[]), ...(rest.fn!=='undefined'?['visSuksesskort finnes']:[]),
+      ...(rest.dialog?['en dialog er åpen etter publisering']:[])], errs);
     await page.close();
   }
   { // 2.2 info-ikonet ved «Send etter» er FJERNET: Rebooking-kortet i prøveperioden, rebooking på

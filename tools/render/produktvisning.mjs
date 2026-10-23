@@ -206,10 +206,10 @@ for(const bredde of [320,MOBIL,1280]){
         return d?((d.querySelector('.pv-witext')||{}).textContent||'').trim():'';})(),
       rekordNote:((sec.querySelector('.pv-dash .rekord-note')||{}).textContent||'').trim(),
       // Klon-sjekker: elementer som KUN finnes hvis den ekte markupen faktisk kom med.
-      svcKort:sec.querySelectorAll('.pv-book .svc-card').length,
-      tidsluker:sec.querySelectorAll('.pv-book .slot-btn').length,
+      svcKort:sec.querySelectorAll('.mock:not(.pv-klon) .pv-book .service').length,
+      tidsluker:sec.querySelectorAll('.mock:not(.pv-klon) .pv-book .time').length,
       kpiKort:sec.querySelectorAll('.pv-dash .stat').length,
-      accSeksjoner:sec.querySelectorAll('.pv-book .acc-section').length,
+      accSeksjoner:sec.querySelectorAll('.mock:not(.pv-klon) .pv-book .v2-tillegg').length,
       // TILSTANDSPRØVE. En telling sier bare at markupen kom med. Den maskinelle
       // CSS-utvelgelsen ser ikke klasser som settes ved kjøring, så .svc-card.sel,
       // .slot-btn.sel og .acc-section.done kan mangle helt uten at antallet endrer seg —
@@ -217,7 +217,7 @@ for(const bredde of [320,MOBIL,1280]){
       // Prøven er palett-uavhengig med vilje: den krever at klassen ENDRER computed stil,
       // ikke at fargen er en bestemt verdi. Da overlever den at paletten byttes.
       tilstand:(function(){
-        const bok=sec.querySelector('.pv-book'), ut={};
+        const bok=sec.querySelector('.mock:not(.pv-klon) .pv-book'), ut={};
         const dash=[...sec.querySelectorAll('.pv-dash')].find(x=>x.offsetParent!==null&&x.querySelector('.pv-fill'));
         const stat=dash&&dash.querySelector('.stat');
         ut.kpiKort = !stat ? 'MANGLER' : stat.offsetParent===null ? 'SKJULT'
@@ -225,9 +225,9 @@ for(const bredde of [320,MOBIL,1280]){
           : getComputedStyle(stat).backgroundColor===getComputedStyle(dash).backgroundColor
             ? 'SAMME SOM BAKGRUNN' : 'flate ✓';
         if(!bok){ ut.svcKort=ut.tidsluker=ut.acc=ut.datochip='MANGLER'; return ut; }
-        // Arket er skjult i utgangstilstand — vi åpner det for å måle, og lukker etterpå.
-        const varApen=bok.classList.contains('vis-sheet');
-        bok.classList.add('vis-sheet');
+        // v2: tjenestene står på forsiden (utgangstilstanden); dag/tid står i flyten (vis-sheet), og
+        // tidspanelet er skjult til en dato er valgt — begge åpnes for å måle og settes tilbake etterpå.
+        const varKlasser=bok.className, tider=bok.querySelector('.pv-tider'), varSkjult=tider&&tider.hidden;
         // Kildens tilstandsregler ligger bak transitions (.svc-card har
         // «transition:border-color .12s»). Leser man computed style straks etter at
         // klassen er satt, får man verdien FØR overgangen, og prøven melder «ingen stil»
@@ -255,12 +255,14 @@ for(const bredde of [320,MOBIL,1280]){
           el.classList.remove(kl);
           return foer===etter ? ('INGEN .'+kl+'-STIL ✗') : ('.'+kl+' virker ✓');
         };
-        ut.svcKort  =proev('.svc-card','sel');
-        ut.tidsluker=proev('.slot-btn','sel');
-        ut.acc      =proev('.acc-section','done','.acc-t');
-        ut.datochip =proev('.date-chip','sel');
+        bok.className='pv-book';
+        ut.svcKort  =proev('.service','selected','.v2-tj-hake');
+        ut.acc      =proev('.v2-tillegg','open');
+        bok.className='pv-book vis-sheet'; if(tider) tider.hidden=false;
+        ut.tidsluker=proev('.time','chosen');
+        ut.datochip =proev('.day:not([disabled])','chosen');
         stopp.remove();
-        if(!varApen) bok.classList.remove('vis-sheet');
+        bok.className=varKlasser; if(tider) tider.hidden=varSkjult;
         return ut;
       })(),
       antallMock:mocks.length,
@@ -305,7 +307,7 @@ for(const bredde of [320,MOBIL,1280]){
     'tidsluker':m.tidsluker+' · '+m.tilstand.tidsluker,
     'datochip':m.tilstand.datochip,
     'KPI-kort':m.kpiKort+' · '+m.tilstand.kpiKort,
-    'acc':m.accSeksjoner+' · '+m.tilstand.acc,
+    'tillegg':m.accSeksjoner+' · '+m.tilstand.acc,
     'peek V/H':(m.peekV===null?'—':m.peekV)+' / '+(m.peekH===null?'—':m.peekH),
     'peek ≥20': (m.peekV===null&&m.peekH===null)?'—'
       :((m.peekV===null||m.peekV>=20)&&(m.peekH===null||m.peekH>=20)?'ja ✓':'NEI ✗'),
@@ -612,19 +614,11 @@ for(const bredde of [320,MOBIL,1280]){
   await ctx.close();
 }
 
-// ── Tilstand 6: bekreftelsen ligger der produktet legger den ────────────────────
-// Klonen brukte <div class="bk-success"> — men «bk-success» er kildens ID, ikke en
-// klasse. Kildens container heter .success-wrap og bærer text-align:center og
-// padding:40px 20px (booking-module.cjs:246). Uten klassen sto bekreftelsen
-// venstrestilt og uten luft, med alt innholdet klemt mot toppen.
-//
-// FASIT-TALLENE er målt mot bookingsiden backend serverer (booking-module.cjs) ved å gjøre
-// nøyaktig showSuccess() sine DOM-steg (skjul #acc-wrap og #bk-back, vis #bk-success — ingen
-// booking): success-wrap starter 56px inn i .sheet-inner, og ✓-ikonet 96px inn (likt på 320/375).
-// Ny måling 10.10: den gamle fasiten 115/155 var målt 10.08, FØR backend begynte å skjule
-// «Tilbake» (#bk-back) på bekreftelsen (5664384, 04.09). Med Tilbake synlig gir samme måling
-// fortsatt 115/155 — knappens 59px er hele forskjellen. Endres kildens padding eller .back-sheet,
-// skal disse tallene endres MED en ny måling — ikke justeres til det som får testen grønn.
+// ── Tilstand 6: kvitteringen (v2) er den ENE synlige flaten ──────────────────────
+// v2-klonen har forsiden og tre flyt-steg i samme kort, styrt av klassene på .pv-book. Sluttilstanden
+// (vis-success, også den frysBooking() setter på karusellens kopier) skal vise kvitteringen og INGENTING
+// annet, og tittel + klokkeslett må stå innenfor skjermen. Utseendet mot den ekte v2-sida dommes i
+// booking-tilstander.mjs (computed style, element for element) — her bare at tilstanden faktisk tennes.
 {
   const ctx=await browser.newContext({viewport:{width:1280,height:900},deviceScaleFactor:1});
   const page=await ctx.newPage();
@@ -634,36 +628,23 @@ for(const bredde of [320,MOBIL,1280]){
   await page.waitForTimeout(700);
   const s6=await page.evaluate(()=>{
     const b=document.getElementById('pvBook');
-    b.className='pv-book vis-sheet vis-success';
-    const w=b.querySelector('.success-wrap');
-    if(!w) return {mangler:true};
-    const ico=w.querySelector('.success-ico');
-    const skjerm=b.closest('.iph-screen'), ark=w.closest('.sheet-inner');
-    // Skalaen gås oppover FRA elementet: .pv-scale ligger inni .pv-book, så en kjede
-    // som starter høyere oppe bommer på den og gir tall i feil enhet.
-    const sk=(function(){let x=1,e=w;while(e&&e!==document.body){const t=getComputedStyle(e).transform;
-      if(t&&t!=='none')x*=parseFloat(t.split(/[(,]/)[1])||1;e=e.parentElement;}return x;})();
-    const rS=skjerm.getBoundingClientRect(), rA=ark.getBoundingClientRect(),
-          rW=w.getBoundingClientRect(), rI=ico.getBoundingClientRect();
-    const cs=getComputedStyle(w);
+    b.className='pv-book vis-sheet vis-skjema vis-success';
+    const synlig=sel=>{const e=b.querySelector(sel); return !!e&&e.offsetParent!==null;};
+    const skjerm=b.closest('.iph-screen').getBoundingClientRect();
+    const inne=sel=>{const e=b.querySelector(sel); if(!e)return false; const r=e.getBoundingClientRect();
+      return r.top>=skjerm.top-1&&r.bottom<=skjerm.bottom+1;};
     return {
-      antall:b.querySelectorAll('.success-wrap').length,
-      textAlign:cs.textAlign, padding:cs.padding,
-      // Ikonet mot SKJERMENS midte, i skjermpiksler — det er slik øyet ser det.
-      ikonBom:Math.round(Math.abs((rI.left+rI.width/2)-(rS.left+rS.width/2))),
-      wrapTop:Math.round((rW.top-rA.top)/sk),
-      ikonTop:Math.round((rI.top-rA.top)/sk),
+      flater:['.pv-v2-forside','.pv-v2-dato','.pv-v2-skjema','.pv-v2-kvittering'].filter(synlig).join(' '),
+      tittel:(b.querySelector('.pv-v2-kvittering .confirmation-title')||{}).textContent||'MANGLER',
+      inne:inne('.pv-v2-kvittering .confirmation-title')&&inne('.pv-v2-kvittering .receipt-lead strong'),
     };
   });
-  oppforsel.push({test:'tilstand 6: kildens container',
-    resultat:`${s6.antall} × .success-wrap, ${s6.textAlign}, ${s6.padding}`,
-    ventet:'1, center, 40px 20px',
-    ok:(s6.antall===1&&s6.textAlign==='center'&&s6.padding==='40px 20px')?'✓':'✗'});
-  oppforsel.push({test:'tilstand 6: ✓-ikon sentrert i skjermen',
-    resultat:s6.ikonBom+'px fra midten', ventet:'≤2px', ok:s6.ikonBom<=2?'✓':'✗'});
-  oppforsel.push({test:'tilstand 6: vertikal posisjon som fasiten',
-    resultat:`wrap ${s6.wrapTop}px / ikon ${s6.ikonTop}px`, ventet:'56px / 96px (±4)',
-    ok:(Math.abs(s6.wrapTop-56)<=4&&Math.abs(s6.ikonTop-96)<=4)?'✓':'✗'});
+  oppforsel.push({test:'tilstand 6: kun kvitteringen synlig',
+    resultat:s6.flater||'ingen', ventet:'.pv-v2-kvittering', ok:s6.flater==='.pv-v2-kvittering'?'✓':'✗'});
+  oppforsel.push({test:'tilstand 6: tittel', resultat:s6.tittel, ventet:'Timen er bekreftet',
+    ok:s6.tittel==='Timen er bekreftet'?'✓':'✗'});
+  oppforsel.push({test:'tilstand 6: tittel + klokkeslett innenfor skjermen', resultat:s6.inne?'ja':'nei',
+    ventet:'ja', ok:s6.inne?'✓':'✗'});
   oppforsel.push({test:'tilstand 6: jsfeil', resultat:errs.length?errs.join('; ').slice(0,40):'ingen',
     ventet:'ingen', ok:errs.length?'✗':'✓'});
   await ctx.close();
@@ -968,26 +949,24 @@ for(const bredde of [320,MOBIL,1280]){
   // testen og tilstandsbildene snakker om det samme.
   const les=()=>page.evaluate(()=>{
     const b=document.getElementById('pvBook');
-    const sek=b.querySelectorAll('.acc-section');
-    const apen=i=>sek[i].querySelector('.acc-bd').classList.contains('open');
+    // v2-klonen (bygg-bookingklon-v2.mjs): tilstandsklassene på .pv-book + valgklassene sidas egen JS setter.
     const n=b.querySelector('input[autocomplete="name"]'), t=b.querySelector('input[autocomplete="tel"]');
-    const svc=b.querySelector('.svc-card'), dag=b.querySelector('.pv-dag'),
+    const svc=b.querySelector('.pv-svc'), dag=b.querySelector('.pv-dag'),
           slot=b.querySelector('.pv-anim-slot');
     const tilstand =
       b.classList.contains('vis-success') ? '6 bekreftelse' :
-      !b.classList.contains('vis-sheet')  ? '1 forside' :
-      apen(2) ? '5 opplysninger' :
-      apen(1) ? (slot.classList.contains('sel') ? '4 tid'
-               : dag.classList.contains('sel') ? '3b dato valgt' : '3 velg dato') :
-      (svc.classList.contains('sel') ? '2b tjeneste valgt' : '2 tjenestevalg');
+      b.classList.contains('vis-skjema')  ? '5 opplysninger' :
+      b.classList.contains('vis-sheet')   ? (slot.classList.contains('chosen') ? '4 tid'
+               : dag.classList.contains('chosen') ? '3b dato valgt' : '3 velg dato') :
+      (svc.classList.contains('selected') ? '2 tjeneste valgt' : '1 forside');
     return {tilstand, navn:n?n.value:'?', tlf:t?t.value:'?'};
   });
   const markorer=await page.evaluate(()=>{
     const b=document.getElementById('pvBook');
-    return {slot:!!b.querySelector('.pv-anim-slot'), neste2:!!b.querySelector('.pv-next2'),
-      se:!!b.querySelector('.see-float'), neste1:!!b.querySelector('.acc-next'),
-      svc:!!b.querySelector('.svc-card'), dag:!!b.querySelector('.pv-dag'),
-      send:!!b.querySelector('.sub-btn')};
+    return {svc:!!b.querySelector('.pv-svc'), neste1:!!b.querySelector('.pv-neste1'),
+      dag:!!b.querySelector('.pv-dag'), tider:!!b.querySelector('.pv-tider'),
+      slot:!!b.querySelector('.pv-anim-slot'), neste2:!!b.querySelector('.pv-next2'),
+      send:!!b.querySelector('.pv-send')};
   });
   const alleMarkorer=Object.values(markorer).every(Boolean);
   oppforsel.push({test:'booking: animasjonsmarkører finnes',
@@ -1001,9 +980,10 @@ for(const bredde of [320,MOBIL,1280]){
   const t0=Date.now();
   const punkter=[
     [ 1000,'1 forside',        null,   null],
-    [ 3400,'2b tjeneste valgt',null,   null],
-    [ 4700,'3 velg dato',      null,   null],
-    [ 6400,'4 tid',            null,   null],
+    [ 2700,'2 tjeneste valgt', null,   null],
+    [ 4200,'3 velg dato',      null,   null],
+    [ 5300,'3b dato valgt',    null,   null],
+    [ 6500,'4 tid',            null,   null],
     [ 9000,'5 opplysninger',   'Marcus',''],
     [10800,'5 opplysninger',   'Marcus','900 00 000'],
     [12500,'6 bekreftelse',    'Marcus','900 00 000'],

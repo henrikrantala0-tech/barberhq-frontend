@@ -47,8 +47,7 @@ function base() {
     sms_tilbud_avvist_at: null,
     sms_paaminnelse_eksempel: 'Hei Ola! Minner om timen din hos Grand Barber i morgen kl. 14:00.',
     plakater_doede: false,
-    // 084: sidemal v1/v2 + første gang siden ble synlig. v1 er standard; bruk v2() for en v2-barber.
-    sidemal: 'v1',
+    // Første gang siden ble synlig (null = aldri publisert).
     publisert_at: null,
   };
 }
@@ -67,8 +66,9 @@ export const prove = (over = {}) => billing({
   ...over,
 });
 
-// v2-barber: live som standard (publisert_at satt), Gratis-plan. For oppsettet (ikke live): v2({ page_status: 'forhandsvist', publisert_at: null }).
-export const v2 = (over = {}) => billing({ sidemal: 'v2', page_status: 'live', publisert_at: dagerFraNaa(-3), ...over });
+// Publisert barber (live, publisert_at satt), Gratis-plan. Navnet er fra da Din side hadde to maler.
+// For oppsettet (ikke live): v2({ page_status: 'forhandsvist', publisert_at: null }).
+export const v2 = (over = {}) => billing({ page_status: 'live', publisert_at: dagerFraNaa(-3), ...over });
 
 export const vekst = (over = {}) => billing({
   subscription_status: 'active', plan: 'vekst',

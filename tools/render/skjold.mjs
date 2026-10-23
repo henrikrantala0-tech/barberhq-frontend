@@ -288,7 +288,7 @@ console.log('\n=== RACE-ASSERT (deep-link #vekst, Basis, treg billing) ===');
     const json=(o)=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(o)});
     if(p==='/api/dashboard/billing/status'){ await new Promise(r=>setTimeout(r,800)); return json(billing('basis')); }
     if(p==='/api/dashboard/profile') return json(PROFILE);
-    if(p==='/api/dashboard/design') return json({palette:'minimal',font:'fraunces',layout:'showcase',mode:'mork'});
+    if(p==='/api/dashboard/design') return json({ mode: 'mork', font: 'jakarta' });
     if(p==='/api/dashboard/settings') return json(nyState());
     if(p==='/api/dashboard/sms-preview') return json({kind:new URL(req.url()).searchParams.get('kind'),body:'Hei',tegn:3,segmenter:1,gsm7:true,transaksjonell:true});
     if(p==='/api/dashboard/preview') return route.fulfill({status:200,contentType:'text/html',body:'<!doctype html><body></body>'});
@@ -333,7 +333,7 @@ console.log(`\n=== BILLING-FEIL-ASSERT (deep-link #vekst, billing 500 → «Prø
     const json=o=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(o)});
     if(p==='/api/dashboard/billing/status'){ if(!billingOk) return route.fulfill({status:500,contentType:'application/json',body:'{"error":"x"}'}); return json(billing(plan)); }
     if(p==='/api/dashboard/profile') return json(PROFILE);
-    if(p==='/api/dashboard/design') return json({palette:'minimal',font:'fraunces',layout:'showcase',mode:'mork'});
+    if(p==='/api/dashboard/design') return json({ mode: 'mork', font: 'jakarta' });
     if(p==='/api/dashboard/settings') return json({sms_paaminnelse_enabled:true,sms_rebooking_enabled:true,rebooking_interval_days:35,referral_discount_pct:20,referral_reward_recipient:'begge',loyalty_enabled:true,loyalty_threshold:10,loyalty_pct:100,loyalty_count_history:false});
     if(p==='/api/dashboard/attribution') return json(ATTR);
     if(p==='/api/dashboard/momentum') return json({show:true,overdue:1,returning:20});

@@ -89,7 +89,7 @@ const SVAR={
   '/api/dashboard/settings':{sms_paaminnelse_enabled:true,sms_rebooking_enabled:true,
     rebooking_interval_days:35,referral_reward_recipient:'begge',referral_discount_pct:20,
     payment_methods:['Vipps','Kort','Kontant']},
-  '/api/dashboard/design':{palette:'mint',font:'fraunces',layout:'profil',mode:'mork'},
+  '/api/dashboard/design':{ mode: 'mork', font: 'jakarta' },
   '/api/dashboard/google/status':{connected:true,scope_ok:true,google_email:'henrik@grandbarber.no'},
   '/api/dashboard/referrals':[{id:'r1',verver:'Markus Lie',ny:'Adam Sø',created_at:iso(-9),
                                recipient:'begge',discount_pct:20,status:'utlost'}],
@@ -155,7 +155,7 @@ const LISTER={
   oversikt:[['#stats',2],['#chartBars',7],['#drivenBy',1],['#upcomingList',1]],
   vekst:   [['#wbList',1]],
   tjenester:[['#hovedList',3],['#tilleggList',2],['#hoursList',7],['#payList',2]],
-  design:  [['#sideAccs',3]],
+  design:  [['#dv2Steg',4]],   // fire steg: Profil → Utseende → Bilder → Kontakt
   abonnement:[['#kontoSider',6]],   // seks seksjoner + bunnen (SMS-kortet er skjult på Vekst)
 };
 

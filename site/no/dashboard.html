@@ -22,7 +22,6 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800&display=swap" rel="stylesheet">
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Plus+Jakarta+Sans:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="lib/cropper.min.css">
 <style>
   :root{
@@ -52,7 +51,7 @@
   /* <button> arver IKKE font-family fra body (UA gir «MS Shell Dlg» i WebKit / «Arial» i Chromium →
      serif-aktig på enkelte systemer). ÉN felles grunnregel så ALLE knapper bruker Inter som resten av
      dashbordet — ikke per knapp. Fanget 22 knapper på UA-font (.tab, .svc-rm, .pub-copy, .crop-btn-*,
-     .slot-popup-btn, .pw-toggle, .fokus-x, .suksess-x, .plakat-kort m.fl.). Per-element-regler
+     .pw-toggle, .fokus-x, .plakat-kort m.fl.). Per-element-regler
      med egen font vinner på spesifisitet og beholdes bevisst. Samme
      rot-årsak som kom-i-gang .btn. */
   button{font-family:inherit}
@@ -61,6 +60,16 @@
      spredte per-element-regler; knapper/lenker/faner/piller manglet konsistent ring. De eksisterende
      per-element-reglene (.acc-head/.skjold m.fl.) er mer spesifikke og beholder sine egne offset. */
   a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
+  /* Dialogen selv får fokus når den åpnes med trykk (fokuserDialog) — ingen ring; kontrollene inni har :focus-visible. */
+  [role=dialog][tabindex="-1"]:focus{outline:none}
+  /* ÉN felles lukkeknapp (X) for alle dialoger, ark og kort (23.10). Ingen boks, ramme eller bakgrunn — heller ikke
+     ved hover/trykk — bare ikonet: SVG 24 px, 2 px strek, var(--mut) (leses både på lyse flater og på de alltid-mørke
+     plakatlagene, i lys og mørk). Trykkflaten er 44×44 (usynlig). Fokusring kun ved Tab (den felles :focus-visible
+     over). Utseendet bor BARE her; dialogens egen klasse (.pause-modal-close, .cal-close …) gir kun plassering.
+     Ikonet kommer fra LUKK_X_SVG / lagLukkX() i JS — samme markup i statisk HTML. */
+  .lukk-x{appearance:none;-webkit-appearance:none;display:inline-flex;align-items:center;justify-content:center;flex:0 0 auto;width:44px;height:44px;min-width:44px;min-height:44px;padding:0;border:0;border-radius:8px;background:transparent;color:var(--mut);cursor:pointer;line-height:0;-webkit-tap-highlight-color:transparent}
+  .lukk-x[hidden]{display:none}
+  .lukk-x svg{display:block;width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;pointer-events:none}
   /* ÉN grunnregel for alle skjemafelt i dashbordet: minst 16px. Under 16px zoomer iOS Safari inn
      ved fokus, og den zoomede sida kan dras sidelengs. Kompakthet løses med BREDDE, aldri med
      skrift under 16px. Ingen per-felt-font under dette — hold det slik. */
@@ -231,56 +240,10 @@
   .ref p{font-size:13px;color:var(--ink-2);margin-bottom:4px}
   .ref .small{font-size:12px;color:var(--mut)}
 
-  /* Slot-bokser (Bilder — trekkspill i «Din side») */
-  /* .bilder-block er FJERNET 08.08: den ga topp-marg + skillelinje for å skille Bilder fra
-     Design da begge lå løst i samme panel. Trekkspillet gjør nå den jobben. */
-  .slot-hint{font-size:12px;color:var(--mut);margin:-6px 0 16px;line-height:1.45}
-  .slot-hint:empty{display:none}
-  /* Låsen i forhåndsvisning (.slots-locked: pointer-events:none + .slots-lock-note) er FJERNET 13.10:
-     bilder er ikke knyttet til layout, så boksene er trykkbare også før layouten er lagret — første
-     opplasting lagrer layouten (handleUpload). Den tomme boksen er oppfordringen. */
-  .slot-alt-lenke{margin:6px auto 0;justify-content:center;text-align:center}
-  .bilder-feil{font-size:13px;font-weight:600;color:var(--bad);line-height:1.45;margin:0 0 14px}
-  /* Showcase-uten-bilder-guard (Din side). Myk advarsel — blokkerer ALDRI lagring/sletting hardt,
-     gjør bare konsekvensen tydelig. Venstre aksent i solid hex (ikke rgba/opacity → overlever lys
-     modus, jf. palett-notatet). [oversettelse: sv/da/en] */
-  .bilde-guard{background:var(--surface);border:1px solid var(--line);border-left:3px solid #d98a3d;border-radius:8px;padding:11px 13px;margin-top:12px;font-size:13px;color:var(--ink-2);line-height:1.45}
-  .bilde-guard p{margin:0 0 10px}
-  .bilde-guard .sg-actions{display:flex;flex-wrap:wrap;gap:8px}
-  .bilde-guard button{appearance:none;border:1px solid var(--line-2);background:var(--bg);color:var(--ink);font:inherit;font-size:12.5px;font-weight:600;padding:8px 13px;border-radius:7px;cursor:pointer;min-height:38px}
-  .bilde-guard button.sg-primary{background:var(--info);border-color:var(--info);color:#fff}
-  /* Layoutens bærende bilde mangler, men siden bruker et reservebilde (bilde_status 'reserve'). */
-  .slot-reserve{font-size:12px;color:var(--mut);margin:-4px 0 10px;line-height:1.45}
-  .slot-section{margin-bottom:22px}
-  .slot-label{font-size:11px;font-weight:600;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin-bottom:10px}
-  .slot-portrett-wrap{display:flex;justify-content:center}
-  .slot-box{position:relative;cursor:pointer;border-radius:12px;overflow:hidden;background:var(--surface);border:1.5px dashed var(--line-2);display:flex;align-items:center;justify-content:center;transition:border-color .15s}
-  .slot-box:hover{border-color:var(--ink-2)}
-  .slot-box.filled{border-style:solid;border-color:var(--info)}
-  .slot-box img{width:100%;height:100%;object-fit:cover;display:block}
-  .slot-box .slot-plus{font-size:28px;color:var(--line-2);pointer-events:none}
-  .slot-wrap{position:relative;display:block;width:100%}
-  .slot-portrett-wrap .slot-wrap{display:inline-block;width:auto}
-  .slot-actions{position:absolute;top:6px;right:6px;display:flex;gap:4px;z-index:2}
-  .slot-act-btn{width:26px;height:26px;border-radius:6px;border:0;background:rgba(10,10,10,.72);color:#fff;cursor:pointer;font-size:13px;line-height:1;display:flex;align-items:center;justify-content:center;transition:background .12s;position:relative}
-  .slot-act-btn:hover{background:rgba(60,60,60,.9)}
   /* 44px trykkflate uten å endre visuell størrelse: usynlig ::after sentreres på knappen
      og tvinges til minst 44x44 (min-width/height) mens knappen beholder sin egen størrelse.
      Klikk på ::after bobler til knappen. Gjelder små ikon-/tekstknapper. WCAG 2.5.5. */
-  .slot-act-btn::after,.noshowbtn::after,.verv-btn::after,.suksess-x::after,.pause-modal-close::after,body.fokus .fokus-x::after,.svc-rm::after,.di-pv-link::after{content:"";position:absolute;top:50%;left:50%;width:100%;height:100%;min-width:44px;min-height:44px;transform:translate(-50%,-50%)}
-  .slot-menu-btn:hover{background:var(--bad)}
-  .slot-popup{position:fixed;z-index:300;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.55);min-width:136px;overflow:hidden;display:none}
-  .slot-popup.open{display:block}
-  .slot-popup-btn{display:block;width:100%;text-align:left;padding:10px 16px;font-size:13px;font-weight:500;border:0;background:transparent;color:var(--ink);cursor:pointer;white-space:nowrap}
-  .slot-popup-btn:hover{background:var(--line)}
-  .slot-popup-btn.danger:hover{background:var(--bad);color:#fff}
-  .slot-portrett{width:100px;height:100px;border-radius:50%!important}
-  .slot-hero{aspect-ratio:9/19.5;width:100%}
-  .slot-galleri-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-  .slot-galleri-item{aspect-ratio:3/4}
-  .slot-direkte-msg{text-align:center;padding:36px 20px;border:1.5px dashed var(--line);border-radius:12px;color:var(--mut)}
-  .slot-direkte-msg .dm-icon{font-size:32px;display:block;margin-bottom:12px;opacity:.5}
-  .slot-direkte-msg p{font-size:13px;line-height:1.6;max-width:260px;margin:0 auto}
+  .noshowbtn::after,.verv-btn::after,.svc-rm::after,.di-pv-link::after{content:"";position:absolute;top:50%;left:50%;width:100%;height:100%;min-width:44px;min-height:44px;transform:translate(-50%,-50%)}
 
   /* Hours */
   .day{display:flex;align-items:center;gap:12px;padding:12px 18px;border-bottom:1px solid var(--line)}
@@ -307,7 +270,7 @@
   .pause-modal-backdrop[hidden]{display:none}
   .pause-modal{background:var(--surface);width:100%;max-width:440px;border-radius:16px 16px 0 0;padding:20px;position:relative;box-shadow:0 -6px 30px rgba(0,0,0,.2);max-height:88vh;overflow-y:auto}
   @media(min-width:561px){.pause-modal-backdrop{align-items:center}.pause-modal{border-radius:14px}}
-  .pause-modal-close{position:absolute;top:14px;right:14px;appearance:none;border:0;background:var(--bg);width:32px;height:32px;border-radius:8px;cursor:pointer;color:var(--mut);font-size:16px;line-height:1}
+  .pause-modal-close{position:absolute;top:8px;right:8px}   /* utseende: .lukk-x */
   .pause-modal-h{font-size:18px;font-weight:700;letter-spacing:-.02em;padding-right:36px}
   .pause-modal-s{font-size:12.5px;color:var(--mut);margin:4px 0 12px}
   .pause-modal-list{display:flex;flex-direction:column}
@@ -318,7 +281,7 @@
   .pm-fields{display:flex;align-items:center;gap:7px;margin-left:auto}
   .pm-closed .pm-day{color:var(--mut);font-weight:500}
   .pm-stengt{margin-left:auto;font-size:12px;color:var(--mut)}
-  #pauseFerdig{width:100%;margin-top:16px}
+  #pauseFerdig{width:100%;margin-top:16px;min-height:44px}
   .sw{position:relative;width:38px;height:22px;flex-shrink:0}
   .sw input{opacity:0;width:0;height:0}
   .sw .sl{position:absolute;inset:0;background:var(--line-2);border-radius:99px;cursor:pointer;transition:.18s}
@@ -400,7 +363,6 @@
      kun periode-pillene (#segs/#attrPeriod); .segs-val-verdipillene har egen regel under. */
   html[data-theme="dark"] .segs button[aria-selected=true]{background:#2563eb;color:#fff}
   html[data-theme="dark"] .sw input:checked + .sl{background:#4d8bff}
-  /* .themebtn er FJERNET 08.08 — tema velges nå med to .preset-kort, ikke en toggle-knapp. */
   .nav{overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
   .nav button{white-space:nowrap}
   /* Bunn-nav ikon. Aktiv fyll via --ac (settes på fanen ved aria-current). */
@@ -439,19 +401,13 @@
   .fld input,.fld textarea{width:100%;font:inherit;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink)}
   .fld textarea{min-height:74px;resize:vertical}
   .fld input:focus,.fld textarea:focus{outline:none;border-color:var(--info)}
-  .fld-hint{font-size:11.5px;color:var(--mut);margin-top:6px;line-height:1.4;letter-spacing:-.01em}
-  /* Feilmelding under et felt (validering) — rød, samme plass som .fld-hint. Salongnavnet er påkrevd. */
+  /* Feilmelding under et felt (validering) — rød. */
   .fld-err{font-size:11.5px;color:var(--bad);margin-top:6px;line-height:1.4;letter-spacing:-.01em}
-  /* Tegnteller på profilfeltene (PROFIL_MAKS). Høyrejustert, dempet; ved taket i --ink-2 (maxlength stopper
+  /* Tegnteller på navnefeltet (PROFIL_MAKS). Høyrejustert, dempet; ved taket i --ink-2 (maxlength stopper
      videre skriving, så det er en opplysning, ikke en feil). */
   .fld-teller{display:block;font-size:11.5px;color:var(--mut);margin-top:6px;text-align:right;font-variant-numeric:tabular-nums;letter-spacing:-.01em}
   .fld-teller[hidden]{display:none}
   .fld-teller.full{color:var(--ink-2)}
-  /* @-prefiks i de sosiale feltene: @ står fast til venstre i inputen og er IKKE del av verdien
-     (barbereren skriver kun handlen). Gjør det åpenbart at det er brukernavn, ikke URL. */
-  .fld-at{position:relative}
-  .fld-at-sym{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mut);font-size:14px;font-weight:600;line-height:1;pointer-events:none}
-  .fld-at input{padding-left:27px}
   .svc-group-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);margin:22px 0 4px}
   .svc-group-s{font-size:11.5px;color:var(--mut);margin-bottom:10px}
   /* Tjeneste-rad: INNHOLDSSTYRT brekking, ikke breakpoint. Navnefeltet får bredden fra sitt eget
@@ -521,46 +477,6 @@
   .svc-rm:hover{color:var(--bad);border-color:var(--bad)}
   .addbtn{appearance:none;border:1px dashed var(--line-2);background:0;color:var(--mut);border-radius:8px;padding:10px;width:100%;max-width:440px;cursor:pointer;font:inherit;font-size:13px;margin-top:10px}
   .addbtn:hover{border-color:var(--info);color:var(--ink)}
-  .preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:11px;margin:6px 0 24px;max-width:680px}
-  .preset{text-align:left;border:1.5px solid var(--line);border-radius:11px;padding:13px 14px;cursor:pointer;background:var(--surface);font:inherit;transition:border-color .12s}
-  .preset[aria-pressed=true]{border-color:var(--info)}
-  .preset .pt{font-size:13px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
-  .preset .pd{font-size:11.5px;color:var(--mut);margin-top:2px}
-  /* Publiser-CTA på «Din side» — vises kun i forhandsvist. */
-  .dinside-cta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;background:var(--surface);border:1px solid var(--info);border-radius:12px;padding:15px 17px;margin:0 0 22px}
-  /* ⚠ display:flex over slår UA-ens [hidden]{display:none} — uten denne skjuler cta.hidden=true
-     ALDRI CTA-en visuelt (den ble stående i live-tilstand). Gjelder også .dinside-live for symmetri. */
-  .dinside-cta[hidden],.dinside-live[hidden]{display:none}
-  .dinside-cta-tekst{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 220px}
-  .dinside-cta-tekst strong{font-size:14px;font-weight:700;color:var(--ink)}
-  .dinside-cta-tekst span{font-size:12.5px;color:var(--mut);line-height:1.45}
-  .dinside-cta-handling{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:0 0 auto}
-  .dinside-cta-handling .btn{white-space:nowrap}
-  .dinside-cta-note{font-size:11.5px;color:var(--mut);line-height:1.4;text-align:right}
-  .dinside-cta-handling .pub-err{margin:0;text-align:right;max-width:260px}
-  @media(max-width:520px){.dinside-cta-handling{align-items:stretch;flex:1 1 100%}.dinside-cta-handling .btn{justify-content:center}.dinside-cta-note,.dinside-cta-handling .pub-err{text-align:center;max-width:none}}
-  /* Live-tilstand på «Din side» (page_status==='live'): liten grønn prikk + «Live» i vanlig
-     tekstfarge — ingen bakgrunn/kant/hover. Kopiering skjer via lenka i toppen (#headerLenke). */
-  .dinside-live{display:flex;align-items:center;gap:8px;margin:0 0 22px;font-size:14px;font-weight:600;color:var(--ink)}
-  .live-dot{width:8px;height:8px;border-radius:50%;background:#3ecf7e;flex:0 0 auto}
-  .swatches{display:flex;gap:5px;margin-top:9px}
-  .swatches span{width:18px;height:18px;border-radius:5px;border:1px solid rgba(127,127,127,.3)}
-  /* «Din egen»-utfelling: blå info-ramme (samme som det valgte custom-kortet) gjør at den leser
-     som de aktive custom-kontrollene, ikke en nøytral frittstående seksjon. Sitter tett under
-     rutenettet. Store trykkflater (≥46px) for 320px. */
-  .custom-panel{max-width:680px;margin:2px 0 24px;padding:16px;border:1.5px solid var(--info);border-radius:11px;background:var(--surface)}
-  /* Egenbygd HSV-fargevelger: kvadrat (metning×lyshet) + kulør-slider. Store touch-flater, touch-action:none. */
-  .cpick{margin:0 0 12px;max-width:340px}
-  .cpick-sv{position:relative;width:100%;height:150px;border-radius:8px;border:1px solid var(--line-2);cursor:crosshair;touch-action:none}
-  .cpick-cursor{position:absolute;width:18px;height:18px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none}
-  .cpick-hue{position:relative;width:100%;height:24px;margin-top:12px;border-radius:99px;cursor:pointer;touch-action:none;background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
-  .cpick-thumb{position:absolute;top:50%;width:22px;height:22px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none}
-  .cpick-prev{width:44px;height:44px;border-radius:8px;border:1px solid var(--line-2);flex:0 0 auto;display:inline-block}
-  .custom-fine{display:flex;gap:10px;align-items:center;max-width:340px}
-  .custom-hex{flex:1;min-width:0;font:inherit;padding:10px 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink)}
-  .custom-hex:focus{outline:none;border-color:var(--info)}
-  .custom-hex.invalid{border-color:#c0594a}
-  .custom-err{color:#c0594a;font-size:12.5px;margin-top:8px}
   /* Momentum-kort (Vekst): positiv bonus-nudge, grønn venstrekant. Skjult by default. */
   .momentum{background:var(--surface);border:1px solid var(--line);border-left:3px solid var(--good);border-radius:12px;padding:16px 18px;margin:24px 0}
   .momentum[hidden]{display:none}
@@ -746,7 +662,7 @@
   .pub-copy.ok{color:var(--good)}   /* hake ved kopiert — grønn fra token */
   /* Tydelig tekstlig «Kopiert»-kvittering (i tillegg til hake-ikonet) — vises ~1,5 s mens .ok står.
      Under ikonet, høyrejustert så den ikke går utenfor skjermkanten på 320. Gjelder alle .pub-copy
-     (headerlenka, Konto-lenkeblokka, suksesskortet). */
+     (headerlenka, Konto-lenkeblokka). */
   .pub-copy.ok::after{content:"Kopiert";position:absolute;top:calc(100% + 5px);right:0;
     background:var(--ink);color:var(--bg);font-size:11px;font-weight:600;letter-spacing:-.01em;
     padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;z-index:5}
@@ -791,50 +707,6 @@
   .pub-err,.subcard p.pub-err{display:none;color:#c0392b;font-size:13px;margin-top:12px;line-height:1.45;max-width:520px}
   .pub-err button{appearance:none;border:0;background:0;font:inherit;font-size:13px;
                   color:var(--info);text-decoration:underline;cursor:pointer;padding:0}
-
-  .dlbl{font-size:12px;color:var(--mut);font-weight:600;margin:16px 0 4px;letter-spacing:-.01em}
-  /* «Din side»: trekkspill venstre, preview høyre — begge på PANEL-nivå.
-     Erstattet .design-wrap, som var et 2×2-grid der preview lå i kolonne 2 og strakte seg
-     over begge rader (grid-row:1/3). Da preview flyttet ut til panel-nivå, ville det gridet
-     stått igjen med en tom høyrekolonne på 281px — .design-controls er nå eneste barn og
-     ville krympet til venstre halvdel av bredden uten at noe fylte resten.
-     Preview er sticky så den følger med mens man scroller gjennom et langt trekkspill. */
-  .side-wrap{display:grid;grid-template-columns:1fr 281px;gap:0 30px;align-items:start}
-  .side-accs{grid-column:1;min-width:0}
-  .side-accs.acc-list{margin-top:0}
-  .design-preview{grid-column:2;position:sticky;top:18px}
-  .design-controls{min-width:0}
-  @media(max-width:719px){
-    /* Mobil: preview UNDER alle tre trekkspillene, ikke ved siden av. */
-    .side-wrap{display:flex;flex-direction:column;gap:16px}
-    .side-accs{order:1}
-    .design-preview{order:2;position:static;width:100%;max-width:340px;margin:0 auto}
-    .preset-grid{grid-template-columns:repeat(2,1fr)}
-    .preset{padding:9px 10px}
-    .preset .pt{font-size:12px}
-    .preset .pd{font-size:10.5px}
-    .preset .fsample{font-size:17px}
-  }
-  .preset-grid{max-width:none}
-  .preset .fsample{font-size:21px;line-height:1.2;color:var(--ink);margin-bottom:5px}
-  .lthumb{display:block;width:100%;height:auto;border-radius:6px;margin-bottom:8px;background:var(--bg);border:1px solid var(--line);color:var(--ink-2)}
-  .modepick{display:inline-flex;background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:3px}
-  .modebtn{appearance:none;border:0;background:0;font:inherit;font-size:13px;font-weight:500;color:var(--mut);padding:7px 20px;border-radius:6px;cursor:pointer}
-  .modebtn[aria-pressed=true]{background:var(--ink);color:var(--bg)}
-  html[data-theme="dark"] .modebtn[aria-pressed=true]{background:#fff;color:#0a0a0a}
-  .modebtn:disabled{opacity:.4;cursor:not-allowed}
-  .mode-hint{font-size:12px;color:var(--mut);margin-top:6px}
-  .pv-frame{border:1px solid var(--line-2);border-radius:24px;background:var(--surface);position:relative;overflow:hidden;width:281px;height:562px;margin:0 auto}
-  .pv-screen{border-radius:17px;overflow:hidden;min-height:430px;padding:20px 16px;transition:background .15s,color .15s}
-  .pv-screen .pv-name{font-weight:700;font-size:20px;letter-spacing:-.02em}
-  .pv-screen .pv-sub{font-size:11px;opacity:.55;margin-top:2px}
-  .pv-screen .pv-svc{display:flex;justify-content:space-between;align-items:center;font-size:13px;padding:10px 0;border-bottom:1px solid transparent}
-  .pv-screen .pv-btn{margin-top:16px;text-align:center;padding:10px;border-radius:9px;font-size:13px;font-weight:600}
-  .pv-screen .pv-avatar{width:56px;height:56px;border-radius:50%;margin:2px auto 12px}
-  .pv-screen .pv-hero{height:110px;border-radius:11px;margin-bottom:14px;}
-  .pv-screen .pv-gal{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin:12px 0}
-  .pv-screen .pv-gal i{display:block;aspect-ratio:1;border-radius:8px}
-  #pvScreen{position:absolute;top:0;left:0;width:390px;height:780px;border:0;padding:0;transform:scale(0.72);transform-origin:top left;pointer-events:none;border-radius:17px}
 
   .ideacard{margin-top:34px;padding-top:26px;border-top:1px solid var(--line);max-width:440px}
   /* Ideer-boksen inne i et trekkspill: dropp .ideacard sin egen topp-marg og skillelinje —
@@ -1104,11 +976,9 @@
   @keyframes cropPuls{0%,100%{background:#111}50%{background:#1c1c1c}}
   @media (prefers-reduced-motion:reduce){ .crop-canvas-wrap.laster{animation:none} }
   .crop-actions{display:flex;gap:10px;justify-content:flex-end}
-  .crop-btn-cancel{padding:10px 22px;border-radius:8px;border:1.5px solid #444;background:transparent;color:#fff;font-size:14px;font-weight:500;cursor:pointer}
-  .crop-btn-cancel:hover{border-color:#888}
-  .crop-btn-save{padding:10px 22px;border-radius:8px;border:0;background:#4d8bff;color:#fff;font-size:14px;font-weight:500;cursor:pointer}
-  .crop-btn-save:hover{background:#3a72e0}
-  .crop-btn-save:disabled{opacity:.45;cursor:not-allowed}
+  /* Knappene i beskjærings- og verve-dialogen er dashbordets .btn/.btn-outline (før: egne .crop-btn-* med hvit tekst
+     — usynlig «Avbryt» på hvit flate i lyst tema — 39 px høye, vekt 500). 44 px også over 719 px. */
+  .crop-actions .btn,.crop-actions .btn-outline,.verv-modal-actions .btn,.verv-modal-actions .btn-outline{min-height:44px}
   .crop-err{font-size:13px;color:var(--bad);min-height:18px;text-align:left}
 
   /* Demo-banner */
@@ -1133,9 +1003,7 @@
   .hs-kort[hidden],.hs-kort [hidden]{display:none}
   .hs-kort-h{font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--ink);margin:0 34px 4px 0;line-height:1.3}
   .hs-kort-s{font-size:13px;color:var(--mut);line-height:1.45;margin:0 0 14px}
-  .hs-kort-x{position:absolute;top:8px;right:8px;width:40px;height:40px;border-radius:8px;border:0;background:0;
-    color:var(--mut);font-size:20px;line-height:1;cursor:pointer}
-  .hs-kort-x:hover{color:var(--ink);background:rgba(127,127,127,.14)}
+  .hs-kort-x{position:absolute;top:6px;right:6px}   /* utseende: .lukk-x */
   .hs-steg{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:hs}
   .hs-steg li{display:grid;grid-template-columns:12px 18px minmax(0,1fr);column-gap:10px;align-items:start;
     font-size:13.5px;line-height:20px;color:var(--ink-2)}
@@ -1484,76 +1352,23 @@
   .toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(12px);background:#1a1a1a;color:#fff;font-size:13px;font-weight:500;padding:11px 18px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.28);opacity:0;pointer-events:none;transition:opacity .2s,transform .2s;z-index:500;letter-spacing:-.01em}
   .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 
-  /* ── Fokusmodus (onboarding-ankomst) ─────────────────────────────────────────
-     Trigger: URL ?velkommen=1 + page_status='forhandsvist' (JS fjerner parameteren
-     ved visning, ingen sessionStorage). Viser KUN «Din side», til barbereren
-     publiserer eller trykker «Utforsk dashbordet» / X. Ingenting flyttes —
-     #design-panelet vises komplett; kun nav + øvrige paneler skjules. #dinsideCta
-     (topp-banner) og «Ideer & ønsker» skjules så flaten er ren.
-     Rekkefølge følger vanlig DOM: sjekkliste → Profil/Design/Bilder → preview →
-     bunnknapper (STATISKE nederst, ikke sticky). Mobil-rekkefølgen på preview er
-     uendret fra standard (preview under trekkspillene). Desktop: to-kolonne som ellers. */
+  /* ── Fokusmodus (oppsettet av Din side) ──────────────────────────────────────
+     Krever page_status='forhandsvist' (se applyFokusModus). Viser KUN «Din side», til barbereren
+     publiserer eller lukker oppsettet med X. #design-panelet vises komplett; kun nav + øvrige paneler
+     skjules, og «Ideer & ønsker» skjules så flaten er ren. Bunnbaren i oppsettet: dinside-v2.css. */
   body.fokus{overscroll-behavior-y:contain} /* demper pull-to-refresh i Chrome mens man er i fokus */
   /* Fokusmodus skjuler NAVIGASJONEN — begge navene i én regel: topp-navet (desktop) og bunn-navet (≤719px, kom i
      75a7386 uten at denne regelen ble utvidet, så alle fem fanene sto synlige i fokusmodus på mobil). Panelets
-     bunnluft (--bunn-nav-h) beholdes med vilje: den gir fokus-baren luft mot skjermkanten. Ut av fokus: X eller Publiser. */
+     bunnluft (--bunn-nav-h) beholdes med vilje. Ut av fokus: X eller publisering. */
   body.fokus nav.nav, body.fokus .bunn-nav{display:none}
   body.fokus .header-lenke{display:none}   /* fokusmodus: skjul bookinglenka, behold butikknavnet + × */
-  body.fokus #dinsideCta{display:none}
   body.fokus .ideacard{display:none}
   .fokus-x{display:none}
-  body.fokus .fokus-x{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);font-size:16px;line-height:1;cursor:pointer;position:relative}
-  body.fokus .fokus-x:hover{border-color:var(--ink)}
-  .fokus-bar{display:none}
-  body.fokus .fokus-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
-  .fokus-bar .fokus-pub-err{flex:1 1 100%;margin:0}   /* publiseringsfeil over knappene, full bredde */
-  .fokus-bar .btn,.fokus-bar .btn-outline{padding:12px 22px;font-size:14px}
-  @media(max-width:520px){ .fokus-bar .btn,.fokus-bar .btn-outline{flex:1;justify-content:center;text-align:center} }
+  body.fokus .fokus-x{display:inline-flex;margin:-4px}   /* utseende: .lukk-x; −4 px holder headerens høyde (var 36 px) */
 
-  /* ── «Fullfør siden»-guide (COMMIT D) — én komponent, to visninger ──────────────
-     Flytende pill nede til høyre på ALLE faner i VANLIG modus → folder ut popover med
-     panelet. IKKE i fokusmodus (der eier fokus-baren onboarding-CTA-en). Synlig KUN ved
-     page_status='forhandsvist' (styres av renderSjekkliste). */
-  .sjekk-panel{background:var(--surface);border:1px solid var(--line-2);border-radius:14px;padding:16px 16px 8px}
-  .sjekk-panel-hd{display:flex;align-items:baseline;justify-content:space-between;gap:10px;margin-bottom:11px}
-  .sjekk-panel-t{font-size:15px;font-weight:700;letter-spacing:-.01em}
-  .sjekk-panel-teller{font-size:12px;color:var(--mut);font-weight:600;flex:0 0 auto}
-  .sjekk-bar{height:6px;border-radius:99px;background:var(--line-2);overflow:hidden;margin-bottom:6px}
-  .sjekk-bar>span{display:block;height:100%;background:var(--info);border-radius:99px;transition:width .3s}
-  .sjekk-rader{display:flex;flex-direction:column}
-  .sjekk-rad{display:flex;align-items:flex-start;gap:11px;width:100%;text-align:left;appearance:none;border:0;border-top:1px solid var(--line);background:0;font:inherit;color:var(--ink);padding:11px 4px;cursor:pointer}
-  .sjekk-rad:first-child{border-top:0}
-  .sjekk-rad:hover{background:rgba(127,127,127,.06)}
-  .sjekk-ikon{width:20px;height:20px;border-radius:50%;border:1.5px solid var(--line-2);flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;margin-top:1px;color:var(--good)}
-  .sjekk-ikon.done{background:var(--good-bg);border-color:var(--good-bg)}
-  .sjekk-rad-tekst{display:flex;flex-direction:column;gap:2px;min-width:0}
-  .sjekk-rad-t{font-size:13.5px;font-weight:600}
-  .sjekk-rad-s{font-size:12px;color:var(--mut)}
-  .sjekk-rad.done .sjekk-rad-t{text-decoration:line-through;color:var(--mut);font-weight:500}
-  .sjekk-pub-err{margin:4px 14px 12px}
-  .sjekk-pill-wrap{position:fixed;right:18px;bottom:18px;z-index:130}
-  .sjekk-pill{display:inline-flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line-2);border-radius:99px;padding:8px 16px 8px 8px;box-shadow:0 6px 22px rgba(0,0,0,.22);cursor:pointer;font:inherit;color:var(--ink)}
-  .sjekk-pill:hover{border-color:var(--ink)}
-  .sjekk-pill-tekst{font-size:13.5px;font-weight:600;letter-spacing:-.01em}
-  .sjekk-ring{position:relative;width:30px;height:30px;border-radius:50%;flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;background:conic-gradient(var(--info) calc(var(--p,0)*1%),var(--line-2) 0)}
-  .sjekk-ring::before{content:'';position:absolute;inset:3px;border-radius:50%;background:var(--surface)}
-  .sjekk-ring-num{position:relative;font-size:9.5px;font-weight:700;color:var(--ink)}
-  .sjekk-popover{position:absolute;right:0;bottom:calc(100% + 10px);width:min(300px,calc(100vw - 32px));box-shadow:0 12px 34px rgba(0,0,0,.28);border-radius:14px}
-  @media(max-width:520px){ .sjekk-pill-wrap{right:12px;bottom:12px} .sjekk-pill-tekst{font-size:13px} }
-  /* Pillen er fixed og ligger over alt: på mobil står den OVER bunnmenyen (radhøyde + safe-area + 12px),
-     ellers dekker den fanene og tar trykket (Din side/Konto). Mens pillen vises (body.har-sjekkpill, satt i
-     renderSjekkliste) får panelene ekstra bunnklaring = pillen (48) + luft (2×12), så den aldri dekker
-     innhold eller knapper når man har scrollet til bunns. Desktop: samme klaring over 18px-marginen. */
-  body.har-sjekkpill .panel{padding-bottom:calc(18px + 48px + 12px)}
-  @media(max-width:719px){
-    .sjekk-pill-wrap{bottom:calc(var(--bunn-nav-h) + env(safe-area-inset-bottom) + 12px)}
-    body.har-sjekkpill .panel{padding-bottom:calc(var(--bunn-nav-h) + env(safe-area-inset-bottom) + 12px + 48px + 12px)}
-  }
-
-  /* ── Live (COMMIT F): kompakt kopierbar lenke i headeren + suksesskort ────────────
-     Begge gjenbruker byggKopierbartLenkefelt (.pub-field + midtForkort + kopierLenke).
-     Headerlenka står under sjappenavnet i live-tilstand; suksesskortet vises ÉN gang
-     rett etter publisering (hendelses-drevet, ikke ved innlasting). */
+  /* ── Live (COMMIT F): kompakt kopierbar lenke i headeren ────────────
+     Gjenbruker byggKopierbartLenkefelt (.pub-field + midtForkort + kopierLenke).
+     Headerlenka står under sjappenavnet i live-tilstand. */
   /* Headeren viser en kompakt, avkuttet bookinglenke (midtForkort) + kopi-knapp til høyre, KUN i
      live. min-width:0 (ikke auto) så lenka KAN krympe forbi innholdsbredden når navnet tar plassen
      → url-en trunkerer (midt-ellipse), aldri linje to. Navnet font-krymper i tillegg (fitShopnavn). */
@@ -1614,15 +1429,6 @@
   .kt-lenke{text-decoration:none;color:inherit}
   .kt-lenke .kt-etikett{flex:1}
   .kt-pil{color:var(--mut);font-size:20px;line-height:1}
-  /* «Ideer og ønsker»: dempet rad som foldes ut. Etiketten dempet (ikke en hovedhandling); pila snus når den er åpen. */
-  .kt-ide>summary{list-style:none;cursor:pointer;border-top:0}   /* ikke .kt-lenke: raden er ingen lenke, den folder ut feltet */
-  .kt-ide>summary:hover{background:rgba(127,127,127,.06)}
-  .kt-ide>summary:focus-visible{outline:2px solid var(--info);outline-offset:-2px;border-radius:6px}
-  .kt-ide>summary::-webkit-details-marker{display:none}
-  .kt-ide>summary .kt-etikett{color:var(--ink-2);font-weight:500}
-  .kt-ide>summary .kt-pil{transition:transform .15s ease}
-  .kt-ide[open]>summary .kt-pil{transform:rotate(90deg)}
-  @media (prefers-reduced-motion:reduce){ .kt-ide>summary .kt-pil{transition:none} }
   .kt-seg{display:inline-flex;flex-shrink:0;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:2px}
   .kt-seg button{appearance:none;border:0;background:0;font:inherit;font-size:13px;font-weight:600;color:var(--mut);padding:0 16px;border-radius:7px;cursor:pointer;min-height:40px}
   .kt-seg button[aria-checked="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line-2)}
@@ -1631,18 +1437,7 @@
   .kt-bunn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:14px}
   .kt-bunn .lnk-quiet{margin-top:0}
   .kt-bunn .pub-err{margin:0 0 6px}
-  .suksess-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px}
-  .suksess-overlay[hidden]{display:none}   /* author-display slår UA [hidden]{display:none} — må gjenopprettes eksplisitt */
-  .suksess-kort{position:relative;background:var(--surface);border:1px solid var(--line-2);border-radius:18px;padding:30px 26px 26px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
-  .suksess-x{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:8px;border:0;background:0;color:var(--mut);font-size:20px;line-height:1;cursor:pointer}
-  .suksess-x:hover{color:var(--ink);background:var(--bg)}
-  .suksess-emoji{font-size:38px;line-height:1;margin-bottom:8px}
-  .suksess-kort h3{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:16px}
-  .suksess-lenke{margin-bottom:16px}
-  .suksess-lenke .pub-field{background:var(--bg)}
-  .suksess-linje{font-size:14px;color:var(--ink);margin-top:6px;font-weight:600}
-  .suksess-linje.sub{color:var(--mut);font-size:13px;font-weight:400}
-/* v2: beskrivelse under hovedtjenesten — tydelig underordnet navnefeltet: mindre tekst, dempet farge, svak kant, tett på raden
+/* Beskrivelse under hovedtjenesten — tydelig underordnet navnefeltet: mindre tekst, dempet farge, svak kant, tett på raden
    (radens egen 8px-gap, ingen ekstra luft). Relative enheter og dashbordets farge-tokens. */
 #hovedList .svc-description{flex:1 0 100%;width:100%;font-size:.875em;color:var(--ink-2);border-color:var(--line);background:transparent}
 #hovedList .svc-description::placeholder{color:var(--mut)}
@@ -1716,7 +1511,7 @@
     </span>
     <div class="header-lenke" id="headerLenke" hidden></div>
     <!-- Kun synlig i fokusmodus (body.fokus) — «X øverst til høyre» = avslutt fokus. -->
-    <button class="fokus-x" id="fokusX" type="button" aria-label="Lukk fokusmodus og vis hele dashbordet">&times;</button>
+    <button class="lukk-x fokus-x" id="fokusX" type="button" aria-label="Lukk fokusmodus og vis hele dashbordet"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
   </header>
 
   <nav class="nav" role="tablist">
@@ -1725,9 +1520,9 @@
     <button role="tab" aria-selected="true" data-panel="oversikt">Oversikt</button>
     <button role="tab" aria-selected="false" data-panel="vekst">Vekst</button>
     <button role="tab" aria-selected="false" data-panel="tjenester">Tjenester &amp; tider</button>
-    <!-- data-panel="design" er BEVART selv om fanen heter «Din side» — Profil-fanen ble slått
-         INN her 08.08, og id-en #design henger sammen med loadDesign(), oppdaterPreview() og
-         hele design-koden. Samme resonnement som «Konto»/#abonnement under. Ikke døp om id-en. -->
+    <!-- data-panel="design" er BEVART selv om fanen heter «Din side» — id-en #design henger sammen med
+         switchPanel('design'), #dinside-hashen og dinside-v2.css. Samme resonnement som «Konto»/#abonnement
+         under. Ikke døp om id-en. -->
     <button role="tab" aria-selected="false" data-panel="design">Din side</button>
     <!-- data-panel="abonnement" er BEVART med vilje selv om fanen heter «Konto» —
          id-en henger sammen med #abonnement, switchPanel('abonnement') (:2376) og
@@ -1739,33 +1534,12 @@
   </nav>
 </div>
 </div>
-<!-- «Fullfør siden»-pill (vanlig modus, alle faner). Fokusmodus bruker inline-panelet i
-     #dinsideSjekkliste i stedet. Synlig kun ved forhandsvist (renderSjekkliste). -->
-<div class="sjekk-pill-wrap" id="sjekkPill" hidden>
-  <div class="sjekk-popover" id="sjekkPopover" hidden></div>
-  <button class="sjekk-pill" id="sjekkPillBtn" type="button" aria-expanded="false" aria-label="Fullfør siden din">
-    <span class="sjekk-ring" id="sjekkRing"><span class="sjekk-ring-num" id="sjekkRingNum">0/5</span></span>
-    <span class="sjekk-pill-tekst">Fullfør siden din</span>
-  </button>
-</div>
-<!-- Suksesskort — vises ÉN gang rett etter vellykket publisering (visSuksesskort fra
-     settSideStatus('live')-responsen, IKKE ved innlasting). Lukkes med X / klikk utenfor. -->
-<div class="suksess-overlay" id="suksessOverlay" hidden>
-  <div class="suksess-kort" role="dialog" aria-modal="true" aria-labelledby="suksessTittel">
-    <button class="suksess-x" id="suksessX" type="button" aria-label="Lukk">&times;</button>
-    <div class="suksess-emoji">🎉</div>
-    <h3 id="suksessTittel">Siden din er klar.</h3>
-    <div class="suksess-lenke" id="suksessLenke"></div>
-    <p class="suksess-linje">Legg lenka i bioen og del den på&nbsp;story</p>
-    <p class="suksess-linje sub">Nå får vi første booking gjennom&nbsp;den.</p>
-  </div>
-</div>
 <div class="wrap">
 
   <!-- OVERSIKT -->
   <section class="panel active" id="oversikt">
 
-    <!-- v2, siden ikke live: lenke tilbake til oppsettet (fokusmodus). Ingen publiser-knapp — «Lagre endringer» i
+    <!-- Siden ikke live: lenke tilbake til oppsettet (fokusmodus). Ingen publiser-knapp — «Lagre endringer» i
          oppsettet publiserer. Synlighet: DinSideV2.tegnFullfor (fra billing). Stil: dinside-v2.css. -->
     <button type="button" class="dv2-fullfor" id="dv2Fullfor" hidden><span><strong>Fullfør siden din</strong><span class="under">Fortsett oppsettet der du slapp.</span></span><span class="pil" aria-hidden="true">→</span></button>
 
@@ -1816,7 +1590,7 @@
          ikke er installert og ikke er lukket, og avslører NØYAKTIG én [data-hs]-variant. Ikonene er egne
          strek-SVG-er (ikke Apples). [oversettelse: sv/da/en] -->
     <div class="hs-kort" id="hsKort" hidden>
-      <button class="hs-kort-x" id="hsKortX" type="button" aria-label="Lukk">&times;</button>
+      <button class="lukk-x hs-kort-x" id="hsKortX" type="button" aria-label="Lukk"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
       <p class="hs-kort-h">Legg BarberHQ på hjemskjermen</p>
       <p class="hs-kort-s">Da åpner du dashbordet som en app, rett fra hjemskjermen.</p>
       <!-- iPhone: Safari og Chrome (Del finnes i begge; i Safari med kompakt fanelinje ligger den bak ⋯) -->
@@ -2260,8 +2034,7 @@
     </div>
   </section>
 
-  <!-- BILDER -->
-  <!-- Bilder-panelet er slått sammen inn i #design (Design-fanen) -->
+  <!-- Beskjæring (Din side → Bilder) -->
   <div id="cropModal" class="crop-modal" aria-modal="true" role="dialog">
     <div class="crop-modal-inner">
       <div class="crop-aspekt">
@@ -2273,8 +2046,8 @@
         <p class="crop-laster" id="cropLaster" role="status">Laster bildet …</p>
       </div>
       <div class="crop-actions">
-        <button class="crop-btn-cancel" id="cropCancel">Avbryt</button>
-        <button class="crop-btn-save" id="cropSave">Lagre beskjæring</button>
+        <button class="btn-outline" id="cropCancel" type="button">Avbryt</button>
+        <button class="btn" id="cropSave" type="button">Lagre beskjæring</button>
       </div>
       <p class="crop-err" id="cropErr"></p>
     </div>
@@ -2288,8 +2061,8 @@
       <textarea id="vervMsg" rows="10"></textarea>
       <p class="verv-modal-note">Rediger gjerne teksten før du kopierer. BarberHQ sender ingenting — du sender selv.</p>
       <div class="verv-modal-actions">
-        <button class="crop-btn-cancel" id="vervCancel" type="button">Lukk</button>
-        <button class="crop-btn-save" id="vervCopy" type="button">Kopier melding</button>
+        <button class="btn-outline" id="vervCancel" type="button">Lukk</button>
+        <button class="btn" id="vervCopy" type="button">Kopier melding</button>
       </div>
     </div>
   </div>
@@ -2299,7 +2072,7 @@
     <div class="plakat-top">
       <button class="plakat-back" id="plakatBack" type="button" hidden>‹ Tilbake</button>
       <span class="plakat-tittel" id="plakatTittel">Velg plakat</span>
-      <button class="plakat-x" id="plakatX" type="button" aria-label="Lukk">×</button>
+      <button class="lukk-x" id="plakatX" type="button" aria-label="Lukk"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </div>
     <div class="plakat-scroll" id="plakatScroll"></div>
   </div>
@@ -2308,7 +2081,7 @@
   <div class="story-overlay" id="storyOverlay" role="dialog" aria-modal="true" aria-label="Lag story">
     <div class="plakat-top">
       <span class="plakat-tittel">Lag story</span>
-      <button class="plakat-x" id="storyX" type="button" aria-label="Lukk">×</button>
+      <button class="lukk-x" id="storyX" type="button" aria-label="Lukk"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     </div>
     <div class="story-layout">
       <div class="story-prev-col">
@@ -2321,8 +2094,6 @@
       <div class="story-kontroller" id="storyKontroller"></div>
     </div>
   </div>
-
-  <!-- PROFIL-panelet er FJERNET 08.08 — innholdet bor nå som trekkspill i #design («Din side»). -->
 
   <!-- TJENESTER -->
   <section class="panel" id="tjenester">
@@ -2391,184 +2162,15 @@
     <p class="pub-err" id="hoursErr"></p>
   </section>
 
-  <!-- DESIGN -->
-  <!-- DIN SIDE — Profil + Design + Bilder slått sammen 08.08. Tre trekkspill, én preview.
-       Preview lå før inne i .design-wrap og tilhørte Design alene. Nå står den på PANEL-nivå
-       (.side-wrap, høyre kolonne) fordi alle tre trekkspillene endrer den samme siden: navn og
-       tagline like mye som palett og bilder. Den skal ALDRI flyttes inn i en .acc-body — da
-       forsvinner den når trekkspillet lukkes, og de to andre mister forhåndsvisningen sin. -->
+  <!-- DIN SIDE — fire steg (Profil → Utseende → Bilder → Kontakt), bygget av dinside-v2.js i #dinsideV2.
+       Til billing har svart (page_status styrer om «Lagre endringer» publiserer) står «Laster Din side …». -->
   <section class="panel" id="design">
-    <!-- v1 (sidemal='v1'): alt merket «v1-kun» under er dagens Din side, uendret. v2: #dinsideV2 (dinside-v2.js) viser fire steg i stedet.
-         v1-flaten vises KUN når body.sm-v1 (billing er kjent og barberen er v1). Ukjent sidemal (billing ikke svart ennå / feilet)
-         viser verken v1 eller v2, bare «Laster …» — ellers så en v2-barber v1-flaten til billing svarte. Se dinside-v2.css. -->
     <div id="dinsideV2"><p class="dv2-lasting" id="dv2Start" role="status">Laster Din side …</p></div>
-    <p class="panel-h v1-kun">Din side</p>
-    <p class="block-s v1-kun">Design siden din. Endringer vises i forhåndsvisningen.</p>
-    <!-- Publiser-CTA: KUN i forhandsvist (styres av renderDinsideCta via _billing.page_status).
-         Gjenbruker settSideStatus('live') — samme dispatch som Konto-knappens _kontoAksjon==='publiser'.
-         Konto-knappen er urørt. -->
-    <div class="dinside-cta v1-kun" id="dinsideCta" hidden>
-      <div class="dinside-cta-tekst">
-        <strong>Siden din er ikke publisert ennå</strong>
-      </div>
-      <!-- «Publiser siden» — på «Din side» ser han siden sin, ikke abonnementet. Publisering er gratis og
-           frikoblet planen (ingen prøveperiode for nye barbere); noten under sier det. -->
-      <div class="dinside-cta-handling">
-        <button class="btn" id="dinsidePubliser">Publiser siden</button>
-        <span class="dinside-cta-note">Publiser når du er fornøyd. Det er gratis, uten kort.</span>
-        <p class="pub-err" id="dinsidePubErr"></p>
-      </div>
-    </div>
-    <!-- Live-tilstand: erstatter CTA-en når page_status==='live'. Liten grønn prikk + «Live» i
-         vanlig tekstfarge (ingen bakgrunn/kant/hover). Kopiering skjer via den permanente
-         kopierbare lenka i headeren (#headerLenke/settHeaderLenke). -->
-    <div class="dinside-live v1-kun" id="dinsideLive" hidden>
-      <span class="live-dot"></span>Live
-    </div>
-    <div class="side-wrap v1-kun">
-      <!-- data-single: ETT trekkspill åpent om gangen. Markøren er på lista, ikke global —
-           Vekst-fanens .acc-list er umerket og beholder flere åpne samtidig. -->
-      <div class="acc-list side-accs" id="sideAccs" data-single>
-
-        <!-- Profil — lukket som standard (aria-expanded="false", .acc-body med hidden), som de
-             øvrige Din side-trekkspillene. Preview lever på panel-nivå (.side-wrap), ikke i
-             denne .acc-body, så den står uansett når alt er lukket. -->
-        <div class="acc" id="accProfil">
-          <button type="button" class="acc-head" aria-expanded="false">
-            <span class="acc-htext">
-              <span class="acc-title">Profil</span>
-              <span class="acc-sub">Grunninfo som vises på bookingsiden din.</span>
-            </span>
-            <span class="acc-chev">▾</span>
-          </button>
-          <div class="acc-body" hidden>
-            <div class="fld"><label>Navn på salongen</label><input id="pf-shop" type="text"><p class="fld-err" id="shopErr" hidden>Salongnavnet kan ikke være tomt.</p></div>
-            <div class="fld"><label>Adresse</label><input id="pf-address" type="text"><p class="fld-hint">Skriv full adresse (gate, nummer, postnr, by) så kunder finner frem i kart. Vil du ikke dele nøyaktig sted, skriv bare byen.</p></div>
-            <div class="fld"><label>Spesialitet</label><input id="pf-tagline" type="text"></div>
-            <!-- bioHint: se refreshSlots(). Direkte-malen har ingen {{BIO_BLOCK}}, så
-                 beskrivelsen lagres men er usynlig i preview — uten denne linja leser det
-                 som at lagringen ikke virket. [oversettelse: sv/da/en] -->
-            <div class="fld"><label>Beskrivelse</label><textarea id="pf-bio"></textarea><p class="fld-hint" id="bioHint" hidden>Direkte-layouten viser ikke beskrivelsen. Den lagres, og dukker opp hvis du bytter layout.</p></div>
-            <!-- Sosiale handles. @ vises som FAST prefiks (.fld-at) og er IKKE del av verdien — barbereren
-                 skriver kun handlen. Backend normaliserer uansett bort @/URL/domene; prefikset gjør det
-                 åpenbart at det er brukernavn, ikke lenke. Tomt felt = ingen lenke (ikonet forsvinner fra
-                 bookingsiden). Lagres via PUT /settings (api.saveSettings) sammen med «Lagre profil». -->
-            <div class="fld"><label>Instagram</label><div class="fld-at"><span class="fld-at-sym">@</span><input id="pf-instagram" type="text" placeholder="brukernavn" autocapitalize="off" autocorrect="off" spellcheck="false"></div></div>
-            <div class="fld"><label>TikTok</label><div class="fld-at"><span class="fld-at-sym">@</span><input id="pf-tiktok" type="text" placeholder="brukernavn" autocapitalize="off" autocorrect="off" spellcheck="false"></div></div>
-            <div class="fld"><label>Snapchat</label><div class="fld-at"><span class="fld-at-sym">@</span><input id="pf-snapchat" type="text" placeholder="brukernavn" autocapitalize="off" autocorrect="off" spellcheck="false"></div></div>
-            <!-- Telefon (contact_phone, migrasjon 062). IKKE @-prefiks — det er et nummer, ikke en handle.
-                 Vises på bookingBEKREFTELSEN (backend), ikke på forsiden. Tomt → '' → backend nullstiller →
-                 vises ikke. Lagres via PUT /settings (api.saveSettings) på «Lagre profil». Maks 32 (backend). -->
-            <div class="fld"><label>Telefon</label><input id="pf-phone" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="91 23 45 67" aria-describedby="phoneErr"><p class="fld-err" id="phoneErr" role="alert" hidden></p><p class="fld-hint">Kunden ser nummeret på bekreftelsen sin, ikke på selve bookingsiden.</p></div>
-            <div class="savebar"><button class="btn" id="saveProfil">Lagre profil</button><span class="saved" id="profilSaved">Lagret &#10003;</span></div>
-          </div>
-        </div>
-
-        <!-- Bilder — slot-visningen følger VALGT layout i Design-trekkspillet under.
-             Den koblingen (refreshSlots ved layout-bytte) er uendret av sammenslåingen. -->
-        <div class="acc" id="accBilder">
-          <button type="button" class="acc-head" aria-expanded="false">
-            <span class="acc-htext">
-              <span class="acc-title">Bilder</span>
-              <span class="acc-sub">Trykk på en boks for å laste opp bilde til den plassen.</span>
-            </span>
-            <span class="acc-chev">▾</span>
-          </button>
-          <div class="acc-body" hidden>
-            <p class="slot-hint" id="layoutHint"></p>
-            <!-- Bildevarselet (#bilderVarsel) er FJERNET her 13.10: når Bilder er åpen, er den tomme boksen
-                 oppfordringen. Varselet står fortsatt i Design (#layoutBildeVarsel), som er der barbereren er
-                 når Bilder er lukket («Din side» har ett åpent trekkspill om gangen). -->
-            <!-- Varig feillinje når opplastingen lyktes men layout-lagringen etterpå feilet (lagreLayoutEtterOpplasting).
-                 Står til layouten faktisk er lagret — en toast forsvinner før barbereren rekker å lese den. -->
-            <p class="bilder-feil" id="bilderFeil" role="alert" hidden></p>
-            <input type="file" id="fileInput" accept="image/*" hidden>
-            <input type="file" id="replaceInput" accept="image/*" hidden>
-            <div id="bilderMount"><div class="loading">Laster …</div></div>
-          </div>
-        </div>
-
-        <!-- Design — hver .acc-body beholder SIN EGEN savebar og sitt eget endepunkt.
-             Tre knapper, tre PUT-er: /profile, /design, /images. Ikke slått sammen. -->
-        <div class="acc" id="accDesign">
-          <button type="button" class="acc-head" aria-expanded="false">
-            <span class="acc-htext">
-              <span class="acc-title">Design</span>
-              <span class="acc-sub">Palett, bakgrunn, stil og layout på bookingsiden din.</span>
-            </span>
-            <span class="acc-chev">▾</span>
-          </button>
-          <div class="acc-body" hidden>
-            <div class="design-controls">
-              <p class="dlbl">Palett</p>
-              <div class="preset-grid" id="paletteGrid"></div>
-              <!-- «Din egen»-utfelling: vises KUN når custom-kortet er valgt (toggles av renderDesign),
-                   og er stylet (blå ramme + kobler-tunge) som en utvidelse av det valgte kortet — ikke
-                   en frittstående seksjon. Forslag (nivå 1) → color-input (nivå 2) → hex (nivå 3).
-                   Ingen navnefelt: paletten heter «Din egen». -->
-              <div class="custom-panel" id="customPanel" hidden>
-                <!-- Egenbygd HSV-velger (ingen eksterne libs): kvadrat = metning×lyshet, slider = kulør. -->
-                <div class="cpick">
-                  <div class="cpick-sv" id="cpickSV" role="slider" aria-label="Metning og lyshet"><span class="cpick-cursor" id="cpickCursor"></span></div>
-                  <div class="cpick-hue" id="cpickHue" role="slider" aria-label="Kulør"><span class="cpick-thumb" id="cpickThumb"></span></div>
-                </div>
-                <div class="custom-fine">
-                  <span class="cpick-prev" id="cpickPrev" aria-hidden="true"></span>
-                  <input type="text" id="customHex" class="custom-hex" placeholder="#000000" maxlength="7" size="7"
-                         inputmode="text" autocapitalize="none" autocomplete="off" spellcheck="false" aria-label="Fargekode (hex)">
-                </div>
-                <p class="custom-err" id="customErr" hidden>Skriv en gyldig fargekode, f.eks. #1e40af</p>
-              </div>
-              <p class="dlbl">Bakgrunn</p>
-              <div class="modepick" id="modePick">
-                <!-- aria-pressed="false" i statisk markup: før loadDesign har svart vet vi ikke
-                     hva som er valgt. Sto "true" og markerte Lys som valgt fra første frame. -->
-                <button class="modebtn" data-mode="lys" aria-pressed="false">Lys</button>
-                <button class="modebtn" data-mode="mork" aria-pressed="false">Mørk</button>
-              </div>
-              <!-- Vises når valgt palett ikke støtter mørk (sand). Toggles av renderDesign. -->
-              <p class="mode-hint" id="modeHint" hidden>Kun lys for denne paletten</p>
-              <p class="dlbl">Stil</p>
-              <div class="preset-grid" id="fontGrid"></div>
-              <p class="dlbl">Layout</p>
-              <div class="preset-grid" id="layoutGrid"></div>
-              <!-- Valgt layout mangler sitt bærende bilde (bilde_status[layout]==='mangler' fra backend):
-                   myk advarsel + snarvei til riktig bildefelt. Toggles av oppdaterBildeVarsel() (fra refreshSlots). -->
-              <div class="bilde-guard" id="layoutBildeVarsel" hidden>
-                <p id="layoutBildeVarselTekst"></p>
-                <div class="sg-actions"><button type="button" class="sg-primary" id="layoutBildeVarselAdd">Legg til bilde</button></div>
-              </div>
-            </div>
-            <div class="savebar"><button class="btn" id="saveDesign">Lagre design</button><span class="saved" id="designSaved">Lagret &#10003;</span></div>
-          </div>
-        </div>
-
-      </div>
-      <div class="design-preview">
-        <div class="pv-frame"><iframe class="pv-screen" id="pvScreen" scrolling="no" tabindex="-1"></iframe></div>
-        <p class="ctx" style="margin-top:8px;text-align:center">Slik ser bookingsiden din ut.</p>
-      </div>
-    </div>
-    <!-- Bunnknapper — STATISKE nederst i «Din side», kun synlige i fokusmodus (body.fokus).
-         «Publiser siden» gjenbruker settSideStatus('live') (samme dispatch som #dinsidePubliser);
-         «Utforsk dashbordet» = X = avslutt fokus. -->
-    <div class="fokus-bar v1-kun" id="fokusBar">
-      <p class="pub-err fokus-pub-err" id="fokusPubErr" role="alert"></p>
-      <button class="btn" id="fokusPubliser" type="button" data-pub-err="#fokusPubErr">Publiser siden</button>
-      <button class="btn-outline" id="fokusUtforsk" type="button">Utforsk dashbordet</button>
-    </div>
-    <!-- #slotPopup står på PANEL-nivå, ikke inne i Bilder-trekkspillet: den er position:fixed
-         og plasseres av JS mot knappens rect. Lå den i .acc-body, ville [hidden] på body-en
-         skjult den idet et annet trekkspill åpnes mens popupen står åpen. -->
-    <div id="slotPopup" class="slot-popup">
-      <button class="slot-popup-btn danger" id="slotPopupFjern">Fjern bilde</button>
-      <button class="slot-popup-btn" id="slotPopupEndre">Endre bilde</button>
-    </div>
     <div class="ideacard">
       <p class="block-h" id="fbLbl-side" style="margin-top:0">Ideer &amp; ønsker</p>
-      <p class="block-s">Har du en idé til en funksjon, eller ønsker en endring på siden, en ny farge eller layout? Send oss, vi leser alt.</p>
-      <!-- Suffiks «-side»: samme boks finnes i Konto («-konto-ide»), og der ligger også en
-           support-boks («-konto-support»). Alle tre deler bindFeedbackBoks(). Prefikset er
+      <p class="block-s">Har du en idé eller et ønske til siden din? Send det til oss – vi leser alt.</p>
+      <!-- Suffiks «-side»: Konto har en support-boks («-konto-support»); begge deler bindFeedbackBoks().
+           Idé-boksen i Konto er fjernet 23.10.2026 — idéer sendes herfra (dinside-v2.js flytter boksen inn under Lagre på Kontakt-steget). Prefikset er
            «fb», ikke «idea» — feltene bærer nå både idé og support. -->
       <textarea id="fbBox-side" aria-labelledby="fbLbl-side"></textarea>
       <div class="savebar"><button class="btn" id="fbSend-side">Send</button><span class="saved" id="fbSaved-side">Sendt &#10003;</span></div>
@@ -2829,21 +2431,6 @@
 
           </div>
         </div>
-        <!-- 3. ØNSKE — type:'idea'. En dempet rad som foldes ut (22.10.2026: flyttet ut av «Din side»-flyten for v2-barbere).
-             Markupen er duplisert fra «Din side» (to tekstfelt kan ikke være samme node), men handleren er det IKKE. -->
-        <div class="kt-kort">
-          <details class="kt-ide">
-            <summary class="kt-rad"><span class="kt-rad-topp"><span class="kt-etikett" id="fbLbl-konto-ide">Ideer og ønsker</span><span class="kt-pil" aria-hidden="true">›</span></span></summary>
-            <div class="kt-rad kt-rad-blokk">
-              <p class="block-s">Ønsker du en ny funksjon, farge eller layout? Send oss, vi leser alt.</p>
-              <div class="ideacard ideacard-flat">
-                <textarea id="fbBox-konto-ide" aria-labelledby="fbLbl-konto-ide"></textarea>
-                <div class="savebar"><button class="btn" id="fbSend-konto-ide">Send</button><span class="saved" id="fbSaved-konto-ide">Sendt &#10003;</span></div>
-                <p class="idea-err" id="fbErr-konto-ide"></p>
-              </div>
-            </div>
-          </details>
-        </div>
       </section>
 
       <!-- ── NEDERST ── adskilt med luft. Avpubliser står BARE her (renderKonto styrer synligheten, som før);
@@ -2871,10 +2458,9 @@
   .cal-overlay{position:fixed;inset:0;z-index:500;background:var(--bg);display:flex;flex-direction:column}
   .cal-overlay[hidden]{display:none}
   .cal-topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
-  .cal-datebtn{appearance:none;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:6px}
-  .cal-today{appearance:none;border:0;background:0;color:var(--info);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:8px 4px}
-  .cal-close{margin-left:auto;appearance:none;border:0;background:var(--surface);color:var(--mut);width:36px;height:36px;border-radius:8px;cursor:pointer;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
-  .cal-close:hover{color:var(--ink)}
+  .cal-datebtn{appearance:none;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:600;min-height:44px;padding:8px 14px;border-radius:8px;cursor:pointer;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:6px}
+  .cal-today{appearance:none;border:0;background:0;color:var(--info);font:inherit;font-size:13px;font-weight:600;cursor:pointer;padding:8px 4px;min-height:44px;border-radius:8px}
+  .cal-close{margin-left:auto}   /* utseende: .lukk-x */
   /* ── Månedvelger (egenbygd) ── */
   .cal-monthpick{position:absolute;top:56px;left:16px;z-index:20;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:12px;width:280px}
   .cal-monthpick[hidden]{display:none}
@@ -2915,9 +2501,7 @@
   /* «Lag story»-banner øverst i dagen (Commit 2) — fast plassering mellom dag-header og tidsgrid, ALDRI
      i en tidsluke (påvirker ikke trykk på blokker). Vises kun når /ledige gir vis_banner=true. */
   .cal-story-banner{flex-shrink:0;display:flex;align-items:stretch;gap:1px;border-bottom:1px solid var(--line);background:var(--info-bg,rgba(47,128,237,.1))}
-  .cal-story-cta{flex:1;min-width:0;appearance:none;border:0;background:transparent;cursor:pointer;font-family:inherit;font-size:11.5px;font-weight:600;color:var(--info);letter-spacing:-.01em;padding:7px 8px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-  .cal-story-x{flex:0 0 auto;appearance:none;border:0;background:transparent;cursor:pointer;color:var(--mut);font-size:15px;line-height:1;padding:0 9px}
-  .cal-story-x:hover{color:var(--ink)}
+  .cal-story-cta{flex:1;min-width:0;min-height:44px;border-radius:8px;appearance:none;border:0;background:transparent;cursor:pointer;font-family:inherit;font-size:11.5px;font-weight:600;color:var(--info);letter-spacing:-.01em;padding:7px 8px;text-align:left;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
   .cal-hourline{position:absolute;left:0;right:0;border-top:1px solid var(--line);pointer-events:none}
   /* Halvtimeslinje: samme tidsrom-logikk som timelinja, men svakere (lavere opasitet). */
   .cal-halfline{position:absolute;left:0;right:0;border-top:1px solid var(--line);opacity:.4;pointer-events:none}
@@ -2951,7 +2535,7 @@
   .bk-detail-backdrop[hidden]{display:none}
   .bk-detail{background:var(--surface);width:100%;max-width:440px;border-radius:16px 16px 0 0;padding:20px;position:relative;box-shadow:0 -6px 30px rgba(0,0,0,.2)}
   @media(min-width:561px){.bk-detail-backdrop{align-items:center}.bk-detail{border-radius:14px}}
-  .bk-detail-close{position:absolute;top:14px;right:14px;appearance:none;border:0;background:var(--bg);width:32px;height:32px;border-radius:8px;cursor:pointer;color:var(--mut);font-size:16px;line-height:1}
+  .bk-detail-close{position:absolute;top:8px;right:8px}   /* utseende: .lukk-x */
   .bk-detail-head{display:flex;align-items:center;gap:10px;margin-bottom:6px;padding-right:36px}
   .bk-detail-name{font-size:18px;font-weight:700;letter-spacing:-.02em;min-width:0;overflow-wrap:break-word}
   .bk-detail-phone{display:inline-block;font-size:14px;color:var(--info);font-weight:600;text-decoration:none;margin-bottom:14px}
@@ -2964,7 +2548,7 @@
   /* Rabatt-pill på egen linje under navnet — i head-en klemte den navnekolonnen på 320. */
   .bk-detail-badge{margin:2px 0 12px}
   .bk-detail-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
-  .bk-detail-actions .noshowbtn{width:100%;justify-content:center;padding:11px}
+  .bk-detail-actions .noshowbtn{width:100%;justify-content:center;padding:11px;min-height:44px}
   .bk-detail-actions .row-err{text-align:center}
   /* ===== KAMPANJEPLAKATER — Lag 1: skjelett + navigasjon ===== */
   /* «Generer plakat» bor inne i Verving- og Lojalitet-trekkspillet (sekundær .btn-outline),
@@ -3012,10 +2596,9 @@
   body.plakat-lock{overflow:hidden}
   .plakat-top{display:flex;align-items:center;gap:10px;padding:12px 14px;border-bottom:1px solid var(--line);flex:0 0 auto}
   .plakat-top .plakat-tittel{flex:1 1 auto;font-size:16px;font-weight:700;color:var(--ink);text-align:center}
-  .plakat-back,.plakat-x{background:none;border:0;color:var(--ink);font:inherit;font-weight:600;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;border-radius:8px}
+  .plakat-back{background:none;border:0;color:var(--ink);font:inherit;font-weight:600;cursor:pointer;min-height:44px;display:inline-flex;align-items:center;border-radius:8px}
   .plakat-back{font-size:15px;padding:0 6px}
   .plakat-back[hidden]{display:none} /* author-display slår ellers av UA [hidden]{display:none} */
-  .plakat-x{font-size:28px;line-height:1;padding:0 10px;justify-content:center}
   .plakat-scroll{flex:1 1 auto;overflow-y:auto;-webkit-overflow-scrolling:touch}
   /* Tre like kort i én rad på alle bredder — ingen anbefalt-tier, ingen «Flere maler». */
   .plakat-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;padding:16px}
@@ -3077,7 +2660,7 @@
   .pk-crop-inner{display:flex;flex-direction:column;gap:12px;width:100%;max-width:520px;max-height:100%}
   .pk-crop-topp{display:flex;align-items:center;justify-content:space-between;gap:12px}
   .pk-crop-tittel{margin:0;color:#fff;font-size:15px;font-weight:600}
-  .pk-crop-x{background:transparent;border:none;color:#fff;font-size:30px;line-height:1;cursor:pointer;padding:0 4px;min-height:44px;min-width:44px;display:flex;align-items:center;justify-content:flex-end}
+  .pk-crop-x{margin-right:-10px}   /* utseende: .lukk-x; ikonet flukter med høyrekanten som før */
   /* Fast-forhold-indikator: forklarer HVORFOR crop-boksen har formen den har (celle-aspektet er låst =
      WYSIWYG mot plakaten), og at 9:16-format er veien til et høyere utsnitt. */
   .pk-crop-aspekt{display:flex;flex-direction:column;gap:3px;margin:-2px 0 2px}
@@ -3090,7 +2673,7 @@
   .pk-row{display:flex;align-items:center;gap:12px;margin-top:16px}
   .pk-label{flex:0 0 96px;font-size:13px;font-weight:600;color:var(--ink)}
   .pk-seg-row{display:flex;gap:8px;flex-wrap:wrap;flex:1}
-  .pk-seg{appearance:none;font:inherit;font-size:13px;font-weight:600;padding:8px 14px;border-radius:8px;cursor:pointer;background:var(--surface);color:var(--ink);border:1px solid var(--line-2);letter-spacing:-.01em}
+  .pk-seg{appearance:none;font:inherit;font-size:13px;font-weight:600;min-height:44px;padding:8px 14px;border-radius:8px;cursor:pointer;background:var(--surface);color:var(--ink);border:1px solid var(--line-2);letter-spacing:-.01em}
   .pk-seg.on{background:#2563eb;color:#fff;border-color:#2563eb}
   .pk-seg:disabled{opacity:.4;cursor:default}
   .pk-slider{flex:1;accent-color:#2563eb}
@@ -3127,7 +2710,7 @@
      persisteres av «Lagre arbeidstider» (PUT /hours {days,breaks}) — ingen egen auto-save. -->
 <div class="pause-modal-backdrop" id="pauseBackdrop" role="dialog" aria-modal="true" aria-label="Pauser" hidden>
   <div class="pause-modal">
-    <button class="pause-modal-close" id="pauseClose" type="button" aria-label="Lukk">×</button>
+    <button class="lukk-x pause-modal-close" id="pauseClose" type="button" aria-label="Lukk"><svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg></button>
     <p class="pause-modal-h">Pauser</p>
     <p class="pause-modal-s">Én pause per dag. Kunder kan ikke booke i pausen. Lagres med arbeidstidene.</p>
     <div class="pause-modal-list" id="pauseModalList"></div>
@@ -3135,9 +2718,34 @@
   </div>
 </div>
 
-<script src="palett.js"></script>
 <script src="lib/cropper.min.js"></script>
 <script>
+// ── ÉN felles lukkeknapp (X) — se .lukk-x i CSS. Alle X-er i JS-genererte maler bruker disse to, så ikon og
+// klasse aldri kan drive fra hverandre (tools/render/dialoger.mjs teller dem statisk).
+var LUKK_X_SVG='<svg viewBox="0 0 24 24" aria-hidden="true" focusable="false"><path d="M6 6l12 12M18 6 6 18"/></svg>';
+function lagLukkX(etikett){ var b=document.createElement('button'); b.type='button'; b.className='lukk-x'; b.setAttribute('aria-label',etikett||'Lukk'); b.innerHTML=LUKK_X_SVG; return b; }
+
+// ── Dialoger: fokus ved åpning (samme mønster som dialog() i dinside-v2.js) ──
+// Siste inndata avgjør hvor fokus legges: åpnet med tastatur → første synlige kontroll (ring via :focus-visible);
+// åpnet med trykk/mus → selve dialogen (tabindex=-1, ingen ring — se [role=dialog][tabindex="-1"]:focus i CSS).
+// Før fikk ingen dialog fokus (calOverlay.focus() var en no-op uten tabindex), så Tab gikk til siden bak.
+var _dlgTastatur=false;
+document.addEventListener('keydown',function(e){ if(e.key==='Tab'||e.key==='Enter'||e.key===' '||e.key.indexOf('Arrow')===0) _dlgTastatur=true; },true);
+document.addEventListener('pointerdown',function(){ _dlgTastatur=false; },true);
+function fokuserDialog(d){
+  if(!d)return;
+  d._dlgForrige=document.activeElement;
+  if(!d.hasAttribute('tabindex'))d.tabIndex=-1;
+  var f=null;
+  if(_dlgTastatur){ var k=d.querySelectorAll('button:not([disabled]),a[href],input:not([disabled]),textarea:not([disabled]),select:not([disabled])');
+    for(var i=0;i<k.length;i++){ if(k[i].offsetParent!==null||getComputedStyle(k[i]).position==='fixed'){ f=k[i]; break; } } }
+  (f||d).focus({preventScroll:true});
+}
+// Tilbake til åpneren ved lukking — kun ved tastatur (ved trykk ville et programmatisk fokus kunne vise ring).
+function returnerDialogFokus(d){
+  var f=d&&d._dlgForrige; if(d)d._dlgForrige=null;
+  if(_dlgTastatur&&f&&f.focus&&document.contains(f)&&f.offsetParent!==null) f.focus({preventScroll:true});
+}
 let IS_DEMO=false;
 
 const CONFIG={
@@ -4418,7 +4026,7 @@ function calVisibleKeys(){var n=(window.innerWidth>760)?3:1,out=[];for(var i=0;i
 
 function byggCal(){
   var ov=$("#calOverlay");
-  ov.innerHTML='<div class="cal-topbar"><button class="cal-datebtn" id="calDateBtn"></button><button class="cal-today" id="calToday">I dag</button><button class="cal-close" id="calClose" aria-label="Lukk">✕</button></div>'
+  ov.innerHTML='<div class="cal-topbar"><button class="cal-datebtn" id="calDateBtn"></button><button class="cal-today" id="calToday">I dag</button><button type="button" class="lukk-x cal-close" id="calClose" aria-label="Lukk">'+LUKK_X_SVG+'</button></div>'
     +'<div class="cal-monthpick" id="calMonthpick" hidden></div>'
     +'<div class="cal-daystrip" id="calDaystrip"></div>'
     +'<div class="cal-grid"><div class="cal-scroll"><div class="cal-axis" id="calAxis"></div><div class="cal-days" id="calDays"></div></div></div>';
@@ -4505,7 +4113,7 @@ async function oppdaterKalenderBannere(keys){
       var b=document.createElement('div'); b.className='cal-story-banner';
       var cta=document.createElement('button'); cta.type='button'; cta.className='cal-story-cta'; cta.textContent=ledigTekst(d.antall)+' · Lag story';
       cta.addEventListener('click',function(){ if(window.aapneStory) window.aapneStory(); });
-      var x=document.createElement('button'); x.type='button'; x.className='cal-story-x'; x.setAttribute('aria-label','Skjul'); x.textContent='×';
+      var x=lagLukkX('Skjul');
       x.addEventListener('click',function(){ meldSkjul(dato); b.remove(); });
       b.appendChild(cta); b.appendChild(x);
       var head=naa.querySelector('.cal-dayhead');
@@ -4563,13 +4171,15 @@ async function openKalender(mode){
   else CAL.active=todayKey; // 'today'/default
   CAL.active=Math.max(CAL.minKey,Math.min(CAL.maxKey,CAL.active));
   renderCal();
-  $("#calOverlay").hidden=false;CAL.open=true;document.body.style.overflow='hidden';$("#calOverlay").focus();
+  $("#calOverlay").hidden=false;CAL.open=true;document.body.style.overflow='hidden';fokuserDialog($("#calOverlay"));
   startNaaTikk();   // nå-strek oppdateres hvert minutt mens kalenderen er åpen
 }
-function lukkKalender(){$("#calOverlay").hidden=true;CAL.open=false;document.body.style.overflow='';toggleMonthpick(true);stopNaaTikk();}
+function lukkKalender(){$("#calOverlay").hidden=true;CAL.open=false;document.body.style.overflow='';toggleMonthpick(true);stopNaaTikk();returnerDialogFokus($("#calOverlay"));}
 
 // ── Delt detaljflate ──
-function openDetalj(id){renderDetalj(id);$("#bkDetailBackdrop").hidden=false;}
+function openDetalj(id){var bd=$("#bkDetailBackdrop"),ny=bd.hidden;renderDetalj(id);bd.hidden=false;
+  // Fokus på det nye arket; åpneren lagres på backdropen (arket bygges på nytt ved hver render).
+  var d=bd.querySelector(".bk-detail");if(d&&ny){fokuserDialog(d);bd._dlgForrige=d._dlgForrige;}}
 function renderDetalj(id){
   var b=finnBooking(id);if(!b){lukkDetalj();return;}
   bkDetalj.openId=String(id);
@@ -4594,14 +4204,14 @@ function renderDetalj(id){
   var prisHtml=(rd&&rd.price_after_nok!=null)
     ? '<span class="pris-fra">'+esc(b.price_label||'')+'</span>'+rd.price_after_nok+' kr'
     : esc(b.price_label||'—');
-  $("#bkDetailBackdrop").innerHTML='<div class="bk-detail" role="dialog" aria-modal="true"><button class="bk-detail-close" aria-label="Lukk">✕</button>'
+  $("#bkDetailBackdrop").innerHTML='<div class="bk-detail" role="dialog" aria-modal="true"><button type="button" class="lukk-x bk-detail-close" aria-label="Lukk">'+LUKK_X_SVG+'</button>'
     +'<div class="bk-detail-head"><span class="bk-detail-name">'+esc(b.name)+'</span><span class="tag '+tagC+'">'+tagT+'</span></div>'
     +(rd?'<div class="bk-detail-badge">'+discountPill(b)+'</div>':'')+tel
     +'<dl class="bk-detail-rows"><div><dt>Tjeneste</dt><dd>'+esc(b.service||'—')+'</dd></div>'+tilleggRad+'<div><dt>Pris</dt><dd>'+prisHtml+'</dd></div><div><dt>Tid</dt><dd>'+tid+'</dd></div></dl>'
     +(handling?'<div class="bk-detail-actions">'+handling+'</div>':'')+'</div>';
   $("#bkDetailBackdrop .bk-detail-close").onclick=lukkDetalj;
 }
-function lukkDetalj(){$("#bkDetailBackdrop").hidden=true;bkDetalj.openId=null;}
+function lukkDetalj(){var bd=$("#bkDetailBackdrop"),v=!bd.hidden;bd.hidden=true;bkDetalj.openId=null;if(v)returnerDialogFokus(bd);}
 $("#bkDetailBackdrop").addEventListener('click',function(e){if(e.target===this)lukkDetalj();});
 
 // Innganger + resize-render
@@ -4829,207 +4439,13 @@ async function renderAttribusjon(){
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') lukkMeny(); });
 })();
 
+// Bildene «Din side» viser. dinside-v2.js holder den oppdatert; crop-modalen leser originalUrl/cropRect herfra.
 let imgs=[];
-let _activeSlot=null;
 let _activeImgId=null;
 let _cropper=null;
 
-async function loadBilder(){
-  // savedLayout/design.layout settes av loadDesign (kjøres før denne på Design-fanen).
-  try{imgs=await api.images();}catch(e){imgs=[];}
-  refreshSlots();
-}
-
-// Bruk denne — IKKE loadBilder() — etter enhver operasjon som ENDRER bilder (opplasting,
-// sletting, erstatning, beskjæring). Bildene er server-rendret inn i preview, men ligger ikke
-// i previewCache-nøkkelen, så slot-visningen må oppdateres OG cachen tømmes. Å legge
-// invaliderPreview() inn i loadBilder() selv ville vært feil: den kalles også ved fane-inngang,
-// og da hadde cachen blitt nullet hver eneste gang barbereren åpner «Din side».
-async function bilderEndret(){
-  if(erV2()){ await DinSideV2.bilderEndret(); return; }   // v2: Din side-steget Bilder eier visningen
-  await loadBilder();
-  invaliderPreview();
-  oppdaterSjekkliste(); // galleri-haken (≥2 bilder) kan ha endret seg
-}
-
-// Rendrer slots for VALGT layout (design.layout), ikke lagret. Slik ser barberen
-// slot-oppsettet skifte live når hen bytter layout. Boksene er trykkbare også når layouten
-// bare er forhåndsvist (13.10 — låsen er fjernet): bilder hører til en SLOT, ikke en layout
-// (images.slot; PUT /design rører aldri bilder), så ingenting går tapt. Første opplasting i en
-// ulagret layout lagrer layouten etterpå (handleUpload), så bildet aldri blir usynlig på siden.
-// Ukjent layout (null) gir ingen bokser i det hele tatt (refreshSlots), så ingen opplasting.
-function layoutUlagret(){return design.layout!==null&&design.layout!==savedLayout;}
-// Bildekrav per layout eies av BACKEND (GET /design + svarene fra POST/DELETE /images):
-//   _bildekrav[layout]   = { felt:[...], baerer, reserve, maks:{ felt: antall } }
-//   _bildeStatus[layout] = null | 'reserve' | 'mangler'
-// Frontend regner IKKE status selv — den leser bilde_status for valgt layout. Mangler feltene
-// (gammel backend): ingen varsler, og ingen bildefelt — vi vet ikke hvilke felt layouten har, og
-// en gjettet liste er nettopp den andre kilden dette erstatter (samme regel som ukjent layout).
-let _bildekrav=null, _bildeStatus=null;
-function _erObj(x){return !!x&&typeof x==='object'&&!Array.isArray(x);}
-// Eneste setter. Hvert felt valideres for seg; et svar uten feltene rører ingenting.
-function settBildeData(d){
-  if(!_erObj(d))return;
-  if(_erObj(d.bildekrav))_bildekrav=d.bildekrav;
-  if(_erObj(d.bilde_status))_bildeStatus=d.bilde_status;
-}
-function kravFor(layout){var k=_bildekrav&&_bildekrav[layout];return (_erObj(k)&&Array.isArray(k.felt))?k:null;}
-function statusFor(layout){return _bildeStatus?_bildeStatus[layout]:undefined;}
-function maksFor(k,felt){var m=k&&_erObj(k.maks)?Number(k.maks[felt]):NaN;return m>0?m:1;}
-// Hjelpetekst regnes av felt + maks. Følger VALGT layout, i takt med slot-visningen.
-// [oversettelse: sv/da/en]
-function layoutHint(layout){
-  var k=kravFor(layout);if(!k)return '';
-  var nm=(LAYOUTS.find(function(l){return l.key===layout;})||{}).t||layout;
-  if(!k.felt.length)return nm+': ingen bilder på siden';
-  var ene=k.felt.length===1;
-  var deler=k.felt.map(function(f){var m=maksFor(k,f);
-    if(f==='portrett')return m===1?'ett portrett':'opptil '+m+' portretter';
-    if(f==='hero')return m===1?'ett forsidebilde':'opptil '+m+' forsidebilder';
-    if(f==='galleri')return 'opptil '+m+(ene?' bilder':'')+' i galleriet';
-    return '';
-  }).filter(Boolean);
-  return nm+': '+deler.join(' + ');
-}
-// Låste tekster (Henrik 10.10). Vises i Design (#layoutBildeVarsel) — ikke i Bilder (13.10, se markup).
-// [oversettelse: sv/da/en]
-const BILDE_VARSEL={
-  showcase:'Showcase viser galleriet ditt. Legg til minst ett bilde, eller velg Direkte.',
-  hero:'Hero viser et stort forsidebilde. Legg til et bilde, eller velg Direkte.',
-  profil:'Profil viser portrettet ditt. Legg til et portrett, eller velg en annen layout.'
-};
-// Dempet linje ved det bærende feltet når siden bruker reserven. Nøkkel = reserve-feltet.
-const RESERVE_TEKST={galleri:'Siden bruker ditt første galleribilde.'};
-// Vis varselet KUN når backend sier 'mangler' for VALGT layout. Følger layout-bytte og
-// bildeendring — begge går gjennom refreshSlots(). Blokkerer aldri lagring.
-function oppdaterBildeVarsel(){
-  var t=(design.layout&&statusFor(design.layout)==='mangler')?(BILDE_VARSEL[design.layout]||''):'';
-  var g=$('#layoutBildeVarsel');if(!g)return;
-  var p=$('#layoutBildeVarselTekst');if(p)p.textContent=t;
-  g.hidden=!t;
-}
-// «Legg til bilde»: åpne Bilder-trekkspillet og gå til layoutens bærende felt (tomt «+»-felt
-// foretrekkes). Ingen auto-filvelger (mister bruker-gesten etter accordion-toggle) — den tomme
-// boksen er trykkbar, også i forhåndsvisning.
-function aapneBaerendeFelt(){
-  var k=kravFor(design.layout);
-  if(typeof _sjekkAapneAkk==='function')_sjekkAapneAkk('accBilder');
-  var boks=null;
-  if(k&&k.baerer){
-    boks=document.querySelector('#bilderMount .slot-box[data-slot="'+k.baerer+'"]:not(.filled)')
-      ||document.querySelector('#bilderMount .slot-box[data-slot="'+k.baerer+'"]');
-  }
-  var maal=boks?(boks.closest('.slot-section')||boks):document.getElementById('accBilder');
-  if(maal)maal.scrollIntoView({behavior:'smooth',block:'start'});
-  if(boks)boks.focus({preventScroll:true});
-}
-$('#layoutBildeVarselAdd').addEventListener('click',aapneBaerendeFelt);
-// «Har du ikke et portrett? Velg en annen layout.» under den tomme portrett-boksen → layoutvalget i Design.
-function aapneLayoutvalg(){
-  if(typeof _sjekkAapneAkk==='function')_sjekkAapneAkk('accDesign');
-  var g=document.getElementById('layoutGrid');
-  if(g)g.scrollIntoView({behavior:'smooth',block:'start'});
-}
-
-function refreshSlots(){
-  oppdaterBildeVarsel();   // følger layout/bilde-state — oppdater ved hvert kall (også null-layout → skjult)
-  if(!layoutUlagret())visBilderFeil('');   // tilbake på lagret layout → layout-feilen gjelder ikke lenger
-  // Vet vi ikke hvilken layout barbereren har, sier vi INGENTING: ingen slot-bokser, ingen
-  // layout-hjelpetekst, ingen bio-varsel. Alt tre er påstander om et valg vi ikke kjenner.
-  // Tomt panel er ærlig; Direkte-farget panel er en gjetning som ser ut som et faktum.
-  if(design.layout===null){
-    const m=$("#bilderMount");if(m)m.innerHTML='';
-    const lh=$("#layoutHint");if(lh)lh.textContent='';
-    const b0=$("#bioHint");if(b0)b0.hidden=true;
-    return;
-  }
-  renderSlotView(design.layout,imgs);
-  const hint=$("#layoutHint");if(hint)hint.textContent=layoutHint(design.layout);
-  // Bio-varselet henger på denne funksjonen med vilje — den kjøres allerede ved BÅDE
-  // fane-inngang (loadBilder) og layout-bytte (:design-klikk), som er nøyaktig de to
-  // øyeblikkene svaret kan endre seg. En egen lytter ville vært et tredje sted å holde i synk.
-  // Følger VALGT layout, ikke lagret — samme regel som slot-visningen rett over.
-  const bh=$("#bioHint");if(bh)bh.hidden=design.layout!=='direkte';
-}
-
-function renderSlotView(layout,imgs){
-  const mount=$("#bilderMount");if(!mount)return;
-  const k=kravFor(layout);
-  if(!k){mount.innerHTML='';return;}   // gammel backend: ingen kjente felt → ingen bokser (se _bildekrav)
-  if(!k.felt.length){
-    const nm=(LAYOUTS.find(function(l){return l.key===layout;})||{}).t||layout;
-    mount.innerHTML='<div class="slot-direkte-msg"><span class="dm-icon">⊘</span><p>'+nm+'-layouten har ikke bilder.<br>Bytt layout i Design hvis du vil ha bilder på siden.</p></div>';
-    return;
-  }
-  // Reservelinja står ved det BÆRENDE feltet (der bildet mangler), ikke ved reserve-feltet.
-  const reserve=statusFor(layout)==='reserve'?(RESERVE_TEKST[k.reserve]||''):'';
-  let html='';
-  k.felt.forEach(function(felt){
-    const r=felt===k.baerer?reserve:'';
-    if(felt==='portrett')html+=slotPortrett(imgs.find(i=>i.slot==='portrett'),r);
-    else if(felt==='hero')html+=slotHero(imgs.find(i=>i.slot==='hero'),r);
-    else if(felt==='galleri')html+=slotGalleri(imgs.filter(i=>i.slot==='galleri').sort((a,b)=>a.sort_order-b.sort_order),maksFor(k,'galleri'),r);
-  });
-  mount.innerHTML=html;
-}
-function slotReserve(t){return t?'<p class="slot-reserve">'+t+'</p>':'';}
-
-// Crop-knappen er fjernet — beskjæring skjer nå ved trykk på selve bildet (se #bilderMount-klikk).
-// × åpner Fjern/Endre-popupen og eier hjørnet alene (full 44px trykkflate uten nabo-overlapp).
-function _slotActions(id){return`<div class="slot-actions"><button class="slot-act-btn slot-menu-btn" data-id="${id}" aria-label="Alternativer">×</button></div>`;}
-
-function slotPortrett(bilde,reserve){
-  const box=bilde
-    ?`<div class="slot-wrap"><div class="slot-box slot-portrett filled" data-slot="portrett" tabindex="0" role="button" aria-label="Beskjær portrett"><img src="${CONFIG.API_BASE+bilde.url}" alt="Portrett"></div>${_slotActions(bilde.id)}</div>`
-    :`<div class="slot-box slot-portrett" data-slot="portrett" tabindex="0" role="button" aria-label="Last opp portrett"><span class="slot-plus">+</span></div>`;
-  // Tom portrett-boks = oppfordringen. Alternativet (annen layout) er en liten lenke rett under.
-  const alt=bilde?'':'<button type="button" class="lnk-quiet slot-alt-lenke" data-velg-layout>Har du ikke et portrett? Velg en annen layout.</button>';
-  return`<div class="slot-section"><div class="slot-label">Portrett</div>${slotReserve(reserve)}<div class="slot-portrett-wrap">${box}</div>${alt}</div>`;
-}
-
-function slotHero(bilde,reserve){
-  const box=bilde
-    ?`<div class="slot-wrap"><div class="slot-box slot-hero filled" data-slot="hero" tabindex="0" role="button" aria-label="Beskjær forsidebilde"><img src="${CONFIG.API_BASE+bilde.url}" alt="Forsidebilde"></div>${_slotActions(bilde.id)}</div>`
-    :`<div class="slot-box slot-hero" data-slot="hero" tabindex="0" role="button" aria-label="Last opp forsidebilde"><span class="slot-plus">+</span></div>`;
-  return`<div class="slot-section"><div class="slot-label">Forsidebilde</div>${slotReserve(reserve)}${box}</div>`;
-}
-
-function slotGalleri(g,MAX,reserve){
-  const items=g.map(im=>`<div class="slot-wrap"><div class="slot-box slot-galleri-item filled" data-slot="galleri" tabindex="0" role="button" aria-label="Beskjær bilde"><img src="${CONFIG.API_BASE+im.url}" alt="Klippebilde"></div>${_slotActions(im.id)}</div>`).join("");
-  const add=g.length<MAX?`<div class="slot-box slot-galleri-item" data-slot="galleri" tabindex="0" role="button" aria-label="Legg til bilde"><span class="slot-plus">+</span></div>`:"";
-  const teller=g.length>0?` (${g.length}/${MAX})`:"";
-  return`<div class="slot-section"><div class="slot-label">Galleri${teller}</div>${slotReserve(reserve)}<div class="slot-galleri-grid">${items}${add}</div></div>`;
-}
-
-async function handleUpload(f,slot){
-  if(!f||!f.type.startsWith("image/"))return;
-  // Ingen knapp (trigges av file-input), men samme sikkerhetsnett: uten dette feilet en opplasting
-  // STUMT ved nettverks-reject (apiFetch kaster, bilderEndret kjører aldri, ingen melding).
-  await medLagreKnapp(async()=>{
-    const fd=new FormData();fd.append("image",f);if(slot)fd.append("slot",slot);
-    const r=await apiFetch('/api/dashboard/images',{method:'POST',body:fd,timeout:API_TIMEOUT_TUNG_MS});
-    if(!r)return;
-    if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke laste opp bilde. Prøv igjen.');return;}
-    settBildeData(await r.json().catch(()=>null));   // bilde_status etter opplastingen
-    // Opplasting i en forhåndsvist (ulagret) layout lagrer layouten — ETTER bildet, så siden aldri
-    // står med f.eks. Profil uten portrett. Kun layout sendes: backend COALESCE-er resten, så ulagret
-    // farge/skrift forblir ulagret til «Lagre design».
-    if(layoutUlagret())await lagreLayoutEtterOpplasting();
-    await bilderEndret();
-  }, {feil:'Kunne ikke laste opp bilde. Prøv igjen.'});
-}
-async function lagreLayoutEtterOpplasting(){
-  const lay=design.layout;
-  const nm=(LAYOUTS.find(function(l){return l.key===lay;})||{}).t||lay;
-  let r, nettFeil=false;
-  try{ r=await apiFetch('/api/dashboard/design',{method:'PUT',body:JSON.stringify({layout:lay})}); }catch(e){ nettFeil=true; }
-  if(r&&r.ok){ savedLayout=lay; _sjekkData.layout=lay; visBilderFeil(''); showToast(nm+'-layouten er lagret.'); return; }
-  if(!nettFeil&&!r)return;   // 401 → apiFetch har sendt til innlogging
-  // savedLayout røres IKKE: layouten er fortsatt ulagret, så neste opplasting prøver igjen, og
-  // «Lagre design» lagrer den. Ingen suksess-toast — bildet ligger trygt, men siden bruker gammel layout.
-  visBilderFeil('Bildet er lastet opp, men '+nm+'-layouten ble ikke lagret. Trykk Lagre design for å bruke den.');
-}
-function visBilderFeil(t){ var e=$('#bilderFeil'); if(!e)return; e.textContent=t; e.hidden=!t; }
+// Etter beskjæring (eller erstatning): Din side-steget Bilder eier visningen og henter bildene på nytt.
+async function bilderEndret(){ if(window.DinSideV2) await DinSideV2.bilderEndret(); }
 
 let hours=[];
 // Delt feilstate: erstatt innholdet i el med en kort melding + «Prøv igjen» som re-kaller fn.
@@ -5090,8 +4506,8 @@ function renderPauseModal(){
       +`<span class="pm-day">${DAYS[h.day]}</span></label>${felt}</div>`;
   }).join("");
 }
-function openPauseModal(){renderPauseModal();$("#pauseBackdrop").hidden=false;document.body.style.overflow='hidden';}
-function closePauseModal(){$("#pauseBackdrop").hidden=true;document.body.style.overflow='';renderHoursList();}
+function openPauseModal(){renderPauseModal();$("#pauseBackdrop").hidden=false;document.body.style.overflow='hidden';fokuserDialog($("#pauseBackdrop"));}
+function closePauseModal(){$("#pauseBackdrop").hidden=true;document.body.style.overflow='';renderHoursList();returnerDialogFokus($("#pauseBackdrop"));}
 // Standard ny pause: 30 min klemt inn i dagens [open,close] — alltid gyldig, ingen valideringsfeil.
 function standardPause(open,close){
   var o=hmMin(open), c=hmMin(close);
@@ -5162,7 +4578,7 @@ window.addEventListener('hashchange',anvendHash);
 /* events */
 document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",()=>{
   const id=t.dataset.panel;if(!id)return; // «Mer»-toggle er også .nav button, men har ingen panel
-  if(window.DinSideV2&&DinSideV2.fangBytte(t))return;   // v2: ulagrede endringer på Din side → dialog, bytte stoppet
+  if(window.DinSideV2&&DinSideV2.fangBytte(t))return;   // ulagrede endringer på Din side → dialog, bytte stoppet
   if(id!=="design"&&window.DinSideV2)DinSideV2.forlat();
   document.querySelectorAll(".nav button").forEach(x=>x.setAttribute("aria-selected","false"));
   t.setAttribute("aria-selected","true");
@@ -5173,9 +4589,6 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();loadLoyalty();}
   if(id==="abonnement"){loadSmsInnstillinger();}   // Konto-bryteren deler sms_paaminnelse_enabled med Vekst
   if(id==="tjenester"){ if(!_ulagret.svc)loadTjenester(); if(!_ulagret.timer)loadArbeidstider(); }   // ulagret → behold det barberen har skrevet
-  // «Din side» laster alle tre trekkspillene. loadProfil FØRST — den fyller Profil-feltene
-  // (navn/adresse/bio/tagline) som bor i dette panelet, før vi bruker tid på design + bilder.
-  // loadProfil hentes alltid (header/slug/_lagretProfil), men fyller bare felt uten ulagrede endringer.
   if(id==="design"){lastDinSide();}
   // Konto (id fortsatt "abonnement"): SMS-loggen lastes ved fane-åpning. Billing lastes
   // separat ved init + Stripe-retur, ikke her — derfor egen, ny gren.
@@ -5229,13 +4642,10 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   document.addEventListener('click',function(e){ if(!mMeny.hidden && !mMeny.contains(e.target) && !mBtn.contains(e.target)) lukk(); });
   document.addEventListener('keydown',function(e){ if(e.key==='Escape') lukk(); });
 })();
-const _slotPopup=document.getElementById('slotPopup');
-function _closeSlotPopup(){_slotPopup.classList.remove('open');}
-document.addEventListener('click',e=>{if(!_slotPopup.contains(e.target))_closeSlotPopup();});
-
 function _closeCropModal(){
   if(_cropper){_cropper.destroy();_cropper=null;}
   document.getElementById('cropModal').classList.remove('open');
+  returnerDialogFokus(document.getElementById('cropModal'));
   var ci=document.getElementById('cropImg'); ci.parentElement.classList.remove('laster'); ci.onload=null; ci.onerror=null; ci.src=''; // nuller handlere før src='' → ingen spøkelses-onerror
   document.getElementById('cropErr').textContent='';
 }
@@ -5273,8 +4683,8 @@ function _openCropModal(imgId,slot,fallbackSrc){
   document.getElementById('cropSave').disabled=true;
   imgEl.parentElement.classList.add('laster');   // «Laster bildet …» til bildet er lastet (onload) / onerror
   if(_cropper){_cropper.destroy();_cropper=null;}
-  // v2: portrett OG galleri er 1:1 (galleriet er kvadratisk på siden). v1 uendret.
-  const ratio=(slot==='portrett'||(slot==='galleri'&&erV2()))?1:slot==='hero'?9/19.5:3/4;
+  // Bildene på siden er portrett og galleri, begge 1:1 (galleriet er kvadratisk på siden).
+  const ratio=1;
   // Bevar original + re-crop fra original: last originalUrl når backend gir den (ny backend), ellers
   // /images/raw/:id som før (gammel backend serverer det destruktivt beskårne bildet). cropRect (forrige
   // utsnitt) finnes bare på ny backend; null ⇒ ikke kall setData, boksen åpner på min-zoom som før.
@@ -5283,7 +4693,7 @@ function _openCropModal(imgId,slot,fallbackSrc){
   const cropRect=rec?(rec.cropRect||rec.crop_rect||null):null;
   // Badge: fast slott-format (samme rolle som plakatens aspekt-badge). Kun visning — ikke i cropData.
   const badge=document.getElementById('cropAspektBadge');
-  if(badge) badge.textContent=slot==='portrett'?'Portrett 1:1':slot==='hero'?'Hero 9:19,5':(erV2()?'Galleri 1:1':'Galleri 3:4');
+  if(badge) badge.textContent=slot==='portrett'?'Portrett 1:1':'Galleri 1:1';
   imgEl.onload=function(){
     // Lastetilstanden av FØR Cropper bygges: Cropper måler beholderen ved oppstart, og minstehøyden ville endret geometrien.
     imgEl.parentElement.classList.remove('laster');
@@ -5308,6 +4718,7 @@ function _openCropModal(imgId,slot,fallbackSrc){
   };
   imgEl.src=src;
   modal.classList.add('open');
+  fokuserDialog(modal);
 }
 document.getElementById('cropCancel').addEventListener('click',_closeCropModal);
 document.getElementById('cropSave').addEventListener('click',async()=>{
@@ -5323,7 +4734,9 @@ document.getElementById('cropSave').addEventListener('click',async()=>{
     const rect=_cropper.getData();
     const canvas=_cropper.getCroppedCanvas();
     const blob=await new Promise((res,rej)=>canvas.toBlob(b=>b?res(b):rej(new Error('toBlob feilet')),'image/jpeg',0.92));
-    if(erV2() && window.DinSideV2 && window.DinSideV2.stageCrop(_activeImgId,blob,rect)){_closeCropModal();return;}
+    // Beskjæringen legges i Din side-utkastet og lagres med «Lagre endringer». PUT-en under er bare reserve
+    // hvis bildet ikke finnes i utkastet.
+    if(window.DinSideV2 && window.DinSideV2.stageCrop(_activeImgId,blob,rect)){_closeCropModal();return;}
     const fd=new FormData();fd.append('image',blob,'crop.jpg');fd.append('op','crop');fd.append('crop_rect',JSON.stringify(rect));
     const r=await apiFetch('/api/dashboard/images/'+_activeImgId,{method:'PUT',body:fd,timeout:API_TIMEOUT_TUNG_MS});
     // 413 = for stort. 415 (og annen feil): serverens egen melding ordrett («Bildeformatet støttes ikke …»).
@@ -5337,80 +4750,6 @@ document.getElementById('cropSave').addEventListener('click',async()=>{
   }
 });
 
-$("#bilderMount").addEventListener("click",async e=>{
-  if(e.target.closest('[data-velg-layout]')){ aapneLayoutvalg(); return; }
-  if(IS_DEMO)return;
-  const menuBtn=e.target.closest('.slot-menu-btn');
-  if(menuBtn){
-    e.stopPropagation();
-    _activeImgId=menuBtn.dataset.id;
-    const r=menuBtn.getBoundingClientRect();
-    _slotPopup.style.top=(r.bottom+4)+'px';
-    _slotPopup.style.left=Math.min(r.left,window.innerWidth-150)+'px';
-    _slotPopup.classList.add('open');
-    return;
-  }
-  const box=e.target.closest(".slot-box");if(!box)return;
-  // Fylt slot → trykk bildet for å beskjære (image-id fra ×-knappen i samme wrap).
-  // Tom slot → trykk for å laste opp.
-  if(box.classList.contains('filled')){
-    const wrap=box.closest('.slot-wrap');
-    const imgEl=box.querySelector('img');
-    const id=wrap?.querySelector('.slot-menu-btn')?.dataset.id;
-    if(imgEl?.src&&id)_openCropModal(id,box.dataset.slot||'galleri',imgEl.src);
-    return;
-  }
-  _activeSlot=box.dataset.slot;
-  $("#fileInput").click();
-});
-// Tastatur: Enter/Mellomrom på en slot-boks (role=button) aktiverer den — fylt → beskjær, tom → last opp.
-$("#bilderMount").addEventListener("keydown",e=>{
-  if(e.key!=='Enter'&&e.key!==' ')return;
-  const box=e.target.closest?.('.slot-box');if(!box)return;
-  e.preventDefault();box.click();
-});
-
-// Selve slettingen. Ingen bekreftelse, heller ikke for layoutens siste bilde: bilde_status i svaret
-// viser bildevarselet (Design + Bilder) med «Legg til bilde» etterpå.
-async function slettBilde(id){
-  let r;
-  try{ r=await apiFetch('/api/dashboard/images/'+id,{method:'DELETE'}); }
-  catch(e){ alert(kontaktFeil(e)); return; }   // før: kastet stumt (ingen melding, bildet sto)
-  if(!r)return;
-  if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke slette bildet. Prøv igjen.');return;}
-  settBildeData(await r.json().catch(()=>null));     // bilde_status etter slettingen
-  await bilderEndret();
-}
-document.getElementById('slotPopupFjern').addEventListener('click',async()=>{
-  _closeSlotPopup();
-  const id=_activeImgId;if(!id)return;
-  await slettBilde(id);
-});
-
-document.getElementById('slotPopupEndre').addEventListener('click',()=>{
-  _closeSlotPopup();
-  $("#replaceInput").click();
-});
-
-$("#replaceInput").addEventListener('change',async e=>{
-  const f=e.target.files[0];e.target.value='';
-  if(!f||!_activeImgId)return;
-  // op='replace': rå fil som før, INGEN crop_rect. Ny backend erstatter originalen (og nullstiller
-  // ev. lagret crop); gammel backend ignorerer op og lagrer den rå fila som før → ingen regresjon.
-  const fd=new FormData();fd.append('image',f);fd.append('op','replace');
-  try{
-    const r=await apiFetch('/api/dashboard/images/'+_activeImgId,{method:'PUT',body:fd,timeout:API_TIMEOUT_TUNG_MS});
-    if(!r)return;
-    // 413 = for stort. 415: serverens egen melding ordrett («Bildeformatet støttes ikke. Prøv JPG eller PNG.»).
-    if(r.status===413){alert('Bildet er for stort (maks 20 MB).');return;}
-    if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke erstatte bildet. Prøv igjen.');return;}
-    await bilderEndret();
-  }catch(err){
-    alert(kontaktFeil(err));
-  }
-});
-
-$("#fileInput").addEventListener("change",e=>{handleUpload(e.target.files[0],_activeSlot);e.target.value="";});
 // «input» (ikke «change») + ALDRI innerHTML mens brukeren skriver. Rot-årsak til at 10:00 ikke
 // kunne tastes: change fyrte så snart tidsfeltet var gyldig («01:00» etter «1»), og renderHoursList()
 // erstattet hele lista (innerHTML) → det fokuserte feltet ble byttet ut og fokus forsvant. Nå
@@ -5442,26 +4781,21 @@ $("#pauseModalList").addEventListener("change",e=>{const i=+e.target.dataset.pm;
   else if(e.target.dataset.pmf){hours[i].breaks=hours[i].breaks||[]; if(!hours[i].breaks[0])hours[i].breaks[0]={start:'',end:''}; hours[i].breaks[0][e.target.dataset.pmf]=e.target.value;}});
 $("#saveHours").addEventListener("click",async()=>{const btn=$("#saveHours");btn.disabled=true;btn.textContent="Lagrer …";$("#hoursErr").textContent="";
   const res=await api.saveHours(hours);btn.disabled=false;btn.textContent="Lagre arbeidstider";
-  if(res.ok){await loadArbeidstider();/* refetch: ufullstendige pauser (start uten slutt) droppes i payloaden (api.saveHours) men blir stående lokalt → speil backend, som saveSvc/savePay. Ellers viser pause-modalen en fantompause til full reload. */ const s=$("#hoursSaved");s.classList.add("show");setTimeout(()=>s.classList.remove("show"),1800);oppdaterSjekkliste();/* åpen-dag-haken kan ha endret seg */}
+  if(res.ok){await loadArbeidstider();/* refetch: ufullstendige pauser (start uten slutt) droppes i payloaden (api.saveHours) men blir stående lokalt → speil backend, som saveSvc/savePay. Ellers viser pause-modalen en fantompause til full reload. */ const s=$("#hoursSaved");s.classList.add("show");setTimeout(()=>s.classList.remove("show"),1800);}
   else if(res.error){$("#hoursErr").textContent=res.error;}});   // 409 booking-kollisjon / 400 validering — ordrett
 
 // ── Ulagrede endringer per område (fanebytte) ──
-// Fanebyttet lastet Tjenester (tjenester + tider) og Din side (profil + design) på nytt HVER gang, så en
-// ulagret pris, åpningstid, palett eller bio forsvant uten advarsel — også via sjekklista (switchPanel).
-// Nå: et område lastes på nytt bare når det IKKE har ulagrede endringer. Flagget settes ved endring og
-// nullstilles når hentingen eller lagringen har lyktes (lagring henter på nytt / er serverens sannhet).
-// Egne flagg i stedet for _ulagrede (DOM-basert): listene tegnes på nytt ved hver endring, og palettvalg er
-// klikk, ikke input — begge falt ut av den sporingen.
-var _ulagret={svc:false,timer:false,design:false,profil:false,navn:false};
+// Fanebyttet lastet Tjenester (tjenester + tider) på nytt HVER gang, så en ulagret pris eller åpningstid
+// forsvant uten advarsel. Nå: et område lastes på nytt bare når det IKKE har ulagrede endringer. Flagget settes
+// ved endring og nullstilles når hentingen eller lagringen har lyktes (lagring henter på nytt / er serverens sannhet).
+// Egne flagg i stedet for _ulagrede (DOM-basert): listene tegnes på nytt ved hver endring.
+// Din side har sin egen sporing (dinside-v2.js: ulagret() + fangBytte).
+var _ulagret={svc:false,timer:false,navn:false};
 function merkUlagret(k){ _ulagret[k]=true; }
 ["#hovedList","#tilleggList"].forEach(function(s){ $(s).addEventListener('input',function(){ merkUlagret('svc'); }); });
 $("#tjenester").addEventListener('click',function(e){ if(e.target.closest('.svc-rm,#addHoved,#addTillegg')) merkUlagret('svc'); },true);
 $("#hoursList").addEventListener('input',function(){ merkUlagret('timer'); });
 $("#pauseModalList").addEventListener('change',function(){ merkUlagret('timer'); });
-$("#design").addEventListener('click',function(e){ if(e.target.closest('.preset,.modebtn')) merkUlagret('design'); },true);
-$("#customPanel").addEventListener('pointerdown',function(){ merkUlagret('design'); },true);
-$("#customPanel").addEventListener('input',function(){ merkUlagret('design'); });
-$("#accProfil").addEventListener('input',function(){ merkUlagret('profil'); });
 $("#pf-name").addEventListener('input',function(){ merkUlagret('navn'); });
 
 $("#gcalBtn").addEventListener("click",async()=>{
@@ -5542,24 +4876,12 @@ async function loadProfil(){
   if(_billing&&typeof renderKonto==='function')renderKonto(_billing);
   if(typeof renderForsteBooking==='function')renderForsteBooking();   // lenka i steg 1/2 trenger sluggen
   if(p.isDemo&&!IS_DEMO){IS_DEMO=true;applyDemoMode();}
-  // Feltene fylles bare når de ikke har ulagrede endringer (fanebytte/sjekkliste skal ikke slette det barberen
-  // har skrevet). Lagret-tilstanden (_lagretNavn/_lagretProfil) følger alltid serveren.
+  // Navnefeltet fylles bare når det ikke har ulagrede endringer. Lagret-tilstanden (_lagretNavn/_lagretProfil)
+  // følger alltid serveren.
   var _uk=(typeof _ulagret==='object'&&_ulagret)||{};
-  if(!_uk.navn) $("#pf-name").value=p.name||"";
+  if(!_uk.navn){ $("#pf-name").value=p.name||""; profilTeller('pf-name'); }   // verdien er satt programmatisk (ingen input-hendelse)
   _lagretNavn=(p.name||"").trim(); oppdaterNavnVerdi();   // Konto → Navn-raden
   _lagretProfil={name:p.name||"",shop:p.shop||"",address:p.address||"",tagline:p.tagline||"",bio:p.bio||""};
-  if(!_uk.profil){
-    $("#pf-shop").value=p.shop||"";
-    $("#pf-address").value=p.address||"";
-    $("#pf-tagline").value=p.tagline||"";
-    $("#pf-bio").value=p.bio||"";
-    oppdaterProfilTellere();   // verdiene er satt programmatisk (ingen input-hendelse)
-    // Strip evt. ledende @ ved lasting — @-en vises som fast prefiks (.fld-at), aldri i verdien.
-    $("#pf-instagram").value=(p.instagram||"").replace(/^@+/,"");
-    $("#pf-tiktok").value=(p.tiktok||"").replace(/^@+/,"");
-    $("#pf-snapchat").value=(p.snapchat||"").replace(/^@+/,"");
-    $("#pf-phone").value=p.contact_phone||"";
-  }
   // Sett barber-navn i header — null til dette punktet
   const displayName=p.shop||p.name||"";
   CONFIG.BARBER_NAME=displayName;
@@ -5623,7 +4945,6 @@ function bindFeedbackBoks(suffiks,type){
   });
 }
 bindFeedbackBoks('side','idea');
-bindFeedbackBoks('konto-ide','idea');
 bindFeedbackBoks('konto-support','support');
 
 /* ---- Konto-radene: «Endre» åpner redigering i samme rad, flere kan være åpne ---- */
@@ -5754,141 +5075,31 @@ $("#loggUt").addEventListener("click",async function(){
   // i UI-et etter et mislykket utloggingskall er verre enn en overflødig redirect.
   try{ await apiFetch('/api/logout',{method:'POST',body:'{}',raw401:true}); }catch(e){}
   glemInnloggingKode();   // utlogget → logg-inn skal vise steg 1, ikke en gammel kodeforespørsel
-  settOppsettLukket(false);   // neste innlogging åpner oppsettet igjen (v2, siden ikke live)
+  settOppsettLukket(false);   // neste innlogging åpner oppsettet igjen (siden ikke live)
   location.href='/no/logg-inn.html';
 });
-// Profil («Din side») og Navn (Konto → Innlogging) deler PUT /api/dashboard/profile. Navn er
-// flyttet til Konto, resten står i Profil. Begge sender HELE profilen — trygt uansett om ruta er
-// partial eller full-replace, og feltene er alt fylt av loadProfil ved init. Flash-en skiller dem.
-const PROFIL_DELVIS_LAGRET='Telefon og lenker er lagret, men navn og bio ble ikke lagret. Prøv igjen.';
-// Inline-feil under Telefon (Profil). tekst=null skjuler. fokus=true åpner Profil-trekkspillet (lagring
-// kan komme fra Konto → «Lagre navn») og setter fokus i feltet, som salongnavn-feilen.
-function setTelefonFeil(tekst, fokus){
-  var el=$("#phoneErr"), inp=$("#pf-phone"); if(!el||!inp)return;
-  el.textContent=tekst||''; el.hidden=!tekst;
-  if(tekst) inp.setAttribute('aria-invalid','true'); else inp.removeAttribute('aria-invalid');
-  if(tekst&&fokus){
-    var _head=document.querySelector('#accProfil .acc-head');
-    if(_head && _head.getAttribute('aria-expanded')!=='true') _head.click();
-    inp.focus();
-  }
-}
-// ── Lengdetak på profilfeltene ──
-// Navn/salongnavn/adresse/beskrivelse = backend rensTekst i PUT /profile. Spesialitet (tagline) er 60 her,
-// strammere enn backendens 150: den vises som en sperret overlinje på bookingsiden, og 150 tegn ble 5–6
-// linjer på 320/375 (rendret 14.10, Henrik valgte 60).
-// ÉN kilde: maxlength og telleren settes herfra. Telleren står alltid under beskrivelsen; på de korte
-// feltene først fra 80 % av taket, så «11 / 100» ikke står under hvert felt.
-const PROFIL_MAKS={'pf-name':100,'pf-shop':100,'pf-address':200,'pf-tagline':60,'pf-bio':2000};
-const PROFIL_TELLER_ALLTID={'pf-bio':true};
+// ── Lengdetak på navnet (Konto → Navn) ──
+// = backend rensTekst i PUT /profile. ÉN kilde: maxlength og telleren settes herfra. Telleren vises først fra
+// 80 % av taket, så «11 / 100» ikke står under feltet.
+const PROFIL_MAKS={'pf-name':100};
 function profilTeller(id){
   var inp=document.getElementById(id), t=document.getElementById(id+'-teller'); if(!inp||!t)return;
   var max=PROFIL_MAKS[id], n=inp.value.length;
   t.textContent=nok(n)+' / '+nok(max);
-  t.hidden=!(PROFIL_TELLER_ALLTID[id] || n>=max*0.8);
+  t.hidden=!(n>=max*0.8);
   t.classList.toggle('full', n>=max);
 }
-function oppdaterProfilTellere(){ Object.keys(PROFIL_MAKS).forEach(profilTeller); }
 Object.keys(PROFIL_MAKS).forEach(function(id){
   var inp=document.getElementById(id); if(!inp)return;
   inp.maxLength=PROFIL_MAKS[id];
   var t=document.createElement('span'); t.className='fld-teller'; t.id=id+'-teller'; t.setAttribute('aria-live','polite');
   inp.insertAdjacentElement('afterend',t);
-  var feil=document.createElement('p'); feil.className='fld-err'; feil.id=id+'-feil'; feil.hidden=true; feil.setAttribute('role','alert');
-  t.insertAdjacentElement('afterend',feil);
-  inp.setAttribute('aria-describedby',[inp.getAttribute('aria-describedby'),t.id,feil.id].filter(Boolean).join(' '));
-  inp.addEventListener('input',function(){ profilTeller(id); var f=document.getElementById(id+'-feil'); if(f&&!f.hidden)f.hidden=true; });
+  inp.setAttribute('aria-describedby',[inp.getAttribute('aria-describedby'),t.id].filter(Boolean).join(' '));
+  inp.addEventListener('input',function(){ profilTeller(id); });
   profilTeller(id);
 });
-// Backendens 400 for et profilfelt → meldingen ordrett under feltet. Feltet tas KUN fra svaret (felt: name|
-// shop|address|tagline|bio) — aldri gjettet fra ordlyden. Mangler/ukjent felt → null (kalleren viser alert).
-const PROFIL_FELT={name:'pf-name',shop:'pf-shop',address:'pf-address',tagline:'pf-tagline',bio:'pf-bio'};
-function profilFeltFraFeil(d){
-  var k=d&&d.felt;
-  return (k&&Object.prototype.hasOwnProperty.call(PROFIL_FELT,k))?PROFIL_FELT[k]:null;
-}
-function visProfilFeltFeil(id, tekst){
-  var f=document.getElementById(id+'-feil'), inp=document.getElementById(id); if(!f||!inp)return false;
-  f.textContent=tekst; f.hidden=false;
-  if(id==='pf-name'){ var rad=document.getElementById('radNavnRed'); if(rad&&rad.hidden&&typeof settRadAapen==='function')settRadAapen('radNavn',true); }
-  else{ var h=document.querySelector('#accProfil .acc-head'); if(h&&h.getAttribute('aria-expanded')!=='true')h.click(); }
-  inp.focus();
-  return true;
-}
-async function lagreProfil(knappSel, flashSel){
-  // Validering: salongnavnet er PÅKREVD (bygger sidetittel/slug-kontekst). Tomt → avbryt uten PUT,
-  // vis tydelig inline-feil + fokus. Kan lagres fra «Lagre profil» ELLER «Lagre navn», så åpne
-  // Profil-trekkspillet slik at feilen faktisk er synlig.
-  const shopEl=$("#pf-shop"), shopErr=$("#shopErr");
-  if(!shopEl.value.trim()){
-    if(shopErr) shopErr.hidden=false;
-    var _head=document.querySelector('#accProfil .acc-head');
-    if(_head && _head.getAttribute('aria-expanded')!=='true') _head.click();
-    shopEl.focus();
-    return;
-  }
-  if(shopErr) shopErr.hidden=true;
-  // M7: felles knapp-/sikkerhetsnett (medLagreKnapp, som saveSvc/savePay/saveDesign) — en nettverks-
-  // reject hang før knappen på «Lagrer …». To writes (sosiale handles/telefon + profil); feiler ÉN, vises
-  // det som FEIL og flash/«Lagret» kjører ALDRI.
-  // /settings FØRST: den er den eneste som validerer (telefonen, gyldigTelefon per marked) og skriver alt
-  // i én UPDATE etter valideringen — avvist nummer = ingenting lagret. Først når den har gått gjennom,
-  // sendes /profile. Omvendt rekkefølge lagret navn/bio og mistet lenkene når telefonen ble avvist.
-  // Telefonregelen bor KUN i backend — vi viser bare serverens tekst under feltet.
-  setTelefonFeil(null);
-  medLagreKnapp(async function(){
-    // Sosiale handles lagres via PUT /settings (backend-kontrakt: normalizeHandle strippar @/URL/domene,
-    // tom streng nullstiller kolonnen → ikonet forsvinner fra bookingsiden). Samme «Lagre profil»-knapp.
-    const rs=await api.saveSettings({
-      instagram:     $("#pf-instagram").value,
-      tiktok:        $("#pf-tiktok").value,
-      snapchat:      $("#pf-snapchat").value,
-      contact_phone: $("#pf-phone").value,
-    });
-    if(!rs)return;                                  // 401 → apiFetch har sendt til logg-inn
-    if(!rs.ok){
-      const d=await rs.json().catch(()=>({}));
-      if(rs.status===400 && /telefon|contact_phone/i.test((d&&d.error)||'')){ setTelefonFeil(d.error,true); return; }
-      alert((d&&d.error)||'Kunne ikke lagre sosiale lenker. Prøv igjen.'); return;
-    }
-    // /settings er lagret. Feiler /profile nå (nett/server), sier meldingen nøyaktig hva som ble lagret.
-    let r;
-    try{
-      r=await apiFetch('/api/dashboard/profile',{method:'PUT',body:JSON.stringify({
-        name:    _lagretProfil?_lagretProfil.name:$("#pf-name").value,   // navnet eies av Konto (lagreNavn)
-        shop:    $("#pf-shop").value,
-        address: $("#pf-address").value,
-        tagline: $("#pf-tagline").value,
-        bio:     $("#pf-bio").value,
-      })});
-    }catch(_){ r=undefined; }
-    if(r===null)return;                             // 401 → apiFetch har sendt til logg-inn
-    if(r&&r.status===400){
-      // For lang tekst (eller annen feltfeil): backendens norske melding under feltet den gjelder.
-      const d=await r.json().catch(()=>({}));
-      const id=profilFeltFraFeil(d);
-      if(id&&d&&d.error&&visProfilFeltFeil(id,d.error))return;
-      alert((d&&d.error)||PROFIL_DELVIS_LAGRET); return;
-    }
-    if(!r||!r.ok){ alert(PROFIL_DELVIS_LAGRET); return; }
-    _lagretProfil={name:_lagretProfil?_lagretProfil.name:$("#pf-name").value,shop:$("#pf-shop").value,
-      address:$("#pf-address").value,tagline:$("#pf-tagline").value,bio:$("#pf-bio").value};
-    _ulagret.profil=false;
-    const displayName=$("#pf-shop").value.trim()||_lagretProfil.name.trim()||"";
-    CONFIG.BARBER_NAME=displayName;
-    settHeaderNavn(displayName);                 // nytt navn kan ha ny bredde → re-fit
-    if(flashSel==="#navnSaved")kontoRadLagret('radNavn');   // Konto: lukk raden + vis nytt navn
-    else{_lagretNavn=_lagretProfil.name.trim();oppdaterNavnVerdi();}   // Profil sendte også navnet
-    savedFlash(flashSel);
-    invaliderPreview(); // tagline/bio/adresse står i preview-HTML-en (navn gjør IKKE — identitetsfelt)
-    oppdaterSjekkliste(); // profil-haken (bio/spesialitet/adresse) kan ha endret seg
-  }, {btn:$(knappSel), feil:'Kunne ikke lagre. Prøv igjen.'});
-}
-$("#saveProfil").addEventListener("click",function(){lagreProfil("#saveProfil","#profilSaved");});
-// Konto → «Lagre navn»: KUN navnet endres. Før lagret knappen hele profilen fra feltene i Din side (ulagret
-// bio-utkast ble publisert) og kjørte /settings først — avviste den et gammelt telefonnummer, havnet feilen i
-// den skjulte Din side-fanen og navnet ble aldri lagret. Nå: PUT /profile med nytt navn + lagrede verdier,
-// ingen /settings, og feil i #navnErr i samme rad.
+// Konto → «Lagre navn»: KUN navnet endres. PUT /profile med nytt navn + lagrede verdier (_lagretProfil, fra
+// GET /profile — dinside-v2.js kaller loadProfil etter lagring så de ikke blir utdaterte), feil i #navnErr i samme rad.
 async function lagreNavn(){
   var btn=$("#saveNavn"), err=$("#navnErr"), navn=$("#pf-name").value;
   function visFeil(t){ err.textContent=t; err.hidden=!t; }
@@ -5907,8 +5118,6 @@ async function lagreNavn(){
   finally{ btn.disabled=false; btn.textContent=orig; }
 }
 $("#saveNavn").addEventListener("click",lagreNavn);
-$("#pf-shop").addEventListener("input",function(){var e=$("#shopErr");if(e&&!e.hidden&&this.value.trim())e.hidden=true;});
-$("#pf-phone").addEventListener("input",function(){ setTelefonFeil(null); });
 
 /* ---- SMS-knotter (Vekst-fanen) ---- */
 // Het loadInnstillinger() da SMS-knottene bodde i en egen Innstillinger-fane.
@@ -6251,6 +5460,7 @@ function openVervModal(name,code){
   $("#vervMsg").value='Hei '+(name||'')+'! Takk for sist 💈\n\n'+forklaring+'\n\nKopier dette og send videre:\n'+videre;
   var b=$("#vervCopy"); if(b){ b.textContent='Kopier melding'; b.disabled=false; }
   $("#vervModal").classList.add('open');
+  fokuserDialog($("#vervModal"));
 }
 // Utklippstavle med fallback: navigator.clipboard krever secure context og finnes ikke
 // overalt. execCommand er utdatert, men er forskjellen på en knapp som virker og en som
@@ -6268,7 +5478,7 @@ async function kopierTekst(txt){
     return ok;
   }catch(e){ return false; }
 }
-function closeVervModal(){ $("#vervModal").classList.remove('open'); }
+function closeVervModal(){ $("#vervModal").classList.remove('open'); returnerDialogFokus($("#vervModal")); }
 $("#vervSendList").addEventListener('click',function(e){ var b=e.target.closest('.verv-btn'); if(b && !b.disabled) openVervModal(b.dataset.name, b.dataset.code); });
 $("#vervCopy").addEventListener('click',async function(){
   var b=this, ok=await kopierTekst($("#vervMsg").value);
@@ -6833,7 +6043,6 @@ function svcMangler(s){return (s.name||'').trim()!=='' && !(Number(s.price)>0);}
 // Varighet kreves KUN for hovedtjenester (tillegg kan ha 0 min, f.eks. et produkt). L-12.
 function svcMinMangler(s){return (s.name||'').trim()!=='' && !(Number(s.min)>0);}
 function svcFlagTxt(mp,mm){return mp&&mm?'Sett pris og varighet':mp?'Sett pris':mm?'Sett varighet':'';}
-// Beskrivelsen vises bare på v2-bookingsiden → feltet bare for v2 (erV2 = billing.sidemal). v1 beholder verdien urørt i dataene.
 // Felles felt. Pris/min: fast enhet inni boksen («kr»/«min», .svc-enhet-tekst, aria-hidden) + aria-label; tomt felt viser bare plassholderen.
 // Verdien er alltid bare tallet — enheten er CSS, aldri en del av value (lagring sender rene tall, se #saveSvc).
 function svcVerdi(v){return v===''||v==null?'':String(v);}
@@ -6842,7 +6051,7 @@ function svcTallFelt(s,l,i,prisKl,minKl){return '<div class="svc-tall">'
   +'<span class="svc-enhet svc-enhet-pris"><input class="svc-pris'+prisKl+'" type="text" inputmode="decimal" value="'+esc(svcVerdi(s.price))+'" data-l="'+l+'" data-i="'+i+'" data-f="price" placeholder="Pris" aria-label="Pris i kroner"><span class="svc-enhet-tekst" aria-hidden="true">kr</span></span>'
   +'<span class="svc-enhet svc-enhet-min"><input class="svc-min'+minKl+'" type="text" inputmode="decimal" value="'+esc(svcVerdi(s.min))+'" data-l="'+l+'" data-i="'+i+'" data-f="min" placeholder="Min" aria-label="Varighet i minutter"><span class="svc-enhet-tekst" aria-hidden="true">min</span></span>'
   +'<button class="svc-rm" data-l="'+l+'" data-i="'+i+'" aria-label="Fjern">&times;</button></div>';}
-function hovedRow(s,i){var mp=svcMangler(s),mm=svcMinMangler(s),ft=svcFlagTxt(mp,mm);return '<div class="svc-row-h">'+svcNavnFelt(s,'h',i)+svcTallFelt(s,'h',i,mp?' pris-0':'',mm?' min-0':'')+'<span class="svc-flag"'+(ft?'':' hidden')+'>'+ft+'</span>'+(erV2()?'<input class="svc-description" data-l="h" data-i="'+i+'" data-f="description" maxlength="120" aria-label="Kort beskrivelse av '+esc((s.name||'').trim()||'tjenesten')+'" placeholder="Hva inngår? (valgfritt)" value="'+esc(s.description||'')+'">':'')+'</div>';}
+function hovedRow(s,i){var mp=svcMangler(s),mm=svcMinMangler(s),ft=svcFlagTxt(mp,mm);return '<div class="svc-row-h">'+svcNavnFelt(s,'h',i)+svcTallFelt(s,'h',i,mp?' pris-0':'',mm?' min-0':'')+'<span class="svc-flag"'+(ft?'':' hidden')+'>'+ft+'</span>'+'<input class="svc-description" data-l="h" data-i="'+i+'" data-f="description" maxlength="120" aria-label="Kort beskrivelse av '+esc((s.name||'').trim()||'tjenesten')+'" placeholder="Hva inngår? (valgfritt)" value="'+esc(s.description||'')+'"></div>';}
 function tilleggRow(s,i){var mp=svcMangler(s);return '<div class="svc-row-t">'+svcNavnFelt(s,'t',i)+svcTallFelt(s,'t',i,mp?' pris-0':'','')+'<span class="svc-flag"'+(mp?'':' hidden')+'>Sett pris</span></div>';}
 function renderSvc(){$("#hovedList").innerHTML=hoved.map(hovedRow).join("");$("#tilleggList").innerHTML=tillegg.map(tilleggRow).join("");validateSvc();oppdaterSvcHode();}
 // Overskriftsraden (Tjeneste / Pris / Min.) står bare når den faktisk står over kolonnene: skjules når lista er tom eller
@@ -6932,7 +6141,6 @@ $("#saveSvc").addEventListener("click",function(){
     if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre tjenester. Prøv igjen.');return;}
     await loadTjenester(); // refetch: tomme (ufiltrerte) rader forsvinner lokalt + backend-normalisering (min/pris/rekkefølge) speiles. Samme mønster som loyalty/design.
     savedFlash("#svcSaved");
-    oppdaterSjekkliste(); // tjeneste-haken (≥1 med pris) kan ha endret seg
   }, {btn:$("#saveSvc"), feil:'Kunne ikke lagre tjenester. Prøv igjen.'});
 });
 
@@ -6970,214 +6178,6 @@ $("#savePay").addEventListener('click',function(){
     await loadPayment(); // refetch: tomme rader forsvinner lokalt + backend speiles (samme som loadTjenester over)
     savedFlash("#paySaved");
   }, {btn:$("#savePay"), feil:'Kunne ikke lagre betaling. Prøv igjen.'});
-});
-
-/* ---- Design (ferdige presets) ---- */
-const FONTS=[
-  {key:"fraunces",vibe:"Klassisk",name:"Fraunces",css:"'Fraunces', serif",w:600},
-  {key:"grotesk",vibe:"Signatur",name:"Space Grotesk",css:"'Space Grotesk', sans-serif",w:600},
-  {key:"jakarta",vibe:"Moderne",name:"Plus Jakarta Sans",css:"'Plus Jakarta Sans', sans-serif",w:600},
-  {key:"bebas",vibe:"Kraftig",name:"Bebas Neue",css:"'Bebas Neue',sans-serif",w:400}
-];
-const LAYOUTS=[
-  {key:"profil",t:"Profil",d:"Portrett + info"},
-  {key:"showcase",t:"Showcase",d:"Galleri i front"},
-  {key:"hero",t:"Hero",d:"Stort forsidebilde"},
-  {key:"direkte",t:"Direkte",d:"Rett til booking"}
-];
-// null = VET IKKE ENNÅ. Ikke en gjettet default.
-// Sto før som {mint, fraunces, direkte, lys}. Svarte ikke GET /design, beholdt panelet de
-// verdiene og oppførte seg som om barbereren hadde valgt dem: slot-visningen sa «Direkte-
-// layouten har ikke bilder», bio-varselet sa «Direkte viser ikke beskrivelsen», og «Mint»
-// sto markert som valgt palett. Alt sammen usant for en barberer med Profil + Krem & Gull.
-// Med null sier panelet ingenting i stedet. Hver leser under må tåle det — se guardene i
-// refreshSlots(), layoutUlagret(), oppdaterPreview() og saveDesign.
-let design={palette:null,font:null,layout:null,mode:null,customAccent:null};
-let savedLayout=design.layout;
-// Har vi et fullstendig design å rendre/lagre? Alle fire må være kjent.
-function designKjent(){return !!(design.layout&&design.palette&&design.font&&design.mode);}
-var previewCache={};
-function oppdaterPreview(){
-  var f=$("#pvScreen");
-  if(!f)return;
-  // Server-render av ekte kundeside (samme vei som publisert side). Ulagrede design-
-  // valg sendes som query; backend legger dem oppå barber-raden og bygger med fill()
-  // + booking-modulen. Ingen klient-fyll = ingen drift mellom preview og ekte side.
-  // Uten alle fire kan vi ikke be om en forhåndsvisning: encodeURIComponent(null) gir
-  // strengen "null", så vi ville sendt layout=null&palette=null… og fått en side bygget på
-  // søppel — eller en 500 — i stedet for å si at vi ikke fikk hentet innstillingene.
-  if(!designKjent()){previewError(f,'Fikk ikke hentet designinnstillingene dine. Last siden på nytt.');return;}
-  var qs='layout='+encodeURIComponent(design.layout)
-        +'&palette='+encodeURIComponent(design.palette)
-        +'&font='+encodeURIComponent(design.font)
-        +'&mode='+encodeURIComponent(design.mode);
-  // Custom: send aksenten til server-previewen. Kontrast-logikken (accentText) bor KUN i backend —
-  // vi speiler den ikke her. accent er også med i cache-nøkkelen (qs), så to aksenter kolliderer ikke.
-  if(design.palette==='custom'&&validHex(design.customAccent))qs+='&accent='+encodeURIComponent(normHex(design.customAccent));
-  if(previewCache[qs]){f.srcdoc=previewCache[qs];return;}
-  apiFetch('/api/dashboard/preview?'+qs).then(function(r){
-    if(!r)return; // 401 → apiFetch har allerede sendt til login
-    if(!r.ok){previewError(f,'Forhåndsvisning feilet ('+r.status+').');return;}
-    return r.text().then(function(html){previewCache[qs]=html;f.srcdoc=html;});
-  }).catch(function(e){console.error('Preview feilet:',e);previewError(f,'Kunne ikke laste forhåndsvisning.');});
-}
-function previewError(f,msg){
-  f.srcdoc='<!DOCTYPE html><html><body style="margin:0;font-family:-apple-system,system-ui,sans-serif;'+
-    'display:flex;align-items:center;justify-content:center;height:100vh;background:#0e0e0e;'+
-    'color:#c0594a;text-align:center;padding:24px;line-height:1.5"><p>'+msg+'</p></body></html>';
-}
-function renderPreview(){oppdaterPreview();}
-// Preview er en SERVER-RENDER av barber-raden, men previewCache er nøklet kun på de fire
-// design-parameterne (layout/palette/font/mode). Alt annet som siden viser — navn, tagline,
-// bio, adresse, bilder — ligger utenfor nøkkelen. Endrer barbereren et av dem, treffer neste
-// oppdatering samme cache-nøkkel og serverer den GAMLE HTML-en: lagringen gikk gjennom, men
-// forhåndsvisningen viser den ikke. Det så ut som om lagringen ikke virket.
-// Fiksen er å tømme cachen, ikke å utvide nøkkelen: legger vi profilfeltene i query-strengen,
-// må backend også ta imot dem, og vi får to kilder til samme sannhet. Med tom cache henter
-// serveren feltene fra barber-raden av seg selv.
-function invaliderPreview(){previewCache={};oppdaterPreview();}
-/* ---- «Din egen» palett (custom aksent) — server eier fargematten; klienten viser bare valget ---- */
-var CUSTOM_DEFAULT='#0071e3'; // seed-aksent når «Din egen» velges uten farge
-var CUSTOM_HINT='linear-gradient(135deg,#e8590c,#10b981,#6b3df0)';
-// #rrggbb (godtar 3-siffer + manglende #, normaliserer til lowercase 6-siffer som backend krever)
-function normHex(v){if(v==null)return null;v=String(v).trim();if(v&&v[0]!=='#')v='#'+v;
-  if(/^#[0-9a-fA-F]{3}$/.test(v))v='#'+v[1]+v[1]+v[2]+v[2]+v[3]+v[3];
-  return /^#[0-9a-fA-F]{6}$/.test(v)?v.toLowerCase():null;}
-function validHex(v){return !!normHex(v);}
-function customKortHtml(){var v=validHex(design.customAccent);var bg=v?normHex(design.customAccent):CUSTOM_HINT;
-  // Undertittel: hex-koden når satt, ellers en nøytral ledetekst. Ingen navn.
-  return '<button class="preset preset-custom" data-grid="palette" data-key="custom" aria-pressed="'+(design.palette==='custom')+'">'
-    +'<div class="pt">Din egen</div><div class="pd" id="customCardSub">'+(v?normHex(design.customAccent):'Egen aksentfarge')+'</div>'
-    // Tre-farge-stripe som de innebygde kortene: hvit base, aksent (live), svart base.
-    +'<div class="swatches"><span style="background:#ffffff"></span><span id="customCardSw" style="background:'+bg+'"></span><span style="background:#0a0a0a"></span></div></button>';}
-/* ---- Egenbygd HSV-fargevelger (ingen eksterne libs). Kvadrat = metning×lyshet, slider = kulør. ---- */
-var customHSV={h:200,s:0.9,v:0.85};
-function clamp01(x){return x<0?0:x>1?1:x;}
-function hexToRgb(h){h=normHex(h);return h?[parseInt(h.slice(1,3),16),parseInt(h.slice(3,5),16),parseInt(h.slice(5,7),16)]:null;}
-function chan(n){return Math.round(clamp01(n/255)*255).toString(16).padStart(2,'0');}
-function rgbToHex(r,g,b){return '#'+chan(r)+chan(g)+chan(b);}
-function hsvToRgb(h,s,v){h=(h%360+360)%360;var c=v*s,x=c*(1-Math.abs((h/60)%2-1)),m=v-c,r=0,g=0,b=0;
-  if(h<60){r=c;g=x;}else if(h<120){r=x;g=c;}else if(h<180){g=c;b=x;}else if(h<240){g=x;b=c;}else if(h<300){r=x;b=c;}else{r=c;b=x;}
-  return [(r+m)*255,(g+m)*255,(b+m)*255];}
-function rgbToHsv(r,g,b){r/=255;g/=255;b/=255;var mx=Math.max(r,g,b),mn=Math.min(r,g,b),d=mx-mn,h=0;
-  if(d){if(mx===r)h=((g-b)/d+6)%6;else if(mx===g)h=(b-r)/d+2;else h=(r-g)/d+4;h*=60;}
-  return {h:h,s:mx?d/mx:0,v:mx};}
-function hsvHex(){var c=hsvToRgb(customHSV.h,customHSV.s,customHSV.v);return rgbToHex(c[0],c[1],c[2]);}
-function renderPicker(){var sv=$("#cpickSV");if(!sv)return;
-  sv.style.background='linear-gradient(to bottom,transparent,#000),linear-gradient(to right,#fff,hsl('+Math.round(customHSV.h)+',100%,50%))';
-  var cur=$("#cpickCursor");if(cur){cur.style.left=(customHSV.s*100)+'%';cur.style.top=((1-customHSV.v)*100)+'%';}
-  var th=$("#cpickThumb");if(th)th.style.left=(customHSV.h/360*100)+'%';}
-function updateCustomSwatches(){var h=validHex(design.customAccent)?normHex(design.customAccent):null;
-  var sw=$("#customCardSw");if(sw)sw.style.background=h||CUSTOM_HINT;
-  var sub=$("#customCardSub");if(sub)sub.textContent=h||'Egen aksentfarge';
-  var pv=$("#cpickPrev");if(pv)pv.style.background=h||CUSTOM_HINT;}
-// Sett custom-aksent fra hex (forslag/hex-felt/lagret): oppdaterer HSV-state + velger + swatcher.
-// updateField=false når brukeren skriver i hex-feltet (ikke overskriv det de taster).
-function setCustomHex(hex,updateField){var h=normHex(hex);if(!h)return false;design.customAccent=h;
-  var rgb=hexToRgb(h);customHSV=rgbToHsv(rgb[0],rgb[1],rgb[2]);
-  if(updateField){var hx=$("#customHex");if(hx){hx.value=h;hx.classList.remove('invalid');}}
-  var er=$("#customErr");if(er)er.hidden=true;renderPicker();updateCustomSwatches();return true;}
-// Fra velger-drag: HSV → hex, oppdater felt + swatcher + debounced preview.
-function applyHSV(){design.customAccent=hsvHex();var hx=$("#customHex");if(hx){hx.value=design.customAccent;hx.classList.remove('invalid');}
-  var er=$("#customErr");if(er)er.hidden=true;renderPicker();updateCustomSwatches();schedulePreview();}
-// Preview er server-render → ikke fyr på hvert pointermove. Debounce under drag, commit ved slipp.
-var _cpvTimer=null;
-function schedulePreview(){if(_cpvTimer)clearTimeout(_cpvTimer);_cpvTimer=setTimeout(function(){_cpvTimer=null;renderPreview();},150);}
-function commitPreview(){if(_cpvTimer){clearTimeout(_cpvTimer);_cpvTimer=null;}renderPreview();}
-// Drag med mus OG touch via pointer events + setPointerCapture. touch-action:none → ingen scroll under drag.
-function bindPick(el,onMove){if(!el)return;
-  el.addEventListener('pointerdown',function(e){e.preventDefault();try{el.setPointerCapture(e.pointerId);}catch(_){}
-    onMove(e);
-    function mv(ev){ev.preventDefault();onMove(ev);}
-    function up(){el.removeEventListener('pointermove',mv);el.removeEventListener('pointerup',up);el.removeEventListener('pointercancel',up);commitPreview();}
-    el.addEventListener('pointermove',mv);el.addEventListener('pointerup',up);el.addEventListener('pointercancel',up);});}
-(function(){var sv=$("#cpickSV"),hue=$("#cpickHue"),hx=$("#customHex");
-  bindPick(sv,function(e){var r=sv.getBoundingClientRect();customHSV.s=clamp01((e.clientX-r.left)/r.width);customHSV.v=clamp01(1-(e.clientY-r.top)/r.height);applyHSV();});
-  bindPick(hue,function(e){var r=hue.getBoundingClientRect();customHSV.h=clamp01((e.clientX-r.left)/r.width)*360;applyHSV();});
-  // Hex-felt: gyldig → flytt velgeren (uten å overskrive det brukeren taster), debounced preview.
-  if(hx)hx.addEventListener("input",function(){var n=normHex(this.value);var er=$("#customErr");
-    if(n){setCustomHex(n,false);schedulePreview();}else{this.classList.add("invalid");if(er)er.hidden=false;}});
-})();
-function renderDesign(){
-  $("#paletteGrid").innerHTML=window.PALETTES_DISPLAY.map(function(p){return '<button class="preset" data-grid="palette" data-key="'+p.key+'" aria-pressed="'+(design.palette===p.key)+'"><div class="pt">'+p.t+'</div><div class="pd">'+p.d+'</div><div class="swatches">'+p.sw.map(function(c){return '<span style="background:'+c+'"></span>';}).join("")+'</div></button>';}).join("")+customKortHtml();
-  // Kun beskrivelsen (.pt) — fontnavn-linja (.pd) fjernet fra font-kortene (name-feltet beholdt som metadata).
-  $("#fontGrid").innerHTML=FONTS.map(function(f){return '<button class="preset" data-grid="font" data-key="'+f.key+'" aria-pressed="'+(design.font===f.key)+'"><div class="pt">'+f.vibe+'</div></button>';}).join("");
-  $("#layoutGrid").innerHTML=LAYOUTS.map(function(l){return '<button class="preset" data-grid="layout" data-key="'+l.key+'" aria-pressed="'+(design.layout===l.key)+'"><div class="pt">'+l.t+'</div><div class="pd">'+l.d+'</div></button>';}).join("");
-  document.querySelectorAll("#modePick .modebtn").forEach(function(b){b.setAttribute("aria-pressed",b.dataset.mode===design.mode);});
-  // Modus-vakt (speiler PALETTE_MODES): sand er lys-only → deaktiver Mørk + vis hint.
-  var moduser=(window.modeneFor?window.modeneFor(design.palette):['lys','mork']);
-  var morkBtn=document.querySelector('#modePick .modebtn[data-mode="mork"]');
-  if(morkBtn)morkBtn.disabled=(moduser.indexOf('mork')===-1);
-  var hint=$("#modeHint"); if(hint)hint.hidden=(moduser.indexOf('mork')!==-1);
-  // «Din egen»-utfelling vises kun når custom er valgt (ellers helt skjult → ingen tom blokk).
-  var cpanel=$("#customPanel"); if(cpanel)cpanel.hidden=(design.palette!=='custom');
-  if(design.palette==='custom'){
-    if(validHex(design.customAccent)){setCustomHex(design.customAccent,true);}
-    else{renderPicker();updateCustomSwatches();var _hx=$("#customHex");if(_hx)_hx.value='';}
-    var _er=$("#customErr"); if(_er)_er.hidden=(design.customAccent==null||validHex(design.customAccent));
-  }
-  renderPreview();
-}
-async function loadDesign(){
-  try{
-    const r=await apiFetch('/api/dashboard/design');
-    // Feiler kallet, lar vi feltene stå null. renderDesign() tegner da et panel uten noe
-    // markert, og oppdaterPreview() skriver feilmeldingen i preview-flaten.
-    if(!r){renderDesign();return;}
-    if(!r.ok){renderDesign();return;}
-    const d=await r.json();
-    settBildeData(d);   // bildekrav + bilde_status (backend eier hvilke bilder hver layout trenger)
-    if(d.palette)design.palette=d.palette;
-    // FONTS er velgerens TRE VALG, ikke settet av gyldige verdier. Prod har barbere med
-    // font='inter' i DB — den står ikke i lista. Gammel kode skrev den stille om til
-    // "fraunces"; da den fallbacken ble fjernet, ble font stående null → designKjent() false
-    // → hele forhåndsvisningen erstattet av feilmelding, og «Lagre design» blokkert.
-    // Riktig er å ta imot verdien som den er: serveren rendrer allerede med den (verifisert
-    // mot prod — /preview?font=inter svarer 200). Font-grid-et markerer da ingenting, og det
-    // er sant: ingen av de tre tilbudte fontene er den som faktisk er satt.
-    if(d.font)design.font=d.font;
-    if(d.layout){design.layout=d.layout;savedLayout=d.layout;_sjekkData.layout=d.layout;}
-    if(d.mode)design.mode=d.mode;
-    if(d.custom_accent)design.customAccent=normHex(d.custom_accent);
-    _ulagret.design=false;
-    renderSjekkliste();   // bildekrav + lagret layout er lastet → bildepunktet kan ha endret seg
-  }catch(e){}
-  renderDesign();
-}
-$("#design").addEventListener("click",function(e){
-  var b=e.target.closest(".preset");if(!b)return;design[b.dataset.grid]=b.dataset.key;
-  // Bytte til en lys-only palett (sand) mens Mørk er aktiv → snap til lys; preview følger via renderDesign.
-  if(b.dataset.grid==="palette"){
-    // «Din egen» valgt uten farge ennå → seed en standard aksent så preview har noe å vise.
-    if(b.dataset.key==='custom'&&!validHex(design.customAccent))design.customAccent=CUSTOM_DEFAULT;
-    var m=(window.modeneFor?window.modeneFor(design.palette):['lys','mork']);if(m.indexOf(design.mode)===-1)design.mode=m[0];
-  }
-  renderDesign();if(b.dataset.grid==="layout")refreshSlots();});
-$("#modePick").addEventListener("click",function(e){var b=e.target.closest(".modebtn");if(!b||b.disabled)return;var m=(window.modeneFor?window.modeneFor(design.palette):['lys','mork']);if(m.indexOf(b.dataset.mode)===-1)return;design.mode=b.dataset.mode;renderDesign();});
-$("#saveDesign").addEventListener("click",function(){
-  // Uten alle fire ville PUT-en skrevet null over det barbereren faktisk har lagret fra før.
-  if(!designKjent()){alert('Fikk ikke hentet designinnstillingene dine. Last siden på nytt før du lagrer.');return;}
-  // accent+name sendes KUN ved custom. For innebygde paletter utelates de → backend COALESCE
-  // bevarer barberens egen palett selv om han prøver en annen.
-  const body={palette:design.palette,font:design.font,layout:design.layout,mode:design.mode};
-  if(design.palette==='custom'){
-    // Klient-validering av hex (backend gir 400 uansett, men brukeren skal slippe å vente på kallet).
-    // Gjøres FØR medLagreKnapp — ingen knapp er satt i gang ennå, så ingenting å nullstille.
-    const norm=normHex($("#customHex")?$("#customHex").value:design.customAccent);
-    if(!norm){const er=$("#customErr");if(er)er.hidden=false;const hf=$("#customHex");if(hf){hf.classList.add("invalid");hf.focus();}return;}
-    design.customAccent=norm;
-    body.accent=norm;
-    // Ingen name sendes — paletten heter «Din egen». Backend-kolonnen står ubrukt.
-  }
-  medLagreKnapp(async()=>{
-    const r=await apiFetch('/api/dashboard/design',{method:'PUT',body:JSON.stringify(body)});
-    if(!r)return;
-    if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre design. Prøv igjen.');return;}
-    savedLayout=design.layout;_sjekkData.layout=savedLayout;_ulagret.design=false;savedFlash("#designSaved");visBilderFeil('');
-    // bilderEndret (ikke loadBilder): re-hent bilder + tøm preview-cachen. Backend sletter IKKE bilder
-    // ved layout-bytte (dashboard.js:379) — re-hentingen holder bare slot-visning + cache i synk.
-    await bilderEndret();
-  }, {btn:$("#saveDesign"), feil:'Kunne ikke lagre design. Prøv igjen.'});
 });
 
 /* ---- Konto: abonnement + publisering, ÉN blokk (ekte, aldri mock) ---- */
@@ -7237,17 +6237,14 @@ async function loadBilling(){
   if(!erBillingShape(d)){ console.error('loadBilling: ufullstendig billing-shape'); _billingFeilet=true; billingFeilRender(); return; }
   settBilling(d);
 }
-// v1/v2-greinen: billing-shapen bærer sidemal (backend billingShape.js). ÉN kilde — ikke gjett ut fra noe annet.
-function erV2(){ return !!(_billing&&_billing.sidemal==='v2'); }
-// «Din side»-fanen åpnes. v2: egen flyt. v1: dagens lasting. Før billing er kjent vet vi ikke hvilken — da venter
-// vi (DinSideV2.billing kjører lastingen når svaret lander) i stedet for å laste v1-data for en v2-barber.
+// «Din side»-fanen åpnes (dinside-v2.js). Før billing er kjent venter vi: page_status avgjør om «Lagre endringer»
+// også publiserer, og DinSideV2.billing bygger flaten når svaret lander.
 // Oppstart med #dinside i URL-en åpner panelet FØR dinside-v2.js er lastet og før billing har svart: da settes
 // _ventDinSide, og settBilling (eller modulen, hvis billing alt er kjent) kjører lastingen.
 var _ventDinSide=false;
 function lastDinSide(){
   if(!window.DinSideV2||!_billingKjent){ _ventDinSide=true; if(_billingFeilet&&window.DinSideV2)DinSideV2.billingFeilet(); return; }
-  if(erV2()){ DinSideV2.last(); return; }
-  loadProfil(); if(!_ulagret.design)loadDesign().then(loadBilder); else loadBilder();
+  DinSideV2.last();
 }
 // Er dette en FULL billing-shape? Delt vakt for alle tre veiene inn (loadBilling, PUT /page-status,
 // sync-checkout). Et svar med page_status men uten plan-feltene skal ALDRI overskrive _billing —
@@ -7262,8 +6259,7 @@ function settBilling(d){
   var forrige=_billing, varFeilet=_billingFeilet;
   _billing=d;
   _billingKjent=true; _billingFeilet=false;   // ÅPNE billing-gaten: kundedata-loaderne kan nå fetche
-  if(window.DinSideV2)DinSideV2.billing(d);   // sidemal v1/v2 (body.sm-v2)
-  if(_svcHentet && (!forrige || forrige.sidemal!==d.sidemal)) renderSvc();   // tjenestene kan være tegnet før sidemal var kjent (beskrivelsesfeltet er v2-kun)
+  if(window.DinSideV2)DinSideV2.billing(d);   // Din side: bygg flaten; «Fullfør siden din» og lagreknappen følger page_status
   if(_ventDinSide&&aktivtPanel()==='design'){ _ventDinSide=false; lastDinSide(); }   // Din side ble åpnet før billing var kjent
   renderKonto(_billing);
   // Skjoldede flater + kundedata-loaderne avhenger KUN av planen. Kjør dem når planen kom første gang,
@@ -7387,7 +6383,8 @@ function renderKonto(b){
   const accDot=$("#kontoAccDot"); if(accDot)accDot.hidden=!b.needs_attention;
   const bunnDot=$("#kontoBunnDot"); if(bunnDot)bunnDot.hidden=!b.needs_attention;
   renderSmsKonto(b);
-  renderDinsideCta(b); // publiser-CTA på «Din side» følger page_status — forsvinner ved publisering
+  applyFokusModus(); // oppsettet (fokus) følger page_status — publisering (→live) slår det av selv
+  settHeaderLenke(b); // permanent kopierbar lenke i headeren (kun live)
 }
 
 // ── SMS-påminnelser (Konto) ──────────────────────────────────────────────────────────────
@@ -7590,29 +6587,7 @@ $("#smsTilbudIkkeNaa").addEventListener("click",async function(){
     if(erBillingShape(d)) settBilling(d);
   }catch(e){}
 });
-// Publiser-CTA på «Din side»: synlig KUN i forhandsvist. Kalles fra renderKonto (hver
-// billing-lasting), så et vellykket publiser → loadBilling → page_status='live' skjuler den
-// uten reload. Egen node fra Konto-knappen; deler bare settSideStatus-dispatchen.
-function renderDinsideCta(b){
-  b=b||_billing||{};
-  var cta=$("#dinsideCta"), live=$("#dinsideLive");
-  if(!cta||!live)return;
-  var st=b.page_status;
-  // Publisering er frikoblet billing: enhver barber kan publisere, uansett plan.
-  if(st==='forhandsvist'){
-    cta.hidden=false; live.hidden=true;
-  }else if(st==='live'){
-    // Live: skjul CTA, vis liten grønn prikk + «Live». Kopiering via headerlenka (settHeaderLenke).
-    cta.hidden=true; live.hidden=false;
-  }else{ // draft / avslag / nedtatt / ukjent — ingen av dem
-    cta.hidden=true; live.hidden=true;
-  }
-  applyFokusModus(); // fokus følger samme page_status — publisering (→live) slår den av selv
-  renderSjekkliste(); // synlighet + hake for «Publiser siden» følger page_status (dør ved live)
-  settHeaderLenke(b); // permanent kopierbar lenke i headeren (kun live)
-}
-
-/* ── Live-lenke i header + suksesskort (COMMIT F) ────────────────────────────────── */
+/* ── Live-lenke i header (COMMIT F) ────────────────────────────────── */
 // Permanent kopierbar lenke ved siden av sjappenavnet, KUN i live: avkuttet URL (midtForkort
 // krymper sluggen til header-bredden) + kopi-knapp. Knappen får .header-kopi så kvitteringen
 // sier «Lenke kopiert». Logoen er fjernet fra headeren, men lenka beholdes (bruker-ønske 02.10).
@@ -7650,10 +6625,17 @@ function fitShopnavn(){
   var normal=parseFloat(getComputedStyle(el).fontSize)||14;
   var avail=el.clientWidth, need=el.scrollWidth;
   if(need<=avail+1) return;                               // passer på full størrelse
-  // Får ikke plass ved siden av bookinglenka: lenka på egen linje under FØR fonten krympes (aldri to «…» side om side).
-  if(top && lenke && !lenke.hidden){ top.classList.add('stablet'); avail=el.clientWidth; need=el.scrollWidth; if(need<=avail+1) return; }
+  // 1) Krymp fonten først (som før runde 2): de fleste navn får plass ved siden av lenka, og toppen hopper ikke.
   var size=Math.max(FIT_MIN, normal*avail/Math.max(1,need)*0.98);
-  el.style.fontSize=size+'px';                            // for smalt på gulvet → CSS-ellipse overtar
+  el.style.fontSize=size+'px';
+  if(el.scrollWidth<=el.clientWidth+1) return;
+  // 2) Fortsatt for bredt på gulvet → navnet måtte vært avkortet ved siden av en avkortet lenke. Da får lenka egen linje
+  //    under (aldri to «…» side om side), og navnet måles på nytt i full bredde. Bare svært lange navn kommer hit.
+  if(top && lenke && !lenke.hidden){
+    top.classList.add('stablet'); el.style.fontSize='';
+    avail=el.clientWidth; need=el.scrollWidth; if(need<=avail+1) return;
+    el.style.fontSize=Math.max(FIT_MIN, normal*avail/Math.max(1,need)*0.98)+'px';   // for smalt på gulvet → CSS-ellipse overtar
+  }
 }
 // Re-fit når web-fonten lastes (fallback-fonten måler annerledes) og ved bredde-endring. Observerer
 // documentElement-BREDDEN, ikke navnet selv: å endre fontSize rører ikke doc-bredden → ingen selv-loop.
@@ -7661,39 +6643,19 @@ if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fitShopnavn);
 if('ResizeObserver' in window){ var _fitT,_fitW=-1;
   new ResizeObserver(function(e){ var w=e[0].contentRect.width; if(Math.abs(w-_fitW)<1)return; _fitW=w;
     clearTimeout(_fitT); _fitT=setTimeout(fitShopnavn,60); }).observe(document.documentElement); }
-// Suksesskort — HENDELSES-drevet: kalles kun fra settSideStatus('live')-suksess, ALDRI ved
-// innlasting. Derfor viser refresh i live-tilstand det ikke igjen (headerlenka dekker varig visning).
-function visSuksesskort(){
-  var ov=$('#suksessOverlay'); if(!ov)return;
-  var boks=$('#suksessLenke');
-  if(boks){
-    if(CONFIG.BARBER_SLUG) byggKopierbartLenkefelt(boks, CONFIG.SITE_BASE+'/'+CONFIG.BARBER_SLUG, CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+CONFIG.BARBER_SLUG);
-    else boks.textContent='';
-  }
-  ov.hidden=false;
-}
-function lukkSuksess(){ var ov=$('#suksessOverlay'); if(ov)ov.hidden=true; }
-(function(){
-  var ov=$('#suksessOverlay'), x=$('#suksessX');
-  if(x)x.addEventListener('click',lukkSuksess);
-  if(ov)ov.addEventListener('click',function(e){ if(e.target===ov) lukkSuksess(); }); // klikk utenfor kortet
-})();
 
-/* ── Fokusmodus ─────────────────────────────────────────────────────────────────
-   Trigger: URL ?velkommen=1 OG page_status='forhandsvist'. Kun da vises fokus.
-   Ved visning fjernes parameteren (replaceState) så refresh IKKE re-trigger — ingen
-   sessionStorage. Å strippe parameteren betyr at applyFokusModus ikke kan RE-utlede
-   fokus etterpå: derfor er inngangen én-skudds (legg på klassen når param+status
-   stemmer), mens exit skjer eksplisitt (X/«Utforsk dashbordet») ELLER automatisk når
-   status ikke lenger er 'forhandsvist' (publisering → live). Mellom de to rører vi
-   ikke klassen — fokus står til noe faktisk avslutter den. */
+/* ── Fokusmodus (oppsettet av Din side) ─────────────────────────────────────────
+   Krever page_status='forhandsvist'. Inngang: URL ?velkommen=1, flagget fra en tidligere visning, eller
+   oppsettet ikke lukket i denne økta. ?velkommen fjernes ved visning (replaceState). Exit skjer eksplisitt
+   (X → DinSideV2.lukkOppsett) ELLER automatisk når status ikke lenger er 'forhandsvist' (publisering → live).
+   Mellom de to rører vi ikke klassen — fokus står til noe faktisk avslutter den. */
 // Persisterings-flagg så fokus overlever reload: URL-param strippes ved visning, så uten et
 // flagg ville reload (uten param) falt ut av fokus. Flagget settes ved aktivering, leses ved
-// innlasting, slettes ved X/«Utforsk»/publisering.
+// innlasting, slettes ved X/publisering.
 var FOKUS_FLAG='fokusAktiv';
 function fokusFlaggSatt(){ try{ return sessionStorage.getItem(FOKUS_FLAG)==='1'; }catch(e){ return false; } }
 function settFokusFlagg(på){ try{ på?sessionStorage.setItem(FOKUS_FLAG,'1'):sessionStorage.removeItem(FOKUS_FLAG); }catch(e){} }
-// v2: oppsettet (fokusmodus) åpnes ved hver innlogging så lenge siden ikke er live. X lukker det for resten av
+// Oppsettet (fokusmodus) åpnes ved hver innlogging så lenge siden ikke er live. X lukker det for resten av
 // økta (sessionStorage); «Fullfør siden din» på Oversikt og utlogging nullstiller.
 var OPPSETT_LUKKET='dv2OppsettLukket';
 function oppsettLukket(){ try{ return sessionStorage.getItem(OPPSETT_LUKKET)==='1'; }catch(e){ return false; } }
@@ -7703,10 +6665,9 @@ function applyFokusModus(b){
   var params=new URLSearchParams(location.search);
   var viaParam=params.get('velkommen')==='1';
   var forhV=b.page_status==='forhandsvist';
-  var v2Oppsett=b.sidemal==='v2' && !oppsettLukket();
-  // Vis fokus hvis forhandsvist OG (førstegangs-param ELLER flagget står fra før ELLER v2 uten lukket oppsett).
+  // Vis fokus hvis forhandsvist OG (førstegangs-param ELLER flagget står fra før ELLER oppsettet ikke er lukket).
   // Alle veier KREVER forhandsvist — publisert side får aldri fokus.
-  if(forhV && (viaParam || fokusFlaggSatt() || v2Oppsett)){
+  if(forhV && (viaParam || fokusFlaggSatt() || !oppsettLukket())){
     document.body.classList.add('fokus');
     settFokusFlagg(true); // persister → reload beholder fokus selv når param er strippet
     if(typeof aktivtPanel==='function' && aktivtPanel()!=='design') switchPanel('design');
@@ -7724,158 +6685,13 @@ function applyFokusModus(b){
     document.body.classList.remove('fokus');
     settFokusFlagg(false);
   }
-  if(window.DinSideV2)DinSideV2.fokusEndret();   // v2: tittelen følger fokusmodus
+  if(window.DinSideV2)DinSideV2.fokusEndret();   // tittelen følger fokusmodus
 }
-function avsluttFokus(){ document.body.classList.remove('fokus'); settFokusFlagg(false); renderSjekkliste(); if(window.DinSideV2)DinSideV2.fokusEndret(); }
+function avsluttFokus(){ document.body.classList.remove('fokus'); settFokusFlagg(false); if(window.DinSideV2)DinSideV2.fokusEndret(); }
 (function(){
-  // v2: X spør først ved ulagrede endringer («Forkast» / «Bli her») og lukker oppsettet til Oversikt (dinside-v2.js).
-  var x=document.getElementById('fokusX');        if(x)x.addEventListener('click',function(){ if(window.DinSideV2&&DinSideV2.erV2()){ DinSideV2.lukkOppsett(); return; } avsluttFokus(); });
+  // X spør først ved ulagrede endringer («Forkast» / «Bli her») og lukker oppsettet til Oversikt (dinside-v2.js).
+  var x=document.getElementById('fokusX');        if(x)x.addEventListener('click',function(){ if(window.DinSideV2)DinSideV2.lukkOppsett(); });
   var fu=document.getElementById('dv2Fullfor');    if(fu)fu.addEventListener('click',function(){ if(window.DinSideV2)DinSideV2.startOppsett(); });
-  var u=document.getElementById('fokusUtforsk');   if(u)u.addEventListener('click',avsluttFokus);
-  var p=document.getElementById('fokusPubliser');
-  if(p)p.addEventListener('click',function(){ if(IS_DEMO)return; settSideStatus('live',this); });
-})();
-
-/* ── «Fullfør siden»-guide (COMMIT D) ──────────────────────────────────────────────
-   ÉN komponent, TO visninger, SAMME data. Fokus → inline-panel i #dinsideSjekkliste;
-   vanlig → flytende pill (alle faner) som folder ut popover. Haker KUN fra ekte data
-   (images/services/hours/profile/billing). Synlig kun ved forhandsvist; dør ved
-   publisering (page_status→live via renderDinsideCta → renderSjekkliste). */
-// layout = LAGRET layout fra GET /design (det kundene ser), ikke den som bare er valgt i Design.
-var _sjekkData={bilderGalleri:0,bilderPortrett:0,bilderHero:0,layout:null,tjenesterMedPris:0,apneDager:0,profilUtfylt:0};
-var _sjekkPopoverAapen=false;
-var SJEKK_CHECK='<svg viewBox="0 0 24 24" width="13" height="13" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6 9 17l-5-5"/></svg>';
-// Minste antall galleribilder for at bildepunktet regnes som ferdig. Et rent sjekkliste-valg: backend
-// krever ingen bilder for å publisere, og verken backend eller onboarding har en tilsvarende konstant.
-// Egen konstant så tallet bor ETT sted, ikke hardkodet i reglene + undertekstene under.
-var SJEKK_BILDER_MIN=2;
-// Bildepunktet følger layoutens felt fra backendens bildekrav (kravFor), ikke en egen layoutliste:
-// ingen felt (direkte) → punktet utelates; portrett (profil) → portrett + galleri; hero → forsidebildet;
-// galleri (showcase) og ukjent layout / gammel backend uten bildekrav → minst N i galleriet.
-function sjekkBildePunkt(){
-  var k=_sjekkData.layout?kravFor(_sjekkData.layout):null;
-  var felt=k?k.felt:null;
-  var galleriOk=_sjekkData.bilderGalleri>=SJEKK_BILDER_MIN;
-  var p={action:'bilder', label:'Last opp bilder', sub:'Minst '+SJEKK_BILDER_MIN+' i galleriet', done:galleriOk};
-  if(!felt) return p;
-  if(!felt.length) return null;
-  if(felt.indexOf('portrett')>=0){ p.sub='Portrett + minst '+SJEKK_BILDER_MIN+' i galleriet'; p.done=_sjekkData.bilderPortrett>=1&&galleriOk; }
-  else if(felt.indexOf('hero')>=0){ p.sub='Ett forsidebilde'; p.done=_sjekkData.bilderHero>=1; }
-  return p;
-}
-function sjekklisteItems(){
-  var b=_billing||{};
-  return [
-    sjekkBildePunkt(),
-    {action:'tjenester', label:'Legg til tjenester',  sub:'Minst én med pris',                     done:_sjekkData.tjenesterMedPris>=1},
-    {action:'tider',     label:'Sett åpningstider',   sub:'Minst én åpen dag',                     done:_sjekkData.apneDager>=1},
-    {action:'profil',    label:'Fortell om deg selv', sub:'Minst 2 av: bio, spesialitet, adresse', done:_sjekkData.profilUtfylt>=2},
-    {action:'publiser',  label:'Publiser siden',      sub:'Gjør siden synlig for kunder',          done:b.page_status==='live'},
-  ].filter(Boolean);   // bildepunktet er null når layouten ikke har bilder → «X av 4»
-}
-function byggSjekkPanel(items,ferdig){
-  var pct=Math.round(ferdig/items.length*100);
-  var rader=items.map(function(it){
-    return '<button type="button" class="sjekk-rad'+(it.done?' done':'')+'" data-act="'+it.action+'"'
-      +(it.action==='publiser'?' data-pub-err="#sjekkPubErr"':'')+'>'
-      +'<span class="sjekk-ikon'+(it.done?' done':'')+'">'+(it.done?SJEKK_CHECK:'')+'</span>'
-      +'<span class="sjekk-rad-tekst"><span class="sjekk-rad-t">'+it.label+'</span><span class="sjekk-rad-s">'+it.sub+'</span></span></button>';
-  }).join('');
-  return '<div class="sjekk-panel"><div class="sjekk-panel-hd"><span class="sjekk-panel-t">Fullfør siden din</span>'
-    +'<span class="sjekk-panel-teller">'+ferdig+' av '+items.length+'</span></div>'
-    +'<div class="sjekk-bar"><span style="width:'+pct+'%"></span></div>'
-    +'<div class="sjekk-rader">'+rader+'</div>'
-    +'<p class="pub-err sjekk-pub-err" id="sjekkPubErr" role="alert"></p></div>';
-}
-function renderSjekkliste(){
-  var b=_billing||{};
-  var forhV=b.page_status==='forhandsvist';
-  var iFokus=document.body.classList.contains('fokus');
-  var items=sjekklisteItems();
-  var ferdig=items.filter(function(i){return i.done;}).length;
-  // Pill KUN i vanlig modus (ikke fokus — der eier fokus-baren onboarding-CTA-en, og pillen
-  // ville kollidert med den). Synlig kun ved forhandsvist.
-  var pill=$('#sjekkPill');
-  if(pill){
-    var visPill=forhV&&!iFokus&&b.sidemal!=='v2';   // v2 har ingen sjekkliste: «Fullfør siden din» er et kort på Oversikt
-    document.body.classList.toggle('har-sjekkpill',visPill);   // ekstra bunnklaring mens pillen står (se CSS)
-    if(visPill){
-      pill.hidden=false;
-      var pct=Math.round(ferdig/items.length*100);
-      var ring=$('#sjekkRing'); if(ring)ring.style.setProperty('--p',pct);
-      var num=$('#sjekkRingNum'); if(num)num.textContent=ferdig+'/'+items.length;
-      var pop=$('#sjekkPopover'); if(pop)pop.innerHTML=byggSjekkPanel(items,ferdig);
-    } else { pill.hidden=true; _sjekkPopoverLukk(); }
-  }
-}
-async function hentSjekklisteData(){
-  try{
-    var res=await Promise.all([
-      apiFetch('/api/dashboard/images'),
-      apiFetch('/api/dashboard/services'),
-      apiFetch('/api/dashboard/hours'),
-      apiFetch('/api/dashboard/profile'),
-      // Lagret layout + bildekrav. Pillen står på ALLE faner, og loadDesign kjører først når Din side
-      // åpnes — uten eget kall ville bildepunktet fulgt dagens regel til barberen åpnet Din side.
-      apiFetch('/api/dashboard/design'),
-    ]);
-    var imgs=res[0]&&res[0].ok?await res[0].json():[];
-    var svc =res[1]&&res[1].ok?await res[1].json():{};
-    var hrs =res[2]&&res[2].ok?await res[2].json():[];
-    var prof=res[3]&&res[3].ok?await res[3].json():{};
-    var dsg =res[4]&&res[4].ok?await res[4].json().catch(function(){return null;}):null;
-    if(dsg){ settBildeData(dsg); if(dsg.layout)_sjekkData.layout=dsg.layout; }
-    var iSlot=function(s){return (imgs||[]).filter(function(i){return i.slot===s;}).length;};
-    _sjekkData.bilderGalleri   =iSlot('galleri');
-    _sjekkData.bilderPortrett  =iSlot('portrett');
-    _sjekkData.bilderHero      =iSlot('hero');
-    _sjekkData.tjenesterMedPris=(((svc&&svc.hoved)||[])).filter(function(s){return Number(s.price)>0;}).length;
-    _sjekkData.apneDager       =(Array.isArray(hrs)?hrs:[]).filter(function(d){return !d.is_closed;}).length;
-    _sjekkData.profilUtfylt    =[prof.bio,prof.tagline,prof.address].filter(function(v){return (v||'').trim();}).length;
-  }catch(e){ console.error('sjekkliste-data feilet:',e); }
-  renderSjekkliste();
-}
-function oppdaterSjekkliste(){ hentSjekklisteData(); }
-function _sjekkAapneAkk(id){var h=document.querySelector('#'+id+' .acc-head');if(h&&h.getAttribute('aria-expanded')!=='true')h.click();}
-function _sjekkScroll(sel){var el=document.querySelector(sel);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}
-function _sjekkPopoverLukk(){ _sjekkPopoverAapen=false; var p=$('#sjekkPopover'); if(p)p.hidden=true; var b=$('#sjekkPillBtn'); if(b)b.setAttribute('aria-expanded','false'); }
-function sjekkGaaTil(action){
-  if(action==='publiser'){
-    // Popoveren blir STÅENDE: før ble den lukket og en usynlig dummy-knapp sendt inn, så en 400 («Sett en pris …»)
-    // havnet i #pubErr i Konto-fanen og barberen så ingenting. Nå er raden selv knappen og feilen står i panelet.
-    if(IS_DEMO) return;
-    var rad=document.querySelector('#sjekkPopover .sjekk-rad[data-act="publiser"]');
-    if(rad){ _sjekkPopoverAapen=true; var pop=$('#sjekkPopover'); if(pop)pop.hidden=false; }
-    settSideStatus('live',rad||document.createElement('button'));
-    return;
-  }
-  _sjekkPopoverLukk();
-  if(action==='bilder'||action==='profil'){
-    // Begge bor i «Din side» (#design) — synlig i fokus, så vi BLIR i fokus, åpner bare trekkspillet.
-    if(typeof aktivtPanel==='function'&&aktivtPanel()!=='design') switchPanel('design');
-    setTimeout(function(){
-      if(action==='bilder'){ _sjekkAapneAkk('accBilder'); _sjekkScroll('#accBilder'); }
-      else { _sjekkAapneAkk('accProfil'); _sjekkScroll('#pf-bio'); var f=$('#pf-bio'); if(f)f.focus(); }
-    },60);
-  } else {
-    // tjenester / tider bor på en ANNEN fane — i fokus må vi ut først (fokus viser kun Din side).
-    if(document.body.classList.contains('fokus')) avsluttFokus();
-    switchPanel('tjenester');
-    setTimeout(function(){ _sjekkScroll(action==='tjenester'?'#hovedList':'#hoursList'); },60);
-  }
-}
-(function(){
-  var btn=$('#sjekkPillBtn');
-  if(btn)btn.addEventListener('click',function(e){
-    e.stopPropagation();
-    _sjekkPopoverAapen=!_sjekkPopoverAapen;
-    var p=$('#sjekkPopover'); if(p)p.hidden=!_sjekkPopoverAapen;
-    btn.setAttribute('aria-expanded',_sjekkPopoverAapen?'true':'false');
-  });
-  document.addEventListener('click',function(e){
-    var rad=e.target.closest('.sjekk-rad'); if(rad){ sjekkGaaTil(rad.dataset.act); return; }
-    if(_sjekkPopoverAapen && !e.target.closest('#sjekkPill')) _sjekkPopoverLukk();
-  });
 })();
 
 // Lenke-blokka styres av page_status ALENE, og ligger derfor utenfor if/else-kjeden i
@@ -7908,7 +6724,7 @@ function settLenkeblokk(b){
   const visUrl=CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+slug;
 
   if(st==='live'){
-    byggKopierbartLenkefelt(boks,url,visUrl); // DELT med «Din side» live-tilstand (renderDinsideCta)
+    byggKopierbartLenkefelt(boks,url,visUrl); // DELT med headerlenka
   }else{ // forhandsvist: forhåndsvisnings-lenke + note, ingen kopi (sida er ikke live ennå)
     const a=document.createElement('a');
     a.href=url; a.target='_blank'; a.rel='noopener';
@@ -7923,7 +6739,7 @@ function settLenkeblokk(b){
 }
 
 // Bygger et kopierbart lenkefelt (URL-tekst + kopi-ikonknapp) i container — DELT mellom Konto-
-// lenkeblokka (settLenkeblokk) og «Din side» live-tilstand (renderDinsideCta). Gjenbruker
+// lenkeblokka (settLenkeblokk) og headerlenka (settHeaderLenke). Gjenbruker
 // .pub-field/.pub-url/.pub-copy, settLenketekst (midt-ellipse) og kopierLenke.
 function byggKopierbartLenkefelt(container,url,visUrl){
   container.textContent='';
@@ -8020,16 +6836,14 @@ function settPubFeil(kode,tekst,maal){
   // tilbake på none og meldinga forblir usynlig. (Samme felle som .idea-err.)
   feil.style.display='block';
 }
-function nullstillPubFeil(){["#pubErr","#avpubErr","#dinsidePubErr","#fokusPubErr","#sjekkPubErr"].forEach(function(sel){const f=$(sel);if(f){f.style.display='none';f.textContent='';}});}
+function nullstillPubFeil(){["#pubErr","#avpubErr"].forEach(function(sel){const f=$(sel);if(f){f.style.display='none';f.textContent='';}});}
 // Felles for begge retninger. nyStatus: 'live' | 'forhandsvist'.
 async function settSideStatus(nyStatus,btn){
   nullstillPubFeil();
-  // Feilen står ved knappen som utløste den: avpubliser nederst i Konto, publiser på «Din side»,
-  // ellers abonnementskortet (tilstand 0 og «Publiser bookingsiden» i avpublisert plan-tilstand).
-  // data-pub-err på knappen vinner (fokusmodus, sjekklista) — feilen skal stå der barberen trykket.
-  const feilMaal=(btn&&btn.dataset&&btn.dataset.pubErr)||(nyStatus==='forhandsvist'?'#avpubErr':(btn&&btn.id==='dinsidePubliser')?'#dinsidePubErr':'#pubErr');
-  // En sjekkliste-rad har egen markup: bytt bare undertittelen, ikke hele knappeteksten.
-  const tekstEl=(btn.querySelector&&btn.querySelector('.sjekk-rad-s'))||btn;
+  // Feilen står ved knappen som utløste den: avpubliser nederst i Konto, ellers abonnementskortet
+  // (tilstand 0 og «Publiser bookingsiden» i avpublisert plan-tilstand).
+  const feilMaal=nyStatus==='forhandsvist'?'#avpubErr':'#pubErr';
+  const tekstEl=btn;
   const orig=tekstEl.textContent;btn.disabled=true;tekstEl.textContent='Lagrer …';
   let r;
   try{
@@ -8052,9 +6866,8 @@ async function settSideStatus(nyStatus,btn){
       settBilling(d);
       // Suksess-feedback gates PÅ SAMME state-oppdatering: en tom/parse-feilet 200-body (uten
       // page_status) skal ikke vise «Siden din er live!» mens renderKonto fortsatt sier «Ikke
-      // publisert». Publisering → suksesskort (hendelses-drevet, én gang). Avpublisering → toast.
-      if(nyStatus==='live') visSuksesskort();
-      else showToast('Bookingsiden er avpublisert');
+      // publisert». Publisering: Konto tegnes på nytt fra settBilling (ingen egen melding). Avpublisering → toast.
+      if(nyStatus!=='live') showToast('Bookingsiden er avpublisert');
     }
     return;
   }
@@ -8071,12 +6884,6 @@ $("#kontoAksjon").addEventListener("click",function(){
   else if(_kontoAksjon==='checkout') startCheckout(this);
   else if(_kontoAksjon==='portal')   aapnePortal();
 });
-// «Din side»-CTA-en: samme publiser-dispatch som Konto-knappen over (_kontoAksjon==='publiser').
-// Ingen egen state-maskin; settSideStatus håndterer knappe-disabling og re-synk selv.
-$("#dinsidePubliser").addEventListener("click",function(){
-  if(IS_DEMO)return;
-  settSideStatus('live',this);
-});
 $("#manageSub").addEventListener("click",function(){ if(IS_DEMO)return; aapnePortal(); });
 $("#kontoOppBtn").addEventListener("click",function(){ if(IS_DEMO)return; startCheckout(this); });
 // Avpublisert i en plan-tilstand: samme publiser-dispatch som hovedknappen i tilstand 0.
@@ -8087,12 +6894,10 @@ $("#unpublish").addEventListener("click",function(){
   settSideStatus('forhandsvist',this);
 });
 // Handlingslenkene i feilmeldinga — delegert, fordi innerHTML byttes ved hver feil.
-// På dokumentet, ikke per element: sjekklistens #sjekkPubErr tegnes på nytt ved hver render.
 document.addEventListener("click",function(e){
   const b=e.target.closest('.pub-err [data-pub-act]'); if(!b)return;
   if(b.dataset.pubAct==='tjenester'){
     if(document.body.classList.contains('fokus')&&typeof avsluttFokus==='function')avsluttFokus();
-    _sjekkPopoverLukk();
     switchPanel('tjenester');
   }
 });
@@ -8165,11 +6970,11 @@ async function applyBillingReturn(){
 
 function applyDemoMode(){
   document.getElementById('demoBanner').classList.add('show');
-  ['saveProfil','saveNavn','saveSvc','savePay','saveDesign','saveHours','cropSave',
-   'slotPopupFjern','slotPopupEndre','gcalBtn',
-   'fbSend-side','fbSend-konto-ide','fbSend-konto-support',  // tre bokser, én handler
+  ['saveNavn','saveSvc','savePay','saveHours','cropSave',
+   'gcalBtn',
+   'fbSend-side','fbSend-konto-support',  // to bokser, én handler
    // Konto: én hovedknapp + tekstlenker (startSub/goLive er slått sammen til kontoAksjon)
-   'kontoAksjon','kontoOppBtn','kontoPubliser','tog-smsPaam','smsKjop','smsTilbudSe','smsTilbudIkkeNaa','dinsidePubliser','manageSub','unpublish','savePw','loggUt'].forEach(function(id){
+   'kontoAksjon','kontoOppBtn','kontoPubliser','tog-smsPaam','smsKjop','smsTilbudSe','smsTilbudIkkeNaa','manageSub','unpublish','savePw','loggUt'].forEach(function(id){
     var el=document.getElementById(id);
     if(el){el.disabled=true;el.title='Ikke tilgjengelig i forhåndsvisning';}
   });
@@ -8185,7 +6990,6 @@ loadPayment(); // betalingsmetoder (Tjenester-fanen) fra innstillings-loaderen
 // Oversikt-nudgen (ferske no-shows) fylles av loadWinback — men FØRST etter at plan er kjent, så
 // erBasis()-guarden virker og basis ikke henter kundedata ved sideload (init-race lukket).
 loadBilling().then(applyBillingReturn).finally(function(){ loadWinback(); }); // abonnementsstatus → retur-flagg → nudge
-hentSjekklisteData(); // «Fullfør siden»-guide: hent haker (images/services/hours/profile) ved sideload
 anvendHash(); // åpne panelet fra location.hash (ukjent/tom → standardpanel). Stripe-retur over
               // kjører async etterpå og kan overstyre til Konto — det er tilsiktet.
 
@@ -8217,7 +7021,7 @@ anvendHash(); // åpne panelet fra location.hash (ukjent/tom → standardpanel).
    med en gang og telles ikke. Usikkerhet går alltid mot «ulagret»: da vises en stripe i stedet for en
    automatisk ny lasting, så ingenting barbereren har skrevet forsvinner. */
 var _ulagrede=new Set(), _sisteKlikk=null;
-var ULAGRET_SEKSJON='.kt-rad, .acc, .ideacard, .subcard, .dinside-cta, .gen-card, #plakatOverlay';
+var ULAGRET_SEKSJON='.kt-rad, .acc, .ideacard, .subcard, .gen-card, #plakatOverlay';
 document.addEventListener('input',function(e){
   var t=e.target;
   if(!e.isTrusted||!t||!t.matches)return;
@@ -8231,8 +7035,8 @@ function ulagretLagret(){
   _ulagrede.forEach(function(el){ if(sek.contains(el))_ulagrede.delete(el); });
 }
 function harUlagret(){
-  // v2 «Din side»: utkastet (tekst, farger, font, bilder) er ÉN kilde — DinSideV2.ulagret(). Felt der telles derfor ikke her
-  // (og tas ut av settet), så flagget faller av seg selv ved vellykket v2-lagring og «Forkast». Bilder og fargevalg gir ingen
+  // «Din side»: utkastet (tekst, farger, font, bilder) er ÉN kilde — DinSideV2.ulagret(). Felt der telles derfor ikke her
+  // (og tas ut av settet), så flagget faller av seg selv ved vellykket lagring og «Forkast». Bilder og fargevalg gir ingen
   // input-hendelse og ble før aldri sett → auto-reload etter deploy kunne kaste et ulagret utkast.
   var n=0; _ulagrede.forEach(function(el){ if(el.isConnected&&!el.closest('#dinsideV2'))n++; else _ulagrede.delete(el); });
   return n>0 || !!(window.DinSideV2&&DinSideV2.ulagret());
@@ -8507,7 +7311,7 @@ function settPlakatVersjon(v){
   // Galleri-bilder (samme kilde som bookingsiden), sortert på sort_order.
   function galleriBilder(){
     var g=(_bilder||[]).filter(function(x){return x.slot==='galleri';});
-    if(!g.length) g=(_bilder||[]).slice(); // fallback: kun portrett/hero
+    if(!g.length) g=(_bilder||[]).slice(); // fallback: bare portrett
     g.sort(function(a,c){return (a.sort_order||0)-(c.sort_order||0);});
     return g;
   }
@@ -8564,11 +7368,13 @@ function settPlakatVersjon(v){
     document.body.classList.add('plakat-lock');
     overlay().classList.add('open');
     render();
+    fokuserDialog(overlay());
   }
   function lukk(){
     if(PS){ PS.valgtId=null; _layout=null; PS.aapen=false; lagre(); } // bug 3: nullstill valgt plakat ved lukking
     overlay().classList.remove('open');
     document.body.classList.remove('plakat-lock');
+    returnerDialogFokus(overlay());
     _delCache={ sig:null, blob:null, pending:false };   // M2: ingen gjenbruk av del-blob på tvers av lukk/åpne (tidsavhengig innhold)
   }
   function tilSkjerm1(){ PS.valgtId=null; _layout=null; lagre(); render(); }
@@ -8580,6 +7386,9 @@ function settPlakatVersjon(v){
     var tittel=document.getElementById('plakatTittel');
     if(!scroll) return;
     scroll.innerHTML='';
+    // Kortet/knappen som ble trykket er nå fjernet → fokus falt til <body>, og Tab ville gått til siden bak.
+    // Fokus tilbake på dialogen (tabindex=-1, ingen ring — samme som ved åpning med trykk).
+    var ov=overlay(); if(ov.classList.contains('open') && (!document.activeElement || document.activeElement===document.body)){ if(!ov.hasAttribute('tabindex')) ov.tabIndex=-1; ov.focus({preventScroll:true}); }
     if(PS.valgtId==null){
       back.hidden=true; tittel.textContent='Velg plakat';
       var g=galleriBilder().length;
@@ -8650,7 +7459,7 @@ function settPlakatVersjon(v){
   // ── Lag 2: forhåndsvisning (iframe mot backend-ruta) + kontroller ───────────────────────────
   // RELATIV URL → same-origin (Netlify-proxy til Railway) → auth-cookie (.trybarberhq.com) følger med.
   // CSP-AVHENGIGHET (verifisert 09.09): dashbordet setter INGEN CSP i dag — verken <meta> i denne fila
-  // eller Content-Security-Policy-header i netlify.toml. Både Design-previewen (oppdaterPreview → f.srcdoc)
+  // eller Content-Security-Policy-header i netlify.toml. Både Din side-forhåndsvisningen (dinside-v2.js → srcdoc)
   // og plakat-previewen lener seg på det: en srcdoc-iframe er same-origin og arver forelderens policy,
   // altså «ingen CSP», så plakatens inline <style>, inline style=, @font-face url(data:) og inline <script>
   // (FIT_SCRIPT) kjører fritt. Innføres en CSP på dashbordet senere, MÅ BEGGE previews whitelistes
@@ -8663,11 +7472,8 @@ function settPlakatVersjon(v){
 
   async function hentDesign(){
     if(_palett) return;
-    // Global `design` er kun fylt hvis Design-fanen har vært åpnet (loadDesign). Editoren åpnes fra
-    // Vekst, så den er som regel tom her → hent /design direkte (api.design finnes ikke). Uten dette
-    // står _palett/_mode undefined og bakgrunnFraBarber() faller alltid til «mork» — en sand-barber
-    // ville da sendt mørk, som backend 400-er.
-    if(typeof design!=='undefined' && design && design.palette){ _palett=design.palette; _mode=design.mode; return; }
+    // Hent /design direkte (api.design finnes ikke). Uten dette står _palett/_mode undefined og
+    // bakgrunnFraBarber() faller alltid til «mork» — en sand-barber ville da sendt mørk, som backend 400-er.
     try{ var r=await apiFetch('/api/dashboard/design',{sameOrigin:true}); if(r&&r.ok){ var d=await r.json(); if(d&&d.palette){ _palett=d.palette; _mode=d.mode; } } }catch(e){}
   }
   // /regler gir plan-oppløste grenser (bl.a. skjoldStyrke {min,max,default}) — hentes én gang ved
@@ -8950,13 +7756,20 @@ function settPlakatVersjon(v){
   // sideforhold (aspect fra /layout). Resultatet er {x,y,w,h} i bildets EGNE pikselkoordinater (getData),
   // klampet innenfor bildets grenser (backend avviser utsnitt utenfor → 400). Lagres på p.rects[slot] og
   // sendes som plass.rect. Ikke-destruktivt: originalbildet røres aldri (kun et utsnitt-rektangel).
+  // Beskjær-/bildevelger-laget er en dialog over editoren: fokus inn ved åpning (fokuserDialog), og ved lukking
+  // (alle veier ender i lag.remove()) tilbake til åpneren (tastatur) eller editoren (trykk) — aldri til <body>.
+  function lagSomDialog(lag, navn){
+    lag.setAttribute('role','dialog'); lag.setAttribute('aria-modal','true'); lag.setAttribute('aria-label',navn);
+    lag.remove=function(){ Element.prototype.remove.call(lag); returnerDialogFokus(lag);
+      var a=document.activeElement, o=overlay(); if((!a||a===document.body) && o.classList.contains('open')) o.focus({preventScroll:true}); };
+  }
   function aapneBeskjaer(celle, bilde){
     if(typeof Cropper==='undefined') return; // biblioteket lastes globalt (lib/cropper.min.js) før denne IIFE-en
-    var lag=document.createElement('div'); lag.className='pk-crop';
+    var lag=document.createElement('div'); lag.className='pk-crop'; lagSomDialog(lag,'Beskjær bilde');
     var inner=document.createElement('div'); inner.className='pk-crop-inner';
     var topp=document.createElement('div'); topp.className='pk-crop-topp';
     var tittel=document.createElement('p'); tittel.className='pk-crop-tittel'; tittel.textContent='Beskjær bilde';
-    var xbtn=document.createElement('button'); xbtn.type='button'; xbtn.className='pk-crop-x'; xbtn.setAttribute('aria-label','Ferdig'); xbtn.textContent='×';
+    var xbtn=lagLukkX('Ferdig'); xbtn.classList.add('pk-crop-x');
     topp.appendChild(tittel); topp.appendChild(xbtn);
     var wrap=document.createElement('div'); wrap.className='pk-crop-canvas';
     // INGEN crossOrigin: R2 sender ikke Access-Control-Allow-Origin, så crossOrigin='anonymous' gjorde
@@ -8985,6 +7798,7 @@ function settPlakatVersjon(v){
     aspBar.appendChild(aspBadge); aspBar.appendChild(aspHint);
     inner.appendChild(topp); inner.appendChild(aspBar); inner.appendChild(wrap); lag.appendChild(inner);
     document.body.appendChild(lag); // på <body>, ikke i editoren → fixed+z-index:1100 garanterer at laget er øverst
+    fokuserDialog(lag);
     var cr=null;
     img.onload=function(){
       // checkCrossOrigin:false + checkOrientation:false — R2 sender ikke CORS. Med defaults oppdager Cropper
@@ -9026,11 +7840,11 @@ function settPlakatVersjon(v){
   function aapneBildevelger(celle){
     var g=galleriBilder(); if(!g.length) return;
     var p=finn(PS.valgtId); if(!p) return;
-    var lag=document.createElement('div'); lag.className='pk-bildevelg';
+    var lag=document.createElement('div'); lag.className='pk-bildevelg'; lagSomDialog(lag,'Velg bilde');
     var inner=document.createElement('div'); inner.className='pk-bildevelg-inner';
     var topp=document.createElement('div'); topp.className='pk-crop-topp';
     var tittel=document.createElement('p'); tittel.className='pk-crop-tittel'; tittel.textContent='Velg bilde';
-    var xbtn=document.createElement('button'); xbtn.type='button'; xbtn.className='pk-crop-x'; xbtn.setAttribute('aria-label','Lukk'); xbtn.textContent='×';
+    var xbtn=lagLukkX('Lukk'); xbtn.classList.add('pk-crop-x');
     topp.appendChild(tittel); topp.appendChild(xbtn);
     var grid=document.createElement('div'); grid.className='pk-bildevelg-grid';
     var naa = p.bilder && p.bilder[celle.slot];
@@ -9069,6 +7883,7 @@ function settPlakatVersjon(v){
     xbtn.addEventListener('click', lukk);
     lag.addEventListener('click', function(e){ if(e.target===lag) lukk(); });
     document.body.appendChild(lag);
+    fokuserDialog(lag);
   }
   // Les fil lokalt, nedskaler til maksKant lengste kant, returner JPEG data-URI + de FAKTISKE dimensjonene
   // (sendes med som width/height — backend bruker dem til rect-grense + cover). Nedskalering før base64.
@@ -9497,7 +8312,7 @@ window.hqDel = (function(){
   // ---- åpne/lukke ----
   function aapne(){
     if(!ov || ov.classList.contains('vis')) return;   // M3: re-entrancy — allerede åpen → ignorer dobbel-inngang
-    document.body.classList.add('story-open'); ov.classList.add('vis');
+    document.body.classList.add('story-open'); ov.classList.add('vis'); fokuserDialog(ov);
     visLaster(true);                    // spinner mens /data henter tilgjengelige_dager (ÉN gang)
     hentMaksDager().then(function(m){
       if(!ov.classList.contains('vis')) return;   // M3: lukket før /data kom → ikke bygg/last i en lukket overlay
@@ -9509,7 +8324,7 @@ window.hqDel = (function(){
       lastPreview();                    // preview ÉN gang (4 dager/valgt, lenke av; backend velger tjeneste)
     });
   }
-  function lukk(){ if(!ov)return; ov.classList.remove('vis'); document.body.classList.remove('story-open'); clearTimeout(_t); if(frame) frame.removeAttribute('src');
+  function lukk(){ if(!ov)return; var varApen=ov.classList.contains('vis'); ov.classList.remove('vis'); document.body.classList.remove('story-open'); if(varApen) returnerDialogFokus(ov); clearTimeout(_t); if(frame) frame.removeAttribute('src');
     _del={sig:null,blob:null,pending:false};   // M2: ingen gjenbruk av del-blob på tvers av lukk/åpne (ledige timer er tidsavhengig)
   }
 

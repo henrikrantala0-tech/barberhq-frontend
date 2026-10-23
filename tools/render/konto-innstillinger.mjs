@@ -268,22 +268,12 @@ for (const bredde of [320, 375]) { // Passord: ikke satt / satt / glemt-lenken, 
   { // Publisering (tilstand 0) feiler → feilen blir i abonnementskortet
     const { page, errs } = await side(bredde, { scen: 'gratis-0', billing: () => ({ ...SCEN['gratis-0'](), page_status: 'forhandsvist' }),
       pageStatus: () => [400, { error: 'Minst én tjeneste med pris kreves for å gå live' }] });
+    // Ikke live → oppsettet (fokusmodus) åpnes ved innlasting. Lukk det (X) og gå til Konto, slik barbereren gjør.
+    await page.evaluate(() => { DinSideV2.lukkOppsett(); switchPanel('abonnement'); }); await page.waitForTimeout(400);
     await page.click('#kontoAksjon'); await page.waitForTimeout(900);
     sjekk(await vis(page, '#pubErr') && !!(await page.$('#kontoAbonnement #pubErr')) && /Minst én tjeneste/.test(await tekst(page, '#pubErr')) && !(await vis(page, '#avpubErr')),
       `${bredde} publiseringsfeil i abonnementskortet: «${await tekst(page, '#pubErr')}»`);
     sjekk(errs.length === 0, `${bredde} publisering: JS-feil ${errs.join(' | ')}`); await page.close(); }
-  { // Publiser-knappen på «Din side» feiler → feilen står ved den knappen, ikke i #pubErr i Konto
-    const { page, errs } = await side(bredde, { scen: 'gratis-0', billing: () => ({ ...SCEN['gratis-0'](), page_status: 'forhandsvist' }),
-      pageStatus: () => [400, { error: 'Minst én tjeneste med pris kreves for å gå live' }] });
-    await page.evaluate(() => switchPanel('design')); await page.waitForTimeout(900);
-    await page.click('#dinsidePubliser'); await page.waitForTimeout(900);
-    const pos = await page.evaluate(() => { const b = document.getElementById('dinsidePubliser').getBoundingClientRect(), e = document.getElementById('dinsidePubErr').getBoundingClientRect();
-      return Math.round(e.top - b.bottom); });
-    sjekk(await vis(page, '#dinsidePubErr') && /Minst én tjeneste/.test(await tekst(page, '#dinsidePubErr')) && await page.$eval('#pubErr', e => e.style.display !== 'block') && pos >= 0 && pos < 60,
-      `${bredde} Din side: publiseringsfeil ved «Publiser siden» (avstand ${pos}px), #pubErr i Konto tom`);
-    await page.addStyleTag({ content: '.bunn-nav{visibility:hidden!important}' });
-    await page.locator('#dinsideCta').screenshot({ path: path.join(OUT, `dinside-publiser-feil-${bredde}.png`) });
-    sjekk(errs.length === 0, `${bredde} Din side publiser: JS-feil ${errs.join(' | ')}`); await page.close(); }
   { // opprett-passord.html?bytt=1 → «Lag nytt passord»; uten bytt → «Lag et passord»
     for (const [q, h] of [['?bytt=1', 'Lag nytt passord'], ['', 'Lag et passord']]) {
       const page = await browser.newPage({ viewport: { width: bredde, height: 800 }, deviceScaleFactor: 2 });
@@ -346,7 +336,9 @@ for (const bredde of [320, 375]) { // Passord: ikke satt / satt / glemt-lenken, 
 { // Tankestrek ut av feedback-kortet i Hjelp
   const { page, errs } = await side(375, { scen: 'vekst' });
   const t = await page.$$eval('#kontoHjelp .block-s', ps => ps.map(p => p.textContent));
-  sjekk(t.includes('Ønsker du en ny funksjon, farge eller layout? Send oss, vi leser alt.') && !t.some(x => x.includes('—')), 'Hjelp: «Send oss, vi leser alt.» uten tankestrek');
+  // Idé-boksen er fjernet fra Konto 23.10.2026 (idéer sendes fra Din side). Support-boksen står, uten tankestrek.
+  sjekk(t.includes('Beskriv hva som skjer, så ser vi på det. Vi svarer på e-posten din.') && !t.some(x => x.includes('—')), 'Hjelp: support-boksen uten tankestrek');
+  sjekk(!(await page.$('#kontoHjelp #fbBox-konto-ide, #kontoHjelp .kt-ide')), 'Hjelp: ingen idé-boks i Konto (bare ett sted: Din side)');
   sjekk(errs.length === 0, `Hjelp: JS-feil ${errs.join(' | ')}`); await page.close();
 }
 { // Gammel backend uten sendt_maaned → intet tall; needs_attention → prikk ved overskriften

@@ -1,10 +1,9 @@
-/* «Din side» for v2-barbere (sidemal='v2') — fire steg: Profil → Utseende → Bilder → Kontakt.
+/* «Din side» — fire steg: Profil → Utseende → Bilder → Kontakt.
    Lastes av dashboard.html etter hovedskriptet og bruker dets globale hjelpere (apiFetch, settBilling, showToast,
-   erBillingShape, kontaktFeil, _openCropModal, CONFIG, loadProfil). v1 er urørt: dashbordet greiner på
-   _billing.sidemal og kaller bare inn hit for 'v2'.
+   erBillingShape, kontaktFeil, _openCropModal, CONFIG, loadProfil).
 
-   Kontrakt (backend redesign-v2):
-     GET  /api/dashboard/din-side          → { sidemal, profil{shop,tagline,address,bio,om}, utseende{aksent,custom_accent,
+   Kontrakt (backend):
+     GET  /api/dashboard/din-side          → { profil{shop,tagline,address,bio,om}, utseende{aksent,custom_accent,
                                                color_mode,font}, kontakt{instagram,tiktok,snapchat,contact_phone}, publisert_at,
                                                valg{aksenter[{key,hex}], fonter[{key,navn,family,url,vekt}], maks{…,bilder{…}}} }
      POST /api/dashboard/preview           → text/html. Body { side:'forside'|'book', profil?, utseende?, kontakt? }
@@ -30,10 +29,11 @@
                     custom_accent: '#dv2Hex', instagram: '#dv2Instagram', tiktok: '#dv2Tiktok', snapchat: '#dv2Snapchat',
                     contact_phone: '#dv2Telefon' };
   var AKSENT_NAVN = { blaa: 'Blå', gull: 'Gull', roed: 'Rød', egen: 'Din egen' };
-  var STANDARD_MAKS = { tagline: 60, address: 200, bio: 2000, om: 4000, bilder: { portrett: 1, hero: 1, galleri: 10 } };
+  var BILDE_ACCEPT = 'image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif,image/svg+xml,.svg';   // BILDE_MIME (dashboard.js:100) + SVG, som konverteres til PNG i klienten
+  var STANDARD_MAKS = { tagline: 60, address: 200, bio: 2000, om: 4000, bilder: { portrett: 1, galleri: 10 } };
 
   var S = {
-    v2: false, aktiv: false, byggd: false,
+    aktiv: false, byggd: false,
     laster: false, lastFeilet: false,
     valg: null, lagret: null, utkast: null, shop: '', publisertAt: null,
     hsv: { h: 212, s: 1, v: 0.89 },   // fargevelgerens posisjon («Din egen»); utkastet lagrer hex
@@ -79,6 +79,10 @@
   function kontrast(a, b) { var x = lum(a), y = lum(b); return (Math.max(x, y) + 0.05) / (Math.min(x, y) + 0.05); }
   // Sidens bakgrunn per modus (backend v2-css.cjs LYS/MORK .bg).
   var SIDE_BG = { lys: '#fafafa', mork: '#0c0c0c' };
+  // Kontrastvarselet for «Din egen» farge: bare når fargen nesten forsvinner mot bakgrunnen (nær svart i mørk modus,
+  // nær hvit i lys). 1,25 gir varsel for #21084f (1,13) mot mørk og #f0f0f0 (1,09) mot lys, ikke for #481b9f (1,80)
+  // eller #33264d (1,42). Juster her.
+  var KONTRAST_VARSEL = 1.25;
   function knappMotBakgrunn(hex, modus) { return kontrast(hex, SIDE_BG[modus] || SIDE_BG.mork); }
 
   /* ── Skjema ↔ utkast ── */
@@ -113,20 +117,14 @@
   }
 
   /* ══ Grein og livssyklus ═══════════════════════════════════════════════════════════════════════════ */
-  function erV2() { var b = ervBilling(); return !!(b && b.sidemal === 'v2'); }
-
-  // Kalles av settBilling (hver gang billing lander). Setter v1/v2-greinen og kjører utsatt lasting.
+  // Kalles av settBilling (hver gang billing lander): bygger flaten og tegner det som avhenger av page_status.
   function billing(b) {
-    var v2 = !!(b && b.sidemal === 'v2');
-    S.v2 = v2;
-    document.body.classList.toggle('sm-v2', v2);
-    document.body.classList.toggle('sm-v1', !v2);
-    if (v2) { S.publisertAt = b.publisert_at || S.publisertAt; ensureByggd(); }
+    if (b) { S.publisertAt = b.publisert_at || S.publisertAt; ensureByggd(); }
     tegnFullfor(b);
-    if (v2 && S.byggd && S.utkast) { tegnSteg(); tegnKnapper(); }   // live/ikke live styrer lagreknappen og hjelpelinja
+    if (S.byggd && S.utkast) { tegnSteg(); tegnKnapper(); }   // live/ikke live styrer lagreknappen og hjelpelinja
   }
 
-  // Billing kunne ikke hentes: sidemal er ukjent, og da vises verken v1- eller v2-flaten (se CSS). Si det rett ut.
+  // Billing kunne ikke hentes: uten page_status vet vi ikke om lagring skal publisere. Si det rett ut.
   function billingFeilet() {
     var st = $('#dv2Start'); if (st && !S.byggd) { st.classList.add('feil'); st.textContent = 'Kunne ikke laste Din side. Last siden på nytt.'; }
   }
@@ -138,10 +136,11 @@
     S.byggd = true;
   }
 
-  // Kalles når «Din side»-fanen åpnes (kun v2).
+  // Kalles når «Din side»-fanen åpnes.
   async function last() {
     ensureByggd();
     S.aktiv = true;
+    nullstillLagreStatus(); nullstillBilderFeil();
     // Ulagret utkast beholdes urørt — bare bildene hentes på nytt (de er alltid serverens sannhet).
     if (S.utkast && ulagret()) { hentBilder(); planleggPreview(0); return; }
     if (S.laster) return;
@@ -151,7 +150,7 @@
     catch (e) { d = null; }
     S.laster = false;
     if (r === null) return;                                    // 401 → apiFetch har sendt til innlogging
-    if (!d || d.sidemal !== 'v2') { S.lastFeilet = true; visLasting(); return; }
+    if (!d) { S.lastFeilet = true; visLasting(); return; }
     tilordneData(d);
     visInnhold();
     hentBilder();
@@ -169,7 +168,14 @@
     (S.valg && S.valg.fonter || []).forEach(lastFont);
   }
 
-  function forlat() { S.aktiv = false; }
+  function forlat() { S.aktiv = false; nullstillLagreStatus(); nullstillBilderFeil(); }
+  // «✓ Lagret …» og «lagret, men ikke publisert» er svar på ÉN lagring og gjelder bare der og da (Kontakt, rett etter Lagre).
+  // Baren med statusen er felles for alle steg, så uten dette sto meldingen igjen på neste steg og ved neste besøk.
+  // Feilstatus (feil felt / lagring feilet) beholdes: den peker til noe barbereren må rette.
+  function nullstillLagreStatus() {
+    if (S.statusType !== 'ok' && S.statusType !== 'info') return;
+    S.statusTekst = ''; S.statusType = ''; if (el.status) tegnStatus();
+  }
 
   /* ══ Bygg markup (én gang) ═════════════════════════════════════════════════════════════════════════
      Godkjent 22.10.2026 (prototype tools/render/prototyper/dinside-v2-oppsett.html): fast topp med tittel + «Forhåndsvis»
@@ -215,9 +221,9 @@
           '</section>' +
           '<section class="dv2-sek" id="dv2Sek2" data-sek="2" aria-labelledby="dv2Tab2" hidden>' +
             '<p class="ingress">Valgfritt. Siden er ferdig uten.</p>' +
-            '<div class="dv2-fld dv2-del"><span class="etikett">Portrett eller logo</span><div id="dv2Portrett"></div></div>' +
+            '<div class="dv2-fld dv2-del"><span class="etikett">Portrett eller logo</span><div id="dv2Portrett"></div><p class="dv2-feil" id="dv2PortrettFeil" role="alert" hidden></p></div>' +
             '<div class="dv2-fld dv2-del"><div class="dv2-teller-rad"><span class="etikett">Arbeidene dine</span><span id="dv2GalleriTeller"></span></div><div id="dv2Galleri"></div><p class="dv2-feil" id="dv2BilderFeil" role="alert" hidden></p></div>' +
-            '<input type="file" id="dv2FilPortrett" accept="image/*" hidden><input type="file" id="dv2FilGalleri" accept="image/*" multiple hidden><input type="file" id="dv2FilBytt" accept="image/*" hidden>' +
+            '<input type="file" id="dv2FilPortrett" accept="' + BILDE_ACCEPT + '" hidden><input type="file" id="dv2FilGalleri" accept="' + BILDE_ACCEPT + '" multiple hidden><input type="file" id="dv2FilBytt" accept="' + BILDE_ACCEPT + '" hidden>' +
           '</section>' +
           '<section class="dv2-sek" id="dv2Sek3" data-sek="3" aria-labelledby="dv2Tab3" hidden>' +
             '<p class="ingress">Hvor kundene finner deg.</p>' +
@@ -251,6 +257,8 @@
     el.lasting = $('#dv2Lasting'); el.grid = $('#dv2Grid'); el.lagre = $('#dv2Lagre'); el.status = $('#dv2Status');
     el.tilbake = $('#dv2Tilbake'); el.neste = $('#dv2Neste'); el.pv = $('#dv2Pv'); el.iframe = $('#dv2Iframe'); el.ramme = $('#dv2Ramme');
     el.bar = $('#dv2Bar');
+    // «Ideer & ønsker» (dashbordets .ideacard i #design, samme felt-id-er og sending) flyttes inn under Lagre-knappen.
+    var ide = document.querySelector('#design > .ideacard'); if (ide) $('.dv2-edit', rot).appendChild(ide);
     bind();
   }
   function felt(etikett, id, nokkel, kontroll) {
@@ -259,7 +267,7 @@
   }
   function handle(etikett, id, nokkel) {
     return '<div class="dv2-fld dv2-del" data-felt="' + nokkel + '"><label for="' + id + '">' + etikett + '</label>' +
-      '<div class="dv2-handle"><span aria-hidden="true">@</span><input id="' + id + '" type="text" placeholder="brukernavn" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off"></div>' +
+      '<div class="dv2-handle"><span aria-hidden="true">@</span><input id="' + id + '" name="' + nokkel + '-handle" type="text" placeholder="brukernavn" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore="true" data-form-type="other"></div>' +
       '<p class="dv2-feil" role="alert" hidden></p></div>';
   }
 
@@ -271,7 +279,7 @@
   }
   function visInnhold() {
     el.lasting.hidden = true; el.grid.hidden = false; $('#dv2Bekreft').hidden = true;
-    fyllFelter(); tegnUtseende(); tegnSteg(); tegnKnapper(); tegnPortrettOgGalleri();
+    fyllFelter(); tegnUtseende(); tegnSteg(); tegnKnapper(); tegnStatus(); tegnPortrettOgGalleri();
   }
 
   /* ══ Binding ═══════════════════════════════════════════════════════════════════════════════════════ */
@@ -299,7 +307,7 @@
       if (e.data.bhq === 'scroll') S.pvScroll = e.data.y || 0;
       if (e.data.bhq === 'escape' && S.pvApen && !erDesktop()) lukkPv();
     });
-    window.addEventListener('beforeunload', function (e) { if (S.v2 && ulagret()) { e.preventDefault(); e.returnValue = ''; } });
+    window.addEventListener('beforeunload', function (e) { if (ulagret()) { e.preventDefault(); e.returnValue = ''; } });
     // Bunnbaren er fast bare i oppsettet (fokusmodus). Der får PANELET bunnluft lik barens FAKTISKE høyde (status og
     // hjelpelinje gjør den høyere), så ingenting i panelet — heller ikke det som står etter stegene — havner bak baren.
     if (window.ResizeObserver) new ResizeObserver(function () { var p = $('#design'); if (p && el.bar.offsetHeight) p.style.setProperty('--dv2-bar-h', el.bar.offsetHeight + 'px'); }).observe(el.bar);
@@ -383,6 +391,7 @@
     var t = $('#dv2Tittel'); if (t) t.textContent = erFokus() ? 'Sett opp siden din' : 'Din side';
     $$('#dv2Steg [data-steg]').forEach(function (b) { var i = +b.dataset.steg; b.setAttribute('aria-selected', String(i === S.steg)); b.tabIndex = i === S.steg ? 0 : -1; });
     $$('.dv2-sek').forEach(function (s) { s.hidden = +s.dataset.sek !== S.steg; });
+    var rot = $('#dinsideV2'); if (rot) rot.classList.toggle('dv2-siste', S.steg === STEG.length - 1);   // «Ideer & ønsker» bare på Kontakt
     tegnFeilpunkt(); tegnKnapper();
   }
   function tegnFeilpunkt() {
@@ -441,7 +450,7 @@
     var u = S.utkast.utseende, box = $('#dv2Aksenter'), aks = (S.valg && S.valg.aksenter) || [];
     if (box.dataset.bygd !== String(aks.length)) {
       box.innerHTML = aks.map(function (a) {
-        var stil = a.hex ? ' style="--palett-aksent:' + a.hex + ';color:' + hakeFarge(a.hex) + '"' : '';
+        var stil = a.hex ? ' style="--prove-aksent:' + a.hex + ';color:' + hakeFarge(a.hex) + '"' : '';
         return '<button type="button" role="radio" data-aksent="' + a.key + '"><span class="prove"' + stil + '>' + HAKE + '</span><span class="navn">' + (AKSENT_NAVN[a.key] || a.key) + '</span></button>';
       }).join('');
       box.dataset.bygd = String(aks.length);
@@ -453,7 +462,7 @@
       if (b.dataset.aksent === 'egen') {
         var vis = egen && hx;
         p.classList.toggle('egen-tom', !vis);
-        if (vis) { p.style.setProperty('--palett-aksent', hx); p.style.color = hakeFarge(hx); }
+        if (vis) { p.style.setProperty('--prove-aksent', hx); p.style.color = hakeFarge(hx); }
         b.style.setProperty('--ring', vis ? hx : 'var(--ink)');
       } else {
         var def = aks.filter(function (a) { return a.key === b.dataset.aksent; })[0];
@@ -481,7 +490,7 @@
       var hf = $('#dv2HexFeil'); hf.hidden = !ugyldig; hf.textContent = ugyldig ? 'Skriv en gyldig fargekode, for eksempel #1e40af.' : '';
       var kk = hx ? knappMotBakgrunn(hx, u.color_mode) : null, v = $('#dv2Kontrast');
       // Svak kontrast varsles, men valget nektes ikke (låst designmodell 19.10).
-      if (hx && kk < 3) { v.hidden = false; v.textContent = 'Knappene kan bli vanskelige å se mot ' + (u.color_mode === 'lys' ? 'den lyse' : 'den mørke') + ' bakgrunnen (kontrast ' + kk.toFixed(1).replace('.', ',') + ' av minst 3,0). Du kan bruke fargen likevel.'; }
+      if (hx && kk < KONTRAST_VARSEL) { v.hidden = false; v.textContent = 'Knappene kan bli vanskelige å se mot ' + (u.color_mode === 'lys' ? 'den lyse' : 'den mørke') + ' bakgrunnen (kontrast ' + kk.toFixed(1).replace('.', ',') + '). Du kan bruke fargen likevel.'; }
       else { v.hidden = true; v.textContent = ''; }
     } else { $('#dv2Kontrast').hidden = true; $('#dv2HexFeil').hidden = true; }
     tegnFonter();
@@ -519,6 +528,7 @@
   /* ══ Steg-navigasjon ═══════════════════════════════════════════════════════════════════════════════ */
   function gaaTilSteg(n, rull) {
     n = Math.max(0, Math.min(STEG.length - 1, n));
+    if (n !== S.steg) { nullstillLagreStatus(); nullstillBilderFeil(); }
     S.steg = n; tegnSteg();
     if (rull) { var nav = $('#dv2Steg'); if (nav && nav.getBoundingClientRect().top < 0) nav.scrollIntoView({ block: 'start' }); }
     if (n === 2) hentBilder();
@@ -646,7 +656,7 @@
   }
   function tegnFullfor(b) {
     var k = $('#dv2Fullfor'); if (!k) return;
-    k.hidden = !(b && b.sidemal === 'v2' && (b.page_status === 'forhandsvist' || b.page_status === 'draft'));   // samme to som backend kan publisere
+    k.hidden = !(b && (b.page_status === 'forhandsvist' || b.page_status === 'draft'));   // samme to som backend kan publisere
   }
 
   /* ══ Forhåndsvisning ═══════════════════════════════════════════════════════════════════════════════ */
@@ -678,7 +688,9 @@
     try {
       r = S.bilderDirty && S.side!=='book' ? await apiFetch('/api/dashboard/din-side/preview',{method:'POST',body:await draftForm(true),timeout:60000}) : await apiFetch('/api/dashboard/preview', { method: 'POST', body: JSON.stringify(b) });
       if (r && r.ok) html = await r.text();
-      else if (r) { var j = await r.json().catch(function () { return {}; }); feil = (j && j.error) || ('Forhåndsvisningen feilet (' + r.status + ').'); }
+      else if (r) { var j = await r.json().catch(function () { return {}; }); feil = (j && j.error) || ('Forhåndsvisningen feilet (' + r.status + ').');
+        // Avviste bilder i utkastet: meldingen hører til Bilder-steget («Legg til bilder»), ikke over forhåndsvisningen.
+        if (S.bilderDirty && (r.status === 415 || r.status === 413 || r.status === 400)) { S.bilderFeil = feil; S.bilderFeilSlot = 'galleri'; tegnBilderFeil(); feil = ''; } }
     } catch (e) { feil = skrivefeil(e); }
     if (mitt !== S.pvSeq) return;                              // et nyere kall har overtatt
     var l2 = $('.dv2-lastelinje', el.ramme); if (l2) l2.remove();
@@ -687,7 +699,8 @@
       pvMelding('');
       var med = html.indexOf('</body>') >= 0 ? html.replace('</body>', lagScript(S.pvScroll) + '</body>') : html + lagScript(S.pvScroll);
       el.iframe.srcdoc = med; S.pvStale = false;
-    } else pvMelding(feil || 'Kunne ikke laste forhåndsvisningen.');
+    } else if (feil === '') pvMelding('');
+    else pvMelding(feil || 'Kunne ikke laste forhåndsvisningen.');
   }
   function apnePv() {
     S.redigeringScrollY = window.scrollY;
@@ -701,12 +714,18 @@
     var b = $('#dv2SeSiden'); if (b && b.offsetParent) b.focus({ preventScroll: true });
   }
 
+  // Siste inndata: tastatur eller peker (mus/berøring). Styrer hvor dialogen legger fokus.
+  var sistTastatur = false;
+  document.addEventListener('keydown', function (e) { if (e.key === 'Tab' || e.key === 'Enter' || e.key === ' ' || e.key.indexOf('Arrow') === 0) sistTastatur = true; }, true);
+  document.addEventListener('pointerdown', function () { sistTastatur = false; }, true);
+
   /* ══ Dialog ════════════════════════════════════════════════════════════════════════════════════════ */
   function dialog(o) {
     return new Promise(function (resolve) {
       var forrige = document.activeElement;
       var bak = lagEl('div', { class: 'dv2-dialog-bak' });
       var d = lagEl('div', { class: 'dv2-dialog', role: 'alertdialog', 'aria-modal': 'true', 'aria-labelledby': 'dv2DlgT', 'aria-describedby': 'dv2DlgP' });
+      d.tabIndex = -1;
       d.appendChild(lagEl('h4', { id: 'dv2DlgT' }, o.tittel)); d.appendChild(lagEl('p', { id: 'dv2DlgP' }, o.tekst));
       var rad = lagEl('div', { class: 'rad' });
       var ja = lagEl('button', { type: 'button', class: 'dv2-btn' + (o.farlig ? ' farlig' : ' prim') }, o.ja);
@@ -715,18 +734,20 @@
       function lukk(v) { document.removeEventListener('keydown', tast, true); bak.remove(); if (forrige && forrige.focus) forrige.focus({ preventScroll: true }); resolve(v); }
       function tast(e) {
         if (e.key === 'Escape') { e.stopPropagation(); lukk(false); }
-        else if (e.key === 'Tab') { var f = [ja, nei], i = f.indexOf(document.activeElement); e.preventDefault(); f[(i + 1) % 2].focus(); }   // to knapper: Tab og Shift+Tab bytter begge
+        else if (e.key === 'Tab') { var f = [ja, nei], i = f.indexOf(document.activeElement); e.preventDefault(); (i < 0 ? nei : f[(i + 1) % 2]).focus(); }   // to knapper: Tab og Shift+Tab bytter begge; fra dialogen først «Bli her»
       }
       ja.addEventListener('click', function () { lukk(true); }); nei.addEventListener('click', function () { lukk(false); });
       bak.addEventListener('click', function (e) { if (e.target === bak) lukk(false); });
       document.addEventListener('keydown', tast, true);
-      nei.focus();
+      // Fokusring bare ved tastatur: åpnet med trykk får selve dialogen fokus (skjermleseren er inne, ingen ring på en knapp);
+      // åpnet med tastatur får «Bli her» fokus og ringen vises (:focus-visible).
+      if (sistTastatur) nei.focus(); else d.focus({ preventScroll: true });
     });
   }
 
   // Fanebytte med ulagrede endringer. Kalles først i nav-klikk-handleren; true = bytte stoppet (dialog vises).
   function fangBytte(knapp) {
-    if (!S.v2 || S.tillatBytte || !ulagret()) return false;
+    if (S.tillatBytte || !ulagret()) return false;
     var panel = knapp && knapp.dataset && knapp.dataset.panel;
     if (!panel || panel === 'design') return false;
     if (typeof aktivtPanel === 'function' && aktivtPanel() !== 'design') return false;
@@ -774,7 +795,14 @@
   }
   function bildeUrl(b) { return /^(blob:|data:|https?:)/.test(b.url)?b.url:(typeof CONFIG !== 'undefined' ? CONFIG.API_BASE : '') + b.url; }
   function iSlot(slot) { return S.bilder.filter(function (b) { return b.slot === slot; }); }
-  function tegnBilderFeil() { var e = $('#dv2BilderFeil'); if (!e) return; e.hidden = !S.bilderFeil; e.textContent = S.bilderFeil; }
+  // Bildefeilen står ETT sted: ved knappen den gjelder (portrett-knappene eller «Legg til bilder»). S.bilderFeilSlot sier hvilken.
+  function tegnBilderFeil() {
+    var p = $('#dv2PortrettFeil'), g = $('#dv2BilderFeil'), iPortrett = S.bilderFeilSlot === 'portrett';
+    if (p) { p.hidden = !(S.bilderFeil && iPortrett); p.textContent = iPortrett ? S.bilderFeil : ''; }
+    if (g) { g.hidden = !(S.bilderFeil && !iPortrett); g.textContent = iPortrett ? '' : S.bilderFeil; }
+  }
+  // Nullstilles som Lagret-meldingen: ved stegbytte, fanebytte og ny inngang — følger aldri med til et annet steg.
+  function nullstillBilderFeil() { if (!S.bilderFeil) return; S.bilderFeil = ''; tegnBilderFeil(); }
 
   function tegnPortrettOgGalleri() {
     if (!S.byggd) return;
@@ -881,6 +909,45 @@
     fd.append('draft',JSON.stringify(body));return fd;
   }
 
+  /* ── Bildeformater og størrelse — SAMME regler som backend ──
+     backend src/routes/dashboard.js:100 (multer fileFilter: image/jpeg|png|webp|heic|heif) og :96 (fileSize 20 MB).
+     GET /din-side sender ikke lista, så den står her; endres backend, endres disse. Teksten skal være den samme som
+     backendens 415-melding (formatAvvist, dashboard.js:107). Endelsen sjekkes også: HEIC fra Windows/Chrome har ofte tom MIME-type. */
+  var BILDE_MIME = ['image/jpeg', 'image/png', 'image/webp', 'image/heic', 'image/heif'];
+  var BILDE_ENDELSE = /\.(jpe?g|png|webp|heic|heif)$/i;
+  var BILDE_MAKS_BYTE = 20 * 1024 * 1024;
+  var BILDE_FORMAT_TEKST = 'Bruk JPG, PNG, WebP eller HEIC.';
+  function erSvg(fil) { return String(fil.type || '').toLowerCase() === 'image/svg+xml' || /\.svg$/i.test(fil.name || ''); }
+  function godtattFormat(fil) { return erSvg(fil) || BILDE_MIME.indexOf(String(fil.type || '').toLowerCase()) >= 0 || (!fil.type && BILDE_ENDELSE.test(fil.name || '')); }
+  var SVG_FEIL_TEKST = 'Logoen kunne ikke tegnes. Lagre den som PNG eller JPG og prøv igjen.';
+
+  /* ── SVG → PNG i nettleseren. Backend avviser SVG med vilje (kan inneholde script), så SVG sendes aldri dit.
+     Fila tegnes som <img> (et SVG-bilde kjører aldri script og henter aldri eksterne ressurser) på et canvas og eksporteres
+     som PNG med gjennomsiktig bakgrunn. Størrelse: width/height, ellers viewBox; lengste kant skaleres til maksKant. */
+  async function svgTilPng(fil, maksKant) {
+    var tekst = await fil.text();
+    var doc = new DOMParser().parseFromString(tekst, 'image/svg+xml'), rot = doc.documentElement;
+    if (!rot || rot.nodeName.toLowerCase() !== 'svg' || doc.getElementsByTagName('parsererror').length) throw new Error('svg');
+    Array.prototype.slice.call(rot.querySelectorAll('script, foreignObject')).forEach(function (n) { n.remove(); });   // følger ikke med uansett, men ut
+    function px(v) { var m = String(v || '').trim().match(/^([\d.]+)(px)?$/); return m ? parseFloat(m[1]) : 0; }
+    var vb = String(rot.getAttribute('viewBox') || '').trim().split(/[\s,]+/).map(Number);
+    var w = px(rot.getAttribute('width')), h = px(rot.getAttribute('height'));
+    if (!(w > 0 && h > 0) && vb.length === 4 && vb[2] > 0 && vb[3] > 0) { w = vb[2]; h = vb[3]; }
+    if (!(w > 0 && h > 0)) throw new Error('svg');                                   // ingen størrelse å regne ut av
+    if (!rot.getAttribute('viewBox')) rot.setAttribute('viewBox', '0 0 ' + w + ' ' + h);   // så den skalerer når width/height byttes
+    var s = maksKant / Math.max(w, h), cw = Math.max(1, Math.round(w * s)), ch = Math.max(1, Math.round(h * s));
+    rot.setAttribute('width', cw); rot.setAttribute('height', ch);
+    var url = URL.createObjectURL(new Blob([new XMLSerializer().serializeToString(rot)], { type: 'image/svg+xml' }));
+    try {
+      var im = await new Promise(function (res, rej) { var i = new Image(); i.onload = function () { res(i); }; i.onerror = function () { rej(new Error('svg')); }; i.src = url; });
+      var cv = document.createElement('canvas'); cv.width = cw; cv.height = ch;
+      cv.getContext('2d').drawImage(im, 0, 0, cw, ch);                                 // tomt canvas = gjennomsiktig bakgrunn
+      var blob = await new Promise(function (res) { try { cv.toBlob(res, 'image/png'); } catch (e) { res(null); } });
+      if (!blob) throw new Error('svg');
+      return new File([blob], (fil.name || 'logo').replace(/\.[^.]+$/, '') + '.png', { type: 'image/png' });
+    } finally { URL.revokeObjectURL(url); }
+  }
+
   /* ── Opplasting med nedskalering i nettleseren ── */
   function lesBilde(fil) {
     return new Promise(function (res, rej) {
@@ -912,21 +979,40 @@
       if (!S.bilderLastet) { tegnPortrettOgGalleri(); tegnKnapper(); return; }   // hentBilder har satt feilmeldingen
     }
     var mx = bildeMaks().galleri, ledig = slot === 'galleri' ? Math.max(0, mx - iSlot('galleri').length) : 1;
-    var valgt = filer.filter(function (f) { return f.type.indexOf('image/') === 0 || !f.type; }).slice(0, ledig);
-    if (filer.length && !valgt.length) { S.bilderFeil = 'Det må være en bildefil (JPG eller PNG).'; tegnBilderFeil(); return; }
-    if (slot === 'galleri' && filer.length > ledig) S.bilderFeil = 'Du kan ha ' + mx + ' bilder. Bare de første ' + ledig + ' ble lastet opp.'; else S.bilderFeil = '';
+    // Avvis andre formater FØR opplasting (samme regel som backend). Godkjente filer i samme valg går videre.
+    S.bilderFeilSlot = slot;
+    var godtatt = filer.filter(godtattFormat), avvist = filer.length - godtatt.length;
+    var valgt = godtatt.slice(0, ledig);
+    if (filer.length && !godtatt.length) { S.bilderFeil = (filer.length > 1 ? 'Ingen av bildene kunne brukes. ' : 'Bildet kunne ikke brukes. ') + BILDE_FORMAT_TEKST; tegnBilderFeil(); return; }
+    var melding = [];
+    if (avvist) melding.push((avvist === 1 ? 'Ett bilde' : avvist + ' bilder') + ' ble ikke lagt til. ' + BILDE_FORMAT_TEKST);
+    if (slot === 'galleri' && godtatt.length > ledig) melding.push('Du kan ha ' + mx + ' bilder. Bare de første ' + ledig + ' ble lastet opp.');
+    S.bilderFeil = melding.join(' ');
     var feilTekst = '';
     for (var i = 0; i < valgt.length; i++) {
       S.opplaster = valgt.length > 1 ? 'Laster opp ' + (i + 1) + ' av ' + valgt.length + ' …' : 'Laster opp …'; tegnPortrettOgGalleri();
       try {
-        var fil = await nedskaler(valgt[i], slot === 'portrett' ? 1200 : 2000);
+        var maksKant = slot === 'portrett' ? 1200 : 2000, fil;
+        if (erSvg(valgt[i])) {
+          try { fil = await svgTilPng(valgt[i], maksKant); }
+          catch (e) { S.bilderFeil = (S.bilderFeil ? S.bilderFeil + ' ' : '') + SVG_FEIL_TEKST; continue; }   // aldri lagt til i utkastet
+        } else fil = await nedskaler(valgt[i], maksKant);
+        // Sendes fila urørt (nettleseren kunne ikke lese/skalere den, typisk HEIC), gjelder backendens grense på 20 MB.
+        if (fil === valgt[i] && fil.size > BILDE_MAKS_BYTE) {
+          S.bilderFeil = (S.bilderFeil ? S.bilderFeil + ' ' : '') + 'Bildet er større enn 20 MB. Velg et mindre bilde, eller ta det på nytt med lavere oppløsning.';
+          continue;
+        }
         if(slot==='portrett')S.bilder=S.bilder.filter(function(b){return b.slot!=='portrett';});
         var url=URL.createObjectURL(fil);
         S.bilder.push({id:'draft-'+Date.now()+'-'+i,slot:slot,sort_order:S.bilder.length,url:url,originalUrl:url,_file:fil,_new:true});draftChanged();
       } catch (e) { feilTekst = skrivefeil(e); break; }
     }
-    S.opplaster = ''; tegnKnapper(); if (feilTekst) S.bilderFeil = feilTekst;
-    await hentBilder(); tegnBilderFeil(); planleggPreview(0);
+    // «Laster opp …» tegnes bort HER: hentBilder() under returnerer tidlig når utkastet er endret, og tegnet før aldri på nytt.
+    S.opplaster = ''; tegnKnapper(); tegnPortrettOgGalleri(); if (feilTekst) S.bilderFeil = (S.bilderFeil ? S.bilderFeil + ' ' : '') + feilTekst;
+    // hentBilder() nullstiller feilmeldingen når hentingen lykkes. Ble ingenting lagt til (alt avvist), er utkastet urørt og
+    // den henter — meldingen om avviste bilder skal likevel stå. En hentefeil (egen melding) vinner.
+    var beholde = S.bilderFeil; await hentBilder(); if (beholde && !S.bilderFeil) S.bilderFeil = beholde;
+    tegnBilderFeil(); planleggPreview(0);
   }
   // Kalles fra dashbordets bilderEndret() etter beskjæring.
   async function bilderEndret() { await hentBilder(); planleggPreview(0); }
@@ -935,7 +1021,7 @@
   setTimeout(function () { if (typeof _ventDinSide !== 'undefined' && _ventDinSide && typeof _billingKjent !== 'undefined' && _billingKjent) { _ventDinSide = false; if (typeof lastDinSide === 'function') lastDinSide(); } }, 0);
 
   window.DinSideV2 = {
-    billing: billing, billingFeilet: billingFeilet, last: last, lukkOppsett: lukkOppsett, startOppsett: startOppsett, fokusEndret: function () { if (S.byggd && S.utkast) tegnSteg(); }, tegnFullfor: tegnFullfor, forlat: forlat, erV2: erV2, fangBytte: fangBytte, bilderEndret: bilderEndret,
+    billing: billing, billingFeilet: billingFeilet, last: last, lukkOppsett: lukkOppsett, startOppsett: startOppsett, fokusEndret: function () { if (S.byggd && S.utkast) tegnSteg(); }, tegnFullfor: tegnFullfor, forlat: forlat, fangBytte: fangBytte, bilderEndret: bilderEndret,
     // Test-/innsyn
     stageCrop:stageCrop, bildeVersjon: bildeVersjon, _S: S,
     ulagret: ulagret,

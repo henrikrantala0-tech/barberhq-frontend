@@ -315,7 +315,7 @@
     el.addEventListener('input',()=>{utkast[k]=el.value; if(feil&&feil.felt===k)visFeil(null); status=''; tegn(); pvSnart();});});
   $('#f-modus').addEventListener('click',e=>{const b=e.target.closest('[data-mode]'); if(b){utkast.mode=b.dataset.mode; status=''; tegn(); pvSnart();}});
   $('#f-font').addEventListener('change',e=>{utkast.font=e.target.value; status=''; tegn(); pvSnart();});
-  $('#f-aksent').innerHTML=AKSENTER.map(a=>`<button type="button" role="radio" data-aksent="${a.key}"><span class="prove" style="${a.hex?`--palett-aksent:${a.hex}`:''}"></span><span class="navn">${NAVN[a.key]||a.key}</span></button>`).join('');
+  $('#f-aksent').innerHTML=AKSENTER.map(a=>`<button type="button" role="radio" data-aksent="${a.key}"><span class="prove" style="${a.hex?`--prove-aksent:${a.hex}`:''}"></span><span class="navn">${NAVN[a.key]||a.key}</span></button>`).join('');
   $('#f-aksent').addEventListener('click',e=>{const b=e.target.closest('[data-aksent]'); if(!b)return; utkast.aksent=b.dataset.aksent;
     if(utkast.aksent==='egen'&&!normHex(utkast.custom_accent)){ utkast.custom_accent=hsvTilHex(hsv.h,hsv.s,hsv.v); }
     status=''; tegn(); pvSnart();});
@@ -453,7 +453,7 @@
     // Aksentbrikker + fargevelger
     const hx=normHex(utkast.custom_accent), egen=utkast.aksent==='egen';
     $$('#f-aksent [data-aksent]').forEach(b=>{const på=b.dataset.aksent===utkast.aksent; b.setAttribute('aria-checked',String(på)); b.tabIndex=på?0:-1;
-      if(b.dataset.aksent==='egen'){ const p=b.querySelector('.prove'); const vis=egen&&hx; p.classList.toggle('egen-tom',!vis); if(vis) p.style.setProperty('--palett-aksent',hx); b.style.setProperty('--ring',vis?hx:'var(--ink)'); }
+      if(b.dataset.aksent==='egen'){ const p=b.querySelector('.prove'); const vis=egen&&hx; p.classList.toggle('egen-tom',!vis); if(vis) p.style.setProperty('--prove-aksent',hx); b.style.setProperty('--ring',vis?hx:'var(--ink)'); }
       else b.style.setProperty('--ring',(AKSENTER.find(a=>a.key===b.dataset.aksent)||{}).hex||'var(--ink)'); });
     $('#velger').hidden=!egen;
     if(egen){ const vis=hx||hsvTilHex(hsv.h,hsv.s,hsv.v);

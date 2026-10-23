@@ -4,9 +4,11 @@
 // feiltekst i #cropErr + #cropSave disabled — i stedet for en tom modal med en
 // aktiv «Lagre»-knapp som er en stille no-op.
 //
-// Serverer site/ lokalt, stubber /api/** (samme mock-mønster som dinside.mjs,
-// hasPassword:true unngår redirect-fella). Åpner crop-modalen via _openCropModal
+// Serverer site/ lokalt, stubber /api/** (hasPassword:true unngår redirect-fella). Åpner crop-modalen via _openCropModal
 // med en imgId som IKKE finnes i imgs → src faller til en 404-URL → onerror.
+//
+// Normal-tilstand: galleri beskjæres 1:1 (badge «Galleri 1:1», kvadratisk boks), og «Lagre» legger utsnittet i
+// Din side-utkastet (DinSideV2.stageCrop) — ingen PUT /images før «Lagre endringer».
 //
 //   node tools/render/crop-onerror.mjs
 //
@@ -15,6 +17,7 @@
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
 import { gratis } from './fixtures/billing.mjs';
+import { TESTBILDER, rutTestbilder } from './fixtures/testbilder.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -35,15 +38,15 @@ const PORT = server.address().port;
 
 const PROFILE = { slug: 'grand-barber', email: 'grand@barber.no', hasPassword: true,
   name: 'Henrik', shop: 'Grand Barber', address: '', tagline: '', bio: '', booking_horizon_days: 28 };
-const DESIGN  = { palette: 'minimal', font: 'fraunces', layout: 'showcase', mode: 'mork' };
-const IMAGES  = [{ id: 1, slot: 'galleri', url: '/no/images/layout-showcase.webp', sort_order: 0 }];
+const IMAGES  = [{ id: '1', slot: 'galleri', url: '/testbilder/bilde-1.webp', sort_order: 0 }];
 const BILLING = gratis({ page_status: 'forhandsvist' });   // delt mock, se fixtures/billing.mjs
 
+let bildePut = 0;
 const router = route => {
   const p = new URL(route.request().url()).pathname;
+  if (route.request().method() === 'PUT' && p.startsWith('/api/dashboard/images')) bildePut++;
   const json = obj => route.fulfill({ status: 200, contentType: 'application/json', body: JSON.stringify(obj) });
   if (p === '/api/dashboard/profile')       return json(PROFILE);
-  if (p === '/api/dashboard/design')         return json(DESIGN);
   if (p === '/api/dashboard/images')         return json(IMAGES);
   if (p === '/api/dashboard/billing/status') return json(BILLING);
   if (p === '/api/dashboard/preview')        return route.fulfill({ status: 200, contentType: 'text/html', body: '<!DOCTYPE html><body></body>' });
@@ -56,7 +59,7 @@ const rad = [];
 for (const bredde of [320, 375]) {
   const page = await browser.newPage({ viewport: { width: bredde, height: 720 }, deviceScaleFactor: 2 });
   const errs = []; page.on('pageerror', e => errs.push(e.message));
-  await page.route('**/api/**', router);
+  await page.route('**/api/**', router); await rutTestbilder(page);
   await page.goto(`http://localhost:${PORT}/no/dashboard.html#dinside`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(1400);
   // Åpne crop-modalen med en imgId som ikke finnes → src faller til fallback-URL som 404-er → onerror.
@@ -88,27 +91,39 @@ for (const bredde of [320, 375]) {
     saveLåst: m.saveLåst, jsfeil: errs.length ? errs.join('; ') : 'ingen' });
   await page.close();
 }
+let normalOk = false;
 // Normal-tilstand (gyldig bilde) på 375 — kortet er en global endring, bekreft at Cropper fortsatt
 // initialiseres og layouten ikke brekker.
 {
   const page = await browser.newPage({ viewport: { width: 375, height: 720 }, deviceScaleFactor: 2 });
   const errs = []; page.on('pageerror', e => errs.push(e.message));
-  await page.route('**/api/**', router);
+  await page.route('**/api/**', router); await rutTestbilder(page);
   await page.goto(`http://localhost:${PORT}/no/dashboard.html#dinside`, { waitUntil: 'networkidle' });
   await page.waitForTimeout(1400);
-  await page.evaluate(() => window._openCropModal('1', 'galleri', '/no/images/layout-showcase.webp'));
+  await page.evaluate(() => window._openCropModal('1', 'galleri', '/testbilder/bilde-1.webp'));
   await page.waitForTimeout(1000);
   await page.screenshot({ path: `${OUT}/crop-normal-375.png`, fullPage: false });
-  const n = await page.evaluate(() => ({
-    cropperOppe: !!document.querySelector('.cropper-container'),
-    feiltom:     (document.querySelector('#cropErr') || {}).textContent === '',
-  }));
+  const n = await page.evaluate(() => {
+    const boks = document.querySelector('.cropper-crop-box'), r = boks ? boks.getBoundingClientRect() : null;
+    return {
+      cropperOppe: !!document.querySelector('.cropper-container'),
+      feiltom:     (document.querySelector('#cropErr') || {}).textContent === '',
+      badge:       (document.getElementById('cropAspektBadge') || {}).textContent || '',
+      aspekt:      r && r.height ? Math.round(r.width / r.height * 100) / 100 : null,
+    };
+  });
+  await page.click('#cropSave'); await page.waitForTimeout(600);
+  n.lukket = !(await page.evaluate(() => document.querySelector('#cropModal').classList.contains('open')));
+  n.iUtkast = await page.evaluate(() => !!(window.DinSideV2 && DinSideV2._S.bilderDirty));
+  n.bildePut = bildePut;
   console.log('\nNormal-tilstand @375:', JSON.stringify({ ...n, jsfeil: errs.length ? errs.join('; ') : 'ingen' }));
+  normalOk = n.cropperOppe && n.feiltom && n.badge === 'Galleri 1:1' && n.aspekt === 1 && n.lukket && n.iUtkast && n.bildePut === 0 && !errs.length;
   await page.close();
 }
 console.table(rad);
 const ok = rad.every(r => r.modalÅpen && r.modalSynlig && r.imgSkjult === true && r.harFeiltekst
   && r.venstre && r.kortBg && r.saveLåst && r.jsfeil === 'ingen');
 console.log('\nCrop-onerror OK (modal åpen, IMG skjult, feiltekst venstre, kort-bg, Lagre låst, 0 JS-feil):', ok ? 'JA' : 'NEI');
+console.log('Normal OK (1:1, Lagre → Din side-utkastet, ingen PUT /images):', normalOk ? 'JA' : 'NEI');
 await browser.close(); server.close();
-process.exit(ok ? 0 : 1);
+process.exit(ok && normalOk ? 0 : 1);

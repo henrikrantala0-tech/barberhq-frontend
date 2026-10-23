@@ -53,7 +53,7 @@ function router(route) {
   if (p === '/api/dashboard/billing/status') return json(BILLING);
   // Første booking avgjort og ferdig → seksjonen skjult, hjemskjerm-kortet slipper fram.
   if (p === '/api/dashboard/aktivering')     return json({ har_booking:true, steg:{ svarmelding:true, bio:true, story:true } });
-  if (p === '/api/dashboard/design')         return json({ palette:'minimal', font:'fraunces', layout:'showcase', mode:'mork' });
+  if (p === '/api/dashboard/design')         return json({ mode: 'mork', font: 'jakarta' });
   const liste = /images|bookings|recent|services|hours|stats|attribution|winback|referrals|rebooking|sms-logg/.test(p);
   return json(liste ? [] : {});
 }

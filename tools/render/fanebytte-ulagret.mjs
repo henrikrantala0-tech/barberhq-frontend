@@ -1,11 +1,9 @@
 // tools/render/fanebytte-ulagret.mjs — fanebytte sletter ikke ulagrede endringer (14.10.2026).
 // Et område lastes på nytt ved fanebytte bare når det IKKE har ulagrede endringer, og alltid etter vellykket
-// lagring. Før lastet Tjenester og Din side alt på nytt hver gang, så endringen forsvant uten advarsel.
+// lagring. Før lastet Tjenester alt på nytt hver gang, så endringen forsvant uten advarsel.
 //   1. Pris (Tjenester): endret pris står etter Din side → Tjenester; ingen ny GET /services.
 //   2. Åpningstid (Tjenester): endret start står; ingen ny GET /hours.
-//   3. Palett (Din side): valgt palett står etter Oversikt → Din side; ingen ny GET /design.
-//   4. Bio (Din side → Profil): utkastet står; GET /profile hentes, men feltet røres ikke.
-//   5. Sjekklista («Legg til tjenester») mens prisen er ulagret: prisen står.
+//   (Din side har egen ulagret-sporing med dialog ved fanebytte — testes i dinside-v2.mjs.)
 //   6. Uten endringer: fanebytte henter fortsatt på nytt (GET /services øker).
 //   7. Etter vellykket lagring av tjenester: neste fanebytte henter igjen (flagget er nullstilt).
 // Alt under /api/** mockes; ingen request når api.trybarberhq.com (forsøk === fanget).
@@ -21,7 +19,7 @@ const server=http.createServer((q,r)=>{const f=path.join(ROOT,decodeURIComponent
     r.writeHead(200,{'Content-Type':MIME[path.extname(f)]||'application/octet-stream'});r.end(b);});});
 await new Promise(r=>server.listen(0,r));
 const PORT=server.address().port;
-const billing={subscription_status:null,page_status:'forhandsvist',plan:null,effective_plan:'basis',effective_plan_grunn:'gratis',needs_attention:false,
+const billing={subscription_status:null,page_status:'live',plan:null,effective_plan:'basis',effective_plan_grunn:'gratis',needs_attention:false,
   cancel_at_period_end:false,current_period_end:null,trial_days_left:null,trial_ends_at:null,sms_saldo:0,sms_pakker:[],sms_pakke_kan_kjopes:false};
 const PROFIL={hasPassword:true,name:'Sander',shop:'Saxe Cuts',email:'s@s.no',slug:'saxe-cuts',address:'Storgata 1',tagline:'Fades',bio:'Lagret bio',instagram:'',tiktok:'',snapchat:'',contact_phone:'91234567'};
 const SVC={hoved:[{id:'a',name:'Herreklipp',price:420,min:30,sort:0}],tillegg:[]};
@@ -45,8 +43,6 @@ async function nySide(){
     if(p==='/api/dashboard/profile') return json(PROFIL);
     if(p==='/api/dashboard/services') return json(SVC);
     if(p==='/api/dashboard/hours') return json(HOURS);
-    if(p==='/api/dashboard/design') return json({palette:'minimal',mode:'mork',font:'fraunces',layout:'showcase'});
-    if(p==='/api/dashboard/preview') return route.fulfill({status:200,contentType:'text/html',body:'<html></html>'});
     return json(/images|recent|referrals|winback|rebooking|bookings/.test(p)?[]:{});
   });
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`,{waitUntil:'networkidle'});
@@ -58,7 +54,7 @@ const rapport=[];
 const push=(n,f,errs)=>rapport.push({sjekk:n,resultat:f.length?'✗ '+f.join(' | '):'OK ✓',jsfeil:errs.length?errs.join('; '):'ingen'});
 const skriv=async(page,sel,verdi)=>{ await page.fill(sel,verdi); };   // fill gir ekte input-hendelse
 
-// 1+2+5: pris, åpningstid, sjekkliste
+// 1+2: pris, åpningstid
 {
   const {page,errs,get}=await nySide();
   await fane(page,'tjenester');
@@ -71,40 +67,10 @@ const skriv=async(page,sel,verdi)=>{ await page.fill(sel,verdi); };   // fill gi
   const pris=await page.$eval('#hovedList input[inputmode="decimal"]',e=>e.value);
   if(pris!=='399') f.push(`pris etter fanebytte «${pris}»`);
   const start=await page.$eval(startSel,e=>e.value); if(start!=='08:00') f.push(`åpningstid «${start}»`);
-  // sjekklista: «Legg til tjenester» mens prisen er ulagret
-  await page.evaluate(()=>typeof sjekkGaaTil==='function'&&sjekkGaaTil('tjenester')); await page.waitForTimeout(400);
-  const pris2=await page.$eval('#hovedList input[inputmode="decimal"]',e=>e.value); if(pris2!=='399') f.push(`pris etter sjekkliste «${pris2}»`);
   const g1={svc:get['/api/dashboard/services']||0,hrs:get['/api/dashboard/hours']||0};
-  // GET /services kan komme fra sjekklistens egen datahenting (hentSjekklisteData) — men skjemaet skal ikke røres.
-  if(g1.hrs>g0.hrs+1) f.push(`GET /hours ${g0.hrs}→${g1.hrs}`);
-  push('pris + åpningstid overlever fanebytte og sjekkliste',f,errs); await page.close();
-}
-// 3: palett
-{
-  const {page,errs,get}=await nySide();
-  await fane(page,'design');
-  const valgt=await page.$$eval('#paletteGrid .preset',b=>{ const ikke=b.find(x=>x.getAttribute('aria-pressed')!=='true'&&x.dataset.key!=='custom'); ikke.click(); return ikke.dataset.key; });
-  await page.waitForTimeout(200);
-  const gd=get['/api/dashboard/design']||0;
-  await fane(page,'oversikt'); await fane(page,'design');
-  const f=[];
-  const naa=await page.$eval('#paletteGrid .preset[aria-pressed="true"]',e=>e.dataset.key).catch(()=>null);
-  if(naa!==valgt) f.push(`palett «${naa}» (ventet ${valgt})`);
-  if((get['/api/dashboard/design']||0)!==gd) f.push('GET /design hentet på nytt');
-  push('palett overlever fanebytte',f,errs); await page.close();
-}
-// 4: bio
-{
-  const {page,errs,get}=await nySide();
-  await fane(page,'design');
-  await page.$eval('#accProfil .acc-head',h=>{ if(h.getAttribute('aria-expanded')!=='true') h.click(); });
-  await skriv(page,'#pf-bio','Ulagret utkast');
-  const gp=get['/api/dashboard/profile']||0;
-  await fane(page,'oversikt'); await fane(page,'design');
-  const f=[];
-  const bio=await page.$eval('#pf-bio',e=>e.value); if(bio!=='Ulagret utkast') f.push(`bio «${bio}»`);
-  if((get['/api/dashboard/profile']||0)<=gp) f.push('GET /profile ble ikke hentet (header/slug skal fortsatt oppdateres)');
-  push('bio overlever fanebytte',f,errs); await page.close();
+  if(g1.svc!==g0.svc) f.push(`GET /services ${g0.svc}→${g1.svc}`);
+  if(g1.hrs!==g0.hrs) f.push(`GET /hours ${g0.hrs}→${g1.hrs}`);
+  push('pris + åpningstid overlever fanebytte',f,errs); await page.close();
 }
 // 6+7: uten endringer hentes på nytt; etter lagring hentes på nytt
 {
