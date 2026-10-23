@@ -15,6 +15,7 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -128,7 +129,7 @@ function maal(page) {
     const pos = bar ? getComputedStyle(bar).position : null;
     return {
       fokus:       document.body.classList.contains('fokus'),
-      navSynlig:   vis(document.querySelector('nav.nav')),
+      navSynlig:   (innerWidth<=719 ? vis(document.querySelector('.bunn-nav')) : vis(document.querySelector('nav.nav'))),
       barSynlig:   vis(bar),
       barStatisk:  pos ? (pos !== 'fixed' && pos !== 'sticky') : null,
       xSynlig:     vis(document.querySelector('#fokusX')),
@@ -156,7 +157,7 @@ function maalPill(page) {
       popoverSkjult:  (document.querySelector('#sjekkPopover') || {}).hidden,
       inlineBorte:    document.querySelector('#dinsideSjekkliste') === null,
       fokus:          document.body.classList.contains('fokus'),
-      navSynlig:      vis(document.querySelector('nav.nav')),
+      navSynlig:      (innerWidth<=719 ? vis(document.querySelector('.bunn-nav')) : vis(document.querySelector('nav.nav'))),
       ctaSynlig:      vis(document.querySelector('#dinsideCta')),
       fokusBar:       vis(document.querySelector('#fokusBar')),
     };
@@ -220,8 +221,8 @@ const okFokus = fk.every(r => r.fokus && r.navSkjult && r.pillSkjult && r.fokusB
 const okVanlig = vn.every(r => !r.fokus && r.nav && r.cta && r.pill && r.ring === '3/5'
   && r.popFør === true && r.popEtter === true && r.pRader === 5 && r.pDone === 3 && r.pTeller === '3 av 5'
   && r.radLukker === true && r.jsfeil === 'ingen');
-console.log('\nFokus OK (INGEN pill, fokus-bar synlig, nav skjult, inline-container borte):', okFokus ? 'JA' : 'NEI');
-console.log('Vanlig OK (pill 3/5 + nav+CTA synlig, klikk → popover 3/5, radklikk lukker):', okVanlig ? 'JA' : 'NEI');
+sjekk(okFokus, '\nFokus OK (INGEN pill, fokus-bar synlig, nav skjult, inline-container borte)');
+sjekk(okVanlig, 'Vanlig OK (pill 3/5 + nav+CTA synlig, klikk → popover 3/5, radklikk lukker)');
 
 // ── COMMIT F: suksesskort etter publisering · live-tilstand med header-lenke ─────────
 const radF = [];
@@ -257,7 +258,8 @@ for (const bredde of [320, 402, 1280]) {
     const m = await page.evaluate(() => {
       const vis = el => { if (!el) return false; const r = el.getBoundingClientRect();
         return getComputedStyle(el).display !== 'none' && r.width > 0 && r.height > 0; };
-      const logo = document.querySelector('.topband .logo'), who = document.querySelector('.who');
+      // Dagens header: sjappenavnet (#barberName) til venstre, bookinglenka (#headerLenke, kun live) til høyre.
+      const logo = document.querySelector('#barberName'), who = document.querySelector('#headerLenke');
       const klaring = (logo && who) ? Math.round(who.getBoundingClientRect().left - logo.getBoundingClientRect().right) : null;
       return { headerLenke: vis(document.querySelector('#headerLenke .pub-url')),
         kortSkjult: (document.querySelector('#suksessOverlay') || {}).hidden,
@@ -276,6 +278,7 @@ const okKort = s1.every(r => r.kort && r.tittel === 'Siden din er klar.' && r.le
   && /Legg lenka i bioen og del den på\sstory/.test(r.linjer) && /Nå får vi første booking gjennom\sden\./.test(r.linjer) && r.jsfeil === 'ingen');
 const okLive = s2.every(r => r.headerLenke && r.kortSkjult === true && r.headerKlaring > 4
   && r.bodyOverflow <= 0 && r.jsfeil === 'ingen');
-console.log('\nSuksesskort OK (synlig, «Siden din er klar.», lenke, bio/story + første booking):', okKort ? 'JA' : 'NEI');
-console.log('Live-header OK (lenke synlig, kort skjult, ingen kollisjon/overflow):', okLive ? 'JA' : 'NEI');
+sjekk(okKort, '\nSuksesskort OK (synlig, «Siden din er klar.», lenke, bio/story + første booking)');
+sjekk(okLive, 'Live-header OK (lenke synlig, kort skjult, ingen kollisjon/overflow)');
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

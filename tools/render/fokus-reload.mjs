@@ -7,6 +7,7 @@
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
 import { gratis } from './fixtures/billing.mjs';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
 fs.mkdirSync(OUT, { recursive: true });
@@ -41,7 +42,7 @@ function maal(page) {
   return page.evaluate(() => {
     const vis = el => { if (!el) return false; const r = el.getBoundingClientRect(); return getComputedStyle(el).display!=='none' && r.width>0 && r.height>0; };
     let flag=null; try { flag = sessionStorage.getItem('fokusAktiv'); } catch(e){}
-    return { fokus: document.body.classList.contains('fokus'), flag, nav: vis(document.querySelector('nav.nav')), url: location.search+location.hash };
+    return { fokus: document.body.classList.contains('fokus'), flag, nav: (innerWidth<=719 ? vis(document.querySelector('.bunn-nav')) : vis(document.querySelector('nav.nav'))), url: location.search+location.hash };
   });
 }
 const U = `http://localhost:${PORT}/no/dashboard.html`;
@@ -59,14 +60,14 @@ for (const bredde of [320, 402, 1280]) {
   await page.reload({ waitUntil:'networkidle' }); await page.waitForTimeout(1500);
   const b = await maal(page);                                  // reload → fortsatt fokus?
   await page.screenshot({ path:`${OUT}/fokusrl-reload-${bredde}.png`, fullPage:false });
-  await page.click('#fokusX'); await page.waitForTimeout(400);
+  await page.click('#fokusX',{timeout:3000}).catch(()=>{}); await page.waitForTimeout(400);   // finnes ikke uten fokus → NEI under, ikke krasj
   const c = await maal(page);                                  // X → vanlig
   await page.reload({ waitUntil:'networkidle' }); await page.waitForTimeout(1500);
   const d = await maal(page);                                  // reload → fortsatt vanlig
   await page.screenshot({ path:`${OUT}/fokusrl-vanlig-${bredde}.png`, fullPage:false });
   // Re-inn i fokus, publiser fra fokus-baren → flagg skal ryddes, reload → vanlig
   await page.goto(`${U}?velkommen=1#dinside`, { waitUntil:'networkidle' }); await page.waitForTimeout(1200);
-  await page.click('#fokusPubliser'); await page.waitForTimeout(800);
+  await page.click('#fokusPubliser',{timeout:3000}).catch(()=>{}); await page.waitForTimeout(800);
   const e = await maal(page);                                  // publiser → fokus av + flagg ryddet
   await page.reload({ waitUntil:'networkidle' }); await page.waitForTimeout(1500);
   const f = await maal(page);                                  // reload → vanlig (live)
@@ -84,5 +85,39 @@ for (const bredde of [320, 402, 1280]) {
 }
 console.table(rad);
 const ok = rad.every(r => r.A_paramFokus && r.B_reloadFokus && r.C_XVanlig && r.D_reloadVanlig && r.E_publiserFokusAv && r.F_reloadVanlig && r.jsfeil==='ingen');
-console.log('\nFokus overlever reload · X/publiser rydder · reload→vanlig · ingen JS-feil:', ok ? 'JA' : 'NEI');
+sjekk(ok, '\nFokus overlever reload · X/publiser rydder · reload→vanlig · ingen JS-feil');
+
+// ── Auto-reload etter deploy MENS fokusmodus er på (22.10.2026) ─────────────────────────────────────────────
+// Dashbordet laster seg selv inn på nytt når det kommer i forgrunnen og HEAD /no/dashboard.html har ny ETag, og
+// ingenting er ulagret (harUlagret). Den lastingen går ikke via page.reload() — men fokusflagget (sessionStorage)
+// skal overleve den på samme måte. Deploy simuleres som i ny-versjon.mjs: ny ETag + visibilitychange etter ett minutt.
+const auto = [];
+for (const bredde of [320, 1280]) {
+  const ctx = await browser.newContext({ viewport:{ width:bredde, height:900 }, deviceScaleFactor:2 });
+  await ctx.route('**/api/**', makeStatefulRouter());
+  const st = { etag:'"aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa-ssl"', lastinger:0 };
+  await ctx.route(u => { const x = new URL(u); return x.hostname === 'localhost' && x.pathname === '/no/dashboard.html'; },
+    r => r.request().method() === 'HEAD' ? r.fulfill({ status:200, headers:{ ETag: st.etag }, body:'' }) : r.fallback());
+  const page = await ctx.newPage();
+  const errs = []; page.on('pageerror', e => errs.push(e.message));
+  page.on('request', q => { if (new URL(q.url()).pathname === '/no/dashboard.html' && q.method() === 'GET' && q.resourceType() === 'document') st.lastinger++; });
+  await page.clock.install(); await page.clock.resume();
+  await page.goto(`${U}?velkommen=1#dinside`, { waitUntil:'networkidle' }); await page.waitForTimeout(1500);
+  const foer = await maal(page);
+  const lastFoer = st.lastinger;
+  await page.clock.fastForward(61 * 1000); st.etag = '"bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb-ssl"';
+  await page.evaluate(() => { Object.defineProperty(document, 'visibilityState', { configurable:true, get:() => 'visible' }); document.dispatchEvent(new Event('visibilitychange')); });
+  for (let i = 0; i < 40 && st.lastinger === lastFoer; i++) await new Promise(r => setTimeout(r, 100));
+  await page.waitForLoadState('networkidle').catch(() => {}); await page.waitForTimeout(1500);
+  const etter = await maal(page);
+  await page.screenshot({ path:`${OUT}/fokusrl-autoreload-${bredde}.png`, fullPage:false });
+  auto.push({ bredde, fokusFoer: foer.fokus && foer.flag === '1', autoReload: st.lastinger === lastFoer + 1,
+    fokusEtter: etter.fokus && etter.flag === '1' && etter.url === '#dinside', jsfeil: errs.length ? errs.join('; ') : 'ingen' });
+  await ctx.close();
+}
+console.table(auto);
+sjekk(auto.every(r => r.fokusFoer && r.autoReload), 'Auto-reload: ny versjon i forgrunnen laster dashbordet på nytt (fokusmodus på, ingenting ulagret)', JSON.stringify(auto));
+sjekk(auto.every(r => r.fokusEtter && r.jsfeil === 'ingen'), 'Auto-reload: fokusmodus overlever (flagg + #dinside)', JSON.stringify(auto));
+
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

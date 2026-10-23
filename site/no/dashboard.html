@@ -1465,7 +1465,10 @@
      bunnknapper (STATISKE nederst, ikke sticky). Mobil-rekkefølgen på preview er
      uendret fra standard (preview under trekkspillene). Desktop: to-kolonne som ellers. */
   body.fokus{overscroll-behavior-y:contain} /* demper pull-to-refresh i Chrome mens man er i fokus */
-  body.fokus nav.nav{display:none}
+  /* Fokusmodus skjuler NAVIGASJONEN — begge navene i én regel: topp-navet (desktop) og bunn-navet (≤719px, kom i
+     75a7386 uten at denne regelen ble utvidet, så alle fem fanene sto synlige i fokusmodus på mobil). Panelets
+     bunnluft (--bunn-nav-h) beholdes med vilje: den gir fokus-baren luft mot skjermkanten. Ut av fokus: X eller Publiser. */
+  body.fokus nav.nav, body.fokus .bunn-nav{display:none}
   body.fokus .header-lenke{display:none}   /* fokusmodus: skjul bookinglenka, behold butikknavnet + × */
   body.fokus #dinsideCta{display:none}
   body.fokus .ideacard{display:none}
