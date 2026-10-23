@@ -22,6 +22,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -139,5 +140,6 @@ for(const bredde of [320,375,1280]){
 
 console.table(rapport);
 const feil = rapport.some(r=>Object.values(r).some(v=>String(v).includes('✗')));
-console.log('\nalt grønt:', feil?'NEI ✗':'ja ✓');
+sjekk(!(feil), '\nalt grønt');
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

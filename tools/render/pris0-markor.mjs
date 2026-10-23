@@ -8,6 +8,7 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -95,5 +96,6 @@ console.table(rad);
 // etter pris → flagg vekk; etter tømt navn → flagg vekk. Ingen overflow / JS-feil.
 const ok = rad.every(r => !r.start_r1 && r.start_r2 && r.start_r2rød && !r.tilleggFlagg
   && !r.etterPris_r2 && !r.etterTømtNavn_r2 && r.overflow <= 0 && r.jsfeil === 'ingen');
-console.log('\nPris-0-markør OK (navngitt u/pris flagges, blank/priset flagges ikke, live-toggle, ingen overflow):', ok ? 'JA' : 'NEI');
+sjekk(ok, '\nPris-0-markør OK (navngitt u/pris flagges, blank/priset flagges ikke, live-toggle, ingen overflow)');
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

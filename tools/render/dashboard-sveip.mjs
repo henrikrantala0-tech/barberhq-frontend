@@ -22,6 +22,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import { gratis, prove, vekst, pastDue } from './fixtures/billing.mjs';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -149,7 +150,9 @@ async function roOgVent(page){
 
 // Containere som SKAL ha rader gitt mocken over. Tallet er minimum, ikke fasit.
 const LISTER={
-  oversikt:[['#stats',2],['#chartBars',7],['#drivenBy',1],['#upcomingList',1],['#bookingList',1]],
+  // #bookingList (full booking-liste) ble fjernet i 007bf32: bookingene ligger nå i «Kommende» + kalenderen bak
+  // «Åpne kalender» (#calOverlay .cal-block), som måles eget sted under (kalenderBlokker).
+  oversikt:[['#stats',2],['#chartBars',7],['#drivenBy',1],['#upcomingList',1]],
   vekst:   [['#wbList',1]],
   tjenester:[['#hovedList',3],['#tilleggList',2],['#hoursList',7],['#payList',2]],
   design:  [['#sideAccs',3]],
@@ -191,7 +194,9 @@ async function mal(page,panelId,lister){
 }
 
 const browser=await chromium.launch();
-const rapport=[]; const detaljer=[];
+const rapport=[];
+const detaljer=[];
+const kalender=[];   // {bredde, blokker} — synlige .cal-block i kalenderen fra Oversikt
 
 for(const bredde of [320,402]){
   // ── De fire første fanene, ett sideoppslag ──
@@ -214,6 +219,13 @@ for(const bredde of [320,402]){
       'tomme lister':m.tomme.length?m.tomme.map(t=>`${t.sel}=${t.n}`).join(' '):'—',
       'Laster igjen':m.laster.length?String(m.laster.length):'—'});
     if(m.smaa) detaljer.push({bredde,fane:navn,minste:m.minste.join(' · ')});
+    if(id==='oversikt'){
+      // Kalenderen er dagens fulle booking-visning: åpne, tell blokker for dagens dato, lukk.
+      await page.click('#calOpenUpcoming'); await page.waitForTimeout(700);
+      kalender.push({bredde, blokker: await page.$$eval('#calOverlay .cal-block', es=>es.filter(e=>e.getBoundingClientRect().height>0).length)});
+      await page.screenshot({path:`${OUT}/${bredde}-sveip-kalender.png`});
+      await page.click('#calClose').catch(()=>{}); await page.waitForTimeout(300);
+    }
   }
   await ctx.close();
 
@@ -241,13 +253,16 @@ for(const bredde of [320,402]){
 }
 
 console.table(rapport);
+console.log('Kalender (Oversikt → Åpne kalender):', kalender);
 console.log('\nMINSTE TRYKKFLATER PER FANE (høyde i px):');
 console.table(detaljer);
 if(ufanget.size) console.log('\n⚠ ufangede /api-stier (svarte tomt):', [...ufanget].join(', '));
-console.log('\njsfeil:      ', rapport.some(r=>r.jsfeil!=='ingen')?'JA ✗':'ingen');
-console.log('overflow:    ', rapport.some(r=>r.overflow!=='nei')?'JA ✗':'nei');
-console.log('tomme lister:', rapport.some(r=>r['tomme lister']!=='—')?'JA ✗':'nei');
-console.log('«Laster …»:  ', rapport.some(r=>r['Laster igjen']!=='—')?'JA ✗':'nei');
+sjekk(!(rapport.some(r=>r.jsfeil!=='ingen')), '\ningen JS-feil');
+sjekk(!(rapport.some(r=>r.overflow!=='nei')), 'ingen horisontal overflow');
+sjekk(!(rapport.some(r=>r['tomme lister']!=='—')), 'ingen tomme lister');
+sjekk(kalender.length>0 && kalender.every(k=>k.blokker>0), 'kalenderen viser bookingene fra mocken', JSON.stringify(kalender));
+sjekk(!(rapport.some(r=>r['Laster igjen']!=='—')), 'ingen «Laster …» igjen');
 console.log('trykkflater under 40px:', rapport.reduce((a,r)=>a+r['under 40px'],0), 'av',
                                        rapport.reduce((a,r)=>a+r.flater,0));
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

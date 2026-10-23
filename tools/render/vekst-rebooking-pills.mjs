@@ -25,6 +25,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import { prove, vekst } from './fixtures/billing.mjs';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -218,14 +219,15 @@ const ok = rapport.every(r => r.låst === 'nei ✓' && r['valgt ok'] === 'ok ✓
   && (r['holdt seg'] === '—' || r['holdt seg'] === 'ubestemt ✓') && r.jsfeil === 'ingen'
   && (r.klikkbar === '—' || r.klikkbar === 'ja ✓')
   && (r['tip trykk'] === '—' || r['tip trykk'] === 'åpner+lukker ✓'));
-console.log('\npiller aldri låst:  ', rapport.every(r => r.låst === 'nei ✓') ? 'ja ✓' : 'NEI ✗');
+sjekk(rapport.every(r => r.låst === 'nei ✓'), '\npiller aldri låst');
 console.log('ingen oppdiktet 28: ', rapport.filter(r => r.case === 'settings-feiler')
   .every(r => r.valgt === '—') ? 'ja ✓' : 'NEI ✗');
-console.log('hint fjernet:       ', rapport.every(r => r['hint borte'] === 'ok ✓') ? 'ja ✓' : 'NEI ✗');
-console.log('plassholder borte:  ', rapport.every(r => r['preview tom'] === 'ok ✓' && r['paam tom'] === 'ok ✓') ? 'ja ✓ (begge)' : 'NEI ✗');
-console.log('ikon/note borte:    ', rapport.every(r => r['ikon ok'] === 'ok ✓') ? 'ja ✓' : 'NEI ✗');
-console.log('feil sier fra:     ', rapport.every(r => r['feil ok'] === 'ok ✓') ? 'ja ✓' : 'NEI ✗');
-console.log('bryter ubestemt:    ', rapport.every(r => r['bryter ok'] === 'ok ✓') ? 'ja ✓' : 'NEI ✗');
-console.log('ingen skriv v/feil: ', rapport.every(r => r['skriv v/feil'] === '—' || r['skriv v/feil'] === '0 ✓') ? 'ja ✓' : 'NEI ✗');
-console.log('SAMLET:', ok ? 'GRØNT ✓' : 'NOE FEILER ✗');
+sjekk(rapport.every(r => r['hint borte'] === 'ok ✓'), 'hint fjernet');
+sjekk(rapport.every(r => r['preview tom'] === 'ok ✓' && r['paam tom'] === 'ok ✓'), 'plassholder borte');
+sjekk(rapport.every(r => r['ikon ok'] === 'ok ✓'), 'ikon/note borte');
+sjekk(rapport.every(r => r['feil ok'] === 'ok ✓'), 'feil sier fra');
+sjekk(rapport.every(r => r['bryter ok'] === 'ok ✓'), 'bryter ubestemt');
+sjekk(rapport.every(r => r['skriv v/feil'] === '—' || r['skriv v/feil'] === '0 ✓'), 'ingen skriv v/feil');
+sjekk(ok, 'SAMLET');
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

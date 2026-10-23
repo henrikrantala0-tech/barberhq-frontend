@@ -9,6 +9,7 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -66,5 +67,6 @@ for (const bredde of [320, 375]) {
 console.table(rad);
 // OK = seksjonstoppen ligger PÅ eller under nav-bunnen (ikke bak), seksjonen er synlig, 0 JS-feil.
 const ok = rad.every(r => r.underNav && r.synlig && r.jsfeil === 'ingen');
-console.log('\nAnker OK (seksjon under nav, synlig, 0 JS-feil):', ok ? 'JA' : 'NEI');
+sjekk(ok, '\nAnker OK (seksjon under nav, synlig, 0 JS-feil)');
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

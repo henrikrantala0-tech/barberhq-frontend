@@ -1,0 +1,56 @@
+# WebKit-render-testene. De kan ikke kjøres på Henriks Windows-maskin: Windows kodeintegritet (Smart App Control-
+# policyen) blokkerer brotlienc.dll og ngtcp2_crypto_quictls.dll i Playwrights WebKit-bygg (CodeIntegrity/Operational,
+# hendelse 3033/3077, 22.10.2026). Linux-runneren har ikke den sperren.
+#
+# Bare de tre skriptene som faktisk starter WebKit (webkit.launch) er med. cta-kontrast, hero-video og produktvisning
+# nevner «webkit» bare i CSS-navn og kjører i Chromium lokalt.
+#
+# Alle /api/**-kall er mocket i skriptene (ingen prod). Skjermbildene i .render-ut/ lastes opp som artefakt også når
+# en test feiler, så man kan se hva som ble målt.
+name: WebKit-render
+
+on:
+  workflow_dispatch:
+  pull_request:
+
+permissions:
+  contents: read
+
+jobs:
+  webkit:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Installer avhengigheter
+        run: npm ci
+
+      - name: Installer Playwright-nettlesere (WebKit + Chromium, med systempakker)
+        # color-scheme-tider måler også Chromium 1280 før WebKit 375, så begge trengs.
+        run: npx playwright install --with-deps webkit chromium
+
+      - name: color-scheme-tider (Chromium 1280 + WebKit 375)
+        run: node tools/render/color-scheme-tider.mjs
+
+      - name: overflow-kom-i-gang (WebKit)
+        if: ${{ !cancelled() }}
+        run: node tools/render/overflow-kom-i-gang.mjs
+
+      - name: overflow-mobil (WebKit)
+        if: ${{ !cancelled() }}
+        run: node tools/render/overflow-mobil.mjs
+
+      - name: Last opp skjermbilder
+        if: ${{ !cancelled() }}
+        uses: actions/upload-artifact@v4
+        with:
+          name: webkit-render-${{ github.run_id }}
+          path: .render-ut/
+          if-no-files-found: warn
+          retention-days: 14

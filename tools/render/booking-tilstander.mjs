@@ -23,6 +23,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -360,4 +361,8 @@ console.table([
 console.table(rapport);
 console.log('\nMÅLT (dagsignaler + disabled-knapp):');
 console.table(maal);
+// Dommene (før: bare tabellen, så «NEI ✗ (klippet)» ga exit 0).
+sjekk(rapport.every(r => r['knapp synlig'] === undefined || r['knapp synlig'] === '—' || r['knapp synlig'] === 'ja ✓'), 'Skjemaet (knapp + betalingsnotat) står innenfor skjermen');
+sjekk(rapport.every(r => r.jsfeil === undefined || r.jsfeil === 'ingen'), 'Ingen JS-feil i klonen');
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

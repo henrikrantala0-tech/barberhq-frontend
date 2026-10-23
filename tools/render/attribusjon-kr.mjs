@@ -1,9 +1,16 @@
-// tools/render/attribusjon-kr.mjs — attribusjon med kroner på de to flatene:
-//   Oversikt «Hvor kundene kommer fra» (renderDrivenBy) + Vekst «Hvor kundene kommer fra» (renderAttribusjon)
+// tools/render/attribusjon-kr.mjs — «Hentet inn av BarberHQ» med kroner på de to flatene:
+//   Oversikt (renderDrivenBy, alltid «siste 30 dager») + Vekst-fanen (renderAttribusjon, #attrRows).
 //
-// Serverer site/ lokalt, stubber /api/**. Mock-attribusjonen returnerer den NYE backend-formen
-// { <kat>:{count,revenue}, total:{count,revenue} } (efaa553). Måler at kroner rendres, at total
-// stemmer, og overflow/JS-feil på 320/375.
+// Skrevet om 22.10.2026 til dagens backend-form: GET /attribution → { hentetInn:{ vervet, vinnTilbake, rebooking,
+// total }, paaVei:{ rebooking, winback } }, der hver arm er {count,revenue}. (Den gamle flate formen med
+// <kat>/total på toppnivå finnes ikke lenger, og testen målte tomme flater uten å si fra.) Billing mockes som Vekst
+// — uten billing er planen ukjent, dashbordet regner den som Gratis (fail-closed) og henter aldri attribusjon.
+//
+// Fire tilfeller × 320/375:
+//   A  Vekst, full hentetInn       → total «25 klipp · 9 050 kr» + tre arm-rader med kroner på begge flater
+//   B  Vekst, hentetInn uten total → «Ingen bookinger her ennå» (0), ALDRI en klient-sum (9 050) av radene
+//   C  Vekst, hentetInn mangler    → Vekst: «Kunne ikke hente tallene akkurat nå.»; Oversikt: bare «På vei», ingen kroner
+//   D  Gratis (backend sender likevel hentetInn) → ingen ekte tall noe sted (frontend-vakta erBasis)
 //
 //   node tools/render/attribusjon-kr.mjs
 //
@@ -11,11 +18,12 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
+import { vekst, gratis } from './fixtures/billing.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
 fs.mkdirSync(OUT, { recursive: true });
-
 const MIME = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8',
   '.css':'text/css', '.webp':'image/webp', '.png':'image/png', '.svg':'image/svg+xml' };
 const server = http.createServer((q, r) => {
@@ -32,130 +40,76 @@ const PORT = server.address().port;
 const PROFILE = { slug:'grand-barber', email:'grand@barber.no', hasPassword:true,
   name:'Henrik', shop:'Grand Barber', address:'', tagline:'', bio:'', booking_horizon_days:28 };
 
-// Ny backend-form: kategorier som {count,revenue} + autoritativ total. sum(kat)==total per «sum er sann».
-const ATTR = {
-  uke:    { period:'uke',    rebooking:{count:4,revenue:1400}, vervet:{count:1,revenue:350}, recovery:{count:2,revenue:800},  total:{count:7,  revenue:2550} },
-  '2uker':{ period:'2uker',  rebooking:{count:7,revenue:2450}, vervet:{count:2,revenue:700}, recovery:{count:3,revenue:1200}, total:{count:12, revenue:4350} },
-  maaned: { period:'maaned', rebooking:{count:14,revenue:4900},vervet:{count:5,revenue:1750},recovery:{count:6,revenue:2400}, total:{count:25, revenue:9050} },
-};
+// «Sum er sann»: sum(armer) == total. Totalen er backendens autoritative tall — frontend summerer aldri selv.
+const HENTET = { vervet:{count:5,revenue:1750}, vinnTilbake:{count:6,revenue:2400}, rebooking:{count:14,revenue:4900},
+                 total:{count:25,revenue:9050} };
+const PAA_VEI = { rebooking:{ naar_vindu_30d:3, med_samtykke:2 }, winback:{ foerste_passerer_60:null, passerer_innen_30d:0 } };
 
-// utenTotal=true → strip .total fra svaret (simulerer gammel/ufullstendig backend).
-// Da SKAL flatene vise feilstate, ALDRI et klient-summert tall.
-function router(utenTotal) {
+function svar(variant) {
+  if (variant === 'utenTotal') { const { total, ...rest } = HENTET; return { hentetInn: rest, paaVei: PAA_VEI }; }
+  if (variant === 'utenHentet') return { paaVei: PAA_VEI };
+  return { hentetInn: HENTET, paaVei: PAA_VEI };
+}
+function router(variant, plan) {
   return route => {
-    const url = new URL(route.request().url());
-    const p = url.pathname;
+    const url = new URL(route.request().url()), p = url.pathname;
     const json = obj => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify(obj) });
     if (p === '/api/dashboard/profile') return json(PROFILE);
-    if (p === '/api/dashboard/attribution') {
-      const per = url.searchParams.get('period') || 'maaned';
-      const base = ATTR[per] || ATTR.maaned;
-      if (utenTotal) { const { total, ...rest } = base; return json(rest); }
-      return json(base);
-    }
+    if (p === '/api/dashboard/billing/status') return json(plan === 'gratis' ? gratis({ page_status:'live' }) : vekst());
+    if (p === '/api/dashboard/attribution') return json(svar(variant));
     const listeAktig = /images|bookings|recent|services|hours|stats|winback|referrals|rebooking|sms-logg/.test(p);
     return json(listeAktig ? [] : {});
   };
 }
 
-const visSrc = `el => { if (!el) return false; const r = el.getBoundingClientRect();
-  return getComputedStyle(el).display !== 'none' && r.width > 0 && r.height > 0; }`;
-
+// innerText (ikke textContent, som limer «Verving»+«5 klipp» sammen) med vanlige mellomrom (toLocaleString bruker hardt mellomrom).
+const tekst = (page, sel) => page.$eval(sel, e => e.innerText.replace(/\s+/g, ' ').trim()).catch(() => '');
 const browser = await chromium.launch();
 const rad = [];
 
-for (const bredde of [320, 375]) {
-  // ── Oversikt: «Hvor kundene kommer fra» ────────────────────────────────────────────────
-  {
+async function maal(bredde, variant, plan) {
+  const ut = {};
+  for (const flate of ['oversikt', 'vekst']) {
     const page = await browser.newPage({ viewport:{ width:bredde, height:1100 }, deviceScaleFactor:2 });
     const errs = []; page.on('pageerror', e => errs.push(e.message));
-    await page.route('**/api/**', router(false));
+    await page.route('**/api/**', router(variant, plan));
     await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
-    await page.waitForTimeout(1800);
-    await page.evaluate(() => { const w = document.querySelector('#drivenByWrap'); if (w) w.scrollIntoView({block:'center'}); });
+    if (flate === 'vekst') await page.evaluate(() => switchPanel('vekst'));
+    await page.waitForTimeout(1600);
+    const sel = flate === 'oversikt' ? '#drivenBy' : '#attrRows';
+    await page.evaluate(s => { const w = document.querySelector(s); if (w) w.scrollIntoView({ block:'center' }); }, sel);
     await page.waitForTimeout(200);
-    await page.screenshot({ path:`${OUT}/attr-drevet-${bredde}.png`, fullPage:false });
-    const m = await page.evaluate(([visSrc]) => { const vis = eval(visSrc);
-      const t = s => (document.querySelector(s)||{}).textContent || '';
-      return { wrapSynlig:vis(document.querySelector('#drivenBy')),
-        heroNum:t('.drv-hero-num'),
-        rader:[...document.querySelectorAll('#drivenBy .drv-row2')].map(r =>
-          (r.querySelector('.drv-nm')||{}).textContent + ':' + (r.querySelector('.drv-val')||{}).textContent),
-        overflow: document.documentElement.scrollWidth - window.innerWidth }; }, [visSrc]);
-    rad.push({ flate:'Drevet av (uke)', bredde, hero:m.heroNum,
-      rader:m.rader.join(' | '), overflow:m.overflow, jsfeil: errs.length ? errs.join('; ') : 'ingen' });
+    await page.screenshot({ path:`${OUT}/attr-${flate}-${variant}-${plan}-${bredde}.png`, fullPage:false });
+    ut[flate] = { txt: await tekst(page, sel), errs: errs.length,
+      overflow: await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth) };
     await page.close();
   }
-  // ── Vekst: «Hvor kundene kommer fra» ──────────────────────────────────────────────
-  {
-    const page = await browser.newPage({ viewport:{ width:bredde, height:1100 }, deviceScaleFactor:2 });
-    const errs = []; page.on('pageerror', e => errs.push(e.message));
-    await page.route('**/api/**', router(false));
-    await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
-    await page.evaluate(() => switchPanel('vekst'));
-    await page.waitForTimeout(1800);
-    await page.evaluate(() => { const w = document.querySelector('#attrRows'); if (w) w.scrollIntoView({block:'center'}); });
-    await page.waitForTimeout(200);
-    await page.screenshot({ path:`${OUT}/attr-vekst-${bredde}.png`, fullPage:false });
-    const m = await page.evaluate(([visSrc]) => { const vis = eval(visSrc);
-      const t = s => (document.querySelector(s)||{}).textContent || '';
-      return { synlig:vis(document.querySelector('#attrRows')),
-        rader:[...document.querySelectorAll('#attrRows .drv-row2')].map(r =>
-          (r.querySelector('.drv-nm')||{}).textContent + ':' + (r.querySelector('.drv-val')||{}).textContent),
-        total:t('#attrRows .attr-total .drv-val'),
-        overflow: document.documentElement.scrollWidth - window.innerWidth }; }, [visSrc]);
-    rad.push({ flate:'Vekst attr (maaned)', bredde, hero:m.total,
-      rader:m.rader.join(' | '), overflow:m.overflow, jsfeil: errs.length ? errs.join('; ') : 'ingen' });
-    await page.close();
-  }
+  return ut;
 }
-console.table(rad);
 
-// ── Feilstate: svar UTEN total → begge flater viser «Kunne ikke hente», ALDRI klient-sum ──────
-const feil = [];
 for (const bredde of [320, 375]) {
-  // Drevet av
-  {
-    const page = await browser.newPage({ viewport:{ width:bredde, height:1100 }, deviceScaleFactor:2 });
-    const errs = []; page.on('pageerror', e => errs.push(e.message));
-    await page.route('**/api/**', router(true));
-    await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
-    await page.waitForTimeout(1800);
-    await page.evaluate(() => { const w = document.querySelector('#drivenByWrap'); if (w) w.scrollIntoView({block:'center'}); });
-    await page.waitForTimeout(150);
-    await page.screenshot({ path:`${OUT}/attr-drevet-feil-${bredde}.png`, fullPage:false });
-    const m = await page.evaluate(() => {
-      const wrap = document.querySelector('#drivenBy');
-      const txt = wrap ? wrap.textContent : '';
-      return { txt, harHero: !!document.querySelector('.drv-hero-num'),
-        seeAllSkjult: (document.querySelector('#drivenBySeeAll')||{}).hidden }; });
-    feil.push({ flate:'Drevet av (uten total)', bredde, tekst:m.txt.trim().slice(0,40),
-      heroBorte:!m.harHero, feilmld:/Kunne ikke hente/.test(m.txt), jsfeil: errs.length ? errs.join('; ') : 'ingen' });
-    await page.close();
-  }
-  // Vekst
-  {
-    const page = await browser.newPage({ viewport:{ width:bredde, height:1100 }, deviceScaleFactor:2 });
-    const errs = []; page.on('pageerror', e => errs.push(e.message));
-    await page.route('**/api/**', router(true));
-    await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
-    await page.evaluate(() => switchPanel('vekst'));
-    await page.waitForTimeout(1800);
-    await page.evaluate(() => { const w = document.querySelector('#attrRows'); if (w) w.scrollIntoView({block:'center'}); });
-    await page.waitForTimeout(150);
-    await page.screenshot({ path:`${OUT}/attr-vekst-feil-${bredde}.png`, fullPage:false });
-    const m = await page.evaluate(() => {
-      const el = document.querySelector('#attrRows');
-      const txt = el ? el.textContent : '';
-      return { txt, harTotalRad: !!document.querySelector('#attrRows .attr-total') }; });
-    feil.push({ flate:'Vekst attr (uten total)', bredde, tekst:m.txt.trim().slice(0,40),
-      heroBorte:!m.harTotalRad, feilmld:/Kunne ikke hente/.test(m.txt), jsfeil: errs.length ? errs.join('; ') : 'ingen' });
-    await page.close();
+  for (const [variant, plan] of [['full', 'vekst'], ['utenTotal', 'vekst'], ['utenHentet', 'vekst'], ['full', 'gratis']]) {
+    const m = await maal(bredde, variant, plan);
+    rad.push({ bredde, variant, plan, oversikt: m.oversikt.txt.slice(0, 70), vekst: m.vekst.txt.slice(0, 70),
+      overflow: Math.max(m.oversikt.overflow, m.vekst.overflow), jsfeil: m.oversikt.errs + m.vekst.errs, m });
   }
 }
-console.log('\n=== FEILSTATE (svar uten data.total) ===');
-console.table(feil);
-const okFeil = feil.every(f => f.feilmld && f.heroBorte && f.jsfeil === 'ingen');
-console.log('Feilstate OK (feilmelding vist, ingen total/hero, ingen klient-sum, 0 JS-feil):', okFeil ? 'JA' : 'NEI');
+console.table(rad.map(({ m, ...r }) => r));
+
+const finn = (v, p) => rad.filter(r => r.variant === v && r.plan === p);
+const ARMER = ['Verving 5 klipp · 1 750 kr', 'Vinn tilbake 6 klipp · 2 400 kr', 'Rebooking 14 klipp · 4 900 kr'];
+const harAlt = t => t.includes('25 klipp') && t.includes('9 050 kr') && ARMER.every(a => t.includes(a));
+sjekk(finn('full', 'vekst').every(r => harAlt(r.m.oversikt.txt) && harAlt(r.m.vekst.txt)),
+  'A: Vekst viser total 25 klipp · 9 050 kr og tre arm-rader med kroner (begge flater)',
+  finn('full', 'vekst').map(r => r.m.oversikt.txt.slice(0, 160)).join(' || '));
+sjekk(finn('utenTotal', 'vekst').every(r => [r.m.oversikt.txt, r.m.vekst.txt].every(t => /Ingen bookinger her ennå/.test(t) && !t.includes('9 050'))),
+  'B: uten total → 0-tilstand, aldri klient-sum (9 050) av radene');
+sjekk(finn('utenHentet', 'vekst').every(r => /Kunne ikke hente tallene akkurat nå/.test(r.m.vekst.txt) && /PÅ VEI/.test(r.m.oversikt.txt) && !/ kr\b/.test(r.m.oversikt.txt)),
+  'C: hentetInn mangler → Vekst-fanen sier fra, Oversikt viser bare «På vei» uten kroner');
+sjekk(finn('full', 'gratis').every(r => [r.m.oversikt.txt, r.m.vekst.txt].every(t => !/9 050|1 750|2 400|4 900/.test(t))),
+  'D: Gratis viser aldri ekte tall, selv om backend sender hentetInn');
+sjekk(rad.every(r => r.overflow <= 0), 'ingen horisontal overflow');
+sjekk(rad.every(r => r.jsfeil === 0), 'ingen JS-feil');
 
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

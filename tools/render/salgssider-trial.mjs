@@ -5,6 +5,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -56,7 +57,8 @@ for(const bredde of [320,402]){
   }
 }
 console.table(rapport);
-console.log('gammel trial-copy igjen:', rapport.some(r=>r['gammel påstand']!=='ingen')?'JA ✗':'nei');
-console.log('overflow:', rapport.some(r=>r.overflow!=='nei')?'JA ✗':'nei');
-console.log('jsfeil:',   rapport.some(r=>r.jsfeil!=='ingen')?'JA ✗':'ingen');
+sjekk(!(rapport.some(r=>r['gammel påstand']!=='ingen')), 'ingen gammel trial-copy');
+sjekk(!(rapport.some(r=>r.overflow!=='nei')), 'ingen horisontal overflow');
+sjekk(!(rapport.some(r=>r.jsfeil!=='ingen')), 'ingen JS-feil');
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

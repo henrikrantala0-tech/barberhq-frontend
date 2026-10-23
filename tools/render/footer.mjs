@@ -6,6 +6,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -78,11 +79,12 @@ for(const bredde of [320,402,1280]){
 }
 
 console.table(rapport);
-console.log('\njsfeil:            ', rapport.some(r=>r.jsfeil!=='ingen')?'JA ✗':'ingen');
-console.log('overflow:          ', rapport.some(r=>r.overflow!=='nei')?'JA ✗':'nei');
-console.log('nyhetsbrev-rester: ', rapport.some(r=>r.rester!=='—')?'JA ✗':'ingen');
-console.log('«Meld meg på»:     ', rapport.some(r=>r['Meld meg på']==='JA ✗')?'JA ✗':'borte');
-console.log('tomt hull i .foot-top:', rapport.some(r=>parseInt(r['tom plass høyre'])>40)?'JA ✗':'nei');
-console.log('feil nøsting:      ', rapport.some(r=>r.nøsting!=='søsken')?'JA ✗':'nei');
-console.log('ett barn i foot-top:', rapport.every(r=>r['foot-top barn']===1)?'ja ✓':'NEI ✗');
+sjekk(!(rapport.some(r=>r.jsfeil!=='ingen')), '\ningen JS-feil');
+sjekk(!(rapport.some(r=>r.overflow!=='nei')), 'ingen horisontal overflow');
+sjekk(!(rapport.some(r=>r.rester!=='—')), 'ingen nyhetsbrev-rester');
+sjekk(!(rapport.some(r=>r['Meld meg på']==='JA ✗')), '«Meld meg på» er borte');
+sjekk(!(rapport.some(r=>parseInt(r['tom plass høyre'])>40)), 'ingen tomt hull i .foot-top');
+sjekk(!(rapport.some(r=>r.nøsting!=='søsken')), 'riktig nøsting');
+sjekk(rapport.every(r=>r['foot-top barn']===1), 'ett barn i foot-top');
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

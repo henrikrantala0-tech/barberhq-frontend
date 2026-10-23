@@ -16,6 +16,7 @@ import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
 import sharp from 'sharp';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -120,7 +121,8 @@ console.table(padRapport);
 console.log('\nMÅLT KONTRAST (lyseste piksel i tekstområdet — worst case):');
 console.table(rapport);
 const darlig=rapport.filter(r=>r['h2 kontrast'].includes('✗')||r['p kontrast'].includes('✗'));
-console.log('\nalle over 4,5:1:', darlig.length?`NEI ✗ (${darlig.map(r=>r.bredde).join(', ')})`:'ja ✓');
-console.log('kaskade:        ', padRapport.every(r=>r['vinner .section.final-cta?']==='ja ✓')?'.section.final-cta vinner ✓':'NEI ✗');
-console.log('jsfeil:         ', rapport.some(r=>r.jsfeil!=='ingen')?'JA ✗':'ingen');
+sjekk(!(darlig.length), '\nalle over 4,5:1');
+sjekk(padRapport.every(r=>r['vinner .section.final-cta?']==='ja ✓'), 'kaskade');
+sjekk(!(rapport.some(r=>r.jsfeil!=='ingen')), 'ingen JS-feil');
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

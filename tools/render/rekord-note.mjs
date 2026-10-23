@@ -10,6 +10,7 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -78,5 +79,6 @@ for (const [kase, forventet] of [['A',''], ['B','Rekord settes denne uka'], ['C'
 }
 console.table(rad);
 const allOk = rad.every(r => r.ok && r.overflow<=0 && r.jsfeil==='ingen');
-console.log('\nRekord-note OK (A tom, B invitasjon, C beste uke, ingen overflow, 0 JS-feil):', allOk ? 'JA' : 'NEI');
+sjekk(allOk, '\nRekord-note OK (A tom, B invitasjon, C beste uke, ingen overflow, 0 JS-feil)');
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

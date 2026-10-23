@@ -16,11 +16,14 @@
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import os from 'node:os';
 import { chromium, webkit } from 'playwright';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 import { gratis } from './fixtures/billing.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
 const DESK = path.join(os.homedir(), 'Desktop');
+// Kopi til Skrivebordet bare når det finnes (CI-runneren på Linux har ikke noe Skrivebord) — .render-ut/ er kilden.
+const tilSkrivebord = navn => { if (fs.existsSync(DESK)) fs.copyFileSync(`${OUT}/${navn}`, path.join(DESK, navn)); };
 fs.mkdirSync(OUT, { recursive: true });
 
 const MIME = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8',
@@ -72,6 +75,7 @@ async function aapneTider(page) {
 }
 
 const rapport = [];
+const dom = {};   // målingene dommene nederst leser (før: bare utskrift, exit 0 uansett)
 
 // ── Chromium 1280 — klokkeikonet synlig, skal være hvitt ──────────────────────────
 {
@@ -89,8 +93,9 @@ const rapport = [];
   }));
   await page.locator('#hoursList').scrollIntoViewIfNeeded();
   await page.locator('#hoursList').screenshot({ path: `${OUT}/color-scheme-chromium-1280.png` });
-  fs.copyFileSync(`${OUT}/color-scheme-chromium-1280.png`, path.join(DESK, 'color-scheme-chromium-1280.png'));
+  tilSkrivebord('color-scheme-chromium-1280.png');
   rapport.push(`Chromium@1280: color-scheme=${info.rootScheme} data-theme=${info.dataTheme} time-felt=${info.antallTid} jsfeil=${errs.length?errs.join('; '):'ingen'}`);
+  dom.chromium = { info, errs: errs.length };
   await browser.close();
 }
 
@@ -109,11 +114,17 @@ const rapport = [];
   });
   await page.locator('#hoursList').scrollIntoViewIfNeeded();
   await page.locator('#hoursList').screenshot({ path: `${OUT}/color-scheme-webkit-375.png` });
-  fs.copyFileSync(`${OUT}/color-scheme-webkit-375.png`, path.join(DESK, 'color-scheme-webkit-375.png'));
+  tilSkrivebord('color-scheme-webkit-375.png');
   rapport.push(`WebKit@375  : color-scheme=${info.rootScheme} picker-display=${info.pickerDisplay} jsfeil=${errs.length?errs.join('; '):'ingen'}`);
+  dom.webkit = { info, errs: errs.length };
   await browser.close();
 }
 
 server.close();
 console.log('\n' + rapport.join('\n'));
-console.log(`\nSkjermbilder:\n  ${path.join(DESK,'color-scheme-chromium-1280.png')}\n  ${path.join(DESK,'color-scheme-webkit-375.png')}`);
+console.log(`\nSkjermbilder: ${OUT}/color-scheme-{chromium-1280,webkit-375}.png (+ Skrivebordet når det finnes)`);
+const c = dom.chromium, w = dom.webkit;
+sjekk(c && /dark/.test(c.info.rootScheme) && c.info.dataTheme === 'dark' && c.info.antallTid > 0, 'Chromium 1280: color-scheme dark på mørkt tema, tidsfeltene er bygget', JSON.stringify(c && c.info));
+sjekk(w && /dark/.test(w.info.rootScheme) && w.info.pickerDisplay === 'none', 'WebKit 375: color-scheme dark, klokkeikonet skjult på mobil', JSON.stringify(w && w.info));
+sjekk(c && w && c.errs === 0 && w.errs === 0, 'ingen JS-feil (Chromium + WebKit)');
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

@@ -1,19 +1,23 @@
-// site/no/priser.html — to prisnivåer (Basis / Vekst), «Prisen er prisen» og prøvelinja.
+// site/no/priser.html — to prisnivåer (Gratis 0 kr / Vekst 179 kr, låst 09.10.2026) og «Prisen er prisen».
+// (Internt heter Gratis-kortet fortsatt .pr-basis; UI sier aldri «Basis».)
 //
 // Fire ting kan gå galt uten at noe feiler, og alle fire måles her:
-//  1. STABLINGSREKKEFØLGEN på mobil. Kravet er at VEKST står øverst; det løses med
-//     CSS `order`, ikke DOM-rekkefølge, så en DOM-sjekk ville bekreftet feil svar.
-//     Vi måler faktisk y-posisjon.
+//  1. STABLINGSREKKEFØLGEN på mobil. GRATIS står øverst (oppdatert 22.10.2026; før Gratis-modellen var kravet
+//     VEKST øverst). Vi måler faktisk y-posisjon, ikke DOM-rekkefølge.
 //  2. ANBEFALT-PILLEN er absolutt posisjonert 13px OVER kortkanten. Blir den klippet av
 //     en forfar med overflow, ser kortet fortsatt helt normalt ut. Rect-en alene holder
-//     ikke — vi spør elementFromPoint om pillen faktisk MALES i sine egne hjørner.
-//  3. PRISLINJA «249 kr /mnd eks. mva» er en flex-boks med to bokser. Brekker den, gjør
+//     ikke — vi spør elementFromPoint om pillen faktisk MALES i sine egne hjørner. Pillen scrolles inn først:
+//     med Gratis øverst ligger Vekst-kortet under folden på mobil, og elementFromPoint gir null utenfor skjermen.
+//  3. PRISLINJA «179 kr /mnd eks. mva» er en flex-boks med to bokser. Brekker den, gjør
 //     den det stille. Vi teller linjer ved å måle tekstnodens rect mot spanens.
 //  4. KNAPPENE. Begge skal treffe kom-i-gang.html — klikkes på ekte, ikke leses av href.
+//  5. GAMMEL MODELL. Ingen «30 dager gratis», «prøv gratis», «prøveperiode» (unntatt den låste «Ingen prøveperiode»),
+//     «Basis», «89 kr» eller «249 kr» i sidens tekst.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -105,8 +109,10 @@ for(const bredde of [320,402,1280]){
       .filter(el=>parseFloat(getComputedStyle(el).opacity)<0.9).length;
 
     return {
-      rekkefolge: rv.top<rb.top?'VEKST først':'BASIS først',
-      sidestilt: Math.abs(rv.top-rb.top)<4,
+      // Layout-posisjon (offsetTop), ikke rect: Vekst-kortet er med vilje løftet (scale 1.035 + svevende animasjon,
+      // 23251b5), så rect-toppen ligger ~12 px over Gratis på desktop selv om kortene står side om side.
+      rekkefolge: vekst.offsetTop<basis.offsetTop?'VEKST først':'GRATIS først',
+      sidestilt: vekst.offsetTop===basis.offsetTop,
       hoyder: `${Math.round(rb.height)}/${Math.round(rv.height)}`,
       // Range, ikke element.getClientRects(): et BLOKKelement gir alltid nøyaktig én rect
       // uansett hvor mange linjer teksten brekker til. Range-en gir én rect per linjeboks.
@@ -118,9 +124,8 @@ for(const bredde of [320,402,1280]){
       // stikker den ut til siden, er den formelt «innenfor viewporten» og likevel feil.
       pillTekst: pill.textContent.trim(),
       pillIKort: rp.left>=rv.left-1 && rp.right<=rv.right+1,
-      // Basis har ingen knapp lenger — bare den dempede linja. Begge deler måles.
+      // Gratis-kortet har én knapp («Kom i gang gratis»); Vekst kjøpes i dashbordet og har ingen.
       basisKnapper: basis.querySelectorAll('.btn').length,
-      basisLater: (basis.querySelector('.pr-later')||{}).textContent||'MANGLER',
       vekstKnapper: vekst.querySelectorAll('.btn').length,
       // Skillepunktet: delelinja skal faktisk være der, og teksten skal være hvit.
       incLinje: (()=>{const el=vekst.querySelector('.pr-inc');if(!el)return 'MANGLER';
@@ -131,11 +136,25 @@ for(const bredde of [320,402,1280]){
       vekstPunkter: vekst.querySelectorAll('.pr-list li').length,
       domeneord: /domene/i.test(document.body.innerText),
       gammelPris: !!q('.price-card,.price-extra,.pc-badge'),
+      // Gammel modell i synlig tekst. «Ingen prøveperiode» er den låste formuleringen og trekkes fra først.
+      gammelTekst: (()=>{const t=document.body.innerText.replace(/Ingen prøveperiode/gi,'');
+        return ['30 dager gratis','prøv gratis','prøveperiode','Basis','89 kr','249 kr'].filter(x=>t.toLowerCase().includes(x.toLowerCase()));})(),
       h1: q('.ph-hero h1').innerText.replace(/\s+/g,' '),
     };
   });
 
-  const forventetRekkefolge = bredde<=760 ? 'VEKST først' : 'sidestilt';
+  // Pillen må være på skjermen for at elementFromPoint skal se den (punkt 2): scroll den inn og mål den PÅ NYTT.
+  // Rekkefølge/høyder over er målt før scrollen; scrollen flytter kortene på 1280 (målt 22.10), så de tas ikke herfra.
+  await page.evaluate(()=>document.querySelector('.pr-pill').scrollIntoView({block:'center'})); await page.waitForTimeout(250);
+  Object.assign(m, await page.evaluate(()=>{
+    const pill=document.querySelector('.pr-pill'), rp=pill.getBoundingClientRect(), rv=document.querySelector('.pr-vekst').getBoundingClientRect();
+    const inni=(x,y)=>{const el=document.elementFromPoint(x,y);return !!el&&(el===pill||pill.contains(el));};
+    const cx=(rp.left+rp.right)/2, cy=(rp.top+rp.bottom)/2;
+    return { pillMalt:[[cx,rp.top+2],[cx,rp.bottom-2],[rp.left+2,cy],[rp.right-2,cy]].filter(([x,y])=>inni(x,y)).length,
+      pillInnenfor: rp.left>=0 && rp.right<=innerWidth && rp.top>=0 && rp.bottom<=innerHeight,
+      pillIKort: rp.left>=rv.left-1 && rp.right<=rv.right+1 };
+  }));
+  const forventetRekkefolge = bredde<=760 ? 'GRATIS først' : 'sidestilt';
   const faktisk = m.sidestilt ? 'sidestilt' : m.rekkefolge;
 
   rapport.push({bredde,
@@ -144,7 +163,6 @@ for(const bredde of [320,402,1280]){
       :`NEI ✗ (${m.pillMalt}/4 malt, viewport=${m.pillInnenfor}, i kort=${m.pillIKort})`,
     'pill tekst/bredde': `${m.pillTekst} · ${m.pillBredde}px`,
     'knapper B/V': `${m.basisKnapper}/${m.vekstKnapper}${m.basisKnapper===1&&m.vekstKnapper===0?' ✓':' ✗'}`,
-    'basis-linje': m.basisLater,
     'skillepunkt': m.incLinje,
     'korthøyde B/V': m.hoyder, 'h1-linjer': m.h1linjer,
     prislinje: m.linjer,
@@ -154,6 +172,7 @@ for(const bredde of [320,402,1280]){
     usynlig: m.usynlig?`${m.usynlig} ✗`:'nei',
     'domene nevnt': m.domeneord?'JA ✗':'nei',
     'gammel prisblokk': m.gammelPris?'JA ✗':'nei',
+    'gammel modell': m.gammelTekst.length?m.gammelTekst.join(', ')+' ✗':'nei',
     overflow: await page.evaluate(w=>document.documentElement.scrollWidth-w,bredde),
     jsfeil: errs.length?errs.join('; '):'ingen'});
   await page.close();
@@ -184,10 +203,16 @@ for(const bredde of [402,1280]){
 console.table(rapport);
 console.log('\nKLIKK-TEST:'); console.table(klikk);
 const alle=rapport.concat(klikk);
-console.log('\njsfeil:       ', alle.some(r=>r.jsfeil!=='ingen')?'JA ✗':'ingen');
-console.log('overflow:     ', rapport.some(r=>r.overflow>0)?'JA ✗':'0 på alle bredder');
-console.log('pill hel:     ', rapport.every(r=>r['pill hel'].startsWith('ja'))?'ja ✓':'NEI ✗');
-console.log('kort-oppsett: ', rapport.every(r=>r['kort-oppsett'].endsWith('✓'))?'ja ✓':'NEI ✗');
-console.log('knapper:      ', klikk.every(r=>r.ok==='✓')?`alle ${klikk.length} → kom-i-gang.html ✓`:'NEI ✗');
-console.log('kort-CTA:     ', rapport.every(r=>r['knapper B/V'].endsWith('✓'))?'Gratis 1 / Vekst 0 ✓':'NEI ✗');
+sjekk(!(alle.some(r=>r.jsfeil!=='ingen')), '\ningen JS-feil');
+sjekk(!(rapport.some(r=>r.overflow>0)), 'ingen horisontal overflow');
+sjekk(rapport.every(r=>r['pill hel'].startsWith('ja')), 'pill hel');
+sjekk(rapport.every(r=>r['kort-oppsett'].endsWith('✓')), 'kort-oppsett');
+sjekk(klikk.every(r=>r.ok==='✓'), 'knapper');
+sjekk(rapport.every(r=>r['knapper B/V'].endsWith('✓')), 'kort-CTA');
+sjekk(rapport.every(r=>r['innhold utenfor kort']==='nei'), 'ingen tekst stikker ut av kortene');
+sjekk(rapport.every(r=>r.usynlig==='nei'), 'alle kort er synlige (reveal har fyrt)');
+sjekk(rapport.every(r=>r['domene nevnt']==='nei' && r['gammel prisblokk']==='nei'), 'ingen domene-påstand eller gammel prisblokk');
+sjekk(rapport.every(r=>r['gammel modell']==='nei'), 'ingen tekst fra gammel modell (30 dager/prøv gratis/prøveperiode/Basis/89/249 kr)',
+  rapport.map(r=>r['gammel modell']).join(' | '));
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)
