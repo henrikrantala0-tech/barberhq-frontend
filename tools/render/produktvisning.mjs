@@ -8,6 +8,7 @@ import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
 import { chromium } from 'playwright';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -1042,10 +1043,39 @@ for(const bredde of [320,MOBIL,1280]){
   await ctx.close();
 }
 
+// ── Demo-innholdet er utilgjengelig for tastatur og skjermleser (22.10.2026) ───────────────────────────────
+// Kortene (role=button + aria-label) er den ekte kontrollen. Alt INNI er klonet demo (dashbord/kalender/booking) og
+// skal ha inert + aria-hidden: før gikk Tab gjennom 37–44 knapper/lenker der inne. Klikk på kortet virker fortsatt
+// (dekket av «klikk aktiverer» over); her sjekkes at Tab bare stopper PÅ kortene og at innholdet er skjult.
+for (const bredde of [375, 1280]) {
+  const ctx=await browser.newContext({viewport:{width:bredde,height:900},deviceScaleFactor:1});
+  const page=await ctx.newPage();
+  const errs=[]; page.on('pageerror',e=>errs.push(e.message));
+  await page.goto(`http://localhost:${PORT}/no/index.html`,{waitUntil:'networkidle'});
+  await page.waitForTimeout(800);
+  let inni=0, paa=0; const eks=[];
+  for (let i=0;i<80;i++){ await page.keyboard.press('Tab');
+    const r=await page.evaluate(()=>{ const a=document.activeElement, k=a&&a.closest('.scene .mock');
+      return { inni:!!(k&&a!==k), paa:!!(k&&a===k), t:(a&&a.textContent||'').trim().slice(0,14) }; });
+    if(r.inni){ inni++; eks.push(r.t); } if(r.paa) paa++; }
+  oppforsel.push({test:`demo @${bredde}: Tab havner aldri inni kortene`, resultat:`${inni} inni${eks.length?' ('+eks.slice(0,2).join(', ')+')':''} · ${paa} på kortene`,
+    ventet:'0 inni, >0 på kortene', ok:(inni===0&&paa>0)?'✓':'✗'});
+  const skjult=await page.evaluate(()=>[...document.querySelectorAll('.scene .mock:not(.pv-klon)')].every(k=>
+    k.children.length>0 && [...k.children].every(c=>c.hasAttribute('inert')&&c.getAttribute('aria-hidden')==='true')
+    && k.getAttribute('role')==='button' && k.tabIndex===0 && !!k.getAttribute('aria-label')));
+  oppforsel.push({test:`demo @${bredde}: innhold inert + aria-hidden, kortet er knapp`, resultat:skjult?'ja':'nei',
+    ventet:'ja', ok:skjult?'✓':'✗'});
+  oppforsel.push({test:`demo @${bredde}: jsfeil`, resultat:errs.length?errs.join('; ').slice(0,40):'ingen', ventet:'ingen', ok:errs.length?'✗':'✓'});
+  await ctx.close();
+}
+
 console.table(rapport);
 console.log('\nOPPFØRSEL:'); console.table(oppforsel);
-console.log('\noverflow:  ', rapport.some(r=>r.overflow!=='nei')?'JA ✗':'nei');
-console.log('jsfeil:    ', rapport.some(r=>r.jsfeil!=='ingen')?'JA ✗':'ingen');
-console.log('døde rester:', rapport.some(r=>r['død rest']!=='—')?'JA ✗':'ingen');
-console.log('oppførsel: ', oppforsel.every(o=>o.ok==='✓')?'alt ✓':'FEIL ✗');
+sjekk(!(rapport.some(r=>r.overflow!=='nei')), '\ningen horisontal overflow');
+sjekk(!(rapport.some(r=>r.jsfeil!=='ingen')), 'ingen JS-feil');
+sjekk(!(rapport.some(r=>r['død rest']!=='—')), 'ingen døde rester');
+// 'info'-rader er målinger til ettersyn (f.eks. «redusert: kalenderblokker vist etter 6 s — avgjøres»), ikke krav.
+// Før talte de som feil, så oppsummeringen sa FEIL selv om alle kravene var ✓ (22.10.2026).
+sjekk(oppforsel.every(o=>o.ok==='✓'||o.ok==='info'), 'oppførsel (alle krav ✓; info-rader teller ikke)', oppforsel.filter(o=>o.ok!=='✓'&&o.ok!=='info').map(o=>o.test).join(' | '));
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

@@ -85,8 +85,10 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .nav.open .nav-burger span:nth-child(1){transform:translateY(6px) rotate(45deg)}
 .nav.open .nav-burger span:nth-child(2){opacity:0}
 .nav.open .nav-burger span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
-.nav-panel{max-height:0;overflow:hidden;background:rgba(10,10,10,.96);transition:max-height .25s ease}
-.nav.open .nav-panel{max-height:280px}
+/* Lukket meny: visibility:hidden tar lenkene ut av tab-rekkefølgen og skjermleseren (max-height:0 alene gjorde ikke det).
+   visibility slår av først når lukke-animasjonen er ferdig (0s forsinket .25s), og på med en gang ved åpning. */
+.nav-panel{max-height:0;overflow:hidden;visibility:hidden;background:rgba(10,10,10,.96);transition:max-height .25s ease,visibility 0s linear .25s}
+.nav.open .nav-panel{max-height:280px;visibility:visible;transition:max-height .25s ease,visibility 0s}
 .nav-panel a{display:block;padding:16px 24px;font-size:15px;color:#e0e0e0;text-decoration:none;border-bottom:1px solid #141414;transition:color .2s}
 .nav-panel a:last-child{border-bottom:none}
 .nav-panel a:hover{color:#fff}
@@ -2767,6 +2769,12 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
   var vp=document.getElementById('sceneVp'); if(!vp)return;
   var scene=document.getElementById('scene');
   var kort=[].slice.call(scene.querySelectorAll('.mock'));
+  // Innholdet i kortene er DEMO (klonet dashbord/kalender/bookingside): knapper, lenker og felt der inne var i
+  // tab-rekkefølgen (79 stk) og ble lest opp av skjermleser. Kortet selv er den ekte kontrollen (role=button +
+  // aria-label) og beholdes; alt INNI gjøres utilgjengelig. inert lar klikk falle gjennom til kortet, så klikk-for-å-
+  // velge virker som før. Settes her og ikke i markupen: klon-markupen bygges maskinelt, og løse rettelser i den har
+  // gått tapt før (CLAUDE.md). Klone-settene (.pv-klon) kopierer kortene etterpå og arver attributtene.
+  kort.forEach(function(k){ [].forEach.call(k.children,function(c){ c.setAttribute('inert',''); c.setAttribute('aria-hidden','true'); }); });
   var caps=[].slice.call(document.querySelectorAll('#sceneCap .cap'));
   var REDUSERT=window.matchMedia('(prefers-reduced-motion: reduce)').matches;
   var erMobil=function(){ return window.innerWidth<=760; };
@@ -3348,6 +3356,16 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
     k.addEventListener('keydown',function(e){
       if(e.key==='Enter'||e.key===' '){ e.preventDefault(); velg(); }
     });
+    // Tastatur: et kort som får fokus skal synes. På mobil ligger sidekortene utenfor sporet (målt −240 px på 320),
+    // og fokus scroller dem ikke inn selv — kort og fokusring var usynlige. Sentrer kortet (bare sporets vannrette
+    // scroll, som et klikk) og hold autoplay i ro mens tastaturfokus står der, ellers roterer den kortet ut igjen.
+    // Bare :focus-visible: et trykk på mobil gir også fokus, og berøring har sin egen autoplay-regel.
+    var tastFokus=false;
+    k.addEventListener('focus',function(){
+      if(!erMobil()||!k.matches(':focus-visible'))return;
+      tastFokus=true; senterKort(+k.dataset.i,true); stoppAuto();
+    });
+    k.addEventListener('blur',function(){ if(tastFokus){ tastFokus=false; if(!hover) startAuto(); } });
   });
 
   // Ny hover-periode ⇒ passiv lesing igjen, til brukeren eventuelt klikker på nytt.

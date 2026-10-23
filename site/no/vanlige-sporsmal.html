@@ -65,8 +65,10 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .nav.open .nav-burger span:nth-child(1){transform:translateY(6px) rotate(45deg)}
 .nav.open .nav-burger span:nth-child(2){opacity:0}
 .nav.open .nav-burger span:nth-child(3){transform:translateY(-6px) rotate(-45deg)}
-.nav-panel{max-height:0;overflow:hidden;background:rgba(10,10,10,.96);transition:max-height .25s ease}
-.nav.open .nav-panel{max-height:280px}
+/* Lukket meny: visibility:hidden tar lenkene ut av tab-rekkefølgen og skjermleseren (max-height:0 alene gjorde ikke det).
+   visibility slår av først når lukke-animasjonen er ferdig (0s forsinket .25s), og på med en gang ved åpning. */
+.nav-panel{max-height:0;overflow:hidden;visibility:hidden;background:rgba(10,10,10,.96);transition:max-height .25s ease,visibility 0s linear .25s}
+.nav.open .nav-panel{max-height:280px;visibility:visible;transition:max-height .25s ease,visibility 0s}
 .nav-panel a{display:block;padding:16px 24px;font-size:15px;color:#e0e0e0;text-decoration:none;border-bottom:1px solid #141414;transition:color .2s}
 .nav-panel a:last-child{border-bottom:none}
 .nav-panel a:hover{color:#fff}

@@ -10,6 +10,7 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+import { sjekk, ferdig } from './fixtures/sjekk.mjs';
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
 fs.mkdirSync(OUT, { recursive: true });
@@ -56,8 +57,16 @@ function measureActive() {
       }
       p = p.parentElement;
     }
+    // Usynlig tab-stopp: selve elementet (ikke bare ringen) ligger helt utenfor en klippende forelder, eller har
+    // null flate — f.eks. en lenke i en LUKKET mobilmeny (max-height:0) eller et karusellkort utenfor sporet.
+    let skjult = r.width === 0 || r.height === 0;
+    for (let q = el.parentElement; q && !skjult; q = q.parentElement) {
+      const qs = getComputedStyle(q); if (qs.overflowX === 'visible' && qs.overflowY === 'visible') continue;
+      const qr = q.getBoundingClientRect();
+      if (r.right <= qr.left + 1 || r.left >= qr.right - 1 || r.bottom <= qr.top + 1 || r.top >= qr.bottom - 1) skjult = true;
+    }
     const desc = el.tagName.toLowerCase() + (el.id?('#'+el.id):'') + (el.className&&typeof el.className==='string'?('.'+el.className.trim().split(/\\s+/).slice(0,2).join('.')):'');
-    return { desc, visible, focusVisible, color:cs.outlineColor, width:cs.outlineWidth, offset:cs.outlineOffset, style:cs.outlineStyle, clippedBy };
+    return { desc, visible, skjult, iPanel: !!el.closest('.nav-panel'), focusVisible, color:cs.outlineColor, width:cs.outlineWidth, offset:cs.outlineOffset, style:cs.outlineStyle, clippedBy };
   })()`;
 }
 
@@ -80,9 +89,19 @@ for (const pg of PAGES) {
     const seen = new Set();
     const focusRows = [];
     let shots = 0;
+    // Vent til det fokuserte elementet står stille: karusellen på index sentrerer et kort som får fokus med glatt
+    // scroll (scrollTo behavior:smooth er ikke en CSS-transition og slås ikke av over). Måler vi midt i glidningen,
+    // ser ringen klippet ut selv om den står fritt når scrollen er ferdig.
+    const ventStille = async () => { let forrige = '';
+      for (let k = 0; k < 12; k++) { const n = await page.evaluate(() => { const a = document.activeElement; if (!a) return ''; const r = a.getBoundingClientRect(); return Math.round(r.left) + ',' + Math.round(r.top); });
+        if (n === forrige) return; forrige = n; await page.waitForTimeout(80); } };
+    let usynligeStopp = 0;
+    const usynligeListe = [];
     for (let i=0; i<40; i++) {
       await page.keyboard.press('Tab');
+      await ventStille();
       const m = await page.evaluate(measureActive());
+      if (m && m.skjult) { usynligeStopp++; usynligeListe.push(m.desc); }
       if (!m) continue;
       const key = m.desc;
       if (seen.has(key)) { if (seen.size>3 && i>15) break; continue; }
@@ -102,6 +121,17 @@ for (const pg of PAGES) {
       mouseNoRing = fv ? 'RING (feil)' : 'ingen ring';
     }
 
+    // Åpen mobilmeny: lenkene SKAL nås med Tab når menyen er åpen (lukket = utilgjengelig, åpen = tilgjengelig).
+    let menyApen = 'n/a';
+    if (w <= 375 && await page.$('#nav-burger')) {
+      await page.evaluate(() => { document.activeElement && document.activeElement.blur(); scrollTo(0, 0); });
+      await page.click('#nav-burger'); await page.waitForTimeout(350);
+      let naadd = 0;
+      for (let k = 0; k < 10; k++) { await page.keyboard.press('Tab');
+        const m = await page.evaluate(measureActive()); if (m && m.iPanel && !m.skjult) naadd++; }
+      menyApen = naadd > 0 ? `${naadd} lenker nås` : 'INGEN nås';
+      await page.click('#nav-burger'); await page.waitForTimeout(350);
+    }
     const visRows = focusRows.filter(r => r.visible);
     const isFormField = r => /^(input|select|textarea)/.test(r.desc);
     const wrongColor = visRows.filter(r => r.focusVisible && r.color!==WANT_COLOR && r.style!=='none');
@@ -115,17 +145,25 @@ for (const pg of PAGES) {
       feilFarge: wrongColor.length,
       utenRing: noRing.length,
       klippet: clipped.length,
+      usynligeStopp,
+      menyApen,
       museIngenRing: mouseNoRing,
       jsfeil: errs.length,
       konsollfeil: cerr.length,
     });
     if (clipped.length) console.log(`  [${pg} @${w}] KLIPPET:`, clipped.map(c=>`${c.desc} <- ${c.clippedBy.sel}`).join(' | '));
     if (noRing.length) console.log(`  [${pg} @${w}] UTEN RING:`, noRing.map(c=>`${c.desc}(${c.style}/${c.width})`).join(' | '));
+    if (usynligeStopp) console.log(`  [${pg} @${w}] USYNLIGE TAB-STOPP:`, usynligeListe.join(' | '));
     if (errs.length) console.log(`  [${pg} @${w}] JSFEIL:`, errs.join('; '));
     await ctx.close();
   }
 }
 console.table(summary);
 const ok = summary.every(r => r.feilFarge===0 && r.klippet===0 && r.jsfeil===0 && r.museIngenRing!=='RING (feil)');
-console.log('\nAlle synlige fokuserbare: blå ring, ingen klipping, mus gir ingen ring, 0 JS-feil:', ok ? 'JA' : 'NEI (se over)');
+sjekk(ok, '\nAlle synlige fokuserbare: blå ring, ingen klipping, mus gir ingen ring, 0 JS-feil');
+sjekk(summary.every(r => r.usynligeStopp === 0), 'Tab hopper aldri til en usynlig lenke (lukket meny, kort utenfor sporet)',
+  summary.filter(r => r.usynligeStopp).map(r => `${r.side}@${r.bredde}=${r.usynligeStopp}`).join(' '));
+sjekk(summary.every(r => r.menyApen === 'n/a' || r.menyApen !== 'INGEN nås'), 'Åpen mobilmeny: lenkene nås med Tab (320/375)',
+  summary.filter(r => r.menyApen === 'INGEN nås').map(r => `${r.side}@${r.bredde}`).join(' '));
 await browser.close(); server.close();
+ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)
