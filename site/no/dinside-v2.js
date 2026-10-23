@@ -121,7 +121,6 @@
     S.v2 = v2;
     document.body.classList.toggle('sm-v2', v2);
     document.body.classList.toggle('sm-v1', !v2);
-    if (v2) { var ib = $('.ideacard .block-s'); if (ib) ib.textContent = 'Har du en idé eller et ønske til siden din? Send det til oss – vi leser alt.'; }
     if (v2) { S.publisertAt = b.publisert_at || S.publisertAt; ensureByggd(); }
     tegnFullfor(b);
     if (v2 && S.byggd && S.utkast) { tegnSteg(); tegnKnapper(); }   // live/ikke live styrer lagreknappen og hjelpelinja
@@ -184,14 +183,15 @@
       '<div class="dv2-grid" id="dv2Grid" hidden>' +
         '<div class="dv2-edit">' +
           '<div class="dv2-fast">' +
-            '<div class="dv2-tittelrad"><h2 id="dv2Tittel">Din side</h2><button type="button" class="dv2-btn liten dv2-pvknapp" id="dv2SeSiden">Forhåndsvis</button></div>' +
+            // «Forhåndsvis»: øye + tekst; under 400 px bare øyet (teksten står igjen som aria-navn), så tittelen får plassen.
+            '<div class="dv2-tittelrad"><h2 id="dv2Tittel">Din side</h2><button type="button" class="dv2-btn liten dv2-pvknapp" id="dv2SeSiden"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="dv2-pvtekst">Forhåndsvis</span></button></div>' +
             '<div class="dv2-steg" id="dv2Steg" role="tablist" aria-label="Steg">' +
-              STEG.map(function (s, i) { return '<button type="button" role="tab" data-steg="' + i + '" aria-controls="dv2Sek' + i + '">' + s.navn + '<span class="feilpunkt" hidden></span></button>'; }).join('') +
+              STEG.map(function (s, i) { return '<button type="button" role="tab" id="dv2Tab' + i + '" data-steg="' + i + '" aria-controls="dv2Sek' + i + '">' + s.navn + '<span class="feilpunkt" hidden></span></button>'; }).join('') +
             '</div>' +
           '</div>' +
           '<div class="dv2-innhold">' +
-          '<section class="dv2-sek" id="dv2Sek0" data-sek="0" aria-labelledby="dv2H0">' +
-            '<h3 id="dv2H0">Profil</h3><p class="ingress">Det kundene leser om deg. Alt er valgfritt.</p>' +
+          '<section class="dv2-sek" id="dv2Sek0" data-sek="0" aria-labelledby="dv2Tab0">' +
+            '<p class="ingress">Det kundene leser om deg.</p>' +
             felt('Spesialitet', 'dv2Tagline', 'tagline', '<input id="dv2Tagline" type="text" autocomplete="off" aria-describedby="dv2TaglineT">') +
             felt('Adresse', 'dv2Address', 'address', '<input id="dv2Address" type="text" autocomplete="street-address" aria-describedby="dv2AddressT">') +
             felt('Kort beskrivelse', 'dv2Bio', 'bio', '<textarea id="dv2Bio" rows="3" aria-describedby="dv2BioT"></textarea>') +
@@ -199,8 +199,8 @@
             felt('Mer info', 'dv2Om', 'om', '<p class="dv2-felthjelp" id="dv2OmHjelp">Vises i Om-fanen på siden din.</p>' +
               '<textarea id="dv2Om" rows="6" placeholder="F.eks. priser, parkering, hvordan du jobber" aria-describedby="dv2OmHjelp dv2OmT"></textarea>') +
           '</section>' +
-          '<section class="dv2-sek" id="dv2Sek1" data-sek="1" aria-labelledby="dv2H1" hidden>' +
-            '<h3 id="dv2H1">Utseende</h3><p class="ingress">Bakgrunn, farge og font på navnet ditt.</p>' +
+          '<section class="dv2-sek" id="dv2Sek1" data-sek="1" aria-labelledby="dv2Tab1" hidden>' +
+            '<p class="ingress">Farge og skrift på siden din.</p>' +
             '<fieldset class="dv2-gruppe dv2-del"><legend>Bakgrunn</legend><div class="dv2-brikker" id="dv2Modus" role="radiogroup" aria-label="Bakgrunn"></div></fieldset>' +
             '<fieldset class="dv2-gruppe dv2-del" id="dv2AksentGr" data-felt="aksent"><legend id="dv2AksentEtikett">Aksentfarge</legend><div class="dv2-prover" id="dv2Aksenter" role="radiogroup" aria-labelledby="dv2AksentEtikett"></div>' +
               // «Din egen»: fargefelt (metning × lysstyrke), fargebånd (kulør) og HEX-felt. Peker + berøring + tastatur.
@@ -211,18 +211,18 @@
                   '<div class="dv2-hexrad"><span class="smak" aria-hidden="true"></span><input type="text" id="dv2Hex" class="dv2-hex" inputmode="text" autocapitalize="none" autocomplete="off" spellcheck="false" maxlength="7" placeholder="#1e40af" aria-describedby="dv2HexFeil dv2Kontrast"></div></div>' +
                 '<p class="dv2-feil" id="dv2HexFeil" role="alert" hidden></p><p class="dv2-varsel" id="dv2Kontrast" role="status" hidden></p>' +
               '</div></fieldset>' +
-            '<fieldset class="dv2-gruppe dv2-del" id="dv2FontGr" data-felt="font"><legend>Font på sjappenavnet</legend><select class="dv2-fontvalg" id="dv2Fonter" aria-label="Font på sjappenavnet"></select><div class="dv2-fontprove" id="dv2FontProve" aria-label="Forhåndsvisning av sjappenavn"></div><p class="dv2-fontstatus" id="dv2FontStatus" role="status"></p></fieldset>' +
+            '<fieldset class="dv2-gruppe dv2-del" id="dv2FontGr" data-felt="font"><legend>Skrift</legend><select class="dv2-fontvalg" id="dv2Fonter" aria-label="Skrift"></select><div class="dv2-fontprove" id="dv2FontProve" aria-label="Forhåndsvisning av sjappenavn"></div><p class="dv2-fontstatus" id="dv2FontStatus" role="status"></p></fieldset>' +
           '</section>' +
-          '<section class="dv2-sek" id="dv2Sek2" data-sek="2" aria-labelledby="dv2H2" hidden>' +
-            '<h3 id="dv2H2">Bilder</h3><p class="ingress">Valgfritt. Siden ser ferdig ut også uten. Bilder, beskjæring og rekkefølge er utkast til du lagrer.</p>' +
+          '<section class="dv2-sek" id="dv2Sek2" data-sek="2" aria-labelledby="dv2Tab2" hidden>' +
+            '<p class="ingress">Valgfritt. Siden er ferdig uten.</p>' +
             '<div class="dv2-fld dv2-del"><span class="etikett">Portrett eller logo</span><div id="dv2Portrett"></div></div>' +
             '<div class="dv2-fld dv2-del"><div class="dv2-teller-rad"><span class="etikett">Arbeidene dine</span><span id="dv2GalleriTeller"></span></div><div id="dv2Galleri"></div><p class="dv2-feil" id="dv2BilderFeil" role="alert" hidden></p></div>' +
             '<input type="file" id="dv2FilPortrett" accept="image/*" hidden><input type="file" id="dv2FilGalleri" accept="image/*" multiple hidden><input type="file" id="dv2FilBytt" accept="image/*" hidden>' +
           '</section>' +
-          '<section class="dv2-sek" id="dv2Sek3" data-sek="3" aria-labelledby="dv2H3" hidden>' +
-            '<h3 id="dv2H3">Kontakt</h3><p class="ingress">Hvor kundene finner deg. Telefonen vises bare i bookingbekreftelsen.</p>' +
+          '<section class="dv2-sek" id="dv2Sek3" data-sek="3" aria-labelledby="dv2Tab3" hidden>' +
+            '<p class="ingress">Hvor kundene finner deg.</p>' +
             handle('Instagram', 'dv2Instagram', 'instagram') + handle('TikTok', 'dv2Tiktok', 'tiktok') + handle('Snapchat', 'dv2Snapchat', 'snapchat') +
-            '<div class="dv2-fld dv2-del" data-felt="contact_phone"><label for="dv2Telefon">Telefon</label><input id="dv2Telefon" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="91 23 45 67"><p class="dv2-feil" role="alert" hidden></p></div>' +
+            '<div class="dv2-fld dv2-del" data-felt="contact_phone"><label for="dv2Telefon">Telefon</label><p class="dv2-felthjelp" id="dv2TelefonHjelp">Vises bare i bookingbekreftelsen.</p><input id="dv2Telefon" aria-describedby="dv2TelefonHjelp" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="91 23 45 67"><p class="dv2-feil" role="alert" hidden></p></div>' +
           '</section>' +
           '</div>' +
           // Fast bunnbar: én rad. Steg 1–3 «← Tilbake» + «Neste →»; siste steg «← Tilbake» + «Lagre endringer».
@@ -300,8 +300,9 @@
       if (e.data.bhq === 'escape' && S.pvApen && !erDesktop()) lukkPv();
     });
     window.addEventListener('beforeunload', function (e) { if (S.v2 && ulagret()) { e.preventDefault(); e.returnValue = ''; } });
-    // Bunnbaren ligger fast nederst: innholdet får bunnpadding lik barens FAKTISKE høyde (status og hjelpelinje gjør den høyere).
-    if (window.ResizeObserver) new ResizeObserver(function () { if (el.bar.offsetHeight) $('#dinsideV2').style.setProperty('--dv2-bar-h', el.bar.offsetHeight + 'px'); }).observe(el.bar);
+    // Bunnbaren er fast bare i oppsettet (fokusmodus). Der får PANELET bunnluft lik barens FAKTISKE høyde (status og
+    // hjelpelinje gjør den høyere), så ingenting i panelet — heller ikke det som står etter stegene — havner bak baren.
+    if (window.ResizeObserver) new ResizeObserver(function () { var p = $('#design'); if (p && el.bar.offsetHeight) p.style.setProperty('--dv2-bar-h', el.bar.offsetHeight + 'px'); }).observe(el.bar);
 
     // Tekstfelt → utkast
     [['#dv2Tagline', 'profil', 'tagline'], ['#dv2Address', 'profil', 'address'], ['#dv2Bio', 'profil', 'bio'], ['#dv2Om', 'profil', 'om'],
@@ -393,7 +394,7 @@
     if (!el.lagre) return;
     var sist = S.steg === STEG.length - 1, live = erLive(), skitten = ulagret();
     if (el.grid) el.grid.inert = S.lagrer;
-    el.tilbake.disabled = S.steg === 0;
+    el.tilbake.hidden = S.steg === 0;
     el.neste.hidden = sist; el.lagre.hidden = !sist;
     el.lagre.disabled = (live && !skitten) || S.lagrer || !!S.opplaster;
     el.lagre.textContent = S.lagrer ? 'Lagrer …' : 'Lagre endringer';
@@ -511,8 +512,9 @@
     navn.textContent = S.shop || 'Sjappenavnet ditt';
     navn.style.fontFamily = st === 'klar' ? "'" + famNavn(f) + "', Inter, system-ui, sans-serif" : '';
     navn.style.fontWeight = st === 'klar' ? String(f.vekt || 400) : '';
-    $('#dv2FontStatus').textContent = st === 'laster' ? 'Laster font …' : st === 'feil' ? 'Fonten kunne ikke lastes. Forhåndsvisningen bruker standardfont.' : '';
+    $('#dv2FontStatus').textContent = st === 'laster' ? 'Laster skrift …' : st === 'feil' ? 'Skriften kunne ikke lastes. Forhåndsvisningen bruker standardskriften.' : '';
   }
+
 
   /* ══ Steg-navigasjon ═══════════════════════════════════════════════════════════════════════════════ */
   function gaaTilSteg(n, rull) {
@@ -783,15 +785,14 @@
     if (p) { var im = lagEl('img', { src: bildeUrl(p), alt: 'Portrett' }); ring.appendChild(im); } else ring.textContent = 'Ingen';
     rad.appendChild(ring);
     var t = lagEl('div', { class: 'tekst' });
-    t.appendChild(lagEl('strong', null, p ? 'Portrett eller logo er lagt til' : 'Et lite bilde ved navnet ditt'));
-    t.appendChild(lagEl('span', null, p ? 'Vises som en sirkel ved sjappenavnet.' : 'Portrett eller logo. Vises som en sirkel ved sjappenavnet.'));
+    t.appendChild(lagEl('span', null, p ? 'Vises som en sirkel ved sjappenavnet.' : 'Et lite bilde ved navnet ditt. Vises som en sirkel.'));
     var h = lagEl('div', { class: 'dv2-handl' });
     if (p) {
       h.appendChild(lagEl('button', { type: 'button', class: 'dv2-btn liten', 'data-h': 'beskjaer', 'data-id': p.id }, 'Beskjær'));
       h.appendChild(lagEl('button', { type: 'button', class: 'dv2-btn liten', 'data-h': 'bytt' }, 'Bytt bilde'));
       h.appendChild(lagEl('button', { type: 'button', class: 'dv2-btn liten farlig', 'data-h': 'slett', 'data-id': p.id }, 'Fjern'));
     } else h.appendChild(lagEl('button', { type: 'button', class: 'dv2-btn liten', 'data-h': 'legg-til' }, 'Legg til bilde'));
-    t.appendChild(h); rad.appendChild(t); box.appendChild(rad);
+    rad.appendChild(t); box.appendChild(rad); box.appendChild(h);
 
     // Galleri
     var g = iSlot('galleri'), n = g.length, mx = bildeMaks().galleri;

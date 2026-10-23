@@ -125,12 +125,42 @@ if (!RASK) {
   }
 }
 
+/* ════════ 1b. Ingen felt bak en fast bar (runde 2, 23.10.2026) ════════
+   Aldri to faste barer: oppsettet (fokusmodus) har bare Tilbake/Neste fast, vanlig Din side bare bunn-navet. Når siden er
+   scrollet HELT ned, skal ALT som kan trykkes eller skrives i (i hele panelet, ikke bare stegene) stå over det faste.
+   Fanget før: «Ideer & ønsker»-knappen lå bak bunnbaren, fordi bunnluften sto på stegene i stedet for på panelet. */
+for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (const oppsett of [false, true]) {
+  const kontekst = `${bredde}/${tema}/${oppsett ? 'oppsett' : 'vanlig'}`;
+  const { ctx, page, errs } = await ny({ bredde, tema, mock: oppsett ? { billing: v2Billing({ page_status: 'forhandsvist', publisert_at: null }) } : {} });
+  for (let i = 0; i < 4; i++) {
+    await stegKnapp(page, i); await page.waitForTimeout(350);
+    await page.evaluate(() => window.scrollTo(0, document.documentElement.scrollHeight)); await page.waitForTimeout(250);
+    const r = await page.evaluate(() => {
+      const vis = e => { if (!e) return false; const cs = getComputedStyle(e), b = e.getBoundingClientRect(); return cs.display !== 'none' && cs.visibility !== 'hidden' && b.height > 0; };
+      // Bunn-navet er sticky (bunn), bunnbaren fixed i oppsettet — begge ligger over innholdet mens man scroller.
+      const faste = [...document.querySelectorAll('#dv2Bar, .bunn-nav')].filter(e => vis(e) && ['fixed', 'sticky'].includes(getComputedStyle(e).position));
+      const linje = Math.min(innerHeight, ...faste.map(e => e.getBoundingClientRect().top));
+      const fast = e => faste.some(f => f.contains(e));
+      const felt = [...document.querySelectorAll('#design input:not([type=file]), #design textarea, #design button, #design [role=radio], #design [role=slider]')]
+        .filter(e => vis(e) && e.offsetParent !== null && !fast(e) && !e.closest('[hidden]'));
+      const bak = felt.filter(e => e.getBoundingClientRect().bottom > linje + 0.5)
+        .map(e => (e.id || e.textContent.trim().slice(0, 20) || e.tagName) + ' ' + Math.round(e.getBoundingClientRect().bottom) + '>' + Math.round(linje));
+      return { antallFaste: faste.length, bak, felt: felt.length };
+    });
+    sjekk(r.antallFaste === 1, `${kontekst} steg ${i + 1}: nøyaktig én fast bar`, String(r.antallFaste));
+    sjekk(r.felt > 0 && !r.bak.length, `${kontekst} steg ${i + 1}: ingen felt bak en fast bar`, r.bak.join(' · '));
+  }
+  sjekk(!errs.length, `${kontekst}: pageerror (fast bar)`, errs.join('; '));
+  await ctx.close();
+}
+
 /* ════════ 2. Interaksjoner (375) ════════ */
 {
   // 2a. Verdier holdes på tvers av steg · Lagre aktiv bare ved endring · PUT-innhold
   const { ctx, page, m, errs } = await ny({ bredde: 375, mock: {} });
   sjekk(await page.$eval('#dv2Lagre', e => e.disabled), 'Lagre er deaktivert uten endringer');
-  sjekk(await synlig(page, '#dv2Neste') && !(await synlig(page, '#dv2Lagre')) && await synlig(page, '#dv2Tilbake'), 'Steg 1: «← Tilbake» + «Neste →», ingen lagre-knapp');
+  // Runde 2 (23.10.2026): ingen «← Tilbake» på første steg — ikke en deaktivert knapp, den står ikke der.
+  sjekk(await synlig(page, '#dv2Neste') && !(await synlig(page, '#dv2Lagre')) && !(await synlig(page, '#dv2Tilbake')), 'Steg 1: bare «Neste →» — ingen «← Tilbake», ingen lagre-knapp');
   sjekk(!(await synlig(page, '#dv2Hjelpelinje')), 'Siden er live: ingen hjelpelinje');
   await page.fill('#dv2Tagline', 'Ny spesialitet æøå');
   sjekk(!(await page.$eval('#dv2Lagre', e => e.disabled)), 'Lagre blir aktiv ved endring');
@@ -264,6 +294,23 @@ if (!RASK) {
   sjekk(await verdi(page,'#dv2Fonter')==='bebas','Fontvalg i dropdown oppdateres umiddelbart');
   sjekk(await page.locator('#dv2FontProve').textContent()==='Grand Barber','Viser barberens sjappenavn');
   sjekk(/BebasNeue/.test(await page.locator('#dv2FontProve').evaluate(e=>getComputedStyle(e).fontFamily)),'Valgt font brukes på navnet');
+  // Dashbordets egen tekst bruker aldri Fraunces — bare prøven av barberens valg (#dv2FontProve) kan gjøre det.
+  await page.selectOption('#dv2Fonter','fraunces');await page.waitForTimeout(500);
+  const fr=await page.evaluate(()=>[...document.querySelectorAll('body *')].filter(e=>!e.closest('#dv2FontProve')&&e.offsetParent!==null&&/Fraunces/i.test(getComputedStyle(e).fontFamily)).map(e=>e.tagName+'.'+e.className).slice(0,5));
+  sjekk(!fr.length,'Ingen dashbordtekst i Fraunces utenom fontprøven',fr.join(', '));
+  // Alle seks fontene LASTER (FontFace-status) og er forskjellige filer — en stand-in eller 404 gir NEI. (23.10.2026: Oswald,
+  // Josefin Sans og Jost var stand-ins i mocken og så ut som Bebas/Plus Jakarta i skjermbildene.)
+  const fl=await page.evaluate(()=>[...document.fonts].filter(f=>/PlusJakartaSans|BebasNeue|Fraunces|Oswald|JosefinSans|Jost/.test(f.family)).map(f=>f.family.replace(/['"]/g,'')+':'+f.status));
+  sjekk(['PlusJakartaSans','BebasNeue','Fraunces','Oswald','JosefinSans','Jost'].every(n=>fl.includes(n+':loaded')),'Alle seks fontene lastes (FontFace loaded)',fl.join(', '));
+  // Hver font er lastet (document.fonts.check) og er den som faktisk brukes på prøven når den er valgt. Ikke bredder:
+  // to ulike fonter kan måle likt ved tilfeldighet (Jakarta og Fraunces ga begge 260 px, 23.10.2026).
+  const FAM={jakarta:['PlusJakartaSans',700],bebas:['BebasNeue',400],fraunces:['Fraunces',600],oswald:['Oswald',600],josefin:['JosefinSans',700],jost:['Jost',600]};
+  // Ikke document.fonts.check: dashbordet har også v1-fontvelgerens Fraunces fra Google Fonts (ulastet til den brukes), og check()
+  // krever at ALLE treff er lastet. Sjekk at fonten v2-prøven laster selv (FontFace med samme familie; vekten kommer fra valg.fonter) har status loaded.
+  const ikkeLastet=await page.evaluate(F=>Object.values(F).filter(([n,w])=>![...document.fonts].some(f=>f.family.replace(/['"]/g,'')===n&&f.status==='loaded')).map(([n])=>n),FAM);
+  sjekk(!ikkeLastet.length,'Alle seks fontene er lastet (FontFace loaded)',ikkeLastet.join(', '));
+  const brukt=[];for(const [k,[n]] of Object.entries(FAM)){await page.selectOption('#dv2Fonter',k);await page.waitForTimeout(150);const ff=await page.$eval('#dv2FontProve',el=>getComputedStyle(el).fontFamily.split(',')[0].replace(/['"]/g,'').trim());if(ff!==n)brukt.push(k+'→'+ff);}
+  sjekk(!brukt.length,'Prøven bruker valgt font for alle seks',brukt.join(', '));
   sjekk(!errs.length,'Fontdropdown uten JS-feil',errs.join('; '));await ctx.close();
 }
 {
@@ -282,7 +329,7 @@ if (!RASK) {
   sjekk(m.kall.filter(k => k.metode === 'DELETE').length === 0, 'Sletting krever bekreftelse (ingen DELETE før «Slett bildet»)');
   await page.click('.dv2-dialog .farlig'); await page.waitForTimeout(500);
   sjekk(m.kall.filter(k => k.metode === 'DELETE').length === 0 && await page.$$eval('#dv2Galleri .flis', f => f.length) === 2, 'Fjern fra utkast etter bekreftelse, uten å slette live');
-  sjekk((await page.$eval('#dv2Sek2 .ingress', e => e.textContent)).includes('ferdig ut også uten'), 'Steget sier at siden ser ferdig ut uten bilder');
+  sjekk((await page.$eval('#dv2Sek2 .ingress', e => e.textContent)).includes('ferdig uten'), 'Steget sier at siden er ferdig uten bilder');
   await ctx.close();
 }
 {

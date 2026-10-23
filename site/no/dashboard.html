@@ -68,6 +68,11 @@
   .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
 
   .top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid var(--line)}
+  /* Stablet (fitShopnavn): navnet på egen linje, bookinglenka på linja under. Brukes når navnet ikke får plass ved siden av
+     lenka — ellers ble begge avkortet side om side på 320. */
+  .top.stablet{flex-wrap:wrap;row-gap:4px}
+  .top.stablet .dash-brand{flex:1 1 100%}
+  .top.stablet .header-lenke{flex:1 1 100%;max-width:none}
   /* Butikknavn i headeren (der ordmerket sto) — 14px halvfet, brødtekst-/etikett-nivå (ned fra
      ordmerkets 21px). white-space:nowrap: aldri to linjer. For NORMALE navn er det rikelig plass og
      bookinglenka trunkerer først (den krymper). Men et patologisk langt salongnavn med flex-shrink:0
@@ -1609,6 +1614,15 @@
   .kt-lenke{text-decoration:none;color:inherit}
   .kt-lenke .kt-etikett{flex:1}
   .kt-pil{color:var(--mut);font-size:20px;line-height:1}
+  /* «Ideer og ønsker»: dempet rad som foldes ut. Etiketten dempet (ikke en hovedhandling); pila snus når den er åpen. */
+  .kt-ide>summary{list-style:none;cursor:pointer;border-top:0}   /* ikke .kt-lenke: raden er ingen lenke, den folder ut feltet */
+  .kt-ide>summary:hover{background:rgba(127,127,127,.06)}
+  .kt-ide>summary:focus-visible{outline:2px solid var(--info);outline-offset:-2px;border-radius:6px}
+  .kt-ide>summary::-webkit-details-marker{display:none}
+  .kt-ide>summary .kt-etikett{color:var(--ink-2);font-weight:500}
+  .kt-ide>summary .kt-pil{transition:transform .15s ease}
+  .kt-ide[open]>summary .kt-pil{transform:rotate(90deg)}
+  @media (prefers-reduced-motion:reduce){ .kt-ide>summary .kt-pil{transition:none} }
   .kt-seg{display:inline-flex;flex-shrink:0;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:2px}
   .kt-seg button{appearance:none;border:0;background:0;font:inherit;font-size:13px;font-weight:600;color:var(--mut);padding:0 16px;border-radius:7px;cursor:pointer;min-height:40px}
   .kt-seg button[aria-checked="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line-2)}
@@ -2813,16 +2827,22 @@
             <p class="idea-err" id="fbErr-konto-support"></p>
           </div>
 
-          <!-- 3. ØNSKE — type:'idea'. Samme boks som på «Din side»; markupen er duplisert
-               (to tekstfelt kan ikke være samme node), men handleren er det IKKE. -->
-          <p class="block-h" id="fbLbl-konto-ide" style="margin-top:26px">Ideer &amp; ønsker</p>
-          <p class="block-s">Ønsker du en ny funksjon, farge eller layout? Send oss, vi leser alt.</p>
-          <div class="ideacard ideacard-flat">
-            <textarea id="fbBox-konto-ide" aria-labelledby="fbLbl-konto-ide"></textarea>
-            <div class="savebar"><button class="btn" id="fbSend-konto-ide">Send</button><span class="saved" id="fbSaved-konto-ide">Sendt &#10003;</span></div>
-            <p class="idea-err" id="fbErr-konto-ide"></p>
           </div>
-          </div>
+        </div>
+        <!-- 3. ØNSKE — type:'idea'. En dempet rad som foldes ut (22.10.2026: flyttet ut av «Din side»-flyten for v2-barbere).
+             Markupen er duplisert fra «Din side» (to tekstfelt kan ikke være samme node), men handleren er det IKKE. -->
+        <div class="kt-kort">
+          <details class="kt-ide">
+            <summary class="kt-rad"><span class="kt-rad-topp"><span class="kt-etikett" id="fbLbl-konto-ide">Ideer og ønsker</span><span class="kt-pil" aria-hidden="true">›</span></span></summary>
+            <div class="kt-rad kt-rad-blokk">
+              <p class="block-s">Ønsker du en ny funksjon, farge eller layout? Send oss, vi leser alt.</p>
+              <div class="ideacard ideacard-flat">
+                <textarea id="fbBox-konto-ide" aria-labelledby="fbLbl-konto-ide"></textarea>
+                <div class="savebar"><button class="btn" id="fbSend-konto-ide">Send</button><span class="saved" id="fbSaved-konto-ide">Sendt &#10003;</span></div>
+                <p class="idea-err" id="fbErr-konto-ide"></p>
+              </div>
+            </div>
+          </details>
         </div>
       </section>
 
@@ -7604,6 +7624,7 @@ function settHeaderLenke(b){
     var k=boks.querySelector('.pub-copy'); if(k)k.classList.add('header-kopi'); // → «Lenke kopiert»
     boks.hidden=false;
   } else { boks.textContent=''; boks.hidden=true; }
+  fitShopnavn();   // lenka tar plass i toppen: navnet måles på nytt (stables ved behov)
 }
 
 // ── Butikknavn: krymp-først-ellipsis-sist (samme prinsipp som bookingsidas FIT_NAVN_JS i
@@ -7623,10 +7644,14 @@ function settHeaderNavn(navn){
 }
 function fitShopnavn(){
   var el=$("#barberName"); if(!el) return;
+  var top=el.closest('.top'), lenke=$('#headerLenke');
+  if(top) top.classList.remove('stablet');                // mål alltid side om side først
   el.style.fontSize='';                                   // reset til CSS-verdien (14px)
   var normal=parseFloat(getComputedStyle(el).fontSize)||14;
   var avail=el.clientWidth, need=el.scrollWidth;
   if(need<=avail+1) return;                               // passer på full størrelse
+  // Får ikke plass ved siden av bookinglenka: lenka på egen linje under FØR fonten krympes (aldri to «…» side om side).
+  if(top && lenke && !lenke.hidden){ top.classList.add('stablet'); avail=el.clientWidth; need=el.scrollWidth; if(need<=avail+1) return; }
   var size=Math.max(FIT_MIN, normal*avail/Math.max(1,need)*0.98);
   el.style.fontSize=size+'px';                            // for smalt på gulvet → CSS-ellipse overtar
 }

@@ -24,8 +24,8 @@ export const FONTER = [
   { key: 'josefin',  navn: 'Josefin Sans',      family: "'JosefinSans'",     url: 'https://api.trybarberhq.com/fonts/JosefinSans.woff2',     vekt: 600 },
   { key: 'jost',     navn: 'Jost',              family: "'Jost'",            url: 'https://api.trybarberhq.com/fonts/Jost.woff2',            vekt: 600 },
 ];
-// Filene til de tre nye fontene finnes ikke i backend ennå: stand-in (annen skrift) slik at listen kan vurderes i full lengde.
-const STANDIN = { 'Oswald.woff2': 'BebasNeue.woff2', 'JosefinSans.woff2': 'PlusJakartaSans.woff2', 'Jost.woff2': 'PlusJakartaSans.woff2' };
+// Fontfilene er kopier av backendens fonts/*.woff2 (origin/main, 23.10.2026) — alle seks, ingen stand-ins. Før lå Oswald,
+// Josefin Sans og Jost som stand-ins (Bebas / Plus Jakarta), så de SÅ like ut i skjermbildene uten at noe var feil i prod.
 
 export const MAKS = { shop: 100, tagline: 60, address: 200, bio: 2000, om: 4000, bilder: { portrett: 1, hero: 1, galleri: 10 } };
 const AKSENTER = [{ key: 'blaa', hex: '#0071e3' }, { key: 'gull', hex: '#b08c32' }, { key: 'roed', hex: '#b83a42' }, { key: 'egen', hex: null }];
@@ -130,7 +130,7 @@ export async function installerDinSideMock(page, opts = {}) {
       m.fontForesp++;
       if (fontModus === 'feil') return route.fulfill({ status: 404, body: 'finnes ikke' });
       if (fontModus === 'sen') await new Promise(r => setTimeout(r, opts.fontForsinkelse || 1800));
-      const f = path.join(HER, 'fonts', STANDIN[path.basename(p)] || path.basename(p));
+      const f = path.join(HER, 'fonts', path.basename(p));
       return fs.existsSync(f) ? route.fulfill({ status: 200, contentType: 'font/woff2', headers: { 'access-control-allow-origin': '*' }, body: fs.readFileSync(f) }) : route.fulfill({ status: 404, body: '' });
     }
 
