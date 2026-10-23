@@ -1074,6 +1074,15 @@
   .crop-aspekt-hint{font-size:12px;color:#b9b9b9;line-height:1.4}
   .crop-canvas-wrap{width:100%;max-height:60vh;overflow:hidden;border-radius:10px;background:#111;display:flex;align-items:center;justify-content:center}
   .crop-canvas-wrap img{display:block;max-width:100%;max-height:60vh}
+  /* Lastetilstand: til Cropper er klar (ready) står flaten i fast høyde med en rolig puls og «Laster bildet …» —
+     ellers kollapset dialogen til en tom, lav boks mens originalen lastet. Lagre er låst i samme vindu. */
+  .crop-canvas-wrap{position:relative}
+  .crop-canvas-wrap.laster{min-height:min(60vh,360px);animation:cropPuls 1.4s ease-in-out infinite}
+  .crop-canvas-wrap.laster img{visibility:hidden;position:absolute}
+  .crop-laster{display:none;margin:0;font-size:14px;color:#b9b9b9}
+  .crop-canvas-wrap.laster .crop-laster{display:block}
+  @keyframes cropPuls{0%,100%{background:#111}50%{background:#1c1c1c}}
+  @media (prefers-reduced-motion:reduce){ .crop-canvas-wrap.laster{animation:none} }
   .crop-actions{display:flex;gap:10px;justify-content:flex-end}
   .crop-btn-cancel{padding:10px 22px;border-radius:8px;border:1.5px solid #444;background:transparent;color:#fff;font-size:14px;font-weight:500;cursor:pointer}
   .crop-btn-cancel:hover{border-color:#888}
@@ -2223,6 +2232,7 @@
       </div>
       <div class="crop-canvas-wrap">
         <img id="cropImg" crossorigin="anonymous" alt="Beskjær bilde">
+        <p class="crop-laster" id="cropLaster" role="status">Laster bildet …</p>
       </div>
       <div class="crop-actions">
         <button class="crop-btn-cancel" id="cropCancel">Avbryt</button>
@@ -5175,7 +5185,7 @@ document.addEventListener('click',e=>{if(!_slotPopup.contains(e.target))_closeSl
 function _closeCropModal(){
   if(_cropper){_cropper.destroy();_cropper=null;}
   document.getElementById('cropModal').classList.remove('open');
-  var ci=document.getElementById('cropImg'); ci.onload=null; ci.onerror=null; ci.src=''; // nuller handlere før src='' → ingen spøkelses-onerror
+  var ci=document.getElementById('cropImg'); ci.parentElement.classList.remove('laster'); ci.onload=null; ci.onerror=null; ci.src=''; // nuller handlere før src='' → ingen spøkelses-onerror
   document.getElementById('cropErr').textContent='';
 }
 // Gjenopprett lagret utsnitt UTEN å røre crop-boksen. iPhone-modellen: boksen er fast (maks,
@@ -5208,7 +5218,9 @@ function _openCropModal(imgId,slot,fallbackSrc){
   const imgEl=document.getElementById('cropImg');
   imgEl.style.display=''; // nullstill ev. skjuling fra en tidligere onerror
   document.getElementById('cropErr').textContent='';
-  document.getElementById('cropSave').disabled=false;
+  // Lagre er låst til Cropper er klar (ready): et trykk før bildet er lastet ga en stille no-op og en modal som ble stående.
+  document.getElementById('cropSave').disabled=true;
+  imgEl.parentElement.classList.add('laster');   // «Laster bildet …» til bildet er lastet (onload) / onerror
   if(_cropper){_cropper.destroy();_cropper=null;}
   const ratio=slot==='portrett'?1:slot==='hero'?9/19.5:3/4;
   // Bevar original + re-crop fra original: last originalUrl når backend gir den (ny backend), ellers
@@ -5221,6 +5233,8 @@ function _openCropModal(imgId,slot,fallbackSrc){
   const badge=document.getElementById('cropAspektBadge');
   if(badge) badge.textContent=slot==='portrett'?'Portrett 1:1':slot==='hero'?'Hero 9:19,5':'Galleri 3:4';
   imgEl.onload=function(){
+    // Lastetilstanden av FØR Cropper bygges: Cropper måler beholderen ved oppstart, og minstehøyden ville endret geometrien.
+    imgEl.parentElement.classList.remove('laster');
     // iPhone-modell: fast crop-boks i slottens aspekt (fyller modalen, ikke dragbar/skalerbar), bildet
     // flyttes og zoomes BAK boksen (dragMode:'move', zoomOnWheel/Touch default på). viewMode:3 tvinger
     // lerretet (bildet) til ALLTID å fylle containeren → zoom-gulv = bildet dekker boksen fullt, ingen
@@ -5229,13 +5243,14 @@ function _openCropModal(imgId,slot,fallbackSrc){
     // innpasset lerret ved et bredt bilde — boksen ville ikke fylt modalen.)
     _cropper=new Cropper(imgEl,{viewMode:3,dragMode:'move',aspectRatio:ratio,autoCropArea:1,
       cropBoxMovable:false,cropBoxResizable:false,toggleDragModeOnDblclick:false,background:false,responsive:true,
-      ready:function(){ _gjenopprettUtsnitt(cropRect); }});
+      ready:function(){ _gjenopprettUtsnitt(cropRect); document.getElementById('cropSave').disabled=false; }});
   };
   imgEl.onerror=function(){
     // Blindvei-vakt: laster src ikke (404 for bilde uten original, R2-5xx, nettverksbrudd), fyrer
     // onload aldri → Cropper initialiseres aldri, og «Lagre» ville vært en stille no-op på tom modal.
     // Vis feil og lås knappen i stedet for å la barberen stirre på en tom flate.
     imgEl.style.display='none'; // skjul det brukne bilde-ikonet + alt-teksten
+    imgEl.parentElement.classList.remove('laster');   // feilteksten under tar over; ingen evig «Laster»
     var err=document.getElementById('cropErr'); if(err)err.textContent='Kunne ikke laste bildet. Lukk og prøv igjen, eller last opp på nytt.';
     var save=document.getElementById('cropSave'); if(save)save.disabled=true;
   };
