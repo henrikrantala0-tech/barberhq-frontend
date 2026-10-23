@@ -3804,6 +3804,7 @@ function settHandlingsLaas(host){
   host.classList.add('handlingslaas');
   host.querySelectorAll('input,select,textarea,button').forEach(function(el){
     if(el.classList.contains('acc-head'))return;        // seksjonen skal kunne åpnes/lukkes og leses
+    if(el.matches('[data-billing-retry]'))return;      // «Prøv igjen» ved billing-feil: planen er ukjent (→ låst), men knappen MÅ virke for å hente den
     if(!el.disabled){ el.disabled=true; el.setAttribute('data-laas-disabled','1'); }
   });
   host.querySelectorAll('input[type=checkbox]').forEach(visBryter);   // låst → deriv AV (dataset.verdi bevart)

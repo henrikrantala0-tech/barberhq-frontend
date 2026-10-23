@@ -14,6 +14,8 @@
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
+// Hver påstand går gjennom jn(): skriver JA/NEI som før, og teller NEI så scriptet avslutter med exit 1 (før var exit alltid 0).
+let antallNei = 0; const jn = ok => { if (!ok) antallNei++; return ok ? 'JA' : 'NEI'; };
 
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = path.resolve(import.meta.dirname, '../../.render-ut');
@@ -186,9 +188,9 @@ const okVekstFunk = funk.filter(r=>r.variant!=='basis').every(r => !r.overlay &&
 // overlay — foreldet etter at basis-skjermingen gikk over til maskerte rader.)
 const okBasisMal  = mal.filter(r=>r.variant==='basis').every(r => r.maskert || !r.vises);
 const okVekstMal  = mal.filter(r=>r.variant!=='basis').every(r => !r.overlay);
-console.log('\nFunksjons-seksjoner Basis (badge + ingen overlay + kontroller disabled + acc-head åpnbar):', okBasisFunk?'JA':'NEI');
-console.log('Funksjons-seksjoner Vekst/Trial (ingen badge, ingen overlay, kontroller enabled):', okVekstFunk?'JA':'NEI');
-console.log('Måling Basis (maskert/skjult — ingen ekte tall):', okBasisMal?'JA':'NEI', '| Måling Vekst/Trial (ingen overlay):', okVekstMal?'JA':'NEI');
+console.log('\nFunksjons-seksjoner Basis (badge + ingen overlay + kontroller disabled + acc-head åpnbar):', jn(okBasisFunk));
+console.log('Funksjons-seksjoner Vekst/Trial (ingen badge, ingen overlay, kontroller enabled):', jn(okVekstFunk));
+console.log('Måling Basis (maskert/skjult — ingen ekte tall):', jn(okBasisMal), '| Måling Vekst/Trial (ingen overlay):', jn(okVekstMal));
 console.log('JS-feil totalt:', rad.filter(r=>r.jsfeil!=='ingen').length);
 
 // ── TOGGLE-BEVIS (Vekst): rebooking-bryter + intervall-piller lagrer FAKTISK ────
@@ -227,7 +229,7 @@ console.log('\n=== Toggle-bevis (Vekst, betalt) ===');
   console.log('  Pille : PUT sendt=', !!putPille, JSON.stringify(putPille||null), '| aria-selected etter=', pilleValgt, '| holder etter re-render=', holderPille);
   const okToggle = putBryter && putBryter.sms_rebooking_enabled===true && etterToggle.checked===true && etterToggle.errSkjult===true && !etterToggle.badge && holderBryter===true
     && putPille && putPille.rebooking_interval_days===45 && pilleValgt==='true' && holderPille==='true' && errs.length===0;
-  console.log('  TOGGLE-BEVIS OK (PUT ut + ok + holder + ingen rollback/403/badge):', okToggle?'JA':'NEI');
+  console.log('  TOGGLE-BEVIS OK (PUT ut + ok + holder + ingen rollback/403/badge):', jn(okToggle));
   await page.close();
 }
 
@@ -251,7 +253,7 @@ console.log('\n=== 403-test (backend-gate, rebooking-bryter på Vekst-UI) ===');
   await kryssKlipp(page, '#accRebook', `${OUT}/skjold-403-rebook-375.png`);
   console.log('  feilfelt synlig:', m.synlig, '| tekst:', JSON.stringify(m.tekst));
   console.log('  har lås-lenke:', m.harLenke, '| generisk:', m.erGenerisk, '| bryter rullet tilbake:', m.rullTilbake);
-  console.log('  403-OK (lås-lenke + ikke generisk + rollback + 0 JS-feil):', (m.harLenke && !m.erGenerisk && m.rullTilbake && errs.length===0)?'JA':'NEI');
+  console.log('  403-OK (lås-lenke + ikke generisk + rollback + 0 JS-feil):', jn((m.harLenke && !m.erGenerisk && m.rullTilbake && errs.length===0)));
   await page.close();
 }
 
@@ -312,20 +314,24 @@ console.log('\n=== RACE-ASSERT (deep-link #vekst, Basis, treg billing) ===');
   const ok = treff===null && !slutt.leak && errs.length===0;
   console.log(`  samples=${samples} · lekkasje i race-vinduet=${treff===null?'NEI':('JA @ sample '+treff)} · lekkasje etter billing=${slutt.leak}`);
   console.log(`  #wbList til slutt="${slutt.wb.replace(/\\s+/g,' ').trim().slice(0,55)}"`);
-  console.log('  RACE-ASSERT OK (0 kundenavn/tlf i DOM i noe vindu):', ok?'JA':'NEI');
+  console.log('  RACE-ASSERT OK (0 kundenavn/tlf i DOM i noe vindu):', jn(ok));
   await page.close();
 }
 
 // ── BILLING-FEIL-ASSERT: en fetch-feil skal ALDRI gi permanent «Laster …» ────────────
 // Vekst deep-link, /billing/status = 500 → gatede seksjoner viser synlig feil + «Prøv igjen»
 // (ikke «Laster», ingen kundedata). Retry med billing 200 → data laster. Biter hvis fiksen mangler.
-console.log('\n=== BILLING-FEIL-ASSERT (Vekst deep-link, billing 500 → retry) ===');
+// Kjøres for begge planer etter «Prøv igjen»: Vekst → de fire handlings-seksjonene åpnes og data lastes;
+// Gratis (basis) → de fire er låst med «Vekst»-merke og ingen kundedata. I begge tilfeller er feilmeldingen borte.
+const HANDLING_HOSTS=['#accRebook','#accWinback','#accVerv','#accLoyal'];
+for (const plan of ['vekst','basis']) {
+console.log(`\n=== BILLING-FEIL-ASSERT (deep-link #vekst, billing 500 → «Prøv igjen» → ${plan}) ===`);
 {
   let billingOk=false;
   const router = async route => {
     const req=route.request(); const p=new URL(req.url()).pathname;
     const json=o=>route.fulfill({status:200,contentType:'application/json',body:JSON.stringify(o)});
-    if(p==='/api/dashboard/billing/status'){ if(!billingOk) return route.fulfill({status:500,contentType:'application/json',body:'{"error":"x"}'}); return json(billing('vekst')); }
+    if(p==='/api/dashboard/billing/status'){ if(!billingOk) return route.fulfill({status:500,contentType:'application/json',body:'{"error":"x"}'}); return json(billing(plan)); }
     if(p==='/api/dashboard/profile') return json(PROFILE);
     if(p==='/api/dashboard/design') return json({palette:'minimal',font:'fraunces',layout:'showcase',mode:'mork'});
     if(p==='/api/dashboard/settings') return json({sms_paaminnelse_enabled:true,sms_rebooking_enabled:true,rebooking_interval_days:35,referral_discount_pct:20,referral_reward_recipient:'begge',loyalty_enabled:true,loyalty_threshold:10,loyalty_pct:100,loyalty_count_history:false});
@@ -351,20 +357,33 @@ console.log('\n=== BILLING-FEIL-ASSERT (Vekst deep-link, billing 500 → retry) 
     const wb=g('#wbList'),vv=g('#vervSendList'),lo=g('#loyalOversikt'); const alle=wb+vv+lo;
     return { visFeil: /Kunne ikke laste/.test(wb)&&/Kunne ikke laste/.test(vv)&&/Kunne ikke laste/.test(lo),
       retryKnapper: document.querySelectorAll('[data-billing-retry]').length,
+      // Ukjent plan = handlingslåst, men «Prøv igjen» MÅ være klikkbar (disabled-knapp fyrer ingen klikk — det var feilen)
+      retryDeaktivert: [...document.querySelectorAll('[data-billing-retry]')].filter(b=>b.disabled).length,
       laster: /Laster/.test(alle), kundedata: /Ola Nordmann|99887766/.test(alle) };
   });
   await kryssKlipp(page,'#accWinback',`${OUT}/billingfeil-375.png`);
-  console.log(`  Fase1 (billing 500): feil+retry=${feil.visFeil} retry-knapper=${feil.retryKnapper}(skal 3) · «Laster»=${feil.laster}(skal false) · kundedata=${feil.kundedata}(skal false)`);
+  console.log(`  Fase1 (billing 500): feil+retry=${feil.visFeil} retry-knapper=${feil.retryKnapper}(skal 3) deaktiverte=${feil.retryDeaktivert}(skal 0) · «Laster»=${feil.laster}(skal false) · kundedata=${feil.kundedata}(skal false)`);
   billingOk=true;
   await page.evaluate(()=>{ var b=document.querySelector('[data-billing-retry]'); if(b)b.click(); }); // delegert handler; knappen kan ligge i kollapset accordion
   await page.waitForTimeout(1300);
-  const etter = await page.evaluate(()=>{ const wb=(document.querySelector('#wbList')||{}).textContent||'';
-    return { wb, feilStår:/Kunne ikke laste/.test(wb), lasterStår:/Laster …/.test(wb), harData:/Ola Nordmann/.test(wb) }; });
-  const ok = feil.visFeil && feil.retryKnapper===3 && !feil.laster && !feil.kundedata
-    && etter.harData && !etter.feilStår && !etter.lasterStår && errs.length===0;
-  console.log(`  Fase2 (retry, billing 200): #wbList="${etter.wb.replace(/\s+/g,' ').trim().slice(0,45)}" (data=${etter.harData}, feil borte=${!etter.feilStår})`);
-  console.log('  BILLING-FEIL-ASSERT OK (feil+retry ved feil, INGEN «Laster»/kundedata; retry laster data):', ok?'JA':'NEI');
+  const etter = await page.evaluate(hosts=>{ const g=s=>(document.querySelector(s)||{}).textContent||'';
+    const wb=g('#wbList'), alle=wb+g('#vervSendList')+g('#loyalOversikt');
+    const seksjoner=hosts.map(h=>{ const el=document.querySelector(h); return { h, laas:!!(el&&el.classList.contains('handlingslaas')),
+      badge:!!(el&&el.querySelector('.laas-badge')), laaste:el?el.querySelectorAll('[data-laas-disabled]').length:-1,
+      // åpne kontroller utenom trekkspill-hodet (låst seksjon skal ha 0; en seksjon kan ha 0 kontroller totalt, f.eks. vinn-tilbake med lås-note)
+      aapne:el?[...el.querySelectorAll('input,select,textarea,button')].filter(k=>!k.disabled&&!k.classList.contains('acc-head')).length:-1 }; });
+    return { wb, feilStår:/Kunne ikke laste/.test(alle), retryIgjen:document.querySelectorAll('[data-billing-retry]').length,
+      lasterStår:/Laster …/.test(wb), harData:/Ola Nordmann/.test(alle), seksjoner }; }, HANDLING_HOSTS);
+  const erVekst=plan==='vekst';
+  const seksjonerOk=etter.seksjoner.every(x=>erVekst ? (!x.laas && !x.badge && x.laaste===0) : (x.laas && x.badge && x.aapne===0));
+  const ok = feil.visFeil && feil.retryKnapper===3 && feil.retryDeaktivert===0 && !feil.laster && !feil.kundedata
+    && !etter.feilStår && etter.retryIgjen===0 && !etter.lasterStår && seksjonerOk && (erVekst ? etter.harData : !etter.harData) && errs.length===0;
+  console.log(`  Fase2 (retry, billing 200 ${plan}): #wbList="${etter.wb.replace(/\s+/g,' ').trim().slice(0,45)}" (data=${etter.harData}, feil borte=${!etter.feilStår}, retry-knapper igjen=${etter.retryIgjen})`);
+  console.log('  Seksjoner:', etter.seksjoner.map(x=>`${x.h} lås=${x.laas} merke=${x.badge} låste=${x.laaste} åpne=${x.aapne}`).join(' · '), seksjonerOk?'— riktig for planen':'— FEIL for planen');
+  console.log(`  BILLING-FEIL-ASSERT OK (${plan}: klikkbar retry ved feil, ingen «Laster»/kundedata; etter retry riktig lås/data og feil borte):`, jn(ok));
   await page.close();
+}
 }
 
 await browser.close(); server.close();
+if (antallNei) { console.log(`\n${antallNei} påstand(er) svarte NEI.`); process.exitCode = 1; }
