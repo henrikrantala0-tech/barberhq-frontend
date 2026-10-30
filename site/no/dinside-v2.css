@@ -76,16 +76,21 @@ html[data-theme="dark"] .dv2-steg button[aria-selected="true"]{background:color-
 .dv2-fld textarea{resize:vertical;min-height:calc(var(--dv2-felt) * 2);padding:var(--dv2-s2)}
 .dv2-fld input,.dv2-fld textarea{scroll-margin-top:140px;scroll-margin-bottom:var(--dv2-s3)}
 body.fokus .dv2-fld input,body.fokus .dv2-fld textarea{scroll-margin-bottom:calc(var(--dv2-bar-h,77px) + var(--dv2-s3))}
-.dv2-fld input:focus,.dv2-fld textarea:focus,.dv2-hex:focus{outline:none;border-color:var(--info);box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 18%,transparent)}
-.dv2-fld.har-feil input,.dv2-fld.har-feil textarea,.dv2-hex[aria-invalid="true"]{border-color:var(--bad)}
+/* #dinsideV2 foran: feltene har sin egen ring (kant + skygge) og må slå «#dinsideV2 :focus-visible» (1,1,0) over, ellers to ringer. */
+#dinsideV2 .dv2-fld input:focus,#dinsideV2 .dv2-fld textarea:focus,#dinsideV2 .dv2-hex:focus{outline:none;border-color:var(--info);box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 18%,transparent)}
+#dinsideV2 .dv2-fld.har-feil input,#dinsideV2 .dv2-fld.har-feil textarea,#dinsideV2 .dv2-hex[aria-invalid="true"]{border-color:var(--bad)}
 .dv2-teller{float:right;font-size:var(--dv2-liten);font-weight:400;color:var(--mut);font-variant-numeric:tabular-nums}
 .dv2-teller.nær{color:var(--ink-2)}
 .dv2-teller.over{color:var(--bad)}
 .dv2-feil{font-size:var(--dv2-liten);color:var(--bad);margin:var(--dv2-s1) 0 0;line-height:1.55}
-.dv2-handle{display:flex;align-items:center;border:1px solid var(--line-2);border-radius:var(--dv2-radius);background:var(--surface);padding-left:var(--dv2-s2);min-height:var(--dv2-felt)}
+.dv2-handle{display:flex;align-items:center;gap:var(--dv2-s2);border:1px solid var(--line-2);border-radius:var(--dv2-radius);background:var(--surface);padding:0 var(--dv2-s2);min-height:var(--dv2-felt)}
 .dv2-handle:focus-within{border-color:var(--info);box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 18%,transparent)}
 .dv2-handle span{color:var(--mut);font-size:1rem}
-.dv2-handle input{border:0!important;box-shadow:none!important;background:transparent!important;min-width:0}
+/* ÉN ramme: bare wrapperen har ramme og :focus-within-ring; feltet inni er nakent. Må slå «#dinsideV2 :focus-visible»
+   (2px-ring med arvet 12px radius → to bokser, prod 30.10) og feltregelens :focus (1,2,1) — :focus-varianten har lik
+   spesifisitet og vinner fordi den står etter. */
+#dinsideV2 .dv2-handle input,#dinsideV2 .dv2-handle input:focus{-webkit-appearance:none;appearance:none;border:0;border-radius:0;background:transparent;box-shadow:none;outline:none;padding:0;min-width:0;flex:1;font-size:1rem}
+#dinsideV2 .dv2-handle input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--surface) inset;-webkit-text-fill-color:var(--ink)}
 .dv2-fld.har-feil .dv2-handle{border-color:var(--bad)}
 .dv2-gruppe{border:0;padding:0;min-width:0}   /* margin fra .dv2-del (fieldset har ellers egen) */
 .dv2-gruppe>legend{float:left;width:100%;margin-bottom:var(--dv2-s15)}

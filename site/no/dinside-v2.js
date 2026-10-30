@@ -259,7 +259,7 @@
   }
   function handle(etikett, id, nokkel) {
     return '<div class="dv2-fld dv2-del" data-felt="' + nokkel + '"><label for="' + id + '">' + etikett + '</label>' +
-      '<div class="dv2-handle"><span aria-hidden="true">@</span><input id="' + id + '" type="text" placeholder="brukernavn" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off"></div>' +
+      '<div class="dv2-handle"><span aria-hidden="true">@</span><input id="' + id + '" name="' + nokkel + '-handle" type="text" placeholder="brukernavn" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore="true" data-form-type="other"></div>' +
       '<p class="dv2-feil" role="alert" hidden></p></div>';
   }
 
