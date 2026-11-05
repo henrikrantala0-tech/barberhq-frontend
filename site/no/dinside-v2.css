@@ -8,7 +8,8 @@
      • fra 1024 px: fast telefonramme med forhåndsvisningen til høyre; under det åpner «Forhåndsvis» en fullskjermflate
    Dashbordets tokens (--ink, --mut, --line, --surface, --info …); egne farger bare i fargeprøvene og velgeren.
    Avstander fra skalaen 4/8/12/16/24/32/48 — ingen løse px utenom hårlinjer, skygger og miniatyrene i fargeprøvene.
-   Tekst: tittel 24 / tekst 15 / liten 13. Unntak: tekstfelt er 16 (under 16 zoomer iOS inn ved fokus).
+   Fanetittel, tekstfelt og «Forhåndsvis» bruker dashbordets felles klasser (.panel-h, .fld/.fld-at, .kl-select,
+   .btn-outline) — samme størrelser som de andre fanene; ikke gi dem egne verdier her. Ellers: tekst 15 / liten 13.
    Valgt (bakgrunn, farge) markeres likt: ring i --ink utenfor flaten + uthevet navn. */
 
 /* ── Grein v1/v2 ─────────────────────────────────────────────────────────────
@@ -34,7 +35,7 @@ body.sm-v2 #design .ideacard{display:none!important}   /* v2: «Ideer & ønsker�
 /* ── Knapper ─────────────────────────────────────────────────────────────── */
 .dv2-btn{appearance:none;font:inherit;font-weight:600;font-size:var(--dv2-tekst);min-height:var(--dv2-trykk);padding:0 var(--dv2-s2);border-radius:var(--dv2-radius);cursor:pointer;border:1px solid var(--line-2);background:transparent;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:var(--dv2-s1);line-height:1.2}
 .dv2-btn:hover{border-color:var(--ink)}
-.dv2-btn:focus-visible,#dinsideV2 :focus-visible,.dv2-dialog button:focus-visible,.dv2-fullfor:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+.dv2-btn:focus-visible,#dinsideV2 :focus-visible:not(input):not(textarea):not(select),.dv2-dialog button:focus-visible,.dv2-fullfor:focus-visible{outline:2px solid var(--info);outline-offset:2px}
 .dv2-btn[disabled]{opacity:.4;cursor:default}
 .dv2-btn.prim{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .dv2-btn.prim:hover{opacity:.9}
@@ -52,9 +53,7 @@ body.sm-v2 #design .ideacard{display:none!important}   /* v2: «Ideer & ønsker�
 /* ── Fast topp: tittel + «Forhåndsvis», segmentert kontroll ──────────────── */
 .dv2-fast{position:sticky;top:0;z-index:20;background:var(--bg);padding:var(--dv2-s2) 0;box-shadow:calc(var(--dv2-s1) * -1) 0 0 var(--bg),var(--dv2-s1) 0 0 var(--bg)}   /* sidekantene dekker valgt-ringer (4 px utenfor flaten) som scroller under */
 .dv2-tittelrad{display:flex;align-items:center;justify-content:space-between;gap:var(--dv2-s2);margin-bottom:var(--dv2-s2)}
-.dv2-tittelrad h2{margin:0;font-size:var(--dv2-tittel);line-height:1.2;font-weight:700;letter-spacing:-.025em;color:var(--ink)}
 .dv2-pvknapp{flex:0 0 auto}
-@media(max-width:399.98px){ .dv2-pvknapp{width:var(--dv2-trykk);padding:0} .dv2-pvtekst{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap} }
 @media(min-width:1024px){ #dinsideV2 .dv2-pvknapp{display:none} }
 /* Stegraden: én rad, fire trykkbare steg. Cellene vokser fra tekstbredden (lange navn får mer), aktivt steg er en løftet flate. */
 .dv2-steg{display:flex;gap:0;padding:var(--dv2-s05);border-radius:var(--dv2-radius);background:color-mix(in srgb,var(--ink) 6%,var(--bg))}
@@ -66,32 +65,20 @@ html[data-theme="dark"] .dv2-steg button[aria-selected="true"]{background:color-
 
 /* ── Steginnhold ─────────────────────────────────────────────────────────── */
 /* Bunnluften står på panelet (#design), se «Bunnbar» under — ikke her: det som står etter stegene havnet ellers bak baren. */
-.dv2-sek>.ingress{margin:var(--dv2-s3) 0 0;font-size:var(--dv2-tekst);color:var(--mut);line-height:1.5}
+.dv2-sek>.ingress{margin:var(--dv2-s3) 0 var(--dv2-s3);font-size:var(--dv2-tekst);color:var(--mut);line-height:1.5}
 .dv2-del{padding:0;margin:var(--dv2-s3) 0 0}
 /* Grupper (Utseende: bakgrunn / farge / font; Bilder: portrett / arbeider) skilles med én hårlinje — felt innen en gruppe gjør det ikke. */
 .dv2-sek>.dv2-del+.dv2-gruppe,.dv2-sek[data-sek="2"]>.dv2-del+.dv2-del{border-top:1px solid var(--line);padding-top:var(--dv2-s4);margin-top:var(--dv2-s4)}
-.dv2-fld>label,.dv2-fld>.etikett,.dv2-gruppe>legend,.dv2-etikett{display:block;font-size:var(--dv2-tekst);font-weight:600;color:var(--ink);margin:0 0 var(--dv2-s1);letter-spacing:-.01em;padding:0;line-height:1.4}
-.dv2-felthjelp{font-size:var(--dv2-liten);line-height:1.45;color:var(--mut);margin:calc(var(--dv2-s05) * -1) 0 var(--dv2-s1)}
-.dv2-fld input[type=text],.dv2-fld input[type=tel],.dv2-fld textarea,.dv2-hex,#dinsideV2 .dv2-fontvalg{width:100%;font:inherit;font-size:1rem;padding:0 var(--dv2-s2);min-height:var(--dv2-felt);border:1px solid var(--line-2);border-radius:var(--dv2-radius);background:var(--surface);color:var(--ink);line-height:1.5}
-.dv2-fld textarea{resize:vertical;min-height:calc(var(--dv2-felt) * 2);padding:var(--dv2-s2)}
-.dv2-fld input,.dv2-fld textarea{scroll-margin-top:140px;scroll-margin-bottom:var(--dv2-s3)}
-body.fokus .dv2-fld input,body.fokus .dv2-fld textarea{scroll-margin-bottom:calc(var(--dv2-bar-h,77px) + var(--dv2-s3))}
-/* #dinsideV2 foran: feltene har sin egen ring (kant + skygge) og må slå «#dinsideV2 :focus-visible» (1,1,0) over, ellers to ringer. */
-#dinsideV2 .dv2-fld input:focus,#dinsideV2 .dv2-fld textarea:focus,#dinsideV2 .dv2-hex:focus{outline:none;border-color:var(--info);box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 18%,transparent)}
-#dinsideV2 .dv2-fld.har-feil input,#dinsideV2 .dv2-fld.har-feil textarea,#dinsideV2 .dv2-hex[aria-invalid="true"]{border-color:var(--bad)}
-.dv2-teller{float:right;font-size:var(--dv2-liten);font-weight:400;color:var(--mut);font-variant-numeric:tabular-nums}
+.dv2-fld>.etikett,.dv2-gruppe>legend,.dv2-etikett{display:block;font-size:var(--dv2-tekst);font-weight:600;color:var(--ink);margin:0 0 var(--dv2-s1);letter-spacing:-.01em;padding:0;line-height:1.4}
+.dv2-hex{width:100%;font:inherit;font-size:1rem;padding:0 var(--dv2-s2);min-height:var(--dv2-felt);border:1px solid var(--line-2);border-radius:var(--dv2-radius);background:var(--surface);color:var(--ink);line-height:1.5}
+#dinsideV2 .fld input,#dinsideV2 .fld textarea{scroll-margin-top:140px;scroll-margin-bottom:var(--dv2-s3)}
+body.fokus #dinsideV2 .fld input,body.fokus #dinsideV2 .fld textarea{scroll-margin-bottom:calc(var(--dv2-bar-h,77px) + var(--dv2-s3))}
+#dinsideV2 .dv2-hex:focus{outline:none;border-color:var(--info);box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 18%,transparent)}
+#dinsideV2 .fld.har-feil input,#dinsideV2 .fld.har-feil textarea,#dinsideV2 .dv2-hex[aria-invalid="true"]{border-color:var(--bad)}
+.dv2-teller{float:right;font-weight:400;color:var(--mut);font-variant-numeric:tabular-nums}
 .dv2-teller.nær{color:var(--ink-2)}
 .dv2-teller.over{color:var(--bad)}
 .dv2-feil{font-size:var(--dv2-liten);color:var(--bad);margin:var(--dv2-s1) 0 0;line-height:1.55}
-.dv2-handle{display:flex;align-items:center;gap:var(--dv2-s2);border:1px solid var(--line-2);border-radius:var(--dv2-radius);background:var(--surface);padding:0 var(--dv2-s2);min-height:var(--dv2-felt)}
-.dv2-handle:focus-within{border-color:var(--info);box-shadow:0 0 0 3px color-mix(in srgb,var(--info) 18%,transparent)}
-.dv2-handle span{color:var(--mut);font-size:1rem}
-/* ÉN ramme: bare wrapperen har ramme og :focus-within-ring; feltet inni er nakent. Må slå «#dinsideV2 :focus-visible»
-   (2px-ring med arvet 12px radius → to bokser, prod 30.10) og feltregelens :focus (1,2,1) — :focus-varianten har lik
-   spesifisitet og vinner fordi den står etter. */
-#dinsideV2 .dv2-handle input,#dinsideV2 .dv2-handle input:focus{-webkit-appearance:none;appearance:none;border:0;border-radius:0;background:transparent;box-shadow:none;outline:none;padding:0;min-width:0;flex:1;font-size:1rem}
-#dinsideV2 .dv2-handle input:-webkit-autofill{-webkit-box-shadow:0 0 0 100px var(--surface) inset;-webkit-text-fill-color:var(--ink)}
-.dv2-fld.har-feil .dv2-handle{border-color:var(--bad)}
 .dv2-gruppe{border:0;padding:0;min-width:0}   /* margin fra .dv2-del (fieldset har ellers egen) */
 .dv2-gruppe>legend{float:left;width:100%;margin-bottom:var(--dv2-s15)}
 .dv2-gruppe>legend+*{clear:both}
@@ -136,7 +123,7 @@ body.fokus .dv2-fld input,body.fokus .dv2-fld textarea{scroll-margin-bottom:calc
 .dv2-varsel{margin:0;font-size:var(--dv2-liten);line-height:1.5;color:var(--ink-2);border-left:2px solid var(--warn);padding-left:var(--dv2-s1)}
 
 /* Font: nedtrekksliste med seks fonter, sjappenavnet vist i valgt font rett under. */
-#dinsideV2 .dv2-fontvalg{padding:0 var(--dv2-s2)}
+#dinsideV2 .dv2-fontvalg{width:100%;min-height:var(--dv2-trykk)}
 #dinsideV2 .dv2-fontprove{margin-top:var(--dv2-s2);padding:var(--dv2-s3) var(--dv2-s2);border:1px solid var(--line);border-radius:var(--dv2-radius);background:var(--surface);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:1.875rem;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
 .dv2-fontstatus{font-size:var(--dv2-liten);color:var(--mut);margin:var(--dv2-s2) 0 0;line-height:1.6}
 .dv2-fontstatus:empty{display:none}

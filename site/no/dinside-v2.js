@@ -183,8 +183,8 @@
       '<div class="dv2-grid" id="dv2Grid" hidden>' +
         '<div class="dv2-edit">' +
           '<div class="dv2-fast">' +
-            // «Forhåndsvis»: øye + tekst; under 400 px bare øyet (teksten står igjen som aria-navn), så tittelen får plassen.
-            '<div class="dv2-tittelrad"><h2 id="dv2Tittel">Din side</h2><button type="button" class="dv2-btn liten dv2-pvknapp" id="dv2SeSiden"><svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M2 12s3.6-7 10-7 10 7 10 7-3.6 7-10 7S2 12 2 12z"/><circle cx="12" cy="12" r="3"/></svg><span class="dv2-pvtekst">Forhåndsvis</span></button></div>' +
+            // Tittel og «Forhåndsvis» bruker dashbordets felles klasser (.panel-h / .btn-outline), som de andre fanene.
+            '<div class="dv2-tittelrad"><h2 class="panel-h" id="dv2Tittel">Din side</h2><button type="button" class="btn-outline dv2-pvknapp" id="dv2SeSiden">Forhåndsvis</button></div>' +
             '<div class="dv2-steg" id="dv2Steg" role="tablist" aria-label="Steg">' +
               STEG.map(function (s, i) { return '<button type="button" role="tab" id="dv2Tab' + i + '" data-steg="' + i + '" aria-controls="dv2Sek' + i + '">' + s.navn + '<span class="feilpunkt" hidden></span></button>'; }).join('') +
             '</div>' +
@@ -196,8 +196,8 @@
             felt('Adresse', 'dv2Address', 'address', '<input id="dv2Address" type="text" autocomplete="street-address" aria-describedby="dv2AddressT">') +
             felt('Kort beskrivelse', 'dv2Bio', 'bio', '<textarea id="dv2Bio" rows="3" aria-describedby="dv2BioT"></textarea>') +
             // «Mer info» = barbers.om → Om-fanen på siden (sammen med åpningstidene). Etikett/plassholder godkjent 22.10.
-            felt('Mer info', 'dv2Om', 'om', '<p class="dv2-felthjelp" id="dv2OmHjelp">Vises i Om-fanen på siden din.</p>' +
-              '<textarea id="dv2Om" rows="6" placeholder="F.eks. priser, parkering, hvordan du jobber" aria-describedby="dv2OmHjelp dv2OmT"></textarea>') +
+            felt('Mer info', 'dv2Om', 'om', '<textarea id="dv2Om" rows="6" placeholder="F.eks. priser, parkering, hvordan du jobber" aria-describedby="dv2OmHjelp dv2OmT"></textarea>' +
+              '<p class="fld-hint" id="dv2OmHjelp">Vises i Om-fanen på siden din.</p>') +
           '</section>' +
           '<section class="dv2-sek" id="dv2Sek1" data-sek="1" aria-labelledby="dv2Tab1" hidden>' +
             '<p class="ingress">Farge og skrift på siden din.</p>' +
@@ -211,7 +211,7 @@
                   '<div class="dv2-hexrad"><span class="smak" aria-hidden="true"></span><input type="text" id="dv2Hex" class="dv2-hex" inputmode="text" autocapitalize="none" autocomplete="off" spellcheck="false" maxlength="7" placeholder="#1e40af" aria-describedby="dv2HexFeil dv2Kontrast"></div></div>' +
                 '<p class="dv2-feil" id="dv2HexFeil" role="alert" hidden></p><p class="dv2-varsel" id="dv2Kontrast" role="status" hidden></p>' +
               '</div></fieldset>' +
-            '<fieldset class="dv2-gruppe dv2-del" id="dv2FontGr" data-felt="font"><legend>Skrift</legend><select class="dv2-fontvalg" id="dv2Fonter" aria-label="Skrift"></select><div class="dv2-fontprove" id="dv2FontProve" aria-label="Forhåndsvisning av sjappenavn"></div><p class="dv2-fontstatus" id="dv2FontStatus" role="status"></p></fieldset>' +
+            '<fieldset class="dv2-gruppe dv2-del" id="dv2FontGr" data-felt="font"><legend>Skrift</legend><select class="kl-select dv2-fontvalg" id="dv2Fonter" aria-label="Skrift"></select><div class="dv2-fontprove" id="dv2FontProve" aria-label="Forhåndsvisning av sjappenavn"></div><p class="dv2-fontstatus" id="dv2FontStatus" role="status"></p></fieldset>' +
           '</section>' +
           '<section class="dv2-sek" id="dv2Sek2" data-sek="2" aria-labelledby="dv2Tab2" hidden>' +
             '<p class="ingress">Valgfritt. Siden er ferdig uten.</p>' +
@@ -222,7 +222,7 @@
           '<section class="dv2-sek" id="dv2Sek3" data-sek="3" aria-labelledby="dv2Tab3" hidden>' +
             '<p class="ingress">Hvor kundene finner deg.</p>' +
             handle('Instagram', 'dv2Instagram', 'instagram') + handle('TikTok', 'dv2Tiktok', 'tiktok') + handle('Snapchat', 'dv2Snapchat', 'snapchat') +
-            '<div class="dv2-fld dv2-del" data-felt="contact_phone"><label for="dv2Telefon">Telefon</label><p class="dv2-felthjelp" id="dv2TelefonHjelp">Vises bare i bookingbekreftelsen.</p><input id="dv2Telefon" aria-describedby="dv2TelefonHjelp" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="91 23 45 67"><p class="dv2-feil" role="alert" hidden></p></div>' +
+            '<div class="fld" data-felt="contact_phone"><label for="dv2Telefon">Telefon</label><input id="dv2Telefon" aria-describedby="dv2TelefonHjelp" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="91 23 45 67"><p class="fld-hint" id="dv2TelefonHjelp">Vises bare i bookingbekreftelsen.</p><p class="fld-err" role="alert" hidden></p></div>' +
           '</section>' +
           '</div>' +
           // Fast bunnbar: én rad. Steg 1–3 «← Tilbake» + «Neste →»; siste steg «← Tilbake» + «Lagre endringer».
@@ -253,14 +253,15 @@
     el.bar = $('#dv2Bar');
     bind();
   }
+  // Tekstfeltene bruker dashbordets felles .fld (samme felt som i Konto), ikke egne størrelser.
   function felt(etikett, id, nokkel, kontroll) {
-    return '<div class="dv2-fld dv2-del" data-felt="' + nokkel + '"><label for="' + id + '">' + etikett + '<span class="dv2-teller" id="' + id + 'T" aria-hidden="true"></span></label>' +
-      kontroll + '<p class="dv2-feil" role="alert" hidden></p></div>';
+    return '<div class="fld" data-felt="' + nokkel + '"><label for="' + id + '">' + etikett + '<span class="dv2-teller" id="' + id + 'T" aria-hidden="true"></span></label>' +
+      kontroll + '<p class="fld-err" role="alert" hidden></p></div>';
   }
   function handle(etikett, id, nokkel) {
-    return '<div class="dv2-fld dv2-del" data-felt="' + nokkel + '"><label for="' + id + '">' + etikett + '</label>' +
-      '<div class="dv2-handle"><span aria-hidden="true">@</span><input id="' + id + '" name="' + nokkel + '-handle" type="text" placeholder="brukernavn" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore="true" data-form-type="other"></div>' +
-      '<p class="dv2-feil" role="alert" hidden></p></div>';
+    return '<div class="fld" data-felt="' + nokkel + '"><label for="' + id + '">' + etikett + '</label>' +
+      '<div class="fld-at"><span class="fld-at-sym" aria-hidden="true">@</span><input id="' + id + '" name="' + nokkel + '-handle" type="text" placeholder="brukernavn" autocapitalize="none" autocorrect="off" spellcheck="false" autocomplete="off" data-1p-ignore data-lpignore="true" data-bwignore="true" data-form-type="other"></div>' +
+      '<p class="fld-err" role="alert" hidden></p></div>';
   }
 
   function visLasting() {
@@ -536,7 +537,7 @@
     else if (feltNavn === 'slot' || feltNavn === 'ids') { S.bilderFeil = tekst; tegnBilderFeil(); }
     else {
       var w = $('[data-felt="' + feltNavn + '"]');
-      if (w) { w.classList.add('har-feil'); var pe = $('.dv2-feil', w); if (pe) { pe.hidden = false; pe.textContent = tekst; } }
+      if (w) { w.classList.add('har-feil'); var pe = $('.fld-err', w); if (pe) { pe.hidden = false; pe.textContent = tekst; } }
     }
     S.statusTekst = 'Ikke lagret. Se feltet som er markert' + (hopp ? ' under «' + STEG[s].navn + '».' : '.'); S.statusType = 'feil';
     tegnStatus(); tegnFeilpunkt();
@@ -547,7 +548,7 @@
   }
   function fjernFeil() {
     S.feil = null;
-    $$('.dv2-fld.har-feil').forEach(function (w) { w.classList.remove('har-feil'); var p = $('.dv2-feil', w); if (p) { p.hidden = true; p.textContent = ''; } });
+    $$('.fld.har-feil').forEach(function (w) { w.classList.remove('har-feil'); var p = $('.fld-err', w); if (p) { p.hidden = true; p.textContent = ''; } });
     $$('[data-dv2-feil]').forEach(function (p) { p.remove(); });
     var hf = $('#dv2HexFeil'); if (hf && !(S.utkast && S.utkast.utseende.custom_accent && !normHex(S.utkast.utseende.custom_accent))) { hf.hidden = true; hf.textContent = ''; }
     S.bilderFeil = ''; tegnBilderFeil();

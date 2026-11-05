@@ -194,12 +194,12 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
   await stegKnapp(page, 0);
   await lagreSiste(page); await page.waitForTimeout(500);
   sjekk(await valgtSteg(page, 3), '400: hopper til steget feltet ligger i (Kontakt)');
-  const fm = await page.$eval('[data-felt="contact_phone"] .dv2-feil', e => ({ vis: !e.hidden, tekst: e.textContent }));
+  const fm = await page.$eval('[data-felt="contact_phone"] .fld-err', e => ({ vis: !e.hidden, tekst: e.textContent }));
   sjekk(fm.vis && /ikke gyldig/.test(fm.tekst), '400: melding under telefonfeltet', JSON.stringify(fm));
   sjekk(await verdi(page, '#dv2Telefon') === '000' && await verdi(page, '#dv2Tagline') === 'Beholdes', '400: ingenting i skjemaet går tapt');
   sjekk(!(await page.$eval('#dv2Lagre', e => e.disabled)), '400: Lagre fortsatt aktiv');
   await page.fill('#dv2Telefon', '91 23 45 67');
-  sjekk(await page.$eval('[data-felt="contact_phone"] .dv2-feil', e => e.hidden), 'Feilen forsvinner når feltet endres');
+  sjekk(await page.$eval('[data-felt="contact_phone"] .fld-err', e => e.hidden), 'Feilen forsvinner når feltet endres');
   await ctx.close();
   // lokal validering av egen farge
   const c2 = await ny({ bredde: 375, mock: {} });
