@@ -302,6 +302,23 @@
   /* «Legg til pause» / «Endre pauser» — diskret knapp under dagslista. */
   .pause-btn{appearance:none;display:block;margin-top:12px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 15px;font:inherit;font-size:13px;font-weight:500;color:var(--ink);cursor:pointer}
   .pause-btn:hover{border-color:var(--line-2)}
+  /* Bookingregler under arbeidstidene: etikett venstre, bryter/select høyre. Lagres ved endring. */
+  .bk-regler{margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}
+  .bk-rad{display:flex;align-items:center;gap:12px}
+  .bk-lbl{font-size:13.5px;font-weight:600;letter-spacing:-.01em;cursor:pointer}
+  .bk-sw,.bk-select{margin-left:auto}
+  .bk-select{min-height:40px}
+  .bk-forkl{font-size:12.5px;color:var(--mut);line-height:1.5;margin:6px 0 0;max-width:46ch}
+  .bk-rad-sel{margin-top:20px}
+  .bk-status{height:18px;margin-top:8px}
+  .bk-regler .sett-err{margin:4px 0 0}
+  .bk-regler input:disabled + .sl,.bk-select:disabled{cursor:default;opacity:.55}
+  @media(max-width:719px){ .bk-select{min-height:44px} }
+  /* Under 400px: etikett over, select i full bredde — samme mønster som #loyalSett .kl-selrow. */
+  @media(max-width:400px){
+    .bk-rad-sel{flex-direction:column;align-items:stretch;gap:6px}
+    .bk-rad-sel .bk-select{margin-left:0;width:100%}
+  }
   /* Pause-modal: bunn-ark mobil / sentrert modal desktop (samme idiom som detaljflaten). */
   .pause-modal-backdrop{position:fixed;inset:0;z-index:600;background:rgba(10,10,10,.5);display:flex;align-items:flex-end;justify-content:center}
   .pause-modal-backdrop[hidden]{display:none}
@@ -2389,6 +2406,30 @@
     </div>
     <!-- Ordrett feilmelding fra PUT /hours (409 booking-kollisjon / 400 validering). -->
     <p class="pub-err" id="hoursErr"></p>
+
+    <!-- BOOKINGREGLER: lagres med en gang ved endring (GET/PUT /api/dashboard/booking-settings),
+         ikke med «Lagre arbeidstider» — derfor egen blokk under knappen. Kontrollene er av til GET
+         har lyktes (samme vern som arbeidstidene, M-6): en ukjent verdi skal ikke se lagret ut.
+         Horisont-verdiene MÅ matche backendens TILLATTE_HORISONTER. [oversettelse: sv/da/en] -->
+    <div class="bk-regler" id="bkRegler">
+      <div class="bk-rad">
+        <label class="bk-lbl" for="bkSamle">Samle bookinger</label>
+        <label class="sw bk-sw"><input type="checkbox" id="bkSamle" disabled><span class="sl"></span></label>
+      </div>
+      <p class="bk-forkl">Når du har en booking, kan kundene bare booke rett før eller rett etter den. Da slipper du lange hull mellom klippene.</p>
+      <div class="bk-rad bk-rad-sel">
+        <label class="bk-lbl" for="bkHorisont">Kunder kan booke inntil</label>
+        <select class="kl-select bk-select" id="bkHorisont" disabled>
+          <option value="7">1 uke</option>
+          <option value="14">2 uker</option>
+          <option value="21">3 uker</option>
+          <option value="28">4 uker</option>
+          <option value="60">2 måneder</option>
+        </select>
+      </div>
+      <div class="bk-status"><span class="saved" id="bkSaved">Lagret ✓</span></div>
+      <p class="sett-err" id="bkErr" hidden></p>
+    </div>
   </section>
 
   <!-- DESIGN -->
@@ -3315,6 +3356,17 @@ const api={
     // Via felles lagreRequest → aldri stille: 409/400 med {error} vises ordrett, øvrige ikke-2xx
     // (f.eks. 403) får generisk melding m/statuskode, nettverksfeil fanges. Se lagreRequest.
     return lagreRequest('/api/dashboard/hours', {days,breaks}, 'arbeidstidene');
+  },
+  // «Samle bookinger» + bookinghorisont → {cluster_bookings, booking_horizon_days}. Feil → null
+  // (kontrollene forblir av + feiltekst; ALDRI en oppdiktet verdi som ser lagret ut).
+  async bookingSettings(){
+    const r=await apiFetch('/api/dashboard/booking-settings');
+    if(!r||!r.ok)return null;
+    return r.json();
+  },
+  // Patch med ett eller begge feltene. Via lagreRequest → {ok,res}|{ok:false,error}, aldri stille.
+  async saveBookingSettings(patch){
+    return lagreRequest('/api/dashboard/booking-settings', patch, 'bookinginnstillingene');
   },
   async googleStatus(){
     const r=await apiFetch('/api/dashboard/google/status');
@@ -5052,6 +5104,59 @@ async function loadArbeidstider(){
   renderHoursList();
   loadGoogleStatus();
 }
+// ─── Bookingregler: «Samle bookinger» + «Kunder kan booke inntil» ───
+// Lagres ved endring (ingen egen knapp). _bkLagret = siste verdi backend har bekreftet; feil ruller
+// tilbake til den. Kontrollene er av til en ekte GET har lyktes, og mens en PUT er i lufta (racevakt:
+// to raske endringer skal ikke lande i svar-rekkefølge).
+var _bkLagret=null;
+function visBookingInnst(v){
+  var t=$("#bkSamle"), s=$("#bkHorisont");
+  t.checked=!!v.cluster_bookings;
+  var h=String(v.booking_horizon_days);
+  // Ukjent horisont (eldre verdi utenfor lista) → vis den som den er, ikke som et annet valg.
+  if(!s.querySelector('option[value="'+h+'"]')){
+    var o=document.createElement('option'); o.value=h; o.textContent=h+' dager'; o.dataset.ekstra='1'; s.appendChild(o);
+  }
+  s.value=h;
+}
+function bkLaas(av){ $("#bkSamle").disabled=av; $("#bkHorisont").disabled=av; }
+async function loadBookingInnst(){
+  var err=$("#bkErr");
+  bkLaas(true);
+  var v=null; try{ v=await api.bookingSettings(); }catch(_){ v=null; }
+  if(!v||typeof v.cluster_bookings!=='boolean'||v.booking_horizon_days==null){
+    _bkLagret=null;
+    $("#bkHorisont").selectedIndex=-1;   // ukjent skal SE ukjent ut — ikke «1 uke» som om det var lagret
+    err.innerHTML='Klarte ikke å laste bookingreglene. <button type="button" class="retry-lenke">Prøv igjen</button>';
+    err.hidden=false; err.querySelector('.retry-lenke').addEventListener('click',loadBookingInnst);
+    return;
+  }
+  err.hidden=true;
+  _bkLagret={cluster_bookings:v.cluster_bookings, booking_horizon_days:v.booking_horizon_days};
+  visBookingInnst(_bkLagret);
+  bkLaas(false);
+}
+async function lagreBookingInnst(patch){
+  if(!_bkLagret)return;
+  var err=$("#bkErr"), ok=$("#bkSaved");
+  bkLaas(true); err.hidden=true; ok.classList.remove("show");
+  var res; try{ res=await api.saveBookingSettings(patch); }catch(e){ res={ok:false,error:kontaktFeil(e)}; }
+  if(res.ok){
+    var j=await res.res.json().catch(()=>null);
+    if(j&&typeof j.cluster_bookings==='boolean') _bkLagret.cluster_bookings=j.cluster_bookings;
+    else if('cluster_bookings' in patch) _bkLagret.cluster_bookings=patch.cluster_bookings;
+    if(j&&j.booking_horizon_days!=null) _bkLagret.booking_horizon_days=j.booking_horizon_days;
+    else if('booking_horizon_days' in patch) _bkLagret.booking_horizon_days=patch.booking_horizon_days;
+    ok.classList.add("show"); setTimeout(()=>ok.classList.remove("show"),1800);
+  }else if(res.error){
+    err.textContent=res.error; err.hidden=false;
+  }
+  visBookingInnst(_bkLagret);   // suksess: speil backend; feil: rull tilbake til siste lagrede
+  bkLaas(false);
+}
+$("#bkSamle").addEventListener("change",function(){ lagreBookingInnst({cluster_bookings:this.checked}); });
+$("#bkHorisont").addEventListener("change",function(){ lagreBookingInnst({booking_horizon_days:Number(this.value)}); });
+
 function pauseTekst(p){return 'Pause '+(p.start||'')+'–'+(p.end||'');}
 function harPause(h){return !!(h.on&&h.breaks&&h.breaks[0]&&h.breaks[0].start&&h.breaks[0].end);}
 // Dempet pause-tekst under dagraden — kun for åpen dag med komplett pause. Ellers ingenting.
@@ -5172,7 +5277,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   if(id==="oversikt"){loadOversikt();loadAktivering();}
   if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();loadLoyalty();}
   if(id==="abonnement"){loadSmsInnstillinger();}   // Konto-bryteren deler sms_paaminnelse_enabled med Vekst
-  if(id==="tjenester"){ if(!_ulagret.svc)loadTjenester(); if(!_ulagret.timer)loadArbeidstider(); }   // ulagret → behold det barberen har skrevet
+  if(id==="tjenester"){ if(!_ulagret.svc)loadTjenester(); if(!_ulagret.timer)loadArbeidstider(); loadBookingInnst(); }   // ulagret → behold det barberen har skrevet
   // «Din side» laster alle tre trekkspillene. loadProfil FØRST — den fyller Profil-feltene
   // (navn/adresse/bio/tagline) som bor i dette panelet, før vi bruker tid på design + bilder.
   // loadProfil hentes alltid (header/slug/_lagretProfil), men fyller bare felt uten ulagrede endringer.
