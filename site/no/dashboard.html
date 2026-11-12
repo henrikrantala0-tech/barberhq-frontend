@@ -3051,7 +3051,7 @@
   .bkn .fld{max-width:none;margin-bottom:14px}
   /* Lik høyde på alle felt (dato-, klokke- og tekstfelt rendres ellers 44–47px, select 45px). */
   .bkn .fld input,.bkn .kl-select{height:46px}
-  .bkn .kl-select{display:block;width:100%;margin-left:0;padding:0 30px 0 12px;text-overflow:ellipsis}
+  .bkn .kl-select{-webkit-appearance:none;display:block;width:100%;margin-left:0;padding:0 30px 0 12px;text-overflow:ellipsis}   /* -webkit-: iOS før 15.4 kjenner bare prefikset */
   /* Klokkeslett smalt, tjenesten får resten. Valgene viser bare navnet — varigheten står i linja under. */
   .bkn-to{display:grid;grid-template-columns:104px minmax(0,1fr);gap:10px}
   .bkn-under{font-size:12px;color:var(--mut);line-height:1.45;margin:-7px 0 14px;letter-spacing:-.01em}
@@ -3060,14 +3060,22 @@
      felt viser en dempet «00:00» i stedet for nettleserens «--:--»/tomme boks. 00:00 er BARE visning: value er
      tom til barberen har valgt, så knappen er grå — en glemt 00:00 skal aldri bli en booking ved midnatt.
      .tom settes av JS (bknTidVisning) fra value. Valgt tid står i --ink (hvit i mørk modus). */
-  .bkn-tidfelt{position:relative}
+  /* iOS Safari gir input[type=time] egen innebygd stil som Playwright-WebKit (Windows) ikke har: eget native
+     oppsett (-webkit-appearance) med egen høyde, inline-flex på grunnlinja, og en ::-webkit-date-and-time-value
+     med egen marg og midtstilt tekst. På iPhone ble feltet derfor høyere enn tjenestefeltet, lå lavere og var
+     bredere enn kolonnen (dekket starten av «Velg tjeneste»). Her slås det native oppsettet av, og feltet får
+     samme mål som de andre: 46px, 1px kant, 12px innrykk, aldri bredere enn kolonnen. display:flex (blokknivå,
+     ikke inline) fjerner grunnlinje-forskyvningen; align-items holder tallet loddrett midt. Trykk åpner fortsatt
+     tidshjulet — appearance styrer bare tegningen, ikke velgeren. (*{margin:0} treffer ikke pseudoelementet.) */
+  .bkn-tidfelt{position:relative;min-width:0}
+  .bkn input[type=time]{-webkit-appearance:none;appearance:none;display:flex;align-items:center;width:100%;min-width:0;max-width:100%;height:46px;padding:0 12px;overflow:hidden;text-align:left}
   .bkn-tid-ph{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:16px;line-height:1;color:var(--mut);pointer-events:none;font-variant-numeric:tabular-nums}
   .bkn-tidfelt:not(.tom) .bkn-tid-ph{display:none}
   /* -webkit-pseudoelementene står i EGNE regler: i en selektorliste ville en nettleser som ikke kjenner dem
      (Firefox) forkastet hele regelen. */
   .bkn-tidfelt.tom input{color:transparent}
   .bkn-tidfelt.tom input::-webkit-datetime-edit{color:transparent}
-  .bkn input[type=time]::-webkit-date-and-time-value{text-align:left}   /* iOS: verdien venstrestilt, der 00:00 står */
+  .bkn input[type=time]::-webkit-date-and-time-value{margin:0;min-width:0;text-align:left}   /* iOS: ingen egen marg, venstrestilt der 00:00 står */
   /* Med mus/tastatur skrives tiden rett i feltet → nettleserens egne segmenter må synes mens det har fokus. */
   @media(pointer:fine){
     .bkn-tidfelt.tom input:focus{color:var(--ink)}
@@ -3077,7 +3085,7 @@
   /* Dato: et felt som folder ut den delte datovelgeren (BhqDatovelger, samme fil som bookingsiden) under seg.
      Velgeren styler innholdet selv (bhq-dv-*); her styles bare rammen rundt (#bkNyKal). Ingen --dv-*-variabler
      settes, så fargene er velgerens nøytrale standard (grått av tekstfargen) — aldri aksent eller blå. */
-  .bkn-datofelt{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;height:46px;padding:0 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:16px;text-align:left;cursor:pointer}
+  .bkn-datofelt{-webkit-appearance:none;appearance:none;min-width:0;display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;height:46px;padding:0 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:16px;text-align:left;cursor:pointer}
   .bkn-datofelt svg{width:18px;height:18px;flex-shrink:0;color:var(--mut)}
   .bkn-datofelt[aria-expanded="true"]{border-color:var(--mut)}
   .bkn-kal{margin:-6px 0 14px;padding:12px 10px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}

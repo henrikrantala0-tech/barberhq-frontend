@@ -251,6 +251,19 @@ for (const w of [320, 375]) {
   });
   sjekk(felt.hoyder.every(h => h === 46), `${w} alle felt er like høye (46px)`, JSON.stringify(felt.hoyder));
   sjekk(felt.tekst <= felt.plass, `${w} lengste tjenestenavn får plass i valget`, JSON.stringify(felt));
+  // Raden klokkeslett + tjeneste. Feilen fra ekte iPhone (12.11.2026) — tidsfeltet høyere, lavere og bredere enn
+  // kolonnen — kom av iOS Safaris innebygde stil for input[type=time], som Playwright-WebKit på Windows IKKE har.
+  // Geometrien under ville derfor vært grønn også før fiksen; det som faktisk vokter er at det native oppsettet
+  // er slått av (appearance:none) og at feltet er en blokk-flex. Ekte iOS sjekkes på iPhone, ikke her.
+  const rad = await page.evaluate(() => {
+    const t = document.querySelector('#bkNyTid'), s = document.querySelector('#bkNySvc'), kol = t.closest('.fld'), d = document.querySelector('#bkNyDatoKnapp');
+    const T = t.getBoundingClientRect(), S = s.getBoundingClientRect(), K = kol.getBoundingClientRect(), ts = getComputedStyle(t), ds = getComputedStyle(d), ss = getComputedStyle(s);
+    const app = c => c.webkitAppearance || c.appearance;
+    return { toppAvvik: Math.abs(T.top - S.top), innenfor: T.right <= K.right + .5 && T.right <= S.left + .5, tidApp: app(ts), tidDisplay: ts.display, svcApp: app(ss), datoApp: app(ds) };
+  });
+  sjekk(rad.toppAvvik < .6 && rad.innenfor, `${w} klokkeslett og tjeneste står på samme topp, tidsfeltet innenfor kolonnen`, JSON.stringify(rad));
+  sjekk(rad.tidApp === 'none' && rad.tidDisplay === 'flex', `${w} tidsfeltet har native oppsett slått av (appearance:none, display:flex)`, JSON.stringify(rad));
+  sjekk(rad.svcApp === 'none' && rad.datoApp === 'none', `${w} tjeneste- og datofeltet har native oppsett slått av`, JSON.stringify(rad));
 
   // 4. Overlapp — 10:45 Skin fade (→ 11:30) kræsjer med Ali 11:00–11:45
   await page.fill('#bkNyTid', '10:45'); await page.selectOption('#bkNySvc', '12'); await page.fill('#bkNyNavn', 'Jonas Berg');
