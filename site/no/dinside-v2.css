@@ -35,7 +35,9 @@ body.sm-v2 #design .ideacard{display:none!important}   /* v2: «Ideer & ønsker�
 /* ── Knapper ─────────────────────────────────────────────────────────────── */
 .dv2-btn{appearance:none;font:inherit;font-weight:600;font-size:var(--dv2-tekst);min-height:var(--dv2-trykk);padding:0 var(--dv2-s2);border-radius:var(--dv2-radius);cursor:pointer;border:1px solid var(--line-2);background:transparent;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:var(--dv2-s1);line-height:1.2}
 .dv2-btn:hover{border-color:var(--ink)}
-.dv2-btn:focus-visible,#dinsideV2 :focus-visible:not(input):not(textarea):not(select),.dv2-dialog button:focus-visible,.dv2-fullfor:focus-visible{outline:2px solid var(--info);outline-offset:2px}
+/* Ringen KUN ved tastaturnavigering — html.tastatur settes av dashbordets <head>-skript (Tab/piltaster), fjernes ved
+   trykk/klikk. Skrivefelt har kantfargen sin; tabindex="-1" (overskrifter koden fokuserer) får ingen ring. */
+html.tastatur .dv2-btn:focus,html.tastatur #dinsideV2 :focus:not(input):not(textarea):not(select):not([tabindex="-1"]),html.tastatur .dv2-dialog button:focus,html.tastatur .dv2-fullfor:focus{outline:2px solid var(--info);outline-offset:2px}
 .dv2-btn[disabled]{opacity:.4;cursor:default}
 .dv2-btn.prim{background:var(--ink);color:var(--bg);border-color:var(--ink)}
 .dv2-btn.prim:hover{opacity:.9}

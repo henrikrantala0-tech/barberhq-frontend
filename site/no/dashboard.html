@@ -24,6 +24,27 @@
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;700;800&display=swap" rel="stylesheet">
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,600&family=Plus+Jakarta+Sans:wght@500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="lib/cropper.min.css">
+<!-- Datovelgeren (BhqDatovelger) — ÉN felles fil med bookingsiden, servert av backend (book-v2.js: /book/_/datovelger.*)
+     gjennom Netlify-proxyen /book/*, altså fra eget domene. Ikke-blokkerende (media-print-bytte + defer): dashbordet skal
+     ikke vente på API-et for å tegne seg; velgeren trengs først når «Legg til booking» åpnes. -->
+<link rel="stylesheet" href="/book/_/datovelger.css" media="print" onload="this.media='all'">
+<script defer src="/book/_/datovelger.js"></script>
+<script>
+/* Fokusring KUN ved tastaturnavigering (Henrik 12.11.2026). :focus-visible alene holdt ikke: WebKit (iPhone) gir ring
+   når koden kaller .focus() etter et trykk (datovelgeren, modaler, kalenderen), og Chromium gir ring på felt ved trykk.
+   Rotfiks: Tab — og piltaster/Home/End utenfor tekstfelt (radiogrupper med roving fokus) — setter html.tastatur;
+   ethvert trykk/klikk fjerner den. CSS-en tegner ringen bare under html.tastatur, så også fokus som koden setter selv
+   følger hvordan handlingen startet. Står i <head> og lytter i capture-fasen, så den kjører før alle andre lyttere. */
+(function(){
+  var h=document.documentElement, tekst=/^(text|search|email|tel|url|password|number|date|time|datetime-local|month|week)$/;
+  function skriverI(t){ return !!t&&(t.isContentEditable||t.tagName==='TEXTAREA'||t.tagName==='SELECT'||(t.tagName==='INPUT'&&tekst.test(t.type))); }
+  document.addEventListener('keydown',function(e){
+    if(e.key==='Tab'||(/^(Arrow(Up|Down|Left|Right)|Home|End)$/.test(e.key)&&!skriverI(e.target))) h.classList.add('tastatur');
+  },true);
+  function trykk(){ h.classList.remove('tastatur'); }
+  ['pointerdown','mousedown','touchstart'].forEach(function(t){ document.addEventListener(t,trykk,{capture:true,passive:true}); });
+})();
+</script>
 <style>
   :root{
     /* Native UA-kontroller (klokkeikon i input[type=time], select-nedtrekk, number-spinnere,
@@ -57,10 +78,14 @@
      rot-årsak som kom-i-gang .btn. */
   button{font-family:inherit}
   /* Generell fokusring — SAMME som markedssidene (#4d8bff, 2px, offset 2px), literal (ikke var(--info),
-     som er #1456a8 i lys modus). Kun :focus-visible → ingen ring ved museklikk. Dashbordet hadde bare
-     spredte per-element-regler; knapper/lenker/faner/piller manglet konsistent ring. De eksisterende
-     per-element-reglene (.acc-head/.skjold m.fl.) er mer spesifikke og beholder sine egne offset. */
-  a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
+     som er #1456a8 i lys modus). Vises KUN ved tastaturnavigering: html.tastatur settes av skriptet i <head>
+     (Tab/piltaster) og fjernes ved trykk/klikk. Alt annet fokus — trykk, mus og .focus() fra koden etter et
+     trykk — får ingen ring (også nettleserens egen er av). Skrivefelt beholder sin kantfarge ved fokus.
+     :where() holder spesifisiteten lav (0,2,1), så per-element-reglene (html.tastatur .acc-head:focus o.l.)
+     beholder egne offset, og felt med «outline:none;border-color» (.fld input:focus) får kanten, ikke ringen.
+     tabindex="-1" er aldri en tabstopp (bare beholdere koden fokuserer: kalenderen, modalarket) → ingen ring. */
+  :focus{outline:none}
+  html.tastatur :where(a,button,select,summary,input,textarea,[tabindex]:not([tabindex="-1"])):focus{outline:2px solid #4d8bff;outline-offset:2px}
   /* ÉN grunnregel for alle skjemafelt i dashbordet: minst 16px. Under 16px zoomer iOS Safari inn
      ved fokus, og den zoomede sida kan dras sidelengs. Kompakthet løses med BREDDE, aldri med
      skrift under 16px. Ingen per-felt-font under dette — hold det slik. */
@@ -342,6 +367,9 @@
   .sw .sl:before{content:"";position:absolute;width:16px;height:16px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.18s}
   .sw input:checked + .sl{background:var(--ink)}
   .sw input:checked + .sl:before{transform:translateX(16px)}
+  /* Tastaturfokus på bryteren: selve avkrysningsfeltet er usynlig (opacity 0), så ringen tegnes på sporet (.sl).
+     Bare ved tastaturnavigering (html.tastatur, som all annen fokusring) — et trykk på bryteren gir ingen ring. */
+  html.tastatur .sw input:focus + .sl{outline:2px solid #4d8bff;outline-offset:2px}
   /* UBESTEMT: /settings feilet, så vi vet ikke om bryteren er på eller av. Knotten står
      MIDT imellom — verken venstre (av) eller høyre (på) — med dempet farge og cursor:default,
      fordi klikk ikke skriver noe før et vellykket kall. Uten denne tilstanden rendres en
@@ -599,7 +627,7 @@
   .skjold-lenke{font-size:13px;color:var(--info);text-decoration:underline;text-underline-offset:2px;text-shadow:0 1px 2px rgba(0,0,0,.45)}
   html:not([data-theme="dark"]) .skjold-ic{filter:drop-shadow(0 1px 2px rgba(255,255,255,.8))}
   html:not([data-theme="dark"]) .skjold-lenke{text-shadow:0 1px 2px rgba(255,255,255,.8)}
-  .skjold:focus-visible{outline:2px solid var(--info);outline-offset:-3px}
+  html.tastatur .skjold:focus{outline:2px solid var(--info);outline-offset:-3px}
   /* Handlings-lås (funksjons-seksjoner på Basis): INGEN overlay — innholdet er lesbart. Liten
      «Vekst»-indikator i tittelen. Kontrollene disables (nettleseren dimmer dem). Se CLAUDE.md:
      måling = skjold, handling = lesbar + låsindikator. */
@@ -699,7 +727,7 @@
   .sms-flis:hover{border-color:var(--mut)}
   /* Valgt = blå ramme + svak blå tone i bakgrunnen. Ingen glød. */
   .sms-flis[aria-checked="true"]{border-color:var(--info);background:color-mix(in srgb,var(--info) 9%,var(--surface))}
-  .sms-flis:focus-visible{outline:2px solid #4d8bff;outline-offset:2px}
+  html.tastatur .sms-flis:focus{outline:2px solid #4d8bff;outline-offset:2px}
   .sms-flis-a,.sms-flis-b{display:flex;flex-direction:column;align-items:center;min-width:0}
   .sms-flis-antall{font-size:24px;font-weight:800;letter-spacing:-.03em;line-height:1.1}
   .sms-flis-enhet{font-size:13px;color:var(--mut)}
@@ -876,8 +904,10 @@
      beholderen (ikke sticky). ~12px over, 28px under → eneste signal om at lista slutter (ingen ramme). */
   /* Kort-flate (var(--card) finnes ikke i temaet → --surface = kort-fargen), IKKE hvit (hvit er reservert
      «Oppgrader til Vekst»). Leser som trykkbar flate mot panelets --bg, konkurrerer ikke med oppsalget. */
-  #calOpenUpcoming{display:block;width:100%;height:48px;margin:12px 0 28px;appearance:none;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;cursor:pointer}
-  #calOpenUpcoming:hover{background:var(--line)}   /* litt lysere flate (mørk: #242424 > surface; lys: subtil grå) */
+  /* «Åpne kalender» + «Legg til booking» side om side under Kommende — samme knapp, delt bredde. */
+  .up-knapper{display:flex;gap:8px;margin:12px 0 28px}
+  .up-knapp{flex:1;min-width:0;height:48px;appearance:none;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 10px}
+  .up-knapp:hover{background:var(--line)}   /* litt lysere flate (mørk: #242424 > surface; lys: subtil grå) */
   /* Fast «Lag story»-inngang på Oversikt (under Kommende bookinger). Full-bredde, åpner SAMME generator-
      modal (#storyOverlay) som Vekst-kortet, i posisjon over Oversikt. Tall-linja kommer i Commit 2. */
   /* Tall-linje over «Lag story»-knappen (Commit 2): «Du har N ledige timer i dag/i morgen». Skjult (hidden) til /ledige svarer med antall>0. */
@@ -1194,7 +1224,7 @@
     stroke-linecap:round;stroke-linejoin:round;opacity:0}
   .fb-kryss[aria-checked="true"]::before{background:var(--ink);border-color:var(--ink)}
   .fb-kryss[aria-checked="true"] svg{opacity:1}
-  .fb-kryss:focus-visible{outline:2px solid var(--info);outline-offset:-6px;border-radius:12px}
+  html.tastatur .fb-kryss:focus{outline:2px solid var(--info);outline-offset:-6px;border-radius:12px}
   .fb-tittel{font-size:14px;font-weight:700;color:var(--ink);margin:0;line-height:20px}
   li[data-ferdig] .fb-tittel{color:var(--mut)}
   .fb-tekst{font-size:13px;color:var(--mut);line-height:1.45;margin:4px 0 0}
@@ -1293,7 +1323,7 @@
   .sett-num-row>label{font-size:13.5px;font-weight:500;letter-spacing:-.01em;flex:1}
   .sett-num-in{display:flex;align-items:center;gap:6px}
   .sett-num-in input{width:72px;padding:7px 10px;border:1px solid var(--line-2);border-radius:8px;font:inherit;background:var(--surface);color:var(--ink);text-align:right}
-  .sett-num-in input:focus{outline:2px solid var(--info);outline-offset:1px}
+  .sett-num-in input:focus{outline:none;border-color:var(--info)}
   .rpill{display:inline-block;font-size:11px;font-weight:600;padding:2px 8px;border-radius:99px;letter-spacing:.01em;white-space:nowrap}
   .rpill.blue{background:rgba(77,139,255,.12);color:#4d8bff}
   .rpill.muted{background:var(--line);color:var(--mut)}
@@ -1310,7 +1340,7 @@
   .verv-modal-h{font-size:16px;font-weight:700;letter-spacing:-.01em}
   .verv-modal-sub{font-size:13px;color:var(--mut);margin:4px 0 14px}
   #vervMsg{width:100%;box-sizing:border-box;padding:12px;border:1px solid var(--line-2);border-radius:10px;font:inherit;font-size:13.5px;line-height:1.5;background:var(--surface);color:var(--ink);resize:vertical}
-  #vervMsg:focus{outline:2px solid var(--info);outline-offset:1px}
+  #vervMsg:focus{outline:none;border-color:var(--info)}
   .verv-modal-note{font-size:12px;color:var(--mut);margin:10px 0 0}
   .verv-modal-actions{display:flex;gap:10px;justify-content:flex-end;margin-top:16px}
   .verv-modal-actions button[disabled]{opacity:.5;cursor:not-allowed}
@@ -1367,7 +1397,7 @@
   /* Innstillinger: native select stylet mot .sett-num-in-inputen (samme ramme/høyde). */
   .kl-select{appearance:none;padding:7px 30px 7px 11px;border:1px solid var(--line-2);border-radius:8px;font:inherit;background:var(--surface);color:var(--ink);cursor:pointer;
     background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='12' viewBox='0 0 24 24' fill='none' stroke='%23888' stroke-width='2.5'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 9px center}
-  .kl-select:focus{outline:2px solid var(--info);outline-offset:1px}
+  html.tastatur .kl-select:focus{outline:2px solid var(--info);outline-offset:1px}
   .kl-select{margin-left:auto}
   /* Bryter høyre i innstillingsraden (skiller den fra .acc-sw som har trekkspill-marg). */
   .kl-sw{margin-left:auto}
@@ -1456,7 +1486,7 @@
     .acc-row:has(> .acc-head:hover){background:rgba(127,127,127,.06)}
     .acc-row > .acc-head:hover{background:none}
   }
-  .acc-head:focus-visible{outline:2px solid var(--info);outline-offset:-2px}
+  html.tastatur .acc-head:focus{outline:2px solid var(--info);outline-offset:-2px}
   .acc-body{padding:2px 17px 18px}
   /* Bryter på tittelraden (variant B). .acc-head er en <button>, så bryteren kan IKKE ligge
      inni den: nøstet interaktivt element er ugyldig HTML, og et klikk på bryteren ville
@@ -1618,7 +1648,7 @@
   .kt-endre,.kt-avbryt{appearance:none;border:0;background:0;font:inherit;font-size:14px;font-weight:600;color:var(--info);cursor:pointer;padding:10px 4px;margin:-10px -4px;flex-shrink:0}
   .kt-avbryt{color:var(--ink-2);margin:0;padding:10px 8px}
   .kt-endre:hover,.kt-avbryt:hover{text-decoration:underline}
-  .kt-endre:focus-visible,.kt-avbryt:focus-visible,.kt-fold:focus-visible,.kt-lenke:focus-visible{outline:2px solid var(--info);outline-offset:-2px;border-radius:6px}
+  html.tastatur .kt-endre:focus,html.tastatur .kt-avbryt:focus,html.tastatur .kt-fold:focus,html.tastatur .kt-lenke:focus{outline:2px solid var(--info);outline-offset:-2px;border-radius:6px}
   .kt-red{padding-top:14px}
   .kt-red .fld:last-of-type{margin-bottom:12px}
   .kt-handl{display:flex;align-items:center;gap:8px;flex-wrap:wrap}
@@ -1634,7 +1664,7 @@
   /* «Ideer og ønsker»: dempet rad som foldes ut. Etiketten dempet (ikke en hovedhandling); pila snus når den er åpen. */
   .kt-ide>summary{list-style:none;cursor:pointer;border-top:0}   /* ikke .kt-lenke: raden er ingen lenke, den folder ut feltet */
   .kt-ide>summary:hover{background:rgba(127,127,127,.06)}
-  .kt-ide>summary:focus-visible{outline:2px solid var(--info);outline-offset:-2px;border-radius:6px}
+  html.tastatur .kt-ide>summary:focus{outline:2px solid var(--info);outline-offset:-2px;border-radius:6px}
   .kt-ide>summary::-webkit-details-marker{display:none}
   .kt-ide>summary .kt-etikett{color:var(--ink-2);font-weight:500}
   .kt-ide>summary .kt-pil{transition:transform .15s ease}
@@ -1643,7 +1673,7 @@
   .kt-seg{display:inline-flex;flex-shrink:0;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:2px}
   .kt-seg button{appearance:none;border:0;background:0;font:inherit;font-size:13px;font-weight:600;color:var(--mut);padding:0 16px;border-radius:7px;cursor:pointer;min-height:40px}
   .kt-seg button[aria-checked="true"]{background:var(--surface);color:var(--ink);box-shadow:0 0 0 1px var(--line-2)}
-  .kt-seg button:focus-visible{outline:2px solid var(--info);outline-offset:1px}
+  html.tastatur .kt-seg button:focus{outline:2px solid var(--info);outline-offset:1px}
   .kt-feedback .block-h:first-child{margin-top:0!important}
   .kt-bunn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:14px}
   .kt-bunn .lnk-quiet{margin-top:0}
@@ -1885,7 +1915,10 @@
            Egen bunn-margin til lista; ovs-h har ingen margin selv (di-title bruker padding i kort-kontekst). -->
       <p class="ovs-h" style="margin:0 0 8px">Kommende bookinger</p>
       <div id="upcomingList"><div class="loading">Laster …</div></div>
-      <button id="calOpenUpcoming">Åpne kalender</button>
+      <div class="up-knapper">
+        <button class="up-knapp" id="calOpenUpcoming" type="button">Åpne kalender</button>
+        <button class="up-knapp" id="upLeggTil" type="button">Legg til booking</button>
+      </div>
     </div>
 
     <!-- Fast inngang til «Lag story»-generatoren (ÉN komponent — SAMME #storyOverlay som Vekst-kortet,
@@ -3007,6 +3040,76 @@
   .bk-detail-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
   .bk-detail-actions .noshowbtn{width:100%;justify-content:center;padding:11px}
   .bk-detail-actions .row-err{text-align:center}
+  /* ── «Legg til booking» (manuell booking) ──
+     Knappen i kalenderens toppbar: primærflate (--ink) så den skiller seg fra lukk-knappen. Under 480px
+     bare plusstegnet — toppbaren har ikke plass til teksten ved siden av «Fredag 18. sep ▾» + «I dag».
+     Modalen bruker pause-modalens skall (.pause-modal*) og dashbordets felt (.fld, .kl-select, .btn). */
+  .cal-add{margin-left:auto;appearance:none;border:0;background:var(--ink);color:var(--surface);height:36px;min-width:36px;padding:0 12px 0 9px;border-radius:8px;cursor:pointer;font:inherit;font-size:13px;font-weight:600;letter-spacing:-.01em;display:inline-flex;align-items:center;justify-content:center;gap:5px;flex-shrink:0}
+  .cal-add svg{width:18px;height:18px;flex-shrink:0}
+  .cal-add + .cal-close{margin-left:0}
+  @media(max-width:479px){.cal-add{padding:0;width:36px}.cal-add-txt{display:none}}
+  .bkn .fld{max-width:none;margin-bottom:14px}
+  /* Lik høyde på alle felt (dato-, klokke- og tekstfelt rendres ellers 44–47px, select 45px). */
+  .bkn .fld input,.bkn .kl-select{height:46px}
+  .bkn .kl-select{display:block;width:100%;margin-left:0;padding:0 30px 0 12px;text-overflow:ellipsis}
+  /* Klokkeslett smalt, tjenesten får resten. Valgene viser bare navnet — varigheten står i linja under. */
+  .bkn-to{display:grid;grid-template-columns:104px minmax(0,1fr);gap:10px}
+  .bkn-under{font-size:12px;color:var(--mut);line-height:1.45;margin:-7px 0 14px;letter-spacing:-.01em}
+  .bkn input::placeholder{color:var(--mut)}
+  /* Klokkeslett: native <input type=time> (trykk åpner telefonens egen velger — hjulet på iPhone), men et tomt
+     felt viser en dempet «00:00» i stedet for nettleserens «--:--»/tomme boks. 00:00 er BARE visning: value er
+     tom til barberen har valgt, så knappen er grå — en glemt 00:00 skal aldri bli en booking ved midnatt.
+     .tom settes av JS (bknTidVisning) fra value. Valgt tid står i --ink (hvit i mørk modus). */
+  .bkn-tidfelt{position:relative}
+  .bkn-tid-ph{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:16px;line-height:1;color:var(--mut);pointer-events:none;font-variant-numeric:tabular-nums}
+  .bkn-tidfelt:not(.tom) .bkn-tid-ph{display:none}
+  /* -webkit-pseudoelementene står i EGNE regler: i en selektorliste ville en nettleser som ikke kjenner dem
+     (Firefox) forkastet hele regelen. */
+  .bkn-tidfelt.tom input{color:transparent}
+  .bkn-tidfelt.tom input::-webkit-datetime-edit{color:transparent}
+  .bkn input[type=time]::-webkit-date-and-time-value{text-align:left}   /* iOS: verdien venstrestilt, der 00:00 står */
+  /* Med mus/tastatur skrives tiden rett i feltet → nettleserens egne segmenter må synes mens det har fokus. */
+  @media(pointer:fine){
+    .bkn-tidfelt.tom input:focus{color:var(--ink)}
+    .bkn-tidfelt.tom input:focus::-webkit-datetime-edit{color:var(--ink)}
+    .bkn-tidfelt.tom input:focus + .bkn-tid-ph{display:none}
+  }
+  /* Dato: et felt som folder ut den delte datovelgeren (BhqDatovelger, samme fil som bookingsiden) under seg.
+     Velgeren styler innholdet selv (bhq-dv-*); her styles bare rammen rundt (#bkNyKal). Ingen --dv-*-variabler
+     settes, så fargene er velgerens nøytrale standard (grått av tekstfargen) — aldri aksent eller blå. */
+  .bkn-datofelt{display:flex;align-items:center;justify-content:space-between;gap:10px;width:100%;height:46px;padding:0 12px;border:1px solid var(--line-2);border-radius:8px;background:var(--surface);color:var(--ink);font:inherit;font-size:16px;text-align:left;cursor:pointer}
+  .bkn-datofelt svg{width:18px;height:18px;flex-shrink:0;color:var(--mut)}
+  .bkn-datofelt[aria-expanded="true"]{border-color:var(--mut)}
+  .bkn-kal{margin:-6px 0 14px;padding:12px 10px 10px;border:1px solid var(--line);border-radius:10px;background:var(--surface)}
+  .bkn-kal[hidden]{display:none}
+  .bkn-kal-feil{font-size:13px;color:var(--mut);line-height:1.45;padding:2px 4px}
+  .bkn-under.feil{color:var(--bad)}
+  .bkn-under[hidden]{display:none}
+  /* Dagens tatte tider: bookinger (klokkeslett + tjeneste) og pauser, sortert. Ren info — ikke klikkbar. */
+  .bkn-dag{margin:-2px 0 16px;border:1px solid var(--line);border-radius:10px;padding:2px 12px;background:var(--bg)}
+  .bkn-dag-h{display:flex;justify-content:space-between;gap:10px;padding:9px 0 7px;font-size:12px;color:var(--mut);font-weight:500;letter-spacing:-.01em}
+  .bkn-dag-aapen{text-align:right}
+  .bkn-rad{display:flex;gap:12px;padding:8px 0;border-top:1px solid var(--line);font-size:13px;line-height:1.35}
+  .bkn-tid{flex:0 0 auto;min-width:86px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .bkn-hva{flex:1;min-width:0;color:var(--ink-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .bkn-rad.pause .bkn-tid,.bkn-rad.pause .bkn-hva{color:var(--mut);font-weight:500}
+  .bkn-rad.kollisjon .bkn-tid,.bkn-rad.kollisjon .bkn-hva{color:var(--bad)}
+  .bkn-dag-tom{padding:8px 0 10px;border-top:1px solid var(--line);font-size:13px;color:var(--mut)}
+  .bkn-dag .wb-empty{padding:8px 0 10px;border-top:1px solid var(--line);font-size:13px}
+  #bkNyFeil{margin:-2px 0 12px}
+  #bkNyLagre{width:100%;min-height:46px;font-size:14px}
+  /* Bekreftelse etter lagring: samme mørke flate som .toast, men med handling («Vis i kalender» fra
+     Oversikt) → pointer-events på. Over kalenderen (500), under modalene (600) — og skjult når en av dem
+     åpnes (detaljflaten). På mobil løftet over bunn-navet; over kalenderen (ingen bunn-nav) nede ved kanten. */
+  .bkn-ok{position:fixed;left:50%;bottom:26px;transform:translateX(-50%);z-index:550;width:max-content;max-width:calc(100vw - 32px);display:flex;align-items:center;gap:14px;background:#1a1a1a;color:#fff;font-size:13px;line-height:1.4;padding:11px 12px 11px 16px;border-radius:10px;box-shadow:0 6px 24px rgba(0,0,0,.28);letter-spacing:-.01em}
+  .bkn-ok[hidden]{display:none}
+  .bkn-ok-tekst{display:flex;flex-direction:column;min-width:0}
+  .bkn-ok-tekst strong{font-weight:600}
+  .bkn-ok-tekst span{color:rgba(255,255,255,.72)}
+  .bkn-ok-vis{flex-shrink:0;appearance:none;border:0;background:rgba(255,255,255,.12);color:#fff;font:inherit;font-size:13px;font-weight:600;padding:8px 12px;border-radius:7px;cursor:pointer;min-height:36px}
+  .bkn-ok-vis:hover{background:rgba(255,255,255,.2)}
+  .bkn-ok-vis[hidden]{display:none}
+  @media(max-width:719px){.bkn-ok{bottom:calc(var(--bunn-nav-h) + env(safe-area-inset-bottom) + 12px)}.bkn-ok.over-kal{bottom:calc(16px + env(safe-area-inset-bottom))}}
   /* ===== KAMPANJEPLAKATER — Lag 1: skjelett + navigasjon ===== */
   /* «Generer plakat» bor inne i Verving- og Lojalitet-trekkspillet (sekundær .btn-outline),
      ikke som egen primærknapp. .plakat-gen gir bare luft over knappen. */
@@ -3173,6 +3276,42 @@
     <p class="pause-modal-s">Én pause per dag. Kunder kan ikke booke i pausen. Lagres med arbeidstidene.</p>
     <div class="pause-modal-list" id="pauseModalList"></div>
     <button class="btn" id="pauseFerdig" type="button">Ferdig</button>
+  </div>
+</div>
+<!-- «Legg til booking»: barberen legger inn en booking selv. Åpnes fra kalenderens toppbar og fra Oversikt
+     (under Kommende bookinger), der man er — ingen navigering. Skallet er pause-modalens. Tidspunktet er
+     fritt (ikke slots, ikke åpningstid); bare overlapp med en tatt booking stopper lagringen. -->
+<div class="pause-modal-backdrop" id="bkNyBackdrop" role="dialog" aria-modal="true" aria-labelledby="bkNyH" hidden>
+  <div class="pause-modal bkn" tabindex="-1">
+    <button class="pause-modal-close" id="bkNyLukk" type="button" aria-label="Lukk">×</button>
+    <p class="pause-modal-h" id="bkNyH" style="margin-bottom:14px">Legg til booking</p>
+    <form id="bkNyForm" novalidate autocomplete="off">
+      <div class="fld">
+        <label for="bkNyDatoKnapp">Dato</label>
+        <input type="hidden" id="bkNyDato">
+        <button type="button" class="bkn-datofelt" id="bkNyDatoKnapp" aria-expanded="false" aria-controls="bkNyKal"><span id="bkNyDatoTekst"></span><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15.5" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M3.5 10h17M8 3v4M16 3v4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/></svg></button>
+        <p class="fld-err" id="bkNyDatoFeil" hidden></p>
+      </div>
+      <div class="bkn-kal" id="bkNyKal" hidden></div>
+      <div class="bkn-dag" id="bkNyDag" aria-live="polite"></div>
+      <div class="bkn-to">
+        <div class="fld"><label for="bkNyTid">Klokkeslett</label><div class="bkn-tidfelt tom"><input type="time" id="bkNyTid" required><span class="bkn-tid-ph" aria-hidden="true">00:00</span></div></div>
+        <div class="fld"><label for="bkNySvc">Tjeneste</label><select class="kl-select" id="bkNySvc" required></select></div>
+      </div>
+      <p class="bkn-under" id="bkNyUnder" aria-live="polite" hidden></p>
+      <div class="fld">
+        <label for="bkNyNavn">Kundenavn</label>
+        <input type="text" id="bkNyNavn" maxlength="100" required>
+      </div>
+      <div class="fld">
+        <label for="bkNyTlf">Telefon (valgfritt)</label>
+        <input type="tel" id="bkNyTlf" inputmode="tel" maxlength="30" placeholder="91 23 45 67" aria-describedby="bkNyTlfFeil">
+        <p class="fld-err" id="bkNyTlfFeil" role="alert" hidden></p>
+        <p class="fld-hint">Uten nummer får kunden ingen påminnelse eller rebooking.</p>
+      </div>
+      <p class="fld-err" id="bkNyFeil" role="alert" hidden></p>
+      <button class="btn" id="bkNyLagre" type="submit" disabled>Legg til booking</button>
+    </form>
   </div>
 </div>
 
@@ -4133,24 +4272,29 @@ async function renderDrivenBy(){
 // fast rad UNDER beholderen (søsken, IKKE sticky — sticky ville dekket den avskårne raden).
 // Datamengde: maks 20 rader ELLER 7 dager frem, det som inntreffer først. (Toggle-modellen fjernet 14.09.)
 var _upcoming=[];
+var _bookingerKilde=[];   // siste /bookings-svar, rått — settUpcoming bygger Kommende + «i morgen» av det
 async function loadUpcoming(){
   // M-8: api.bookings degraderer 4xx/5xx til [] selv, men en hard nettverksfeil kaster gjennom
   // apiFetch → uten try/catch ble #upcomingList stående på «Laster …». Kast → synlig feil + retry.
   try{
-    var b=await api.bookings();
-    var now=Date.now();
-    var morgenKey=calNesteKey(osloTodayKey(),1);
-    _morgenBookinger=b.filter(function(x){return x.status!=='avlyst' && osloDayKey(x.start)===morgenKey;});
-    if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud();
-    var horisont=now+7*86400000;   // 7 dager frem
-    _upcoming=b.filter(function(x){return new Date(x.start).getTime()>now && x.status!=='avlyst';})
-               .sort(function(a,c){return new Date(a.start)-new Date(c.start);})
-               .filter(function(x){return new Date(x.start).getTime()<=horisont;})   // behold start <= nå+7d
-               .slice(0,20);                                                          // så maks 20 rader
-    renderUpcoming();
+    settUpcoming(await api.bookings());
   }catch(e){
     feilMedRetry($("#upcomingList"),'Klarte ikke å laste bookinger.',loadUpcoming);
   }
+}
+// Delt av lastingen OG «Legg til booking» (ny booking legges inn lokalt, uten ny henting) → samme filtre.
+function settUpcoming(b){
+  _bookingerKilde=b||[];
+  var now=Date.now();
+  var morgenKey=calNesteKey(osloTodayKey(),1);
+  _morgenBookinger=_bookingerKilde.filter(function(x){return x.status!=='avlyst' && osloDayKey(x.start)===morgenKey;});
+  if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud();
+  var horisont=now+7*86400000;   // 7 dager frem
+  _upcoming=_bookingerKilde.filter(function(x){return new Date(x.start).getTime()>now && x.status!=='avlyst';})
+             .sort(function(a,c){return new Date(a.start)-new Date(c.start);})
+             .filter(function(x){return new Date(x.start).getTime()<=horisont;})   // behold start <= nå+7d
+             .slice(0,20);                                                          // så maks 20 rader
+  renderUpcoming();
 }
 // Rabatt-flagg (spec 4): blå pill ved navnet når bookingen har referral_discount. Ingen pill uten feltet.
 function discountPill(b){
@@ -4400,6 +4544,10 @@ async function calFetch(){
   var t0=new Date();t0.setHours(0,0,0,0);var today=t0.getTime();
   CAL.minKey=calNesteKey(today,-14);
   CAL.maxKey=calNesteKey(today,(CONFIG.BOOKING_HORIZON||28));
+  // Vinduet strekkes til den siste bookingen: barberen kan legge inn bookinger inntil ett år fram (langt
+  // forbi kundenes horisont), og horisonten kan være kortet ned etter at kunder booket. Uten dette falt de
+  // ut av CAL.alle, og calGoto klampet dagen så de aldri kunne vises.
+  (bs||[]).forEach(function(b){ if(b.status!=='avlyst') CAL.maxKey=Math.max(CAL.maxKey,calDayKey(b.end||b.start)); });
   CAL.alle=(bs||[]).filter(function(b){return b.status!=='avlyst';})   // avlyste vises ikke (og telles ikke)
                    // Behold hvis START- ELLER SLUTT-dagen er i vinduet, så en booking som krysser
                    // midnatt inn i en synlig dag ikke faller ut (halen splittes i dagSegmenter).
@@ -4470,11 +4618,14 @@ function calVisibleKeys(){var n=(window.innerWidth>760)?3:1,out=[];for(var i=0;i
 
 function byggCal(){
   var ov=$("#calOverlay");
-  ov.innerHTML='<div class="cal-topbar"><button class="cal-datebtn" id="calDateBtn"></button><button class="cal-today" id="calToday">I dag</button><button class="cal-close" id="calClose" aria-label="Lukk">✕</button></div>'
+  ov.innerHTML='<div class="cal-topbar"><button class="cal-datebtn" id="calDateBtn"></button><button class="cal-today" id="calToday">I dag</button>'
+    +'<button class="cal-add" id="calAdd" type="button" aria-label="Legg til booking" title="Legg til booking"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg><span class="cal-add-txt">Legg til booking</span></button>'
+    +'<button class="cal-close" id="calClose" aria-label="Lukk">✕</button></div>'
     +'<div class="cal-monthpick" id="calMonthpick" hidden></div>'
     +'<div class="cal-daystrip" id="calDaystrip"></div>'
     +'<div class="cal-grid"><div class="cal-scroll"><div class="cal-axis" id="calAxis"></div><div class="cal-days" id="calDays"></div></div></div>';
   $("#calClose").onclick=lukkKalender;
+  $("#calAdd").onclick=function(){aapneNyBooking(CAL.active,'kalender');};
   $("#calToday").onclick=function(){calGoto(osloTodayKey());};
   $("#calDateBtn").onclick=function(){toggleMonthpick();};
   $("#calDaystrip").addEventListener('click',function(e){var c=e.target.closest('.cal-chip');if(c)calGoto(Number(c.dataset.key));});
@@ -4621,7 +4772,7 @@ async function openKalender(mode){
 function lukkKalender(){$("#calOverlay").hidden=true;CAL.open=false;document.body.style.overflow='';toggleMonthpick(true);stopNaaTikk();}
 
 // ── Delt detaljflate ──
-function openDetalj(id){renderDetalj(id);$("#bkDetailBackdrop").hidden=false;}
+function openDetalj(id){renderDetalj(id);$("#bkDetailBackdrop").hidden=false;if(typeof skjulLagtTil==='function')skjulLagtTil();}
 function renderDetalj(id){
   var b=finnBooking(id);if(!b){lukkDetalj();return;}
   bkDetalj.openId=String(id);
@@ -4658,8 +4809,275 @@ $("#bkDetailBackdrop").addEventListener('click',function(e){if(e.target===this)l
 
 // Innganger + resize-render
 (function(){var a=$("#calOpenUpcoming");if(a)a.onclick=function(){openKalender('today');};
+  var n=$("#upLeggTil");if(n)n.onclick=function(){aapneNyBooking(osloTodayKey(),'oversikt');};
   })();
 window.addEventListener('resize',function(){if(CAL.open)renderGrid();});
+
+// ── «Legg til booking» (manuell booking) ──────────────────────────────────────────────────────────
+// Kontrakt (backend, branch manuell-booking):
+//   GET  /api/dashboard/bookings/dag?dato=YYYY-MM-DD → {dato, aapningstid, bookinger:[{id,name,phone,service,start,end,
+//        status,kilde}], pauser:[{start,end}]} — riktige pauser for akkurat den datoen + ALLE bookinger, også de utenfor
+//        perioden kalenderen har lastet. Lista over tatte tider bygges KUN av dette, ikke av CAL.alle eller /hours.
+//   POST /api/dashboard/bookings/manuell {dato, klokkeslett:"HH:MM", service_id, customer_name, customer_phone?}
+//        201 {booking:{…som GET /bookings + kilde}, paaminnelse_sendes} · 409 {error, konflikt:{id,name,service,start,end}}
+//        · 400 ugyldig telefon / dato utenfor [i dag, ett år fram] / klokkeslett som ikke finnes (sommertid).
+// Dato og klokkeslett er barberens veggklokke (Europe/Oslo) — backend regner om, frontend sender teksten slik den står.
+// Overlapp-sjekken her er bare for å si fra med en gang; backend (bookings_no_overlap → 409) er sannheten.
+var BKNY={fra:null,dato:null,dag:null,token:0,tjenester:null,lagrer:false,konflikt:null,okT:null};
+function bknPad(n){return String(n).padStart(2,'0');}
+function bknIdag(){return osloTodayStr();}
+function bknMaks(){   // samme dato neste år (29.02 → 28.02), Oslo-kalender
+  var p=osloParts(new Date()), d=(p.mo===2&&p.d===29)?28:p.d;
+  return (p.y+1)+'-'+bknPad(p.mo)+'-'+bknPad(d);
+}
+// Oslo-veggklokke (dato + HH:MM) → ms. null når klokkeslettet ikke finnes den dagen (sommertid-hullet 02:00–03:00):
+// itererer på offseten via osloParts (samme Intl-kilde som resten av kalenderen) og sjekker at resultatet leses tilbake likt.
+function osloTilMs(dato,hm){
+  var m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(dato||''), t=/^(\d{1,2}):(\d{2})/.exec(hm||'');
+  if(!m||!t)return null;
+  var y=+m[1],mo=+m[2],d=+m[3],h=+t[1],mi=+t[2],mal=Date.UTC(y,mo-1,d,h,mi),ms=mal;
+  for(var i=0;i<3;i++){var p=osloParts(ms);ms+=mal-Date.UTC(p.y,p.mo-1,p.d,p.h,p.mi);}
+  var q=osloParts(ms);
+  return (q.y===y&&q.mo===mo&&q.d===d&&q.h===h&&q.mi===mi)?ms:null;
+}
+// Pauser kan komme som «HH:MM» (veggklokke den dagen) eller som tidsstempel — begge tåles.
+function bknErHm(v){return typeof v==='string'&&/^\d{1,2}:\d{2}(:\d{2})?$/.test(v);}
+function bknMs(v,dato){if(v==null)return null;if(bknErHm(v))return osloTilMs(dato,v);var t=new Date(v).getTime();return isNaN(t)?null:t;}
+function bknVis(v){return bknErHm(v)?bknPad(+v.split(':')[0])+':'+v.split(':')[1]:timeOnly(v);}
+function bknAapningstid(a){
+  if(!a||typeof a!=='object')return '';
+  if(a.stengt===true||a.is_closed===true)return 'Stengt denne dagen';
+  var o=a.open||a.open_time, c=a.close||a.close_time;
+  return (o&&c)?'Åpent '+bknVis(o)+'–'+bknVis(c):'';
+}
+// Dagens tatte tider, sortert: bookinger (ikke avlyste — de holder ikke av tiden) og pauser.
+function bknRader(){
+  var d=BKNY.dag, dato=BKNY.dato, ut=[];
+  if(!d)return ut;
+  (d.bookinger||[]).forEach(function(b){
+    if(!b||b.status==='avlyst')return;
+    var s=new Date(b.start).getTime(), e=b.end?new Date(b.end).getTime():s;
+    if(!isNaN(s))ut.push({type:'b',b:b,s:s,e:isNaN(e)?s:e});
+  });
+  (d.pauser||[]).forEach(function(p){
+    var s=bknMs(p&&p.start,dato), e=bknMs(p&&p.end,dato);
+    if(s!=null&&e!=null)ut.push({type:'p',s:s,e:e,fra:p.start,til:p.end});
+  });
+  return ut.sort(function(a,c){return (a.s-c.s)||(a.type==='p'?1:-1);});
+}
+function bknTidsrom(r){return r.type==='p'?bknVis(r.fra)+'–'+bknVis(r.til):timeOnly(r.b.start)+(r.b.end?'–'+timeOnly(r.b.end):'');}
+function bknValgt(){   // det barberen har fylt inn nå
+  var dato=$("#bkNyDato").value, tid=$("#bkNyTid").value, sid=$("#bkNySvc").value;
+  var svc=(BKNY.tjenester||[]).find(function(s){return String(s.id)===sid;})||null;
+  var datoOk=!!dato&&dato>=bknIdag()&&dato<=bknMaks();
+  var s=(datoOk&&tid)?osloTilMs(dato,tid):null;
+  var e=(s!=null&&svc)?s+svc.min*60000:null;
+  return {dato:dato,tid:tid,svc:svc,datoOk:datoOk,s:s,e:e,navn:$("#bkNyNavn").value.trim(),tlf:$("#bkNyTlf").value.trim()};
+}
+function bknKollisjon(v){   // første tatte booking som overlapper [s,e) — halvåpent som tstzrange i backend
+  if(v.e==null||!BKNY.dag||BKNY.dato!==v.dato)return null;
+  return bknRader().find(function(r){return r.type==='b'&&r.s<v.e&&v.s<r.e;})||null;
+}
+function tegnNyDag(tilstand){
+  var el=$("#bkNyDag");
+  if(tilstand==='laster'){el.innerHTML='<div class="bkn-dag-h"><span>Opptatt denne dagen</span></div><p class="bkn-dag-tom">Henter dagen …</p>';return;}
+  if(tilstand==='feil'){
+    el.innerHTML='<div class="bkn-dag-h"><span>Opptatt denne dagen</span></div><div class="bkn-dag-feil"></div>';
+    feilMedRetry(el.querySelector('.bkn-dag-feil'),'Klarte ikke å hente dagen.',function(){hentNyDag(BKNY.dato);});
+    return;
+  }
+  if(!BKNY.dag){el.innerHTML='';return;}
+  var v=bknValgt(), kol=bknKollisjon(v), rader=bknRader(), aapen=bknAapningstid(BKNY.dag.aapningstid);
+  var html='<div class="bkn-dag-h"><span>Opptatt denne dagen</span>'+(aapen?'<span class="bkn-dag-aapen">'+esc(aapen)+'</span>':'')+'</div>';
+  if(!rader.length) html+='<p class="bkn-dag-tom">Ingen bookinger eller pauser.</p>';
+  rader.forEach(function(r){
+    var hva=r.type==='p'?'Pause':esc(r.b.service||'Booking');
+    html+='<div class="bkn-rad'+(r.type==='p'?' pause':'')+(kol&&r.type==='b'&&r.b===kol.b?' kollisjon':'')+'"><span class="bkn-tid">'+bknTidsrom(r)+'</span><span class="bkn-hva">'+hva+'</span></div>';
+  });
+  el.innerHTML=html;
+}
+// Linja under klokkeslett/tjeneste: overlapp (rød, knappen grå) → ellers sluttid (+ «Ligger i pausen.» som ren info).
+// Etter 409 er det den nettopp tatte bookingen som står her, med beskjed om at noen booket samtidig.
+function sjekkNy(){
+  bknTidVisning();
+  var v=bknValgt(), kol=bknKollisjon(v), under=$("#bkNyUnder"), df=$("#bkNyDatoFeil");
+  var datoTekst=(v.dato&&!v.datoOk)?'Velg en dato fra i dag og inntil ett år fram.':'';
+  df.textContent=datoTekst; df.hidden=!datoTekst;
+  var tekst='', feil=false;
+  if(v.datoOk&&v.tid&&v.s==null){ tekst='Klokkeslettet finnes ikke denne dagen (sommertid).'; feil=true; }
+  else if(kol){
+    var b=kol.b, hvem=esc(b.name||'en kunde')+', '+bknTidsrom(kol)+(b.service?' · '+esc(b.service):'');
+    tekst=(BKNY.konflikt&&String(BKNY.konflikt.id)===String(b.id))
+      ? 'Noen booket denne tiden akkurat nå: '+hvem+'. Velg en annen tid.'
+      : 'Overlapper med '+hvem+'.';
+    feil=true;
+  } else if(v.e!=null){
+    var iPause=bknRader().some(function(r){return r.type==='p'&&r.s<v.e&&v.s<r.e;});
+    tekst='Ferdig '+timeOnly(v.e)+' · '+v.svc.min+' min'+(iPause?' · Ligger i pausen.':'');
+  } else if(v.svc){
+    tekst='Varer '+v.svc.min+' min';
+  }
+  under.innerHTML=tekst; under.hidden=!tekst; under.classList.toggle('feil',feil);
+  if(BKNY.dag) tegnNyDag();   // marker kollisjonsraden i lista
+  var klar=v.datoOk&&v.s!=null&&!!v.svc&&!!v.navn&&!kol&&!BKNY.lagrer&&!!BKNY.tjenester;
+  $("#bkNyLagre").disabled=!klar||IS_DEMO;
+}
+// stille=true: behold lista som står til det nye svaret er inne (brukt etter 409, så kollisjonen ikke blinker bort).
+async function hentNyDag(dato,stille){
+  var tok=++BKNY.token; BKNY.dato=dato;
+  if(!stille){BKNY.dag=null;tegnNyDag('laster');sjekkNy();}
+  if(!dato||dato<bknIdag()||dato>bknMaks()){BKNY.dag=null;$("#bkNyDag").innerHTML='';sjekkNy();return;}
+  var r,d=null;
+  try{ r=await apiFetch('/api/dashboard/bookings/dag?dato='+encodeURIComponent(dato)); if(r&&r.ok)d=await r.json(); }catch(e){ r=undefined; }
+  if(tok!==BKNY.token)return;        // en nyere dato er valgt i mellomtiden — dette svaret er utdatert
+  if(r===null)return;                // 401 → apiFetch sender til logg-inn
+  if(!d||!Array.isArray(d.bookinger)){ if(!stille||!BKNY.dag) tegnNyDag('feil'); sjekkNy(); return; }
+  BKNY.dag=d; bknFlettKonflikt(); tegnNyDag(); sjekkNy();
+}
+// 409-bookingen kan mangle i dagsvaret (hentet før den kom) — legg den inn så lista og overlapp-linja viser den.
+function bknFlettKonflikt(){
+  var k=BKNY.konflikt; if(!k||k.id==null||!BKNY.dag||BKNY.dato!==BKNY.konfliktDato)return;
+  var liste=BKNY.dag.bookinger||(BKNY.dag.bookinger=[]);
+  if(!liste.some(function(b){return String(b.id)===String(k.id);}))
+    liste.push({id:k.id,name:k.name,service:k.service,start:k.start,end:k.end,status:'bekreftet'});
+}
+async function hentNyTjenester(){
+  var sel=$("#bkNySvc"); BKNY.tjenester=null;
+  sel.innerHTML='<option value="">Henter …</option>'; sel.disabled=true;
+  var r,d=null;
+  try{ r=await apiFetch('/api/dashboard/services'); if(r&&r.ok)d=await r.json(); }catch(e){ r=undefined; }
+  if(r===null)return;
+  if(!d){ sel.innerHTML='<option value="">Klarte ikke å hente tjenestene</option>'; visNyFeil('Klarte ikke å hente tjenestene. Lukk og prøv igjen.'); sjekkNy(); return; }
+  // Bare hovedtjenester kan bookes alene. Varighet som backend (tjenesteMinutter): 0/ugyldig → 30.
+  BKNY.tjenester=(d.hoved||[]).filter(function(s){return s&&s.id!=null;})
+    .sort(function(a,c){return (a.sort==null?0:a.sort)-(c.sort==null?0:c.sort);})
+    .map(function(s){var m=Number(s.min);return {id:s.id,name:s.name||'Tjeneste',min:(m>0?Math.round(m):30)};});
+  if(!BKNY.tjenester.length){ sel.innerHTML='<option value="">Ingen tjenester ennå</option>'; visNyFeil('Legg inn en tjeneste under Tjenester & tider først.'); sjekkNy(); return; }
+  sel.innerHTML=(BKNY.tjenester.length>1?'<option value="">Velg tjeneste</option>':'')
+    +BKNY.tjenester.map(function(s){return '<option value="'+esc(String(s.id))+'">'+esc(s.name)+'</option>';}).join('');
+  sel.disabled=false; sjekkNy();
+}
+function visNyFeil(t){var f=$("#bkNyFeil");f.textContent=t||'';f.hidden=!t;}
+// ── Datovelger: den delte BhqDatovelger (backend src/klient/datovelger.js, samme fil som bookingsiden) ──
+// Lastet i <head> fra /book/_/datovelger.{js,css}. Min = i dag, maks = ett år fram (funksjoner: leses ved hver
+// tegning, så de følger klokka over midnatt), ingen dager-liste = alle dager i [min, maks] valgbare. Ingen
+// --dv-*-variabler → velgerens nøytrale farger. Verdien bor i det skjulte #bkNyDato (YYYY-MM-DD).
+var _bknDv=null;
+function bknDatoLang(iso){   // feltets tekst: «Torsdag 12. november» (+ år når det ikke er i år)
+  var p=String(iso).split('-'), y=+p[0], m=+p[1]-1, d=+p[2], uke=(new Date(Date.UTC(y,m,d,12)).getUTCDay()+6)%7;
+  return DAYS[uke]+' '+d+'. '+MONTHS[m]+(String(y)!==bknIdag().slice(0,4)?' '+y:'');
+}
+function bknDatoVisning(){var v=$("#bkNyDato").value;$("#bkNyDatoTekst").textContent=v?bknDatoLang(v):'Velg dato';}
+function settNyDato(dato){$("#bkNyDato").value=dato;bknDatoVisning();BKNY.konflikt=null;visNyFeil('');hentNyDag(dato);}
+function bknKalAapne(){
+  var rot=$("#bkNyKal"), valgt=$("#bkNyDato").value||bknIdag();
+  if(!window.BhqDatovelger){   // fila kom ikke (API nede / nettverk): si det, ikke vis en tom ramme
+    _bknDv=null; rot.innerHTML='<p class="bkn-kal-feil">Klarte ikke å laste datovelgeren. Last inn siden på nytt.</p>';
+  } else {
+    var inn={min:bknIdag,maks:bknMaks,idag:bknIdag,valgt:valgt,maaned:valgt.slice(0,7)};
+    if(_bknDv) _bknDv.oppdater(inn);
+    else _bknDv=BhqDatovelger.lag(rot,Object.assign(inn,{vedValg:function(dato){
+      settNyDato(dato); bknKalLukk(); $("#bkNyDatoKnapp").focus({preventScroll:true});
+    }}));
+  }
+  rot.hidden=false; $("#bkNyDatoKnapp").setAttribute('aria-expanded','true');
+}
+function bknKalLukk(){$("#bkNyKal").hidden=true;$("#bkNyDatoKnapp").setAttribute('aria-expanded','false');}
+// Klokkeslett: tom value → dempet «00:00» (CSS .tom). Synkes fra value hver gang skjemaet sjekkes.
+function bknTidVisning(){var f=$("#bkNyTid");f.parentNode.classList.toggle('tom',!f.value);}
+function aapneNyBooking(dagKey,fra){
+  BKNY.okt=(BKNY.okt||0)+1;           // ny økt: et lagre-svar fra en tidligere åpning skal ikke styre denne
+  BKNY.fra=fra; BKNY.konflikt=null; BKNY.lagrer=false;
+  var idag=bknIdag(), dato=(dagKey!=null)?keyTilDato(dagKey):idag;
+  if(dato<idag)dato=idag;            // kalenderen kan stå på en passert dag — datoer før i dag tas ikke imot
+  if(dato>bknMaks())dato=bknMaks();
+  $("#bkNyForm").reset(); visNyFeil(''); visTlfFeil('');
+  $("#bkNyDato").value=dato; bknDatoVisning(); bknKalLukk();
+  $("#bkNyLagre").textContent='Legg til booking';
+  skjulLagtTil();
+  $("#bkNyBackdrop").hidden=false; document.body.style.overflow='hidden';
+  $("#bkNyBackdrop .pause-modal").scrollTop=0; $("#bkNyBackdrop .pause-modal").focus({preventScroll:true});
+  hentNyTjenester(); hentNyDag(dato);
+}
+function lukkNyBooking(){
+  $("#bkNyBackdrop").hidden=true; BKNY.token++;   // svar som er underveis tegner ikke i en lukket modal
+  if(!CAL.open)document.body.style.overflow='';
+  // Det som sto i feltene forkastes ved lukking (reset ved neste åpning) → ikke «ulagret» for versjonssjekken.
+  if(typeof _ulagrede!=='undefined')_ulagrede.forEach(function(el){if($("#bkNyBackdrop").contains(el))_ulagrede.delete(el);});
+}
+async function lagreNyBooking(e){
+  if(e)e.preventDefault();
+  var knapp=$("#bkNyLagre"); if(knapp.disabled)return;
+  var v=bknValgt();
+  var body={dato:v.dato,klokkeslett:v.tid,service_id:v.svc.id,customer_name:v.navn};
+  if(v.tlf)body.customer_phone=v.tlf;
+  BKNY.lagrer=true; knapp.textContent='Lagrer …'; visNyFeil(''); sjekkNy();
+  var okt=BKNY.okt, r,j=null, feilTekst='';
+  try{ r=await apiFetch('/api/dashboard/bookings/manuell',{method:'POST',body:JSON.stringify(body)}); }
+  catch(err){ r=undefined; feilTekst=kontaktFeil(err); }
+  if(r===null)return;                // 401 → logg-inn
+  if(r){ try{ j=await r.json(); }catch(_){ j=null; } }
+  // Modalen er lukket (og ev. åpnet på nytt) mens kallet gikk: en lagret booking skal likevel inn i
+  // kalenderen og bekreftes, men svaret skal ikke lukke eller skrive i en ny økt.
+  // SMS-linja i bekreftelsen følger KUN backendens paaminnelse_sendes (alltid false uten telefon).
+  if(okt!==BKNY.okt){ if(r&&r.ok&&j&&j.booking) nyBookingLagret(j.booking,j.paaminnelse_sendes===true,true); return; }
+  BKNY.lagrer=false; knapp.textContent='Legg til booking';
+  if(feilTekst){ visNyFeil(feilTekst); sjekkNy(); return; }
+  if(r&&r.ok&&j&&j.booking){ nyBookingLagret(j.booking,j.paaminnelse_sendes===true); return; }
+  if(r&&r.status===409){
+    if(j&&j.konflikt&&j.konflikt.id!=null){ BKNY.konflikt=j.konflikt; BKNY.konfliktDato=v.dato; bknFlettKonflikt(); }
+    else visNyFeil('Noen booket denne tiden akkurat nå. Velg en annen tid.');
+    sjekkNy(); hentNyDag(v.dato,true);   // hent dagen på nytt: lista viser det som faktisk er tatt nå
+    return;
+  }
+  if(r&&r.ok) visNyFeil('Bookingen ble lagret, men svaret manglet. Last inn siden på nytt.');
+  else if(r&&r.status===400&&v.tlf&&/telefon|nummer/i.test((j&&j.error)||'')) visTlfFeil(j.error);   // som profilens telefonfelt
+  else if(r) visNyFeil((j&&j.error)||('Klarte ikke å legge til bookingen (feil '+r.status+'). Prøv igjen.'));
+  sjekkNy();
+}
+function visTlfFeil(t){var f=$("#bkNyTlfFeil");f.textContent=t||'';f.hidden=!t;}
+// Etter lagring: inn i kalenderen og Kommende med en gang (ingen ny henting), modalen lukkes, kort bekreftelse.
+function nyBookingLagret(b,smsLinje,annenOkt){
+  var key=calDayKey(b.start);
+  if(CAL.built&&b.status!=='avlyst'){
+    CAL.alle=CAL.alle.filter(function(x){return String(x.id)!==String(b.id);}).concat([b]);
+    CAL.maxKey=Math.max(CAL.maxKey,calDayKey(b.end||b.start));
+  }
+  settUpcoming(_bookingerKilde.filter(function(x){return String(x.id)!==String(b.id);}).concat([b]));
+  try{ delete _ledigeCache[keyTilDato(key)]; }catch(_){}   // «N ledige timer» for dagen regnes på nytt
+  if(annenOkt){ if(CAL.open)renderCal(); visLagtTil(smsLinje,CAL.open?null:key); return; }
+  lukkNyBooking();
+  if(CAL.open) calGoto(key);
+  visLagtTil(smsLinje, BKNY.fra==='oversikt'&&!CAL.open?key:null);
+}
+function visLagtTil(smsLinje,visKey){
+  var t=$("#bkLagtTil"), vis=$("#bkLagtTilVis");
+  $("#bkLagtTilSms").hidden=!smsLinje;
+  vis.hidden=(visKey==null);
+  vis.onclick=function(){ skjulLagtTil(); openKalender(visKey); };
+  t.classList.toggle('over-kal',!!CAL.open);
+  t.hidden=false;
+  clearTimeout(BKNY.okT); BKNY.okT=setTimeout(skjulLagtTil,visKey!=null?7000:4500);
+}
+function skjulLagtTil(){clearTimeout(BKNY.okT);var t=$("#bkLagtTil");if(t)t.hidden=true;}
+(function(){
+  $("#bkNyLukk").addEventListener('click',lukkNyBooking);
+  $("#bkNyBackdrop").addEventListener('click',function(e){if(e.target===e.currentTarget)lukkNyBooking();});
+  $("#bkNyBackdrop").addEventListener('keydown',function(e){
+    if(e.key!=='Escape')return;
+    e.stopPropagation();
+    if(!$("#bkNyKal").hidden){bknKalLukk();$("#bkNyDatoKnapp").focus();}   // åpen datovelger lukkes først
+    else lukkNyBooking();
+  });
+  $("#bkNyForm").addEventListener('submit',lagreNyBooking);
+  $("#bkNyDatoKnapp").addEventListener('click',function(){ if($("#bkNyKal").hidden)bknKalAapne(); else bknKalLukk(); });
+  ['#bkNyTid','#bkNySvc'].forEach(function(s){
+    $(s).addEventListener('input',function(){BKNY.konflikt=null;sjekkNy();});
+    $(s).addEventListener('change',function(){BKNY.konflikt=null;sjekkNy();});
+  });
+  $("#bkNyNavn").addEventListener('input',function(){visNyFeil('');sjekkNy();});
+  $("#bkNyTlf").addEventListener('input',function(){visNyFeil('');visTlfFeil('');sjekkNy();});
+})();
 
 function monthLbl(ym){ return MONTHS[(+String(ym).slice(5,7))-1] || ""; } // "2026-07" → "juli"
 
@@ -8274,7 +8692,7 @@ function applyDemoMode(){
    'slotPopupFjern','slotPopupEndre','gcalBtn',
    'fbSend-side','fbSend-konto-ide','fbSend-konto-support',  // tre bokser, én handler
    // Konto: én hovedknapp + tekstlenker (startSub/goLive er slått sammen til kontoAksjon)
-   'kontoAksjon','kontoOppBtn','kontoPubliser','tog-smsPaam','smsKjop','smsTilbudSe','smsTilbudIkkeNaa','dinsidePubliser','manageSub','unpublish','savePw','loggUt'].forEach(function(id){
+   'kontoAksjon','kontoOppBtn','kontoPubliser','tog-smsPaam','smsKjop','smsTilbudSe','smsTilbudIkkeNaa','dinsidePubliser','manageSub','unpublish','savePw','loggUt','bkNyLagre'].forEach(function(id){
     var el=document.getElementById(id);
     if(el){el.disabled=true;el.title='Ikke tilgjengelig i forhåndsvisning';}
   });
@@ -9635,6 +10053,11 @@ window.hqDel = (function(){
 })();
 </script>
 <div class="toast" id="toast" role="status" aria-live="polite"></div>
+<!-- Bekreftelse etter «Legg til booking» (egen flate: den har en knapp, .toast tar ikke trykk). -->
+<div class="bkn-ok" id="bkLagtTil" role="status" aria-live="polite" hidden>
+  <div class="bkn-ok-tekst"><strong>Booking lagt til</strong><span id="bkLagtTilSms" hidden>Kunden får SMS-påminnelse dagen før.</span></div>
+  <button class="bkn-ok-vis" id="bkLagtTilVis" type="button" hidden>Vis i kalender</button>
+</div>
 <!-- Bunn-nav (mobil ≤719px). Erstatter dropdown-nav. Faner kaller switchPanel; aria-current synkes
      fra aktivt panel. «Tjenester & tider» kortes til «Tjenester» KUN her, ikke i selve fanen. -->
 <nav class="bunn-nav" aria-label="Hovednavigasjon">

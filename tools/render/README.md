@@ -52,6 +52,14 @@ at ingen JS kjørte, ville stått igjen.
 Et grønt skjermbilde er ikke bevis på at siden virker. `jsfeil: 'ingen'` er en
 del av beviset.
 
+## ⚠ WebKit-skjermbilder: bruk `fixtures/webkit-fonter.mjs`
+
+Playwrights WebKit-bygg for Windows tegner Googles VARIABLE Inter-fil i standardvekten (400): bredden
+følger `font-weight`, men strekene gjør det ikke, så all fet tekst blir tynn på bildet. Safari på iPhone
+tegner fila riktig — feilen er i oppsettet. Målt 12.11.2026 (400/700 → 136,0/139,8 px i begge motorer,
+lik strektykkelse i WebKit). Skal et WebKit-bilde vise typografi, kall `statiskeGoogleFonter(page)` før
+`page.goto`: da får WebKit Googles statiske filer (én per vekt, samme Inter). Chromium skal ikke ha den.
+
 ## Måling slår øyemål
 
 Scriptene rapporterer tall, ikke bare bilder — `getBoundingClientRect`,
