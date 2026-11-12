@@ -1,15 +1,15 @@
-// tools/render/dinside-v2.mjs — «Din side» for v2-barbere: fire steg, lagre, forhåndsvisning, ulagret-varsel (19.10.2026).
+// tools/render/dinside-v2.mjs — «Din side» for v2-barbere: fire steg, autolagring, forhåndsvisning, oppsett (19.10.2026).
 //
 //   node tools/render/dinside-v2.mjs            # full matrise + interaksjoner (320/375/402/1280)
 //   node tools/render/dinside-v2.mjs --rask     # én bredde (375), kun interaksjonene
 //
 // Matrise (skjermbilder i .render-ut/dinside-v2/): hvert steg × dashbord lys/mørk × med/uten bilder/tomme felt ×
-// langt sjappenavn med æøå × forhåndsvisning åpen på mobil × feilmelding ved lagring × ulagret-varselet.
+// langt sjappenavn med æøå × forhåndsvisning åpen på mobil × feilmelding ved lagring × «ikke lagret»-dialogen.
 // Målinger (ikke bare bilder): overflow, trykkflater ≥ 40 px, v1-flater skjult, ingen request mot prod.
-// Interaksjoner: verdier holdes på tvers av steg · Lagre aktiv bare ved endring · PUT inneholder alt (aldri sjappenavn) ·
-// 400 → melding ved riktig felt + hopp til steget, ingenting tapt · debounce på preview · preview bruker ulagrede verdier ·
-// «Tilbake» fra preview bevarer steg/innhold/rulleposisjon · beforeunload · fanebytte-dialog · fontvelger fra valg.fonter,
-// Inter + «laster» til fonten er der · rekkefølge via piler (PUT /images/rekkefolge) · v1-barber helt uendret.
+// Interaksjoner: verdier holdes på tvers av steg · autolagring (12.11.2026: hver endring lagres med en gang — detaljene i
+// dinside-v2-autolagring.mjs) · 400 → melding ved riktig felt, ingenting tapt · debounce på preview · preview bruker
+// utkastet · «Tilbake» fra preview bevarer steg/innhold/rulleposisjon · dialog bare når lagringen feilet · fontvelger fra
+// valg.fonter, Inter + «laster» til fonten er der · bildehandlinger lagres for seg · «Publiser siden» · v1-barber uendret.
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -52,7 +52,10 @@ const verdi = (page, sel) => page.$eval(sel, e => e.value);
 const stegKnapp = (page, i) => page.click(`#dv2Steg [data-steg="${i}"]`);
 const lagringer = m => m.utkast.filter(u => u.action === 'lagre');   // POST /din-side/lagre (JSON eller multipart)
 const valgtSteg = (page, i) => page.$eval(`#dv2Steg [data-steg="${i}"]`, e => e.getAttribute('aria-selected') === 'true');
-async function lagreSiste(page){await stegKnapp(page,3);await page.click('#dv2Lagre');await page.waitForTimeout(500);if(await page.locator('#suksessOverlay').isVisible())await page.locator('#suksessX').click();}
+const puts = m => m.kall.filter(k => k.metode === 'PUT' && k.sti === '/api/dashboard/din-side');   // autolagring av felt
+async function ventPaa(fn, ms = 4000) { const slutt = Date.now() + ms; for (;;) { const v = await fn(); if (v || Date.now() > slutt) return v; await new Promise(r => setTimeout(r, 60)); } }
+// Autolagring: forlat feltet (lagrer med en gang) og vent til alt er bekreftet av serveren.
+async function ventLagret(page) { await page.click('#dv2Tittel').catch(() => {}); await ventPaa(() => page.evaluate(() => !DinSideV2.ulagret() && !DinSideV2._S.felt && !DinSideV2._S.bildeLagrer)); await page.waitForTimeout(100); }
 
 // Visningsvindu = det brukeren ser (klistret lagre-linje på plass). «-hel» = hele siden (lagre-linja tegnes midt i, det er en artefakt).
 const skjerm = async (page, navn) => { await page.screenshot({ path: `${OUT}/${navn}.png` }); await page.screenshot({ path: `${OUT}/${navn}-hel.png`, fullPage: true }); };
@@ -112,13 +115,15 @@ if (!RASK) {
       sjekk(!errs.length, `${bredde} preview: pageerror`, errs.join('; '));
       await ctx.close();
     }
-    // Feilmelding ved lagring (400 med felt) og ulagret-dialogen
+    // Feilmelding ved lagring (400 med felt) og «ikke lagret»-dialogen (bare når lagringen feilet)
     {
-      const { ctx, page, errs } = await ny({ bredde, tema: 'dark', mock: {} });
-      await stegKnapp(page, 3); await page.fill('#dv2Telefon', '000'); await lagreSiste(page); await page.waitForTimeout(500);
+      const { ctx, page, m, errs } = await ny({ bredde, tema: 'dark', mock: {} });
+      await stegKnapp(page, 3); await page.fill('#dv2Telefon', '000'); await page.click('#dv2Tittel'); await page.waitForTimeout(600);
       await skjerm(page, `${bredde}-dark-feil-ved-lagring`);
-      await page.fill('#dv2Telefon', '91 23 45 67'); await stegKnapp(page, 0); await page.fill('#dv2Tagline', 'Endret'); await page.evaluate(() => document.querySelector('.nav button[data-panel="oversikt"]').click());   // som bunn-navet gjør (skjult topp-nav klikkes programmatisk)
-      await page.waitForTimeout(400); await skjerm(page, `${bredde}-dark-ulagret-varsel`);
+      await page.fill('#dv2Telefon', '91 23 45 67'); await ventLagret(page);
+      m.opts.putFeil = 'nett';
+      await stegKnapp(page, 0); await page.fill('#dv2Tagline', 'Endret'); await page.evaluate(() => document.querySelector('.nav button[data-panel="oversikt"]').click());   // som bunn-navet gjør (skjult topp-nav klikkes programmatisk)
+      await page.waitForSelector('.dv2-dialog', { timeout: 4000 }).catch(() => {}); await page.waitForTimeout(200); await skjerm(page, `${bredde}-dark-ulagret-varsel`);
       sjekk(!errs.length, `${bredde} feil/varsel: pageerror`, errs.join('; '));
       await ctx.close();
     }
@@ -156,57 +161,50 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
 
 /* ════════ 2. Interaksjoner (375) ════════ */
 {
-  // 2a. Verdier holdes på tvers av steg · Lagre aktiv bare ved endring · PUT-innhold
+  // 2a. Verdier holdes på tvers av steg · autolagring: bare endrede felt, aldri sjappenavn, aldri publiser, aldri /page-status
   const { ctx, page, m, errs } = await ny({ bredde: 375, mock: {} });
-  sjekk(await page.$eval('#dv2Lagre', e => e.disabled), 'Lagre er deaktivert uten endringer');
   // Runde 2 (23.10.2026): ingen «← Tilbake» på første steg — ikke en deaktivert knapp, den står ikke der.
-  sjekk(await synlig(page, '#dv2Neste') && !(await synlig(page, '#dv2Lagre')) && !(await synlig(page, '#dv2Tilbake')), 'Steg 1: bare «Neste →» — ingen «← Tilbake», ingen lagre-knapp');
+  sjekk(await synlig(page, '#dv2Neste') && !(await synlig(page, '#dv2Publiser')) && !(await synlig(page, '#dv2Tilbake')), 'Steg 1: bare «Neste →» — ingen «← Tilbake», ingen lagre-/publiserknapp');
   sjekk(!(await synlig(page, '#dv2Hjelpelinje')), 'Siden er live: ingen hjelpelinje');
   await page.fill('#dv2Tagline', 'Ny spesialitet æøå');
-  sjekk(!(await page.$eval('#dv2Lagre', e => e.disabled)), 'Lagre blir aktiv ved endring');
   await stegKnapp(page, 3); await page.fill('#dv2Instagram', 'https://instagram.com/mitt_navn/');
   await page.click('#dv2Tilbake'); await page.click('#dv2Tilbake'); await page.click('#dv2Tilbake');
   sjekk(await verdi(page, '#dv2Tagline') === 'Ny spesialitet æøå', 'Verdi holdes etter steg-bytte (profil)');
   await stegKnapp(page, 3);
-  sjekk(await verdi(page, '#dv2Instagram') === 'https://instagram.com/mitt_navn/', 'Verdi holdes etter steg-bytte (kontakt)');
+  sjekk(await verdi(page, '#dv2Instagram') === 'mitt_navn', 'Handle lagret og normalisert av serveren når feltet er forlatt', await verdi(page, '#dv2Instagram'));
   // Utseende: mørk→lys, gull
   await stegKnapp(page, 1);
   await page.click('[data-mode="lys"]'); await page.click('[data-aksent="gull"]');
-  await lagreSiste(page); await page.waitForTimeout(600);
-  const put = lagringer(m);
-  sjekk(put.length === 1 && !m.kall.some(k => k.metode === 'PUT' && /din-side|page-status/.test(k.sti)), 'Nøyaktig én POST /din-side/lagre (ingen PUT /din-side, ingen PUT /page-status)', String(put.length));
-  const b = put[0] && put[0].draft;
-  sjekk(b && b.profil && !('shop' in b.profil), 'Lagringen inneholder ikke sjappenavn', JSON.stringify(b && b.profil));
-  sjekk(b && b.profil.tagline === 'Ny spesialitet æøå' && b.utseende.color_mode === 'lys' && b.utseende.aksent === 'gull' && b.kontakt.instagram.includes('mitt_navn') && 'contact_phone' in b.kontakt, 'Lagringen bærer alle tre grupper', JSON.stringify(b));
-  sjekk(b && b.publiser === false && !b.images, 'Live side: publiser:false, ren JSON uten bilder', JSON.stringify(b && { publiser: b.publiser, images: b.images }));
-  const st = await page.$eval('#dv2Status', e => e.textContent);
-  sjekk(/Lagret/.test(st), 'Bekreftelse etter lagring', st);
-  sjekk(await page.$eval('#dv2Lagre', e => e.disabled), 'Lagre deaktiveres etter lagring');
-  sjekk(await verdi(page, '#dv2Instagram') === 'mitt_navn', 'Handle normaliseres av server (vises etter lagring)');
-  await stegKnapp(page, 3); sjekk(await verdi(page, '#dv2Instagram') === 'mitt_navn', 'Normalisert handle fra serverens svar', await verdi(page, '#dv2Instagram'));
+  await ventLagret(page);
+  const alle = puts(m).map(k => k.body);
+  sjekk(alle.length >= 3 && alle.every(b => !b.profil || !('shop' in b.profil)), 'Autolagringen sender aldri sjappenavn', JSON.stringify(alle));
+  sjekk(m.tilstand.profil.tagline === 'Ny spesialitet æøå' && m.tilstand.utseende.color_mode === 'lys' && m.tilstand.utseende.aksent === 'gull' && m.tilstand.kontakt.instagram === 'mitt_navn', 'Alle tre gruppene er lagret', JSON.stringify(m.tilstand.utseende));
+  sjekk(lagringer(m).length === 0 && !m.kall.some(k => /page-status/.test(k.sti)) && alle.every(b => !('publiser' in b)), 'Live side: bare PUT /din-side — ingen /lagre, ingen publiser, ingen /page-status');
+  sjekk(/Lagret ✓/.test(await page.$eval('#dv2Status', e => e.textContent)), 'Bekreftelse etter lagring', await page.$eval('#dv2Status', e => e.textContent));
   sjekk(m.prod === 0, 'Ingen request mot prod (2a)'); sjekk(!errs.length, '2a pageerror', errs.join('; '));
   await ctx.close();
 }
 {
-  // 2b. 400 → melding ved riktig felt, hopp til steget, ingenting tapt
+  // 2b. 400 → melding ved riktig felt (feilprikk på steget), ingenting tapt
   const { ctx, page, errs } = await ny({ bredde: 375, mock: {} });
   await page.fill('#dv2Tagline', 'Beholdes'); await stegKnapp(page, 3); await page.fill('#dv2Telefon', '000');
-  await stegKnapp(page, 0);
-  await lagreSiste(page); await page.waitForTimeout(500);
-  sjekk(await valgtSteg(page, 3), '400: hopper til steget feltet ligger i (Kontakt)');
+  await stegKnapp(page, 0); await page.waitForTimeout(600);   // telefonfeltet er forlatt → lagres → 400
+  sjekk(await page.$eval('#dv2Steg [data-steg="3"] .feilpunkt', e => !e.hidden), '400: feilprikk på steget feltet ligger i (Kontakt)');
+  sjekk(/under «Kontakt»/.test(await page.$eval('#dv2Status', e => e.textContent)), '400: statuslinja peker på steget', await page.$eval('#dv2Status', e => e.textContent));
+  await stegKnapp(page, 3);
   const fm = await page.$eval('[data-felt="contact_phone"] .fld-err', e => ({ vis: !e.hidden, tekst: e.textContent }));
   sjekk(fm.vis && /ikke gyldig/.test(fm.tekst), '400: melding under telefonfeltet', JSON.stringify(fm));
   sjekk(await verdi(page, '#dv2Telefon') === '000' && await verdi(page, '#dv2Tagline') === 'Beholdes', '400: ingenting i skjemaet går tapt');
-  sjekk(!(await page.$eval('#dv2Lagre', e => e.disabled)), '400: Lagre fortsatt aktiv');
   await page.fill('#dv2Telefon', '91 23 45 67');
   sjekk(await page.$eval('[data-felt="contact_phone"] .fld-err', e => e.hidden), 'Feilen forsvinner når feltet endres');
   await ctx.close();
   // lokal validering av egen farge
   const c2 = await ny({ bredde: 375, mock: {} });
-  await stegKnapp(c2.page, 1); await c2.page.click('[data-aksent="egen"]'); await c2.page.fill('#dv2Hex', '#zzz');
-  await lagreSiste(c2.page); await c2.page.waitForTimeout(300);
+  await stegKnapp(c2.page, 1); await c2.page.click('[data-aksent="egen"]'); await ventLagret(c2.page);
+  const foerHex = puts(c2.m).length;
+  await c2.page.fill('#dv2Hex', '#zzz'); await c2.page.click('#dv2Tittel'); await c2.page.waitForTimeout(400);
   sjekk(await c2.page.$eval('#dv2HexFeil', e => !e.hidden && /gyldig fargekode/.test(e.textContent)), 'Ugyldig hex gir melding ved feltet');
-  sjekk(lagringer(c2.m).length === 0, 'Ugyldig hex sendes ikke til serveren');
+  sjekk(puts(c2.m).length === foerHex, 'Ugyldig hex sendes ikke til serveren');
   await c2.page.fill('#dv2Hex', '#ffee00'); await c2.page.waitForTimeout(200);
   const v = await c2.page.$eval('#dv2Kontrast', e => ({ vis: !e.hidden, tekst: e.textContent }));
   sjekk(!v.vis, 'Kontrastvarsel: gul mot mørk bakgrunn gir ingen varsel', JSON.stringify(v));
@@ -215,8 +213,8 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
   await c2.page.click('[data-mode="mork"]'); await c2.page.fill('#dv2Hex', '#1a1a1a'); await c2.page.waitForTimeout(200);
   const v2_ = await c2.page.$eval('#dv2Kontrast', e => ({ vis: !e.hidden, tekst: e.textContent }));
   sjekk(v2_.vis && /kontrast/.test(v2_.tekst), 'Kontrastvarsel under 3,0 vises', JSON.stringify(v2_));
-  await lagreSiste(c2.page); await c2.page.waitForTimeout(500);
-  sjekk(lagringer(c2.m).length === 1, 'Lagring tillatt ved lav kontrast');
+  await ventLagret(c2.page);
+  sjekk(c2.m.tilstand.utseende.custom_accent === '#1a1a1a', 'Lagring tillatt ved lav kontrast', c2.m.tilstand.utseende.custom_accent);
   await c2.ctx.close();
 }
 {
@@ -261,19 +259,21 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
   await d.ctx.close();
 }
 {
-  // 2d. Ulagrede endringer: beforeunload + fanebytte-dialog
-  const { ctx, page, errs } = await ny({ bredde: 375, mock: {} });
-  await page.click('#dv2Bio'); await page.fill('#dv2Bio', 'Ulagret tekst');   // ekte klikk = brukeraktivering, ellers viser ikke Chromium beforeunload
+  // 2d. Lagringen feilet: beforeunload (det som ikke kan sendes) + fanebytte-dialog. Uten feil: ingen av delene
+  //     (dekket i dinside-v2-autolagring.mjs).
+  const { ctx, page, m: m0 } = await ny({ bredde: 375, mock: {} });
+  m0.opts.putFeil = 'nett';
+  await page.click('#dv2Bio'); await page.fill('#dv2Bio', 'Ulagret tekst'); await page.click('#dv2Tittel'); await page.waitForTimeout(500);   // ekte klikk = brukeraktivering, ellers viser ikke Chromium beforeunload
   const dlg = new Promise(res => { page.once('dialog', async d => { res(d.type()); await d.dismiss(); }); setTimeout(() => res(null), 4000); });
   page.close({ runBeforeUnload: true }).catch(() => {});
   const dialogType = await dlg;
-  sjekk(dialogType === 'beforeunload', 'beforeunload ved lukking med ulagrede endringer', String(dialogType));
+  sjekk(dialogType === 'beforeunload', 'beforeunload ved lukking når lagringen har feilet', String(dialogType));
   await ctx.close();
-  const c = await ny({ bredde: 375, mock: {} });
+  const c = await ny({ bredde: 375, mock: { putFeil: 'nett' } });
   await c.page.fill('#dv2Bio', 'Ulagret tekst');
   await c.page.evaluate(() => document.querySelector('.nav button[data-panel="oversikt"]').click());
-  await c.page.waitForSelector('.dv2-dialog', { timeout: 3000 }).catch(() => {});
-  sjekk(await synlig(c.page, '.dv2-dialog'), 'Fanebytte med ulagrede endringer viser dialog');
+  await c.page.waitForSelector('.dv2-dialog', { timeout: 4000 }).catch(() => {});
+  sjekk(await synlig(c.page, '.dv2-dialog'), 'Fanebytte når lagringen feiler viser dialog');
   sjekk(await c.page.evaluate(() => document.querySelector('#design').classList.contains('active')), 'Står fortsatt på Din side mens dialogen er oppe');
   await c.page.click('.dv2-dialog .dv2-btn:not(.farlig):not(.prim)'); await c.page.waitForTimeout(250);   // «Bli her»
   sjekk(await verdi(c.page, '#dv2Bio') === 'Ulagret tekst' && await c.page.evaluate(() => document.querySelector('#design').classList.contains('active')), '«Bli her» beholder utkastet');
@@ -322,82 +322,64 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
   sjekk(g.every(x => x[0] === g[0][0] && x[1] === x[0]), 'Galleriet: 2 per rad, like store og kvadratiske', JSON.stringify(g));
   sjekk(g[2][2] === g[0][2], 'Siste bilde (oddetall) står alene i venstre kolonne i samme størrelse', JSON.stringify(g));
   await skjerm(page, '375-dark-bilder-oddetall');
-  await page.click('#dv2Galleri .flis:nth-child(1)'); await page.click('[data-h="senere"]'); await page.waitForTimeout(400);
+  await page.click('#dv2Galleri .flis:nth-child(1)'); await page.click('[data-h="senere"]'); await ventLagret(page);
   const rf = m.kall.find(k => k.sti === '/api/dashboard/images/rekkefolge');
-  sjekk(!rf && JSON.stringify(await page.$$eval('#dv2Galleri .flis',es=>es.map(e=>e.dataset.id)))===JSON.stringify(['g2','g1','g3']),'Ny rekkefølge beholdes som utkast uten HTTP-skriving');
-  await page.click('#dv2Galleri [data-h="slett"]'); await page.waitForSelector('.dv2-dialog');
-  sjekk(m.kall.filter(k => k.metode === 'DELETE').length === 0, 'Sletting krever bekreftelse (ingen DELETE før «Slett bildet»)');
-  await page.click('.dv2-dialog .farlig'); await page.waitForTimeout(500);
-  sjekk(m.kall.filter(k => k.metode === 'DELETE').length === 0 && await page.$$eval('#dv2Galleri .flis', f => f.length) === 2, 'Fjern fra utkast etter bekreftelse, uten å slette live');
+  sjekk(!rf && lagringer(m).length === 1 && JSON.stringify(await page.$$eval('#dv2Galleri .flis',es=>es.map(e=>e.dataset.id)))===JSON.stringify(['g2','g1','g3']),'Ny rekkefølge lagres med en gang (utkast-lagring, ikke /rekkefolge)');
+  await page.click('#dv2Galleri .flis[data-id="g2"]'); await page.click('#dv2Galleri [data-h="slett"]'); await page.waitForSelector('.dv2-dialog');
+  sjekk(lagringer(m).length === 1 && m.kall.filter(k => k.metode === 'DELETE').length === 0, 'Sletting krever bekreftelse (ingenting lagres før «Fjern bildet»)');
+  await page.click('.dv2-dialog .farlig'); await ventLagret(page);
+  sjekk(lagringer(m).length === 2 && await page.$$eval('#dv2Galleri .flis', f => f.length) === 2 && !m.tilstand.bilder.some(b => b.id === 'g2'), 'Fjernet etter bekreftelse og lagret med en gang');
   sjekk((await page.$eval('#dv2Sek2 .ingress', e => e.textContent)).includes('ferdig uten'), 'Steget sier at siden er ferdig uten bilder');
   await ctx.close();
 }
 {
-  // 2i. Bildeutkast ende-til-ende mot mocken: opplasting → beskjæring → flytting → sletting → forhåndsvisning → ÉN multipart-lagring.
-  //     Ingen bilde-HTTP-skriving før «Lagre endringer»; forhåndsvisningen får små kopier, lagringen full fil + original.
+  // 2i. Bildehandlinger ende-til-ende mot mocken: opplasting → beskjæring → flytting → sletting, HVER lagret for seg
+  //     (multipart via /din-side/lagre, bare bildene, publiser:false). Lagringen sender full fil + original.
   const BILDE = path.resolve(ROOT, 'no/images/layout-hero.webp');
   const fliser = page => page.$$eval('#dv2Galleri .flis', es => es.map(e => e.dataset.id));
   const bildeSkriv = m => m.kall.filter(k => /^\/api\/dashboard\/images/.test(k.sti) && k.metode !== 'GET').length;
   const { ctx, page, m, errs } = await ny({ bredde: 375, mock: {} });
   await stegKnapp(page, 2); await page.waitForTimeout(400);
-  await page.setInputFiles('#dv2FilGalleri', BILDE); await page.waitForTimeout(800);
-  const f1 = await fliser(page);
-  sjekk(f1.length === 4 && /^draft-/.test(f1[3]), 'Opplasting legger bildet i utkastet', JSON.stringify(f1));
-  sjekk(bildeSkriv(m) === 0 && !m.utkast.some(u => u.action === 'lagre'), 'Opplasting skriver ingenting til serveren');
-  // Beskjær det nye bildet via dashbordets crop-modal → utkastet, ikke PUT /images/:id
+  await page.setInputFiles('#dv2FilGalleri', BILDE); await ventLagret(page);
+  const l1 = lagringer(m)[0], f1 = await fliser(page);
+  sjekk(lagringer(m).length === 1 && l1.draft.publiser === false && !l1.draft.profil && l1.filer.length === 1, 'Opplasting lagres med en gang: én multipart med bare bildene', JSON.stringify(l1 && { publiser: l1.draft.publiser, profil: !!l1.draft.profil, filer: l1.filer.length }));
+  sjekk(f1.length === 4 && !f1.some(id => /^draft-/.test(id)) && m.tilstand.bilder.filter(b => b.slot === 'galleri').length === 4, 'Etter lagring viser galleriet serverens bilder', JSON.stringify(f1));
+  sjekk(bildeSkriv(m) === 0, 'Ingen separate /images-skrivinger');
+  // Beskjær det nye bildet via dashbordets crop-modal → lagres som egen handling (fil + original + utsnitt)
   await page.click(`#dv2Galleri .flis[data-id="${f1[3]}"]`); await page.click('#dv2Galleri [data-h="beskjaer"]');
   // Cropper må være «ready» (bildet lastet) før lagring — vent på tilstanden, ikke på en fast pause.
   await page.waitForFunction(() => typeof _cropper !== 'undefined' && _cropper && _cropper.ready, null, { timeout: 8000 }).catch(() => {});
   await page.click('#cropSave');
   await page.waitForFunction(() => !document.querySelector('#cropModal').classList.contains('open'), null, { timeout: 5000 }).catch(() => {});
+  await ventLagret(page);
   const cropErr = await page.$eval('#cropErr', e => e.textContent);
-  const ny0 = await page.evaluate(() => { const b = DinSideV2._S.bilder.find(x => x._new); return b && { rect: !!b.cropRect, orig: !!b._original, blob: /^blob:/.test(b.url) }; });
-  sjekk(ny0 && ny0.rect && ny0.orig && ny0.blob, 'Beskjæring av nytt bilde lagres i utkastet (utsnitt + original beholdt)', JSON.stringify(ny0) + ' cropErr=' + cropErr);
+  const l2 = lagringer(m)[1], e2 = l2 && l2.draft.images.find(e => e.id === f1[3]);
+  sjekk(e2 && e2.file && e2.cropRect && l2.filer.length >= 1, 'Beskjæring lagres med en gang (fil + utsnitt for bildet)', JSON.stringify(e2) + ' cropErr=' + cropErr);
   sjekk(!(await page.$eval('#cropModal', e => e.classList.contains('open'))), 'Crop-modalen lukkes etter beskjæring');
-  sjekk(bildeSkriv(m) === 0, 'Beskjæring skriver ingenting til serveren');
-  // Flytt g1 ett hakk senere, slett g2
-  await page.click('#dv2Galleri .flis[data-id="g1"]'); await page.click('[data-h="senere"]'); await page.waitForTimeout(200);
+  // Flytt g1 ett hakk senere, slett g2 — to handlinger, to lagringer
+  await page.click('#dv2Galleri .flis[data-id="g1"]'); await page.click('[data-h="senere"]'); await ventLagret(page);
   await page.click('#dv2Galleri .flis[data-id="g2"]'); await page.click('#dv2Galleri [data-h="slett"]'); await page.waitForSelector('.dv2-dialog');
-  await page.click('.dv2-dialog .farlig'); await page.waitForTimeout(300);
+  await page.click('.dv2-dialog .farlig'); await ventLagret(page);
   const f2 = await fliser(page);
-  sjekk(JSON.stringify(f2.slice(0, 2)) === '["g1","g3"]' && f2.length === 3, 'Flytting og sletting står i utkastet', JSON.stringify(f2));
-  // Forhåndsvisning med bildeutkast: multipart, liten kopi, ingen original
-  await page.click('#dv2SeSiden'); await page.waitForTimeout(1200);
-  const pv = m.utkast.filter(u => u.action === 'preview').pop();
-  const full = fs.statSync(BILDE).size;
-  // Bytes sier lite (kilden er en liten webp); det som teller er pikselkanten på kopien som sendes.
-  const pvKant = await page.evaluate(async () => { const b = DinSideV2._S.bilder.find(x => x._new); if (!b || !b._pv) return null; const bm = await createImageBitmap(b._pv); return Math.max(bm.width, bm.height); });
-  sjekk(pv && pv.filer.length === 1 && pvKant && pvKant <= 600 && !pv.draft.images.some(e => e.original), 'Forhåndsvisning av bildeutkast sender en kopi på maks 600 px uten original', pv ? JSON.stringify(pv.filer) + ' kant=' + pvKant : 'ingen preview-kall');
-  sjekk(pv && !('contact_phone' in (pv.draft.kontakt || {})), 'Forhåndsvisning av bildeutkast sender ikke telefon');
-  await page.click('#dv2PvLukk'); await page.waitForTimeout(200);
-  // Lagre
-  await lagreSiste(page); await page.waitForTimeout(600);
-  const lg = m.utkast.filter(u => u.action === 'lagre');
-  sjekk(lg.length === 1 && !m.kall.some(k => k.sti === '/api/dashboard/din-side' && k.metode === 'PUT'), 'Nøyaktig én multipart-lagring (og ingen separat PUT)', String(lg.length));
-  const man = lg[0] && lg[0].draft.images;
-  const gal = man ? man.filter(e => e.slot === 'galleri') : [];
-  sjekk(gal.length === 3 && gal[0].id === 'g1' && gal[1].id === 'g3' && !gal[2].id && gal[2].file && gal[2].original && gal[2].cropRect, 'Manifestet: rekkefølge, sletting, ny fil med original og utsnitt', JSON.stringify(man));
+  sjekk(lagringer(m).length === 4 && JSON.stringify(f2.slice(0, 2)) === '["g1","g3"]' && f2.length === 3, 'Flytting og sletting lagret hver for seg', `${lagringer(m).length} lagringer · ${JSON.stringify(f2)}`);
+  const man = lagringer(m)[3].draft.images;
   sjekk(man && man.some(e => e.id === 'b1' && e.slot === 'portrett'), 'Manifestet beholder portrettet');
-  sjekk(lg[0] && lg[0].filer.some(x => x.str === full || x.str > 0) && lg[0].filer.length === 2, 'Lagringen sender fil + original', lg[0] && JSON.stringify(lg[0].filer));
-  sjekk(/Lagret/.test(await page.$eval('#dv2Status', e => e.textContent)), 'Bekreftelse etter bildelagring', await page.$eval('#dv2Status', e => e.textContent));
-  await stegKnapp(page, 2); await page.waitForTimeout(300);
-  const f3 = await fliser(page);
-  sjekk(JSON.stringify(f3) === JSON.stringify(m.tilstand.bilder.filter(b => b.slot === 'galleri').map(b => b.id)) && !f3.some(id => /^draft-/.test(id)), 'Etter lagring viser galleriet serverens bilder', JSON.stringify(f3));
-  sjekk(await page.evaluate(() => !DinSideV2.ulagret()) && await page.$eval('#dv2Lagre', e => e.disabled), 'Etter lagring: ingen ulagrede endringer, Lagre deaktivert');
-  sjekk(m.prod === 0, 'Bildeutkast: ingen request mot prod'); sjekk(!errs.length, 'Bildeutkast: pageerror', errs.join('; '));
+  sjekk(/Lagret ✓/.test(await page.$eval('#dv2Status', e => e.textContent)), 'Bekreftelse etter bildelagring', await page.$eval('#dv2Status', e => e.textContent));
+  sjekk(await page.evaluate(() => !DinSideV2.ulagret()), 'Etter lagring: ingen ulagrede endringer');
+  sjekk(m.prod === 0, 'Bilder: ingen request mot prod'); sjekk(!errs.length, 'Bilder: pageerror', errs.join('; '));
   await skjerm(page, '375-dark-bilder-etter-lagring');
   await ctx.close();
 
-  // 2j. Lagringen feiler (409 annen fane · nettfeil · 500): utkastet står urørt, tydelig melding, Lagre fortsatt aktiv
-  for (const [navn, opt, tekst] of [['409', { konflikt: true }, /annen fane/], ['nettfeil', { lagreFeil: 'nett' }, /bekrefte lagringen/], ['500', { lagreFeil: { status: 500, error: 'Kunne ikke lagre utkastet. Prøv igjen.' } }, /Kunne ikke lagre/]]) {
+  // 2j. Bildelagringen feiler (409 annen fane · nettfeil · 500): utkastet står, tydelig melding med «Prøv igjen», serveren urørt
+  for (const [navn, opt, tekst] of [['409', { konflikt: true }, /annen fane/], ['nettfeil', { lagreFeil: 'nett' }, /Fikk ikke kontakt/], ['500', { lagreFeil: { status: 500, error: 'Kunne ikke lagre utkastet. Prøv igjen.' } }, /Kunne ikke lagre/]]) {
     const c = await ny({ bredde: 375, mock: opt });
     await stegKnapp(c.page, 2); await c.page.waitForTimeout(400);
-    await c.page.setInputFiles('#dv2FilGalleri', BILDE); await c.page.waitForTimeout(800);
-    await stegKnapp(c.page, 3); await c.page.click('#dv2Lagre'); await c.page.waitForTimeout(800);
-    const st = await c.page.$eval('#dv2Status', e => e.textContent);
-    sjekk(tekst.test(st), `${navn}: melding ved lagre-knappen`, st);
-    sjekk(!(await c.page.$eval('#dv2Lagre', e => e.disabled)) && await c.page.evaluate(() => DinSideV2.ulagret()), `${navn}: Lagre aktiv og utkastet ulagret`);
-    await stegKnapp(c.page, 2); await c.page.waitForTimeout(200);
+    await c.page.setInputFiles('#dv2FilGalleri', BILDE);
+    await ventPaa(() => c.page.$eval('#dv2BilderFeil', e => !e.hidden));
+    const bf = await c.page.$eval('#dv2BilderFeil', e => ({ t: e.textContent, knapp: !!e.querySelector('.dv2-provigjen') }));
+    // 409 gir samme svar til siden er lastet på nytt → ingen «Prøv igjen» der; nett/500 kan lykkes ved nytt forsøk.
+    sjekk(tekst.test(bf.t) && bf.knapp === (navn !== '409'), `${navn}: melding i Bilder${navn === '409' ? ' (uten «Prøv igjen»)' : ' med «Prøv igjen»'}`, JSON.stringify(bf));
+    sjekk(await c.page.evaluate(() => DinSideV2.ulagret()) && /Ikke lagret/.test(await c.page.$eval('#dv2Status', e => e.textContent)), `${navn}: utkastet ulagret, statuslinja sier det`);
     sjekk((await fliser(c.page)).length === 4 && c.m.tilstand.bilder.filter(b => b.slot === 'galleri').length === 3, `${navn}: utkastet beholdt, serveren urørt`);
     sjekk(!c.errs.length, `${navn}: pageerror`, c.errs.join('; '));
     await c.ctx.close();
@@ -407,11 +389,11 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
   {
     const c = await ny({ bredde: 375, mock: { bilderForsinkelse: 1500 }, vent: 'commit' });
     await stegKnapp(c.page, 2);
-    await c.page.setInputFiles('#dv2FilGalleri', BILDE); await c.page.waitForTimeout(2600);
+    await c.page.setInputFiles('#dv2FilGalleri', BILDE);
+    await ventPaa(() => c.page.evaluate(() => !DinSideV2.ulagret() && !DinSideV2._S.bildeLagrer && DinSideV2._S.bilder.length === 5), 8000);
     const f = await fliser(c.page);
     sjekk(f.length === 4 && f.slice(0, 3).join() === 'g1,g2,g3', 'Tidlig opplasting venter på bildelista', JSON.stringify(f));
-    await stegKnapp(c.page, 3); await c.page.click('#dv2Lagre'); await c.page.waitForTimeout(2600);   // ny GET /images etter lagring har samme forsinkelse
-    sjekk(/Lagret/.test(await c.page.$eval('#dv2Status', e => e.textContent)), 'Tidlig opplasting lagres uten konflikt', await c.page.$eval('#dv2Status', e => e.textContent));
+    sjekk(lagringer(c.m).length === 1 && c.m.tilstand.bilder.filter(b => b.slot === 'galleri').length === 4 && /Lagret ✓/.test(await c.page.$eval('#dv2Status', e => e.textContent)), 'Tidlig opplasting lagres uten konflikt', await c.page.$eval('#dv2Status', e => e.textContent));
     sjekk(!c.errs.length, 'Tidlig opplasting: pageerror', c.errs.join('; '));
     await c.ctx.close();
   }
@@ -421,8 +403,8 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
     const c = await ny({ bredde: 375, mock: {} });
     await c.page.route('**/api/dashboard/images', r => r.request().method() === 'GET' ? r.fulfill({ status: 500, body: '{}' }) : r.fallback());
     await c.page.evaluate(() => { DinSideV2._S.bilderLastet = false; });
-    await c.page.fill('#dv2Tagline', 'Bare tekst'); await lagreSiste(c.page);
-    sjekk(lagringer(c.m).some(u => u.draft && !u.draft.images) && /Lagret/.test(await c.page.$eval('#dv2Status', e => e.textContent)), 'Tekst lagres uten bildelista', await c.page.$eval('#dv2Status', e => e.textContent));
+    await c.page.fill('#dv2Tagline', 'Bare tekst'); await ventLagret(c.page);
+    sjekk(c.m.tilstand.profil.tagline === 'Bare tekst' && puts(c.m).some(k => k.body.profil && k.body.profil.tagline === 'Bare tekst') && /Lagret ✓/.test(await c.page.$eval('#dv2Status', e => e.textContent)), 'Tekst lagres uten bildelista', await c.page.$eval('#dv2Status', e => e.textContent));
     await c.ctx.close();
   }
 }
@@ -503,40 +485,40 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
     await page.waitForTimeout(900);
   };
   const stripe = page => page.$eval('#nyVersjon', e => !e.hidden && e.getBoundingClientRect().height > 0).catch(() => false);
-  // (a) ulagret bilde → ingen reload, stripe
+  // Med autolagring er et utkast bare ulagret når lagringen har feilet (eller ikke er ferdig) — det er da reload må vente.
+  // (a) bildelagringen feilet → ingen reload, stripe
   {
-    const c = await nyMedEtag({});
+    const c = await nyMedEtag({ lagreFeil: 'nett' });
     await stegKnapp(c.page, 2); await c.page.waitForTimeout(300);
-    await c.page.setInputFiles('#dv2FilGalleri', BILDE); await c.page.waitForTimeout(800);
+    await c.page.setInputFiles('#dv2FilGalleri', BILDE); await ventPaa(() => c.page.$eval('#dv2BilderFeil', e => !e.hidden));
     const foer = c.st.lastinger; await deploy(c.page, c.st);
     sjekk(c.st.lastinger === foer && await stripe(c.page), 'Ny versjon + ulagret bilde: ingen reload, stripen vises', `lastinger ${foer}→${c.st.lastinger}`);
     sjekk(!c.errs.length, 'Ny versjon (bilde): pageerror', c.errs.join('; '));
     await c.ctx.close();
   }
-  // (b) ulagret fargevalg (klikk, ingen input-hendelse) → ingen reload, stripe
+  // (b) fargevalget feilet (klikk, ingen input-hendelse) → ingen reload, stripe
   {
-    const c = await nyMedEtag({});
-    await stegKnapp(c.page, 1); await c.page.click('#dv2Aksenter [data-aksent="gull"]'); await c.page.waitForTimeout(300);
+    const c = await nyMedEtag({ putFeil: 'nett' });
+    await stegKnapp(c.page, 1); await c.page.click('#dv2Aksenter [data-aksent="gull"]'); await c.page.waitForTimeout(500);
     const foer = c.st.lastinger; await deploy(c.page, c.st);
     sjekk(c.st.lastinger === foer && await stripe(c.page), 'Ny versjon + ulagret fargevalg: ingen reload, stripen vises', `lastinger ${foer}→${c.st.lastinger}`);
     await c.ctx.close();
   }
-  // (c) tekst + bilde lagret → flagget nullstilt → reload
+  // (c) tekst + bilde autolagret → ingenting ulagret → reload
   {
     const c = await nyMedEtag({});
-    await c.page.fill('#dv2Tagline', 'Lagres før deploy');
-    await stegKnapp(c.page, 2); await c.page.setInputFiles('#dv2FilGalleri', BILDE); await c.page.waitForTimeout(800);
-    await lagreSiste(c.page); await c.page.waitForTimeout(600);
-    sjekk(/Lagret/.test(await c.page.$eval('#dv2Status', e => e.textContent).catch(() => '')), 'Ny versjon: lagringen gikk gjennom før deploy');
+    await c.page.fill('#dv2Tagline', 'Lagres før deploy'); await ventLagret(c.page);
+    await stegKnapp(c.page, 2); await c.page.setInputFiles('#dv2FilGalleri', BILDE); await ventLagret(c.page);
+    sjekk(/Lagret ✓/.test(await c.page.$eval('#dv2Status', e => e.textContent).catch(() => '')), 'Ny versjon: lagringen gikk gjennom før deploy');
     const foer = c.st.lastinger; await deploy(c.page, c.st);
     for (let i = 0; i < 30 && c.st.lastinger === foer; i++) await new Promise(r => setTimeout(r, 100));
     sjekk(c.st.lastinger === foer + 1, 'Ny versjon etter vellykket lagring: auto-reload skjer', `lastinger ${foer}→${c.st.lastinger}`);
     await c.ctx.close();
   }
-  // (d) «Forkast» (fanebytte-dialogen) nullstiller også → reload
+  // (d) «Forkast» (dialogen etter feilet lagring) nullstiller også → reload
   {
-    const c = await nyMedEtag({});
-    await c.page.fill('#dv2Bio', 'Forkastes'); await stegKnapp(c.page, 2); await c.page.setInputFiles('#dv2FilGalleri', BILDE); await c.page.waitForTimeout(800);
+    const c = await nyMedEtag({ putFeil: 'nett', lagreFeil: 'nett' });
+    await c.page.fill('#dv2Bio', 'Forkastes'); await stegKnapp(c.page, 2); await c.page.setInputFiles('#dv2FilGalleri', BILDE); await ventPaa(() => c.page.$eval('#dv2BilderFeil', e => !e.hidden));
     await c.page.click('.nav button[data-panel="oversikt"]', { force: true }).catch(() => c.page.evaluate(() => document.querySelector('.nav button[data-panel="oversikt"]').click()));
     await c.page.waitForSelector('.dv2-dialog'); await c.page.click('.dv2-dialog .farlig'); await c.page.waitForTimeout(400);
     const foer = c.st.lastinger; await deploy(c.page, c.st);
@@ -567,7 +549,7 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
 }
 {
   // 2q. Oppsettet (A): v2-barber med side som ikke er live → fokusmodus ved innlasting, uten hovedfaner og sjekkliste.
-  //     «Lagre endringer» er aktiv uten endringer og sender publiser:true til /din-side/lagre (aldri PUT /page-status).
+  //     «Publiser siden» er aktiv uten endringer og sender publiser:true til /din-side/lagre (aldri PUT /page-status).
   //     Svar publisert:true → «Siden din er live» med lenken, «Kopier lenke», «Gå til Oversikt» (uten «Fullfør siden din»).
   for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) {
     const { ctx, page, m, errs } = await ny({ bredde, tema, mock: { billing: v2Billing({ page_status: 'forhandsvist', publisert_at: null }) } });
@@ -580,15 +562,15 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
     await skjerm(page, `A-${bredde}-${tema}-steg1`);
     await maal(page, `${ctxt} steg 1`);
     await stegKnapp(page, 3); await page.waitForTimeout(250);
-    sjekk(!(await page.$eval('#dv2Lagre', e => e.disabled)) && await synlig(page, '#dv2Hjelpelinje'), `${ctxt}: siste steg — «Lagre endringer» aktiv uten endringer + hjelpelinje`);
+    sjekk(!(await page.$eval('#dv2Publiser', e => e.disabled)) && await page.$eval('#dv2Publiser', e => e.textContent) === 'Publiser siden' && await synlig(page, '#dv2Hjelpelinje'), `${ctxt}: siste steg — «Publiser siden» aktiv uten endringer + hjelpelinje`);
     const ikkeBak = await page.evaluate(() => { const f = document.querySelector('#dv2Telefon'); f.scrollIntoView({ block: 'end' }); scrollTo(0, document.documentElement.scrollHeight);
       return f.getBoundingClientRect().bottom <= document.getElementById('dv2Bar').getBoundingClientRect().top - 8; });
     sjekk(ikkeBak, `${ctxt}: siste felt står over bunnbaren med luft (også med hjelpelinja)`);
     await skjerm(page, `A-${bredde}-${tema}-steg4`);
     if (bredde === 375 && tema === 'dark') {
-      await page.click('#dv2Lagre'); await page.waitForSelector('#dv2Bekreft:not([hidden])', { timeout: 5000 }).catch(() => {});
+      await page.click('#dv2Publiser'); await page.waitForSelector('#dv2Bekreft:not([hidden])', { timeout: 5000 }).catch(() => {});
       const lg = lagringer(m);
-      sjekk(lg.length === 1 && lg[0].draft.publiser === true, 'A: lagring sender publiser:true', JSON.stringify(lg.map(x => x.draft && x.draft.publiser)));
+      sjekk(lg.length === 1 && lg[0].draft.publiser === true, 'A: «Publiser siden» sender publiser:true', JSON.stringify(lg.map(x => x.draft && x.draft.publiser)));
       sjekk(!m.kall.some(k => /page-status/.test(k.sti)), 'A: ingen kall til /page-status');
       const bk = await page.evaluate(() => ({ h: document.getElementById('dv2BekreftH').textContent, lenke: document.getElementById('dv2Lenke').textContent, fokus: document.activeElement && document.activeElement.id, iFokus: document.body.classList.contains('fokus') }));
       sjekk(bk.h === 'Siden din er live' && /grand-barber$/.test(bk.lenke) && bk.fokus === 'dv2BekreftH' && !bk.iFokus, 'A: «Siden din er live» med lenken, fokus på overskriften, oppsettet avsluttet', JSON.stringify(bk));
@@ -605,7 +587,7 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
   {
     const t = startTilstand(); t.krav = { tjeneste_med_pris: true, apen_dag: false };
     const { ctx, page, m, errs } = await ny({ bredde: 375, mock: { tilstand: t, billing: v2Billing({ page_status: 'forhandsvist', publisert_at: null }) } });
-    await stegKnapp(page, 3); await page.click('#dv2Lagre'); await page.waitForTimeout(700);
+    await stegKnapp(page, 3); await page.click('#dv2Publiser'); await page.waitForTimeout(700);
     const st = await page.$eval('#dv2Status', e => ({ t: e.textContent, k: e.className }));
     sjekk(/kan ikke publiseres før du har lagt inn åpningstid/.test(st.t) && /info/.test(st.k) && await page.$eval('#dv2Bekreft', e => e.hidden), 'Krav mangler: publisering.melding vises som den er, ingen bekreftelse', JSON.stringify(st));
     sjekk(lagringer(m).length === 1 && !m.kall.some(k => /page-status/.test(k.sti)), 'Krav mangler: én lagring, ingen /page-status');
@@ -616,8 +598,9 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
 }
 {
   // 2r. X og «Fullfør siden din»: uten endringer lukker X til Oversikt (kortet vises, hovedfanene tilbake);
-  //     kortet åpner oppsettet igjen. Med ulagrede endringer: «Forkast» / «Bli her». Lukket oppsett huskes ved reload i økta.
-  const { ctx, page, errs } = await ny({ bredde: 375, mock: { billing: v2Billing({ page_status: 'forhandsvist', publisert_at: null }) } });
+  //     kortet åpner oppsettet igjen. Endringen lagres før X lukker; bare når lagringen feiler: «Forkast endringene» /
+  //     «Bli her». Lukket oppsett huskes ved reload i økta.
+  const { ctx, page, m, errs } = await ny({ bredde: 375, mock: { billing: v2Billing({ page_status: 'forhandsvist', publisert_at: null }) } });
   const tilstand = () => page.evaluate(() => ({ fokus: document.body.classList.contains('fokus'), panel: document.querySelector('.panel.active') && document.querySelector('.panel.active').id,
     kort: !document.getElementById('dv2Fullfor').hidden && document.getElementById('dv2Fullfor').offsetParent !== null,
     bunnNav: getComputedStyle(document.querySelector('.bunn-nav')).display !== 'none', tittel: document.getElementById('dv2Tittel').textContent }));
@@ -628,10 +611,11 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
   await page.click('#dv2Fullfor'); await page.waitForTimeout(600);
   s = await tilstand();
   sjekk(s.fokus && s.panel === 'design' && s.tittel === 'Sett opp siden din' && !s.bunnNav, '«Fullfør siden din» åpner oppsettet igjen', JSON.stringify(s));
+  m.opts.putFeil = 'nett';   // lagringen feiler → først da kommer dialogen
   await page.fill('#dv2Tagline', 'Skal forkastes');
-  await page.click('#fokusX'); await page.waitForSelector('.dv2-dialog', { timeout: 3000 }).catch(() => {});
+  await page.click('#fokusX'); await page.waitForSelector('.dv2-dialog', { timeout: 4000 }).catch(() => {});
   const knapper = await page.$$eval('.dv2-dialog .dv2-btn', bs => bs.map(b => b.textContent));
-  sjekk(knapper.includes('Forkast') && knapper.includes('Bli her'), 'X med ulagrede endringer: «Forkast» / «Bli her»', knapper.join(' | '));
+  sjekk(knapper.includes('Forkast endringene') && knapper.includes('Bli her'), 'X når lagringen feiler: «Forkast endringene» / «Bli her»', knapper.join(' | '));
   await page.click('.dv2-dialog .dv2-btn:not(.farlig)'); await page.waitForTimeout(250);
   s = await tilstand();
   sjekk(s.fokus && s.panel === 'design' && await verdi(page, '#dv2Tagline') === 'Skal forkastes', '«Bli her»: oppsettet og utkastet står', JSON.stringify(s));
@@ -664,9 +648,9 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
       underBio: !!(document.querySelector('[data-felt="bio"]').compareDocumentPosition(document.querySelector('[data-felt="om"]')) & Node.DOCUMENT_POSITION_FOLLOWING),
       beskrevet: (t.getAttribute('aria-describedby') || '').includes('dv2OmHjelp') }; });
   sjekk(o.etikett === 'Mer info' && o.hjelp === 'Vises i Om-fanen på siden din.' && o.plass === 'F.eks. priser, parkering, hvordan du jobber' && o.maks === 4000 && o.underBio && o.beskrevet, 'Mer info: etikett, hjelpetekst, plassholder, maks 4000, under Kort beskrivelse', JSON.stringify(o));
-  await page.fill('#dv2Om', 'Gratis parkering i bakgården.'); await lagreSiste(page); await page.waitForTimeout(500);
-  const lg = lagringer(m).pop();
-  sjekk(lg && lg.draft.profil.om === 'Gratis parkering i bakgården.' && m.tilstand.profil.om === 'Gratis parkering i bakgården.', 'Mer info lagres som profil.om', JSON.stringify(lg && lg.draft.profil));
+  await page.fill('#dv2Om', 'Gratis parkering i bakgården.'); await ventLagret(page);
+  const lg = puts(m).pop();
+  sjekk(lg && JSON.stringify(lg.body) === JSON.stringify({ profil: { om: 'Gratis parkering i bakgården.' } }) && m.tilstand.profil.om === 'Gratis parkering i bakgården.', 'Mer info lagres som profil.om', JSON.stringify(lg && lg.body));
   sjekk(!errs.length, 'Mer info: pageerror', errs.join('; '));
   await ctx.close();
 }
@@ -690,7 +674,8 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
   //     før billing hadde svart hadde body ingen sidemal-klasse, og da sto hele v1-flaten synlig.
   const V1_SEL = '#design .v1-kun, #design #sideAccs, #design .side-wrap, #design #dinsideLive, #design #dinsideCta, #design #fokusBar, #design #accProfil, #design #accBilder, #design #accDesign';
   const v1Synlig = page => page.evaluate(sel => [...document.querySelectorAll(sel)].filter(e => e.offsetParent !== null || getComputedStyle(e).position === 'fixed').map(e => e.id || e.className.split(' ')[0]), V1_SEL);
-  const v1Tekst = page => page.evaluate(() => { const p = document.querySelector('#design'); const t = (p.innerText || ''); return ['Design siden din', 'Endringer vises i forhåndsvisningen', 'Publiser siden', 'Trykk på en boks'].filter(s => t.includes(s)); });
+  // «Publiser siden» var en v1-markør, men er v2s publiseringsknapp fra 12.11.2026 (sider som ikke er live) — ikke med her.
+  const v1Tekst = page => page.evaluate(() => { const p = document.querySelector('#design'); const t = (p.innerText || ''); return ['Design siden din', 'Endringer vises i forhåndsvisningen', 'Trykk på en boks'].filter(s => t.includes(s)); });
   async function ingenV1(page, hva) {
     const a = await v1Synlig(page), b = await v1Tekst(page);
     sjekk(!a.length && !b.length, `v1-flate synlig på v2: ${hva}`, [...a, ...b].join(', '));
@@ -706,7 +691,7 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
       await ingenV1(page, `${bredde}: etter at billing og Din side er lastet`);
       sjekk(await page.evaluate(() => document.body.classList.contains('sm-v2')), `${bredde}: body.sm-v2 etter billing`);
       // (b) etter lagring
-      await page.fill('#dv2Tagline', 'Lagret nå'); await lagreSiste(page); await page.waitForTimeout(700);
+      await page.fill('#dv2Tagline', 'Lagret nå'); await ventLagret(page);
       await ingenV1(page, `${bredde}: etter lagring`);
       // (c) fanebytte og tilbake (via topp-navet slik bunn-navet gjør)
       await page.evaluate(() => document.querySelector('.nav button[data-panel="oversikt"]').click()); await page.waitForTimeout(500);

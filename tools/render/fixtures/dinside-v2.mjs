@@ -105,14 +105,16 @@ function parseMultipart(req) {
 // b.v = updated_at-ms (standard 1). ?? og ikke ||: v=0 betyr updated_at null og skal stå som 0, som i backend.
 export const bildeVersjon = bilder => bilder.filter(b => b.slot === 'portrett' || b.slot === 'galleri').map(b => `${b.id}:${b.v ?? 1}:${b.slot}:${b.sort_order}`).sort().join('|');
 
-// opts: { tilstand, billing, fontModus:'ok'|'sen'|'feil', putFeil:{felt,error,status?}, previewTreg:ms, sidemal:'v2'|'v1',
+// m.opts = opts (samme objekt — en test kan slå feil av/på underveis, f.eks. m.opts.putFeil = 'nett' → «Prøv igjen» → null)
+// opts: { tilstand, billing, fontModus:'ok'|'sen'|'feil', putFeil:{felt?,error,status?}|'nett', putForsinkelse:ms (PUT /din-side),
+//         previewTreg:ms, sidemal:'v2'|'v1',
 //         billingForsinkelse:ms, billingStatus:500 (billing-kallet feiler), bilderForsinkelse:ms (GET /images),
 //         tjenester:{hoved,tillegg} (GET /services; ellers tom),
 //         lagreFeil:{status,error,felt?} | 'nett' (utkast-lagringen feiler / avbrytes), konflikt:true (bildene endret i annen fane → 409) }
 // m.utkast: hvert multipart-kall { action:'lagre'|'preview', draft, filer }
 export async function installerDinSideMock(page, opts = {}) {
   const t = opts.tilstand || startTilstand();
-  const m = { tilstand: t, kall: [], prod: 0, fontForesp: 0, previewHtml: [], utkast: [] };
+  const m = { tilstand: t, kall: [], prod: 0, fontForesp: 0, previewHtml: [], utkast: [], opts };
   const fontModus = opts.fontModus || 'ok';
   const billing = opts.billing || (opts.sidemal === 'v1' ? gratis({ page_status: 'live' }) : v2());
   const PROFIL = { slug: 'grand-barber', email: 'g@b.no', hasPassword: true, name: 'Henrik', shop: t.profil.shop, address: t.profil.address,
@@ -145,7 +147,9 @@ export async function installerDinSideMock(page, opts = {}) {
       if (billing.sidemal !== 'v2') return json({ error: 'Denne siden bruker den gamle malen (v1). Bruk de gamle rutene.', sidemal: 'v1' }, 409);
       if (metode === 'GET') return json({ sidemal: 'v2', ...dinSideShape(t), profil: { ...t.profil }, publisert_at: billing.publisert_at,
         valg: { aksenter: AKSENTER, fonter: FONTER, maks: MAKS } });
-      if (opts.putFeil) return json({ error: opts.putFeil.error, felt: opts.putFeil.felt }, opts.putFeil.status || 400);
+      if (opts.putForsinkelse) await new Promise(r => setTimeout(r, opts.putForsinkelse));
+      if (opts.putFeil === 'nett') return route.abort('failed');
+      if (opts.putFeil) return json({ error: opts.putFeil.error, ...(opts.putFeil.felt ? { felt: opts.putFeil.felt } : {}) }, opts.putFeil.status || 400);
       const f = valider(body || {}, t); if (f) return json(f, 400);
       const b = body || {};
       Object.assign(t.profil, b.profil || {}); Object.assign(t.utseende, b.utseende || {}); Object.assign(t.kontakt, b.kontakt || {});

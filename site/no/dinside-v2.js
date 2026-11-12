@@ -9,10 +9,21 @@
                                                valg{aksenter[{key,hex}], fonter[{key,navn,family,url,vekt}], maks{…,bilder{…}}} }
      POST /api/dashboard/preview           → text/html. Body { side:'forside'|'book', profil?, utseende?, kontakt? }
      POST /api/dashboard/din-side/preview  → text/html. Multipart (draft + bildeutkast)
+     PUT  /api/dashboard/din-side          → delvis { profil?, utseende?, kontakt? } — bare feltene som sendes, skrives.
+                                              Rører ALDRI page_status. 400 { error, felt } = ingenting skrevet.
      POST /api/dashboard/din-side/lagre    → ALLTID 200 når lagret: { lagret:true, publisering{publisert, melding?, …}, …billing }
                                               | 400 { error, felt } (ingenting skrevet). JSON uten bilder, multipart med.
-   Utkastet holdes i minnet på tvers av steg. «Lagre endringer» sender ALT i ett kall; mens siden ikke er live sendes
-   publiser:true, og samme kall publiserer. v2 kaller aldri PUT /page-status og har ingen sjekkliste. */
+
+   AUTOLAGRING (12.11.2026, Henriks valg A): ingen endring skal gå tapt fordi man ikke blar til siste steg.
+     · Tekst lagres etter ~1 s pause eller når feltet forlates; telefon når feltet forlates; fargevelgeren når man slipper;
+       font/aksent/bakgrunn med en gang. Alt via PUT /din-side med BARE de endrede feltene — publiserer aldri.
+     · Hver bildehandling (legg til, bytt, beskjær, flytt, slett) lagres for seg via POST /din-side/lagre (multipart,
+       publiser:false, uten tekstfelt).
+     · Appen i bakgrunnen / siden lukkes (visibilitychange, pagehide): det som gjenstår sendes med keepalive, same-origin.
+     · «Lagret ✓» i statuslinja; feil → rød melding ved feltet (med «Prøv igjen» når et nytt forsøk kan hjelpe), utkastet beholdes.
+     · Live side: ingen lagreknapp. Side som ikke er live: siste steg har «Publiser siden» (POST /din-side/lagre med
+       publiser:true — krav-sjekken og meldingen om hva som mangler er backendens). Forkast-dialogene vises bare når en
+       lagring har feilet eller ikke ble ferdig. v2 kaller aldri PUT /page-status og har ingen sjekkliste. */
 (function () {
   'use strict';
 
@@ -29,6 +40,13 @@
   var STEG_FELT = { tagline: '#dv2Tagline', address: '#dv2Address', bio: '#dv2Bio', om: '#dv2Om',
                     custom_accent: '#dv2Hex', instagram: '#dv2Instagram', tiktok: '#dv2Tiktok', snapchat: '#dv2Snapchat',
                     contact_phone: '#dv2Telefon' };
+  // Autolagringens enheter: ett felt hver, bortsett fra aksent + egen farge, som lagres sammen (backend sjekker paret).
+  var GRUPPE = { tagline: 'profil', address: 'profil', bio: 'profil', om: 'profil', aksent: 'utseende', color_mode: 'utseende', font: 'utseende',
+                 instagram: 'kontakt', tiktok: 'kontakt', snapchat: 'kontakt', contact_phone: 'kontakt' };
+  var ENHETER = Object.keys(GRUPPE);
+  var INPUT = { tagline: '#dv2Tagline', address: '#dv2Address', bio: '#dv2Bio', om: '#dv2Om',
+                instagram: '#dv2Instagram', tiktok: '#dv2Tiktok', snapchat: '#dv2Snapchat', contact_phone: '#dv2Telefon' };
+  var VENT_SKRIV = 1000;   // tekst: lagres etter så lang pause (eller når feltet forlates)
   var AKSENT_NAVN = { blaa: 'Blå', gull: 'Gull', roed: 'Rød', egen: 'Din egen' };
   var STANDARD_MAKS = { tagline: 60, address: 200, bio: 2000, om: 4000, bilder: { portrett: 1, hero: 1, galleri: 10 } };
 
@@ -42,9 +60,15 @@
     redigeringScrollY: 0,
     bilderDirty:false, bilderLastet:false, imageVersion:'', bilderLagret:[], bilder: [], bilderFeil: '', valgtBilde: null, opplaster: '',
     fontStatus: {},
-    feil: null,            // { felt, tekst }
-    lagrer: false, statusTekst: '', statusType: '',
+    feil: {},              // felt → { tekst, provIgjen } (flere felt kan ha feil samtidig)
+    statusTekst: '', statusType: '',   // publiseringens melding; ellers regnes statuslinja ut av autolagringen
     tillatBytte: false,
+    // Autolagring
+    timere: {}, forfalt: {},          // enhet → venter på pause / klar til å sendes
+    felt: null, igjen: false,         // PUT som går (promise) · ny runde etter den
+    bildeLagrer: null,                // bildelagring som går (promise)
+    lagretFase: '', lagretTimer: null, bildeLagret: false,   // «Lagret ✓»: '' · 'vis' (ca. 2 s) · 'tones' (toner ut)
+    publiserer: false, forlater: false,
   };
   var el = {};            // cachede noder
 
@@ -165,7 +189,7 @@
     S.lagret = formFra(d);
     S.utkast = kopi(S.lagret);
     S.hsv = hexTilHsv(normHex(S.lagret.utseende.custom_accent));
-    S.feil = null; S.statusTekst = ''; S.statusType = '';
+    S.feil = {}; S.statusTekst = ''; S.statusType = '';
     (S.valg && S.valg.fonter || []).forEach(lastFont);
   }
 
@@ -225,13 +249,14 @@
             '<div class="fld" data-felt="contact_phone"><label for="dv2Telefon">Telefon</label><input id="dv2Telefon" aria-describedby="dv2TelefonHjelp" type="tel" inputmode="tel" autocomplete="tel" maxlength="32" placeholder="91 23 45 67"><p class="fld-hint" id="dv2TelefonHjelp">Vises bare i bookingbekreftelsen.</p><p class="fld-err" role="alert" hidden></p></div>' +
           '</section>' +
           '</div>' +
-          // Fast bunnbar: én rad. Steg 1–3 «← Tilbake» + «Neste →»; siste steg «← Tilbake» + «Lagre endringer».
+          // Fast bunnbar: én rad. Steg 1–3 «← Tilbake» + «Neste →». Siste steg: live side bare «← Tilbake» (alt lagres
+          // automatisk); side som ikke er live «← Tilbake» + «Publiser siden».
           '<div class="dv2-bar" id="dv2Bar"><div class="dv2-bar-inn">' +
             '<p class="dv2-status" id="dv2Status" role="status" aria-live="polite"></p>' +
             '<div class="dv2-bar-rad"><button type="button" class="dv2-btn" id="dv2Tilbake">← Tilbake</button>' +
               '<button type="button" class="dv2-btn prim hoved" id="dv2Neste">Neste →</button>' +
-              '<button type="button" class="dv2-btn prim hoved" id="dv2Lagre" hidden>Lagre endringer</button></div>' +
-            '<p class="dv2-hjelpelinje" id="dv2Hjelpelinje" hidden>Når du lagrer, går siden live og kundene kan booke.</p>' +
+              '<button type="button" class="dv2-btn prim hoved" id="dv2Publiser" hidden>Publiser siden</button></div>' +
+            '<p class="dv2-hjelpelinje" id="dv2Hjelpelinje" hidden>Når du publiserer, går siden live og kundene kan booke.</p>' +
           '</div></div>' +
         '</div>' +
         '<aside class="dv2-pv" id="dv2Pv" aria-label="Forhåndsvisning av siden din">' +
@@ -248,7 +273,7 @@
         '<div class="dv2-bar-rad"><button type="button" class="dv2-btn" id="dv2Kopier">Kopier lenke</button><button type="button" class="dv2-btn prim hoved" id="dv2TilOversikt">Gå til Oversikt</button></div>' +
         '<p class="dv2-status" id="dv2Kopiert" role="status" aria-live="polite"></p>' +
       '</section>';
-    el.lasting = $('#dv2Lasting'); el.grid = $('#dv2Grid'); el.lagre = $('#dv2Lagre'); el.status = $('#dv2Status');
+    el.lasting = $('#dv2Lasting'); el.grid = $('#dv2Grid'); el.publiser = $('#dv2Publiser'); el.status = $('#dv2Status');
     el.tilbake = $('#dv2Tilbake'); el.neste = $('#dv2Neste'); el.pv = $('#dv2Pv'); el.iframe = $('#dv2Iframe'); el.ramme = $('#dv2Ramme');
     el.bar = $('#dv2Bar');
     bind();
@@ -285,7 +310,7 @@
     });
     el.tilbake.addEventListener('click', function () { gaaTilSteg(S.steg - 1, true); });
     el.neste.addEventListener('click', function () { gaaTilSteg(S.steg + 1, true); });
-    el.lagre.addEventListener('click', lagre);
+    el.publiser.addEventListener('click', publiser);
     $('#dv2SeSiden').addEventListener('click', apnePv);
     $('#dv2PvLukk').addEventListener('click', lukkPv);
     $('#dv2Kopier').addEventListener('click', kopierLenke);
@@ -300,43 +325,56 @@
       if (e.data.bhq === 'scroll') S.pvScroll = e.data.y || 0;
       if (e.data.bhq === 'escape' && S.pvApen && !erDesktop()) lukkPv();
     });
-    window.addEventListener('beforeunload', function (e) { if (S.v2 && ulagret()) { e.preventDefault(); e.returnValue = ''; } });
+    // Siden lukkes / appen går i bakgrunnen: send det som gjenstår (keepalive). iOS viser aldri beforeunload-dialogen,
+    // så sendingen er det som faktisk berger endringene der. Nettleserens «Forlate siden?» bare når noe IKKE kan sendes
+    // slik: bilder (multipart) og felt med feil.
+    window.addEventListener('beforeunload', function (e) {
+      if (!S.v2) return;
+      nodLagre();
+      if (S.bildeLagrer || S.bilderDirty || Object.keys(S.feil).length) { e.preventDefault(); e.returnValue = ''; }
+    });
+    window.addEventListener('pagehide', nodLagre);
+    document.addEventListener('visibilitychange', function () { if (document.visibilityState === 'hidden') nodLagre(); });
     // Bunnbaren er fast bare i oppsettet (fokusmodus). Der får PANELET bunnluft lik barens FAKTISKE høyde (status og
     // hjelpelinje gjør den høyere), så ingenting i panelet — heller ikke det som står etter stegene — havner bak baren.
     if (window.ResizeObserver) new ResizeObserver(function () { var p = $('#design'); if (p && el.bar.offsetHeight) p.style.setProperty('--dv2-bar-h', el.bar.offsetHeight + 'px'); }).observe(el.bar);
 
-    // Tekstfelt → utkast
-    [['#dv2Tagline', 'profil', 'tagline'], ['#dv2Address', 'profil', 'address'], ['#dv2Bio', 'profil', 'bio'], ['#dv2Om', 'profil', 'om'],
-     ['#dv2Instagram', 'kontakt', 'instagram'], ['#dv2Tiktok', 'kontakt', 'tiktok'], ['#dv2Snapchat', 'kontakt', 'snapchat'], ['#dv2Telefon', 'kontakt', 'contact_phone']].forEach(function (f) {
-      $(f[0]).addEventListener('input', function (e) { S.utkast[f[1]][f[2]] = e.target.value; endret(f[2]); });
+    // Tekstfelt → utkast. Lagres etter en pause i skrivingen eller når feltet forlates. Telefonen bare når feltet
+    // forlates: et halvskrevet nummer ville gitt 400 underveis.
+    Object.keys(INPUT).forEach(function (n) {
+      var inp = $(INPUT[n]), g = GRUPPE[n];
+      inp.addEventListener('input', function (e) { S.utkast[g][n] = e.target.value; endret(n, n === 'contact_phone' ? null : VENT_SKRIV); });
+      inp.addEventListener('blur', function () { if (S.utkast) { forfall(n); synkFelt(n); } });
     });
-    // Utseende
-    $('#dv2Modus').addEventListener('click', function (e) { var b = e.target.closest('[data-mode]'); if (!b) return; S.utkast.utseende.color_mode = b.dataset.mode; tegnUtseende(); endret('color_mode'); });
+    // Utseende — lagres med en gang
+    $('#dv2Modus').addEventListener('click', function (e) { var b = e.target.closest('[data-mode]'); if (!b) return; S.utkast.utseende.color_mode = b.dataset.mode; tegnUtseende(); endret('color_mode', 0); });
     $('#dv2Aksenter').addEventListener('click', function (e) {
       var b = e.target.closest('[data-aksent]'); if (!b) return;
       S.utkast.utseende.aksent = b.dataset.aksent;
       if (b.dataset.aksent === 'egen' && !normHex(S.utkast.utseende.custom_accent)) S.utkast.utseende.custom_accent = normHex(S.lagret.utseende.custom_accent) || hsvTilHex(S.hsv.h, S.hsv.s, S.hsv.v);
       if (b.dataset.aksent === 'egen') S.hsv = hexTilHsv(normHex(S.utkast.utseende.custom_accent));
-      tegnUtseende(); endret('aksent');
+      tegnUtseende(); endret('aksent', 0);
     });
     // Fargevelgeren: peker/berøring (setPointerCapture) + tastatur (piltaster, Shift = større steg) + HEX-felt.
-    function settFraHsv() { S.utkast.utseende.custom_accent = hsvTilHex(S.hsv.h, S.hsv.s, S.hsv.v); tegnUtseende(); endret('custom_accent'); }
+    // Lagres når man slipper (peker), etter en kort pause (piltaster) eller når HEX-feltet har en pause / forlates.
+    function settFraHsv(naar) { S.utkast.utseende.custom_accent = hsvTilHex(S.hsv.h, S.hsv.s, S.hsv.v); tegnUtseende(); endret('custom_accent', naar); }
     function dra(node, fn) { node.addEventListener('pointerdown', function (e) { node.setPointerCapture(e.pointerId); fn(e); node.focus({ preventScroll: true });
-      function flytt(ev) { fn(ev); } function slipp() { node.removeEventListener('pointermove', flytt); node.removeEventListener('pointerup', slipp); node.removeEventListener('pointercancel', slipp); }
+      function flytt(ev) { fn(ev); } function slipp() { node.removeEventListener('pointermove', flytt); node.removeEventListener('pointerup', slipp); node.removeEventListener('pointercancel', slipp); forfall('aksent'); }
       node.addEventListener('pointermove', flytt); node.addEventListener('pointerup', slipp); node.addEventListener('pointercancel', slipp); }); }
     function klem(x) { return Math.max(0, Math.min(1, x)); }
-    dra($('#dv2Sv'), function (e) { var r = $('#dv2Sv').getBoundingClientRect(); S.hsv.s = klem((e.clientX - r.left) / r.width); S.hsv.v = 1 - klem((e.clientY - r.top) / r.height); settFraHsv(); });
-    dra($('#dv2Hue'), function (e) { var r = $('#dv2Hue').getBoundingClientRect(); S.hsv.h = klem((e.clientX - r.left) / r.width) * 360; settFraHsv(); });
+    dra($('#dv2Sv'), function (e) { var r = $('#dv2Sv').getBoundingClientRect(); S.hsv.s = klem((e.clientX - r.left) / r.width); S.hsv.v = 1 - klem((e.clientY - r.top) / r.height); settFraHsv(null); });
+    dra($('#dv2Hue'), function (e) { var r = $('#dv2Hue').getBoundingClientRect(); S.hsv.h = klem((e.clientX - r.left) / r.width) * 360; settFraHsv(null); });
     $('#dv2Sv').addEventListener('keydown', function (e) { var t = e.shiftKey ? 0.1 : 0.02, m = { ArrowLeft: ['s', -t], ArrowRight: ['s', t], ArrowUp: ['v', t], ArrowDown: ['v', -t] }[e.key];
-      if (!m) return; e.preventDefault(); S.hsv[m[0]] = klem(S.hsv[m[0]] + m[1]); settFraHsv(); });
+      if (!m) return; e.preventDefault(); S.hsv[m[0]] = klem(S.hsv[m[0]] + m[1]); settFraHsv(600); });
     $('#dv2Hue').addEventListener('keydown', function (e) { var t = e.shiftKey ? 30 : 5, m = { ArrowLeft: -t, ArrowDown: -t, ArrowRight: t, ArrowUp: t }[e.key];
-      if (m == null) return; e.preventDefault(); S.hsv.h = (S.hsv.h + m + 360) % 360; settFraHsv(); });
+      if (m == null) return; e.preventDefault(); S.hsv.h = (S.hsv.h + m + 360) % 360; settFraHsv(600); });
     $('#dv2Hex').addEventListener('input', function (e) {
       S.utkast.utseende.custom_accent = e.target.value;
       var h = normHex(e.target.value); if (h) S.hsv = hexTilHsv(h);
-      tegnUtseende(true); endret('custom_accent');
+      tegnUtseende(true); endret('custom_accent', VENT_SKRIV);
     });
-    $('#dv2Fonter').addEventListener('change', function (e) { S.utkast.utseende.font = e.target.value; tegnUtseende(); endret('font'); });
+    $('#dv2Hex').addEventListener('blur', function () { if (S.utkast) forfall('aksent'); });
+    $('#dv2Fonter').addEventListener('change', function (e) { S.utkast.utseende.font = e.target.value; tegnUtseende(); endret('font', 0); });
     // Piltaster i radiogrupper
     ['#dv2Modus', '#dv2Aksenter'].forEach(function (s) {
       $(s).addEventListener('keydown', function (e) {
@@ -353,11 +391,174 @@
     $('#dv2Galleri').addEventListener('click', galleriKlikk);
   }
 
-  function endret(feltNavn) {
-    if (S.feil && (!feltNavn || S.feil.felt === feltNavn)) fjernFeil();
+  // naar: 0 = lagre nå · tall = lagre etter så mange ms pause · null = vent (blur / slipp) · undefined = ingen feltlagring (bilder).
+  function endret(feltNavn, naar) {
+    if (feltNavn && feltNavn !== 'slot') fjernFeil(feltNavn);
     S.statusTekst = ''; S.statusType = '';
+    if (naar !== undefined) planleggLagring(feltNavn, naar);
     tegnTellere(); tegnKnapper(); tegnStatus(); tegnFeilpunkt();
     planleggPreview(300);
+  }
+
+  /* ══ Autolagring av felt (PUT /din-side, bare endrede felt) ═════════════════════════════════════════ */
+  function enhet(f) { return f === 'custom_accent' ? 'aksent' : f; }
+  function enhetVerdi(n, e) { return e === 'aksent' ? n.utseende.aksent + '|' + n.utseende.custom_accent : n[GRUPPE[e]][e]; }
+  // Enheter der utkastet avviker fra det serveren sist bekreftet.
+  function skitne() {
+    if (!S.utkast || !S.lagret) return [];
+    var a = norm(S.utkast), b = norm(S.lagret);
+    return ENHETER.filter(function (e) { return enhetVerdi(a, e) !== enhetVerdi(b, e); });
+  }
+  // Det som stoppes lokalt før kallet (samme tekster som før autolagringen).
+  function lokalFeil(e) {
+    var u = S.utkast;
+    if (e === 'aksent') return u.utseende.aksent === 'egen' && !normHex(u.utseende.custom_accent) ? { felt: 'custom_accent', tekst: 'Skriv en gyldig fargekode, for eksempel #1e40af.' } : null;
+    if (GRUPPE[e] === 'profil') {
+      var m = maks()[e], n = String(u.profil[e]).trim().length, navn = { tagline: 'Spesialiteten', address: 'Adressen', bio: 'Beskrivelsen', om: 'Teksten i Mer info' }[e];
+      if (n > m) return { felt: e, tekst: navn + ' kan være maks ' + m + ' tegn. Den er ' + n + ' tegn. Kort ned, så lagres den.' };
+    }
+    return null;
+  }
+  function planleggLagring(f, naar) {
+    var e = enhet(f);
+    clearTimeout(S.timere[e]); delete S.timere[e];
+    if (naar === null) return;
+    if (!naar) { forfall(e); return; }
+    S.timere[e] = setTimeout(function () { delete S.timere[e]; forfall(e); }, naar);
+  }
+  function forfall(f) {
+    var e = enhet(f);
+    clearTimeout(S.timere[e]); delete S.timere[e];
+    S.forfalt[e] = true;
+    lagreFelt();
+  }
+  // Etter at feltet er forlatt: vis det utkastet faktisk holder (serverens normaliserte verdi, f.eks. @-fri handle).
+  function synkFelt(e) {
+    var inp = INPUT[e] && $(INPUT[e]); if (!inp || !S.utkast) return;
+    var v = S.utkast[GRUPPE[e]][e];
+    if (inp.value !== v && document.activeElement !== inp) inp.value = v;
+  }
+  function feltBody(enheter) {
+    var u = S.utkast, b = {};
+    enheter.forEach(function (e) {
+      var g = GRUPPE[e]; b[g] = b[g] || {};
+      if (e === 'aksent') { b.utseende.aksent = u.utseende.aksent; if (u.utseende.aksent === 'egen') b.utseende.custom_accent = normHex(u.utseende.custom_accent); }
+      else b[g][e] = u[g][e];
+    });
+    return b;
+  }
+  // Én PUT om gangen. Endringer som kommer mens den går, tas i neste runde (S.igjen).
+  async function lagreFelt() {
+    if (!S.v2 || !S.utkast || !S.lagret) return;
+    if (S.felt) { S.igjen = true; return S.felt; }
+    var skitten = skitne(), send = [];
+    Object.keys(S.forfalt).forEach(function (e) { if (skitten.indexOf(e) < 0) delete S.forfalt[e]; });
+    skitten.forEach(function (e) {
+      if (!S.forfalt[e]) return;
+      var lf = lokalFeil(e);
+      if (lf) { delete S.forfalt[e]; visFeil(lf.felt, lf.tekst); return; }
+      send.push(e);
+    });
+    tegnStatus();
+    if (!send.length) return;
+    S.felt = sendFelt(send); tegnStatus();                   // «Lagrer …» (S.felt er satt først her)
+    try { await S.felt; } finally { S.felt = null; }
+    tegnStatus();
+    if (S.igjen) { S.igjen = false; return lagreFelt(); }
+  }
+  async function sendFelt(enheter) {
+    var n = norm(S.utkast), sendt = {};
+    enheter.forEach(function (e) { sendt[e] = enhetVerdi(n, e); delete S.forfalt[e]; });
+    tegnStatus();
+    var r, d = {};
+    try { r = await apiFetch('/api/dashboard/din-side', { method: 'PUT', body: JSON.stringify(feltBody(enheter)) }); }
+    catch (err) { feltFeilet(enheter, skrivefeil(err)); return false; }
+    if (!r) return false;                                      // 401 → apiFetch har sendt til innlogging
+    try { d = await r.json(); } catch (err) { d = {}; }
+    if (r.ok && d && d.profil) { feltLagret(enheter, sendt, d); return true; }
+    if (r.status === 400 && d && d.felt) {
+      // Valideringsfeil: bare det feltet stoppes. Resten av runden sendes på nytt uten det.
+      visFeil(d.felt, d.error || 'Ugyldig verdi.');
+      var rest = enheter.filter(function (e) { return e !== enhet(d.felt); });
+      if (rest.length && rest.length < enheter.length) { rest.forEach(function (e) { S.forfalt[e] = true; }); S.igjen = true; }
+      else if (rest.length) feltFeilet(rest, (d && d.error) || 'Ugyldig verdi.');
+      return false;
+    }
+    feltFeilet(enheter, (d && d.error) || ('Kunne ikke lagre (feil ' + r.status + ').'));
+    return false;
+  }
+  // Nett-/serverfeil: melding ved hvert felt med «Prøv igjen». Utkastet står; ingen automatisk gjentakelse (nettet kan
+  // være nede), men neste endring i feltet, «Prøv igjen» eller å forlate flyten prøver på nytt.
+  function feltFeilet(enheter, grunn) {
+    enheter.forEach(function (e) {
+      visFeil(e, 'Ikke lagret. ' + grunn,
+        { provIgjen: function () { forfall(e); } });
+    });
+  }
+  function feltLagret(enheter, sendt, d) {
+    S.lagret = formFra(d);
+    var n = norm(S.utkast);
+    enheter.forEach(function (e) {
+      fjernFeil(e);
+      if (enhetVerdi(n, e) === sendt[e]) adopter(e);           // uendret siden sending → ta serverens normaliserte verdi
+    });
+    if (typeof erBillingShape === 'function' && erBillingShape(d) && typeof settBilling === 'function') settBilling(d);
+    if (enheter.some(function (e) { return GRUPPE[e] === 'profil'; }) && typeof loadProfil === 'function') loadProfil();   // Konto sender lagrede profilverdier
+    tegnKnapper(); tegnFeilpunkt(); visLagret();
+  }
+  function adopter(e) {
+    var u = S.utkast, l = S.lagret;
+    if (e === 'aksent') {
+      if (u.utseende.aksent === l.utseende.aksent && (u.utseende.aksent !== 'egen' || normHex(u.utseende.custom_accent) === normHex(l.utseende.custom_accent))) return;
+      u.utseende.aksent = l.utseende.aksent; u.utseende.custom_accent = l.utseende.custom_accent || '';
+      tegnUtseende(document.activeElement === $('#dv2Hex')); return;
+    }
+    var g = GRUPPE[e];
+    if (u[g][e] === l[g][e]) return;
+    if (String(u[g][e]).trim() === String(l[g][e]).trim()) return;   // bare mellomrom: la det barberen skriver stå
+    u[g][e] = l[g][e];
+    if (INPUT[e]) synkFelt(e); else tegnUtseende();
+  }
+
+  // Siden lukkes / appen går i bakgrunnen: send alle endrede felt som kan sendes, med keepalive. Same-origin (Netlify-
+  // proxyen /api/*, cookien gjelder .trybarberhq.com) — en keepalive-request med CORS-preflight er ikke pålitelig.
+  // Telefonen går i eget kall, så et ugyldig nummer ikke stopper resten (backend skriver ingenting ved 400).
+  var _nodSist = { body: '', t: 0 };
+  function nodLagre() {
+    if (!S.v2 || !S.utkast || !S.lagret) return;
+    var send = skitne().filter(function (e) { return !lokalFeil(e); });
+    if (!send.length) return;
+    Object.keys(S.timere).forEach(function (e) { clearTimeout(S.timere[e]); delete S.timere[e]; });
+    [send.filter(function (e) { return e !== 'contact_phone'; }), send.filter(function (e) { return e === 'contact_phone'; })].forEach(function (l) {
+      if (!l.length) return;
+      var body = JSON.stringify(feltBody(l)), naa = Date.now();
+      if (body === _nodSist.body && naa - _nodSist.t < 2000) return;   // pagehide + visibilitychange for samme lukking
+      _nodSist = { body: body, t: naa };
+      var n = norm(S.utkast), sendt = {}; l.forEach(function (e) { sendt[e] = enhetVerdi(n, e); });
+      try {
+        fetch('/api/dashboard/din-side', { method: 'PUT', keepalive: true, credentials: 'same-origin', headers: { 'Content-Type': 'application/json' }, body: body })
+          .then(function (r) { return r.ok ? r.json().then(function (d) { if (d && d.profil) feltLagret(l, sendt, d); }) : null; })
+          .catch(function () {});
+      } catch (err) {}
+    });
+  }
+
+  // Flyten forlates (fanebytte, X): lagre alt som gjenstår NÅ og vent. true = alt er lagret.
+  function harUsikre() { return !!(S.felt || S.bildeLagrer || ulagret()); }
+  async function sikreLagret() {
+    for (var runde = 0; runde < 4; runde++) {
+      Object.keys(S.timere).forEach(function (e) { clearTimeout(S.timere[e]); delete S.timere[e]; });
+      skitne().forEach(function (e) { S.forfalt[e] = true; });
+      var vent = [S.felt || lagreFelt()];
+      if (S.bildeLagrer) vent.push(S.bildeLagrer); else if (S.bilderDirty) vent.push(lagreBilder());
+      await Promise.all(vent);
+      if (!harUsikre()) return true;
+      if (!S.felt && !S.bildeLagrer && Object.keys(S.feil).length) return false;   // feilet: ikke prøv i løkke
+    }
+    return !harUsikre();
+  }
+  function ikkeLagretDialog(tekst) {
+    return dialog({ tittel: 'Endringene er ikke lagret', tekst: tekst, ja: 'Forkast endringene', nei: 'Bli her', farlig: true });
   }
 
   /* ══ Tegning ═══════════════════════════════════════════════════════════════════════════════════════ */
@@ -387,22 +588,44 @@
     tegnFeilpunkt(); tegnKnapper();
   }
   function tegnFeilpunkt() {
-    $$('#dv2Steg [data-steg]').forEach(function (b) { var p = $('.feilpunkt', b); if (p) p.hidden = !(S.feil && FELT_STEG[S.feil.felt] === +b.dataset.steg); });
+    var steg = {}; Object.keys(S.feil).forEach(function (f) { steg[FELT_STEG[f]] = true; });
+    $$('#dv2Steg [data-steg]').forEach(function (b) { var p = $('.feilpunkt', b); if (p) p.hidden = !steg[+b.dataset.steg]; });
   }
-  // Bunnbar: én rad. Steg 1–3: «← Tilbake» + «Neste →». Siste steg: «← Tilbake» + «Lagre endringer».
-  // «Lagre endringer» er aktiv ved endringer — og alltid mens siden ikke er live (lagringen publiserer da).
+  // Bunnbar: én rad. Steg 1–3: «← Tilbake» + «Neste →». Siste steg: live side bare «← Tilbake» (alt lagres automatisk);
+  // side som ikke er live «← Tilbake» + «Publiser siden» (aktiv også uten endringer — den publiserer).
   function tegnKnapper() {
-    if (!el.lagre) return;
-    var sist = S.steg === STEG.length - 1, live = erLive(), skitten = ulagret();
-    if (el.grid) el.grid.inert = S.lagrer;
+    if (!el.publiser) return;
+    var sist = S.steg === STEG.length - 1, live = erLive();
+    if (el.grid) el.grid.inert = S.publiserer;
     el.tilbake.hidden = S.steg === 0;
-    el.neste.hidden = sist; el.lagre.hidden = !sist;
-    el.lagre.disabled = (live && !skitten) || S.lagrer || !!S.opplaster;
-    el.lagre.textContent = S.lagrer ? 'Lagrer …' : 'Lagre endringer';
+    el.neste.hidden = sist; el.publiser.hidden = !(sist && !live);
+    el.publiser.disabled = S.publiserer || !!S.opplaster || !!S.bildeLagrer;
+    el.publiser.textContent = S.publiserer ? 'Publiserer …' : 'Publiser siden';
     var h = $('#dv2Hjelpelinje'); if (h) h.hidden = !(sist && !live);
   }
+  // Statuslinja (Henrik 12.11.2026): publiseringens melding hvis den finnes; ellers autolagringens tilstand.
+  //   feil → «Ikke lagret …» (rød), står til den er løst · lagring pågår → «Lagrer …» ·
+  //   etter hver lagring → «Lagret ✓» i ca. 2 s, så tones den ut (visLagret) · ellers tom (plassen holdes, se CSS).
   function tegnStatus() {
-    el.status.textContent = S.statusTekst; el.status.className = 'dv2-status' + (S.statusType ? ' ' + S.statusType : '');
+    if (!el.status) return;
+    var tekst = S.statusTekst, type = S.statusType;
+    if (!tekst && S.utkast) {
+      var feilFelt = Object.keys(S.feil);
+      if (feilFelt.length) {
+        var s = FELT_STEG[feilFelt[0]];
+        tekst = 'Ikke lagret. Se feltet som er markert' + (s != null && s !== S.steg ? ' under «' + STEG[s].navn + '».' : '.'); type = 'feil';
+      } else if (S.felt || S.bildeLagrer || S.forlater) { tekst = 'Lagrer …'; type = ''; }
+      else if (S.lagretFase) { tekst = 'Lagret ✓'; type = 'lagret' + (S.lagretFase === 'tones' ? ' tones' : ''); }
+    }
+    el.status.textContent = tekst || ''; el.status.className = 'dv2-status' + (type ? ' ' + type : '');
+  }
+  var LAGRET_VIS_MS = 2000, LAGRET_TON_MS = 400;   // tonetiden = transition i CSS (.dv2-status.lagret)
+  function visLagret() {
+    clearTimeout(S.lagretTimer); S.lagretFase = 'vis'; tegnStatus();
+    S.lagretTimer = setTimeout(function () {
+      S.lagretFase = 'tones'; tegnStatus();
+      S.lagretTimer = setTimeout(function () { S.lagretFase = ''; tegnStatus(); }, LAGRET_TON_MS);
+    }, LAGRET_VIS_MS);
   }
   var HAKE = '<svg viewBox="0 0 24 24" width="22" height="22" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M20 6 9 17l-5-5"/></svg>';
   function hakeFarge(hex) { return kontrast(hex, '#ffffff') >= kontrast(hex, '#141210') ? '#ffffff' : '#141210'; }
@@ -479,7 +702,10 @@
       if (!medHex) $('#dv2Hex').value = hx || u.custom_accent || '';
       var ugyldig = !!u.custom_accent && !hx;
       $('#dv2Hex').setAttribute('aria-invalid', String(ugyldig));
-      var hf = $('#dv2HexFeil'); hf.hidden = !ugyldig; hf.textContent = ugyldig ? 'Skriv en gyldig fargekode, for eksempel #1e40af.' : '';
+      var hf = $('#dv2HexFeil'), sf = S.feil.custom_accent;   // serverens melding for feltet står til feltet endres
+      if (ugyldig) { hf.hidden = false; hf.textContent = 'Skriv en gyldig fargekode, for eksempel #1e40af.'; }
+      else if (sf) { hf.hidden = false; settFeilTekst(hf, sf.tekst, sf.provIgjen); }
+      else { hf.hidden = true; hf.textContent = ''; }
       var kk = hx ? knappMotBakgrunn(hx, u.color_mode) : null, v = $('#dv2Kontrast');
       // Svak kontrast varsles, men valget nektes ikke (låst designmodell 19.10).
       if (hx && kk < 3) { v.hidden = false; v.textContent = 'Knappene kan bli vanskelige å se mot ' + (u.color_mode === 'lys' ? 'den lyse' : 'den mørke') + ' bakgrunnen (kontrast ' + kk.toFixed(1).replace('.', ',') + ' av minst 3,0). Du kan bruke fargen likevel.'; }
@@ -526,38 +752,59 @@
   }
 
   /* ══ Feil ved riktig felt ══════════════════════════════════════════════════════════════════════════ */
-  function visFeil(feltNavn, tekst, hopp) {
-    fjernFeil();
-    S.feil = { felt: feltNavn, tekst: tekst };
+  // o: { hopp: gå til steget og fokuser feltet, provIgjen: fn → «Prøv igjen»-knapp ved meldingen (nett-/serverfeil) }.
+  // Flere felt kan ha feil samtidig (autolagring), så hver feil står ved sitt felt og fjernes for seg.
+  function settFeilTekst(node, tekst, provIgjen) {
+    // Med knappen ved siden av skal ikke teksten også si «prøv igjen» (kontakttekstene og serverens meldinger ender ofte slik).
+    if (provIgjen) { tekst = String(tekst).replace(/\s*(?:og )?prøv igjen(?: om litt)?\.?\s*$/i, ''); if (!/[.!?]$/.test(tekst)) tekst += '.'; }
+    node.textContent = tekst;
+    if (provIgjen) {
+      node.appendChild(document.createTextNode(' '));
+      var b = lagEl('button', { type: 'button', class: 'dv2-provigjen' }, 'Prøv igjen');
+      b.addEventListener('click', function () { provIgjen(); });
+      node.appendChild(b);
+    }
+  }
+  function visFeil(feltNavn, tekst, o) {
+    o = o || {};
+    fjernFeil(feltNavn);
     var s = FELT_STEG[feltNavn];
     if (s == null) { S.statusTekst = tekst; S.statusType = 'feil'; tegnStatus(); return; }
-    if (hopp) { S.steg = s; tegnSteg(); }
-    if (feltNavn === 'custom_accent') { var hf = $('#dv2HexFeil'); hf.hidden = false; hf.textContent = tekst; }
-    else if (feltNavn === 'font' || feltNavn === 'aksent' || feltNavn === 'color_mode') { var g = $('#dv2' + (feltNavn === 'font' ? 'FontGr' : 'AksentGr')); if (g) { var p = lagEl('p', { class: 'dv2-feil', role: 'alert' }, tekst); p.dataset.dv2Feil = '1'; g.appendChild(p); } }
-    else if (feltNavn === 'slot' || feltNavn === 'ids') { S.bilderFeil = tekst; tegnBilderFeil(); }
+    S.feil[feltNavn] = { tekst: tekst, provIgjen: o.provIgjen || null };
+    if (o.hopp) { S.steg = s; tegnSteg(); }
+    if (feltNavn === 'custom_accent') { var hf = $('#dv2HexFeil'); hf.hidden = false; settFeilTekst(hf, tekst, o.provIgjen); }
+    else if (feltNavn === 'font' || feltNavn === 'aksent' || feltNavn === 'color_mode') {
+      var g = feltNavn === 'font' ? $('#dv2FontGr') : feltNavn === 'aksent' ? $('#dv2AksentGr') : $('#dv2Modus').closest('fieldset');
+      if (g) { var p = lagEl('p', { class: 'dv2-feil', role: 'alert' }); p.dataset.dv2Feil = feltNavn; settFeilTekst(p, tekst, o.provIgjen); g.appendChild(p); }
+    }
+    else if (feltNavn === 'slot' || feltNavn === 'ids') { S.bilderFeil = tekst; S.bilderProvIgjen = o.provIgjen || null; tegnBilderFeil(); }
     else {
       var w = $('[data-felt="' + feltNavn + '"]');
-      if (w) { w.classList.add('har-feil'); var pe = $('.fld-err', w); if (pe) { pe.hidden = false; pe.textContent = tekst; } }
+      if (w) { w.classList.add('har-feil'); var pe = $('.fld-err', w); if (pe) { pe.hidden = false; settFeilTekst(pe, tekst, o.provIgjen); } }
     }
-    S.statusTekst = 'Ikke lagret. Se feltet som er markert' + (hopp ? ' under «' + STEG[s].navn + '».' : '.'); S.statusType = 'feil';
     tegnStatus(); tegnFeilpunkt();
-    if (hopp) {
+    if (o.hopp) {
       var inp = STEG_FELT[feltNavn] ? $(STEG_FELT[feltNavn]) : null;
       setTimeout(function () { if (inp) { inp.focus({ preventScroll: true }); inp.scrollIntoView({ block: 'center' }); } }, 30);
     }
   }
-  function fjernFeil() {
-    S.feil = null;
-    $$('.fld.har-feil').forEach(function (w) { w.classList.remove('har-feil'); var p = $('.fld-err', w); if (p) { p.hidden = true; p.textContent = ''; } });
-    $$('[data-dv2-feil]').forEach(function (p) { p.remove(); });
-    var hf = $('#dv2HexFeil'); if (hf && !(S.utkast && S.utkast.utseende.custom_accent && !normHex(S.utkast.utseende.custom_accent))) { hf.hidden = true; hf.textContent = ''; }
-    S.bilderFeil = ''; tegnBilderFeil();
+  // Uten argument: alle feil. Med felt: bare det (aksent og egen farge er ett par).
+  function fjernFeil(feltNavn) {
+    var liste = feltNavn == null ? Object.keys(S.feil).concat(['slot']) : (enhet(feltNavn) === 'aksent' ? ['aksent', 'custom_accent'] : [feltNavn]);
+    liste.forEach(function (f) {
+      delete S.feil[f];
+      if (f === 'custom_accent') { var hf = $('#dv2HexFeil'); if (hf && !(S.utkast && S.utkast.utseende.custom_accent && !normHex(S.utkast.utseende.custom_accent))) { hf.hidden = true; hf.textContent = ''; } }
+      else if (f === 'font' || f === 'aksent' || f === 'color_mode') $$('[data-dv2-feil="' + f + '"]').forEach(function (p) { p.remove(); });
+      else if (f === 'slot' || f === 'ids') { S.bilderFeil = ''; S.bilderProvIgjen = null; tegnBilderFeil(); }
+      else { var w = $('[data-felt="' + f + '"]'); if (w) { w.classList.remove('har-feil'); var p = $('.fld-err', w); if (p) { p.hidden = true; p.textContent = ''; } } }
+    });
     tegnFeilpunkt();
   }
 
-  /* ══ Lagre ═════════════════════════════════════════════════════════════════════════════════════════
-     Kontrakt (backend redesign-v2): POST /api/dashboard/din-side/lagre — ren JSON uten bildeendring, multipart (draft +
-     filer) med bildeutkast. Body bærer publiser: !live. Svaret er ALLTID 200 når lagringen gikk gjennom:
+  /* ══ Publiser (bare side som ikke er live) ═════════════════════════════════════════════════════════
+     Kontrakt (backend redesign-v2): POST /api/dashboard/din-side/lagre med publiser:true — ren JSON, eller multipart hvis et
+     bildeutkast fortsatt ikke er lagret. Hele utkastet sendes, så ingenting i skjemaet kan bli liggende igjen. Svaret er
+     ALLTID 200 når lagringen gikk gjennom:
        { lagret:true, publisering:{ publisert, forste_gang, page_status, grunn, mangler[], melding? }, …din-side, …billing }
      publisert:true → bekreftelsen «Siden din er live». publisert:false med melding → meldingen vises som den er.
      400 { error, felt } = valideringsfeil (ingenting skrevet). v2 kaller ALDRI PUT /page-status. */
@@ -569,40 +816,40 @@
     for (var i = 0; i < g.length; i++) { var n = p[g[i][0]].trim().length; if (n > g[i][2]) return { felt: g[i][0], tekst: g[i][1] + ' kan være maks ' + g[i][2] + ' tegn. Den er ' + n + ' tegn. Kort ned og prøv igjen.' }; }
     return null;
   }
-  async function lagre() {
-    if (S.lagrer) return;
-    var live = erLive();
-    if (live && !ulagret()) return;
-    fjernFeil();
+  async function publiser() {
+    if (S.publiserer || erLive()) return;
     var lf = lokalValider();
-    if (lf) { visFeil(lf.felt, lf.tekst, true); return; }
-    S.lagrer = true; S.statusTekst = ''; S.statusType = ''; tegnKnapper(); tegnStatus();
-    var sendt = JSON.stringify(norm(S.utkast)), ekstra = { publiser: !live }, r, d = {};
+    if (lf) { visFeil(lf.felt, lf.tekst, { hopp: true }); return; }
+    S.publiserer = true; S.statusTekst = ''; S.statusType = ''; tegnKnapper(); tegnStatus();
+    // Autolagring som venter eller går, først. Publiseringen sender deretter hele utkastet (også det som ikke rakk å lagres).
+    Object.keys(S.timere).forEach(function (e) { clearTimeout(S.timere[e]); delete S.timere[e]; });
+    await Promise.all([S.felt, S.bildeLagrer].filter(Boolean));
+    var sendt = JSON.stringify(norm(S.utkast)), ekstra = { publiser: true }, r, d = {};
     try {
       r = S.bilderDirty
         ? await apiFetch('/api/dashboard/din-side/lagre', { method: 'POST', body: await draftForm(false, ekstra), timeout: 120000 })
         : await apiFetch('/api/dashboard/din-side/lagre', { method: 'POST', body: JSON.stringify(Object.assign(bodyFra(false), ekstra)) });
     }
-    catch (e) { S.lagrer = false; S.statusTekst = skrivefeil(e) + ' Vi kunne ikke bekrefte lagringen. Behold utkastet og prøv igjen eller last siden på nytt for å sjekke.'; S.statusType = 'feil'; tegnKnapper(); tegnStatus(); return; }
-    S.lagrer = false;
+    catch (e) { S.publiserer = false; S.statusTekst = skrivefeil(e) + ' Vi fikk ikke bekreftet publiseringen. Prøv igjen, eller last siden på nytt for å sjekke.'; S.statusType = 'feil'; tegnKnapper(); tegnStatus(); return; }
+    S.publiserer = false;
     if (!r) return;                                           // 401 → innlogging
     try { d = await r.json(); } catch (e) { d = {}; }
     if (r.ok && d && d.lagret) {
       if (S.bilderDirty) { var gamle = S.bilder; S.bilderDirty = false; await hentBilder(); slippUrler(gamle); }
-      S.lagret = formFra(d);
+      S.lagret = formFra(d); S.forfalt = {};
       S.shop = (d.profil && d.profil.shop) || S.shop;
       if (JSON.stringify(norm(S.utkast)) === sendt) { S.utkast = kopi(S.lagret); fyllFelter(); tegnUtseende(); }
+      fjernFeil();
       if (typeof erBillingShape === 'function' && erBillingShape(d) && typeof settBilling === 'function') settBilling(d);
       if (typeof loadProfil === 'function') loadProfil();     // Konto → «Lagre navn» sender lagrede verdier: ikke la dem bli utdatert
       var p = d.publisering || {};
       if (p.publisert) { tegnKnapper(); visBekreftelse(); return; }
       if (p.melding) { S.statusTekst = p.melding; S.statusType = 'info'; }          // lagret, men ikke publisert — som backend skriver den
-      else { S.statusTekst = '✓ Lagret. Kundene ser endringene nå.'; S.statusType = 'ok'; }
       tegnKnapper(); tegnStatus(); tegnFeilpunkt();
       return;
     }
-    if (r.status === 400 && d && d.felt) { tegnKnapper(); visFeil(d.felt, d.error || 'Ugyldig verdi.', true); return; }
-    S.statusTekst = (d && d.error) || ('Kunne ikke lagre (feil ' + r.status + '). Ingenting er endret. Prøv igjen.'); S.statusType = 'feil';
+    if (r.status === 400 && d && d.felt) { tegnKnapper(); visFeil(d.felt, d.error || 'Ugyldig verdi.', { hopp: true }); return; }
+    S.statusTekst = (d && d.error) || ('Kunne ikke publisere (feil ' + r.status + '). Prøv igjen.'); S.statusType = 'feil';
     tegnKnapper(); tegnStatus();
   }
 
@@ -625,18 +872,24 @@
   }
 
   /* ── Oppsettet (fokusmodus): X og «Fullfør siden din» ──
-     X: ulagrede endringer → «Forkast» / «Bli her»; ellers lukkes oppsettet og hele dashbordet vises (Oversikt).
-     «Fullfør siden din» (Oversikt, bare mens siden ikke er live): en lenke tilbake til oppsettet — ingen publiser-knapp. */
+     X: det som gjenstår lagres først; feilet lagringen → «Forkast endringene» / «Bli her». Ellers lukkes oppsettet og hele
+     dashbordet vises (Oversikt). «Fullfør siden din» (Oversikt, bare mens siden ikke er live): lenke tilbake til oppsettet. */
   function forkastUtkast() {
+    Object.keys(S.timere).forEach(function (e) { clearTimeout(S.timere[e]); }); S.timere = {}; S.forfalt = {};
     if (S.bilderDirty) { var gamle = S.bilder; S.bilderDirty = false; settBilderFraServer(S.bilderLagret); slippUrler(gamle); }
     S.utkast = kopi(S.lagret); S.hsv = hexTilHsv(normHex(S.lagret.utseende.custom_accent)); S.statusTekst = ''; S.statusType = ''; fjernFeil();
     if (S.byggd) { fyllFelter(); tegnUtseende(); tegnPortrettOgGalleri(); tegnKnapper(); tegnStatus(); }
   }
   function lukkOppsett() {
     function lukk() { if (typeof settOppsettLukket === 'function') settOppsettLukket(true); if (typeof avsluttFokus === 'function') avsluttFokus(); S.tillatBytte = true; try { if (typeof switchPanel === 'function') switchPanel('oversikt'); } finally { S.tillatBytte = false; } }
-    if (!ulagret()) { lukk(); return; }
-    dialog({ tittel: 'Du har ulagrede endringer', tekst: 'Endringene på siden din er ikke lagret. Lukker du nå, forsvinner de.', ja: 'Forkast', nei: 'Bli her', farlig: true })
-      .then(function (forkast) { if (forkast) { forkastUtkast(); lukk(); } });
+    if (!harUsikre()) { lukk(); return; }
+    if (S.forlater) return;
+    S.forlater = true; tegnStatus();
+    sikreLagret().then(function (ok) {
+      S.forlater = false; tegnStatus();
+      if (ok) { lukk(); return; }
+      ikkeLagretDialog('Noe på siden din ble ikke lagret. Lukker du nå, forsvinner det.').then(function (forkast) { if (forkast) { forkastUtkast(); lukk(); } });
+    });
   }
   function startOppsett() {
     if (typeof settOppsettLukket === 'function') settOppsettLukket(false);
@@ -725,17 +978,23 @@
     });
   }
 
-  // Fanebytte med ulagrede endringer. Kalles først i nav-klikk-handleren; true = bytte stoppet (dialog vises).
+  // Fanebytte fra Din side. Kalles først i nav-klikk-handleren; true = bytte holdt igjen. Det som gjenstår, lagres først;
+  // byttet skjer når lagringen er ferdig. Bare hvis den feiler: «Forkast endringene» / «Bli her».
   function fangBytte(knapp) {
-    if (!S.v2 || S.tillatBytte || !ulagret()) return false;
+    if (!S.v2 || S.tillatBytte || !harUsikre()) return false;
     var panel = knapp && knapp.dataset && knapp.dataset.panel;
     if (!panel || panel === 'design') return false;
     if (typeof aktivtPanel === 'function' && aktivtPanel() !== 'design') return false;
-    dialog({ tittel: 'Du har ulagrede endringer', tekst: 'Endringene på Din side er ikke lagret. Hvis du går videre nå, forsvinner de.', ja: 'Forkast endringene', nei: 'Bli her', farlig: true }).then(function (forkast) {
-      if (forkast) {
-        forkastUtkast();
-        S.tillatBytte = true; try { knapp.click(); } finally { S.tillatBytte = false; }
-      } else if (location.hash.replace('#', '') !== 'dinside') { location.hash = 'dinside'; }
+    if (S.forlater) return true;
+    function bytt() { S.tillatBytte = true; try { knapp.click(); } finally { S.tillatBytte = false; } }
+    S.forlater = true; tegnStatus();
+    sikreLagret().then(function (ok) {
+      S.forlater = false; tegnStatus();
+      if (ok) { bytt(); return; }
+      ikkeLagretDialog('Noe på Din side ble ikke lagret. Går du videre nå, forsvinner det.').then(function (forkast) {
+        if (forkast) { forkastUtkast(); bytt(); }
+        else if (location.hash.replace('#', '') !== 'dinside') { location.hash = 'dinside'; }
+      });
     });
     return true;
   }
@@ -775,7 +1034,7 @@
   }
   function bildeUrl(b) { return /^(blob:|data:|https?:)/.test(b.url)?b.url:(typeof CONFIG !== 'undefined' ? CONFIG.API_BASE : '') + b.url; }
   function iSlot(slot) { return S.bilder.filter(function (b) { return b.slot === slot; }); }
-  function tegnBilderFeil() { var e = $('#dv2BilderFeil'); if (!e) return; e.hidden = !S.bilderFeil; e.textContent = S.bilderFeil; }
+  function tegnBilderFeil() { var e = $('#dv2BilderFeil'); if (!e) return; e.hidden = !S.bilderFeil; settFeilTekst(e, S.bilderFeil || '', S.bilderFeil ? S.bilderProvIgjen : null); }
 
   function tegnPortrettOgGalleri() {
     if (!S.byggd) return;
@@ -827,13 +1086,18 @@
     }
     var add = lagEl('div', { class: 'dv2-handl' });
     var legg = lagEl('button', { type: 'button', class: 'dv2-btn', 'data-h': 'legg-til-galleri' }, 'Legg til bilder');
-    legg.disabled = n >= mx || !!S.opplaster; add.appendChild(legg); gb.appendChild(add);
+    legg.disabled = n >= mx || bildeOpptatt(); add.appendChild(legg); gb.appendChild(add);
     if (n >= mx) gb.appendChild(lagEl('p', { class: 'dv2-hjelp' }, 'Du har lagt til alle ' + mx + ' bildene du kan ha. Slett et bilde for å legge til et nytt.'));
-    if (S.opplaster) gb.appendChild(lagEl('p', { class: 'dv2-opplast', role: 'status' }, S.opplaster));
+    var opptatt = S.opplaster || (S.bildeLagrer ? 'Lagrer …' : '');
+    if (opptatt) gb.appendChild(lagEl('p', { class: 'dv2-opplast', role: 'status' }, opptatt));
+    // Én bildehandling om gangen: mens den lagres, står de andre stille (ellers ville neste handling bygget på en liste
+    // serveren ikke har bekreftet ennå).
+    $$('#dv2Portrett [data-h], #dv2Galleri [data-h]').forEach(function (k) { if (bildeOpptatt()) k.disabled = true; });
   }
+  function bildeOpptatt() { return !!(S.opplaster || S.bildeLagrer || S.publiserer); }
 
   function portrettKlikk(e) {
-    var b = e.target.closest('[data-h]'); if (!b) return;
+    var b = e.target.closest('[data-h]'); if (!b || b.disabled || bildeOpptatt()) return;
     if (b.dataset.h === 'legg-til') $('#dv2FilPortrett').click();
     else if (b.dataset.h === 'bytt') { S.bytteSlot = 'portrett'; $('#dv2FilBytt').click(); }
     else if (b.dataset.h === 'beskjaer') beskjaer(b.dataset.id, 'portrett');
@@ -842,7 +1106,7 @@
   function galleriKlikk(e) {
     var fl = e.target.closest('.flis');
     if (fl) { S.valgtBilde = S.valgtBilde === fl.dataset.id ? null : fl.dataset.id; tegnPortrettOgGalleri(); return; }
-    var b = e.target.closest('[data-h]'); if (!b || b.disabled) return;
+    var b = e.target.closest('[data-h]'); if (!b || b.disabled || bildeOpptatt()) return;
     var h = b.dataset.h;
     if (h === 'legg-til-galleri') $('#dv2FilGalleri').click();
     else if (h === 'tidligere') flytt(-1); else if (h === 'senere') flytt(1);
@@ -853,11 +1117,44 @@
     var b = S.bilder.filter(function (x) { return x.id === id; })[0]; if (!b || typeof _openCropModal !== 'function') return;
     _openCropModal(id, slot, bildeUrl(b));
   }
-  function draftChanged(){S.bilderDirty=true;if(typeof imgs!=='undefined')imgs=S.bilder;tegnPortrettOgGalleri();endret('slot');planleggPreview(0);}
+  // Hver bildehandling lagres for seg, med en gang (autolagring). Utkastet står til serveren har bekreftet.
+  function draftChanged(){S.bilderDirty=true;if(typeof imgs!=='undefined')imgs=S.bilder;tegnPortrettOgGalleri();endret('slot');planleggPreview(0);lagreBilder();}
   async function slettBilde(id,slot){
-    var ok=await dialog({tittel:'Fjerne bildet?',tekst:'Bildet fjernes fra kundesiden først når du lagrer.',ja:'Fjern fra utkast',nei:'Behold',farlig:true});if(!ok)return;
+    var ok=await dialog({tittel:'Fjerne bildet?',tekst:'Bildet fjernes fra siden din med en gang.',ja:'Fjern bildet',nei:'Behold',farlig:true});if(!ok)return;
     S.bilder=S.bilder.filter(function(b){return b.id!==id;});S.valgtBilde=null;draftChanged();
   }
+  // POST /din-side/lagre, multipart med BARE bildene (ingen tekstfelt — de har sin egen lagring) og publiser:false.
+  async function lagreBilder() {
+    if (S.bildeLagrer) { S.bildeIgjen = true; return S.bildeLagrer; }
+    if (!S.v2 || !S.bilderDirty) return true;
+    if (S.feil.slot || S.feil.ids) { fjernFeil('slot'); fjernFeil('ids'); }
+    S.bildeLagrer = (async function () {
+      var r, d = {};
+      try { r = await apiFetch('/api/dashboard/din-side/lagre', { method: 'POST', body: await draftForm(false, { publiser: false }, true), timeout: 120000 }); }
+      catch (e) { bilderFeilet(skrivefeil(e)); return false; }
+      if (!r) return false;                                    // 401 → innlogging
+      try { d = await r.json(); } catch (e) { d = {}; }
+      if (r.ok && d && d.lagret) {
+        var gamle = S.bilder; S.bilderDirty = false; await hentBilder(); slippUrler(gamle);
+        if (typeof erBillingShape === 'function' && erBillingShape(d) && typeof settBilling === 'function') settBilling(d);
+        S.bildeLagret = true;                                   // «Lagret ✓» når lagringen er helt ferdig (under)
+        return true;
+      }
+      if (r.status === 400 && d && d.felt) { visFeil(d.felt, d.error || 'Bildet kunne ikke lagres.'); return false; }
+      // 409: bildene er endret et annet sted — et nytt forsøk gir samme svar til siden er lastet på nytt. Ingen «Prøv igjen».
+      if (r.status === 409) { visFeil('slot', 'Bildene er ikke lagret. ' + ((d && d.error) || 'Bildene er endret et annet sted. Last siden på nytt.')); return false; }
+      bilderFeilet((d && d.error) || ('Kunne ikke lagre bildet (feil ' + r.status + ').'));
+      return false;
+    })();
+    tegnPortrettOgGalleri(); tegnStatus(); tegnKnapper();
+    var ok;
+    try { ok = await S.bildeLagrer; } finally { S.bildeLagrer = null; }
+    tegnPortrettOgGalleri(); tegnStatus(); tegnKnapper();
+    if (S.bildeLagret) { S.bildeLagret = false; visLagret(); }
+    if (S.bildeIgjen) { S.bildeIgjen = false; if (S.bilderDirty) return lagreBilder(); }
+    return ok;
+  }
+  function bilderFeilet(grunn) { visFeil('slot', 'Bildene er ikke lagret. ' + grunn, { provIgjen: lagreBilder }); }
   async function flytt(retning){var g=iSlot('galleri'),i=g.findIndex(function(b){return b.id===S.valgtBilde;}),j=i+retning;if(i<0||j<0||j>=g.length)return;var t=g[i];g[i]=g[j];g[j]=t;g.forEach(function(b,n){b.sort_order=n;});S.bilder.sort(function(a,b){return a.sort_order-b.sort_order;});draftChanged();}
   function stageCrop(id,blob,rect){var b=S.bilder.find(function(x){return x.id===id;});if(!b)return false;if(b._new&&b._file&&!b._original)b._original=b._file;b._file=blob;b.url=URL.createObjectURL(blob);b.cropRect=rect;draftChanged();return true;}
   // Forhåndsvisningen trenger ikke fullt bilde: backend skalerer uansett ned til 600 px (din-side/preview). Uten dette gikk
@@ -868,8 +1165,9 @@
     return b._pv;
   }
   // Multipart-utkastet. preview=true: små kopier og ingen original (preview bruker den ikke). Lagring: full fil + original.
-  async function draftForm(preview, ekstra){
-    var fd=new FormData(),body=Object.assign(bodyFra(!!preview),ekstra||{});body.imageVersion=S.imageVersion;
+  // kunBilder: uten profil/utseende/kontakt (bildelagringen skal aldri sende et halvskrevet tekstfelt).
+  async function draftForm(preview, ekstra, kunBilder){
+    var fd=new FormData(),body=Object.assign(kunBilder?{}:bodyFra(!!preview),ekstra||{});body.imageVersion=S.imageVersion;
     var liste=S.bilder.filter(function(b){return b.slot==='portrett'||b.slot==='galleri';});
     body.images=[];
     for(var i=0;i<liste.length;i++){
@@ -904,7 +1202,7 @@
     return new File([blob], navn, { type: blob.type });
   }
   async function lastOpp(slot, filer) {
-    if (S.opplaster || S.lagrer) return;
+    if (bildeOpptatt()) return;
     // Utkastet bygger på serverens bildeliste (imageVersion + eksisterende id-er). Er den ikke hentet ennå, hent den først —
     // ellers ville lagringen sendt en tom versjon og et utkast uten de eksisterende bildene.
     if (!S.bilderLastet) {
@@ -916,18 +1214,19 @@
     var valgt = filer.filter(function (f) { return f.type.indexOf('image/') === 0 || !f.type; }).slice(0, ledig);
     if (filer.length && !valgt.length) { S.bilderFeil = 'Det må være en bildefil (JPG eller PNG).'; tegnBilderFeil(); return; }
     if (slot === 'galleri' && filer.length > ledig) S.bilderFeil = 'Du kan ha ' + mx + ' bilder. Bare de første ' + ledig + ' ble lastet opp.'; else S.bilderFeil = '';
-    var feilTekst = '';
+    // Alle valgte filer legges i utkastet først, så lagres de i ÉN handling (ett kall, ikke ett per fil).
+    var feilTekst = '', lagt = 0;
     for (var i = 0; i < valgt.length; i++) {
       S.opplaster = valgt.length > 1 ? 'Laster opp ' + (i + 1) + ' av ' + valgt.length + ' …' : 'Laster opp …'; tegnPortrettOgGalleri();
       try {
         var fil = await nedskaler(valgt[i], slot === 'portrett' ? 1200 : 2000);
         if(slot==='portrett')S.bilder=S.bilder.filter(function(b){return b.slot!=='portrett';});
         var url=URL.createObjectURL(fil);
-        S.bilder.push({id:'draft-'+Date.now()+'-'+i,slot:slot,sort_order:S.bilder.length,url:url,originalUrl:url,_file:fil,_new:true});draftChanged();
+        S.bilder.push({id:'draft-'+Date.now()+'-'+i,slot:slot,sort_order:S.bilder.length,url:url,originalUrl:url,_file:fil,_new:true}); lagt++;
       } catch (e) { feilTekst = skrivefeil(e); break; }
     }
     S.opplaster = ''; tegnKnapper(); if (feilTekst) S.bilderFeil = feilTekst;
-    await hentBilder(); tegnBilderFeil(); planleggPreview(0);
+    if (lagt) draftChanged(); else { tegnPortrettOgGalleri(); tegnBilderFeil(); }
   }
   // Kalles fra dashbordets bilderEndret() etter beskjæring.
   async function bilderEndret() { await hentBilder(); planleggPreview(0); }

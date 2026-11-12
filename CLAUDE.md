@@ -125,9 +125,16 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
     til alle er flyttet.
   - **v2 (ny, bak `barbers.sidemal='v2'` i backend):** ÉN fast mal. Fonten påvirker KUN sjappenavnet
     (Inter ellers). Aksent blå `#0071E3` / gull `#B08C32` / rød `#B83A42` / egen; lys/mørk. Ingen layout,
-    ingen hero. «Din side» blir fire steg: Profil → Utseende → Bilder → Kontakt, «Se siden» hele veien,
-    «Lagre endringer» gjør alt live (ingen publiser-knapp, ingen sjekkliste-sperre). Mobil først; render
-    320/375/402/1280. Egen farge med knappkontrast under 3,0 → varsel, lagring tillatt.
+    ingen hero. «Din side» blir fire steg: Profil → Utseende → Bilder → Kontakt, «Se siden» hele veien.
+    **Autolagring (Henrik 12.11.2026, erstatter «Lagre endringer gjør alt live»):** hver endring lagres med en
+    gang (tekst etter ~1 s pause / når feltet forlates, telefon når feltet forlates, fargevelger når man slipper,
+    font/aksent/bakgrunn straks, hver bildehandling for seg; det som gjenstår sendes når appen går i bakgrunnen).
+    Feltene via `PUT /din-side` med bare det endrede — publiserer ALDRI. «Lagre endringer» er BORTE. Live side:
+    ingen lagreknapp. Side som ikke er live: siste steg har én knapp, «Publiser siden» (`POST /din-side/lagre`
+    `publiser:true`; backendens krav-sjekk og melding). Statuslinja: «Lagrer …» / «Lagret ✓» ca. 2 s og tones ut /
+    feil står til de er løst; på mobil (live side) fast rett over bunn-navet. Forkast-dialog bare når en lagring
+    har feilet. Ingen sjekkliste-sperre. Mobil først; render 320/375/402/1280. Egen farge med knappkontrast under
+    3,0 → varsel, lagring tillatt. Render: `tools/render/dinside-v2-autolagring.mjs` + `dinside-v2.mjs`.
   - Nye barbere får v1 til Grand Barber er godkjent på v2; deretter v2.
 - **Oversikt = uke-rekord-akse; Vekst = måned-rekord-akse.** Persentil + progress-bar bor
   på Oversikt og er UKE-relative (måned har for få datapunkter for meningsfull persentil;

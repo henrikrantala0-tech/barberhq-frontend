@@ -179,6 +179,29 @@ body.fokus .dv2-bar-inn{max-width:calc(var(--dv2-innhold) - var(--dv2-s3) * 2);m
 .dv2-status.ok{color:var(--good);font-weight:600}
 .dv2-status.feil{color:var(--bad)}
 .dv2-status.info{color:var(--ink-2)}
+/* Autolagring (12.11.2026): «Lagrer …» mens lagringen pågår, «Lagret ✓» i ca. 2 s etter hver lagring og så tones den ut
+   (JS: visLagret — LAGRET_TON_MS = transition-tiden her). Statuslinja i Din side holder plassen sin også når den er tom,
+   så knappene under ikke hopper hver gang meldingen kommer og går. «Prøv igjen» står i feilmeldingen ved feltet —
+   trykkflate 40 px (negative marger holder linja like lav som teksten rundt). */
+#dv2Status{min-height:1.45em}
+#dv2Status:empty{display:block}
+.dv2-status.lagret{color:var(--mut);transition:opacity .4s ease}
+.dv2-status.lagret.tones{opacity:0}
+@media (prefers-reduced-motion:reduce){ .dv2-status.lagret{transition:none} }
+/* Mobil, vanlig Din side (ikke oppsettet): statuslinja står FAST rett over bunn-navet, så «Lagrer …» / «Lagret ✓» /
+   «Ikke lagret» synes uansett hvor i steget man er (Henrik 12.11.2026). Full bredde, samme flate som navet, kant i kant
+   med det — innholdet ruller under den som under navet (en flytende pille lå oppå «← Tilbake»/«Neste →»). Den er ute av
+   flyten (knappene flytter seg aldri), tom = ikke tegnet, og trykk går gjennom den. Panelet får ekstra bunnklaring (60 px),
+   så den aldri dekker knappene når man har rullet helt ned. Skjules bak den åpne forhåndsvisningen.
+   Oppsettet (body.fokus) og desktop: statuslinja står i bunnbaren som før. */
+@media (max-width:719px){
+  body:not(.fokus) #dv2Status{position:fixed;left:0;right:0;bottom:calc(var(--bunn-nav-h,56px) + env(safe-area-inset-bottom,0px));z-index:119;
+    margin:0;min-height:0;padding:9px 16px;background:var(--surface);border-top:1px solid var(--line);pointer-events:none;text-align:center}
+  body:not(.fokus) #dv2Status:empty{display:none}
+  body.dv2-pv-laas:not(.fokus) #dv2Status{display:none}
+  body.sm-v2:not(.fokus) #design{padding-bottom:calc(var(--bunn-nav-h,56px) + env(safe-area-inset-bottom,0px) + 12px + 48px + 12px)}
+}
+#dinsideV2 .dv2-provigjen{appearance:none;border:0;background:0;font:inherit;font-weight:600;color:var(--info);text-decoration:underline;text-underline-offset:2px;cursor:pointer;display:inline-flex;align-items:center;min-height:40px;padding:0 6px;margin:-12px 0 -12px -6px;vertical-align:middle}
 .dv2-hjelpelinje{margin:var(--dv2-s1) 0 0;font-size:var(--dv2-liten);line-height:1.45;color:var(--mut);text-align:center}
 
 /* ── Forhåndsvisning ─────────────────────────────────────────────────────── */
