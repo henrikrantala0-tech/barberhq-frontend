@@ -1179,6 +1179,20 @@
   .pv-tekst{font-size:14px;color:var(--ink)}
   .pv-dempet{display:block;font-size:13.5px;line-height:1.5;color:var(--mut)}
   .pv-samtykke{display:block;margin-top:2px;font-size:12.5px;line-height:1.5;color:var(--mut)}
+  /* Hentet inn — Gratis (erBasis): fast tekst, ingen tall utenom prisen. */
+  .ovs-tagg{font-size:11.5px;font-weight:500;color:var(--mut);border:1px solid var(--ov-btn-line);border-radius:6px;padding:4px 8px;white-space:nowrap;line-height:1.2}
+  /* text-wrap:balance: «Flere klipp fra kundene du har.» er bredere enn kolonnen på mobil (også på designets 390) —
+     uten balance ble «har.» stående alene. Balance deler hver linje (før/etter <br>) jevnt. */
+  .gr-h{margin:16px 0 0;font-size:24px;font-weight:800;letter-spacing:-.035em;line-height:1.12;color:var(--ink);text-wrap:balance}
+  .gr-p{margin:10px 0 0;font-size:13.5px;line-height:1.5;color:var(--mut);text-wrap:pretty}   /* pretty: ikke «kroner.» alene på 320 */
+  .gr-rader{margin-top:18px}
+  .gr-rad{display:flex;flex-direction:column;gap:4px;padding:15px 0;border-top:1px solid var(--ov-hair)}
+  .gr-bunn{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;padding-top:18px;border-top:1px solid var(--ov-hair)}
+  .gr-pris{display:flex;flex-direction:column;gap:3px}
+  .gr-pris b{font-size:16px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+  .gr-pris span{font-size:12.5px;color:var(--mut)}
+  .gr-cta{flex-shrink:0;height:44px;padding:0 20px;appearance:none;border:0;border-radius:8px;background:var(--ink);color:var(--bg);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
+  .gr-cta:hover{opacity:.9}
   /* Crop-modal */
   .crop-modal{position:fixed;inset:0;z-index:400;background:rgba(10,10,10,.97);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px}
   .crop-modal.open{display:flex}
@@ -4230,7 +4244,7 @@ function diBasisLaastRader(){
     +'<div class="di-row di-basis-laast"><span class="di-arm">Rebooking</span><span class="di-value">* klipp · **** kr</span></div>'
   +'</div>';
 }
-// Forklaringssetning (Vekst-fanen).
+// Forklaringssetning (Vekst-fanen; Oversikt har egen Gratis-blokk, ovsHentetGratisHtml).
 function diBasisForklaring(){
   return '<div class="di-basis-sell">Vekst sender rebooking-SMS automatisk og gir deg en liste over kunder du kan vinne tilbake.</div>';
 }
@@ -4332,6 +4346,18 @@ function ovsHentetVekstHtml(data){
     +'<p class="hi-sub">'+klippTekst(total.count)+' fra kunder BarberHQ hentet tilbake</p>'
     +ovsStripe(hi)+ovsHentetRader(hi,false)+ovsPaaVeiHtml(data.paaVei,false);
 }
+// Gratis: FAST overskrift uten tall (Henrik 17.11 — erstatter «{borte} kunder har sluttet å booke»). Gratis leser
+// IKKE paaVei.winback.borte og henter ingenting — renderDrivenBy tegner denne uten /attribution-kall.
+function ovsHentetGratisHtml(){
+  var h='Flere klipp fra kundene du har.<br>Og nye i tillegg.';
+  var rader=[['Rebooking','SMS når kunden har gått over tiden sin'],['Vinn tilbake','Lista over hvem du bør ta kontakt med'],['Verving','Kundene dine skaffer deg nye kunder']];
+  return '<div class="hi-hode"><h2 class="ovs-etikett" id="ovsHentetH">Hentet inn av BarberHQ</h2><span class="ovs-tagg">Med Vekst</span></div>'
+    +'<p class="gr-h">'+h+'</p>'
+    +'<p class="gr-p">Med Vekst ser du her hva det henter inn, i kroner.</p>'
+    +'<div class="gr-rader">'+rader.map(function(r){ return '<div class="gr-rad"><span class="hi-navn">'+r[0]+'</span><span class="hi-desc">'+r[1]+'</span></div>'; }).join('')+'</div>'
+    +'<div class="gr-bunn"><div class="gr-pris"><b>'+PLAN_INFO.vekst.pris+'/mnd</b><span>eks. mva</span></div>'
+    +'<button type="button" class="gr-cta" data-di-oppgrader>Se Vekst</button></div>';
+}
 async function renderDrivenBy(){
   var wrap=$("#drivenBy"); if(!wrap)return;
   // Delegert ÉN gang (overlever innerHTML-rebuild): periodevelger, «Se lista →», «Se Vekst». Hele-panelet-klikket
@@ -4347,7 +4373,7 @@ async function renderDrivenBy(){
   if(billingUkjent())return; // behold vakt (e5aa245): ingen henting/render før planen er kjent
   // Gratis: fast tekst uten tall (Henrik 17.11) → ingen /attribution-henting i det hele tatt. Teller sekvensen
   // opp, så et Vekst-svar som fortsatt er i lufta (plan byttet underveis) ikke overskriver Gratis-blokka.
-  if(erBasis()){ ++_ovsAttrSeq; wrap.innerHTML=''; return; }   // Gratis-blokka kommer i neste commit
+  if(erBasis()){ ++_ovsAttrSeq; wrap.innerHTML=ovsHentetGratisHtml(); return; }
   // Valgt periode vises med en gang (før svaret), så velgeren ikke føles død på tregt nett.
   [].forEach.call(wrap.querySelectorAll('[data-ovs-attr]'),function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-ovs-attr')===ovsAttrPeriod?'true':'false'); });
   var seq=++_ovsAttrSeq;
@@ -4356,7 +4382,7 @@ async function renderDrivenBy(){
   if(!data){ wrap.innerHTML=''; return; } // feil/401 → tomt, ingen krasj
   // Forsvar-i-dybden: Basis skal ALDRI vise ekte hentetInn-tall (backend gater: !krevVekst). erBasis() leses
   // på nytt etter svaret — billing kan ha landet underveis.
-  wrap.innerHTML = erBasis() ? '' : ovsHentetVekstHtml(data);
+  wrap.innerHTML = erBasis() ? ovsHentetGratisHtml() : ovsHentetVekstHtml(data);
 }
 // I DAG + KOMMENDE (Oversikt-redesign 17.11.2026). Begge bygges av samme /bookings-svar (_bookingerKilde).
 // I DAG: dagens IKKE-passerte timer — den neste stort, resten som rader. «N igjen» til høyre. Passerte timer
