@@ -1,4 +1,4 @@
-// tools/render/periodepiller.mjs — periode-pillene på Oversikt (#segs) og Vekst (#attrPeriod).
+// tools/render/periodepiller.mjs — periode-pillene på Oversikt (#segs + #ovsAttrPeriod, .ovs-seg) og Vekst (#attrPeriod, .perbar).
 // Invariant som voktes: de tre pillene står på ÉN linje, like brede segmenter, uten tekst-klipp
 // og uten å dytte dokumentet i horisontal overflow — på alle smale bredder.
 //
@@ -55,10 +55,12 @@ const MAAL = `(sel) => {
   const r = bar.getBoundingClientRect();
   const cs = getComputedStyle(bar);
   const padR = parseFloat(cs.paddingRight)||0;
-  const btns = [...bar.children].filter(c => c.classList.contains('perbar-btn')).map(b => {
+  // Oversikt bruker .ovs-seg-btn (Oversikt-redesign 17.11), Vekst fortsatt .perbar-btn. Den brede tredjeknappen
+  // (.ovs-seg-bred, flex 1.3 — «Denne måneden ▾») er bevisst bredere og holdes utenfor «like segmenter»-målet.
+  const btns = [...bar.children].filter(c => c.classList.contains('perbar-btn') || c.classList.contains('ovs-seg-btn')).map(b => {
     const br = b.getBoundingClientRect();
     return {
-      tekst: b.textContent.trim(),
+      tekst: b.textContent.trim(), bred: b.classList.contains('ovs-seg-bred'),
       w: Math.round(br.width),
       top: Math.round(br.top),
       klipp: b.scrollWidth > b.clientWidth + 1,   // nowrap-tekst bredere enn knappeboksen
@@ -67,13 +69,13 @@ const MAAL = `(sel) => {
     };
   });
   const rader = new Set(btns.map(b => b.top)).size;          // 1 = én linje
-  const ws = btns.map(b=>b.w);
+  const ws = btns.filter(b=>!b.bred).map(b=>b.w);
   const skjevPx = ws.length ? Math.max(...ws) - Math.min(...ws) : 0;   // 0 = perfekt like segmenter
   const last = btns[btns.length-1];
   const hoyreGap = last ? Math.round((r.right - padR) - last.rightEdge) : null;   // ≥0 = ikke forbi kanten
   return { finnes:true, barW: Math.round(r.width), nBtns: btns.length, rader,
     skjevPx, hoyreGap, klippKnapp: btns.filter(b=>b.klipp).map(b=>b.tekst+'('+b.overflowPx+'px)').join(',')||'—',
-    bredder: ws.join('/') };
+    bredder: btns.map(b=>b.w).join('/') };
 }`;
 
 const browser = await chromium.launch();
@@ -89,6 +91,8 @@ for (const bredde of [320, 360, 375, 390]) {
   await page.evaluate(() => { const b = document.querySelector('#segs'); if (b) b.scrollIntoView({block:'start'}); });
   await page.waitForTimeout(150);
   await page.screenshot({ path:`${OUT}/pill-oversikt-${bredde}.png`, fullPage:false, clip:{ x:0, y:0, width:bredde, height:200 } });
+  // Oversikt «Hentet inn» (#ovsAttrPeriod, 3/6/12 mnd) — samme .ovs-seg
+  const ovsAttr = await page.evaluate(eval(MAAL), '#ovsAttrPeriod');
   // Vekst (#attrPeriod)
   await page.evaluate(() => switchPanel('vekst'));
   await page.waitForTimeout(900);
@@ -97,7 +101,7 @@ for (const bredde of [320, 360, 375, 390]) {
   await page.waitForTimeout(150);
   await page.screenshot({ path:`${OUT}/pill-vekst-${bredde}.png`, fullPage:false, clip:{ x:0, y:0, width:bredde, height:200 } });
   const docOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-  for (const [flate, m] of [['Oversikt #segs', segs], ['Vekst #attrPeriod', attr]]) {
+  for (const [flate, m] of [['Oversikt #segs', segs], ['Oversikt #ovsAttrPeriod', ovsAttr], ['Vekst #attrPeriod', attr]]) {
     rad.push({ flate, bredde, barW:m.barW, nBtns:m.nBtns, rader:m.rader, bredder:m.bredder, skjevPx:m.skjevPx,
       hoyreGap:m.hoyreGap, klippKnapp:m.klippKnapp, docOverflow, jsfeil: errs.length ? errs.join('; ') : 'ingen' });
   }

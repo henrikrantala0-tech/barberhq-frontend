@@ -99,10 +99,14 @@ console.table(rad.map(({ m, ...r }) => r));
 const finn = (v, p) => rad.filter(r => r.variant === v && r.plan === p);
 const ARMER = ['Verving 5 klipp · 1 750 kr', 'Vinn tilbake 6 klipp · 2 400 kr', 'Rebooking 14 klipp · 4 900 kr'];
 const harAlt = t => t.includes('25 klipp') && t.includes('9 050 kr') && ARMER.every(a => t.includes(a));
-sjekk(finn('full', 'vekst').every(r => harAlt(r.m.oversikt.txt) && harAlt(r.m.vekst.txt)),
+// Oversikt-redesign (17.11): egne rader (navn + beskrivelse, kroner over klipp) i rekkefølgen Rebooking/Vinn tilbake/Verving.
+const ARMER_OVS = ['Rebooking Booket igjen etter SMS 4 900 kr 14 klipp', 'Vinn tilbake Kom tilbake fra lista 2 400 kr 6 klipp', 'Verving Nye kunder via verving 1 750 kr 5 klipp'];
+const harAltOvs = t => t.includes('9 050 kr') && t.includes('25 klipp fra kunder BarberHQ hentet tilbake') && ARMER_OVS.every(a => t.includes(a));
+sjekk(finn('full', 'vekst').every(r => harAltOvs(r.m.oversikt.txt) && harAlt(r.m.vekst.txt)),
   'A: Vekst viser total 25 klipp · 9 050 kr og tre arm-rader med kroner (begge flater)',
   finn('full', 'vekst').map(r => r.m.oversikt.txt.slice(0, 160)).join(' || '));
-sjekk(finn('utenTotal', 'vekst').every(r => [r.m.oversikt.txt, r.m.vekst.txt].every(t => /Ingen bookinger her ennå/.test(t) && !t.includes('9 050'))),
+sjekk(finn('utenTotal', 'vekst').every(r => /Ingen kunder hentet inn ennå/.test(r.m.oversikt.txt) && /Ingen bookinger her ennå/.test(r.m.vekst.txt)
+    && [r.m.oversikt.txt, r.m.vekst.txt].every(t => !t.includes('9 050'))),
   'B: uten total → 0-tilstand, aldri klient-sum (9 050) av radene');
 sjekk(finn('utenHentet', 'vekst').every(r => /Kunne ikke hente tallene akkurat nå/.test(r.m.vekst.txt) && /PÅ VEI/.test(r.m.oversikt.txt) && !/ kr\b/.test(r.m.oversikt.txt)),
   'C: hentetInn mangler → Vekst-fanen sier fra, Oversikt viser bare «På vei» uten kroner');

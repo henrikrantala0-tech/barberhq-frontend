@@ -1,6 +1,7 @@
 // «Hvor kundene kommer fra» v2 — panelet mot /attribution-shape ({paaVei, hentetInn?}).
 // Tre tilstander × Oversikt + Vekst × 320/375. Vokter:
-//  - Panelet har NØYAKTIG TRE armer: Verving, Vinn tilbake, Rebooking — i den rekkefølgen.
+//  - Panelet har NØYAKTIG TRE armer: Verving, Vinn tilbake, Rebooking på Vekst-fanen; Rebooking, Vinn tilbake,
+//    Verving på Oversikt (Oversikt-redesign 17.11, der Basis = tre armer uten tall + «Se Vekst», uten PÅ VEI).
 //    LOJALITET er fjernet (14.09) og skal ALDRI finnes i panelet — vakten BITER hvis raden kommer tilbake
 //    (ingen «Lojalitet»-arm, ingen .di-setup, ingen «kunder i programmet»-linje).
 //  - Vekst m/data: Hentet inn (total) + tre armer + På vei (Oversikt) / rader (Vekst).
@@ -65,31 +66,38 @@ for (const flate of ['oversikt','vekst']) {
       if (flate === 'vekst') { await page.$eval('button[data-panel="vekst"]', b => b.click()); }
       await page.waitForTimeout(900);
       const host = flate === 'vekst' ? '#attrRows' : '#drivenBy';
+      // Oversikt-redesign (17.11): #drivenBy har ny markup (.hi-* / .gr-* / .pv-blokk) og ny armrekkefølge
+      // Rebooking / Vinn tilbake / Verving. Vekst-fanen (#attrRows) er uendret (.di-row, Verving først).
       const m = await page.evaluate((h) => {
         const el = document.querySelector(h); const t = el ? el.innerText : '';
-        const armer = el ? [...el.querySelectorAll('.di-row')].map(r => { const a=r.querySelector('.di-arm'); return a?a.textContent.trim():''; }).filter(Boolean) : [];
+        const ovs = h === '#drivenBy';
+        const armer = !el ? [] : ovs
+          ? [...el.querySelectorAll('.hi-rad .hi-navn, .gr-rad .hi-navn')].map(a => (a.childNodes[0]||{}).textContent.trim())
+          : [...el.querySelectorAll('.di-row')].map(r => { const a=r.querySelector('.di-arm'); return a?a.textContent.trim():''; }).filter(Boolean);
+        const rekkefolge = ovs ? ['Rebooking','Vinn tilbake','Verving'] : ['Verving','Vinn tilbake','Rebooking'];
+        const pv = el ? el.querySelector('.pv-blokk .pv-rad') : null;
         return {
-          harHentetInn:      /BOOKET VIA BARBERHQ/.test(t),
+          harHentetInn:      ovs ? !!(el && el.querySelector('.hi-total, .hi-tom-h')) : /BOOKET VIA BARBERHQ/.test(t),
           harBunntekst:      /Kun klipp BarberHQ har bidratt til/.test(t),        // #4: skal være FALSE (flyttet til undertittel)
           // Lojalitet skal ALDRI finnes: ingen «Lojalitet»-arm, ingen .di-setup, ingen program-linje.
           lojFinnes:         armer.includes('Lojalitet') || /Lojalitet/.test(t) || /kunder i programmet|klipp registrert/.test(t) || !!(el && el.querySelector('.di-setup')),
           armer:             armer.join(','),
-          harTreArmer:       armer.length===3 && armer[0]==='Verving' && armer[1]==='Vinn tilbake' && armer[2]==='Rebooking',
+          harTreArmer:       armer.length===3 && armer.every((a,i)=>a===rekkefolge[i]),
           harPaaVei:         /PÅ VEI/.test(t),
-          harCta:            !!document.querySelector('[data-di-oppgrader]'),
-          // Vinn-tilbake-armen (kun i #drivenBy/På vei): N>0 = .di-pv-num, dato = .di-pv-date, null = .di-pv-tom.
-          wbArm: (function(){ var vt=el?[...el.querySelectorAll('.di-pv-block')].find(b=>/VINN TILBAKE/.test(b.innerText)):null;
-            if(!vt) return null;
-            return { num:!!vt.querySelector('.di-pv-num'), date:!!vt.querySelector('.di-pv-date'), tom:!!vt.querySelector('.di-pv-tom'),
-                     link:!!vt.querySelector('.di-pv-link'), tekst:vt.innerText.replace(/\n/g,' ') }; })(),
+          harCta:            !!(el && el.querySelector('[data-di-oppgrader]')),
+          // Vinn-tilbake-linja i PÅ VEI (Oversikt): N>0 = «N kunder å hente inn», dato = «Første kunde passerer 60 dager …»,
+          // ingen = «Ingen kunder å hente inn ennå» (uten lenke).
+          wbArm: !pv ? null : (function(){ var tx=pv.innerText.replace(/\n/g,' ');
+            return { num:/\d+ kunder? å hente inn/.test(tx), date:/Første kunde passerer 60 dager/.test(tx), tom:/Ingen kunder å hente inn ennå/.test(tx),
+                     link:!!pv.querySelector('[data-di-winback]'), tekst:tx }; })(),
         };
       }, host);
       const node = await page.$(host); if (node && bredde===375) await node.screenshot({ path:`${OUT}/drevet-av-${flate}-${navn}-375.png` });
 
       // Globalt: bunntekst borte + lojalitet ALDRI i panelet (biter hvis raden kommer tilbake). Så per tilstand/flate.
       let ok = errs.length===0 && !m.harBunntekst && !m.lojFinnes;
-      // Basis (14.09): tre låste armer, INGEN total/hentetInn. CTA KUN på Vekst-fanen; på Oversikt bærer «På vei» (ingen CTA).
-      if (navn==='basis' && flate==='oversikt') ok = ok && !m.harHentetInn && m.harTreArmer && m.harPaaVei && !m.harCta;
+      // Basis på Oversikt (redesign 17.11): tre armer UTEN tall, INGEN total, INGEN PÅ VEI, «Se Vekst»-knapp (CTA).
+      if (navn==='basis' && flate==='oversikt') ok = ok && !m.harHentetInn && m.harTreArmer && !m.harPaaVei && m.harCta;
       if (navn==='basis' && flate==='vekst')    ok = ok && !m.harHentetInn && m.harTreArmer && !m.harPaaVei && m.harCta;
       if (navn==='vekst'  && flate==='oversikt') ok = ok && m.harHentetInn && m.harPaaVei && m.harTreArmer;
       if (navn==='vekst'  && flate==='vekst')    ok = ok && !m.harPaaVei && m.harTreArmer;   // rader, ingen På vei
@@ -99,8 +107,8 @@ for (const flate of ['oversikt','vekst']) {
       // Vinn-tilbake-armens tre tilstander (kun På vei/oversikt): N>0=tall+lenke, dato=dato+lenke, null=«Ingen ennå» uten tall/dato/lenke.
       if (flate==='oversikt'){
         if (navn==='vekst')        ok = ok && m.wbArm && m.wbArm.num && !m.wbArm.date && !m.wbArm.tom && m.wbArm.link && /kunder å hente inn/.test(m.wbArm.tekst);
-        if (navn==='datoprognose') ok = ok && m.wbArm && m.wbArm.date && !m.wbArm.num && !m.wbArm.tom && m.wbArm.link && /passerer 60-dagersgrensen/.test(m.wbArm.tekst);
-        if (navn==='nykonto')      ok = ok && m.wbArm && m.wbArm.tom && !m.wbArm.num && !m.wbArm.date && !m.wbArm.link && /Ingen ennå/.test(m.wbArm.tekst);
+        if (navn==='datoprognose') ok = ok && m.wbArm && m.wbArm.date && !m.wbArm.num && !m.wbArm.tom && m.wbArm.link && /passerer 60 dager 25\. sep/.test(m.wbArm.tekst);
+        if (navn==='nykonto')      ok = ok && m.wbArm && m.wbArm.tom && !m.wbArm.num && !m.wbArm.date && !m.wbArm.link;
       }
       var wbVis = (flate==='oversikt' && m.wbArm) ? (m.wbArm.num?'N>0':m.wbArm.date?'dato':m.wbArm.tom?'tom':'?')+(m.wbArm.link?'+lenke':'') : '—';
       rapport.push({ flate, tilstand:navn, bredde, hentetInn:m.harHentetInn?'ja':'nei',

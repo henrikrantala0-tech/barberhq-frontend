@@ -261,7 +261,10 @@ for (const bredde of [320, 402, 1280]) {
       // Dagens header: sjappenavnet (#barberName) til venstre, bookinglenka (#headerLenke, kun live) til høyre.
       const logo = document.querySelector('#barberName'), who = document.querySelector('#headerLenke');
       const klaring = (logo && who) ? Math.round(who.getBoundingClientRect().left - logo.getBoundingClientRect().right) : null;
-      return { headerLenke: vis(document.querySelector('#headerLenke .pub-url')),
+      // Oversikt-redesign (17.11): under 720px står bare kopi-ikonet (.pub-copy) — URL-teksten er skjult der
+      // fordi navnet er 26px. Desktop viser fortsatt URL-en. «Lenke synlig» = riktig element for bredden.
+      const lenkeEl = window.innerWidth < 720 ? '#headerLenke .pub-copy' : '#headerLenke .pub-url';
+      return { headerLenke: vis(document.querySelector(lenkeEl)),
         kortSkjult: (document.querySelector('#suksessOverlay') || {}).hidden,
         headerKlaring: klaring, bodyOverflow: document.documentElement.scrollWidth - window.innerWidth };
     });

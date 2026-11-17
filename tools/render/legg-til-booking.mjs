@@ -307,7 +307,8 @@ for (const w of [320, 375]) {
   sjekk(!v.aapen && v.ok && v.okSms && v.okVis && v.okTekst === 'Booking lagt til Kunden får SMS-påminnelse dagen før. Vis i kalender',
         `${w} paaminnelse_sendes true → SMS-linja + «Vis i kalender»`, v.okTekst);
   const kommende = await page.$eval('#upcomingList', e => e.innerText.replace(/\s+/g, ' '));
-  sjekk(/LØR 14\. NOV.*15:00 Jonas Berg/.test(kommende), `${w} Kommende viser bookingen med en gang`, kommende.slice(0, 160));
+  // Dagsoverskrift i Kommende er «Lørdag 14. nov» etter Oversikt-redesignet (17.11), før «LØR 14. NOV».
+  sjekk(/Lørdag 14\. nov.*15:00 Jonas Berg/.test(kommende), `${w} Kommende viser bookingen med en gang`, kommende.slice(0, 160));
   await skjerm(page, `7-varsling-med-sms-${w}`);
 
   // 7b. Varsling UTEN SMS-linje: ingen telefon → paaminnelse_sendes false
@@ -423,7 +424,8 @@ for (const w of [320, 375]) {
   await page.click('#bkNyLukk'); await page.click('#upLeggTil'); await page.waitForTimeout(1400);
   v = await les(page);
   const navn = await page.$eval('#bkNyNavn', e => e.value);
-  const kommende = await page.$eval('#upcomingList', e => e.innerText);
+  // I dag og Kommende er to seksjoner etter Oversikt-redesignet — bookingen kan havne i den ene eller den andre.
+  const kommende = await page.evaluate(() => document.querySelector('#idagInnhold').innerText + ' ' + document.querySelector('#upcomingList').innerText);
   sjekk(v.aapen && navn === '' && v.knapp === 'Legg til booking' && v.tidPh, 'økt-vakt: den nye modalen står åpen og urørt', JSON.stringify({ aapen:v.aapen, navn, knapp:v.knapp }));
   sjekk(kommende.includes('Treg Lagring'), 'økt-vakt: den lagrede bookingen kom likevel inn i Kommende');
   sjekk(errs.length === 0, 'grenser: ingen pageerror', errs.join(' | '));

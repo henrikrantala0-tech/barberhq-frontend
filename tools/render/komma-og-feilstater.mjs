@@ -173,7 +173,8 @@ async function dash(cfg, fn) {
     await page.screenshot({ path:`${OUT}/kf-m8-oversikt-feil.png`, clip:{x:0,y:0,width:390,height:520} });
     const f = await page.evaluate(() => ({
       stats:document.querySelector('#stats').textContent, statsRetry:!!document.querySelector('#stats .retry-lenke'),
-      up:document.querySelector('#upcomingList').textContent, upRetry:!!document.querySelector('#upcomingList .retry-lenke') }));
+      // Oversikt-redesign (17.11): «Prøv igjen» for bookingene står i I dag (#idagInnhold); Kommende viser bare meldingen.
+      up:document.querySelector('#idagInnhold').textContent+' '+document.querySelector('#upcomingList').textContent, upRetry:!!document.querySelector('#idagInnhold .retry-lenke') }));
     cur.abort = [];
     await page.click('#stats .retry-lenke'); await page.waitForTimeout(600);
     const ok = await page.evaluate(() => document.querySelector('#stats').textContent.slice(0,40));
@@ -183,7 +184,7 @@ async function dash(cfg, fn) {
   });
   sjekk('M-8 #stats abort → melding «Klarte ikke å laste tallene»', r.statsMelding, r.jsfeil);
   sjekk('M-8 #stats abort → «Prøv igjen» + ikke «Laster»', r.statsRetry && r.statsIkkeLaster);
-  sjekk('M-8 #upcomingList abort → melding + «Prøv igjen»', r.upMelding && r.upRetry);
+  sjekk('M-8 bookinger abort → melding + «Prøv igjen» (I dag)', r.upMelding && r.upRetry);
   sjekk('M-8 retry lykkes → innhold tilbake', r.retryOk);
   sjekk('M-8 ingen JS-feil', r.jsfeil==='ingen', r.jsfeil);
 }

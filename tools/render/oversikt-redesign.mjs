@@ -1,0 +1,362 @@
+// Oversikt-redesign (17.11.2026) — render + vakter for hele Oversikt-fanen.
+//
+// Kilde: oversikt-vekst / oversikt-gratis / hentet-inn-vekst-tom (.dc.html, Henrik). Fire rammefrie seksjoner:
+// I DAG → KOMMENDE → NØKKELTALL → HENTET INN AV BARBERHQ. Testen tegner fire tilstander på 320/375/1280 i
+// mørk OG lys modus (24 skjermbilder), og sjekker det som ikke synes på øyemål:
+//   - I dag: passerte timer skjules, «N igjen», neste booking stort, «Neste kunde · om …» fra fast klokke,
+//     «Tjeneste · varighet», alle passert → «Ingen flere bookinger i dag.»
+//   - Kommende: dager etter i dag, «N neste 7 dager», «Onsdag 18. nov», ingen avlyste, ingen utenfor 7 døgn.
+//   - Nøkkeltall: .ovs-seg valgt = nøytral flate (aldri blå), tallfargene arvet (Kunder --info, omsetning
+//     #35d07a), ÉN linje under tallene, 72px stolpeområde, 0-dag = 3px, ensfarget fyll (ingen gradient).
+//   - Hentet inn (Vekst): egen periode (3 mnd standard → 6 mnd sender siste_6mnd), total, stripe med tre biter,
+//     rekkefølge Rebooking / Vinn tilbake / Verving, PÅ VEI «N kunder å hente inn» = borte + no_show, og
+//     reserven (dagens passerer_innen_30d) når feltene mangler. Klikk på panelet bytter IKKE fane.
+//   - Hentet inn (Gratis): FAST overskrift «Flere klipp fra kundene du har. Og nye i tillegg.» (Henrik 17.11 —
+//     ingen borte-tall), ingen /attribution-kall, ingen maskerte rader, ingen kronebeløp utenom prisen, «Se Vekst» → Konto.
+//   - Tomtilstand (total = 0): «Ingen kunder hentet inn ennå.», rader med «—», PÅ VEI vises.
+//   - Header: navnet 26px på alle faner, datoen bare på Oversikt. Bunn-nav: nytt Oversikt-ikon (fire fliser).
+//   - Ingen horisontal overflow, ingen pageerror, ingen forespørsel slipper forbi mocken.
+//
+// ALLE /api/** mockes (catch-all) — ingen skriv eller les mot prod. Klokka er låst til tirsdag 17.11.2026 10:10
+// (Oslo) med page.clock, så nedtelling og dagsbøtter er deterministiske.
+//   node tools/render/oversikt-redesign.mjs            → alle tilstander → .render-ut/oversikt-redesign/*.png
+//   node tools/render/oversikt-redesign.mjs gratis     → bare skjermbilder av den tilstanden (vaktene kjører alltid)
+//   (exit 1 ved avvik)
+import http from 'node:http';
+import fs from 'node:fs';
+import path from 'node:path';
+import { chromium } from 'playwright';
+
+const ROOT = path.resolve(import.meta.dirname, '../../site');
+const OUT  = path.resolve(import.meta.dirname, '../../.render-ut/oversikt-redesign');
+fs.mkdirSync(OUT, { recursive: true });
+const MIME = { '.html':'text/html; charset=utf-8', '.js':'text/javascript; charset=utf-8',
+               '.css':'text/css', '.webp':'image/webp', '.png':'image/png', '.svg':'image/svg+xml', '.json':'application/json' };
+const server = http.createServer((q, r) => {
+  const f = path.join(ROOT, decodeURIComponent(q.url.split('?')[0]));
+  fs.readFile(f, (e, b) => { if (e) { r.writeHead(404); r.end('404'); return; }
+    r.writeHead(200, { 'Content-Type': MIME[path.extname(f)] || 'application/octet-stream' }); r.end(b); });
+});
+await new Promise(r => server.listen(0, r));
+const PORT = server.address().port;
+
+// ── Fast «nå»: tirsdag 17.11.2026 10:10 Oslo (CET = UTC+1) ──────────────────────────────────────────────
+const NAA = new Date('2026-11-17T09:10:00Z');
+const bk = (id, name, service, startZ, min, extra={}) => {
+  const s = new Date(startZ); return { id, name, service, start: s.toISOString(), end: new Date(s.getTime()+min*60000).toISOString(), status:'bekreftet', ...extra };
+};
+const BOOKINGER_FULL = [
+  bk(1,'Ola Nordmann','Klipp','2026-11-17T08:00:00Z',30),          // 09:00 — passert, skal IKKE vises
+  bk(2,'Jonas Berg','Fade','2026-11-17T10:30:00Z',40),              // 11:30 — neste (om 1 t 20 min)
+  bk(3,'Emre Yilmaz','Skin fade','2026-11-17T12:00:00Z',45),        // 13:00
+  bk(4,'Theo Nilsen','Klipp + skjegg','2026-11-17T13:30:00Z',60),   // 14:30
+  bk(5,'Avlyst Person','Klipp','2026-11-17T15:00:00Z',30,{status:'avlyst'}),
+  bk(6,'Karim Haddad','Fade','2026-11-18T09:00:00Z',40),            // onsdag 10:00
+  bk(7,'Sindre Holm','Klipp','2026-11-18T11:30:00Z',30),            // onsdag 12:30
+  bk(8,'Avlyst To','Fade','2026-11-18T13:00:00Z',30,{status:'avlyst'}),
+  bk(9,'Jonas Berg','Skjegg','2026-11-19T14:00:00Z',20),            // torsdag 15:00
+  bk(10,'Magnus Lie','Klipp','2026-11-21T10:00:00Z',30,{referral_discount:{rolle:'ny',pct:20}}), // lørdag
+  bk(11,'Utenfor Vindu','Klipp','2026-11-25T10:00:00Z',30),         // > 7 døgn frem — skal IKKE vises
+];
+// Gratis-tilstanden: tom dag (som oversikt-gratis.dc.html), to kommende torsdag.
+const BOOKINGER_TOMDAG = [
+  bk(21,'Karim Haddad','Fade','2026-11-19T11:00:00Z',40),
+  bk(22,'Sindre Holm','Klipp','2026-11-19T12:30:00Z',30),
+];
+
+// /stats: siste 7 dager som i designet (ONS 11.11 … TIR 17.11), søndag 0.
+const dag = (d, revenue, count) => ({ day:d, revenue, count, new:Math.round(count/3), returning:count-Math.round(count/3) });
+const STATS_FULL = {
+  daily: [ dag('2026-11-05',1200,3), dag('2026-11-08',2100,5), dag('2026-11-10',600,2),
+           dag('2026-11-11',1400,3), dag('2026-11-12',1850,4), dag('2026-11-13',2300,5), dag('2026-11-14',2600,6),
+           dag('2026-11-16',900,3), dag('2026-11-17',800,2) ],
+  months_with_data:['2026-08','2026-09','2026-10','2026-11'],
+  current_week_revenue: 9850, best_week_revenue: 14768, best_week_start:'2026-08-10', best_week_approximate:false,
+  weekly_revenue: [14768,12000,11000,10500,10200,9000,8000,13000].map((r,i)=>({ week_start:'2026-0'+(8+Math.floor(i/4))+'-1'+(i%4), revenue:r })),
+};
+const STATS_GRATIS = {
+  daily: [ dag('2026-11-12',1000,1), dag('2026-11-13',300,1), dag('2026-11-14',1000,1) ],
+  months_with_data:['2026-10','2026-11'],
+  current_week_revenue: 2300, best_week_revenue: 14768, best_week_start:'2026-08-10', weekly_revenue: [],
+};
+
+const PAAVEI_NY = { rebooking:{naar_vindu_30d:2,med_samtykke:1}, winback:{ foerste_passerer_60:'2026-12-03', passerer_innen_30d:5, borte:12, no_show:5 } };
+const PAAVEI_GAMMEL = { rebooking:{naar_vindu_30d:2,med_samtykke:1}, winback:{ foerste_passerer_60:'2026-12-03', passerer_innen_30d:5 } };   // backend uten borte/no_show
+const HENTET = { period:'siste_3mnd', total:{count:14,revenue:4850},
+  rebooking:{count:8,revenue:2300,aktivert:true}, vinnTilbake:{count:4,revenue:1550}, vervet:{count:2,revenue:1000} };
+const HENTET_TOM = { period:'siste_3mnd', total:{count:0,revenue:0},
+  rebooking:{count:0,revenue:0,aktivert:true}, vinnTilbake:{count:0,revenue:0}, vervet:{count:0,revenue:0} };
+
+const bill = (plan) => plan==='vekst'
+  ? { subscription_status:'active', plan:'vekst', effective_plan:'vekst', effective_plan_grunn:'subscription', page_status:'live',
+      days_left:99, trial_days_left:null, needs_attention:false, current_period_end:'2026-12-17T00:00:00Z', cancel_at_period_end:false }
+  : { subscription_status:null, plan:null, effective_plan:'basis', effective_plan_grunn:'gratis', page_status:'live',
+      days_left:null, trial_days_left:null, needs_attention:false, sms_pakke_kan_kjopes:false };
+
+const TILSTANDER = {
+  'vekst':             { plan:'vekst', bookinger:BOOKINGER_FULL,   stats:STATS_FULL,   attr:{ paaVei:PAAVEI_NY, hentetInn:HENTET } },
+  'vekst-tom':         { plan:'vekst', bookinger:BOOKINGER_FULL,   stats:STATS_FULL,   attr:{ paaVei:PAAVEI_NY, hentetInn:HENTET_TOM } },
+  // Gratis: én variant — teksten er fast og leser ingen tall. attr sendes likevel, så vakta ser at den IKKE hentes.
+  'gratis':            { plan:'basis', bookinger:BOOKINGER_TOMDAG, stats:STATS_GRATIS, attr:{ paaVei:{ ...PAAVEI_NY, winback:{ ...PAAVEI_NY.winback, borte:17, no_show:3 } } }, story:true },
+};
+
+const browser = await chromium.launch();
+const sjekker = [];
+const sjekk = (navn, ok, detalj='') => { sjekker.push({ navn, ok:!!ok, detalj }); };
+const bilder = [];
+
+async function aapne(t, { bredde, tema, naa=NAA, attrOverride=null }) {
+  const T = TILSTANDER[t];
+  const ctx = await browser.newContext({ viewport:{ width:bredde, height:900 }, deviceScaleFactor:2, reducedMotion:'reduce' });
+  const page = await ctx.newPage();
+  await page.clock.setFixedTime(naa);
+  await page.addInitScript((tm) => { try { localStorage.setItem('bhq-theme', tm); } catch(e){} }, tema);
+  const st = { errs:[], attrKall:[], uMocket:[] };
+  page.on('pageerror', e => st.errs.push(e.message));
+  // Alt mot prod-API-et som IKKE er /api/** avbrytes og telles (skal være 0).
+  await page.route('https://api.trybarberhq.com/**', route => {
+    const u = new URL(route.request().url());
+    if (!u.pathname.startsWith('/api/')) { st.uMocket.push(u.pathname); return route.abort(); }
+    return route.fallback();
+  });
+  await page.route('**/api/**', async route => {
+    const u = new URL(route.request().url()); const p = u.pathname;
+    const J = (o, s=200) => route.fulfill({ status:s, contentType:'application/json', body:JSON.stringify(o) });
+    if (route.request().method() !== 'GET') return J({ ok:true });   // skriv besvares lokalt, aldri videre
+    if (p === '/api/dashboard/profile') return J({ hasPassword:true, name:'Henrik', shop:'Grand Barber', email:'test@example.no', slug:'grand-barber' });
+    if (p === '/api/dashboard/billing/status') return J(bill(T.plan));
+    if (p === '/api/dashboard/stats') return J(T.stats);
+    if (p === '/api/dashboard/bookings') return J(T.bookinger);
+    if (p === '/api/dashboard/attribution') { st.attrKall.push(u.searchParams.get('period')); return J(attrOverride || T.attr); }
+    if (p === '/api/dashboard/aktivering') return J({ har_booking:true, steg:{} });
+    if (p === '/api/dashboard/ledige') {
+      const dato = u.searchParams.get('dato');
+      return J(T.story && dato==='2026-11-17' ? { dato, antall:6, vis_banner:true, stengt:false } : { dato, antall:0, vis_banner:false });
+    }
+    if (p === '/api/dashboard/story/ledige-timer/data') return J({ tjenester:1, har_ledige:true, apne_dager:4, tilgjengelige_dager:4, dager:[] });
+    if (p === '/api/dashboard/preview') return route.fulfill({ status:200, contentType:'text/html', body:'<html><body></body></html>' });
+    return J(/images|recent|services|hours|referrals|customers/.test(p) ? [] : {});
+  });
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'domcontentloaded' });
+  await page.waitForSelector('#drivenBy h2', { timeout:15000 });
+  await page.waitForSelector('#idagInnhold .idag-neste, #idagInnhold .idag-tom', { timeout:15000 });
+  await page.waitForSelector('#chartBars .cbar-col', { timeout:15000 });
+  await page.evaluate(() => document.fonts && document.fonts.ready);
+  await page.waitForTimeout(400);
+  return { ctx, page, st };
+}
+const norm = s => (s||'').replace(/[\s  ]+/g,' ').trim();
+
+// ── 1) Skjermbilder: 4 tilstander × 320/375/1280 × mørk/lys ──────────────────────────────────────────────
+const KUN = process.argv[2];   // valgfritt: bare skjermbilder av én tilstand
+for (const t of Object.keys(TILSTANDER).filter(k => !KUN || k===KUN)) for (const tema of ['dark','light']) for (const bredde of [320,375,1280]) {
+  const { ctx, page, st } = await aapne(t, { bredde, tema });
+  const m = await page.evaluate(() => ({
+    overflow: document.documentElement.scrollWidth - window.innerWidth,
+    navnPx: getComputedStyle(document.getElementById('barberName')).fontSize,
+    datoSynlig: !!document.getElementById('dashDato').offsetParent,
+    datoTekst: document.getElementById('dashDato').textContent,
+  }));
+  const tag = `${t} ${tema} ${bredde}`;
+  sjekk(`${tag}: ingen horisontal overflow`, m.overflow <= 0, m.overflow+'px');
+  sjekk(`${tag}: ingen pageerror`, st.errs.length===0, st.errs.join(' | ').slice(0,120));
+  sjekk(`${tag}: ingen forespørsel forbi mocken`, st.uMocket.length===0, st.uMocket.join(','));
+  if (bredde===375) {
+    sjekk(`${tag}: butikknavn 26px`, m.navnPx==='26px', m.navnPx);
+    sjekk(`${tag}: dato under navnet på Oversikt`, m.datoSynlig && m.datoTekst==='Tirsdag 17. november', m.datoTekst);
+  }
+  const fil = path.join(OUT, `${t}-${tema}-${bredde}.png`);
+  // Bunn-navet er sticky: med fullPage og 900px viewport tegnes det midt i sida. Strekk viewporten til hele
+  // dokumenthøyden først, så havner det nederst — slik det står når barbereren har scrollet til bunns.
+  const hoyde = await page.evaluate(() => document.documentElement.scrollHeight);
+  await page.setViewportSize({ width:bredde, height:hoyde });
+  await page.waitForTimeout(150);
+  await page.screenshot({ path:fil, fullPage:true });
+  bilder.push(fil);
+  await ctx.close();
+}
+
+// ── 2) Innholdsvakter (375, mørk) ─────────────────────────────────────────────────────────────────────
+{ // Vekst, full data
+  const { ctx, page, st } = await aapne('vekst', { bredde:375, tema:'dark' });
+  const d = await page.evaluate(() => {
+    const q = s => document.querySelector(s), qa = s => [...document.querySelectorAll(s)];
+    const cs = (el, p) => el ? getComputedStyle(el)[p] : null;
+    const valgt = q('#segs .ovs-seg-btn[aria-selected="true"]');
+    const bars = qa('#chartBars .cbar-bar');
+    return {
+      idagAntall: q('#idagAntall').textContent,
+      idagTid: q('.idag-tid')?.textContent, idagNavn: q('.idag-navn')?.textContent, idagSvc: q('.idag-svc')?.textContent,
+      idagOm: q('.idag-om')?.textContent, idagRader: qa('#idagInnhold .up-row .up-name').map(e=>e.textContent),
+      idagTekst: q('#ovsIdag').textContent,
+      komAntall: q('#kommendeAntall').textContent,
+      komDager: qa('#upcomingList .up-day').map(e=>e.textContent),
+      komNavn: qa('#upcomingList .up-name').map(e=>e.textContent),
+      etiketter: qa('#oversikt .ovs-etikett').map(e=>e.innerText),
+      etikettStil: (()=>{ const e=q('#ovsIdagH'); const c=getComputedStyle(e); return [c.fontSize,c.fontWeight,c.letterSpacing,c.color].join(' '); })(),
+      segValgtBg: cs(valgt,'backgroundColor'), segValgtFarge: cs(valgt,'color'),
+      segHoyde: q('#segs').getBoundingClientRect().height,
+      kpiFarge: cs(q('#kpiCount'),'color'), revFarge: cs(q('#estRevValue').parentElement,'color'),
+      kpiTekst: norm2(q('#stats').innerText),
+      note: q('#rekordNote').textContent, noteLinjer: Math.round(q('#rekordNote').getBoundingClientRect().height / parseFloat(getComputedStyle(q('#rekordNote')).lineHeight)),
+      sporHoyde: q('#chartBars .cbar-spor').getBoundingClientRect().height,
+      antallStolper: bars.length,
+      nullHoyde: bars.filter(b=>b.classList.contains('null')).map(b=>b.getBoundingClientRect().height),
+      gradient: bars.some(b=>/gradient/.test(getComputedStyle(b).backgroundImage)),
+      idagLbl: cs(q('#chartBars .cbar-col.idag .cbar-lbl > span'),'color'),
+      hentetEtikett: q('#ovsHentetH')?.innerText,
+      attrValgt: q('#ovsAttrPeriod [aria-pressed="true"]')?.textContent,
+      total: norm2(q('.hi-total')?.textContent), totalSub: q('.hi-sub')?.textContent,
+      stripe: qa('.hi-stripe > span').length,
+      arm: qa('.hi-rad .hi-navn').map(e=>e.childNodes[0].textContent),
+      armKr: qa('.hi-rad .hi-kr').map(e=>norm2(e.textContent)),
+      paavei: norm2(q('.pv-blokk')?.textContent),
+      ikonRects: document.querySelectorAll('#ic-oversikt rect').length,
+      kort: qa('#oversikt .ovs-sek').filter(s=>{ const c=getComputedStyle(s); return parseFloat(c.borderTopWidth)>0 && parseFloat(c.borderLeftWidth)>0; }).length,
+      smaTrykk: qa('#oversikt button, #oversikt a').filter(e=>e.offsetParent && !e.closest('.perseg-meny') && !e.classList.contains('ovs-seg-btn') && e.getBoundingClientRect().height<44).map(e=>(e.id||e.className)+':'+Math.round(e.getBoundingClientRect().height)),
+    };
+    function norm2(s){ return (s||'').replace(/[\s  ]+/g,' ').trim(); }
+  });
+  sjekk('I dag: «3 igjen» (passert + avlyst telles ikke)', d.idagAntall==='3 igjen', d.idagAntall);
+  sjekk('I dag: neste = 11:30 Jonas Berg', d.idagTid==='11:30' && /Jonas Berg/.test(d.idagNavn), d.idagTid+' '+d.idagNavn);
+  sjekk('I dag: «Fade · 40 min»', d.idagSvc==='Fade · 40 min', d.idagSvc);
+  sjekk('I dag: «Neste kunde · om 1 t 20 min»', d.idagOm==='Neste kunde · om 1 t 20 min', d.idagOm);
+  sjekk('I dag: resten som rader (Emre, Theo)', JSON.stringify(d.idagRader)==='["Emre Yilmaz","Theo Nilsen"]', JSON.stringify(d.idagRader));
+  sjekk('I dag: passert/avlyst vises ikke', !/Ola Nordmann|Avlyst Person/.test(d.idagTekst));
+  sjekk('Kommende: «4 neste 7 dager»', d.komAntall==='4 neste 7 dager', d.komAntall);
+  sjekk('Kommende: dagsoverskrifter', JSON.stringify(d.komDager)==='["Onsdag 18. nov","Torsdag 19. nov","Lørdag 21. nov"]', JSON.stringify(d.komDager));
+  sjekk('Kommende: ingen i dag/avlyst/utenfor vindu', !d.komNavn.some(n=>/Emre|Avlyst|Utenfor/.test(n)), JSON.stringify(d.komNavn));
+  sjekk('Etiketter i versaler, rekkefølge', JSON.stringify(d.etiketter.slice(0,4))==='["I DAG","KOMMENDE","NØKKELTALL","HENTET INN AV BARBERHQ"]', JSON.stringify(d.etiketter));
+  sjekk('Etikett-stil 11.5px/600/#8a8a8a', /^11\.5px 600 .* rgb\(138, 138, 138\)$/.test(d.etikettStil), d.etikettStil);
+  sjekk('Seg valgt = #262626 (ikke blå), hvit tekst', d.segValgtBg==='rgb(38, 38, 38)' && d.segValgtFarge==='rgb(255, 255, 255)', d.segValgtBg+' / '+d.segValgtFarge);
+  sjekk('Seg-container ≥44px (trykkflate)', d.segHoyde>=44, d.segHoyde);
+  sjekk('Kunder-tallet arver --info (blå)', d.kpiFarge==='rgb(77, 139, 255)', d.kpiFarge);
+  sjekk('Omsetning arver #35d07a (grønn)', d.revFarge==='rgb(53, 208, 122)', d.revFarge);
+  sjekk('KPI: 23 kunder / 9 850 kr', /Kunder 23 fullførte klipp/.test(d.kpiTekst) && /9 850 ?kr/.test(d.kpiTekst), d.kpiTekst);
+  sjekk('Én linje: «Beste uke: 14 768 kr · august»', norm(d.note)==='Beste uke: 14 768 kr · august' && d.noteLinjer===1, d.note+' ('+d.noteLinjer+' linjer)');
+  sjekk('Stolpeområde 72px, 7 stolper', Math.round(d.sporHoyde)===72 && d.antallStolper===7, d.sporHoyde+' / '+d.antallStolper);
+  sjekk('0-dag (søndag) = 3px', d.nullHoyde.length===1 && Math.round(d.nullHoyde[0])===3, JSON.stringify(d.nullHoyde));
+  sjekk('Stolper ensfarget (ingen gradient)', !d.gradient);
+  sjekk('I dag-etikett under diagrammet er hvit', d.idagLbl==='rgb(255, 255, 255)', d.idagLbl);
+  sjekk('Hentet inn: 3 mnd valgt som standard', d.attrValgt==='3 mnd', d.attrValgt);
+  sjekk('Hentet inn: første kall er siste_3mnd', st.attrKall.includes('siste_3mnd') && !st.attrKall.includes('siste_maaned'), JSON.stringify(st.attrKall));
+  sjekk('Hentet inn: total «4 850 kr», «14 klipp …»', d.total==='4 850 kr' && d.totalSub==='14 klipp fra kunder BarberHQ hentet tilbake', d.total+' | '+d.totalSub);
+  sjekk('Hentet inn: stripe med tre biter', d.stripe===3, d.stripe);
+  sjekk('Hentet inn: rekkefølge Rebooking/Vinn tilbake/Verving', JSON.stringify(d.arm)==='["Rebooking","Vinn tilbake","Verving"]', JSON.stringify(d.arm));
+  sjekk('Hentet inn: kronebeløp per rad', JSON.stringify(d.armKr)==='["2 300 kr","1 550 kr","1 000 kr"]', JSON.stringify(d.armKr));
+  sjekk('PÅ VEI: «17 kunder å hente inn» (borte 12 + no_show 5)', /17 kunder å hente inn/.test(d.paavei), d.paavei);
+  sjekk('PÅ VEI: «2 kunder nærmer seg rebooking» + samtykkelinja', /2 kunder nærmer seg rebooking/.test(d.paavei) && /1 av 2 har SMS-samtykke i dag/.test(d.paavei), d.paavei);
+  sjekk('Ingen rammer rundt seksjonene', d.kort===0, d.kort);
+  sjekk('Trykkflater ≥44px', d.smaTrykk.length===0, d.smaTrykk.join(', '));
+  sjekk('Bunn-nav: Oversikt-ikon = fire fliser', d.ikonRects===4, d.ikonRects);
+
+  // Periodebytte i Hentet inn: 6 mnd → siste_6mnd, uten fanebytte. Klikk i panelet bytter ikke fane.
+  await page.click('#ovsAttrPeriod [data-ovs-attr="siste_6mnd"]');
+  await page.waitForFunction(() => document.querySelector('#ovsAttrPeriod [aria-pressed="true"]')?.textContent==='6 mnd');
+  await page.click('.hi-total');
+  const etter = await page.evaluate(() => ({ aktiv: document.querySelector('.panel.active').id, segUke: document.querySelector('#segs [data-p="uke"]').getAttribute('aria-selected') }));
+  sjekk('6 mnd sender siste_6mnd', st.attrKall.includes('siste_6mnd'), JSON.stringify(st.attrKall));
+  sjekk('Klikk i Hentet inn bytter ikke fane', etter.aktiv==='oversikt', etter.aktiv);
+  sjekk('Hentet inn-periode rører ikke Nøkkeltall-velgeren', etter.segUke==='true');
+  // Nøkkeltall 2 uker: gap krymper, 14 stolper, rekordlinja forsvinner ikke ut av én linje.
+  await page.click('#segs [data-p="2uker"]');
+  await page.waitForFunction(() => document.querySelectorAll('#chartBars .cbar-col').length===14);
+  const to = await page.evaluate(() => ({ gap: getComputedStyle(document.getElementById('chartBars')).columnGap, attr: null }));
+  sjekk('2 uker: 14 stolper, gap 4px', to.gap==='4px', to.gap);
+  // «Se lista →» → Vekst-fanen; datoen skjules utenfor Oversikt; navnet er fortsatt 26px.
+  await page.click('#segs [data-p="uke"]');
+  await page.waitForSelector('#drivenBy [data-di-winback]');
+  await page.click('#drivenBy [data-di-winback]');
+  await page.waitForTimeout(200);
+  const v = await page.evaluate(() => ({ aktiv: document.querySelector('.panel.active').id, dato: !!document.getElementById('dashDato').offsetParent, navn: getComputedStyle(document.getElementById('barberName')).fontSize }));
+  sjekk('«Se lista →» åpner Vekst', v.aktiv==='vekst', v.aktiv);
+  sjekk('Dato skjult på Vekst-fanen', !v.dato);
+  sjekk('Navnet 26px også på Vekst-fanen', v.navn==='26px', v.navn);
+  sjekk('vekst-interaksjon: ingen pageerror', st.errs.length===0, st.errs.join(' | ').slice(0,160));
+  await ctx.close();
+}
+{ // Måned: 31-dagersakse får plass på 320 (gap 2px), ingen overflow
+  const { ctx, page, st } = await aapne('vekst', { bredde:320, tema:'dark' });
+  await page.click('#maanedBtn');
+  await page.click('#maanedMeny [data-ym=""]');
+  await page.waitForFunction(() => document.querySelectorAll('#chartBars .cbar-col').length===17);
+  const m = await page.evaluate(() => ({ gap:getComputedStyle(document.getElementById('chartBars')).columnGap, of:document.documentElement.scrollWidth-innerWidth,
+    hoyre: Math.round(document.querySelector('#chartBars').lastElementChild.getBoundingClientRect().right), bredde: Math.round(document.querySelector('#chartBars').getBoundingClientRect().right) }));
+  sjekk('Denne måneden @320: gap 2px, stolpene innenfor', m.gap==='2px' && m.of<=0 && m.hoyre<=m.bredde, JSON.stringify(m));
+  sjekk('måned: ingen pageerror', st.errs.length===0, st.errs.join(' | '));
+  await ctx.close();
+}
+{ // Reserve: backend uten borte/no_show → dagens tall (passerer_innen_30d = 5)
+  const { ctx, page } = await aapne('vekst', { bredde:375, tema:'dark', attrOverride:{ paaVei:PAAVEI_GAMMEL, hentetInn:HENTET } });
+  const t = await page.evaluate(() => document.querySelector('.pv-blokk').textContent.replace(/\s+/g,' '));
+  sjekk('Reserve uten borte-feltene: «5 kunder å hente inn»', /5 kunder å hente inn/.test(t), t);
+  await ctx.close();
+}
+{ // Vinn tilbake = 0 → «Første kunde passerer 60 dager 3. des»
+  const { ctx, page } = await aapne('vekst', { bredde:375, tema:'dark', attrOverride:{ paaVei:{ rebooking:{naar_vindu_30d:0,med_samtykke:0}, winback:{ foerste_passerer_60:'2026-12-03', passerer_innen_30d:0, borte:0, no_show:0 } }, hentetInn:HENTET } });
+  const t = await page.evaluate(() => document.querySelector('.pv-blokk').textContent.replace(/\s+/g,' '));
+  sjekk('Vinn tilbake 0: «Første kunde passerer 60 dager 3. des»', /Første kunde passerer 60 dager 3\. des/.test(t), t);
+  sjekk('Rebooking 0: ingen samtykkelinje', !/SMS-samtykke/.test(t), t);
+  await ctx.close();
+}
+{ // Tomtilstand
+  const { ctx, page } = await aapne('vekst-tom', { bredde:375, tema:'dark' });
+  const d = await page.evaluate(() => ({ h: document.querySelector('.hi-tom-h')?.textContent, streker: document.querySelectorAll('.hi-rad .hi-strek').length,
+    total: !!document.querySelector('.hi-total'), stripe: !!document.querySelector('.hi-stripe'), paavei: !!document.querySelector('.pv-blokk.med-strek') }));
+  sjekk('Tom: «Ingen kunder hentet inn ennå.»', d.h==='Ingen kunder hentet inn ennå.', d.h);
+  sjekk('Tom: tre rader med «—», ingen total/stripe', d.streker===3 && !d.total && !d.stripe, JSON.stringify(d));
+  sjekk('Tom: PÅ VEI vises', d.paavei);
+  await ctx.close();
+}
+for (const [t, forventet] of [['gratis','Flere klipp fra kundene du har. Og nye i tillegg.']]) {
+  const { ctx, page, st } = await aapne(t, { bredde:375, tema:'dark' });
+  const d = await page.evaluate(() => {
+    const w = document.getElementById('drivenBy');
+    return { h: w.querySelector('.gr-h')?.innerText.replace(/\s+/g,' '), p: w.querySelector('.gr-p')?.textContent, tagg: w.querySelector('.ovs-tagg')?.textContent,
+      maskert: w.querySelectorAll('.di-basis-laast').length, rader: [...w.querySelectorAll('.gr-rad .hi-navn')].map(e=>e.textContent),
+      kr: (w.textContent.replace(/179 kr\/mnd/,'').match(/\d[\d\s ]*kr/g)||[]), pris: w.querySelector('.gr-pris')?.innerText.replace(/\s+/g,' '),
+      paavei: !!w.querySelector('.pv-blokk'), velger: !!w.querySelector('#ovsAttrPeriod'),
+      idag: document.querySelector('#idagInnhold').textContent, idagAnt: document.querySelector('#idagAntall').textContent,
+      story: !!document.getElementById('storyOpenOversikt').offsetParent, storyLinje: document.getElementById('storyLedigeLinje').textContent };
+  });
+  sjekk(`${t}: overskrift «${forventet}»`, d.h===forventet, d.h);
+  sjekk(`${t}: undertekst «Med Vekst ser du her hva det henter inn, i kroner.»`, d.p==='Med Vekst ser du her hva det henter inn, i kroner.', d.p);
+  sjekk(`${t}: overskriften bruker ikke borte-tallet (17)`, !/17/.test(d.h||''), d.h);
+  sjekk(`${t}: ingen /attribution-kall på Gratis`, st.attrKall.length===0, JSON.stringify(st.attrKall));
+  sjekk(`${t}: «Med Vekst»-tagg`, d.tagg==='Med Vekst', d.tagg);
+  sjekk(`${t}: ingen maskerte rader`, d.maskert===0, d.maskert);
+  sjekk(`${t}: tre rader uten tall`, JSON.stringify(d.rader)==='["Rebooking","Vinn tilbake","Verving"]' && d.kr.length===0, JSON.stringify(d.kr));
+  sjekk(`${t}: «179 kr/mnd · eks. mva»`, d.pris==='179 kr/mnd eks. mva', d.pris);
+  sjekk(`${t}: ingen PÅ VEI / periodevelger på Gratis`, !d.paavei && !d.velger);
+  sjekk(`${t}: tom dag «Ingen bookinger i dag.» / «0 igjen»`, d.idag==='Ingen bookinger i dag.' && d.idagAnt==='0 igjen', d.idag+' / '+d.idagAnt);
+  sjekk(`${t}: story-lenke + «Du har 6 ledige timer i dag»`, d.story && d.storyLinje==='Du har 6 ledige timer i dag', d.storyLinje);
+  if (t==='gratis') {
+    await page.click('#drivenBy [data-di-oppgrader]');
+    await page.waitForTimeout(250);
+    const aktiv = await page.evaluate(() => document.querySelector('.panel.active').id);
+    sjekk('gratis: «Se Vekst» → Konto', aktiv==='abonnement', aktiv);
+  }
+  sjekk(`${t}: ingen pageerror`, st.errs.length===0, st.errs.join(' | ').slice(0,160));
+  await ctx.close();
+}
+{ // Alle dagens timer passert (17:00 Oslo) → «Ingen flere bookinger i dag.» / «0 igjen»
+  const { ctx, page } = await aapne('vekst', { bredde:375, tema:'dark', naa:new Date('2026-11-17T16:00:00Z') });
+  const d = await page.evaluate(() => ({ t: document.querySelector('#idagInnhold').textContent, a: document.querySelector('#idagAntall').textContent }));
+  sjekk('Alle passert: «Ingen flere bookinger i dag.» / «0 igjen»', d.t==='Ingen flere bookinger i dag.' && d.a==='0 igjen', JSON.stringify(d));
+  await ctx.close();
+}
+{ // Lys modus: valgt segment er nøytral (ikke blå), etiketter --mut
+  const { ctx, page } = await aapne('vekst', { bredde:375, tema:'light' });
+  const d = await page.evaluate(() => ({ bg: getComputedStyle(document.querySelector('#segs [aria-selected="true"]')).backgroundColor,
+    hair: getComputedStyle(document.getElementById('ovsIdag')).borderBottomColor, body: getComputedStyle(document.body).backgroundColor }));
+  sjekk('Lys: valgt segment nøytral grå', d.bg==='rgb(233, 233, 233)', d.bg);
+  sjekk('Lys: hårlinje lys (ikke #1a1a1a)', d.hair==='rgb(235, 235, 235)', d.hair);
+  await ctx.close();
+}
+
+await browser.close(); server.close();
+const feil = sjekker.filter(s => !s.ok);
+for (const s of sjekker) console.log((s.ok?'✓ ':'✗ ')+s.navn+(s.ok||!s.detalj?'':'  — '+s.detalj));
+console.log('\nBilder:'); bilder.forEach(b => console.log(b));
+console.log(`\n${sjekker.length-feil.length}/${sjekker.length} sjekker grønne.`);
+process.exit(feil.length ? 1 : 0);

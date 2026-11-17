@@ -315,10 +315,10 @@ for(const b of [320,375]){
     // «Hentet inn av BarberHQ» (attribusjonskortet i Vekst-fanen) på Gratis: prislinja under
     // «Oppgrader til Vekst». diBasisCtaPris rendres KUN der (Oversikt har ingen CTA).
     const g=await nySide(b,{billing:()=>gratis()});
-    // «Drevet av» (Oversikt) → «På vei»: Gratis-noten under rebooking-tallet
+    // «Hentet inn» (Oversikt) på Gratis — Oversikt-redesign 17.11: PÅ VEI og Gratis-noten er borte; i stedet pris + «Se Vekst».
     await g.page.waitForTimeout(600);
-    const pvNote=await tekstAv(g.page,'#drivenBy .di-basis-note');
-    if(b===375) push('Drevet av → På vei: Gratis-note', pvNote==='På Gratis får ingen av dem rebooking-SMS.'?[]:[`«${pvNote}»`], g.errs);
+    const grPris=await tekstAv(g.page,'#drivenBy .gr-pris b'), grCta=await tekstAv(g.page,'#drivenBy .gr-cta');
+    if(b===375) push('Hentet inn (Oversikt) på Gratis: «179 kr/mnd» + «Se Vekst»', (grPris==='179 kr/mnd'&&grCta==='Se Vekst')?[]:[`«${grPris}» / «${grCta}»`], g.errs);
     await g.page.locator('#drivenBy').screenshot({path:path.join(OUT,`${b}-drevet-av-paa-vei.png`)});
     await g.page.$eval('button[data-panel="vekst"]',x=>x.click()); await g.page.waitForTimeout(900);
     const pris=await tekstAv(g.page,'#attrRows .di-cta-price');

@@ -49,9 +49,10 @@ const stats = { daily:[], months_with_data:[], current_week_revenue:0, best_week
 // (ikke «Av»/di-off); count>0 m/aktivert=true → «N klipp · X kr», INGEN badge; count===0 (aktivert) →
 // «Ingen ennå», ingen badge. Lojalitet: se lojFinnes-vakten (skal ALDRI finnes).
 const forvent = {
-  'grand-barber':  { inneholder:'6 klipp · 2 048 kr', badge:true },   // aktivert=false → tall + «SMS av»
+  // Oversikt-redesign (17.11): raden viser «2 048 kr» over «6 klipp»; tom periode (total 0) → «—» i alle rader.
+  'grand-barber':  { inneholder:'2 048 kr 6 klipp', badge:true },     // aktivert=false → tall + «SMS av»
   'ahmed-fadezz':  { inneholder:'klipp', badge:false },               // aktivert=true → tall, ingen badge
-  'utan-deltakere':{ value:'Ingen ennå', badge:false },              // count===0 → «Ingen ennå»
+  'utan-deltakere':{ value:'—', badge:false },                       // total===0 → tomtilstand, «—»
 };
 
 const browser = await chromium.launch();
@@ -74,13 +75,16 @@ for (const [navn, attr] of Object.entries(STATES)) {
     await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
     await page.waitForTimeout(900);
     const rad = await page.evaluate(() => {
-      const finn = (arm) => { for (const r of document.querySelectorAll('#drivenBy .di-row')) {
-        const a=r.querySelector('.di-arm'); if (!a || a.textContent.trim()!==arm) continue;
-        const v=r.querySelector('.di-value');
-        const b=v?v.querySelector('.di-off-badge'):null;   // «SMS av» = aktivert:false-signalet (14.09)
-        return { value:v?v.textContent.trim():'', badge:!!b, badgeTxt:b?b.textContent.trim():'' };
+      // Oversikt-redesign (17.11): rad = .hi-rad, navn = første tekstnode i .hi-navn (merket «SMS av» står i samme span),
+      // verdi = .hi-tall («X kr» + «N klipp», eller «—»).
+      const navnAv = n => (((n&&n.childNodes[0])||{}).textContent||'').trim();
+      const finn = (arm) => { for (const r of document.querySelectorAll('#drivenBy .hi-rad')) {
+        const a=r.querySelector('.hi-navn'); if (!a || navnAv(a)!==arm) continue;
+        const v=r.querySelector('.hi-tall');
+        const b=a.querySelector('.di-off-badge');   // «SMS av» = aktivert:false-signalet (14.09)
+        return { value:v?v.innerText.replace(/\s+/g,' ').trim():'', badge:!!b, badgeTxt:b?b.textContent.trim():'' };
       } return null; };
-      const armer = [...document.querySelectorAll('#drivenBy .di-row .di-arm')].map(a=>a.textContent.trim());
+      const armer = [...document.querySelectorAll('#drivenBy .hi-rad .hi-navn')].map(navnAv);
       // Lojalitet skal ALDRI finnes: ingen «Lojalitet»-arm, ingen .di-setup i panelet.
       const lojFinnes = armer.includes('Lojalitet') || !!document.querySelector('#drivenBy .di-setup');
       return { rebooking:finn('Rebooking'), armer, lojFinnes };
@@ -105,9 +109,9 @@ for (const [navn, attr] of Object.entries(STATES)) {
 }
 console.table(rapport);
 const ok = rapport.every(r => r.ok==='✓');
-console.log('Tall BEHOLDES + «SMS av»-badge ved aktivert=false (grand-barber):', rapport.filter(r=>r.konto==='grand-barber').every(r=>/6 klipp · 2 048 kr.*\[SMS av\]/.test(r.rebooking.replace(/[\s  ]+/g,' '))) ? 'ja ✓':'NEI ✗');
+console.log('Tall BEHOLDES + «SMS av»-badge ved aktivert=false (grand-barber):', rapport.filter(r=>r.konto==='grand-barber').every(r=>/2 048 kr 6 klipp.*\[SMS av\]/.test(r.rebooking.replace(/[\s  ]+/g,' '))) ? 'ja ✓':'NEI ✗');
 console.log('Lojalitet ALDRI i panelet (biter hvis raden kommer tilbake):', rapport.every(r=>r.lojalitet==='borte') ? 'ja ✓':'NEI ✗');
-console.log('Armer = kun Verving/Vinn tilbake/Rebooking:', rapport.every(r=>r.armer==='Verving,Vinn tilbake,Rebooking') ? 'ja ✓':'NEI ✗');
+console.log('Armer = kun Rebooking/Vinn tilbake/Verving (Oversikt-rekkefølgen):', rapport.every(r=>r.armer==='Rebooking,Vinn tilbake,Verving') ? 'ja ✓':'NEI ✗');
 console.log('SAMLET:', ok ? 'GRØNT ✓' : 'NOE FEILER ✗');
 await browser.close(); server.close();
 process.exit(ok ? 0 : 1);

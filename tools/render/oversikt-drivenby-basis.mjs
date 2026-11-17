@@ -76,10 +76,11 @@ for (const plan of ['basis','vekst']) {
     return {
       // «Eksempel»-merke er FJERNET fra dette panelet (14.09) — skal aldri finnes for noen plan.
       eksempelMerke: !!(w && w.querySelector(':scope > .eksempel-merke')),
-      // Basis-signal: maskerte låste armer «* klipp · **** kr».
-      maskert: !!(w && w.querySelector('.di-basis-laast')),
-      // Vekst-signal: ekte total i .di-total-kr (erstattet .drv-hero-num, fjernet 14.09).
-      totalKr: (w && w.querySelector('.di-total-kr')) ? w.querySelector('.di-total-kr').textContent.trim() : '(ingen)',
+      // Basis-signal (Oversikt-redesign 17.11): de maskerte radene er FJERNET — Gratis-blokka (.gr-h, «… har sluttet å
+      // booke» / «Du har kundene.») uten tall. «maskert» betyr nå «Gratis-blokka vises».
+      maskert: !!(w && w.querySelector('.gr-h')) && !(w && w.querySelector('.di-basis-laast')),
+      // Vekst-signal: ekte total i .hi-total (Oversikt-redesign; var .di-total-kr).
+      totalKr: (w && w.querySelector('.hi-total')) ? w.querySelector('.hi-total').textContent.trim() : '(ingen)',
       innerLen: w ? w.innerHTML.length : 0,
     };
   });
@@ -87,7 +88,9 @@ for (const plan of ['basis','vekst']) {
   const norm = s => (s||'').replace(/[\s  ]+/g,' ').trim();
   // Begge planer henter nå /attribution etter at billing lander (backend plan-shaper svaret) — ingen
   // klient-gate lenger. Skillet ligger i RESPONSEN: basis maskeres, vekst viser ekte total.
-  const kallOk = kallEtter > 0;
+  // Oversikt-redesign (17.11): Gratis har fast tekst uten tall → INGEN /attribution-kall på Basis i det hele tatt.
+  // Vekst henter etter at billing har landet.
+  const kallOk = plan==='basis' ? kallEtter === 0 : kallEtter > 0;
   const renderOk = plan==='basis'
     ? (dom.maskert && dom.totalKr==='(ingen)')                 // basis: maskerte armer, INGEN ekte total
     : (!dom.maskert && norm(dom.totalKr)==='2 398 kr');        // vekst: ekte total, ingen maskering
@@ -109,7 +112,7 @@ console.table(rapport);
 const b = rapport.find(r=>r.plan==='basis'), v = rapport.find(r=>r.plan==='vekst');
 const ok = rapport.every(r => r['kall i race (må=0)']==='0 ✓' && r['kall ok']==='ok ✓' && r['render ok']==='ok ✓' && r['merke (skal=nei)']==='nei ✓' && r.jsfeil==='ingen');
 console.log('\nIngen attribution i race-vinduet (begge planer):', rapport.every(r=>r['kall i race (må=0)']==='0 ✓') ? 'ja ✓' : 'NEI ✗');
-console.log('Basis: henter etter billing, men SVARET er maskert (ingen ekte total/merke):', (b['kall etter billing']>0 && b['maskert (basis)']==='ja' && b['ekte total']==='(ingen)' && b['merke (skal=nei)']==='nei ✓') ? 'ja ✓' : 'NEI ✗');
+console.log('Basis: henter IKKE /attribution, viser Gratis-blokka uten tall:', (b['kall etter billing']===0 && b['maskert (basis)']==='ja' && b['ekte total']==='(ingen)' && b['merke (skal=nei)']==='nei ✓') ? 'ja ✓' : 'NEI ✗');
 console.log('Vekst: attribution fyrer + ekte total, ingen maskering/merke:', (v['kall etter billing']>0 && v['ekte total']==='2 398 kr' && v['maskert (basis)']==='nei' && v['merke (skal=nei)']==='nei ✓') ? 'ja ✓ ('+v['kall etter billing']+' kall)' : 'NEI ✗');
 console.log('SAMLET:', ok ? 'GRØNT ✓' : 'NOE FEILER ✗');
 await browser.close(); server.close();

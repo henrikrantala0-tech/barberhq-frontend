@@ -111,7 +111,8 @@ const MAAL = `(sel) => {
   const merke = !!host.querySelector('.eksempel-merke');
   // Basis-måling skjermes nå med MASKERTE rader (diBasisLaastRader → .di-basis-laast, «* klipp · **** kr»),
   // ikke lenger en .skjold-overlay. momentum skjules helt på Basis (loadMomentum → renderMomentum(null)).
-  const maskert = !!host.querySelector('.di-basis-laast');
+  // Oversikt-redesign (17.11): Oversiktens Gratis-blokk (.gr-h) har INGEN tall i det hele tatt — teller som maskert.
+  const maskert = !!host.querySelector('.di-basis-laast, .gr-h');
   const vises = host.offsetParent !== null;
   const accHead = host.querySelector('.acc-head');
   const accHeadDisabled = accHead ? accHead.disabled : null;
