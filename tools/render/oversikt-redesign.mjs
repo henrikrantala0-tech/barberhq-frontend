@@ -7,7 +7,7 @@
 //     «Tjeneste · varighet», alle passert → «Ingen flere bookinger i dag.»
 //   - Kommende: dager etter i dag, «N neste 7 dager», «Onsdag 18. nov», ingen avlyste, ingen utenfor 7 døgn.
 //   - Nøkkeltall: .ovs-seg valgt = nøytral flate (aldri blå), tallfargene arvet (Kunder --info, omsetning
-//     #35d07a), ÉN linje under tallene, 72px stolpeområde, 0-dag = 3px, ensfarget fyll (ingen gradient).
+//     #35d07a), ÉN linje under tallene, 110px stolpeområde (felles .stolpe, se stolper-felles.mjs), 0-dag = 3px, ensfarget fyll (ingen gradient).
 //   - Hentet inn (Vekst): egen periode (3 mnd standard → 6 mnd sender siste_6mnd), total, stripe med tre biter,
 //     rekkefølge Rebooking / Vinn tilbake / Verving, PÅ VEI «N kunder å hente inn» = borte + no_show, og
 //     reserven (dagens passerer_innen_30d) når feltene mangler. Klikk på panelet bytter IKKE fane.
@@ -235,7 +235,7 @@ for (const t of Object.keys(TILSTANDER).filter(k => !KUN || k===KUN)) for (const
   sjekk('Omsetning arver #35d07a (grønn)', d.revFarge==='rgb(53, 208, 122)', d.revFarge);
   sjekk('KPI: 23 kunder / 9 850 kr', /Kunder 23 fullførte klipp/.test(d.kpiTekst) && /9 850 ?kr/.test(d.kpiTekst), d.kpiTekst);
   sjekk('Én linje: «Beste uke: 14 768 kr · august»', norm(d.note)==='Beste uke: 14 768 kr · august' && d.noteLinjer===1, d.note+' ('+d.noteLinjer+' linjer)');
-  sjekk('Stolpeområde 72px, 7 stolper', Math.round(d.sporHoyde)===72 && d.antallStolper===7, d.sporHoyde+' / '+d.antallStolper);
+  sjekk('Stolpeområde 110px, 7 stolper', Math.round(d.sporHoyde)===110 && d.antallStolper===7, d.sporHoyde+' / '+d.antallStolper);
   sjekk('0-dag (søndag) = 3px', d.nullHoyde.length===1 && Math.round(d.nullHoyde[0])===3, JSON.stringify(d.nullHoyde));
   sjekk('Stolper ensfarget (ingen gradient)', !d.gradient);
   sjekk('I dag-etikett under diagrammet er hvit', d.idagLbl==='rgb(255, 255, 255)', d.idagLbl);

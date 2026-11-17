@@ -183,7 +183,7 @@
   /* Setningscase-variant (Vekst: «Kunder i snitt per måned») — de øvrige stat-etikettene er versaler. */
   .stat .l.l-plain{text-transform:none}
   .stat .v{font-size:30px;font-weight:800;letter-spacing:-.04em;margin-top:7px;line-height:1;font-variant-numeric:tabular-nums}
-  .stat .v .u{font-size:15px;font-weight:300;color:var(--mut);margin-right:3px;letter-spacing:0}
+  .stat .v .u{font-size:15px;font-weight:300;color:inherit;margin-right:3px;letter-spacing:0}   /* «kr» arver tallets farge (Henrik 17.11) */
   .stat .sub{font-size:12px;margin-top:6px;font-weight:500}
   .stat .sub .pct{font-variant-numeric:tabular-nums}
   .v.good{color:var(--good)} .v.bad{color:var(--bad)} .v.info{color:var(--info)}
@@ -980,24 +980,29 @@
      ingen max-width: den fyller kolonnen (uten det ble det luft rundt en kappet stolpe). */
   .mcol{flex:1 1 0;max-width:96px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
   .mval{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink-2);letter-spacing:-.01em}
-  .mbar{width:100%;border-radius:6px 6px 0 0;background:linear-gradient(180deg,var(--bar-top),var(--bar-bot));min-height:5px} /* transition:height fjernet — Vekst-stolpene animerer ikke (innerHTML-rebuild), men den persistente height-transisjonen ga samme iOS-repaint-feil ved temabytte som .cbar-bar */
+  .mbar{width:100%}   /* fyll, radius, 0-strek og rekord-glød kommer fra den FELLES .stolpe (stolpeHtml) — samme som Oversikt */ /* transition:height fjernet — Vekst-stolpene animerer ikke (innerHTML-rebuild), men den persistente height-transisjonen ga samme iOS-repaint-feil ved temabytte som .cbar-bar */
   .mlbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
-  .mbar.gull{filter:drop-shadow(0 0 2px rgba(255,224,138,.9)) drop-shadow(0 0 8px rgba(240,194,75,.55)) drop-shadow(0 0 16px rgba(240,194,75,.28))} /* identisk glød som Oversikts .rekord-gull */
   /* Gull-tallet gjenbruker .rekord-gull (samme gradient + glød som Oversikts rekord-KPI) — se renderMonthChart */
   /* ----- Stolpediagram (omsetning) ----- */
-  /* Oversikt-redesign (17.11): diagrammet står uten kort og uten egen overskrift. 72px stolpeområde
-     (.cbar-spor), ENSFARGET fyll (--bar-c = grunnfargen fra colorForRatio, se renderBarChart), radius 3.
-     0-dager: 3px i --ov-null. Gap 8px (7 stolper) → 4px (14) → 2px (måned), så 31 stolper får plass på 320. */
+  /* Oversikt-redesign (17.11): diagrammet står uten kort og uten egen overskrift. 110px stolpeområde (.cbar-spor).
+     Selve stolpen er den FELLES .stolpe (stolpeHtml, delt med Vekst): ett fyll fra colorForRatio, radius 4 i toppen,
+     0-dager 3px i --ov-null. Gap 8px (7 stolper) → 4px (14) → 2px (måned), så 31 stolper får plass på 320. */
   .chart-wrap{position:relative;margin:26px 0 0}
   .chartbars{display:flex;gap:8px}
   .chartbars.n14{gap:4px}
   .chartbars.nmnd{gap:2px}
   .cbar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;min-width:0}
-  .cbar-spor{width:100%;height:72px;display:flex;align-items:flex-end;justify-content:center}
+  .cbar-spor{width:100%;height:110px;display:flex;align-items:flex-end;justify-content:center}
   /* Entré-/vekst-animasjonen skalerer med transform (scaleY), ikke height — height-transition ga
      hvert stolpe-lag en iOS-repaint-feil ved temabytte. transform-origin:bottom → vokser opp fra aksen. */
-  .cbar-bar{width:100%;max-width:56px;border-radius:3px;background:var(--bar-c);transform-origin:bottom;transition:transform .25s ease}
-  .cbar-bar.null{background:var(--ov-null)}
+  .cbar-bar{width:100%;max-width:56px;transform-origin:bottom;transition:transform .25s ease}   /* fyll/radius/0-strek: .stolpe */
+  /* ══ FELLES STOLPE (Henrik 17.11) — Oversikt (#chartBars) OG Vekst-fanens månedsdiagram (#trend) bruker samme
+     renderer (stolpeHtml) og samme klasse. Ett fyll fra colorForRatio (ingen gradient), radius 4 i toppen / 0 i bunnen,
+     0-verdi = 3px flat strek i --ov-null (#262626 mørk), rekord = gull med DEMPET glød (bare den stolpen). Høyden og
+     etikettene (tall over / ukedag under) styres per fane. Vakt: tools/render/stolper-felles.mjs. ══ */
+  .stolpe{border-radius:4px 4px 0 0;background:var(--stolpe-farge)}
+  .stolpe.null{height:3px!important;background:var(--ov-null)}
+  .stolpe.rekord{filter:drop-shadow(0 0 2px rgba(255,224,138,.55)) drop-shadow(0 0 6px rgba(240,194,75,.28))}
   .cbar-lbl{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:0;white-space:nowrap;text-align:center;line-height:1.2}
   .cbar-col.idag .cbar-lbl>span:first-child,.cbar-col.idag .cbar-lbl:not(:has(span)){color:var(--ink)}
   .cbar-lbl-sub{font-size:10.5px;font-weight:400;color:var(--mut);text-transform:none;font-variant-numeric:tabular-nums}
@@ -1090,7 +1095,7 @@
   /* Totalblokka (turn 3): to stablede tall + periode-etikett. */
   .di-total-klipp{font-size:30px;font-weight:800;letter-spacing:-.035em;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
   .di-total-kr{font-size:34px;font-weight:800;letter-spacing:-.035em;line-height:1;margin-top:6px;color:var(--ink);font-variant-numeric:tabular-nums}
-  .di-kr{font-weight:300;font-size:22px;color:var(--ink-2)}
+  .di-kr{font-weight:300;font-size:22px;color:inherit}   /* «kr» arver tallets farge (Henrik 17.11) */
   .di-tom-linje{font-size:13px;color:var(--mut);line-height:1.4}   /* total 0 → én dempet linje (14.09), ikke «0 klipp / 0 kr» */
   #attrRows .di-total{margin-top:26px}   /* #2: luft fra periodevelgeren til totalen (Vekst) */
   .di-periode{font-size:12px;color:var(--mut);margin-top:8px}
@@ -1146,12 +1151,14 @@
   .ovs-kpi-l,.ovs-kpi-s{font-size:12.5px;color:var(--mut);line-height:1.3}
   .ovs-kpi-v{font-size:34px;font-weight:800;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
   .ovs-kpi-v.info{color:var(--info)}
-  .ovs-kpi-v .u{font-size:.53em;font-weight:300;letter-spacing:0}   /* ekte mellomrom foran «kr» (ikke margin) → «9 850 kr» også i kopiert tekst/skjermleser */
+  /* «kr» ARVER tallets farge (Henrik 17.11): grønt tall → grønn «kr», gull tall → gull «kr» (gull-klassen står på hele
+     .ovs-kpi-v, se applyRekord). Ekte mellomrom foran «kr» (ikke margin) → «9 850 kr» også i kopiert tekst/skjermleser. */
+  .ovs-kpi-v .u{font-size:.53em;font-weight:300;letter-spacing:0;color:inherit}
   /* Hentet inn — Vekst */
   .hi-hode{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
   #drivenBy .ovs-seg{margin-bottom:20px}
   .hi-total{font-size:46px;font-weight:800;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
-  .hi-total .u{font-size:22px;font-weight:300;letter-spacing:0;color:var(--ink-2)}
+  .hi-total .u{font-size:22px;font-weight:300;letter-spacing:0;color:inherit}   /* «kr» arver tallets farge */
   .hi-sub{margin:9px 0 0;font-size:13.5px;line-height:1.5;color:var(--mut)}
   .hi-stripe{display:flex;gap:3px;height:6px;margin-top:22px}
   .hi-stripe>span{border-radius:3px;min-width:3px}
@@ -3689,7 +3696,7 @@ function gradeRate(rate,goodWhenHigh){
 
 // Nøkkeltallene (Kunder = Σcount, Estimert omsetning = Σrevenue) som to kolonner. Delt av pill- OG måneds-visning.
 // Tallfargene er ARVET uendret (Oversikt-redesign 17.11): Kunder = .info (blå), omsetning = #35d07a (grønn), gull
-// via .rekord-gull på #estRevValue (applyRekord). #rekordNote står UTENFOR (én linje under kolonnene, se markup).
+// via .rekord-gull på HELE tallet inkl. «kr» (.ovs-kpi-v rundt #estRevValue — applyRekord). #rekordNote står UTENFOR (én linje under kolonnene, se markup).
 // ℹ-ikonet er borte (title virker ikke på touch); forklaringen ligger som title på etiketten for mus.
 function kpiCardsHtml(count,rev){
   return '<div class="ovs-kpi-kol">'
@@ -3892,6 +3899,17 @@ function stolpeFarge(r){
   var m=colorForRatio(r).bot.match(/\d+/g)||[0,0,0];
   return 'rgb('+m.map(function(v){return Math.min(255,Math.round(+v/0.8));}).join(',')+')';
 }
+// FELLES STOLPE-RENDERER (Henrik 17.11) — ENESTE sted en stolpe tegnes, for BÅDE Oversikt (renderBarChart) og Vekst
+// (renderMonthChart). Farge: stolpeFarge(ratio) = colorForRatio sin grunnfarge (eneste fargekilde), eller gull for
+// rekordstolpen (STOLPE_GULL — Vekst-rekordens gull, som før; Oversikt har ingen rekordstolpe). 0 → .null (3px strek).
+// o = { ratio, hoyde (px), rekord (bool), klasse (fanens egen klasse for layout/oppførsel: cbar-bar / mbar) }
+var STOLPE_GULL='#F0C24B';   // rekord-gullet (paret #F0C24B/#FFE08A) — nå som ett fyll
+function stolpeFyll(ratio, rekord){ return rekord ? STOLPE_GULL : stolpeFarge(ratio); }
+function stolpeHtml(o){
+  var null0=!(o.ratio>0);
+  var cls='stolpe'+(o.klasse?' '+o.klasse:'')+(null0?' null':'')+(o.rekord&&!null0?' rekord':'');
+  return '<div class="'+cls+'" style="height:'+(null0?3:o.hoyde)+'px'+(null0?'':';--stolpe-farge:'+stolpeFyll(o.ratio,o.rekord))+'"></div>';
+}
 function renderBarChart(data,period){
   var total,sub;
   total=data.reduce(function(a,b){return a+b.kr;},0);
@@ -3901,7 +3919,7 @@ function renderBarChart(data,period){
      :historisk?MONTHS[+period.slice(5,7)-1]+" "+period.slice(0,4)
      :"denne måneden"; // "maaned"-pill
   var max=Math.max.apply(null,data.map(function(d){return d.kr;}))||1;
-  var MAXH=72, MINH=6, NULLH=3;   // designets 72px stolpeområde; 0-dager = 3px flat strek (--ov-null)
+  var MAXH=110, MINH=6;   // 110px stolpeområde (Henrik 17.11, var 72); 0-dager = 3px strek (stolpeHtml/.stolpe.null)
   // Ingen tittel over diagrammet lenger — perioden og totalen leses av skjermleser via aria-label.
   var cb=$("#chartBars");
   cb.setAttribute('aria-label','Estimert omsetning per dag, '+sub+': '+total.toLocaleString("no-NO")+' kr');
@@ -3921,8 +3939,7 @@ function renderBarChart(data,period){
   cb.classList.toggle('n14', !isMonth && data.length>7);
   cb.classList.toggle('nmnd', isMonth);
   cb.innerHTML=data.map(function(d,i){
-    var null0=!(d.kr>0);
-    var h=null0?NULLH:Math.max(MINH,Math.round(d.kr/max*MAXH));
+    var h=d.kr>0?Math.max(MINH,Math.round(d.kr/max*MAXH)):0;
     var lbl=d.l2?'<span>'+d.l+'</span><span class="cbar-lbl-sub">'+d.l2+'</span>':d.l;
     var day=isMonth?+d.l:0;
     var lblCls=(tynnEtiketter&&!(day===1||day%5===0)) ? "cbar-lbl cbar-lbl-minor"
@@ -3931,7 +3948,7 @@ function renderBarChart(data,period){
     // Siste stolpe er i dag i alle rullende visninger (uke/2uker/denne måneden) → hvit ukedag. Historisk måned: ingen.
     var idag=!historisk && i===sisteIdx;
     // Ingen tall over stolpen — beløpet står i HUD-kortet ved trykk (og overlappet hverandre på fullt månedsdiagram).
-    return '<div class="cbar-col'+(idag?' idag':'')+'"><div class="cbar-spor"><div class="cbar-bar'+(null0?' null':'')+'" style="height:'+h+'px'+(null0?'':';--bar-c:'+stolpeFarge(d.kr/max))+'"></div></div><div class="'+lblCls+'">'+lbl+'</div></div>';
+    return '<div class="cbar-col'+(idag?' idag':'')+'"><div class="cbar-spor">'+stolpeHtml({ ratio:d.kr/max, hoyde:h, klasse:'cbar-bar' })+'</div><div class="'+lblCls+'">'+lbl+'</div></div>';
   }).join("");
   chartDays=data; clearSel(); // lag 2: HUD leser herfra; nullstill til default ved (re)render
   var entering=!chartEntered; // lag 3: entré kun første render
@@ -4057,11 +4074,14 @@ function applyRekord(p){
   var hasRecord = p && p.best_week_start!=null;
   var beaten = hasRecord && p.current_week_revenue > p.best_week_revenue;
   var showGold = beaten && curPeriod==="uke"; // gull-tenning KUN på "Siste uke" — andre perioder viser en annen tidsrammes sum
-  rev.classList.toggle('rekord-gull', !!showGold);
+  // Gull på HELE tallet inkl. «kr» (Henrik 17.11: «kr» arver tallets farge). Klassen står på .ovs-kpi-v rundt
+  // #estRevValue; background-clip:text der maler både tallet og «kr». Tell-opp skriver fortsatt bare i #estRevValue.
+  var gullMaal=rev.closest('.ovs-kpi-v')||rev;
+  gullMaal.classList.toggle('rekord-gull', !!showGold);
   note.classList.toggle('rekord', !!showGold);   // linja i gull når rekorden er slått (erstatter rekord-barens gull-tekst)
   if(showGold){
     note.textContent="Ny rekord denne uka";
-    if(!rekordPulsed && !prefersReduced()){ rev.classList.add('rekord-puls'); rekordPulsed=true; } // puls kun første gang
+    if(!rekordPulsed && !prefersReduced()){ gullMaal.classList.add('rekord-puls'); rekordPulsed=true; } // puls kun første gang
   } else if(!hasRecord){
     // «Rekord settes denne uka» er en invitasjon — men bare når det FAKTISK er tjent noe denne
     // uka. Uten record OG med 0 kr (ingen bookinger) er den en tom/falsk påstand: 0 «slår» ingenting.
@@ -5332,20 +5352,17 @@ function renderMonthChart(stats){
   // (h = c/max * MAXH), så doblingen forstørrer den absolutte forskjellen proporsjonalt uten
   // å overdrive den. Mobil beholder 120 + samme avrunding → pixel-uendret.
   var MAXH=(window.innerWidth>=900)?240:120;
-  // gull = Oversikts EKTE rekord-gull (.wi-fill.rekord-paret #F0C24B/#FFE08A), ikke amber #d4af37.
-  // Eneste gjenværende diskrete tilstand — resten kommer fra colorForRatio.
-  var GULL={top:'#FFE08A',bot:'#F0C24B'};
+  // Stolpen tegnes av den FELLES stolpeHtml (samme som Oversikt): colorForRatio-farge, gull (STOLPE_GULL) for ekte rekord.
   el.innerHTML=months.map(function(m){
     var c=m.customers||0;
-    // Tom måned: ingen stolpe (min-height:5px ville ellers gitt en falsk «1»-strek), ingen tall —
-    // bare månedsetiketten, så aksen står full uten å hevde aktivitet som ikke finnes.
-    if(c<=0){ return '<div class="mcol"><div class="mlbl">'+monthLbl(m.ym).slice(0,3)+'</div></div>'; }
+    // Tom måned: 3px flat strek i --ov-null (felles 0-verdi, Henrik 17.11) og ingen tall — skiller seg tydelig fra en
+    // ekte stolpe, så aksen hevder ikke aktivitet som ikke finnes.
+    if(c<=0){ return '<div class="mcol">'+stolpeHtml({ ratio:0, klasse:'mbar' })+'<div class="mlbl">'+monthLbl(m.ym).slice(0,3)+'</div></div>'; }
     var isRecord = allowRecord && !!rec && m.ym===rec.ym && c===rec.customers; // EKTE rekord (ym+antall), kun ved ≥2 mnd data
-    var g=isRecord ? GULL : colorForRatio(c/max); // DELT med Oversikt — samme {top,bot}-form
     var hgt=Math.max(Math.round(c/max*MAXH),5);
     var gullCls=isRecord?' gull':'';
     return '<div class="mcol'+gullCls+'"><div class="mval'+(isRecord?' rekord-gull':'')+'">'+c+'</div>'
-      +'<div class="mbar'+gullCls+'" style="height:'+hgt+'px;--bar-top:'+g.top+';--bar-bot:'+g.bot+'"></div>'
+      +stolpeHtml({ ratio:c/max, hoyde:hgt, rekord:isRecord, klasse:'mbar' })   // FELLES med Oversikt
       +'<div class="mlbl">'+monthLbl(m.ym).slice(0,3)+'</div></div>';
   }).join("");
 }
