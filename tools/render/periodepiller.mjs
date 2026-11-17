@@ -1,4 +1,4 @@
-// tools/render/periodepiller.mjs — periode-pillene på Oversikt (#segs + #ovsAttrPeriod, .ovs-seg) og Vekst (#attrPeriod, .perbar).
+// tools/render/periodepiller.mjs — periodevelgerne (.ovs-seg) på Oversikt (#segs + #ovsAttrPeriod) og Vekst-fanen (#vkAttrPeriod — samme komponent, 17.11).
 // Invariant som voktes: de tre pillene står på ÉN linje, like brede segmenter, uten tekst-klipp
 // og uten å dytte dokumentet i horisontal overflow — på alle smale bredder.
 //
@@ -93,15 +93,16 @@ for (const bredde of [320, 360, 375, 390]) {
   await page.screenshot({ path:`${OUT}/pill-oversikt-${bredde}.png`, fullPage:false, clip:{ x:0, y:0, width:bredde, height:200 } });
   // Oversikt «Hentet inn» (#ovsAttrPeriod, 3/6/12 mnd) — samme .ovs-seg
   const ovsAttr = await page.evaluate(eval(MAAL), '#ovsAttrPeriod');
-  // Vekst (#attrPeriod)
+  // Vekst-fanen (#vkAttrPeriod — samme «Hentet inn»-komponent som Oversikt)
   await page.evaluate(() => switchPanel('vekst'));
   await page.waitForTimeout(900);
-  const attr = await page.evaluate(eval(MAAL), '#attrPeriod');
-  await page.evaluate(() => { const b = document.querySelector('#attrPeriod'); if (b) b.scrollIntoView({block:'start'}); });
+  await page.waitForSelector('#vkAttrPeriod', { timeout:8000 }).catch(()=>{});
+  const attr = await page.evaluate(eval(MAAL), '#vkAttrPeriod');
+  await page.evaluate(() => { const b = document.querySelector('#vkAttrPeriod'); if (b) b.scrollIntoView({block:'start'}); });
   await page.waitForTimeout(150);
   await page.screenshot({ path:`${OUT}/pill-vekst-${bredde}.png`, fullPage:false, clip:{ x:0, y:0, width:bredde, height:200 } });
   const docOverflow = await page.evaluate(() => document.documentElement.scrollWidth - window.innerWidth);
-  for (const [flate, m] of [['Oversikt #segs', segs], ['Oversikt #ovsAttrPeriod', ovsAttr], ['Vekst #attrPeriod', attr]]) {
+  for (const [flate, m] of [['Oversikt #segs', segs], ['Oversikt #ovsAttrPeriod', ovsAttr], ['Vekst #vkAttrPeriod', attr]]) {
     rad.push({ flate, bredde, barW:m.barW, nBtns:m.nBtns, rader:m.rader, bredder:m.bredder, skjevPx:m.skjevPx,
       hoyreGap:m.hoyreGap, klippKnapp:m.klippKnapp, docOverflow, jsfeil: errs.length ? errs.join('; ') : 'ingen' });
   }

@@ -82,10 +82,12 @@ for(const w of [320,375]){
     if(linje!==c.vent.linje) f.push(`linje synlig=${linje}`);
     if(c.vent.linje){
       const t=await page.$eval('#paamKjop',e=>e.innerText.trim());
-      if(t!=='Kjøp SMS for å sende påminnelser') f.push(`linjetekst «${t}»`);
+      if(t!=='Kjøp SMS for å sende påminnelser →') f.push(`linjetekst «${t}»`);   // Vekst-liste (17.11): pil + blå lenke
       // Ingen aksentfarge: lenka arver den dempede fargen fra linja.
-      const farger=await page.$eval('#paamKjopLenke',a=>[getComputedStyle(a).color,getComputedStyle(a.parentElement).color]);
-      if(farger[0]!==farger[1]) f.push(`lenkefarge ${farger[0]} ≠ ${farger[1]}`);
+      // Vekst-liste (Henrik 17.11): lenka er BLÅ (--info) og ikke understreket — ikke lenger dempet som linja rundt.
+      const farger=await page.$eval('#paamKjopLenke',a=>[getComputedStyle(a).color,getComputedStyle(a).textDecorationLine,getComputedStyle(document.documentElement).getPropertyValue('--info').trim()]);
+      const hex=farger[2].replace('#',''), infoRgb='rgb('+[0,2,4].map(i=>parseInt(hex.slice(i,i+2),16)).join(', ')+')';
+      if(farger[0]!==infoRgb || farger[1]!=='none') f.push(`lenka ${farger[0]} / ${farger[1]} (ventet ${infoRgb} / none)`);
     }
     if(c.bilde){
       await page.$eval('#accPaam',e=>e.scrollIntoView({block:'center'}));

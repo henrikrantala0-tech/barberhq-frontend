@@ -65,12 +65,12 @@ for (const flate of ['oversikt','vekst']) {
       await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
       if (flate === 'vekst') { await page.$eval('button[data-panel="vekst"]', b => b.click()); }
       await page.waitForTimeout(900);
-      const host = flate === 'vekst' ? '#attrRows' : '#drivenBy';
+      const host = flate === 'vekst' ? '#vekstHentet' : '#drivenBy';   // samme komponent på begge flater (17.11)
       // Oversikt-redesign (17.11): #drivenBy har ny markup (.hi-* / .gr-* / .pv-blokk) og ny armrekkefølge
       // Rebooking / Vinn tilbake / Verving. Vekst-fanen (#attrRows) er uendret (.di-row, Verving først).
       const m = await page.evaluate((h) => {
         const el = document.querySelector(h); const t = el ? el.innerText : '';
-        const ovs = h === '#drivenBy';
+        const ovs = true;   // Vekst-fanen bruker samme markup som Oversikt siden 17.11
         const armer = !el ? [] : ovs
           ? [...el.querySelectorAll('.hi-rad .hi-navn, .gr-rad .hi-navn')].map(a => (a.childNodes[0]||{}).textContent.trim())
           : [...el.querySelectorAll('.di-row')].map(r => { const a=r.querySelector('.di-arm'); return a?a.textContent.trim():''; }).filter(Boolean);
@@ -98,19 +98,18 @@ for (const flate of ['oversikt','vekst']) {
       let ok = errs.length===0 && !m.harBunntekst && !m.lojFinnes;
       // Basis på Oversikt (redesign 17.11): tre armer UTEN tall, INGEN total, INGEN PÅ VEI, «Se Vekst»-knapp (CTA).
       if (navn==='basis' && flate==='oversikt') ok = ok && !m.harHentetInn && m.harTreArmer && !m.harPaaVei && m.harCta;
-      if (navn==='basis' && flate==='vekst')    ok = ok && !m.harHentetInn && m.harTreArmer && !m.harPaaVei && m.harCta;
-      if (navn==='vekst'  && flate==='oversikt') ok = ok && m.harHentetInn && m.harPaaVei && m.harTreArmer;
-      if (navn==='vekst'  && flate==='vekst')    ok = ok && !m.harPaaVei && m.harTreArmer;   // rader, ingen På vei
-      if (navn==='nykonto'&& flate==='oversikt') ok = ok && m.harHentetInn && m.harTreArmer;
-      if (navn==='datoprognose' && flate==='oversikt') ok = ok && m.harHentetInn && m.harPaaVei && m.harTreArmer;
-      if (navn==='datoprognose' && flate==='vekst')    ok = ok && !m.harPaaVei && m.harTreArmer;
+      // Siden 17.11 er Vekst-fanen og Oversikt SAMME komponent → samme forventning på begge flater.
+      if (navn==='basis')        ok = ok && !m.harHentetInn && m.harTreArmer && !m.harPaaVei && m.harCta;
+      if (navn==='vekst')        ok = ok && m.harHentetInn && m.harPaaVei && m.harTreArmer;
+      if (navn==='nykonto')      ok = ok && m.harHentetInn && m.harTreArmer;
+      if (navn==='datoprognose') ok = ok && m.harHentetInn && m.harPaaVei && m.harTreArmer;
       // Vinn-tilbake-armens tre tilstander (kun På vei/oversikt): N>0=tall+lenke, dato=dato+lenke, null=«Ingen ennå» uten tall/dato/lenke.
-      if (flate==='oversikt'){
+      {   // Vinn-tilbake-linja i PÅ VEI — begge flater (samme komponent)
         if (navn==='vekst')        ok = ok && m.wbArm && m.wbArm.num && !m.wbArm.date && !m.wbArm.tom && m.wbArm.link && /kunder å hente inn/.test(m.wbArm.tekst);
         if (navn==='datoprognose') ok = ok && m.wbArm && m.wbArm.date && !m.wbArm.num && !m.wbArm.tom && m.wbArm.link && /passerer 60 dager 25\. sep/.test(m.wbArm.tekst);
         if (navn==='nykonto')      ok = ok && m.wbArm && m.wbArm.tom && !m.wbArm.num && !m.wbArm.date && !m.wbArm.link;
       }
-      var wbVis = (flate==='oversikt' && m.wbArm) ? (m.wbArm.num?'N>0':m.wbArm.date?'dato':m.wbArm.tom?'tom':'?')+(m.wbArm.link?'+lenke':'') : '—';
+      var wbVis = (m.wbArm) ? (m.wbArm.num?'N>0':m.wbArm.date?'dato':m.wbArm.tom?'tom':'?')+(m.wbArm.link?'+lenke':'') : '—';
       rapport.push({ flate, tilstand:navn, bredde, hentetInn:m.harHentetInn?'ja':'nei',
         lojalitet:m.lojFinnes?'FINNES✗':'borte', treArmer:m.harTreArmer?'ja':(navn==='basis'?'—':'NEI✗'),
         paaVei:m.harPaaVei?'ja':'nei', wbArm:wbVis, cta:m.harCta?'ja':'nei', jsfeil: errs.length?errs.join('; ').slice(0,40):'ingen', ok: ok?'✓':'✗' });

@@ -107,8 +107,8 @@ for (const tema of ['dark','light']) {
     await page.evaluate(() => switchPanel('vekst')); await page.waitForSelector('#trend .mcol'); await page.waitForTimeout(400);
     await page.evaluate(() => window.scrollTo(0,0));
     const vk = await page.evaluate(MAAL, '#trend');
-    if (P.id==='1-siste-uke') { await page.waitForSelector('#attrRows .di-total-kr', { timeout:8000 }).catch(()=>{});
-      const dk = await page.evaluate(() => { const t = document.querySelector('#attrRows .di-total-kr'), k = t && t.querySelector('.di-kr'); return t ? [getComputedStyle(t).color, getComputedStyle(k).color] : null; });
+    if (P.id==='1-siste-uke') { await page.waitForSelector('#vekstHentet .hi-total', { timeout:8000 }).catch(()=>{});
+      const dk = await page.evaluate(() => { const t = document.querySelector('#vekstHentet .hi-total'), k = t && t.querySelector('.u'); return t ? [getComputedStyle(t).color, getComputedStyle(k).color] : null; });
       sjekk(`${tag}: Vekst-totalen — «kr» samme farge som tallet`, dk && dk[0]===dk[1], JSON.stringify(dk)); }
     sjekk(`${tag}: Vekst 6 måneder, alle .stolpe, ingen gradient`, vk.length===6 && vk.every(b => b.stolpe && !b.gradient), vk.length+'');
     sjekk(`${tag}: Vekst radius 4 topp / 0 bunn`, vk.filter(b=>!b.null).every(b => b.rTopp==='4px' && b.rBunn==='0px'));

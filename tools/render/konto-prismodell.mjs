@@ -321,9 +321,9 @@ for(const b of [320,375]){
     if(b===375) push('Hentet inn (Oversikt) på Gratis: «179 kr/mnd» + «Se Vekst»', (grPris==='179 kr/mnd'&&grCta==='Se Vekst')?[]:[`«${grPris}» / «${grCta}»`], g.errs);
     await g.page.locator('#drivenBy').screenshot({path:path.join(OUT,`${b}-drevet-av-paa-vei.png`)});
     await g.page.$eval('button[data-panel="vekst"]',x=>x.click()); await g.page.waitForTimeout(900);
-    const pris=await tekstAv(g.page,'#attrRows .di-cta-price');
-    if(b===375) push('Hentet inn: prislinje', pris==='179 kr/mnd eks. mva. Ingen binding.'?[]:[`«${pris}»`], g.errs);
-    await g.page.locator('#attrKort').screenshot({path:path.join(OUT,`${b}-hentet-inn-gratis.png`)});
+    const pris=await g.page.$eval('#vekstHentet .gr-pris',e=>e.innerText).catch(()=>'');   // Vekst-fanen: samme Gratis-blokk som Oversikt (17.11)
+    if(b===375) push('Hentet inn (Vekst-fanen): prislinje «179 kr/mnd eks. mva»', pris.replace(/\s+/g,' ')==='179 kr/mnd eks. mva'?[]:[`«${pris}»`], g.errs);
+    await g.page.locator('#vekstHentetWrap').screenshot({path:path.join(OUT,`${b}-hentet-inn-gratis.png`)});
     await g.page.close();
   }
   { // «Din side»-CTA (forhandsvist) + suksesskortet etter publisering
@@ -375,7 +375,7 @@ for(const b of [320,375]){
     await page.evaluate(()=>{ const c=document.getElementById('momentumCard'); if(c){ c.hidden=false; settSkjold(c); } });
     await page.waitForTimeout(200);
     const skjold=await page.$$eval('.skjold',l=>l.map(s=>s.getAttribute('aria-label')+'|'+s.innerText.trim()));
-    const badge=await page.$$eval('.laas-badge',l=>l.map(x=>x.title));
+    const badge=await page.$$eval('.laas-merke',l=>l.map(x=>x.title));   // lås + «Vekst» (17.11)
     await page.evaluate(()=>{ const h=document.querySelector('#accVerv .acc-head'); if(h&&h.getAttribute('aria-expanded')!=='true')h.click(); });
     await page.waitForTimeout(400);
     const liste=await tekstAv(page,'#vervSendList');

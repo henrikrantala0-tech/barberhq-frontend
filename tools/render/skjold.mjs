@@ -1,6 +1,6 @@
 // tools/render/skjold.mjs — Vekst-gating (Basis-visning) i dashbordet. NY MODELL (13.09):
 //   MÅLING (#drivenBy/#attrKort/#momentumCard) = SKJOLD (overlay + eksempel, teaser, ikke lesbar).
-//   HANDLING (#accRebook/#accWinback/#accVerv/#accLoyal) = LESBAR + «Vekst»-låsindikator (.laas-badge),
+//   HANDLING (#accRebook/#accWinback/#accVerv/#accLoyal) = LESBAR + «Vekst»-låsindikator (.laas-merke, 17.11),
 //     INGEN overlay, kontroller disabled (ALDRI .acc-head → seksjonen kan åpnes/leses).
 // Billing-varianter:
 //   basis = effective_plan:'basis'  → skjold på måling, handlings-lås på funksjon
@@ -95,7 +95,7 @@ function router(variant, forbudt403, state, putLog) {
 // type: 'maaling' → forvent overlay (skjold). 'funksjon' → forvent badge + INGEN overlay + kontroller disabled.
 const FLATER = [
   { navn:'drivenBy',     type:'maaling',  panel:'oversikt', host:'#drivenBy' },
-  { navn:'attribusjon',  type:'maaling',  panel:'vekst', host:'#attrKort' },
+  { navn:'attribusjon',  type:'maaling',  panel:'vekst', host:'#vekstHentet' },   // samme komponent som Oversikt (17.11)
   { navn:'momentum',     type:'maaling',  panel:'vekst', host:'#momentumCard' },
   { navn:'rebooking',    type:'funksjon', panel:'vekst', host:'#accRebook' },
   { navn:'vinn-tilbake', type:'funksjon', panel:'vekst', host:'#accWinback' },
@@ -107,7 +107,7 @@ const MAAL = `(sel) => {
   const host = document.querySelector(sel);
   if (!host) return { finnes:false };
   const overlay = !!(host.querySelector(':scope > .skjold'));
-  const badge = !!host.querySelector('.laas-badge');
+  const badge = !!host.querySelector('.laas-merke');   // lås + «Vekst» (17.11) — erstatter den blå .laas-badge
   const merke = !!host.querySelector('.eksempel-merke');
   // Basis-måling skjermes nå med MASKERTE rader (diBasisLaastRader → .di-basis-laast, «* klipp · **** kr»),
   // ikke lenger en .skjold-overlay. momentum skjules helt på Basis (loadMomentum → renderMomentum(null)).
@@ -211,7 +211,7 @@ console.log('\n=== Toggle-bevis (Vekst, betalt) ===');
   await page.evaluate(() => { const t=document.querySelector('#tog-rebook'); t.checked=true; t.dispatchEvent(new Event('change',{bubbles:true})); });
   await page.waitForTimeout(500);
   const etterToggle = await page.evaluate(() => ({ checked:document.querySelector('#tog-rebook').checked,
-    errSkjult:(document.querySelector('#rebookErr')||{}).hidden!==false, badge:!!document.querySelector('#accRebook .laas-badge') }));
+    errSkjult:(document.querySelector('#rebookErr')||{}).hidden!==false, badge:!!document.querySelector('#accRebook .laas-merke') }));
   const putBryter = putLog.slice(førPut).find(b => 'sms_rebooking_enabled' in b);
   // Re-render (ny loadSmsInnstillinger → GET returnerer oppdatert state) → holder?
   await page.evaluate(() => loadSmsInnstillinger());
@@ -370,7 +370,7 @@ console.log(`\n=== BILLING-FEIL-ASSERT (deep-link #vekst, billing 500 → «Prø
   const etter = await page.evaluate(hosts=>{ const g=s=>(document.querySelector(s)||{}).textContent||'';
     const wb=g('#wbList'), alle=wb+g('#vervSendList')+g('#loyalOversikt');
     const seksjoner=hosts.map(h=>{ const el=document.querySelector(h); return { h, laas:!!(el&&el.classList.contains('handlingslaas')),
-      badge:!!(el&&el.querySelector('.laas-badge')), laaste:el?el.querySelectorAll('[data-laas-disabled]').length:-1,
+      badge:!!(el&&el.querySelector('.laas-merke')), laaste:el?el.querySelectorAll('[data-laas-disabled]').length:-1,
       // åpne kontroller utenom trekkspill-hodet (låst seksjon skal ha 0; en seksjon kan ha 0 kontroller totalt, f.eks. vinn-tilbake med lås-note)
       aapne:el?[...el.querySelectorAll('input,select,textarea,button')].filter(k=>!k.disabled&&!k.classList.contains('acc-head')).length:-1 }; });
     return { wb, feilStår:/Kunne ikke laste/.test(alle), retryIgjen:document.querySelectorAll('[data-billing-retry]').length,

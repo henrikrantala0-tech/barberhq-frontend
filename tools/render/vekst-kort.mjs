@@ -61,8 +61,10 @@ async function side(bredde, tema, touch) {
 // Bakgrunn i venstre del (tittel) og i bryterkolonnen, sett med øynene: farge på piksel i et skjermbilde.
 async function pikselBg(page, sel) {
   const r = await page.$eval(sel + ' .acc-row', e => { const a = e.getBoundingClientRect(), s = e.querySelector('.acc-sw').getBoundingClientRect();
-    const y = a.top + a.height * 0.75;   // ikke helt nederst: der kan kortets avrundede hjørne ligge
-    return { venstre: { x: a.left + 4, y }, hoyre: { x: a.right - 4, y } }; });   // i kantmargen (tittelens padding / bryterens marg): aldri tekst
+    // Vekst-liste (17.11): radene har ingen boks/padding på sidene og bryteren står helt til høyre. Mål i radens
+    // bunnpadding (16px, aldri tekst): venstre ved tekstkanten, høyre i gapet rett FORAN bryteren.
+    const y = a.bottom - 6;
+    return { venstre: { x: a.left + 4, y }, hoyre: { x: s.left - 6, y } }; });
   const buf = await page.screenshot({ clip: { x: 0, y: 0, width: page.viewportSize().width, height: page.viewportSize().height } });
   const p2 = await browser.newPage();
   const farger = await p2.evaluate(async ({ b64, pts }) => {
@@ -94,8 +96,10 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) {
       html: document.getElementById('vekst').innerHTML,
     }));
     sjekk(tekster.paam.trim() === 'Kunden får én SMS dagen før timen. Færre glemte avtaler.', `${id}: SMS-påminnelse «${tekster.paam.trim()}»`);
-    sjekk(/En personlig melding fra deg, ikke en maskin\.$/.test(tekster.winback.trim()) && !/—/.test(tekster.winback), `${id}: Vinn tilbake «${tekster.winback.trim()}»`);
-    sjekk(tekster.hentet.endsWith('Vinn tilbake er kunder som var borte i over 60 dager og kom tilbake.') && !/Dem lister vi/.test(tekster.hentet), `${id}: «Hentet inn»-forklaringen uten «Dem lister vi …»`);
+    // Vekst-liste (Henrik 17.11): ny Vinn tilbake-tekst (uten «ikke en maskin»); den lange «Hentet inn»-forklaringen er
+    // fjernet — Vekst-fanen bruker samme komponent som Oversikt.
+    sjekk(tekster.winback.trim()==='Kunder som ikke møtte opp, eller har vært borte lenge. En personlig melding fra deg.', `${id}: Vinn tilbake «${tekster.winback.trim()}»`);
+    sjekk(tekster.hentet==='' && !/Dem lister vi/.test(tekster.html) && !document_harGammelVelger(tekster.html), `${id}: ingen gammel «Hentet inn»-forklaring / velger på Vekst-fanen`);
     // Forklaringslinja under rebooking-boblen (åpne rebooking for å få den rendret)
     await page.click('#accRebook .acc-head'); await page.waitForTimeout(700);
     const noter = await page.$$eval('#vekst .sms-prev-note', ps => ps.map(p => p.textContent));
@@ -118,20 +122,21 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) {
     sjekk(errs.length === 0, `${id} touch: JS-feil ${errs.join(' | ')}`); await page.close();
   }
 }
-// «På vei»: samtykkelinja bare når noen når vinduet. 0 → bare tallet + «kunder når vinduet de neste 30 dagene».
+function document_harGammelVelger(html){ return /id="attrPeriod"/.test(html); }
+// «På vei» (Oversikt-redesign 17.11): «N kunder nærmer seg rebooking» + samtykkelinja bare når noen når vinduet;
+// 0 → «Ingen kunder nærmer seg rebooking ennå» uten samtykkelinje.
 for (const bredde of [320, 375]) for (const n of [0, 5]) {
   PAA_VEI_N = n;
   const { page, errs } = await side(bredde, 'dark', false);
   await page.evaluate(() => switchPanel('oversikt')); await page.waitForTimeout(1200);   // «På vei» står i «Drevet av» på Oversikt
-  const pv = await page.$$eval('.di-pv-block', bs => bs.filter(b => b.offsetParent && /REBOOKING/.test(b.textContent)).map(b => ({
-    num: (b.querySelector('.di-pv-num') || {}).textContent, txt: (b.querySelector('.di-pv-txt') || {}).textContent,
-    samtykke: b.querySelector('.di-pv-consent') ? b.querySelector('.di-pv-consent').textContent : null })));
-  const ok = pv.length > 0 && pv.every(x => x.num === String(n) && x.txt === 'kunder når vinduet de neste 30 dagene'
-    && (n === 0 ? x.samtykke === null : x.samtykke === `3 av ${n} har SMS-samtykke i dag`));
+  const pv = await page.$$eval('#drivenBy .pv-blokk', bs => bs.filter(b => b.offsetParent).map(b => ({
+    txt: (b.querySelector('.pv-dempet') || {}).textContent, samtykke: b.querySelector('.pv-samtykke') ? b.querySelector('.pv-samtykke').textContent : null })));
+  const ok = pv.length > 0 && pv.every(x => (n === 0 ? x.txt === 'Ingen kunder nærmer seg rebooking ennå' && x.samtykke === null
+    : x.txt === `${n} kunder nærmer seg rebooking` && x.samtykke === `3 av ${n} har SMS-samtykke i dag`));
   sjekk(ok, `${bredde} På vei med ${n} i vinduet: ${JSON.stringify(pv[0] || 'ikke rendret')}`);
   if (pv.length) {
     await page.mouse.move(0, 0);
-    const blokk = page.locator('.di-pv').filter({ visible: true }).first();
+    const blokk = page.locator('#drivenBy .pv-blokk').first();
     await blokk.screenshot({ path: path.join(OUT, `paa-vei-${n}-${bredde}.png`) });
   }
   sjekk(errs.length === 0, `${bredde} På vei ${n}: JS-feil ${errs.join(' | ')}`); await page.close();

@@ -1,5 +1,5 @@
 // tools/render/attribusjon-kr.mjs — «Hentet inn av BarberHQ» med kroner på de to flatene:
-//   Oversikt (renderDrivenBy, alltid «siste 30 dager») + Vekst-fanen (renderAttribusjon, #attrRows).
+//   Oversikt (#drivenBy) + Vekst-fanen (#vekstHentet) — SAMME komponent (tegnHentetInn) siden 17.11.
 //
 // Skrevet om 22.10.2026 til dagens backend-form: GET /attribution → { hentetInn:{ vervet, vinnTilbake, rebooking,
 // total }, paaVei:{ rebooking, winback } }, der hver arm er {count,revenue}. (Den gamle flate formen med
@@ -76,7 +76,7 @@ async function maal(bredde, variant, plan) {
     await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
     if (flate === 'vekst') await page.evaluate(() => switchPanel('vekst'));
     await page.waitForTimeout(1600);
-    const sel = flate === 'oversikt' ? '#drivenBy' : '#attrRows';
+    const sel = flate === 'oversikt' ? '#drivenBy' : '#vekstHentet';   // samme komponent på begge flater (17.11)
     await page.evaluate(s => { const w = document.querySelector(s); if (w) w.scrollIntoView({ block:'center' }); }, sel);
     await page.waitForTimeout(200);
     await page.screenshot({ path:`${OUT}/attr-${flate}-${variant}-${plan}-${bredde}.png`, fullPage:false });
@@ -102,13 +102,13 @@ const harAlt = t => t.includes('25 klipp') && t.includes('9 050 kr') && ARMER.ev
 // Oversikt-redesign (17.11): egne rader (navn + beskrivelse, kroner over klipp) i rekkefølgen Rebooking/Vinn tilbake/Verving.
 const ARMER_OVS = ['Rebooking Booket igjen etter SMS 4 900 kr 14 klipp', 'Vinn tilbake Kom tilbake fra lista 2 400 kr 6 klipp', 'Verving Nye kunder via verving 1 750 kr 5 klipp'];
 const harAltOvs = t => t.includes('9 050 kr') && t.includes('25 klipp fra kunder BarberHQ hentet tilbake') && ARMER_OVS.every(a => t.includes(a));
-sjekk(finn('full', 'vekst').every(r => harAltOvs(r.m.oversikt.txt) && harAlt(r.m.vekst.txt)),
+sjekk(finn('full', 'vekst').every(r => harAltOvs(r.m.oversikt.txt) && harAltOvs(r.m.vekst.txt)),
   'A: Vekst viser total 25 klipp · 9 050 kr og tre arm-rader med kroner (begge flater)',
   finn('full', 'vekst').map(r => r.m.oversikt.txt.slice(0, 160)).join(' || '));
-sjekk(finn('utenTotal', 'vekst').every(r => /Ingen kunder hentet inn ennå/.test(r.m.oversikt.txt) && /Ingen bookinger her ennå/.test(r.m.vekst.txt)
+sjekk(finn('utenTotal', 'vekst').every(r => /Ingen kunder hentet inn ennå/.test(r.m.oversikt.txt) && /Ingen kunder hentet inn ennå/.test(r.m.vekst.txt)
     && [r.m.oversikt.txt, r.m.vekst.txt].every(t => !t.includes('9 050'))),
   'B: uten total → 0-tilstand, aldri klient-sum (9 050) av radene');
-sjekk(finn('utenHentet', 'vekst').every(r => /Kunne ikke hente tallene akkurat nå/.test(r.m.vekst.txt) && /PÅ VEI/.test(r.m.oversikt.txt) && !/ kr\b/.test(r.m.oversikt.txt)),
+sjekk(finn('utenHentet', 'vekst').every(r => [r.m.vekst.txt, r.m.oversikt.txt].every(t => /Kunne ikke hente beløpet akkurat nå/.test(t) && /PÅ VEI/.test(t) && !/ kr\b/.test(t))),
   'C: hentetInn mangler → Vekst-fanen sier fra, Oversikt viser bare «På vei» uten kroner');
 sjekk(finn('full', 'gratis').every(r => [r.m.oversikt.txt, r.m.vekst.txt].every(t => !/9 050|1 750|2 400|4 900/.test(t))),
   'D: Gratis viser aldri ekte tall, selv om backend sender hentetInn');
