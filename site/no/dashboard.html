@@ -108,7 +108,7 @@
      dyttet før forbi viewporten (H5: 31-tegns navn = 62px horisontal overflow @320 → hele dashbordet
      kunne swipes sidelengs). Derfor: min-width:0 + overflow/ellipsis så navnet KRYMPER og avkortes
      med «…» i stedet for å sprenge raden. Voktet av tools/render/overflow-mobil.mjs (langt navn). */
-  .shopnavn{font-size:26px;font-weight:800;letter-spacing:-.035em;line-height:1.1;min-height:1.1em;color:var(--ink);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}   /* min-height: tomt navn (feilet /profile) holder én linjes høyde */
+  .shopnavn{font-size:26px;font-weight:700;letter-spacing:-.035em;line-height:1.1;min-height:1.1em;color:var(--ink);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}   /* min-height: tomt navn (feilet /profile) holder én linjes høyde */
   /* Før barberens navn er lastet: nøytral skjelett-linje, samme høyde som én linje navn (14px × 1.15),
      så headeren ikke hopper når navnet kommer. Fjernes av settHeaderNavn() — også når /profile feiler. */
   .shopnavn.laster{display:inline-block;width:160px;max-width:55%;height:1.1em;border-radius:4px;background:var(--line);vertical-align:middle}
@@ -116,9 +116,7 @@
      Headeren viser butikknavnet (venstre) + avkuttet bookinglenke m/kopi-knapp (høyre). .dash-brand
      er flex-wrapperen rundt navnet; min-width:0 så den kan gi etter og la navnet krympe/avkortes
      (fitShopnavn font-krymper #barberName mot clientWidth før CSS-ellipsen overtar). */
-  .dash-brand{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:7px;min-width:0;min-height:22px}   /* kolonne: navn + dato (Oversikt). stretch → #barberName får hele bredden, så fitShopnavn måler mot den. min-height reserverer bookinglenkas høyde (.pub-copy 22px) */
-  .dash-dato{font-size:12.5px;color:var(--mut);line-height:1.2;white-space:nowrap}
-  .dash-dato[hidden]{display:none}
+  .dash-brand{display:flex;align-items:center;min-width:0;min-height:22px}   /* kolonne: navn + dato (Oversikt). stretch → #barberName får hele bredden, så fitShopnavn måler mot den. min-height reserverer bookinglenkas høyde (.pub-copy 22px) */
   .brand{font-weight:800;font-size:19px;letter-spacing:-.03em}
   .brand .hq{font-weight:300}
   /* .who (stablet navn+lenke) er fjernet — headeren er nå én rad: .shopnavn + .header-lenke. */
@@ -947,7 +945,8 @@
   .idag-svc{font-size:13px;color:var(--mut)}
   .idag-om{margin:12px 0 0;font-size:12.5px;font-weight:500;color:var(--info)}
   .idag-rader{margin-top:20px}
-  .idag-tom{margin:0;font-size:22px;font-weight:700;letter-spacing:-.03em;line-height:1.15;color:var(--ink)}
+  /* Roligere vekt (Henrik 17.11): 800 bare på tall — tomtilstandene er tekst, 20px/600. */
+  .idag-tom{margin:0;font-size:20px;font-weight:600;letter-spacing:-.02em;line-height:1.2;color:var(--ink)}
   @media (max-width:375px){ #upcomingList{max-height:362px} }
   /* «Intern utvidelse»-form (FASIT): rammet boks, full bredde, sentrert, chevron ▾/▴, dempet
      farge. Delt av Kommende bookinger, Siste bookinger, Verving og SMS-logg. padding 12px gir
@@ -1168,7 +1167,7 @@
   .hi-kr{font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
   .hi-klipp{font-size:12.5px;color:var(--mut);white-space:nowrap}
   .hi-strek{font-size:14.5px;font-weight:600;color:var(--mut-2)}
-  .hi-tom-h{margin:0;font-size:22px;font-weight:700;letter-spacing:-.03em;line-height:1.15;color:var(--ink)}
+  .hi-tom-h{margin:0;font-size:20px;font-weight:600;letter-spacing:-.02em;line-height:1.2;color:var(--ink)}
   .hi-tom-p{margin:10px 0 0;font-size:13.5px;line-height:1.5;color:var(--mut)}
   .hi-feil{margin:0;font-size:13.5px;line-height:1.5;color:var(--mut)}
   /* PÅ VEI (Vekst): kunder/datoer, ALDRI kroner. Etter tom rad-liste får blokka egen hårlinje over. */
@@ -1183,7 +1182,7 @@
   .ovs-tagg{font-size:11.5px;font-weight:500;color:var(--mut);border:1px solid var(--ov-btn-line);border-radius:6px;padding:4px 8px;white-space:nowrap;line-height:1.2}
   /* text-wrap:balance: «Flere klipp fra kundene du har.» er bredere enn kolonnen på mobil (også på designets 390) —
      uten balance ble «har.» stående alene. Balance deler hver linje (før/etter <br>) jevnt. */
-  .gr-h{margin:16px 0 0;font-size:24px;font-weight:800;letter-spacing:-.035em;line-height:1.12;color:var(--ink);text-wrap:balance}
+  .gr-h{margin:16px 0 0;font-size:22px;font-weight:700;letter-spacing:-.03em;line-height:1.15;color:var(--ink);text-wrap:balance}
   .gr-p{margin:10px 0 0;font-size:13.5px;line-height:1.5;color:var(--mut);text-wrap:pretty}   /* pretty: ikke «kroner.» alene på 320 */
   .gr-rader{margin-top:18px}
   .gr-rad{display:flex;flex-direction:column;gap:4px;padding:15px 0;border-top:1px solid var(--ov-hair)}
@@ -1672,10 +1671,26 @@
   .header-lenke .pub-url{font-size:11.5px}
   .header-lenke .pub-copy{width:22px;height:22px}
   @media(max-width:400px){ .header-lenke{max-width:150px} }
-  /* Oversikt-redesign (17.11): navnet er 26px. Under 720px får navn + URL-tekst ikke plass på én rad, og lenka ble
-     stablet under — headeren vokste da med en hel linje når billing landet (hopp). På mobil står derfor bare
-     kopi-ikonet (aria-label «Kopier lenke», 44px trykkflate); URL-en står i Konto/Din side. Desktop uendret. */
-  @media(max-width:719px){ .header-lenke{max-width:none;flex:0 0 auto} .header-lenke .pub-url{display:none} }
+  /* Mobil (Henrik 17.11): ÉN rad, NAVNET HAR FORRANG. Navnet (20px/700) står helt (flex:0 0 auto); lenka tar plassen
+     som er igjen (flex:1 1 0, min 44px, høyrestilt) som «/<slug>» 12.5px/500 i --info + kopi-ikon 15px 6px etter,
+     ende-ellipse (midtForkort setter «/slug» på mobil). Blir det under 72px til teksten → .bare-ikon (44×44 kopi-ikon).
+     Får navnet ikke plass ved siden av ikonet → fitShopnavn krymper det til 16px, og først da «…». Trykkflaten er 44px,
+     raden har min-height 44px også UTEN lenke → samme høyde uansett, ingen hopp. Kopi = HELE URL-en (settHeaderLenke).
+     Desktop (≥720) uendret: 26px navn, full lenke + ikon til høyre, teksten åpner siden. */
+  @media(max-width:719px){
+    .top{flex-wrap:nowrap;padding:14px 0 2px}
+    .top .dash-brand{flex:0 0 auto;min-height:44px;max-width:100%}
+    .shopnavn{font-size:20px;letter-spacing:-.025em}
+    .header-lenke{flex:1 1 0;min-width:44px;display:flex;justify-content:flex-end}
+    .header-lenke .pub-field{gap:6px;min-height:44px;cursor:pointer;min-width:0;justify-content:flex-end}
+    .header-lenke .pub-url{flex:0 1 auto;font-size:12.5px;font-weight:500;color:var(--info)}
+    .top.bare-ikon .header-lenke .pub-url{display:none}
+    .top.bare-ikon .header-lenke .pub-copy{width:44px;height:44px}
+    .header-lenke .pub-url:hover{text-decoration:none}
+    .header-lenke .pub-copy{width:15px;height:15px;color:var(--info)}
+    .header-lenke .pub-copy:hover{background:0;color:var(--info)}
+    .header-lenke .pub-copy svg{width:15px;height:15px}
+  }
   /* Headerens kvittering sier «Lenke kopiert» (tydeligere enn bare «Kopiert» som de andre .pub-copy).
      Samme spesifisitet som den globale .pub-copy.ok::after, men senere i kilden → vinner kun her. */
   .header-kopi.ok::after{content:"Lenke kopiert"}
@@ -1819,11 +1834,10 @@
          høyre. BarberHQ-ordmerket er fjernet herfra og bor nå i bunnen av Konto-fanen (.konto-brand).
          #barberName skal aldri brekke til linje to: fitShopnavn() krymper fonten til den passer på
          én linje, og faller til «…» (CSS-ellipse) først når minste font fortsatt er for bred. -->
-    <!-- .dash-brand er en KOLONNE: navnet, og under det dagens dato (#dashDato). Datoen vises KUN på
-         Oversikt (settDashDato i fane-handleren); navnestilen (26px/800) gjelder alle faner (Henrik 17.11). -->
+    <!-- Én rad på alle bredder (Henrik 17.11): navnet til venstre (tar resten av bredden), bookinglenka til høyre.
+         Datoen står i I DAG-etiketten på Oversikt, ikke i headeren. -->
     <span class="dash-brand">
       <b class="shopnavn laster" id="barberName" aria-busy="true"></b>
-      <span class="dash-dato" id="dashDato"></span>
     </span>
     <div class="header-lenke" id="headerLenke" hidden></div>
     <!-- Kun synlig i fokusmodus (body.fokus) — «X øverst til høyre» = avslutt fokus. -->
@@ -1979,7 +1993,7 @@
     <!-- 1. I DAG — neste booking stort + resten av dagens kommende timer (renderIdag). Passerte timer i dag
          vises ikke; «N igjen» til høyre. Story-inngangen og SMS-tilbudet bor også her. -->
     <section class="ovs-sek" id="ovsIdag" aria-labelledby="ovsIdagH">
-      <div class="ovs-sek-hode"><h2 class="ovs-etikett" id="ovsIdagH">I dag</h2><span class="ovs-hode-tall" id="idagAntall"></span></div>
+      <div class="ovs-sek-hode"><h2 class="ovs-etikett" id="ovsIdagH">I dag<span id="idagDato"></span></h2><span class="ovs-hode-tall" id="idagAntall"></span></div>
       <div id="idagInnhold"><div class="loading">Laster …</div></div>
       <!-- Story-inngang (ÉN komponent — SAMME #storyOverlay som Vekst-kortet). Linje OG lenke vises KUN når
            /ledige gir vis_banner=true for i dag eller i morgen (loadStoryLedigeLinje — dagens regel, uendret).
@@ -4474,23 +4488,23 @@ function renderUpcoming(){
     ? keys.map(function(k){ return '<div class="up-gruppe"><p class="up-day">'+upDagOverskrift(k)+'</p>'+byKey[k].map(upRow).join('')+'</div>'; }).join('')
     : '<p class="up-empty">Ingen bookinger de neste 7 dagene.</p>';
 }
-// Dato under butikknavnet («Tirsdag 17. november», Oslo) — KUN på Oversikt (Henrik 17.11, valg 1).
-function settDashDato(){
-  var el=$("#dashDato"); if(!el) return;
-  var aktiv=document.querySelector('.panel.active');
-  el.hidden=!(aktiv && aktiv.id==='oversikt');
-  var t=new Intl.DateTimeFormat('nb-NO',{timeZone:'Europe/Oslo',weekday:'long',day:'numeric',month:'long'}).format(new Date());
-  el.textContent=t.charAt(0).toUpperCase()+t.slice(1);
+// Dagens dato i I DAG-etiketten: «I DAG · TIRSDAG 17. NOV» (Oslo; versaler via .ovs-etikett). Henrik 17.11 — datoen står
+// ikke lenger i headeren. Måneden kortes til tre bokstaver (som Kommende-overskriftene).
+function settIdagDato(){
+  var el=$("#idagDato"); if(!el) return;
+  var p={}; new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Oslo',year:'numeric',month:'numeric',day:'numeric'}).formatToParts(new Date()).forEach(function(x){p[x.type]=x.value;});
+  var d=new Date(+p.year,+p.month-1,+p.day);
+  el.textContent=' · '+DAYS[(d.getDay()+6)%7]+' '+d.getDate()+'. '+MONTHS[d.getMonth()].slice(0,3);
 }
-// Minutt-tikk: nedtellingen i I dag og datoen i headeren. Bare I dag tegnes på nytt (ikke Kommende — det ville
+// Minutt-tikk: nedtellingen og datoen i I dag. Bare I dag tegnes på nytt (ikke Kommende — det ville
 // nullstilt scroll-posisjonen), og bare når Oversikt er synlig og bookingene er lastet.
 setInterval(function(){
   if(document.hidden) return;
-  settDashDato();
+  settIdagDato();
   var o=document.getElementById('oversikt');
   if(o && o.classList.contains('active') && _bookingerKilde.length) renderIdag();
 },60000);
-settDashDato();
+settIdagDato();
 /* Beregn VISNINGS-status fra rå status + tid.
    Regel: passert tid + ikke eksplisitt no-show => "fullfort" automatisk.
    Kommende time => "booket". Eksplisitt noshow/venter overstyrer.
@@ -5852,7 +5866,6 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
   $("#"+id).classList.add("active");
   if(window.__syncBunnNav)window.__syncBunnNav();   // speil aktiv fane i bunn-nav (mobil)
-  settDashDato();   // datoen under butikknavnet vises bare på Oversikt
   if(id==="oversikt"){loadOversikt();loadAktivering();}
   if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();loadLoyalty();}
   if(id==="abonnement"){loadSmsInnstillinger();}   // Konto-bryteren deler sms_paaminnelse_enabled med Vekst
@@ -8304,6 +8317,16 @@ function settHeaderLenke(b){
   if(b.page_status==='live' && CONFIG.BARBER_SLUG){
     byggKopierbartLenkefelt(boks, CONFIG.SITE_BASE+'/'+CONFIG.BARBER_SLUG, CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+CONFIG.BARBER_SLUG);
     var k=boks.querySelector('.pub-copy'); if(k)k.classList.add('header-kopi'); // → «Lenke kopiert»
+    // Mobil: hele lenkelinja er trykkflaten og KOPIERER (samme knapp, samme kvittering) i stedet for å åpne siden.
+    // Delegert på boksen én gang (innholdet bygges på nytt av byggKopierbartLenkefelt). Desktop: lenka åpner som før.
+    if(!boks._kopiBound){ boks._kopiBound=true;
+      boks.addEventListener('click',function(e){
+        if(!(window.matchMedia && matchMedia('(max-width:719px)').matches)) return;
+        if(e.target.closest('.pub-copy')) return;            // knappen kopierer selv
+        var kn=boks.querySelector('.pub-copy'); if(!kn) return;
+        e.preventDefault(); kn.click();
+      });
+    }
     boks.hidden=false;
   } else { boks.textContent=''; boks.hidden=true; }
   fitShopnavn();   // lenka tar plass i toppen: navnet måles på nytt (stables ved behov)
@@ -8328,7 +8351,9 @@ function fitShopnavn(){
   var el=$("#barberName"); if(!el) return;
   var top=el.closest('.top'), lenke=$('#headerLenke');
   if(top) top.classList.remove('stablet');                // mål alltid side om side først
-  el.style.fontSize='';                                   // reset til CSS-verdien (14px)
+  el.style.fontSize='';                                   // reset til CSS-verdien
+  el.style.maxWidth=''; if(top) top.classList.remove('bare-ikon');
+  if(window.matchMedia && matchMedia('(max-width:719px)').matches){ fitShopnavnMobil(el, top, lenke); return; }
   var normal=parseFloat(getComputedStyle(el).fontSize)||14;
   var avail=el.clientWidth, need=el.scrollWidth;
   if(need<=avail+1) return;                               // passer på full størrelse
@@ -8336,6 +8361,29 @@ function fitShopnavn(){
   if(top && lenke && !lenke.hidden){ top.classList.add('stablet'); avail=el.clientWidth; need=el.scrollWidth; if(need<=avail+1) return; }
   var size=Math.max(FIT_MIN, normal*avail/Math.max(1,need)*0.98);
   el.style.fontSize=size+'px';                            // for smalt på gulvet → CSS-ellipse overtar
+}
+// Mobil (Henrik 17.11) — navnet har forrang over lenka, i denne rekkefølgen:
+//  1) navnet helt i 20px; lenka tar resten (CSS flex:1 1 0) og kortes med «…»
+//  2) under ~72px til lenketeksten → .bare-ikon: bare kopi-ikonet (44×44), kopierer fortsatt hele URL-en
+//  3) navnet får ikke plass ved siden av ikonet (44 + 16 gap) → krymp fonten, gulv FIT_MIN_MOBIL (16px)
+//  4) fortsatt for bredt på 16px → max-width på navnet → CSS-ellipse
+var FIT_MIN_MOBIL=16, LENKE_MIN_TEKST=72;
+function fitShopnavnMobil(el, top, lenke){
+  if(!top) return;
+  var lenkeVis=!!(lenke && !lenke.hidden), gap=parseFloat(getComputedStyle(top).columnGap)||16;
+  var rad=top.clientWidth, need=el.scrollWidth;
+  if(lenkeVis){
+    var ikon=lenke.querySelector('.pub-copy'), ikonB=ikon?ikon.getBoundingClientRect().width:15;
+    var tekstPlass=rad-need-gap-ikonB-6;            // det lenketeksten får når navnet står helt
+    if(tekstPlass<LENKE_MIN_TEKST) top.classList.add('bare-ikon');
+  }
+  var navnPlass=rad-(lenkeVis?(top.classList.contains('bare-ikon')?44:0)+gap:0);
+  if(lenkeVis && !top.classList.contains('bare-ikon')) return;   // navnet står helt og lenka har plass
+  if(need<=navnPlass+1) return;
+  var normal=parseFloat(getComputedStyle(el).fontSize)||20;
+  var size=Math.max(FIT_MIN_MOBIL, normal*navnPlass/Math.max(1,need)*0.98);
+  el.style.fontSize=size+'px';
+  if(el.scrollWidth>navnPlass+1) el.style.maxWidth=navnPlass+'px';   // gulvet nådd → CSS-ellipse
 }
 // Re-fit når web-fonten lastes (fallback-fonten måler annerledes) og ved bredde-endring. Observerer
 // documentElement-BREDDEN, ikke navnet selv: å endre fontSize rører ikke doc-bredden → ingen selv-loop.
@@ -8631,6 +8679,9 @@ function byggKopierbartLenkefelt(container,url,visUrl){
 function midtForkort(a){
   var full=a.dataset.full||''; a.textContent=full;
   if(!a.clientWidth) return;                 // skjult (fane ikke åpen) → RO måler på nytt når synlig
+  // Headerlenka på mobil (Henrik 17.11): bare «/<slug>», ende-ellipse via CSS (ikke midt-ellipse). RO kjører på nytt
+  // ved resize, så desktop/mobil bytter tekst selv. Kopieringen bruker alltid full URL (kopierLenke), ikke teksten.
+  if(a.closest('#headerLenke') && window.matchMedia && matchMedia('(max-width:719px)').matches){ var sk=full.indexOf('/'); a.textContent=sk>=0?full.slice(sk):full; return; }
   if(a.scrollWidth<=a.clientWidth) return;   // får plass — ingen forkorting
   var i=full.indexOf('/');
   var pre = i>=0 ? full.slice(0,i+1) : '';   // «trybarberhq.com/» — beholdes alltid

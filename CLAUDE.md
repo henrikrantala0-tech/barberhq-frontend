@@ -417,9 +417,16 @@ Kilde: Henriks `oversikt-vekst` / `oversikt-gratis` / `hentet-inn-vekst-tom` (.d
   Midlertidige kort (første booking, hjemskjerm, «Fullfør siden») står over seksjonene, uendret.
 - **Tokens `--ov-*`** (hårlinje, segment, knappramme, 0-stolpe, Hentet inn-stripa): mørk = designets hex nøyaktig,
   lys = egne motstykker. Ingen gradienter på Oversikt.
-- **Header (alle faner):** navn 26px/800 (`FIT_MIN` 18). Dato (`#dashDato`, Oslo) KUN på Oversikt (`settDashDato` i
-  fane-handleren + minutt-tikk). Under 720px står bare kopi-ikonet for bookinglenka (URL-teksten skjult) — navn + URL
-  fikk ikke plass på én rad, og stablingen fikk headeren til å hoppe (Henrik godkjent 17.11).
+- **Skrifttykkelse (Henrik 17.11):** 800 BARE på tall (neste time, nøkkeltallene, Hentet inn-totalen). Tekst ett hakk
+  ned: butikknavn 700, tomtilstander («Ingen bookinger i dag.» m.fl.) 20px/600, Gratis-overskriften 22px/700.
+- **Header (alle faner), ÉN rad, ingen dato:** desktop = navn 26px/700 (`FIT_MIN` 18, stabling som før) + full lenke + ikon
+  til høyre, teksten åpner siden. **Mobil (<720) — navnet har forrang** (`fitShopnavnMobil`): navnet helt i 20px/700
+  (flex:0 0 auto); lenka tar resten (flex:1 1 0, min 44px, høyrestilt) som «/<slug>» 12.5px/500 `--info` + ikon 15px,
+  ende-ellipse (`midtForkort` setter «/slug» på mobil). Under 72px til lenketeksten → `.top.bare-ikon` (bare kopi-ikonet,
+  44×44). Får navnet ikke plass ved siden av ikonet → krymp til `FIT_MIN_MOBIL` 16px, «…» først da. Trykk på tekst/ikon
+  kopierer HELE URL-en («Lenke kopiert»), ingen navigasjon. Ikke live / feil → høyre side tom; raden har min-height 44px
+  uansett → INGEN layout-hopp når lenka lastes (ingen plassreservering trengs). Vakt: `tools/render/header-lenke.mjs`.
+- **Dato:** i I DAG-etiketten, «I DAG · TIRSDAG 17. NOV» (`settIdagDato`, Oslo, minutt-tikk) — ikke i headeren.
 - **I DAG** (`renderIdag`, av `_bookingerKilde`): dagens IKKE-passerte timer; neste stort (38px) + «Tjeneste · varighet»
   + «Neste kunde · om …» (klientside, `tMinTekst`, tegnes på nytt hvert minutt), resten som `.up-row`. «N igjen» til
   høyre; alle passert → «Ingen flere bookinger i dag.»; ingen → «Ingen bookinger i dag.» Story-lenka (`#storyOpenOversikt`,

@@ -14,7 +14,8 @@
 //   - Hentet inn (Gratis): FAST overskrift «Flere klipp fra kundene du har. Og nye i tillegg.» (Henrik 17.11 —
 //     ingen borte-tall), ingen /attribution-kall, ingen maskerte rader, ingen kronebeløp utenom prisen, «Se Vekst» → Konto.
 //   - Tomtilstand (total = 0): «Ingen kunder hentet inn ennå.», rader med «—», PÅ VEI vises.
-//   - Header: navnet 26px på alle faner, datoen bare på Oversikt. Bunn-nav: nytt Oversikt-ikon (fire fliser).
+//   - Header: én rad, navnet 20px på mobil / 26px på desktop, INGEN dato i headeren — datoen står i I DAG-etiketten
+//     («I DAG · TIRSDAG 17. NOV»). Detaljene vaktes av header-lenke.mjs. Bunn-nav: nytt Oversikt-ikon (fire fliser).
 //   - Ingen horisontal overflow, ingen pageerror, ingen forespørsel slipper forbi mocken.
 //
 // ALLE /api/** mockes (catch-all) — ingen skriv eller les mot prod. Klokka er låst til tirsdag 17.11.2026 10:10
@@ -154,16 +155,16 @@ for (const t of Object.keys(TILSTANDER).filter(k => !KUN || k===KUN)) for (const
   const m = await page.evaluate(() => ({
     overflow: document.documentElement.scrollWidth - window.innerWidth,
     navnPx: getComputedStyle(document.getElementById('barberName')).fontSize,
-    datoSynlig: !!document.getElementById('dashDato').offsetParent,
-    datoTekst: document.getElementById('dashDato').textContent,
+    datoIHeader: !!document.getElementById('dashDato'),
+    idagEtikett: document.getElementById('ovsIdagH').innerText,
   }));
   const tag = `${t} ${tema} ${bredde}`;
   sjekk(`${tag}: ingen horisontal overflow`, m.overflow <= 0, m.overflow+'px');
   sjekk(`${tag}: ingen pageerror`, st.errs.length===0, st.errs.join(' | ').slice(0,120));
   sjekk(`${tag}: ingen forespørsel forbi mocken`, st.uMocket.length===0, st.uMocket.join(','));
   if (bredde===375) {
-    sjekk(`${tag}: butikknavn 26px`, m.navnPx==='26px', m.navnPx);
-    sjekk(`${tag}: dato under navnet på Oversikt`, m.datoSynlig && m.datoTekst==='Tirsdag 17. november', m.datoTekst);
+    sjekk(`${tag}: butikknavn 20px (mobil)`, m.navnPx==='20px', m.navnPx);
+    sjekk(`${tag}: dato i I DAG-etiketten, ikke i headeren`, !m.datoIHeader && m.idagEtikett==='I DAG · TIRSDAG 17. NOV', m.idagEtikett);
   }
   const fil = path.join(OUT, `${t}-${tema}-${bredde}.png`);
   // Bunn-navet er sticky: med fullPage og 900px viewport tegnes det midt i sida. Strekk viewporten til hele
@@ -226,7 +227,7 @@ for (const t of Object.keys(TILSTANDER).filter(k => !KUN || k===KUN)) for (const
   sjekk('Kommende: «4 neste 7 dager»', d.komAntall==='4 neste 7 dager', d.komAntall);
   sjekk('Kommende: dagsoverskrifter', JSON.stringify(d.komDager)==='["Onsdag 18. nov","Torsdag 19. nov","Lørdag 21. nov"]', JSON.stringify(d.komDager));
   sjekk('Kommende: ingen i dag/avlyst/utenfor vindu', !d.komNavn.some(n=>/Emre|Avlyst|Utenfor/.test(n)), JSON.stringify(d.komNavn));
-  sjekk('Etiketter i versaler, rekkefølge', JSON.stringify(d.etiketter.slice(0,4))==='["I DAG","KOMMENDE","NØKKELTALL","HENTET INN AV BARBERHQ"]', JSON.stringify(d.etiketter));
+  sjekk('Etiketter i versaler, rekkefølge', JSON.stringify(d.etiketter.slice(0,4))==='["I DAG · TIRSDAG 17. NOV","KOMMENDE","NØKKELTALL","HENTET INN AV BARBERHQ"]', JSON.stringify(d.etiketter));
   sjekk('Etikett-stil 11.5px/600/#8a8a8a', /^11\.5px 600 .* rgb\(138, 138, 138\)$/.test(d.etikettStil), d.etikettStil);
   sjekk('Seg valgt = #262626 (ikke blå), hvit tekst', d.segValgtBg==='rgb(38, 38, 38)' && d.segValgtFarge==='rgb(255, 255, 255)', d.segValgtBg+' / '+d.segValgtFarge);
   sjekk('Seg-container ≥44px (trykkflate)', d.segHoyde>=44, d.segHoyde);
@@ -263,15 +264,14 @@ for (const t of Object.keys(TILSTANDER).filter(k => !KUN || k===KUN)) for (const
   await page.waitForFunction(() => document.querySelectorAll('#chartBars .cbar-col').length===14);
   const to = await page.evaluate(() => ({ gap: getComputedStyle(document.getElementById('chartBars')).columnGap, attr: null }));
   sjekk('2 uker: 14 stolper, gap 4px', to.gap==='4px', to.gap);
-  // «Se lista →» → Vekst-fanen; datoen skjules utenfor Oversikt; navnet er fortsatt 26px.
+  // «Se lista →» → Vekst-fanen; navnet er 20px også der (mobil).
   await page.click('#segs [data-p="uke"]');
   await page.waitForSelector('#drivenBy [data-di-winback]');
   await page.click('#drivenBy [data-di-winback]');
   await page.waitForTimeout(200);
-  const v = await page.evaluate(() => ({ aktiv: document.querySelector('.panel.active').id, dato: !!document.getElementById('dashDato').offsetParent, navn: getComputedStyle(document.getElementById('barberName')).fontSize }));
+  const v = await page.evaluate(() => ({ aktiv: document.querySelector('.panel.active').id, navn: getComputedStyle(document.getElementById('barberName')).fontSize }));
   sjekk('«Se lista →» åpner Vekst', v.aktiv==='vekst', v.aktiv);
-  sjekk('Dato skjult på Vekst-fanen', !v.dato);
-  sjekk('Navnet 26px også på Vekst-fanen', v.navn==='26px', v.navn);
+  sjekk('Navnet 20px også på Vekst-fanen (mobil)', v.navn==='20px', v.navn);
   sjekk('vekst-interaksjon: ingen pageerror', st.errs.length===0, st.errs.join(' | ').slice(0,160));
   await ctx.close();
 }
