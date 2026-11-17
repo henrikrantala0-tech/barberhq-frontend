@@ -925,7 +925,7 @@
   #storyOpenOversikt[hidden]{display:none}
   #smsTilbudSe{flex:1;min-width:0;height:44px;appearance:none;border:1px solid var(--ov-btn-line);border-radius:8px;background:transparent;font-family:inherit;font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-.01em;cursor:pointer}
   #smsTilbudSe:hover{border-color:var(--mut)}
-  #oversikt .sms-tilbud{margin-top:20px}
+  #oversikt .sms-tilbud{margin-top:20px;background:var(--surface);border:1px solid var(--ov-seg-line);border-radius:12px;padding:18px}
   #oversikt .sms-tilbud .ovs-story-linje{margin-top:0}
   /* Kommende + I dag-radene (Oversikt-redesign 17.11): rader uten boks — klokkeslett (44px), navn, tjeneste
      høyrestilt, hårlinje over HVER rad, 13px vertikal padding (~46px rad). */
@@ -1103,7 +1103,7 @@
   /* «SMS av»-badge på rebooking-raden når sms_rebooking_enabled=false: tallene vises normalt (opptjent
      historikk), badgen viser at automatikken er av NÅ. Erstattet «Av»-maskeringen (14.09). ≈40 % blekk.
      Brukes av Vekst (di-off-badge) OG Oversikt (.hi-navn .di-off-badge). */
-  .di-off-badge{display:inline-block;margin-left:8px;font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--mut-2);border:1px solid var(--line-2);border-radius:5px;padding:1px 6px;vertical-align:middle}
+  .di-off-badge{display:inline-block;margin-left:8px;font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--mut-2);border:1px solid var(--line-2);border-radius:5px;padding:1px 6px;vertical-align:middle}
   /* Basis på Vekst-fanen: tre låste rader, INGEN total/lås-ikon (fjernet 14.09). opacity:.4 (IKKE rgba hvit —
      ville forsvunnet i lys modus) gir 40 % på tema-riktig blekk i begge moduser; maskert tekst bærer låsen.
      .di-basis-rows nuller 16px total→rader-gapet → første rad rett under undertittelen, ingen hull. */
@@ -1188,7 +1188,7 @@
   .gr-rad{display:flex;flex-direction:column;gap:4px;padding:15px 0;border-top:1px solid var(--ov-hair)}
   .gr-bunn{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;padding-top:18px;border-top:1px solid var(--ov-hair)}
   .gr-pris{display:flex;flex-direction:column;gap:3px}
-  .gr-pris b{font-size:16px;font-weight:700;letter-spacing:-.02em;color:var(--ink)}
+  .gr-pris b{font-size:16px;font-weight:600;letter-spacing:-.02em;color:var(--ink)}
   .gr-pris span{font-size:12.5px;color:var(--mut)}
   .gr-cta{flex-shrink:0;height:44px;padding:0 20px;appearance:none;border:0;border-radius:8px;background:var(--ink);color:var(--bg);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
   .gr-cta:hover{opacity:.9}
@@ -1237,18 +1237,19 @@
      Stegene er et rutenett [nr][ikon][tekst], så en lang linje brytes under teksten, ikke under
      ikonet. Ikonene er egne strek-SVG-er i samme stil som .nav-ico (1.8 strek, runde ender), 18px,
      toppjustert mot første tekstlinje (line-height 20px → 1px ned). */
-  .hs-kort{position:relative;background:var(--surface);border:1px solid var(--line);border-radius:12px;
-    padding:16px 18px 18px;margin:0 0 18px}
+  /* Midlertidige kort på Oversikt (Henrik 17.11): boks i ny stil — surface, 1px --ov-seg-line (#1f1f1f mørk), radius 12,
+     padding 18, ingen skygge. Tittel 15/600/-0.01em, brødtekst 13.5/400 dempet/1.5, knapper som resten av Oversikt (46px, r8). */
+  .hs-kort{position:relative;background:var(--surface);border:1px solid var(--ov-seg-line);border-radius:12px;
+    padding:18px;margin:18px 0}
   .hs-kort[hidden],.hs-kort [hidden]{display:none}
-  .hs-kort-h{font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--ink);margin:0 34px 4px 0;line-height:1.3}
-  .hs-kort-s{font-size:13px;color:var(--mut);line-height:1.45;margin:0 0 14px}
+  .hs-kort-h{font-size:15px;font-weight:600;letter-spacing:-.01em;color:var(--ink);margin:0 34px 12px 0;line-height:1.3}
   .hs-kort-x{position:absolute;top:8px;right:8px;width:40px;height:40px;border-radius:8px;border:0;background:0;
     color:var(--mut);font-size:20px;line-height:1;cursor:pointer}
   .hs-kort-x:hover{color:var(--ink);background:rgba(127,127,127,.14)}
   .hs-steg{list-style:none;margin:0;padding:0;display:grid;gap:10px;counter-reset:hs}
   .hs-steg li{display:grid;grid-template-columns:12px 18px minmax(0,1fr);column-gap:10px;align-items:start;
     font-size:13.5px;line-height:20px;color:var(--ink-2)}
-  .hs-steg li::before{counter-increment:hs;content:counter(hs);font-size:12px;font-weight:700;color:var(--mut);text-align:right}
+  .hs-steg li::before{counter-increment:hs;content:counter(hs);font-size:12px;font-weight:600;color:var(--mut);text-align:right}
   .hs-steg li.hs-hint{margin-top:-4px;font-size:12.5px;color:var(--mut)}
   .hs-steg li.hs-hint::before{counter-increment:none;content:''}
   .hs-steg b{font-weight:600;color:var(--ink)}
@@ -1257,10 +1258,10 @@
   .hs-ic .hs-fyll{fill:currentColor;stroke:none}
   .hs-ic .hs-paa{fill:var(--good);stroke:var(--good)}
   .hs-ic .hs-knott{fill:#fff;stroke:none}
-  .hs-kort-tekst{font-size:13.5px;line-height:1.45;color:var(--ink-2);margin:0}
+  .hs-kort-tekst{font-size:13.5px;font-weight:400;line-height:1.5;color:var(--mut);margin:0}
   /* Innebygd nettleser: tekst → (snarvei) → steg → kopier-knapp → ev. reservefelt. */
   [data-hs="innebygd"] .hs-kort-tekst{margin-bottom:12px}
-  .hs-snarvei{font-size:13px;line-height:1.45;color:var(--ink-2);margin:0 0 12px}
+  .hs-snarvei{font-size:13.5px;font-weight:400;line-height:1.5;color:var(--mut);margin:0 0 12px}
   .hs-snarvei b{font-weight:600;color:var(--ink)}
   /* Del-symbolet inne i snarvei-linja: samme strek-SVG som Del-steget i iOS-stegene, skalert til
      tekstlinja (13px) og sentrert mot x-høyden i stedet for steg-ikonenes toppjustering. */
@@ -1272,10 +1273,10 @@
   .hs-lenke-hjelp{font-size:12.5px;color:var(--mut);margin:6px 0 0}
   /* «Få din første booking» (Oversikt, øverst). Samme kortflate som hjemskjerm-kortet. Hvert steg er
      [kryss][innhold]; krysset er en 44px trykkflate rundt en 20px sirkel. Ingen teller, ingen prosent. */
-  .fb-kort{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:16px 18px 18px;margin:0 0 18px}
+  .fb-kort{background:var(--surface);border:1px solid var(--ov-seg-line);border-radius:12px;padding:18px;margin:18px 0}
   .fb-kort[hidden],.fb-kort [hidden]{display:none}
-  .fb-h{font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--ink);margin:0 0 4px;line-height:1.3}
-  .fb-s{font-size:13px;color:var(--mut);line-height:1.45;margin:0 0 6px}
+  .fb-h{font-size:15px;font-weight:600;letter-spacing:-.01em;color:var(--ink);margin:0 0 4px;line-height:1.3}
+  .fb-s{font-size:13.5px;font-weight:400;color:var(--mut);line-height:1.5;margin:0 0 6px}
   .fb-steg{list-style:none;margin:0;padding:0}
   .fb-steg li{display:grid;grid-template-columns:28px minmax(0,1fr);column-gap:6px;align-items:start;padding:12px 0 0}
   .fb-steg li + li{border-top:1px solid var(--line);margin-top:12px}
@@ -1287,17 +1288,23 @@
   .fb-kryss[aria-checked="true"]::before{background:var(--ink);border-color:var(--ink)}
   .fb-kryss[aria-checked="true"] svg{opacity:1}
   html.tastatur .fb-kryss:focus{outline:2px solid var(--info);outline-offset:-6px;border-radius:12px}
-  .fb-tittel{font-size:14px;font-weight:700;color:var(--ink);margin:0;line-height:20px}
+  .fb-tittel{font-size:14px;font-weight:600;color:var(--ink);margin:0;line-height:20px}   /* stegnavn = radnavn → 600 */
   li[data-ferdig] .fb-tittel{color:var(--mut)}
-  .fb-tekst{font-size:13px;color:var(--mut);line-height:1.45;margin:4px 0 0}
+  .fb-tekst{font-size:13.5px;font-weight:400;color:var(--mut);line-height:1.5;margin:4px 0 0}
   .fb-melding{font-size:13px;color:var(--ink-2);line-height:1.45;margin:8px 0 0;padding:8px 10px;border-radius:8px;
     background:var(--bg);overflow-wrap:anywhere}
-  .fb-knapp{margin-top:10px;min-height:44px}
+  .fb-knapp{margin-top:10px}
+  /* Knapper i de midlertidige kortene = Oversiktens knapper: 46px, radius 8, 14/600. Primær = ink-fyll (hvit i mørk). */
+  .fb-kort .fb-knapp,.hs-kort .btn,#oversikt .sms-tilbud #smsTilbudSe{display:inline-flex;align-items:center;justify-content:center;height:46px;min-height:46px;padding:0 18px;border-radius:8px;font-size:14px;font-weight:600;letter-spacing:-.01em}
+  .fb-kort .fb-knapp{background:transparent;border:1px solid var(--ov-btn-line);color:var(--ink)}
+  .fb-kort .fb-knapp:hover{border-color:var(--mut)}
+  .hs-kort .btn,#oversikt .sms-tilbud #smsTilbudSe{width:100%;background:var(--ink);color:var(--bg);border:1px solid var(--ink)}
+  .hs-kort .btn:hover,#oversikt .sms-tilbud #smsTilbudSe:hover{opacity:.9}
   /* Krympet (alle tre krysset, ingen booking ennå): én linje + «Vis stegene». Kortet beholder flaten,
      men med mindre luft — det skal ikke ta plass fra resten av Oversikt. */
   .fb-kort.fb-krympet{padding:12px 18px}
   .fb-krympet-rad{display:flex;align-items:center;justify-content:space-between;gap:4px 12px;flex-wrap:wrap}
-  .fb-krympet-rad p{font-size:13.5px;line-height:1.45;color:var(--ink-2);margin:0;flex:1 1 220px}
+  .fb-krympet-rad p{font-size:13.5px;font-weight:400;line-height:1.5;color:var(--mut);margin:0;flex:1 1 220px}
   .fb-vis{appearance:none;font:inherit;font-size:13px;font-weight:600;color:var(--info);background:0;border:0;
     padding:12px 0;margin:-12px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
   .fb-vis:hover{color:var(--ink)}
@@ -1943,7 +1950,6 @@
     <div class="hs-kort" id="hsKort" hidden>
       <button class="hs-kort-x" id="hsKortX" type="button" aria-label="Lukk">&times;</button>
       <p class="hs-kort-h">Legg BarberHQ på hjemskjermen</p>
-      <p class="hs-kort-s">Da åpner du dashbordet som en app, rett fra hjemskjermen.</p>
       <!-- iPhone: Safari og Chrome (Del finnes i begge; i Safari med kompakt fanelinje ligger den bak ⋯) -->
       <ol class="hs-steg" data-hs="ios" hidden>
         <li><svg class="hs-ic" viewBox="0 0 24 24" aria-hidden="true"><path d="M8.5 9.5H7a2 2 0 0 0-2 2v7.5a2 2 0 0 0 2 2h10a2 2 0 0 0 2-2v-7.5a2 2 0 0 0-2-2h-1.5"/><path d="M12 3v11.5M8.5 6.5 12 3l3.5 3.5"/></svg><span>Trykk <b>Del</b></span></li>
@@ -1975,7 +1981,7 @@
       </div>
       <!-- Android Chrome med beforeinstallprompt: ekte installer-knapp -->
       <div data-hs="android-installer" hidden>
-        <p class="hs-kort-tekst">Ett trykk, så ligger dashbordet på startskjermen.</p>
+        <p class="hs-kort-tekst">Ett trykk, så ligger dashbordet på hjemskjermen.</p>
         <button class="btn hs-installer" id="hsInstaller" type="button">Installer</button>
       </div>
       <!-- Android uten prompt (annen nettleser, eller Chrome som ikke tilbyr det nå): menyen -->

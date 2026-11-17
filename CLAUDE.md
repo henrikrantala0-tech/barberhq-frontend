@@ -417,8 +417,17 @@ Kilde: Henriks `oversikt-vekst` / `oversikt-gratis` / `hentet-inn-vekst-tom` (.d
   Midlertidige kort (første booking, hjemskjerm, «Fullfør siden») står over seksjonene, uendret.
 - **Tokens `--ov-*`** (hårlinje, segment, knappramme, 0-stolpe, Hentet inn-stripa): mørk = designets hex nøyaktig,
   lys = egne motstykker. Ingen gradienter på Oversikt.
-- **Skrifttykkelse (Henrik 17.11):** 800 BARE på tall (neste time, nøkkeltallene, Hentet inn-totalen). Tekst ett hakk
-  ned: butikknavn 700, tomtilstander («Ingen bookinger i dag.» m.fl.) 20px/600, Gratis-overskriften 22px/700.
+- **Vekt-regel på Oversikt (Henrik 17.11 — gjelder header, Oversikt-panelet og bunnmenyen):**
+  - **800:** bare de store tallene (neste time, nøkkeltallene, Hentet inn-totalen)
+  - **700:** butikknavnet og Gratis-overskriften i Hentet inn
+  - **600:** korttitler, tomtilstander, etiketter, radnavn, tall i rader (klokkeslett, beløp per rad, pris), knapper,
+    valgt tilstand (periode, fane), merker og stegnumre, uthevede ord
+  - **500/400:** resten · **300:** bare «kr» etter de store tallene
+  Kartlegging av faktiske vekter: `node tools/render/oversikt-kort.mjs` skriver en VEKT-KARTLEGGING (feiler ikke testen).
+- **Midlertidige kort** (første booking, hjemskjerm, «Fullfør siden», SMS-tilbud): boks i ny stil — `--surface`, 1px
+  `--ov-seg-line`, radius 12, padding 18, ingen skygge; tittel 15/600, brødtekst 13.5/400 dempet, knapper 46px/r8.
+  Hjemskjerm-kortet har ÉN tekstlinje bare i Android-Installer-varianten («Ett trykk, så ligger dashbordet på
+  hjemskjermen.»); iPhone/innebygd/meny viser tittel + steg (ikke «ett trykk» — det er flere steg der). Vakt: `oversikt-kort.mjs`.
 - **Header (alle faner), ÉN rad, ingen dato:** desktop = navn 26px/700 (`FIT_MIN` 18, stabling som før) + full lenke + ikon
   til høyre, teksten åpner siden. **Mobil (<720) — navnet har forrang** (`fitShopnavnMobil`): navnet helt i 20px/700
   (flex:0 0 auto); lenka tar resten (flex:1 1 0, min 44px, høyrestilt) som «/<slug>» 12.5px/500 `--info` + ikon 15px,
