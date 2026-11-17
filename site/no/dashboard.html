@@ -63,6 +63,10 @@
     --warn:#bf9000;
     /* Tjeneste-posisjon 5 (lilla) og 6 (lyseblå) i kalenderblokkene. Mørkere på lys tema. */
     --violet:#7c4dd6;--sky:#2b93c9;
+    /* Oversikt-redesign (17.11.2026): hårlinjer, segmentvelger, knappramme, 0-stolpe og Hentet inn-stripa.
+       Mørk tema = designets verdier nøyaktig (under html[data-theme="dark"]); her lyse motstykker. */
+    --ov-hair:#ebebeb;--ov-seg-line:#e2e2e2;--ov-seg-sel:#e9e9e9;--ov-btn-line:#d4d4d4;--ov-null:#e2e2e2;
+    --ov-a1:#1a7a44;--ov-a2:rgba(26,122,68,.55);--ov-a3:rgba(26,122,68,.28);
   }
   *{margin:0;padding:0;box-sizing:border-box}
   /* Dashbordet ligger fast som en app: manipulation fjerner dobbelttrykk-zoom + 300ms-forsinkelsen
@@ -92,7 +96,7 @@
   input,select,textarea{font-size:16px}
   .wrap{max-width:1120px;margin:0 auto;padding:0 24px}
 
-  .top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:7px 0;border-bottom:1px solid var(--line)}
+  .top{display:flex;align-items:center;justify-content:space-between;gap:16px;padding:18px 0 12px;border-bottom:1px solid var(--line)}
   /* Stablet (fitShopnavn): navnet på egen linje, bookinglenka på linja under. Brukes når navnet ikke får plass ved siden av
      lenka — ellers ble begge avkortet side om side på 320. */
   .top.stablet{flex-wrap:wrap;row-gap:4px}
@@ -104,15 +108,17 @@
      dyttet før forbi viewporten (H5: 31-tegns navn = 62px horisontal overflow @320 → hele dashbordet
      kunne swipes sidelengs). Derfor: min-width:0 + overflow/ellipsis så navnet KRYMPER og avkortes
      med «…» i stedet for å sprenge raden. Voktet av tools/render/overflow-mobil.mjs (langt navn). */
-  .shopnavn{font-size:14px;font-weight:700;letter-spacing:-.01em;line-height:1.15;min-height:1.15em;color:var(--ink);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}   /* min-height: tomt navn (feilet /profile) holder én linjes høyde */
+  .shopnavn{font-size:26px;font-weight:800;letter-spacing:-.035em;line-height:1.1;min-height:1.1em;color:var(--ink);white-space:nowrap;min-width:0;overflow:hidden;text-overflow:ellipsis}   /* min-height: tomt navn (feilet /profile) holder én linjes høyde */
   /* Før barberens navn er lastet: nøytral skjelett-linje, samme høyde som én linje navn (14px × 1.15),
      så headeren ikke hopper når navnet kommer. Fjernes av settHeaderNavn() — også når /profile feiler. */
-  .shopnavn.laster{display:inline-block;width:120px;max-width:45%;height:1.15em;border-radius:4px;background:var(--line);vertical-align:middle}
+  .shopnavn.laster{display:inline-block;width:160px;max-width:55%;height:1.1em;border-radius:4px;background:var(--line);vertical-align:middle}
   /* BarberHQ-ordmerket er FJERNET fra headeren (flyttet til bunnen av Konto-fanen, .konto-brand).
      Headeren viser butikknavnet (venstre) + avkuttet bookinglenke m/kopi-knapp (høyre). .dash-brand
      er flex-wrapperen rundt navnet; min-width:0 så den kan gi etter og la navnet krympe/avkortes
      (fitShopnavn font-krymper #barberName mot clientWidth før CSS-ellipsen overtar). */
-  .dash-brand{display:flex;align-items:center;min-width:0;min-height:22px}   /* reserverer bookinglenkas høyde (.pub-copy 22px) fra start: headeren hopper ikke når lenka kommer */
+  .dash-brand{display:flex;flex-direction:column;align-items:stretch;justify-content:center;gap:7px;min-width:0;min-height:22px}   /* kolonne: navn + dato (Oversikt). stretch → #barberName får hele bredden, så fitShopnavn måler mot den. min-height reserverer bookinglenkas høyde (.pub-copy 22px) */
+  .dash-dato{font-size:12.5px;color:var(--mut);line-height:1.2;white-space:nowrap}
+  .dash-dato[hidden]{display:none}
   .brand{font-weight:800;font-size:19px;letter-spacing:-.03em}
   .brand .hq{font-weight:300}
   /* .who (stablet navn+lenke) er fjernet — headeren er nå én rad: .shopnavn + .header-lenke. */
@@ -137,27 +143,19 @@
   @media(min-width:720px){
     #oversikt,#vekst,#tjenester,#design,#abonnement{max-width:680px;margin-left:auto;margin-right:auto}
     .topband>.wrap{max-width:728px}
-    /* Restgap etter desktop-bredde-fiksen: «Drevet av»-radene (.di-row space-between) har bare
-       ~170px innhold, så på det 680px-kappede panelet sprer arm og verdi seg med ~470px void
-       imellom. Kapp .di-rows til 320px så arm venstre + verdi høyrejustert leses som én rad.
-       KUN 720+ — mobil (<720) er urørt (gapet er ~120px der, naturlig). */
-    #drivenBy .di-rows{max-width:320px}
   }
   .panel.active{display:block}
 
   /* Period selector */
-  .periodbar{display:flex;flex-direction:column;align-items:flex-start;gap:12px;margin-bottom:24px}
   .segs{display:inline-flex;flex-wrap:wrap;background:var(--surface);border:1px solid var(--line-2);border-radius:9px;padding:3px}
   .segs button{appearance:none;border:0;background:0;font:inherit;font-size:12.5px;font-weight:500;color:var(--mut);padding:6px 13px;border-radius:6px;cursor:pointer;letter-spacing:-.01em}
   .segs button[aria-selected=true]{background:var(--ink);color:#fff}
   /* Vekst-fanens periodevelger (#attrPeriod, design turn 3) — kompakt segmentert kontroll.
      Designets dark-hexer er tema-mappet (som resten av panelet) så den også virker i lys modus:
-     #0e0e0e→--bg, #242424→--line, aktiv → --ink (lys) / #2563eb (mørk, som #segs). Oversikt-panelet
-     har INGEN velger (frikoblet, siste_maaned — da564bd). */
-  /* DELT periodevelger — #segs (Oversikt) + #attrPeriod (Vekst). ÉN kilde, aldri drift. 40px alle bredder. */
+     #0e0e0e→--bg, #242424→--line, aktiv → --ink (lys) / #2563eb (mørk). Oversikt bruker IKKE denne lenger —
+     den har egen .ovs-seg (Oversikt-redesign 17.11). .perbar er nå KUN Veksts #attrPeriod. */
   .perbar{position:relative;display:flex;gap:3px;height:40px;box-sizing:border-box;padding:3px;background:var(--bg);border:1px solid var(--line);border-radius:10px}
   .perbar[hidden]{display:none}
-  #segs{width:100%}   /* #segs er flex-item i .periodbar (column) → må fylle bredden (#attrPeriod fyller #attrKort selv) */
   .perbar-btn{flex:1;min-width:0;border:none;border-radius:8px;background:transparent;font-family:inherit;font-size:12px;font-weight:600;color:var(--mut);cursor:pointer;letter-spacing:-.01em;white-space:nowrap;display:inline-flex;align-items:center;justify-content:center}
   .perbar-btn:hover{color:var(--ink)}
   .perbar-btn[aria-selected=true]{background:var(--ink);color:#fff}
@@ -176,7 +174,6 @@
   .perseg-meny button:hover{background:var(--line)}
   .perseg-meny button[aria-selected=true]{background:var(--line);color:var(--ink);font-weight:600}
   .perseg-meny button[aria-selected=true]::after{content:"✓";color:var(--mut);font-weight:600}
-  .rangelabel{font-size:13px;color:var(--mut);letter-spacing:-.01em;font-weight:500}
 
   /* Stat row */
   .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:1px;background:var(--line);border:1px solid var(--line);border-radius:12px;overflow:hidden;margin-bottom:8px}
@@ -292,7 +289,7 @@
   /* 44px trykkflate uten å endre visuell størrelse: usynlig ::after sentreres på knappen
      og tvinges til minst 44x44 (min-width/height) mens knappen beholder sin egen størrelse.
      Klikk på ::after bobler til knappen. Gjelder små ikon-/tekstknapper. WCAG 2.5.5. */
-  .slot-act-btn::after,.noshowbtn::after,.verv-btn::after,.suksess-x::after,.pause-modal-close::after,body.fokus .fokus-x::after,.svc-rm::after,.di-pv-link::after{content:"";position:absolute;top:50%;left:50%;width:100%;height:100%;min-width:44px;min-height:44px;transform:translate(-50%,-50%)}
+  .slot-act-btn::after,.noshowbtn::after,.verv-btn::after,.suksess-x::after,.pause-modal-close::after,body.fokus .fokus-x::after,.svc-rm::after{content:"";position:absolute;top:50%;left:50%;width:100%;height:100%;min-width:44px;min-height:44px;transform:translate(-50%,-50%)}
   .slot-menu-btn:hover{background:var(--bad)}
   .slot-popup{position:fixed;z-index:300;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.55);min-width:136px;overflow:hidden;display:none}
   .slot-popup.open{display:block}
@@ -438,6 +435,8 @@
     --good:#3ecf7e;--good-bg:#10241a;--bad:#ff6b5e;--bad-bg:#2c1512;--info:#4d8bff;--info-bg:#11203b;
     --warn:#f5d93a;   /* sitron-/løvetann-gul for påminnelse-prikk; ~14:1 på mørk --surface/#0a0a0a */
     --violet:#b18cf0;--sky:#5cc4f0;   /* tjeneste-posisjon 5/6, lysere på mørk tema */
+    --ov-hair:#1a1a1a;--ov-seg-line:#1f1f1f;--ov-seg-sel:#262626;--ov-btn-line:#2a2a2a;--ov-null:#262626;
+    --ov-a1:#3ecf7e;--ov-a2:rgba(62,207,126,.55);--ov-a3:rgba(62,207,126,.28);
   }
   html[data-theme="dark"] .btn{background:#fff;color:#0a0a0a}
   /* Valgt periode-pille: merke-default-blå #2563eb (landing-CTA-en «Prøv gratis»), bevisst
@@ -760,7 +759,7 @@
   .subcard .sms-fot[hidden]{display:none}
   /* SMS-tilbud på Oversikt: samme mønster og plass som «Lag story»-inngangen (linje + flatknapp). */
   .sms-tilbud[hidden]{display:none}
-  .sms-tilbud-knapper{display:flex;align-items:center;gap:14px;margin:0 0 28px}
+  .sms-tilbud-knapper{display:flex;align-items:center;gap:14px;margin:8px 0 0}
   .sms-tilbud-knapper .lnk-quiet{margin-top:0;flex-shrink:0}
   /* Publisering — egen blokk under abonnementskortet. Gjenbruker .subcard/.substatus. */
   .pubcard{margin-top:22px}
@@ -905,33 +904,50 @@
   /* Kort-flate (var(--card) finnes ikke i temaet → --surface = kort-fargen), IKKE hvit (hvit er reservert
      «Oppgrader til Vekst»). Leser som trykkbar flate mot panelets --bg, konkurrerer ikke med oppsalget. */
   /* «Åpne kalender» + «Legg til booking» side om side under Kommende — samme knapp, delt bredde. */
-  .up-knapper{display:flex;gap:8px;margin:12px 0 28px}
-  .up-knapp{flex:1;min-width:0;height:48px;appearance:none;border:1px solid var(--line);border-radius:10px;background:var(--surface);font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 10px}
-  .up-knapp:hover{background:var(--line)}   /* litt lysere flate (mørk: #242424 > surface; lys: subtil grå) */
+  /* Oversikt-redesign: «Åpne kalender» (hvit fyll — primær, tema-invertert) + «Legg til booking» (ramme), like brede, 46px. */
+  .up-knapper{display:flex;gap:10px;margin:18px 0 0}
+  .up-knapp{flex:1;min-width:0;height:46px;appearance:none;border:1px solid var(--ov-btn-line);border-radius:8px;background:transparent;font-family:inherit;font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-.01em;cursor:pointer;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;padding:0 10px}
+  .up-knapp:hover{border-color:var(--mut)}
+  .up-knapp.up-knapp-hoved{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+  .up-knapp.up-knapp-hoved:hover{opacity:.9}
   /* Fast «Lag story»-inngang på Oversikt (under Kommende bookinger). Full-bredde, åpner SAMME generator-
      modal (#storyOverlay) som Vekst-kortet, i posisjon over Oversikt. Tall-linja kommer i Commit 2. */
   /* Tall-linje over «Lag story»-knappen (Commit 2): «Du har N ledige timer i dag/i morgen». Skjult (hidden) til /ledige svarer med antall>0. */
-  .ovs-story-linje{margin:0 0 8px;font-size:13px;font-weight:500;color:var(--ink-2);letter-spacing:-.01em}
+  /* «Du har N ledige timer i dag/i morgen» + SMS-tilbudets linje: dempet 13.5px (Oversikt-redesign). */
+  .ovs-story-linje{margin:12px 0 0;font-size:13.5px;line-height:1.5;color:var(--mut);letter-spacing:-.01em}
   .ovs-story-linje[hidden]{display:none}
-  /* Fullbooket (har_ledige:false): dempet linje i stedet for «Lag story»-knappen. Samme luft under som knappen. */
-  .ovs-story-fullt{margin:0 0 28px;font-size:13px;color:var(--mut);letter-spacing:-.01em}
+  /* Fullbooket (har_ledige:false): dempet linje i stedet for «Lag story»-lenka. */
+  .ovs-story-fullt{margin:12px 0 0;font-size:13.5px;color:var(--mut);letter-spacing:-.01em}
   .ovs-story-fullt[hidden]{display:none}
-  #storyOpenOversikt,#smsTilbudSe{display:block;width:100%;height:48px;margin:0 0 28px;appearance:none;border:1px solid var(--line-2);border-radius:10px;background:var(--surface);font-family:inherit;font-size:13.5px;font-weight:600;color:var(--ink);letter-spacing:-.01em;cursor:pointer}
-  #storyOpenOversikt[hidden]{display:none}   /* author display:block ellers slår UA [hidden] → vakt mot vis-alltid */
-  #storyOpenOversikt:hover,#smsTilbudSe:hover{border-color:var(--ink)}
-  #smsTilbudSe{margin:0;flex:1;min-width:0}
-  .up-day{margin:0 0 4px;font-size:11px;font-weight:600;letter-spacing:.04em;text-transform:uppercase;color:var(--mut)}
-  .up-day:not(:first-child){margin-top:14px}
-  .up-row{display:flex;align-items:center;gap:10px;min-height:56px;border-top:1px solid var(--line)}
-  .up-row:first-of-type{border-top:none}   /* første rad uten hårlinje; øvrige skiller med hårlinje */
-  .up-time{min-width:44px;font-size:13px;font-weight:600;color:var(--info);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
-  /* IKKE flex:1: det svellet navnet og skjøv tjenesten til høyre kant → stort tomrom mellom kort
-     navn og tjeneste (punkt 4). Uten grow ligger navn + tjeneste gruppert til venstre etter
-     klokkeslettet (rad-gap 10px imellom), tomrommet samles som luft til høyre. min-width:0 lar
-     et langt navn krympe i stedet for å dytte tjenesten ut av raden. */
-  .up-name{font-size:14px;font-weight:500;min-width:0}
-  .up-svc{font-size:12px;color:var(--mut);flex-shrink:0}
-  .up-empty{margin:0;padding:0 0 2px;font-size:12.5px;line-height:1.2;color:var(--mut)}   /* tom dag: dempet + minimal (~17px), IKKE 56px radhøyde */
+  /* Blå tekstlenke (story-inngangen, «Se lista →»): knapp/lenke uten flate, 44px trykkhøyde. */
+  .ovs-lenke{display:inline-flex;align-items:center;min-height:44px;padding:0;appearance:none;background:none;border:0;font-family:inherit;font-size:13.5px;font-weight:500;color:var(--info);letter-spacing:-.01em;cursor:pointer;text-align:left;text-decoration:none}
+  .ovs-lenke:hover{text-decoration:underline}
+  .ovs-lenke[hidden]{display:none}   /* author display:inline-flex slår ellers UA [hidden] */
+  #storyOpenOversikt{display:flex;margin-top:4px}
+  #storyOpenOversikt[hidden]{display:none}
+  #smsTilbudSe{flex:1;min-width:0;height:44px;appearance:none;border:1px solid var(--ov-btn-line);border-radius:8px;background:transparent;font-family:inherit;font-size:14px;font-weight:600;color:var(--ink);letter-spacing:-.01em;cursor:pointer}
+  #smsTilbudSe:hover{border-color:var(--mut)}
+  #oversikt .sms-tilbud{margin-top:20px}
+  #oversikt .sms-tilbud .ovs-story-linje{margin-top:0}
+  /* Kommende + I dag-radene (Oversikt-redesign 17.11): rader uten boks — klokkeslett (44px), navn, tjeneste
+     høyrestilt, hårlinje over HVER rad, 13px vertikal padding (~46px rad). */
+  .up-gruppe{margin-bottom:8px}
+  .up-gruppe:last-child{margin-bottom:0}
+  .up-day{margin:0;padding:6px 0 4px;font-size:12.5px;font-weight:500;color:var(--mut)}
+  .up-row{display:flex;align-items:center;gap:16px;padding:13px 0;border-top:1px solid var(--ov-hair);cursor:pointer}
+  .up-time{width:44px;flex-shrink:0;font-size:14px;font-weight:600;color:var(--ink);font-variant-numeric:tabular-nums;letter-spacing:-.01em}
+  .up-name{flex:1;min-width:0;font-size:14px;color:var(--ink-2);overflow-wrap:anywhere}
+  .up-svc{max-width:45%;flex-shrink:0;font-size:13px;color:var(--mut);text-align:right;overflow-wrap:anywhere}
+  .up-empty{margin:0;font-size:13.5px;line-height:1.5;color:var(--mut)}
+  /* I DAG: neste booking stort (klokkeslett 38px) + navn/tjeneste ved siden av, nedtelling under. */
+  .idag-neste{display:flex;align-items:flex-end;gap:18px;cursor:pointer}
+  .idag-tid{flex-shrink:0;font-size:38px;font-weight:800;letter-spacing:-.045em;line-height:.9;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .idag-hvem{display:flex;flex-direction:column;gap:4px;min-width:0;padding-bottom:1px}
+  .idag-navn{font-size:16px;font-weight:600;letter-spacing:-.01em;color:var(--ink);overflow-wrap:anywhere}
+  .idag-svc{font-size:13px;color:var(--mut)}
+  .idag-om{margin:12px 0 0;font-size:12.5px;font-weight:500;color:var(--info)}
+  .idag-rader{margin-top:20px}
+  .idag-tom{margin:0;font-size:22px;font-weight:700;letter-spacing:-.03em;line-height:1.15;color:var(--ink)}
   @media (max-width:375px){ #upcomingList{max-height:362px} }
   /* «Intern utvidelse»-form (FASIT): rammet boks, full bredde, sentrert, chevron ▾/▴, dempet
      farge. Delt av Kommende bookinger, Siste bookinger, Verving og SMS-logg. padding 12px gir
@@ -970,15 +986,23 @@
   .mbar.gull{filter:drop-shadow(0 0 2px rgba(255,224,138,.9)) drop-shadow(0 0 8px rgba(240,194,75,.55)) drop-shadow(0 0 16px rgba(240,194,75,.28))} /* identisk glød som Oversikts .rekord-gull */
   /* Gull-tallet gjenbruker .rekord-gull (samme gradient + glød som Oversikts rekord-KPI) — se renderMonthChart */
   /* ----- Stolpediagram (omsetning) ----- */
-  .chart-wrap{background:var(--surface);border:1px solid var(--line);border-radius:12px;padding:20px 22px;margin-bottom:24px;position:relative}
-  .chart-header{display:flex;align-items:flex-start;justify-content:space-between;gap:12px;margin-bottom:16px;flex-wrap:wrap;min-height:52px}
-  .chartbars{display:flex;align-items:flex-end;gap:5px;height:160px;padding:0 2px}
-  .cbar-col{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:4px;min-width:0}
+  /* Oversikt-redesign (17.11): diagrammet står uten kort og uten egen overskrift. 72px stolpeområde
+     (.cbar-spor), ENSFARGET fyll (--bar-c = grunnfargen fra colorForRatio, se renderBarChart), radius 3.
+     0-dager: 3px i --ov-null. Gap 8px (7 stolper) → 4px (14) → 2px (måned), så 31 stolper får plass på 320. */
+  .chart-wrap{position:relative;margin:26px 0 0}
+  .chartbars{display:flex;gap:8px}
+  .chartbars.n14{gap:4px}
+  .chartbars.nmnd{gap:2px}
+  .cbar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;min-width:0}
+  .cbar-spor{width:100%;height:72px;display:flex;align-items:flex-end;justify-content:center}
   /* Entré-/vekst-animasjonen skalerer med transform (scaleY), ikke height — height-transition ga
      hvert stolpe-lag en iOS-repaint-feil ved temabytte. transform-origin:bottom → vokser opp fra aksen. */
-  .cbar-bar{width:100%;max-width:52px;border-radius:4px 4px 0 0;background:linear-gradient(180deg,var(--bar-top),var(--bar-bot));min-height:4px;transform-origin:bottom;transition:transform .25s ease}
-  .cbar-lbl{font-size:10px;color:var(--mut);text-transform:uppercase;letter-spacing:.02em;white-space:nowrap;text-align:center;line-height:1.3}
-  .cbar-lbl-sub{font-size:9px;display:block;opacity:.7;text-transform:none;letter-spacing:0}
+  .cbar-bar{width:100%;max-width:56px;border-radius:3px;background:var(--bar-c);transform-origin:bottom;transition:transform .25s ease}
+  .cbar-bar.null{background:var(--ov-null)}
+  .cbar-lbl{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:0;white-space:nowrap;text-align:center;line-height:1.2}
+  .cbar-col.idag .cbar-lbl>span:first-child,.cbar-col.idag .cbar-lbl:not(:has(span)){color:var(--ink)}
+  .cbar-lbl-sub{font-size:10.5px;font-weight:400;color:var(--mut);text-transform:none;font-variant-numeric:tabular-nums}
+  .chartbars.nmnd .cbar-lbl{font-size:10px}
   /* Månedsvisning på smal skjerm: 28–31 dagnr-etiketter overlapper (31×~20px=620px > 430px).
      Tynn ut til hver 5. (1,5,10,15,20,25,30) via visibility — stolpene og kolonnebreddene
      står urørt, kun teksten skjules. Over 700px vises alle 31 igjen. */
@@ -989,7 +1013,6 @@
   @media(max-width:430px){ .cbar-lbl-minor2{visibility:hidden} }
   /* ----- Diagram-HUD + magnetisk touch (lag 2, additivt) ----- */
   #chartBars{touch-action:pan-y}
-  .chart-wrap.sel .chart-head-default{display:none}
   /* HUD som forankret kort (variant A) — absolutt i .chart-wrap, pointer-events:none så tap/skann treffer stolpene under */
   .chart-hud{position:absolute;display:none;z-index:5;box-sizing:border-box;width:194px;
     background:#151515;border:1px solid #2a2a2a;border-radius:12px;padding:11px 12px;
@@ -1013,19 +1036,10 @@
   @keyframes barlift{from{transform:translateY(0)}to{transform:translateY(-6px)}}
   .chart-pointer{position:absolute;width:2px;border-radius:2px;background:var(--mut);opacity:.5;pointer-events:none;display:none;transition:left .09s ease-out,height .09s ease-out}
   .chart-wrap.sel .chart-pointer{display:block}
-  /* ----- Uke-rekord: dempet fotnote + gull-tilstand (lag 4, additivt) ----- */
-  .rekord-note{font-size:11px;color:var(--mut-2);margin-top:3px;font-weight:500;letter-spacing:-.01em}
-  /* ----- Uke-innsikt: persentil + rekord-progress-bar (batch 2) ----- */
-  .week-insight{display:flex;flex-direction:column;gap:8px;margin:2px 0 20px}
-  .week-insight[hidden]{display:none}
-  .wi-pct{font-size:12px;color:var(--mut-2);font-weight:500;letter-spacing:-.01em}
-  .wi-pct[hidden]{display:none}
-  .wi-record[hidden]{display:none}
-  .wi-track{height:6px;border-radius:99px;background:var(--line);overflow:hidden}
-  .wi-fill{height:100%;border-radius:99px;background:var(--good);transition:width .5s cubic-bezier(.165,.84,.44,1)}
-  .wi-fill.rekord{background:linear-gradient(90deg,#F0C24B,#FFE08A)}
-  .wi-text{font-size:12px;color:var(--mut-2);font-weight:500;letter-spacing:-.01em;margin-top:2px}
-  .wi-text.rekord{color:#E8B84B;font-weight:600}
+  /* ----- ÉN dempet linje under nøkkeltallene (#rekordNote): beste uke / rekord / «X kr unna» / persentil ----- */
+  .ovs-note{margin:16px 0 0;font-size:12.5px;line-height:1.4;color:var(--mut);letter-spacing:-.01em}
+  .ovs-note:empty{display:none}
+  .ovs-note.rekord{color:#E8B84B;font-weight:600}
   .rekord-gull{
     background:linear-gradient(180deg,#FFF4B2 0%,#FFE08A 38%,#F0C24B 72%,#C8960F 100%);
     -webkit-background-clip:text;background-clip:text;
@@ -1072,16 +1086,8 @@
   .drv-empty-mark{width:40px;height:40px;border-radius:50%;background:var(--good-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:20px;color:var(--good)}
   .drv-empty-h{margin:0 0 8px;font-size:16px;font-weight:600;color:var(--ink-2)}
   .drv-empty-p{margin:0 auto;max-width:280px;font-size:13px;color:var(--mut);line-height:1.55}
-  /* «Hvor kundene kommer fra» v2 — Hentet inn + På vei. Farger fra tema-variablene (adapterer lys/mørk;
-     designets dark-hex #141414/#242424/#8a8a8a/#cfcfcf/#4d8bff = mørk-tema-verdiene). Ingen prikker. */
-  .di-card{background:var(--surface);border:1px solid var(--line);border-radius:16px;overflow:hidden}
-  /* .ovs-h = DELT seksjonsoverskrift på Oversikt (ÉN kilde for størrelse/vekt/linjehøyde). Brukes av
-     både «Kommende bookinger» og driven-by-kortets «Hentet inn av BarberHQ» (.di-title). Egen klasse,
-     ikke .block-h (13px) — så «Omsetning»/«Betaling» m.fl. ikke endres. */
-  .ovs-h{font-size:15px;font-weight:700;letter-spacing:-.01em;color:var(--ink)}
-  .di-title{padding:18px 18px 0}   /* kort-tittel = .ovs-h (typografi) + kort-padding */
-  .di-hentet{padding:26px 18px 2px}   /* #2: 26px topp gir luft over totalen (Oversikt) */
-  .di-eyebrow{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mut);margin-bottom:12px}
+  /* «Hentet inn av BarberHQ» på VEKST-fanen (#attrRows, renderAttribusjon) — totalblokk + tre rader. Oversikt
+     bruker dem ikke lenger (egen .hi-*-stil under «Oversikt-redesign»). Farger fra tema-variablene. */
   /* Totalblokka (turn 3): to stablede tall + periode-etikett. */
   .di-total-klipp{font-size:30px;font-weight:800;letter-spacing:-.035em;line-height:1;color:var(--ink);font-variant-numeric:tabular-nums}
   .di-total-kr{font-size:34px;font-weight:800;letter-spacing:-.035em;line-height:1;margin-top:6px;color:var(--ink);font-variant-numeric:tabular-nums}
@@ -1096,40 +1102,52 @@
   .di-row.di-zero .di-arm,.di-row.di-zero .di-value{color:var(--mut);font-weight:500}  /* «Ingen ennå» ≈55% */
   .di-row.di-zero .di-value{font-size:12.5px}
   /* «SMS av»-badge på rebooking-raden når sms_rebooking_enabled=false: tallene vises normalt (opptjent
-     historikk), badgen viser at automatikken er av NÅ. Erstattet «Av»-maskeringen (14.09). ≈40 % blekk. */
+     historikk), badgen viser at automatikken er av NÅ. Erstattet «Av»-maskeringen (14.09). ≈40 % blekk.
+     Brukes av Vekst (di-off-badge) OG Oversikt (.hi-navn .di-off-badge). */
   .di-off-badge{display:inline-block;margin-left:8px;font-size:10px;font-weight:700;letter-spacing:.03em;text-transform:uppercase;color:var(--mut-2);border:1px solid var(--line-2);border-radius:5px;padding:1px 6px;vertical-align:middle}
-  #drivenBy .di-card{cursor:pointer}   /* hele «Drevet av»-panelet er trykkbart → Vekst (indre lenker/CTA stopper propagering) */
-  /* Basis: tre låste rader, INGEN total/lås-ikon (fjernet 14.09). opacity:.4 (IKKE rgba hvit — ville
-     forsvunnet i lys modus) gir 40 % på tema-riktig blekk i begge moduser; maskert tekst bærer låsen.
-     .di-basis-blokk = Oversikt-wrapper (18px sider som .di-hentet, INGEN 26px-topp totalen hadde).
+  /* Basis på Vekst-fanen: tre låste rader, INGEN total/lås-ikon (fjernet 14.09). opacity:.4 (IKKE rgba hvit —
+     ville forsvunnet i lys modus) gir 40 % på tema-riktig blekk i begge moduser; maskert tekst bærer låsen.
      .di-basis-rows nuller 16px total→rader-gapet → første rad rett under undertittelen, ingen hull. */
   .di-row.di-basis-laast{opacity:.4}
-  .di-basis-blokk{padding:0 18px 2px}
   .di-basis-rows{margin-top:0}
-  .di-divider{height:1px;background:var(--line);margin-top:6px}
-  .di-pv{padding:18px 18px 20px}
-  .di-pv-eyebrow{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mut)}
-  .di-pv-block{margin-top:16px}
-  .di-pv-sub{font-size:11px;font-weight:600;letter-spacing:.06em;color:var(--mut)}
-  .di-pv-num{font-size:30px;font-weight:800;letter-spacing:-.035em;line-height:1;margin-top:8px;color:var(--ink);font-variant-numeric:tabular-nums}
-  .di-pv-date{font-size:26px;font-weight:800;letter-spacing:-.03em;line-height:1;margin-top:8px;color:var(--ink)}
-  .di-pv-txt{font-size:13px;line-height:1.45;color:var(--ink-2);margin-top:6px}
-  .di-pv-consent{font-size:12.5px;line-height:1.45;color:var(--info);margin-top:6px;font-variant-numeric:tabular-nums}
-  .di-pv-link{display:inline-block;position:relative;margin-top:8px;font-size:12.5px;font-weight:600;color:var(--info);cursor:pointer;letter-spacing:-.01em}  /* «Se lista i Vekst →» — samme blå/størrelse som consent-linja, hopper til #accWinback. position:relative for 44px ::after-treffflate (visuelt uendret) */
-  .di-pv-link:hover{text-decoration:underline}
-  .di-pv-txt.di-pv-tom{color:var(--mut)}   /* «Ingen ennå» ≈55% — dempet, ikke tom arm */
-  .di-pv-hr{height:1px;background:var(--line);margin:18px 0}
-  .di-basis-note{font-size:13px;line-height:1.45;font-weight:600;color:var(--ink);margin-top:8px}
   .di-basis-sell{font-size:12.5px;line-height:1.5;color:var(--mut);margin-top:16px}
   .di-cta{margin-top:14px;width:100%;min-height:46px;background:var(--ink);color:var(--bg);border:none;border-radius:8px;font-family:inherit;font-size:13.5px;font-weight:600;cursor:pointer}
   .di-cta-price{font-size:11.5px;line-height:1.45;color:var(--mut-2);margin-top:10px;text-align:center}
   html[data-theme="dark"] body{background:#0a0a0a}
-/* ----- Tre-kolonns bunnrad ----- */
-  /* .bottom-grid er FJERNET — Kommende bookinger og Drevet av deler ikke lenger container.
-     Ny Oversikt-rekkefølge er ren enkeltkolonne på alle bredder:
-     Kommende → periode+KPI → diagram → Siste → Drevet av. */
-  .ovs-upcoming{margin-bottom:14px}   /* Kommende (topp) → periodbar (+13px knapp-pad = ~27px) */
-  #drivenByWrap{margin-top:30px}       /* Siste bookinger → Drevet av (ny nabo, ny margin) */
+  /* ══ Oversikt-redesign (17.11.2026) ══════════════════════════════════════════════════════════════════
+     Kilde: oversikt-vekst / oversikt-gratis / hentet-inn-vekst-tom (.dc.html, Henrik). Fire RAMMEFRIE seksjoner
+     skilt med 1px hårlinje (--ov-hair), 28px vertikal padding; sidepaddingen (24px) kommer fra .wrap. Etiketter
+     11.5px/600/.08em/VERSALER/--mut. Ingen gradienter. Mørk tema = designets hex nøyaktig (--ov-* + --mut/--ink-2/
+     --info/--good i html[data-theme="dark"]); lys tema = egne motstykker. Desktop = samme komponenter i 680px. */
+  #oversikt.panel{padding-top:6px}
+  .ovs-sek{padding:28px 0;border-bottom:1px solid var(--ov-hair)}
+  .ovs-sek.ovs-sek-sist{border-bottom:0;padding-bottom:32px}
+  .ovs-sek-hode{display:flex;justify-content:space-between;align-items:baseline;gap:12px;margin-bottom:18px}
+  #ovsKommende .ovs-sek-hode{margin-bottom:14px}
+  .ovs-etikett{margin:0;font-size:11.5px;font-weight:600;letter-spacing:.08em;text-transform:uppercase;color:var(--mut);line-height:1.3}
+  .ovs-etikett-alene{margin-bottom:14px}
+  .ovs-hode-tall{font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .ovs-hode-tall:empty{display:none}
+  /* Segmentert periodevelger — ÉN delt klasse for Nøkkeltall (#segs) og Hentet inn (#ovsAttrPeriod). Valgt =
+     nøytral flate (--ov-seg-sel), ALDRI blå fyll. Knappene er 36px; ::after strekker trykkflaten til 46px
+     (dekker containerens 4px padding + rammen) uten å endre utseendet. .perbar på Vekst er urørt. */
+  .ovs-seg{position:relative;display:flex;gap:4px;padding:4px;border:1px solid var(--ov-seg-line);border-radius:10px;margin-bottom:22px}
+  .ovs-seg-btn{position:relative;flex:1;min-width:0;height:36px;padding:0 4px;appearance:none;border:0;border-radius:7px;background:transparent;font-family:inherit;font-size:12.5px;font-weight:500;color:var(--mut);letter-spacing:-.01em;white-space:nowrap;cursor:pointer;display:inline-flex;align-items:center;justify-content:center}
+  .ovs-seg-btn::after{content:"";position:absolute;left:0;right:0;top:-5px;bottom:-5px}
+  .ovs-seg-bred{flex:1.3}
+  .ovs-seg-btn:hover{color:var(--ink)}
+  .ovs-seg-btn[aria-selected=true],.ovs-seg-btn[aria-pressed=true]{background:var(--ov-seg-sel);color:var(--ink);font-weight:600}
+  @media(max-width:360px){ .ovs-seg-btn{font-size:12px;letter-spacing:-.02em} }
+  /* Nøkkeltall: to kolonner med hårlinje imellom. Tallfargene arves (Kunder .info, omsetning #35d07a, gull ved
+     rekord) — se kpiCardsHtml. fitKpi() krymper tallet når et stort beløp ikke får plass i kolonnen. */
+  .ovs-kpi{display:grid;grid-template-columns:repeat(2,minmax(0,1fr))}
+  .ovs-kpi>.loading,.ovs-kpi>.feil-retry{grid-column:1/-1}
+  .ovs-kpi-kol{display:flex;flex-direction:column;gap:7px;min-width:0}
+  .ovs-kpi-kol+.ovs-kpi-kol{padding-left:20px;border-left:1px solid var(--ov-hair)}
+  .ovs-kpi-l,.ovs-kpi-s{font-size:12.5px;color:var(--mut);line-height:1.3}
+  .ovs-kpi-v{font-size:34px;font-weight:800;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ovs-kpi-v.info{color:var(--info)}
+  .ovs-kpi-v .u{font-size:.53em;font-weight:300;letter-spacing:0}   /* ekte mellomrom foran «kr» (ikke margin) → «9 850 kr» også i kopiert tekst/skjermleser */
   /* Crop-modal */
   .crop-modal{position:fixed;inset:0;z-index:400;background:rgba(10,10,10,.97);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px}
   .crop-modal.open{display:flex}
@@ -1609,6 +1627,10 @@
   .header-lenke .pub-url{font-size:11.5px}
   .header-lenke .pub-copy{width:22px;height:22px}
   @media(max-width:400px){ .header-lenke{max-width:150px} }
+  /* Oversikt-redesign (17.11): navnet er 26px. Under 720px får navn + URL-tekst ikke plass på én rad, og lenka ble
+     stablet under — headeren vokste da med en hel linje når billing landet (hopp). På mobil står derfor bare
+     kopi-ikonet (aria-label «Kopier lenke», 44px trykkflate); URL-en står i Konto/Din side. Desktop uendret. */
+  @media(max-width:719px){ .header-lenke{max-width:none;flex:0 0 auto} .header-lenke .pub-url{display:none} }
   /* Headerens kvittering sier «Lenke kopiert» (tydeligere enn bare «Kopiert» som de andre .pub-copy).
      Samme spesifisitet som den globale .pub-copy.ok::after, men senere i kilden → vinner kun her. */
   .header-kopi.ok::after{content:"Lenke kopiert"}
@@ -1701,15 +1723,9 @@
      symboler. Aktiv fane setter --ac:currentColor → hvert ikons utpekte flate fylles (én regel).
      Tjenester = saks + klokke (telefonrøret byttet ut, se docs «Åpen sak»). Ingen nav ennå. ── -->
 <svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <!-- Oversikt-ikon (Oversikt-redesign 17.11): fire fliser. Strek 1.75 som de andre (.nav-ico), ikke designets 1.9. -->
   <symbol id="ic-oversikt" viewBox="0 0 24 24">
-    <mask id="mk-oversikt"><rect width="24" height="24" fill="#fff"/><circle cx="16.4" cy="16.1" r="6.6" fill="#000"/></mask>
-    <g mask="url(#mk-oversikt)">
-      <rect x="3.5" y="4.1" width="14.1" height="16.9" rx="2.4"/>
-      <rect x="7.9" y="2.4" width="5.3" height="3.2" rx="1.6"/>
-      <path d="M6.6 9.7h7.5M6.6 12.9h5.4M6.6 16.1h3.4"/>
-    </g>
-    <circle cx="16.4" cy="16.1" r="4.7"/>
-    <circle cx="16.4" cy="16.1" r="1.75" style="fill:var(--ac,none)"/>
+    <rect x="4" y="4" width="6" height="8" rx="1.5"/><rect x="4" y="16" width="6" height="4" rx="1.5"/><rect x="14" y="12" width="6" height="8" rx="1.5"/><rect x="14" y="4" width="6" height="4" rx="1.5"/>
   </symbol>
   <symbol id="ic-vekst" viewBox="0 0 24 24">
     <path d="M3.6 3.3V20.4H21"/>
@@ -1758,8 +1774,11 @@
          høyre. BarberHQ-ordmerket er fjernet herfra og bor nå i bunnen av Konto-fanen (.konto-brand).
          #barberName skal aldri brekke til linje to: fitShopnavn() krymper fonten til den passer på
          én linje, og faller til «…» (CSS-ellipse) først når minste font fortsatt er for bred. -->
+    <!-- .dash-brand er en KOLONNE: navnet, og under det dagens dato (#dashDato). Datoen vises KUN på
+         Oversikt (settDashDato i fane-handleren); navnestilen (26px/800) gjelder alle faner (Henrik 17.11). -->
     <span class="dash-brand">
       <b class="shopnavn laster" id="barberName" aria-busy="true"></b>
+      <span class="dash-dato" id="dashDato"></span>
     </span>
     <div class="header-lenke" id="headerLenke" hidden></div>
     <!-- Kun synlig i fokusmodus (body.fokus) — «X øverst til høyre» = avslutt fokus. -->
@@ -1908,94 +1927,82 @@
       </ol>
     </div>
 
-    <!-- 1. Kommende bookinger — løftet ut av .bottom-grid til topp. -->
-    <div class="ovs-upcoming">
-      <!-- .ovs-h = DELT seksjonsoverskrift på Oversikt: samme typografi (15px/700) som driven-by-kortets
-           «Hentet inn av BarberHQ» (.di-title). IKKE .block-h (13px, brukt av «Omsetning» m.fl. — urørt).
-           Egen bunn-margin til lista; ovs-h har ingen margin selv (di-title bruker padding i kort-kontekst). -->
-      <p class="ovs-h" style="margin:0 0 8px">Kommende bookinger</p>
-      <div id="upcomingList"><div class="loading">Laster …</div></div>
+    <!-- ══ Oversikt-redesign (17.11.2026): fire RAMMEFRIE seksjoner (.ovs-sek) skilt med hårlinje —
+         I DAG → KOMMENDE → NØKKELTALL → HENTET INN AV BARBERHQ. Ingen kort rundt seksjonene. Farger via
+         --ov-*-tokens (mørk = designverdiene, lys = egne), se «Oversikt-redesign» i CSS-en. ══ -->
+
+    <!-- 1. I DAG — neste booking stort + resten av dagens kommende timer (renderIdag). Passerte timer i dag
+         vises ikke; «N igjen» til høyre. Story-inngangen og SMS-tilbudet bor også her. -->
+    <section class="ovs-sek" id="ovsIdag" aria-labelledby="ovsIdagH">
+      <div class="ovs-sek-hode"><h2 class="ovs-etikett" id="ovsIdagH">I dag</h2><span class="ovs-hode-tall" id="idagAntall"></span></div>
+      <div id="idagInnhold"><div class="loading">Laster …</div></div>
+      <!-- Story-inngang (ÉN komponent — SAMME #storyOverlay som Vekst-kortet). Linje OG lenke vises KUN når
+           /ledige gir vis_banner=true for i dag eller i morgen (loadStoryLedigeLinje — dagens regel, uendret).
+           Begge false / 404 / feil → verken lenke eller linje (stille). -->
+      <p class="ovs-story-linje" id="storyLedigeLinje" hidden></p>
+      <button type="button" class="ovs-lenke" id="storyOpenOversikt" hidden>Lag story med ledige timer →</button>
+      <!-- Ingen ledige tider de neste dagene (/story/ledige-timer/data har_ledige:false): lenke og linje
+           skjules, og denne står i stedet. Backend nekter da også preview/render (409 ingen_ledige_tider). -->
+      <p class="ovs-story-fullt" id="storyFullt" hidden>Fullt de neste dagene</p>
       <div class="up-knapper">
-        <button class="up-knapp" id="calOpenUpcoming" type="button">Åpne kalender</button>
+        <button class="up-knapp up-knapp-hoved" id="calOpenUpcoming" type="button">Åpne kalender</button>
         <button class="up-knapp" id="upLeggTil" type="button">Legg til booking</button>
       </div>
-    </div>
-
-    <!-- Fast inngang til «Lag story»-generatoren (ÉN komponent — SAMME #storyOverlay som Vekst-kortet,
-         ingen kopi). Åpner som modal OVER Oversikt; lukking returnerer hit (ingen fane-bytte). Tilgjengelig
-         på Basis + Vekst (generatoren låses aldri).
-         Knapp OG tall-linje vises KUN når /ledige gir vis_banner=true for i dag eller i morgen (begge
-         skjult som standard). Tekst «Du har N ledige timer i dag/i morgen» (antall fra /ledige). Begge
-         false / 404 / feil → verken knapp eller linje (stille). Vekst-kortet er uberørt, alltid synlig. -->
-    <p class="ovs-story-linje" id="storyLedigeLinje" hidden></p>
-    <button type="button" id="storyOpenOversikt" hidden>Lag story med ledige timer</button>
-    <!-- Ingen ledige tider de neste dagene (/story/ledige-timer/data har_ledige:false): knapp og tall-linje
-         skjules, og denne står i stedet. Backend nekter da også preview/render (409 ingen_ledige_tider). -->
-    <p class="ovs-story-fullt" id="storyFullt" hidden>Fullt de neste dagene</p>
-    <!-- SMS-tilbud (Gratis): vises KUN når sms_pakke_kan_kjopes, påminnelser ikke går (saldo 0 eller av),
-         minst én booking i morgen, og tilbudet ikke er avvist siste 14 dager. Viker for «Lag story»: maks
-         ett slikt kort om gangen (oppdaterSmsTilbud). [oversettelse: sv/da/en] -->
-    <div class="sms-tilbud" id="smsTilbud" hidden>
-      <p class="ovs-story-linje" id="smsTilbudLinje"></p>
-      <div class="sms-tilbud-knapper">
-        <button type="button" id="smsTilbudSe">Se SMS-pakker</button>
-        <button type="button" class="lnk-quiet" id="smsTilbudIkkeNaa">Ikke nå</button>
+      <!-- SMS-tilbud (Gratis): vises KUN når sms_pakke_kan_kjopes, påminnelser ikke går (saldo 0 eller av),
+           minst én booking i morgen, og tilbudet ikke er avvist siste 14 dager. Viker for «Lag story»: maks
+           ett slikt tilbud om gangen (oppdaterSmsTilbud). [oversettelse: sv/da/en] -->
+      <div class="sms-tilbud" id="smsTilbud" hidden>
+        <p class="ovs-story-linje" id="smsTilbudLinje"></p>
+        <div class="sms-tilbud-knapper">
+          <button type="button" id="smsTilbudSe">Se SMS-pakker</button>
+          <button type="button" class="lnk-quiet" id="smsTilbudIkkeNaa">Ikke nå</button>
+        </div>
       </div>
-    </div>
+    </section>
 
-    <!-- 2. Periode-piller + KPI. Pillene styrer KPI/diagram/Drevet av (period-scope) og følger
-         KPI hit — de sitter IKKE over Kommende, som ikke er periodefiltrert. -->
-    <div class="periodbar">
-      <!-- Tredje pille er et nedtrekk (gjenbruker Veksts .perseg-meny): «Denne måneden» øverst + historiske
-           måneder (fillMonths → #maanedMeny). Pille-etiketten viser aktivt valg. «Tidligere: Velg måned»-raden
-           er fjernet (14.09) — månedene bor nå her. Egen state (curPeriod/ym), uavhengig av #attrPeriod i Vekst. -->
-      <div class="perbar" id="segs" role="tablist">
-        <button class="perbar-btn" role="tab" aria-selected="true" data-p="uke">Siste uke</button>
-        <button class="perbar-btn" role="tab" aria-selected="false" data-p="2uker">Siste 2 uker</button>
-        <button class="perbar-btn" id="maanedBtn" aria-haspopup="listbox" aria-expanded="false" aria-selected="false"><span class="pb-full">Denne måneden</span><span class="pb-kort">Denne mnd</span> ▾</button>
+    <!-- 2. KOMMENDE — dag-gruppert, rullende 7 dager etter i dag (maks 20 rader). Rammefri scroll-beholder
+         med fast max-height (dagens scroll-oppførsel). Dagsoverskriftene scroller med innholdet. -->
+    <section class="ovs-sek" id="ovsKommende" aria-labelledby="ovsKommendeH">
+      <div class="ovs-sek-hode"><h2 class="ovs-etikett" id="ovsKommendeH">Kommende</h2><span class="ovs-hode-tall" id="kommendeAntall"></span></div>
+      <div id="upcomingList"><div class="loading">Laster …</div></div>
+    </section>
+
+    <!-- 3. NØKKELTALL — periodevelger (.ovs-seg, delt med Hentet inn) + to tall + ÉN dempet linje + diagram.
+         Pillene styrer KPI/diagram (curPeriod/ym), ikke Kommende og ikke Hentet inn. Tredje pille er et
+         nedtrekk (#maanedMeny): «Denne måneden» + historiske måneder (fillMonths). -->
+    <section class="ovs-sek" id="ovsTall" aria-labelledby="ovsTallH">
+      <h2 class="ovs-etikett ovs-etikett-alene" id="ovsTallH">Nøkkeltall</h2>
+      <div class="ovs-seg" id="segs" role="tablist" aria-label="Periode for nøkkeltall">
+        <button class="ovs-seg-btn" role="tab" aria-selected="true" data-p="uke">Siste uke</button>
+        <button class="ovs-seg-btn" role="tab" aria-selected="false" data-p="2uker">Siste 2 uker</button>
+        <button class="ovs-seg-btn ovs-seg-bred" id="maanedBtn" aria-haspopup="listbox" aria-expanded="false" aria-selected="false"><span class="pb-full">Denne måneden</span><span class="pb-kort">Denne mnd</span> ▾</button>
         <div class="perseg-meny" id="maanedMeny" role="listbox" aria-label="Måneder" hidden>
           <button type="button" role="option" data-ym="" aria-selected="false">Denne måneden</button>
         </div>
       </div>
-    </div>
-    <p class="rangelabel" id="rangeLabel"></p>
-    <p class="ctx" id="ctxNote" style="display:none"></p>
-
-    <div class="stats" id="stats"><div class="loading">Laster …</div></div>
-
-    <div class="week-insight" id="weekInsight" hidden>
-      <div class="wi-pct" id="wiPct" hidden></div>
-      <div class="wi-record" id="wiRecord" hidden>
-        <div class="wi-track"><div class="wi-fill" id="wiFill"></div></div>
-        <div class="wi-text" id="wiText"></div>
-      </div>
-    </div>
-
-    <div class="chart-wrap">
-      <div class="chart-header">
-        <div class="chart-head-default">
-          <p class="block-h" id="chartTitle">Omsetning · — kr</p>
-          <p class="block-s" id="chartSub">Estimert, siste 7 dager</p>
+      <div class="ovs-kpi" id="stats"><div class="loading">Laster …</div></div>
+      <!-- ÉN linje under tallene (Henrik 17.11): #rekordNote bærer både beste uke-fotnoten (applyRekord) og
+           uke-innsikten (renderWeekInsight: rekord / «X kr unna» / persentil) — innsikten vinner når den har noe. -->
+      <p class="ovs-note" id="rekordNote"></p>
+      <!-- Diagram uten kort og uten egen overskrift. HUD-kortet ved trykk flyter OVER innholdet over stolpene. -->
+      <div class="chart-wrap">
+        <div class="chartbars" id="chartBars" role="img" aria-label="Omsetning per dag"></div>
+        <div class="chart-pointer" id="chartPointer"></div>
+        <div class="chart-caret" id="chartCaret"></div>
+        <div class="chart-hud" id="chartHud">
+          <div class="hud-day" id="hudDay"></div>
+          <div class="hud-main"><span class="hud-kr" id="hudKr"></span><span class="hud-cuts" id="hudCuts"></span></div>
+          <div class="hud-pills"><span class="hud-new" id="hudNew"></span><span class="hud-ret" id="hudRet"></span></div>
         </div>
       </div>
-      <div class="chartbars" id="chartBars"></div>
-      <div class="chart-pointer" id="chartPointer"></div>
-      <div class="chart-caret" id="chartCaret"></div>
-      <div class="chart-hud" id="chartHud">
-        <div class="hud-day" id="hudDay"></div>
-        <div class="hud-main"><span class="hud-kr" id="hudKr"></span><span class="hud-cuts" id="hudCuts"></span></div>
-        <div class="hud-pills"><span class="hud-new" id="hudNew"></span><span class="hud-ret" id="hudRet"></span></div>
-      </div>
-    </div>
+    </section>
 
-
-    <!-- 5. Hvor kundene kommer fra — løftet ut av .bottom-grid til bunn. -->
-    <div id="drivenByWrap">
-      <!-- v2: tittelen «Hvor kundene kommer fra» rendres NÅ inne i kortet (di-title) av renderDrivenBy,
-           ikke som løs .block-h over. Ingen undertekst i panelet (design turn 2). Vekst-fanens
-           attribusjonskort beholder sin egen sec-h + block-s. -->
+    <!-- 4. HENTET INN AV BARBERHQ — renderDrivenBy tegner hele seksjonen (etikett, velger, innhold).
+         Vekst: egen periode-state ovsAttrPeriod (3/6/12 mnd, standard 3 mnd — uavhengig av Veksts #attrPeriod).
+         Gratis (erBasis): fast tekst uten tall + hva Vekst gjør + pris (ingen /attribution-henting). -->
+    <section class="ovs-sek ovs-sek-sist" id="drivenByWrap" aria-labelledby="ovsHentetH">
       <div id="drivenBy"></div>
-    </div>
+    </section>
   </section>
 
   <!-- Bookinger-panelet er slått sammen inn i #oversikt -->
@@ -3609,33 +3616,40 @@ function esc(s){return(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">"
 
 let curPeriod="uke";
 
-function rangeText(p){
-  const now=new Date(); const d=now.getDate(), m=MONTHS[now.getMonth()];
-  if(p==="uke")return "Siste 7 dager";
-  if(p==="2uker")return "Siste 14 dager";
-  return `1.–${d}. ${m} (så langt denne måneden)`;
-}
 
 function gradeRate(rate,goodWhenHigh){
   return goodWhenHigh ? (rate>=50?"good":rate>=30?"info":"bad")
                       : (rate<=5?"good":rate<=12?"info":"bad");
 }
 
-// De to KPI-kortene (Kunder = Σcount, Estimert omsetning = Σrevenue). Delt av pill- OG måneds-visning.
+// Nøkkeltallene (Kunder = Σcount, Estimert omsetning = Σrevenue) som to kolonner. Delt av pill- OG måneds-visning.
+// Tallfargene er ARVET uendret (Oversikt-redesign 17.11): Kunder = .info (blå), omsetning = #35d07a (grønn), gull
+// via .rekord-gull på #estRevValue (applyRekord). #rekordNote står UTENFOR (én linje under kolonnene, se markup).
+// ℹ-ikonet er borte (title virker ikke på touch); forklaringen ligger som title på etiketten for mus.
 function kpiCardsHtml(count,rev){
-  return `
-    <div class="stat">
-      <div class="l">Kunder</div>
-      <div class="v info" id="kpiCount">${count}</div>
-      <div class="sub mut">fullførte klipp</div>
-    </div>
-    <div class="stat">
-      <div class="l">Estimert omsetning <span title="Anslaget baseres på fullførte timer × gjennomsnittspris. No-shows og kommende bookinger er ikke inkludert." style="cursor:help;font-size:11px;opacity:.55;vertical-align:1px;margin-left:2px">ℹ</span></div>
-      <div class="v" style="color:#35d07a"><span id="estRevValue">${rev.toLocaleString("no-NO")}</span><span class="u"> kr</span></div>
-      <div class="sub mut">fra fullførte timer</div>
-      <div class="rekord-note" id="rekordNote"></div>
-    </div>`;
+  return '<div class="ovs-kpi-kol">'
+      +'<span class="ovs-kpi-l">Kunder</span>'
+      +'<span class="ovs-kpi-v info" id="kpiCount">'+count+'</span>'
+      +'<span class="ovs-kpi-s">fullførte klipp</span>'
+    +'</div>'
+    +'<div class="ovs-kpi-kol">'
+      +'<span class="ovs-kpi-l" title="Anslaget baseres på fullførte timer × gjennomsnittspris. No-shows og kommende bookinger er ikke inkludert.">Estimert omsetning</span>'
+      +'<span class="ovs-kpi-v" style="color:#35d07a"><span id="estRevValue">'+rev.toLocaleString("no-NO")+'</span><span class="u"> kr</span></span>'
+      +'<span class="ovs-kpi-s">fra fullførte timer</span>'
+    +'</div>';
 }
+// Store beløp (6 sifre + «kr») får ikke plass i en kolonne på 320–375 px ved 34 px. Krymp tallet til det passer
+// (målt på SLUTTVERDIEN — kalles før tell-opp starter fra 0), gulv 20 px. Kalles etter hver #stats-render + resize.
+function fitKpi(){
+  var vs=document.querySelectorAll('#stats .ovs-kpi-v');
+  for(var i=0;i<vs.length;i++){ var el=vs[i]; el.style.fontSize='';
+    var avail=el.clientWidth, need=el.scrollWidth; if(!avail||need<=avail+1) continue;
+    var size=parseFloat(getComputedStyle(el).fontSize)||34;
+    el.style.fontSize=Math.max(20, size*avail/need*0.98)+'px';
+  }
+}
+(function(){ var t; window.addEventListener('resize',function(){ clearTimeout(t); t=setTimeout(fitKpi,80); });
+  if(document.fonts&&document.fonts.ready) document.fonts.ready.then(function(){ fitKpi(); }); })();
 // Inneværende Oslo-måned ("YYYY-MM") — ekskluderes fra "Tidligere"-dropdownen (dekket av pill-en).
 function osloYm(){ return new Intl.DateTimeFormat('en-CA',{timeZone:'Europe/Oslo'}).format(new Date()).slice(0,7); }
 // Fyll #maanedMeny (tredje pilles nedtrekk): «Denne måneden» øverst + historiske måneder (nyest
@@ -3715,7 +3729,6 @@ async function loadStoryLedigeLinje(){
 }
 async function loadOversikt(){
   loadStoryLedigeLinje();   // uavhengig av stats (fire-and-forget; skjuler seg selv ved 404/feil)
-  $("#rangeLabel").textContent=rangeText(curPeriod);
   // M-8: api.statsDaily/bookings degraderer 4xx/5xx til tom akse selv, men en HARD nettverksfeil
   // (offline/DNS) kaster gjennom apiFetch. Uten try/catch ville #stats bli stående på «Laster …».
   // Speiler winback/verving/loyalty-loaderne: kast → synlig feil + «Prøv igjen».
@@ -3727,6 +3740,7 @@ async function loadOversikt(){
     const totalCount=days.reduce(function(a,d){return a+d.count;},0);
 
     $("#stats").innerHTML=kpiCardsHtml(totalCount,totalRev);
+    fitKpi();   // mål sluttverdien FØR tell-opp setter teksten til 0
 
     // lag 3: tell-opp begge KPI kun første render (leses FØR renderBarChart flipper chartEntered)
     if(!chartEntered && !prefersReduced()){
@@ -3735,11 +3749,10 @@ async function loadOversikt(){
       countUp($("#estRevValue"), totalRev, 600, true);
     }
     applyRekord(payload); // lag 4: fotnote + gull-tilstand (gull-klasse sameksisterer med tell-opp)
-    renderWeekInsight(payload); // batch 2: persentil + rekord-bar (tømmer #rekordNote hvis baren vises)
+    renderWeekInsight(payload); // batch 2: «X kr unna» / persentil — overstyrer fotnoten i SAMME linje (#rekordNote)
 
-    var dw=$("#drivenByWrap");if(dw)dw.hidden=false; // pill-modus: alltid synlig (skjules kun på historisk måned)
     renderBarChart(days,curPeriod);
-    renderDrivenBy(); // panelet henter alltid siste_maaned selv — frikoblet fra #segs/curPeriod
+    renderDrivenBy(); // egen periode-state (ovsAttrPeriod) — frikoblet fra #segs/curPeriod
     loadUpcoming();
   }catch(e){
     feilMedRetry($("#stats"),'Klarte ikke å laste tallene.',loadOversikt);
@@ -3807,17 +3820,26 @@ function colorForRatio(r){
   var bot = mix(c,[0,0,0],0.20);       // bunn mørkere — grunnfargen (volum-koding) uendret
   return { top:'rgb('+top.join(',')+')', bot:'rgb('+bot.join(',')+')' };
 }
+// Ensfarget stolpe (Oversikt-redesign 17.11) = colorForRatio sin GRUNNFARGE, ikke gradienten. colorForRatio er
+// URØRT (delt med Vekst-fanens månedsdiagram); grunnfargen hentes tilbake fra bunn-nyansen, som er grunnfargen
+// blandet 20 % mot svart (= ×0,8). ÷0,8 gir den tilbake (±1 av avrunding). Fargekodingen er dermed den samme.
+function stolpeFarge(r){
+  var m=colorForRatio(r).bot.match(/\d+/g)||[0,0,0];
+  return 'rgb('+m.map(function(v){return Math.min(255,Math.round(+v/0.8));}).join(',')+')';
+}
 function renderBarChart(data,period){
   var total,sub;
   total=data.reduce(function(a,b){return a+b.kr;},0);
-  sub=period==="uke"?"Daglig fordeling, siste 7 dager"
-     :period==="2uker"?"Daglig fordeling, siste 14 dager"
-     :/^\d{4}-\d{2}$/.test(period)?"Daglig fordeling, "+MONTHS[+period.slice(5,7)-1]+" "+period.slice(0,4) // historisk måned (period = ym)
-     :"Daglig fordeling, denne måneden"; // "maaned"-pill
+  var historisk=/^\d{4}-\d{2}$/.test(period);   // historisk måned (period = ym)
+  sub=period==="uke"?"siste 7 dager"
+     :period==="2uker"?"siste 14 dager"
+     :historisk?MONTHS[+period.slice(5,7)-1]+" "+period.slice(0,4)
+     :"denne måneden"; // "maaned"-pill
   var max=Math.max.apply(null,data.map(function(d){return d.kr;}))||1;
-  var MAXH=120;
-  $("#chartTitle").textContent="Omsetning · "+total.toLocaleString("no-NO")+" kr";
-  $("#chartSub").textContent=sub;
+  var MAXH=72, MINH=6, NULLH=3;   // designets 72px stolpeområde; 0-dager = 3px flat strek (--ov-null)
+  // Ingen tittel over diagrammet lenger — perioden og totalen leses av skjermleser via aria-label.
+  var cb=$("#chartBars");
+  cb.setAttribute('aria-label','Estimert omsetning per dag, '+sub+': '+total.toLocaleString("no-NO")+' kr');
   // Månedsvisning ("maaned"-pill eller historisk ym): dagnr-etikettene tynnes på smal skjerm
   // via .cbar-lbl-minor (CSS-breakpoint ≤700px). 2uker tynnes til annenhver via .cbar-lbl-minor2
   // (≤430px, se under). Uke (7) er urørt — passer. Alle stolper beholdes i alle visninger.
@@ -3830,16 +3852,21 @@ function renderBarChart(data,period){
   // Ankret fra HØYRE så i dag (siste stolpe) alltid er merket: behold der (siste−i) er partall.
   var tynn2uker=period==="2uker";
   var sisteIdx=data.length-1;
-  $("#chartBars").innerHTML=data.map(function(d,i){
-    var h=Math.max(Math.round(d.kr/max*MAXH),4);
-    var col=colorForRatio(d.kr/max);
+  // Gap krymper med antall stolper (8px ved 7 → 4px ved 14 → 2px ved måned), ellers får ikke 31 plass på 320.
+  cb.classList.toggle('n14', !isMonth && data.length>7);
+  cb.classList.toggle('nmnd', isMonth);
+  cb.innerHTML=data.map(function(d,i){
+    var null0=!(d.kr>0);
+    var h=null0?NULLH:Math.max(MINH,Math.round(d.kr/max*MAXH));
     var lbl=d.l2?'<span>'+d.l+'</span><span class="cbar-lbl-sub">'+d.l2+'</span>':d.l;
     var day=isMonth?+d.l:0;
     var lblCls=(tynnEtiketter&&!(day===1||day%5===0)) ? "cbar-lbl cbar-lbl-minor"
              : (tynn2uker&&((sisteIdx-i)%2!==0)) ? "cbar-lbl cbar-lbl-minor2"
              : "cbar-lbl";
+    // Siste stolpe er i dag i alle rullende visninger (uke/2uker/denne måneden) → hvit ukedag. Historisk måned: ingen.
+    var idag=!historisk && i===sisteIdx;
     // Ingen tall over stolpen — beløpet står i HUD-kortet ved trykk (og overlappet hverandre på fullt månedsdiagram).
-    return '<div class="cbar-col"><div class="cbar-bar" style="height:'+h+'px;--bar-top:'+col.top+';--bar-bot:'+col.bot+'"></div><div class="'+lblCls+'">'+lbl+'</div></div>';
+    return '<div class="cbar-col'+(idag?' idag':'')+'"><div class="cbar-spor"><div class="cbar-bar'+(null0?' null':'')+'" style="height:'+h+'px'+(null0?'':';--bar-c:'+stolpeFarge(d.kr/max))+'"></div></div><div class="'+lblCls+'">'+lbl+'</div></div>';
   }).join("");
   chartDays=data; clearSel(); // lag 2: HUD leser herfra; nullstill til default ved (re)render
   var entering=!chartEntered; // lag 3: entré kun første render
@@ -3868,7 +3895,10 @@ function positionPointer(i){
   var b=bar.getBoundingClientRect();
   var centerX=b.left+b.width/2-wrap.left; // stolpens senter, relativt til .chart-wrap
   var hud=$("#chartHud"), caret=$("#chartCaret"), p=$("#chartPointer");
-  var PAD=22, CARD_TOP=15; // fast vertikal → ingen hopping når stolpehøyder varierer
+  // Diagrammet har ingen overskrift lenger (Oversikt-redesign) → kortet flyter OVER stolpeområdet, med bunnen
+  // 10px over taket (72px-sporet starter på .chart-wraps topp). Fast vertikal → ingen hopping mellom stolper.
+  // Ingen innvendig padding i .chart-wrap → PAD 0 (kortet klemmes til diagrammets egne kanter).
+  var PAD=0, CARD_TOP=-((hud.offsetHeight||86)+10);
   var cardW=hud.offsetWidth||194;
   // Horisontalt: kortets senter følger stolpen, clamped innenfor .chart-wraps innside (padding respekteres)
   var cardLeft=Math.max(PAD, Math.min(centerX-cardW/2, wrap.width-PAD-cardW));
@@ -3963,6 +3993,7 @@ function applyRekord(p){
   var beaten = hasRecord && p.current_week_revenue > p.best_week_revenue;
   var showGold = beaten && curPeriod==="uke"; // gull-tenning KUN på "Siste uke" — andre perioder viser en annen tidsrammes sum
   rev.classList.toggle('rekord-gull', !!showGold);
+  note.classList.toggle('rekord', !!showGold);   // linja i gull når rekorden er slått (erstatter rekord-barens gull-tekst)
   if(showGold){
     note.textContent="Ny rekord denne uka";
     if(!rekordPulsed && !prefersReduced()){ rev.classList.add('rekord-puls'); rekordPulsed=true; } // puls kun første gang
@@ -3977,34 +4008,30 @@ function applyRekord(p){
     note.textContent="Beste uke: "+kr+" · "+mnd;
   }
 }
-// Uke-innsikt (batch 2): persentil + rekord-progress. KUN pill-modus inneværende uke.
+// Uke-innsikt (batch 2) — KUN pill-modus inneværende uke. MAKS ÉN linje under nøkkeltallene (Henrik 17.11):
+// innsikten skriver i SAMME #rekordNote som applyRekords fotnote, og vinner når den har noe å si. Prioritet:
+//   rekord slått → applyRekord eier linja («Ny rekord denne uka», gull) — vi rører den ikke
+//   ≥80 % av beste uke → «X kr unna din beste uke noensinne» (fremdriftsstripa er borte — én linje)
+//   ≥6 ferdige uker og ≥50 % persentil → «Bedre enn X % av dine egne uker»
+//   ellers → applyRekords fotnote står («Beste uke: … · måned» / «Rekord settes denne uka»)
 function renderWeekInsight(p){
-  var wi=$("#weekInsight"); if(!wi) return;
-  if(curPeriod!=="uke" || !p){ wi.hidden=true; return; } // 2uker/måned/historisk måned → skjul rent
+  var note=$("#rekordNote"); if(!note) return;
+  if(curPeriod!=="uke" || !p) return; // 2uker/måned/historisk måned → fotnoten (eller tom) står
   var wr=p.weekly_revenue||[], cur=p.current_week_revenue||0, best=p.best_week_revenue||0;
-  var beaten = best>0 && cur>best;   // > (ikke >=) — matcher applyRekord (:3203) og produktets fasit i CLAUDE.md; en uke lik beste uke har ikke slått rekorden ennå
-  // Persentil: andel ferdige uker med revenue < inneværende. Vis kun ≥6 uker & ≥50% & ikke rekord (redundant).
-  var showPct=false, pct=0;
-  if(wr.length>=6 && !beaten){
+  var beaten = best>0 && cur>best;   // > (ikke >=) — matcher applyRekord og produktets fasit i CLAUDE.md; en uke lik beste uke har ikke slått rekorden ennå
+  if(beaten) return;
+  var ratio = best>0 ? cur/best : 0;
+  if(best>0 && ratio>=0.80){
+    note.classList.remove('rekord');
+    note.textContent=(best-cur).toLocaleString("no-NO")+" kr unna din beste uke noensinne";
+    return;
+  }
+  // Persentil: andel ferdige uker med revenue < inneværende. Vis kun ≥6 uker & ≥50%.
+  if(wr.length>=6){
     var below=0; for(var i=0;i<wr.length;i++){ if(wr[i].revenue<cur) below++; }
-    pct=Math.round(below/wr.length*100); showPct=pct>=50;
+    var pct=Math.round(below/wr.length*100);
+    if(pct>=50){ note.classList.remove('rekord'); note.textContent="Bedre enn "+pct+" % av dine egne uker"; }
   }
-  var pctEl=$("#wiPct"); pctEl.hidden=!showPct;
-  if(showPct) pctEl.textContent="Bedre enn "+pct+" % av dine egne uker";
-  // Rekord-bar: <0.80 skjul, 0.80–1.0 "unna", ≥1.0 "ny rekord".
-  var ratio = best>0 ? cur/best : 0, showBar = best>0 && ratio>=0.80;
-  var rec=$("#wiRecord"), fill=$("#wiFill"), txt=$("#wiText"); rec.hidden=!showBar;
-  if(showBar){
-    if(beaten){
-      fill.style.width="100%"; fill.classList.add('rekord'); txt.classList.add('rekord');
-      txt.textContent="Ny rekord denne uka! 🔥";
-    } else {
-      fill.style.width=Math.round(ratio*100)+"%"; fill.classList.remove('rekord'); txt.classList.remove('rekord');
-      txt.textContent=(best-cur).toLocaleString("no-NO")+" kr unna din beste uke noensinne";
-    }
-    var rn=$("#rekordNote"); if(rn) rn.textContent=""; // baren eier best-uke/rekord-budskapet → unngå dobbel
-  }
-  wi.hidden = !(showPct || showBar); // ingen tomme bokser når begge er under terskel
 }
 function krFmt(n){return (n||0).toLocaleString("no-NO")+" kr";} // "9 800 kr" (kr bak, no-NO tusenskille)
 
@@ -4115,10 +4142,10 @@ function oppdaterSkjoldFlater(){
   }
 }
 
-// ── «Hvor kundene kommer fra» v2 — delte byggere (brukt av renderDrivenBy + renderAttribusjon) ──
+// ── «Hvor kundene kommer fra» v2 — byggere for VEKST-fanen (renderAttribusjon). Oversikt har egne ovs*-byggere
+// (Oversikt-redesign 17.11, under renderDrivenBy); pvDato + krFmt deles. ──
 // Kontrakt (backend 46898fd+d9048ee): { paaVei, hentetInn? }. hentetInn MANGLER for Basis —
 // fravær = signalet, aldri en tom verdi. Alt leses via ?. / ||-guard → manglende nøkkel kaster aldri.
-function diTitle(){ return '<div class="di-title ovs-h">Hentet inn av BarberHQ</div>'; }
 // Totalblokka (turn 3): to stablede tall «N klipp» + «X kr» + periode-etikett. total.count===0 →
 // erstattes av ÉN dempet linje (14.09) i stedet for «0 klipp / 0 kr» — så «På vei» dominerer på tom periode.
 function diTotalHtml(count, revenue, periodeTekst){
@@ -4162,45 +4189,6 @@ function diRaderHtml(hi){
     +diArmRad('Rebooking', hi&&hi.rebooking)
   +'</div>';
 }
-// Oversikt: eyebrow + total («siste 30 dager» — panelet har ingen velger, da564bd) + rader.
-function diHentetInnHtml(hi){
-  var total=(hi&&hi.total)||{count:0,revenue:0};
-  return '<div class="di-hentet"><div class="di-eyebrow">BOOKET VIA BARBERHQ</div>'
-    +diTotalHtml(total.count, total.revenue, 'siste 30 dager')
-    +diRaderHtml(hi)
-  +'</div>';
-}
-// På vei-blokk: kunder/datoer, ALDRI kroner. opts.basis=true → «På Gratis får ingen…»-noten (selg + CTA
-// bor nå i den låste «Med Vekst»-blokka OVER På vei, ikke her — så CTA-en ikke dupliseres).
-function diPaaVeiHtml(pv, opts){
-  var rb=(pv&&pv.rebooking)||{naar_vindu_30d:0,med_samtykke:0};
-  var wb=(pv&&pv.winback)||{foerste_passerer_60:null,passerer_innen_30d:0};
-  var basis=!!(opts&&opts.basis);
-  var h='<div class="di-pv"><div class="di-pv-eyebrow">PÅ VEI</div>'
-    +'<div class="di-pv-block"><div class="di-pv-sub">REBOOKING</div>'
-      +'<div class="di-pv-num">'+(rb.naar_vindu_30d||0)+'</div>'
-      +'<div class="di-pv-txt">kunder når vinduet de neste 30 dagene</div>'
-      // Samtykkelinja bare når noen når vinduet: «0 av 0 har SMS-samtykke» sier ingenting.
-      +((rb.naar_vindu_30d||0)>0?'<div class="di-pv-consent">'+(rb.med_samtykke||0)+' av '+rb.naar_vindu_30d+' har SMS-samtykke i dag</div>':'')
-      +(basis?'<div class="di-basis-note">På Gratis får ingen av dem rebooking-SMS.</div>':'')
-    +'</div>';
-  // Vinn tilbake — NÅTILSTAND FØRST (14.09): N klare nå (tall, som rebooking) → dato-prognose → «Ingen ennå».
-  var wbN=wb.passerer_innen_30d||0, wbDato=pvDato(wb.foerste_passerer_60);
-  h+='<div class="di-pv-hr"></div><div class="di-pv-block"><div class="di-pv-sub">VINN TILBAKE</div>';
-  if(wbN>0){                                 // tall RÅTT (ikke kappet), som rebooking-armen
-    h+='<div class="di-pv-num">'+wbN+'</div>'
-      +'<div class="di-pv-txt">'+(wbN===1?'kunde å hente inn':'kunder å hente inn')+'</div>'
-      +'<a class="di-pv-link" data-di-winback>Se lista i Vekst →</a>';
-  }else if(wbDato){                          // ingen klare ennå, men en passerer snart
-    h+='<div class="di-pv-date">'+wbDato+'</div>'
-      +'<div class="di-pv-txt">første kunde passerer 60-dagersgrensen</div>'
-      +'<a class="di-pv-link" data-di-winback>Se lista i Vekst →</a>';
-  }else{                                      // verken klare eller dato → dempet, ikke tom arm
-    h+='<div class="di-pv-txt di-pv-tom">Ingen ennå</div>';
-  }
-  h+='</div>';
-  return h+'</div>';
-}
 // Basis: tre låste armer (maskert: * klipp · **** kr, asterisker IKKE bullets → leses som maskert tekst,
 // 13px/600 som ekte verdier, hele raden 40 % via opacity). INGEN total, INGEN lås-ikon, INGEN plassholder
 // (fjernet 14.09) — radene bærer maskeringen alene. .di-basis-rows nuller total→rader-gapet (margin-top).
@@ -4211,11 +4199,11 @@ function diBasisLaastRader(){
     +'<div class="di-row di-basis-laast"><span class="di-arm">Rebooking</span><span class="di-value">* klipp · **** kr</span></div>'
   +'</div>';
 }
-// Forklaringssetning (begge flater). Knapp + pris er skilt ut fordi de KUN vises på Vekst-fanen.
+// Forklaringssetning (Vekst-fanen).
 function diBasisForklaring(){
   return '<div class="di-basis-sell">Vekst sender rebooking-SMS automatisk og gir deg en liste over kunder du kan vinne tilbake.</div>';
 }
-// Knapp + pris — KUN Vekst-fanen. På Oversikt bærer «På vei» flaten (det eneste ekte tallet); ingen CTA der.
+// Knapp + pris — Vekst-fanen. Oversikts Gratis-blokk har egen «Se Vekst»-knapp (samme aapneAbonnement).
 function diBasisCtaPris(){
   return '<button type="button" class="di-cta" data-di-oppgrader>Oppgrader til Vekst</button>'
     +'<div class="di-cta-price">'+PLAN_INFO.vekst.pris+'/mnd eks.&nbsp;mva. Ingen binding.</div>';
@@ -4226,68 +4214,25 @@ function koblePaaVeiCta(host){
   var w=host.querySelector('[data-di-winback]'); if(w)w.addEventListener('click',function(){ if(typeof aapneVekstAkkordion==='function')aapneVekstAkkordion('#accWinback'); });
 }
 
-// «Hvor kundene kommer fra» (Oversikt). Henter ALLTID siste_maaned (ny default) — panelet har ingen
-// egen periodevelger (design turn 2). Basis-signal = hentetInn mangler → kun På vei + CTA.
-async function renderDrivenBy(){
-  var wrap=$("#drivenBy"); if(!wrap)return;
-  // Hele panelet trykkbart → Vekst (14.09). Delegert ÉN gang på #drivenBy (overlever innerHTML-rebuild).
-  // Indre interaktive elementer (Se lista i Vekst / Oppgrader-CTA) stopper via closest-sjekk, ikke propagering.
-  if(!wrap._navBound){ wrap._navBound=true;
-    wrap.addEventListener('click',function(e){
-      if(e.target.closest('[data-di-winback],[data-di-oppgrader]'))return;   // indre knapp/lenke → egen handling
-      switchPanel('vekst');
-    });
-  }
-  if(billingUkjent())return; // behold vakt (e5aa245): ingen henting/render før planen er kjent
-  var data=await api.attribution('siste_maaned');
-  if(!data){ wrap.innerHTML=''; return; } // feil/401 → tomt, ingen krasj
-  // Forsvar-i-dybden: Basis skal ALDRI vise ekte hentetInn-tall. Backend gater (dashboard.js: !krevVekst),
-  // men skulle den regresjonen svikte og sende hentetInn til en Basis-konto, ignorerer vi det her og
-  // faller til den maskerte Basis-grenen (diBasisLaastRader). Vekst/trial (erBasis=false) uendret.
-  var hi = erBasis() ? null : data.hentetInn; // MANGLER for Basis (backend plan-shaper) + frontend-vakt
-  if(!hi){
-    if(erBasis()){
-      // BASIS: tre låste armer + forklaring FØR «På vei» (sterkest på Basis, det eneste ekte tallet).
-      // INGEN total, INGEN CTA på Oversikt (knapp+pris bor kun på Vekst-fanen). Ingen tomrom der totalen sto.
-      wrap.innerHTML='<div class="di-card">'+diTitle()
-        +'<div class="di-basis-blokk">'+diBasisLaastRader()+diBasisForklaring()+'</div>'
-        +'<div class="di-divider"></div>'
-        +diPaaVeiHtml(data.paaVei,{basis:true})
-      +'</div>';
-    }else{
-      // Vekst/trial MEN hentetInn mangler → backend shape-drift. Vis «På vei» (ekte for begge planer)
-      // UTEN Basis-teaser/CTA — ærlig, aldri oppsalg. Logg avviket.
-      console.warn('[drevet-av] hentetInn mangler for ikke-Basis konto (effective_plan='+(_billing&&_billing.effective_plan)+', grunn='+(_billing&&_billing.effective_plan_grunn)+') — viser På vei uten oppsalg.');
-      wrap.innerHTML='<div class="di-card">'+diTitle()
-        +diPaaVeiHtml(data.paaVei,{basis:false})
-      +'</div>';
-    }
-    koblePaaVeiCta(wrap);   // wirer «Se lista i Vekst →» (data-di-winback) i På vei
-    return;
-  }
-  // VEKST: Hentet inn + På vei.
-  wrap.innerHTML='<div class="di-card">'+diTitle()
-    +diHentetInnHtml(hi)
-    +'<div class="di-divider"></div>'
-    +diPaaVeiHtml(data.paaVei,{basis:false})
-  +'</div>';
-  koblePaaVeiCta(wrap);   // wirer «Se lista i Vekst →» (data-di-winback) i På vei
-}
-// Kommende bookinger: dag-gruppert. «I dag» + «I morgen» er faste ankere (alltid
-// synlig, også tomme). Dager lenger frem vises datert. Rammefri scroll-beholder med fast
-// max-height (306 ≤375px / 418 desktop — nudget så bunnraden kappes ~50% på tett liste) = scroll-hinten;
-// «Åpne kalender» står som
-// fast rad UNDER beholderen (søsken, IKKE sticky — sticky ville dekket den avskårne raden).
-// Datamengde: maks 20 rader ELLER 7 dager frem, det som inntreffer først. (Toggle-modellen fjernet 14.09.)
-var _upcoming=[];
-var _bookingerKilde=[];   // siste /bookings-svar, rått — settUpcoming bygger Kommende + «i morgen» av det
+// «Hentet inn av BarberHQ» på Oversikt — ny utgave bygges i neste commit (Oversikt-redesign 17.11). Til da tom.
+async function renderDrivenBy(){ var wrap=$("#drivenBy"); if(wrap) wrap.innerHTML=''; }
+// I DAG + KOMMENDE (Oversikt-redesign 17.11.2026). Begge bygges av samme /bookings-svar (_bookingerKilde).
+// I DAG: dagens IKKE-passerte timer — den neste stort, resten som rader. «N igjen» til høyre. Passerte timer
+//   vises ikke; er alle passert: «Ingen flere bookinger i dag.» Nedtellingen («om 1 t 20 min») regnes klientside
+//   og tegnes på nytt hvert minutt (oversiktTikk). /bookings har med siste 30 dager, så passerte i dag er kjent.
+// KOMMENDE: dagene ETTER i dag, rullende 7 døgn frem, maks 20 rader. «N neste 7 dager» = alle i vinduet (ikke
+//   kappet). Rammefri scroll-beholder med fast max-height (dagens scroll-oppførsel). Dagsoverskriftene scroller med.
+var _upcoming=[];          // kommende (start > nå, 7 døgn frem, ikke avlyst) — også oppslagskilde for finnBooking
+var _bookingerKilde=[];   // siste /bookings-svar, rått — settUpcoming bygger I dag + Kommende + «i morgen» av det
 async function loadUpcoming(){
   // M-8: api.bookings degraderer 4xx/5xx til [] selv, men en hard nettverksfeil kaster gjennom
-  // apiFetch → uten try/catch ble #upcomingList stående på «Laster …». Kast → synlig feil + retry.
+  // apiFetch → uten try/catch ble listene stående på «Laster …». Kast → synlig feil + retry (én knapp, i I dag).
   try{
     settUpcoming(await api.bookings());
   }catch(e){
-    feilMedRetry($("#upcomingList"),'Klarte ikke å laste bookinger.',loadUpcoming);
+    feilMedRetry($("#idagInnhold"),'Klarte ikke å laste bookinger.',loadUpcoming);
+    var ul=$("#upcomingList"); if(ul) ul.innerHTML='<p class="up-empty">Klarte ikke å laste bookinger.</p>';
+    ['#idagAntall','#kommendeAntall'].forEach(function(s){ var el=$(s); if(el) el.textContent=''; });
   }
 }
 // Delt av lastingen OG «Legg til booking» (ny booking legges inn lokalt, uten ny henting) → samme filtre.
@@ -4297,11 +4242,11 @@ function settUpcoming(b){
   var morgenKey=calNesteKey(osloTodayKey(),1);
   _morgenBookinger=_bookingerKilde.filter(function(x){return x.status!=='avlyst' && osloDayKey(x.start)===morgenKey;});
   if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud();
-  var horisont=now+7*86400000;   // 7 dager frem
+  var horisont=now+7*86400000;   // 7 døgn frem
+  // Ikke kappet her lenger: I dag skal ha ALLE dagens gjenværende, og Kommende kapper selv på 20 rader.
   _upcoming=_bookingerKilde.filter(function(x){return new Date(x.start).getTime()>now && x.status!=='avlyst';})
              .sort(function(a,c){return new Date(a.start)-new Date(c.start);})
-             .filter(function(x){return new Date(x.start).getTime()<=horisont;})   // behold start <= nå+7d
-             .slice(0,20);                                                          // så maks 20 rader
+             .filter(function(x){return new Date(x.start).getTime()<=horisont;});   // behold start <= nå+7d
   renderUpcoming();
 }
 // Rabatt-flagg (spec 4): blå pill ved navnet når bookingen har referral_discount. Ingen pill uten feltet.
@@ -4316,29 +4261,68 @@ function discountPill(b){
   var label=rd.rolle==='verver'?'Verve-bonus':'Velkomstrabatt'; // ny kunde = velkomstrabatt (matcher løftet på bookingsida) · verver = verve-bonus
   return ' <span class="rpill blue">'+label+' · '+(rd.pct||0)+'%</span>';
 }
-function upRow(b){return '<div class="up-row" data-bk="'+b.id+'"><span class="up-time">'+timeOnly(b.start)+'</span>'
+// Rad (I dag + Kommende): klokkeslett · navn · tjeneste høyrestilt. Hele raden åpner detaljflaten (data-bk, body-delegert).
+function upRow(b){return '<div class="up-row" data-bk="'+esc(String(b.id))+'"><span class="up-time">'+timeOnly(b.start)+'</span>'
   +'<span class="up-name">'+esc(b.name)+discountPill(b)+'</span><span class="up-svc">'+esc(b.service||"")+'</span></div>';}
-// Flat struktur (ingen .up-rows-wrapper): dagsskillere (<p>) og rader (<div>) er søsken rett i
-// #upcomingList → radene ligger kontinuerlig med hårlinjer, og .up-row:first-of-type treffer første rad.
-// Dagsskillerne scroller MED innholdet (de ligger inni scroll-beholderen), ikke sticky.
-function upSection(label,items){
-  var body=items.length?items.map(upRow).join("")
-                       :'<p class="up-empty">Ingen bookinger</p>';
-  return '<p class="up-day">'+label+'</p>'+body;
+// «1 t 20 min» / «40 min» / «2 t». Felles for varighet og nedtelling.
+function tMinTekst(min){
+  min=Math.max(0,Math.round(min));
+  if(min<60) return min+' min';
+  var t=Math.floor(min/60), m=min%60;
+  return t+' t'+(m?' '+m+' min':'');
+}
+// «Onsdag 18. nov» (dagsoverskrift i Kommende). k = osloDayKey (lokal midnatt med Oslo-datoens y/m/d).
+function upDagOverskrift(k){ var d=new Date(k); return DAYS[(d.getDay()+6)%7]+' '+d.getDate()+'. '+MONTHS[d.getMonth()].slice(0,3); }
+function renderIdag(){
+  var host=$("#idagInnhold"), ant=$("#idagAntall"); if(!host) return;
+  var now=Date.now(), today=osloTodayKey();
+  // Bøtt på OSLO-kalenderdato (osloDayKey), ikke nettleser-lokal midnatt (H1) — samme definisjon som Kommende.
+  var idag=_bookingerKilde.filter(function(x){return x.status!=='avlyst' && osloDayKey(x.start)===today;});
+  var igjen=idag.filter(function(x){return new Date(x.start).getTime()>now;})
+                .sort(function(a,c){return new Date(a.start)-new Date(c.start);});
+  if(ant) ant.textContent=igjen.length+' igjen';
+  if(!igjen.length){
+    host.innerHTML='<p class="idag-tom">'+(idag.length?'Ingen flere bookinger i dag.':'Ingen bookinger i dag.')+'</p>';
+    return;
+  }
+  var b=igjen[0], start=new Date(b.start).getTime();
+  var varighet=b.end?tMinTekst((new Date(b.end).getTime()-start)/60000):'';
+  var svc=[b.service?esc(b.service):'', varighet].filter(Boolean).join(' · ');
+  host.innerHTML='<div class="idag-neste" data-bk="'+esc(String(b.id))+'">'
+      +'<span class="idag-tid">'+timeOnly(b.start)+'</span>'
+      +'<div class="idag-hvem"><span class="idag-navn">'+esc(b.name)+discountPill(b)+'</span>'+(svc?'<span class="idag-svc">'+svc+'</span>':'')+'</div>'
+    +'</div>'
+    +'<p class="idag-om">Neste kunde · om '+tMinTekst(Math.ceil((start-now)/60000))+'</p>'
+    +(igjen.length>1?'<div class="idag-rader">'+igjen.slice(1).map(upRow).join('')+'</div>':'');
 }
 function renderUpcoming(){
-  // Bøtt på OSLO-kalenderdato (osloDayKey), ikke nettleser-lokal midnatt. Ellers havnet en booking
-  // nær midnatt i feil «I dag/I morgen»-bøtte når nettleser-sona ≠ Oslo (H1), og headeren (dayHead,
-  // som allerede ankrer på osloTodayKey) sa noe annet enn bøtta. Nå én felles Oslo-definisjon.
-  var today=osloTodayKey();var tomorrow=calNesteKey(today,1);  // calNesteKey: DST-trygg +1 dag (ikke +86400000)
-  var byKey={};
-  _upcoming.forEach(function(x){var k=osloDayKey(x.start);(byKey[k]=byKey[k]||[]).push(x);});
-  // «I dag» + «I morgen» er faste ankere (alltid, også tomme). Dager lenger frem vises datert, kun med bookinger.
-  var html=upSection("I dag",byKey[today]||[])+upSection("I morgen",byKey[tomorrow]||[]);
-  Object.keys(byKey).map(Number).filter(function(k){return k>tomorrow;}).sort(function(a,c){return a-c;})
-    .forEach(function(k){ html+=upSection(dayHead(new Date(k)),byKey[k]); });
-  $("#upcomingList").innerHTML=html;
+  renderIdag();
+  var today=osloTodayKey();
+  var kommende=_upcoming.filter(function(x){return osloDayKey(x.start)>today;});
+  var ant=$("#kommendeAntall"); if(ant) ant.textContent=kommende.length+' neste 7 dager';
+  var byKey={}, keys=[];
+  kommende.slice(0,20).forEach(function(x){var k=osloDayKey(x.start); if(!byKey[k]){byKey[k]=[];keys.push(k);} byKey[k].push(x);});
+  $("#upcomingList").innerHTML = keys.length
+    ? keys.map(function(k){ return '<div class="up-gruppe"><p class="up-day">'+upDagOverskrift(k)+'</p>'+byKey[k].map(upRow).join('')+'</div>'; }).join('')
+    : '<p class="up-empty">Ingen bookinger de neste 7 dagene.</p>';
 }
+// Dato under butikknavnet («Tirsdag 17. november», Oslo) — KUN på Oversikt (Henrik 17.11, valg 1).
+function settDashDato(){
+  var el=$("#dashDato"); if(!el) return;
+  var aktiv=document.querySelector('.panel.active');
+  el.hidden=!(aktiv && aktiv.id==='oversikt');
+  var t=new Intl.DateTimeFormat('nb-NO',{timeZone:'Europe/Oslo',weekday:'long',day:'numeric',month:'long'}).format(new Date());
+  el.textContent=t.charAt(0).toUpperCase()+t.slice(1);
+}
+// Minutt-tikk: nedtellingen i I dag og datoen i headeren. Bare I dag tegnes på nytt (ikke Kommende — det ville
+// nullstilt scroll-posisjonen), og bare når Oversikt er synlig og bookingene er lastet.
+setInterval(function(){
+  if(document.hidden) return;
+  settDashDato();
+  var o=document.getElementById('oversikt');
+  if(o && o.classList.contains('active') && _bookingerKilde.length) renderIdag();
+},60000);
+settDashDato();
 /* Beregn VISNINGS-status fra rå status + tid.
    Regel: passert tid + ikke eksplisitt no-show => "fullfort" automatisk.
    Kommende time => "booket". Eksplisitt noshow/venter overstyrer.
@@ -5700,6 +5684,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
   $("#"+id).classList.add("active");
   if(window.__syncBunnNav)window.__syncBunnNav();   // speil aktiv fane i bunn-nav (mobil)
+  settDashDato();   // datoen under butikknavnet vises bare på Oversikt
   if(id==="oversikt"){loadOversikt();loadAktivering();}
   if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();loadLoyalty();}
   if(id==="abonnement"){loadSmsInnstillinger();}   // Konto-bryteren deler sms_paaminnelse_enabled med Vekst
@@ -5745,12 +5730,10 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
     var monthDays=sliceMonth(resp.days||[],ym);
     var totalRev=monthDays.reduce(function(a,d){return a+d.kr;},0);
     var totalCount=monthDays.reduce(function(a,d){return a+d.count;},0);
-    var parts=ym.split("-");
-    $("#rangeLabel").textContent=MONTHS[+parts[1]-1]+" "+parts[0]+" — hele måneden";
-    $("#stats").innerHTML=kpiCardsHtml(totalCount,totalRev);   // samme to kort som pill-modus
-    $("#rekordNote").textContent="";        // ingen uke-rekord på måneds-visning
-    $("#weekInsight").hidden=true;           // persentil + rekord-bar er inneværende-uke → skjul
-    renderBarChart(monthDays,ym);            // rører IKKE #drivenByWrap eller Kommende (som før)
+    $("#stats").innerHTML=kpiCardsHtml(totalCount,totalRev);   // samme to kolonner som pill-modus
+    fitKpi();
+    var rn=$("#rekordNote"); rn.textContent=""; rn.classList.remove('rekord');   // ingen uke-rekord/-innsikt på måneds-visning
+    renderBarChart(monthDays,ym);            // rører IKKE Hentet inn eller Kommende (som før)
   }
   pills.forEach(function(b){ b.addEventListener('click',function(){ velgPill(b); }); });
   mBtn.addEventListener('click',function(e){ e.stopPropagation();
@@ -8165,7 +8148,7 @@ function settHeaderLenke(b){
 // når navnet er for bredt skalerer vi fonten ned med samme ratio-metode som bookingsidas enkeltord-
 // gren, ned til et gulv (FIT_MIN). Er navnet fortsatt for bredt på gulvet, overtar CSS-ellipsen
 // (.shopnavn text-overflow:ellipsis) — font FØRST, «…» SIST.
-var FIT_MIN=11;                 // lesbar minste font før «…» tar over (normal = 14px)
+var FIT_MIN=18;                 // lesbar minste font før «…» tar over (normal = 26px, Oversikt-redesign 17.11)
 // Eneste setter for headernavnet: fjerner skjelettet og fitter fonten. Tom streng = ingen navn (også ved
 // feilet /profile) — da står feltet tomt, ikke et skjelett for alltid.
 function settHeaderNavn(navn){
