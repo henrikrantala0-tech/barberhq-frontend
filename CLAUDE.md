@@ -409,6 +409,29 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
   tittelfeltet fikk annen bakgrunn enn bryterkolonnen. Render: `tools/render/vekst-kort.mjs`.
 - **Kundeside bygges fra `barbers`-raden** (ikke `orders.payload`): alt barbereren endrer (design, layout, font, adresse, bio, bilder, tjenester) når bookingsiden. Oppslag via `barbers.slug`, status-gating via `barbers.page_status`. `savedLayout` er skilt fra `design.layout` — Bilder-fanen leser alltid lagret DB-verdi.
 
+### Oversikt-fanen (redesign 17.11.2026)
+Kilde: Henriks `oversikt-vekst` / `oversikt-gratis` / `hentet-inn-vekst-tom` (.dc.html). Render + vakter:
+`tools/render/oversikt-redesign.mjs` (320/375/1280 × mørk/lys; `… gratis` = bare den tilstandens bilder).
+- **Fire RAMMEFRIE seksjoner** (`.ovs-sek`, 1px `--ov-hair`, 28px): I DAG (`#ovsIdag`) → KOMMENDE (`#ovsKommende`) →
+  NØKKELTALL (`#ovsTall`) → HENTET INN AV BARBERHQ (`#drivenByWrap`). Etiketter `.ovs-etikett` (11.5/600/.08em/versaler).
+  Midlertidige kort (første booking, hjemskjerm, «Fullfør siden») står over seksjonene, uendret.
+- **Tokens `--ov-*`** (hårlinje, segment, knappramme, 0-stolpe, Hentet inn-stripa): mørk = designets hex nøyaktig,
+  lys = egne motstykker. Ingen gradienter på Oversikt.
+- **Header (alle faner):** navn 26px/800 (`FIT_MIN` 18). Dato (`#dashDato`, Oslo) KUN på Oversikt (`settDashDato` i
+  fane-handleren + minutt-tikk). Under 720px står bare kopi-ikonet for bookinglenka (URL-teksten skjult) — navn + URL
+  fikk ikke plass på én rad, og stablingen fikk headeren til å hoppe (Henrik godkjent 17.11).
+- **I DAG** (`renderIdag`, av `_bookingerKilde`): dagens IKKE-passerte timer; neste stort (38px) + «Tjeneste · varighet»
+  + «Neste kunde · om …» (klientside, `tMinTekst`, tegnes på nytt hvert minutt), resten som `.up-row`. «N igjen» til
+  høyre; alle passert → «Ingen flere bookinger i dag.»; ingen → «Ingen bookinger i dag.» Story-lenka (`#storyOpenOversikt`,
+  dagens `/ledige`-regel uendret) + «Du har N ledige timer …» og SMS-tilbudet bor her. Feil → «Prøv igjen» i I DAG.
+- **KOMMENDE:** dagene ETTER i dag, rullende 7 døgn, maks 20 rader, «N neste 7 dager», «Onsdag 18. nov». `_upcoming` er
+  ikke lenger kappet på 20 (I DAG skal ha alle dagens). Scroll-beholderen (`#upcomingList`, max-height) er uendret.
+- **NØKKELTALL:** `.ovs-seg` (delt med Hentet inn; valgt = `--ov-seg-sel`, ALDRI blå; 36px knapp, `::after` gir 46px
+  trykkflate). `.perbar` er nå KUN Veksts `#attrPeriod`. To kolonner (`kpiCardsHtml`), tallfargene arvet (Kunder `.info`,
+  omsetning `#35d07a`, gull ved rekord); `fitKpi()` krymper store beløp. ÉN linje under (`#rekordNote`) — se Oversikt-diagram.
+- **Bunn-nav:** Oversikt-ikonet er fire fliser (`#ic-oversikt`), strek 1.75 som de andre.
+- **Forsidens dashbordklon (`site/no/index.html`) viser fortsatt den GAMLE Oversikt** — bevisst urørt, Henrik avgjør.
+
 ### Oversikt-diagram (Oversikt-fanen)
 Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(days[], ym)` null-fyller til `[{l,kr,l2,count,new,returning}]` → `renderBarChart(data, period)` (leser `d.l/d.kr/d.l2`). Samme skårne array mater KPI-kortene (Σcount=Kunder, Σrevenue=Estimert omsetning). Diagrammet dekker hele historikken.
 - **Perioder:** pill-er (Siste uke=7d / Siste 2 uker=14d / Denne måneden=1.→i dag), rullende, forankret Oslo-i-dag. `daily[]` = 90-dagers vindu fra `/stats`.
@@ -417,8 +440,8 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
   helt — både CSS-regelen og `renderBarChart`-markupen. På fullt månedsdiagram (28–31 stolper)
   overlappet tallene hverandre til uleselig grøt. Beløpet bor i HUD-kortet ved trykk (lag 2), som
   allerede viser det større og med kontekst. Ikke legg dem tilbake uten å løse tettheten.
-- **Volum-farge (lag 1):** `colorForRatio(d.kr/max)` — glidende lineær RGB dempet blågrå → brand-blå → brand-grønn, relativt til beste stolpe i visningen. Per-stolpe gradient (mørk bunn→lys topp av stolpens EGEN farge), ingen glow.
-- **HUD + touch (lag 2, variant A):** magnetisk `pointerdown`/`pointermove` på `#chartBars`, snap via `getBoundingClientRect`. Valgt stolpe → **kort forankret til stolpen** (`#chartHud`, absolutt i `.chart-wrap`): dato liten/dempet, beløp stort + «· N klipp», pills nye (blå) / gjengangere (grønn). Løsrevet caret (`#chartCaret`) på stolpe-senter + peker-linje til stolpetopp; horisontal clamping innenfor kort-padding ved kant-stolper; skann-glid `transition:left .09s`. `pointer-events:none` på kort/caret → tap/skann/undo treffer stolpene under. Undo: tap valgt stolpe → `clearSel()`, tap-vs-dra <8px.
+- **Volum-farge (lag 1):** `colorForRatio(d.kr/max)` — glidende lineær RGB dempet blågrå → brand-blå → brand-grønn, relativt til beste stolpe i visningen. **Ensfarget fyll siden 17.11** (`stolpeFarge` = grunnfargen, hentet tilbake fra `colorForRatio(...).bot ÷ 0,8` — `colorForRatio` er URØRT og deles med Vekst-fanens månedsdiagram, som fortsatt har gradient). 72px stolpeområde (`.cbar-spor`), 0-dag = 3px `--ov-null`, gap 8/4/2px ved 7/14/måned, i dag-etiketten hvit. Ingen tittel over diagrammet (perioden står i `aria-label`).
+- **HUD + touch (lag 2, variant A):** magnetisk `pointerdown`/`pointermove` på `#chartBars`, snap via `getBoundingClientRect`. Valgt stolpe → **kort forankret til stolpen** (`#chartHud`, absolutt i `.chart-wrap`; siden 17.11 flyter kortet OVER stolpeområdet, bunnen 10px over taket, fordi diagrammet ikke har overskrift lenger): dato liten/dempet, beløp stort + «· N klipp», pills nye (blå) / gjengangere (grønn). Løsrevet caret (`#chartCaret`) på stolpe-senter + peker-linje til stolpetopp; horisontal clamping innenfor kort-padding ved kant-stolper; skann-glid `transition:left .09s`. `pointer-events:none` på kort/caret → tap/skann/undo treffer stolpene under. Undo: tap valgt stolpe → `clearSel()`, tap-vs-dra <8px.
 - **Entré + tell-opp (lag 3):** stolper stiger staggered venstre→høyre (variant D: step 95ms / rise 350ms, clamp `ENTRY_MAX_TOTAL=3000` → 90-heatmap sprenger aldri), KPI teller 0→target, KUN første render (`chartEntered`-flagg); pill/tab = uniform vekst, ingen tell-opp. Respekterer `prefers-reduced-motion`.
 - **⚠ Tekst i forsidens dashbord-kloner driver når dashbordet endres (10.10).** Vekst-demoene (`.rbdemo` i
   «Fem systemer»-radene) viste fortsatt «kvelden før», tankestrek, «SLIK SER DEN UT» og «Del vervelenke» lenge
@@ -436,9 +459,21 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
   avviket er reelt og skal ikke «ryddes» ved å endre produktet — det er klonen som er
   koreografi. Se også notatet om at gull-timingen i klonen er demo, ikke produktatferd.
 - **Uke-rekord (lag 4) — KUN pill-modus inneværende uke:** `current_week_revenue`/`best_week_revenue`/`best_week_start` fra `/stats` (backend-beregnet, on-read/Oslo, best = MAX ferdige uker). Gull-KPI (`#estRevValue` gull-gradient + drop-shadow-glow + puls) tenner kun ved `current > best` OG `curPeriod==="uke"`. Dempet «Beste uke: X kr · [mnd]»-fotnote ellers.
-- **Persentil + rekord-bar (batch 2) — KUN pill-modus inneværende uke:** fra `/stats.weekly_revenue` (`[{week_start,revenue}]`, all-time ferdige uker, on-read/Oslo, `max==best_week_revenue` per konstruksjon). Persentil «Bedre enn X% av dine egne uker» vist ved ≥6 uker OG pct≥50 (over median), undertrykt ved rekord. Rekord-bar `current/best`: <0.80 skjul · 0.80–1.0 «X kr unna» · ≥1.0 «Ny rekord denne uka! 🔥» 100% gull. Baren eier rekord-budskapet (tømmer `#rekordNote`) → ingen dobbelt. Skjult på 2uker/måned/historisk måned.
+- **Persentil + «X kr unna» — KUN pill-modus inneværende uke, MAKS ÉN LINJE (17.11):** fra `/stats.weekly_revenue` (`[{week_start,revenue}]`, all-time ferdige uker, on-read/Oslo, `max==best_week_revenue` per konstruksjon). `renderWeekInsight` skriver i SAMME `#rekordNote` som `applyRekord`. Prioritet: rekord slått → «Ny rekord denne uka» (gull, `applyRekord`) · ≥80 % av beste → «X kr unna din beste uke noensinne» · ≥6 uker og pct≥50 → «Bedre enn X % av dine egne uker» · ellers fotnoten «Beste uke: X kr · [mnd]». Fremdriftsstripa (`#weekInsight`/`.wi-*`) er FJERNET. 2uker/måned: bare fotnoten; historisk måned: tom.
 - **Merk (aldri sett live):** mot volum-test er `current_week` (~10 550) « `best` (13 950 = 76%) → persentil + rekord-bar naturlig SKJULT. «unna»/«rekord»-tilstand kun Playwright/deterministisk verifisert. `gull-demo.cjs`-fixtur (backend-repo) kan heve `current` over tersklene for å se dem live.
-- **«Drevet av BarberHQ» (Oversikt):** `renderDrivenBy` henter ekte `GET /api/dashboard/attribution?period=uke|2uker|maaned` (session) via `api.attribution` for ikke-basis — mock (`MOCK_ATTRIBUTION` + `USE_MOCK`) fjernet i `fa02e3f`. Ved Basis-plan vises eksempeltall bak lås i stedet (Basis-visning, INGEN API-kall — lekker aldri ekte tall). Totalen kommer fra backendens autoritative `data.total {count,revenue}` (efaa553), gjort til ENESTE kilde i `46701a3` (klient-sum `attribSum` fjernet; mangler total → feilstate, aldri klient-sum). Tre rader (rebooking/verving/vinn tilbake); 0-rad «0 klipp · 0 kr», alle tre 0 → «Her bygger verdien seg opp». Delta «fra forrige uke» kun på uke-pill (2uker−uke), aldri på eksempeldata. Skjult på historisk måned. **✅ ATTRIBUSJONSSAKEN LUKKET (14.09.2026):** lojalitet er fjernet som attribusjonskategori i BÅDE frontend og backend — begge repos pushet og prod-verifisert (backend `67e2826` «lojalitet er ingen arm — kategori fjernet, rabatt beholdt», som bygger på `98ae355`; frontend `25faaa5`). **Ikke flagg `98ae355`/`67e2826` som upushet — de ER på origin/main.** Totalen summerer nå de TRE armene panelet viser (verving/vinn tilbake/rebooking); lojalitet-noden står igjen i API-et men teller IKKE. `renderDrivenBy` henter hardkodet `siste_maaned` (frikoblet fra #segs). Rebooking-raden viser ekte tall + dempet «SMS av»-badge når `sms_rebooking_enabled=false` (`3372d19`) → synlige rader summerer alltid til vist total. **Tom total (`count===0`) → én dempet linje «Ingenting hentet inn ennå.» (`25faaa5`)** — ERSTATTER de eldre «0 klipp · 0 kr»/«Her bygger verdien seg opp» nevnt tidligere i denne bulleten.
+- **«Hentet inn av BarberHQ» (Oversikt) — NÅTILSTAND (17.11), erstatter bulleten under der de motsier hverandre:**
+  `renderDrivenBy` tegner hele seksjonen. **Vekst:** egen periode `ovsAttrPeriod` (3/6/12 mnd → `siste_3mnd/6mnd/12mnd`,
+  standard 3 mnd, uavhengig av Veksts `#attrPeriod` — snur `da564bd`), sekvensvakt `_ovsAttrSeq`. Total (46px) + «N klipp
+  fra kunder BarberHQ hentet tilbake» + fordelingsstripe (kroner per arm) + rader i rekkefølgen **Rebooking / Vinn
+  tilbake / Verving** (`OVS_ARMER`; Vekst-fanen beholder Verving først) med «SMS av»-merket. Total 0 → «Ingen kunder hentet
+  inn ennå.» + rader med «—». PÅ VEI: «N kunder å hente inn» = `paaVei.winback.borte + no_show` (samme utvalg som
+  `/winback`-lista); mangler feltene (backend før borte/no_show) → reserve `passerer_innen_30d`. 0 → dato-prognose
+  «Første kunde passerer 60 dager …». «N kunder nærmer seg rebooking» + samtykkelinja. Klikk på hele panelet bytter
+  IKKE lenger fane. **Gratis (`erBasis`):** FAST tekst «Flere klipp fra kundene du har. Og nye i tillegg.» + tre rader
+  uten tall + «179 kr/mnd · eks. mva» + «Se Vekst» (`aapneAbonnement`). INGEN `/attribution`-kall på Gratis, ingen
+  maskerte rader, ingen PÅ VEI. De gamle Oversikt-byggerne (`diTitle`, `diHentetInnHtml`, `diPaaVeiHtml`, `.di-card`/
+  `.di-pv-*`) er SLETTET; `diRaderHtml`/`diTotalHtml`/`diBasis*` lever videre for Vekst-fanen.
+- **«Drevet av BarberHQ» (Oversikt) — historikk før 17.11:** `renderDrivenBy` henter ekte `GET /api/dashboard/attribution?period=uke|2uker|maaned` (session) via `api.attribution` for ikke-basis — mock (`MOCK_ATTRIBUTION` + `USE_MOCK`) fjernet i `fa02e3f`. Ved Basis-plan vises eksempeltall bak lås i stedet (Basis-visning, INGEN API-kall — lekker aldri ekte tall). Totalen kommer fra backendens autoritative `data.total {count,revenue}` (efaa553), gjort til ENESTE kilde i `46701a3` (klient-sum `attribSum` fjernet; mangler total → feilstate, aldri klient-sum). Tre rader (rebooking/verving/vinn tilbake); 0-rad «0 klipp · 0 kr», alle tre 0 → «Her bygger verdien seg opp». Delta «fra forrige uke» kun på uke-pill (2uker−uke), aldri på eksempeldata. Skjult på historisk måned. **✅ ATTRIBUSJONSSAKEN LUKKET (14.09.2026):** lojalitet er fjernet som attribusjonskategori i BÅDE frontend og backend — begge repos pushet og prod-verifisert (backend `67e2826` «lojalitet er ingen arm — kategori fjernet, rabatt beholdt», som bygger på `98ae355`; frontend `25faaa5`). **Ikke flagg `98ae355`/`67e2826` som upushet — de ER på origin/main.** Totalen summerer nå de TRE armene panelet viser (verving/vinn tilbake/rebooking); lojalitet-noden står igjen i API-et men teller IKKE. `renderDrivenBy` henter hardkodet `siste_maaned` (frikoblet fra #segs). Rebooking-raden viser ekte tall + dempet «SMS av»-badge når `sms_rebooking_enabled=false` (`3372d19`) → synlige rader summerer alltid til vist total. **Tom total (`count===0`) → én dempet linje «Ingenting hentet inn ennå.» (`25faaa5`)** — ERSTATTER de eldre «0 klipp · 0 kr»/«Her bygger verdien seg opp» nevnt tidligere i denne bulleten.
 
 ### Lojalitetsprogram (Vekst-fanen)
 Ett trekkspill (`#accLoyal`) nederst i «Personlig»-lista, under Verving — speiler Vervings struktur:
@@ -648,9 +683,8 @@ og fem `<section class="panel" id=…>`, i denne rekkefølgen i DOM-en. Her sto 
 riktig fram til Profil-fanen ble slått inn i «Din side». To sammenslåinger har skjedd:
 Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet ikke bar en egen fane.
 
-1. **Oversikt** = Oversikt + Bookinger + vinn-tilbake-**liste**. Pengeside-rekkefølge:
-   KPI/omsetning → graf → «Drevet av BarberHQ» → kommende bookinger → full booking-liste
-   (no-show-marker) → vinn-tilbake-liste.
+1. **Oversikt** = I DAG → KOMMENDE → NØKKELTALL (KPI + graf) → HENTET INN AV BARBERHQ (redesign 17.11.2026 —
+   se «Oversikt-fanen (redesign 17.11.2026)» under Systemtilstand). Vinn tilbake-lista bor i Vekst (`#accWinback`).
 2. **Vekst** = vekst-tall (rebooking-rate/trend) + attribusjon (EKTE `/attribution`, ikke mock) + SMS-knottene
    (påminnelse/rebooking/intervall, ekte `GET/PUT /api/dashboard/settings`) + **Lojalitetsprogram** (se
    egen seksjon). Hele fanens Vekst-flater (attribusjon/momentum/rebooking/vinn-tilbake/verving/lojalitet)
