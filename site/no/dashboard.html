@@ -1148,6 +1148,37 @@
   .ovs-kpi-v{font-size:34px;font-weight:800;letter-spacing:-.045em;line-height:1;font-variant-numeric:tabular-nums;white-space:nowrap}
   .ovs-kpi-v.info{color:var(--info)}
   .ovs-kpi-v .u{font-size:.53em;font-weight:300;letter-spacing:0}   /* ekte mellomrom foran «kr» (ikke margin) → «9 850 kr» også i kopiert tekst/skjermleser */
+  /* Hentet inn — Vekst */
+  .hi-hode{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
+  #drivenBy .ovs-seg{margin-bottom:20px}
+  .hi-total{font-size:46px;font-weight:800;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+  .hi-total .u{font-size:22px;font-weight:300;letter-spacing:0;color:var(--ink-2)}
+  .hi-sub{margin:9px 0 0;font-size:13.5px;line-height:1.5;color:var(--mut)}
+  .hi-stripe{display:flex;gap:3px;height:6px;margin-top:22px}
+  .hi-stripe>span{border-radius:3px;min-width:3px}
+  .hi-rader{margin-top:14px}
+  .hi-rad{display:flex;align-items:flex-start;gap:12px;padding:15px 0;border-bottom:1px solid var(--ov-hair)}
+  .hi-rader.tom{margin-top:18px}
+  .hi-rader.tom .hi-rad{border-bottom:0;border-top:1px solid var(--ov-hair);align-items:center}
+  .hi-prikk{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
+  .hi-tekst{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
+  .hi-navn{font-size:14.5px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
+  .hi-desc{font-size:12.5px;color:var(--mut);line-height:1.4}
+  .hi-tall{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+  .hi-kr{font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
+  .hi-klipp{font-size:12.5px;color:var(--mut);white-space:nowrap}
+  .hi-strek{font-size:14.5px;font-weight:600;color:var(--mut-2)}
+  .hi-tom-h{margin:0;font-size:22px;font-weight:700;letter-spacing:-.03em;line-height:1.15;color:var(--ink)}
+  .hi-tom-p{margin:10px 0 0;font-size:13.5px;line-height:1.5;color:var(--mut)}
+  .hi-feil{margin:0;font-size:13.5px;line-height:1.5;color:var(--mut)}
+  /* PÅ VEI (Vekst): kunder/datoer, ALDRI kroner. Etter tom rad-liste får blokka egen hårlinje over. */
+  .pv-blokk{margin-top:22px}
+  .pv-blokk.med-strek{margin-top:8px;padding-top:18px;border-top:1px solid var(--ov-hair)}
+  .pv-blokk .ovs-etikett{margin-bottom:4px}
+  .pv-rad{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px}
+  .pv-tekst{font-size:14px;color:var(--ink)}
+  .pv-dempet{display:block;font-size:13.5px;line-height:1.5;color:var(--mut)}
+  .pv-samtykke{display:block;margin-top:2px;font-size:12.5px;line-height:1.5;color:var(--mut)}
   /* Crop-modal */
   .crop-modal{position:fixed;inset:0;z-index:400;background:rgba(10,10,10,.97);display:none;flex-direction:column;align-items:center;justify-content:center;padding:20px 16px}
   .crop-modal.open{display:flex}
@@ -4214,8 +4245,119 @@ function koblePaaVeiCta(host){
   var w=host.querySelector('[data-di-winback]'); if(w)w.addEventListener('click',function(){ if(typeof aapneVekstAkkordion==='function')aapneVekstAkkordion('#accWinback'); });
 }
 
-// «Hentet inn av BarberHQ» på Oversikt — ny utgave bygges i neste commit (Oversikt-redesign 17.11). Til da tom.
-async function renderDrivenBy(){ var wrap=$("#drivenBy"); if(wrap) wrap.innerHTML=''; }
+// ══ Oversikt «Hentet inn av BarberHQ» (Oversikt-redesign 17.11.2026) ═══════════════════════════════════════
+// Vekst: egen periodevelger (3/6/12 mnd → siste_3mnd/6mnd/12mnd, standard 3 mnd), UAVHENGIG av Veksts #attrPeriod
+// (snur da564bd etter Henriks valg 5). Total + fordelingsstripe + tre rader + PÅ VEI.
+// Gratis (erBasis): fast overskrift + hva Vekst gjør + pris. Ingen tall, ingen /attribution-henting.
+var ovsAttrPeriod='siste_3mnd';
+var _ovsAttrSeq=0;   // sekvensvakt: raskt periodebytte → bare siste svar får tegne
+var OVS_ATTR_VALG=[['siste_3mnd','3 mnd'],['siste_6mnd','6 mnd'],['siste_12mnd','12 mnd']];
+// Tre armer i OVERSIKTENS rekkefølge (Henrik 17.11): Rebooking / Vinn tilbake / Verving. Vekst-fanen
+// (diRaderHtml) beholder sin egen rekkefølge. Lojalitet er fortsatt IKKE en arm (se diRaderHtml-noten).
+var OVS_ARMER=[
+  {nokkel:'rebooking',   navn:'Rebooking',    desc:'Booket igjen etter SMS',  farge:'var(--ov-a1)'},
+  {nokkel:'vinnTilbake', navn:'Vinn tilbake', desc:'Kom tilbake fra lista',   farge:'var(--ov-a2)'},
+  {nokkel:'vervet',      navn:'Verving',      desc:'Nye kunder via verving',  farge:'var(--ov-a3)'}
+];
+function klippTekst(n){ return n===1?'1 klipp':n+' klipp'; }
+function kunderTekst(n){ return n===1?'1 kunde':n+' kunder'; }
+function ovsAttrVelgerHtml(){
+  return '<div class="ovs-seg" id="ovsAttrPeriod" role="group" aria-label="Periode for Hentet inn">'
+    +OVS_ATTR_VALG.map(function(v){
+      return '<button type="button" class="ovs-seg-btn" data-ovs-attr="'+v[0]+'" aria-pressed="'+(v[0]===ovsAttrPeriod?'true':'false')+'">'+v[1]+'</button>';
+    }).join('')+'</div>';
+}
+// «SMS av»-merket (rebooking-bryteren av NÅ): tallene er opptjent historikk og vises likevel (14.09).
+function ovsSmsAvMerke(o){ return (o && o.aktivert===false)?'<span class="di-off-badge">SMS av</span>':''; }
+function ovsHentetRader(hi, tom){
+  return '<div class="hi-rader'+(tom?' tom':'')+'">'+OVS_ARMER.map(function(a){
+    var o=(hi&&hi[a.nokkel])||{count:0,revenue:0};
+    var tall = (!tom && o.count>0)
+      ? '<div class="hi-tall"><span class="hi-kr">'+krFmt(o.revenue||0)+'</span><span class="hi-klipp">'+klippTekst(o.count)+'</span></div>'
+      : '<div class="hi-tall"><span class="hi-strek" aria-label="ingen ennå">—</span></div>';
+    return '<div class="hi-rad">'
+      +(tom?'':'<span class="hi-prikk" style="background:'+a.farge+'" aria-hidden="true"></span>')
+      +'<div class="hi-tekst"><span class="hi-navn">'+a.navn+ovsSmsAvMerke(a.nokkel==='rebooking'?o:null)+'</span><span class="hi-desc">'+a.desc+'</span></div>'
+      +tall+'</div>';
+  }).join('')+'</div>';
+}
+// Fordelingsstripe: segmenter proporsjonale med KRONER per kilde. Arm med 0 kr får ingen bit; er alle 0 kr
+// (f.eks. bare gratis lojalitetsklipp) tegnes ingen stripe.
+function ovsStripe(hi){
+  var deler=OVS_ARMER.map(function(a){ return {farge:a.farge, kr:Math.max(0,((hi&&hi[a.nokkel])||{}).revenue||0)}; })
+                     .filter(function(d){return d.kr>0;});
+  if(!deler.length) return '';
+  return '<div class="hi-stripe" aria-hidden="true">'+deler.map(function(d){ return '<span style="flex:'+d.kr+';background:'+d.farge+'"></span>'; }).join('')+'</div>';
+}
+// «Kunder å hente inn» = borte + no_show fra backend (samme utvalg som /winback-lista, 0b). Mangler feltene
+// (eldre backend) → dagens tall (passerer_innen_30d) til backend er ute. null = ukjent.
+function ovsHenteInnAntall(wb){
+  if(wb && typeof wb.borte==='number' && typeof wb.no_show==='number') return wb.borte+wb.no_show;
+  return (wb && typeof wb.passerer_innen_30d==='number') ? wb.passerer_innen_30d : null;
+}
+// PÅ VEI (Vekst): kunder/datoer, ALDRI kroner. medStrek = egen hårlinje over (etter tom rad-liste).
+function ovsPaaVeiHtml(pv, medStrek){
+  var rb=(pv&&pv.rebooking)||{naar_vindu_30d:0,med_samtykke:0};
+  var wb=(pv&&pv.winback)||{};
+  var n=ovsHenteInnAntall(wb), dato=pvDato(wb.foerste_passerer_60);
+  var h='<div class="pv-blokk'+(medStrek?' med-strek':'')+'"><h3 class="ovs-etikett">På vei</h3>';
+  if(n>0){
+    h+='<div class="pv-rad"><span class="pv-tekst">'+kunderTekst(n)+' å hente inn</span><button type="button" class="ovs-lenke" data-di-winback>Se lista →</button></div>';
+  }else if(dato){   // ingen klare ennå, men en passerer snart (valg 6)
+    h+='<div class="pv-rad"><span class="pv-tekst">Første kunde passerer 60 dager '+dato+'</span><button type="button" class="ovs-lenke" data-di-winback>Se lista →</button></div>';
+  }else{
+    h+='<div class="pv-rad"><span class="pv-tekst">Ingen kunder å hente inn ennå</span></div>';
+  }
+  var rn=rb.naar_vindu_30d||0;
+  h+='<span class="pv-dempet">'+(rn>0?kunderTekst(rn)+' nærmer seg rebooking':'Ingen kunder nærmer seg rebooking ennå')+'</span>';
+  // Samtykkelinja bare når noen når vinduet: «0 av 0 har SMS-samtykke» sier ingenting.
+  if(rn>0) h+='<span class="pv-samtykke">'+(rb.med_samtykke||0)+' av '+rn+' har SMS-samtykke i dag</span>';
+  return h+'</div>';
+}
+function ovsHentetVekstHtml(data){
+  var hi=data.hentetInn, total=(hi&&hi.total)||{count:0,revenue:0};
+  var h='<h2 class="ovs-etikett ovs-etikett-alene" id="ovsHentetH">Hentet inn av BarberHQ</h2>'+ovsAttrVelgerHtml();
+  if(!hi){
+    // Vekst/trial MEN hentetInn mangler → backend shape-drift. Ærlig feiltilstand, aldri oppsalg. PÅ VEI er ekte for begge planer.
+    console.warn('[hentet-inn] hentetInn mangler for ikke-Basis konto (effective_plan='+(_billing&&_billing.effective_plan)+', grunn='+(_billing&&_billing.effective_plan_grunn)+') — viser På vei uten beløp.');
+    return h+'<p class="hi-feil">Kunne ikke hente beløpet akkurat nå.</p>'+ovsPaaVeiHtml(data.paaVei,true);
+  }
+  if(!((total.count||0)>0)){
+    // Tomtilstand (total = 0) — hentet-inn-vekst-tom.dc.html.
+    return h+'<p class="hi-tom-h">Ingen kunder hentet inn ennå.</p>'
+      +'<p class="hi-tom-p">Når en kunde booker etter en rebooking-SMS, fra vinn tilbake-lista eller via verving, dukker beløpet opp her.</p>'
+      +ovsHentetRader(hi,true)+ovsPaaVeiHtml(data.paaVei,true);
+  }
+  return h+'<div class="hi-total">'+(total.revenue||0).toLocaleString('no-NO')+'<span class="u"> kr</span></div>'
+    +'<p class="hi-sub">'+klippTekst(total.count)+' fra kunder BarberHQ hentet tilbake</p>'
+    +ovsStripe(hi)+ovsHentetRader(hi,false)+ovsPaaVeiHtml(data.paaVei,false);
+}
+async function renderDrivenBy(){
+  var wrap=$("#drivenBy"); if(!wrap)return;
+  // Delegert ÉN gang (overlever innerHTML-rebuild): periodevelger, «Se lista →», «Se Vekst». Hele-panelet-klikket
+  // til Vekst er FJERNET (Henrik 17.11) — med en velger inni ville det vært en felle.
+  if(!wrap._navBound){ wrap._navBound=true;
+    wrap.addEventListener('click',function(e){
+      var p=e.target.closest('[data-ovs-attr]');
+      if(p){ var v=p.getAttribute('data-ovs-attr'); if(v!==ovsAttrPeriod){ ovsAttrPeriod=v; renderDrivenBy(); } return; }
+      if(e.target.closest('[data-di-winback]')){ if(typeof aapneVekstAkkordion==='function')aapneVekstAkkordion('#accWinback'); return; }
+      if(e.target.closest('[data-di-oppgrader]')){ if(typeof aapneAbonnement==='function')aapneAbonnement(); }
+    });
+  }
+  if(billingUkjent())return; // behold vakt (e5aa245): ingen henting/render før planen er kjent
+  // Gratis: fast tekst uten tall (Henrik 17.11) → ingen /attribution-henting i det hele tatt. Teller sekvensen
+  // opp, så et Vekst-svar som fortsatt er i lufta (plan byttet underveis) ikke overskriver Gratis-blokka.
+  if(erBasis()){ ++_ovsAttrSeq; wrap.innerHTML=''; return; }   // Gratis-blokka kommer i neste commit
+  // Valgt periode vises med en gang (før svaret), så velgeren ikke føles død på tregt nett.
+  [].forEach.call(wrap.querySelectorAll('[data-ovs-attr]'),function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-ovs-attr')===ovsAttrPeriod?'true':'false'); });
+  var seq=++_ovsAttrSeq;
+  var data=await api.attribution(ovsAttrPeriod);
+  if(seq!==_ovsAttrSeq) return;   // et nyere valg har overtatt mens kallet var i lufta
+  if(!data){ wrap.innerHTML=''; return; } // feil/401 → tomt, ingen krasj
+  // Forsvar-i-dybden: Basis skal ALDRI vise ekte hentetInn-tall (backend gater: !krevVekst). erBasis() leses
+  // på nytt etter svaret — billing kan ha landet underveis.
+  wrap.innerHTML = erBasis() ? '' : ovsHentetVekstHtml(data);
+}
 // I DAG + KOMMENDE (Oversikt-redesign 17.11.2026). Begge bygges av samme /bookings-svar (_bookingerKilde).
 // I DAG: dagens IKKE-passerte timer — den neste stort, resten som rader. «N igjen» til høyre. Passerte timer
 //   vises ikke; er alle passert: «Ingen flere bookinger i dag.» Nedtellingen («om 1 t 20 min») regnes klientside
