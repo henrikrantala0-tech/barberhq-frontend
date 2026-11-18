@@ -183,7 +183,11 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
 .final-cta h2{font-family:'Inter',-apple-system,system-ui,sans-serif;font-size:clamp(30px,5.5vw,50px);font-weight:800;line-height:1.04;letter-spacing:-.04em;margin-bottom:18px}
 .final-cta p{color:#9a9a9a;font-size:17px;line-height:1.55;max-width:420px;margin:0 auto 34px}
 .final-cta .btn{font-size:17.5px;padding:18px 44px}   /* litt større enn før (16px / 16×38) — sluttstørrelsen etter veksten */
-.final-cta-inner.cta-vokser{transform-origin:50% 50%;will-change:transform,opacity}
+.final-cta-inner.cta-vokser{transform-origin:50% 50%}   /* will-change settes av JS bare mens den vokser */
+/* Lenis (kun desktop) — se LENIS i skriptet. */
+html.lenis,html.lenis body{height:auto}
+.lenis.lenis-smooth{scroll-behavior:auto!important}
+.lenis.lenis-stopped{overflow:hidden}
 
 .foot{border-top:1px solid #1f1f1f;background:#0a0a0a}
 .foot-wrap{max-width:1100px;margin:0 auto;padding:72px 32px 36px}
@@ -514,7 +518,7 @@ html{overflow-x:clip}
    #ksPhoneSlot = permanent plass telefonen lander i (HØYDE-drevet bredde, aspect 1884/3402).
    #ksPhoneTravel = eier hero→ks-transformasjonen (blir position:fixed under reisen).
    #ksPhone       = fyller travel-wrapperen, beholder sine egne små y-bob. */
-.ks-phone-slot{position:relative;width:min(340px, calc((100vh - var(--nav-h,68px) - 46px) / 1.806));aspect-ratio:1884/3402;flex:0 0 auto}
+.ks-phone-slot{position:relative;width:min(340px, calc((100svh - var(--nav-h,68px) - 46px) / 1.806));aspect-ratio:1884/3402;flex:0 0 auto}
 .ks-phone-travel{position:absolute;inset:0;width:100%;height:100%;transform-origin:50% 50%}
 .ks-phone-travel.is-travelling{position:fixed;inset:auto;left:0;top:0;z-index:40;pointer-events:none;will-change:transform,opacity}   /* z:40 < nav z:50 */
 /* Alt.1 fase 1: telefonen ligger i dokumentflyt (absolutt i .ks-scene, IKKE fixed) → nettleseren
@@ -532,7 +536,7 @@ html{overflow-x:clip}
 /* Skjermenes rot isoleres fra scenen rundt: aldri arv av tekstjustering/font fra .ks-inner. */
 .ks-scene .phone-screen{position:absolute;left:16.135%;top:7.76%;width:67.728%;height:81.54%;border-radius:10.19cqw;overflow:hidden;background:#0a0a0a;z-index:1;text-align:left;font-size:medium}
 .ks-scene .hp-screens{position:relative;width:100%;height:100%;overflow:hidden}
-.ks-scene .hp-screen{position:absolute;inset:0;will-change:transform;backface-visibility:hidden}
+.ks-scene .hp-screen{position:absolute;inset:0;backface-visibility:hidden}   /* will-change + content-visibility settes av skjermSynlighet() */
 .ks-scene .phone-di{position:absolute;left:50%;top:9.1%;transform:translateX(-50%);width:20cqw;height:5.6cqw;background:#000;border-radius:2.8cqw;z-index:2;pointer-events:none}
 .ks-scene .phone-statusbar{position:absolute;left:16.135%;top:8.9%;width:67.728%;height:5.6cqw;display:flex;align-items:center;justify-content:space-between;padding:0 4.5cqw;z-index:2;color:#0a0a0a;pointer-events:none}
 .ks-scene .phone-statusbar .sb-t{font-size:3.4cqw;font-weight:700;letter-spacing:-.02em;font-variant-numeric:tabular-nums}
@@ -731,14 +735,13 @@ html{overflow-x:clip}
 /* Stegene ligger i samme grid-celle og krysstones (opacity) — ingen layout-hopp mellom steg. */
 .des-main{min-width:0;display:grid}
 .des-seg{grid-area:1/1;min-width:0;display:flex;flex-direction:column;align-items:center}
-.des-scene.des-anim .des-seg{will-change:opacity,transform}
 .des-seg-off{pointer-events:none}
 .des-text{margin:0 0 18px;text-align:center;max-width:520px}
 .des-text p{color:#b4b4b4;font-size:16px;line-height:1.5;margin:0}
 /* To rammer side om side: dashbordet til venstre, bookingsiden til høyre. Fast forhold (780×1688) → ingen layout-skift. */
 .des-par{display:flex;justify-content:center;gap:28px}
 .des-fig{margin:0;display:flex;flex-direction:column;align-items:center;min-width:0}
-.des-frame{position:relative;height:min(58vh,560px);aspect-ratio:780/1688;border:1px solid var(--d-line2);border-radius:22px;background:var(--d-surface);overflow:hidden}
+.des-frame{position:relative;height:min(58svh,560px);aspect-ratio:780/1688;border:1px solid var(--d-line2);border-radius:22px;background:var(--d-surface);overflow:hidden}
 .des-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;display:block}
 .des-fig figcaption{font-size:12.5px;color:var(--d-mut);margin-top:10px}
 /* Utseende-steget: tre lag per ramme (blå / gull / rød), tonet av desTick mens steget er aktivt — pinnen blir ikke lengre.
@@ -998,8 +1001,8 @@ html{overflow-x:clip}
       <div class="des-seg" data-seg="0">
         <div class="des-text"><p>Spesialitet, adresse og en kort beskrivelse. Mer om deg havner i en egen Om-fane.</p></div>
         <div class="des-par">
-          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-dash-profil.webp" width="780" height="1688" alt="Dashbordet, Din side: steget Profil" decoding="async" loading="lazy"></div><figcaption>Dashbordet</figcaption></figure>
-          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-side-tjenester.webp" width="780" height="1688" alt="Bookingsiden til Grand barber med tjenestene" decoding="async" loading="lazy"></div><figcaption>Bookingsiden</figcaption></figure>
+          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-dash-profil.webp" srcset="images/ds2-dash-profil-390.webp 390w, images/ds2-dash-profil.webp 780w" sizes="(max-width:899px) 46vw, 260px" width="780" height="1688" alt="Dashbordet, Din side: steget Profil" decoding="async" loading="lazy"></div><figcaption>Dashbordet</figcaption></figure>
+          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-side-tjenester.webp" srcset="images/ds2-side-tjenester-390.webp 390w, images/ds2-side-tjenester.webp 780w" sizes="(max-width:899px) 46vw, 260px" width="780" height="1688" alt="Bookingsiden til Grand barber med tjenestene" decoding="async" loading="lazy"></div><figcaption>Bookingsiden</figcaption></figure>
         </div>
       </div>
       <div class="des-seg des-seg-off" data-seg="1">
@@ -1012,15 +1015,15 @@ html{overflow-x:clip}
       <div class="des-seg des-seg-off" data-seg="2">
         <div class="des-text"><p>Portrett eller logo og opptil 10 bilder av arbeidet ditt. Valgfritt, siden er ferdig uten.</p></div>
         <div class="des-par">
-          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-dash-bilder.webp" width="780" height="1688" alt="Dashbordet, Din side: steget Bilder med portrett og arbeidene dine" decoding="async" loading="lazy"></div><figcaption>Dashbordet</figcaption></figure>
-          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-side-bilder.webp" width="780" height="1688" alt="Bookingsiden til Grand barber: Bilder-fanen" decoding="async" loading="lazy"></div><figcaption>Bookingsiden</figcaption></figure>
+          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-dash-bilder.webp" srcset="images/ds2-dash-bilder-390.webp 390w, images/ds2-dash-bilder.webp 780w" sizes="(max-width:899px) 46vw, 260px" width="780" height="1688" alt="Dashbordet, Din side: steget Bilder med portrett og arbeidene dine" decoding="async" loading="lazy"></div><figcaption>Dashbordet</figcaption></figure>
+          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-side-bilder.webp" srcset="images/ds2-side-bilder-390.webp 390w, images/ds2-side-bilder.webp 780w" sizes="(max-width:899px) 46vw, 260px" width="780" height="1688" alt="Bookingsiden til Grand barber: Bilder-fanen" decoding="async" loading="lazy"></div><figcaption>Bookingsiden</figcaption></figure>
         </div>
       </div>
       <div class="des-seg des-seg-off" data-seg="3">
         <div class="des-text"><p>Instagram, TikTok og Snapchat på siden. Nummeret ditt ser kunden bare i bookingbekreftelsen.</p></div>
         <div class="des-par">
-          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-dash-kontakt.webp" width="780" height="1688" alt="Dashbordet, Din side: steget Kontakt" decoding="async" loading="lazy"></div><figcaption>Dashbordet</figcaption></figure>
-          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-side-om.webp" width="780" height="1688" alt="Bookingsiden til Grand barber: Om-fanen med åpningstider" decoding="async" loading="lazy"></div><figcaption>Bookingsiden</figcaption></figure>
+          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-dash-kontakt.webp" srcset="images/ds2-dash-kontakt-390.webp 390w, images/ds2-dash-kontakt.webp 780w" sizes="(max-width:899px) 46vw, 260px" width="780" height="1688" alt="Dashbordet, Din side: steget Kontakt" decoding="async" loading="lazy"></div><figcaption>Dashbordet</figcaption></figure>
+          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-side-om.webp" srcset="images/ds2-side-om-390.webp 390w, images/ds2-side-om.webp 780w" sizes="(max-width:899px) 46vw, 260px" width="780" height="1688" alt="Bookingsiden til Grand barber: Om-fanen med åpningstider" decoding="async" loading="lazy"></div><figcaption>Bookingsiden</figcaption></figure>
         </div>
       </div>
     </div>
@@ -1113,6 +1116,7 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/gsap.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollTrigger.min.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/gsap/3.12.5/ScrollToPlugin.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/lenis@1.1.20/dist/lenis.min.js"></script>
 <script>
 /* FELLES PIN-INIT — deterministisk OPPRETTELSESREKKEFØLGE for ALLE pinnede scener på sida.
    Hver scene registrerer kun sin byggefunksjon (aldri egen await/refresh). Init-en venter ÉN gang på
@@ -1122,10 +1126,31 @@ document.querySelectorAll('.reveal').forEach(function(el){io.observe(el);});
    som feiler (404) stopper ikke byggingen.
    ⚠ Nye pinnede scener (plakat-generatoren kommer) legges inn HER i DOM-rekkefølge via PinInit.register,
    ALDRI med egen await eller egen refresh, og aldri med egen ScrollTrigger utenfor sin registrerte bygg. */
+/* LENIS — jevn sidescroll KUN på desktop (mus/styreplate: hover + fin peker), aldri på touch (syncTouch av) og aldri med
+   prefers-reduced-motion. Koblet til ScrollTrigger (lenis.on('scroll', ScrollTrigger.update)) og drevet av gsap.ticker, så
+   pinner og scrub følger samme bilde. Tastatur (Page Down, mellomrom, piltaster) er nativ scroll som Lenis følger;
+   ankerlenker håndteres av Lenis (anchors). bhqRullTil(y) = felles programmatisk rulling (stegknappene i scenene). */
+(function(){
+  if(!window.Lenis||!window.gsap||!window.ScrollTrigger)return;
+  if(!matchMedia('(hover:hover) and (pointer:fine)').matches||matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  var lenis=new Lenis({lerp:0.1,smoothWheel:true,syncTouch:false,anchors:true,autoRaf:false});
+  lenis.on('scroll',ScrollTrigger.update);
+  gsap.ticker.add(function(time){lenis.raf(time*1000);});
+  gsap.ticker.lagSmoothing(0);
+  window.bhqLenis=lenis;
+})();
+window.bhqRullTil=function(y){
+  if(window.bhqLenis){window.bhqLenis.scrollTo(y,{duration:.6});return;}
+  if(window.gsap&&window.ScrollToPlugin){gsap.registerPlugin(ScrollToPlugin);gsap.to(window,{scrollTo:y,duration:.5,ease:'power1.inOut'});return;}
+  window.scrollTo(0,y);
+};
 window.PinInit=(function(){
   var scener=[];
   return {
     register:function(fn){ if(typeof fn==='function')scener.push(fn); },
+    // Utjevningen (scrub 0.6) settes rett på målet: ved lasting/reload midt i siden skal scenene stå riktig MED EN GANG,
+    // ikke gli fra 0 dit. Fullfører hver scrub-tween og setter animasjonen på scroll-progresjonen.
+    snapp:function(){ window.ScrollTrigger.getAll().forEach(function(s){ var tw=s.getTween&&s.getTween(); if(tw)tw.progress(1); if(s.animation&&s.vars&&typeof s.vars.scrub==='number')s.animation.progress(s.progress); }); },
     run:function(){
       if(!window.gsap||!window.ScrollTrigger)return;
       var frame=document.querySelector('.ks-scene .phone-frame');
@@ -1135,6 +1160,21 @@ window.PinInit=(function(){
       Promise.allSettled(vent).then(function(){
         for(var i=0;i<scener.length;i++){ try{ scener[i](); }catch(e){} }   // bygg i DOM-rekkefølge
         window.ScrollTrigger.refresh();                                       // ÉN felles refresh til slutt
+        window.PinInit.snapp();
+        // Ankerlenke inn til siden (#dineegenside o.l.): scenene er display:none til de er bygget, og pinnene endrer layouten —
+        // nettleserens eget hopp ved lasting treffer derfor feil. Vi hopper selv etter hver refresh (også den ScrollTrigger tar
+        // ved «load», når bilder/fonter har endret pin-avstandene) — helt til brukeren selv har begynt å scrolle.
+        var hash=location.hash&&document.getElementById(decodeURIComponent(location.hash.slice(1)));
+        if(hash){ var brukt=false, stopp=function(){brukt=true;};
+          ['wheel','touchstart','keydown','pointerdown'].forEach(function(ev){window.addEventListener(ev,stopp,{passive:true,once:true});});
+          var hashHopp=function(){ if(brukt)return; var nav=document.querySelector('.nav'), y=Math.max(0,hash.getBoundingClientRect().top+window.scrollY-((nav&&nav.offsetHeight)||0));
+            // Nativt hopp (bruker gjeldende dokumenthøyde) — Lenis' egen scrollTo klemmer mot en grense den måler asynkront og
+            // som ennå ikke har med pin-spacerne. Lenis måles på nytt og følger den native scrollen.
+            window.scrollTo(0,y); if(window.bhqLenis&&window.bhqLenis.resize)window.bhqLenis.resize();
+            window.ScrollTrigger.update(); window.PinInit.snapp(); };
+          hashHopp(); window.ScrollTrigger.addEventListener('refresh',function(){ setTimeout(hashHopp,0); }); }
+        // Ved senere refresh (orientering): samme — utjevningen settes rett på målet i stedet for å «fly» dit.
+        window.ScrollTrigger.addEventListener('refresh',window.PinInit.snapp);
       });
     }
   };
@@ -1285,19 +1325,27 @@ window.PinInit=(function(){
       loTl.fromTo(s,{scale:.6,opacity:0},{scale:1,opacity:1,duration:.2,ease:'back.out(1.9)',onStart:function(){s.classList.add('on');var lm=$('loMeta');if(lm)lm.textContent=(ix===9)?'':(ix+1)+' av 10 klipp';}}, ix*0.11);
     });
     loTl.to('#loRew',{opacity:1,duration:.3},'+=0.06');
-    function loReset(){loTl.pause(0);loStampEls.forEach(function(s){s.classList.remove('on');s.style.opacity=0;s.style.transform='scale(0.6)';});var lr=$('loRew');if(lr)lr.style.opacity=0;var lm=$('loMeta');if(lm)lm.textContent='0 av 10 klipp';}
+    function loReset(){loFerdig=false;loTl.pause(0);loStampEls.forEach(function(s){s.classList.remove('on');s.style.opacity=0;s.style.transform='scale(0.6)';});var lr=$('loRew');if(lr)lr.style.opacity=0;var lm=$('loMeta');if(lm)lm.textContent='0 av 10 klipp';}
     var loActive=false;
+    var loFerdig=false;   // sluttilstanden (t>190) skrives ÉN gang, ikke hvert bilde
     function lojal(t){
       if(t<167){ if(loActive){loReset();loActive=false;} return; }
       if(!loActive){loReset();loTl.play(0);loActive=true;}
-      if(t>190){loTl.progress(1);loStampEls.forEach(function(s){s.classList.add('on');s.style.opacity=1;s.style.transform='scale(1)';});var lr=$('loRew');if(lr)lr.style.opacity=1;var lm=$('loMeta');if(lm)lm.textContent='';}
+      if(t<=190)loFerdig=false;
+      if(t>190&&!loFerdig){loFerdig=true;loTl.progress(1);loStampEls.forEach(function(s){s.classList.add('on');s.style.opacity=1;s.style.transform='scale(1)';});var lr=$('loRew');if(lr)lr.style.opacity=1;var lm=$('loMeta');if(lm)lm.textContent='';}
     }
 
     // diagramTick — REN funksjon av tidslinje-tid t (0..250). Scrub reverserer perfekt.
     function cl01(x){return x<0?0:x>1?1:x;}
     function sg(t,a,b){return cl01((t-a)/(b-a));}
     function ez(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;}
-    function op(id,v){var el=$(id);if(el)el.style.opacity=v;}
+    // sv: skriv en egenskap bare når verdien er ENDRET. Før skrev dTick/lojal hvert bilde — textContent (layout),
+    // setAttribute på SVG (stil + maling) — også når ingenting var endret (målt 18.11 @4× CPU: Få kunder tilbake 105–126 ms
+    // layout, 345–405 ms maling). Hurtigbufferen er ny for hver bygging (matchMedia), så en revert gjør den aldri foreldet.
+    var svC=new WeakMap();
+    function sv(el,k,v){ if(!el)return; var c=svC.get(el); if(!c){c={};svC.set(el,c);} if(c[k]===v)return; c[k]=v;
+      if(k==='text')el.textContent=v; else if(k.charAt(0)==='@')el.setAttribute(k.slice(1),v); else el.style[k]=v; }
+    function op(id,v){sv($(id),'opacity',String(v));}
     function tg(id,n,on){var el=$(id);if(el)el.classList.toggle(n,!!on);}
     function dTick(t){
       // Vinn tilbake er SISTE steg, og steg-6-teksten fader ALDRI ut (i motsetning til steg
@@ -1305,7 +1353,7 @@ window.PinInit=(function(){
       // halen — ellers står teksten alene igjen («bare stegnavn og stegtekst») mens lista er
       // borte i hvilepunktet før scenen unpinner. Lista blir stående til #ksPin scroller vekk.
       var overlay=cl01(sg(t,100,108));
-      var ov=$('ksDiagrams'); if(ov)ov.style.opacity=overlay;
+      sv($('ksDiagrams'),'opacity',String(overlay));
       if(overlay<=0)return;
       op('dReA', cl01(sg(t,108,114))*(1-sg(t,138,143)));
       op('dVe', cl01(sg(t,140,145))*(1-sg(t,165,170)));
@@ -1316,36 +1364,36 @@ window.PinInit=(function(){
       var act=t<116?'28':t<119?'35':t<122?'45':'35';
       tg('h28','on',act==='28');tg('h35','on',act==='35');tg('h45','on',act==='45');
       var fH=t<122?54+(128-54)*ez(sg(t,111,122)):128+(300-128)*ez(sg(t,122,130));
-      var fe=$('reAfill');if(fe)fe.setAttribute('x2',Math.max(54,fH));
+      sv($('reAfill'),'@x2',String(Math.max(54,fH)));
       op('whk5', cl01(sg(t,126,130))); tg('whk5','on', t>=128);
       op('reAsmsH', cl01(sg(t,128,132)));
       var five=t>=132;
       tg('reAgr','hide',!five);
-      if(five){var ge=$('reAgr');if(ge)ge.setAttribute('x2',300+(440-300)*ez(sg(t,132,137)));}
+      if(five)sv($('reAgr'),'@x2',String(300+(440-300)*ez(sg(t,132,137))));
       tg('reAlinkH','hide',!five);tg('reAchkH','hide',!five);
       var n4e=$('reAn4');if(n4e){n4e.querySelector('.node').classList.toggle('grn',five);n4e.classList.toggle('glowg',five);}
       op('reAl4',five?1:0);tg('reAl4','on',five);
       // ---- VERVING ----
       var vp=ez(sg(t,146,154));
-      var vf=$('veFill');if(vf)vf.setAttribute('x2',98+(322-98)*vp);
+      sv($('veFill'),'@x2',String(98+(322-98)*vp));
       op('veDot', cl01(sg(t,146,148))*(1-sg(t,154,157)));
-      var vd=$('veDot');if(vd)vd.setAttribute('cx',98+(322-98)*vp);
+      sv($('veDot'),'@cx',String(98+(322-98)*vp));
       op('veShare', cl01(sg(t,142,146))*(1-sg(t,152,156)));
       var eOn=t>=154,vE=$('veE');
-      if(vE){var vn=vE.querySelector('.node');vn.classList.toggle('on',eOn);vn.style.stroke=eOn?'#4d8bff':'#3a3a42';}
-      var vet=$('veEt');if(vet)vet.style.fill=eOn?'#cfe0ff':'#9a9aa2';
-      tg('veEL','on',eOn);var vel=$('veEL');if(vel)vel.textContent=eOn?'Emre Yilmaz':'Ny kunde';
+      if(vE){var vn=vE.querySelector('.node');vn.classList.toggle('on',eOn);sv(vn,'stroke',eOn?'#4d8bff':'#3a3a42');}
+      sv($('veEt'),'fill',eOn?'#cfe0ff':'#9a9aa2');
+      tg('veEL','on',eOn);sv($('veEL'),'text',eOn?'Emre Yilmaz':'Ny kunde');
       op('veL2', cl01(sg(t,154,158)));
-      var vl1=$('veL1');if(vl1)vl1.style.opacity=1-0.6*cl01(sg(t,148,154));
+      sv($('veL1'),'opacity',String(1-0.6*cl01(sg(t,148,154))));
       op('veBanner', cl01(sg(t,156,159))*(1-sg(t,161,164)));
       op('veReward', cl01(sg(t,161,165)));
       op('veMB', cl01(sg(t,160,164)));op('veEB', cl01(sg(t,160,164)));
       var grn=t>=164;tg('veMB','grn',grn);tg('veEB','grn',grn);
       // ---- VINN TILBAKE ----
       var wbNy=$('wbNy'),nyRow=wbNy&&wbNy.querySelector('.wbrow');
-      if(nyRow){var np=cl01(sg(t,196,202));nyRow.style.opacity=np;nyRow.style.transform='translateY('+(12*(1-np))+'px)';var actw=t>=205;nyRow.classList.toggle('active',actw);nyRow.classList.toggle('slidein',!actw);}
+      if(nyRow){var np=cl01(sg(t,196,202));sv(nyRow,'opacity',String(np));sv(nyRow,'transform','translateY('+(12*(1-np))+'px)');var actw=t>=205;nyRow.classList.toggle('active',actw);nyRow.classList.toggle('slidein',!actw);}
       // ---- desktop stegnav-highlight (Få kunder tilbake) ----
-      if(isD){var ai=t<140?0:t<167?1:t<190?2:3,inFK=t>=113;navBtns2.forEach(function(b,ix){b.style.color=(inFK&&ix===ai)?WHITE:DIM;});}
+      if(isD){var ai=t<140?0:t<167?1:t<190?2:3,inFK=t>=113;navBtns2.forEach(function(b,ix){sv(b,'color',(inFK&&ix===ai)?WHITE:DIM);});}
     }
 
     var tl=gsap.timeline({defaults:{ease:'power2.inOut'}});   // eases på scrubbede tweens (ikke lineær)
@@ -1415,9 +1463,44 @@ window.PinInit=(function(){
     var dist=Math.round((isD?window.innerHeight:(window.visualViewport?window.visualViewport.height:window.innerHeight))*(isD?7.038:6.003));
     // Statuslinje-farge som ren funksjon av tidslinje-tid: mørk (booking) → hvit (mørk kalender) over t41–47,
     // blir hvit på kalender + SMS. Scrubbet i frame() (som dTick) → ingen GSAP-capture-timing-feil.
-    function statusTick(t){var w=(t-41)/6;w=w<0?0:w>1?1:w;var g=Math.round(10+245*w);gsap.set('#ksStatus',{color:'rgb('+g+','+g+','+g+')'});}
-    function frame(self){var t=(self&&typeof self.progress==='number'?self.progress:tl.progress())*207;dTick(t);lojal(t);statusTick(t);}
-    var st=ScrollTrigger.create({trigger:sec,start:'top top+='+navH,end:'+='+dist,pin:'#ksPin',anticipatePin:1,scrub:true,animation:tl,invalidateOnRefresh:true,onUpdate:frame,onRefresh:function(){frame();}});
+    // Statuslinja: hvit på alle fire skjermene (v2-bookingen, kalenderen og låseskjermen er mørke). Var: mørk → hvit t41–47.
+    var statusSatt=false; function statusTick(t){ if(statusSatt)return; statusSatt=true; gsap.set('#ksStatus',{color:'rgb(255,255,255)'}); }
+    // SKJERMEIERE (18.11.2026): før landing (scrollY ≤ st.start) eier reise-driveren #ksHero/#ksBook (glid ut fra banen);
+    // etter landing eier frame() #ksBook (ut t41–49, power2.inOut som tidslinjas standard) og driveren holder #ksHero landet.
+    // Samme betingelse begge steder → rekkefølgen mellom refresh-kall spiller ingen rolle, og skjermene tegnes ut fra
+    // scrollposisjonen også ved reload / hopp midt i scenen (før: hero-kalenderen ble stående, bookingen halvveis).
+    var bookEase=gsap.parseEase('power2.inOut');
+    // Utjevnet reise (J-kroken, travelST scrub 0.6). «Landet» = reisen er helt fram — ÉN betingelse for hvem som eier skjermene.
+    var reise={p:0};
+    function landet(){ return travelST ? reise.p>=0.9999 : (window.scrollY||window.pageYOffset||0)>st.start; }
+    function bookSkjerm(t){ if(!st||!landet())return;
+      var p=(t-41)/8; p=p<0?0:p>1?1:p; gsap.set('#ksBook',{xPercent:-100*bookEase(p)}); }
+    // t = den UTJEVNEDE tidslinja (scrub 0.6), ikke rå scroll — alt i scenen følger samme myke kurve.
+    function frame(){var t=tl.progress()*207;dTick(t);lojal(t);statusTick(t);v2bTick(t);bookSkjerm(t);skjermSynlighet();}
+    tl.eventCallback('onUpdate',frame);
+    // Skjermene i telefonen: content-visibility:hidden når en skjerm er helt utenfor (xPercent ±100 / opacity 0) — da legges den
+    // ikke ut. Rotårsak målt 18.11: J-krok-overgangen (absolute → fixed) bygde layout for HELE telefonen (822 av sidens 1287
+    // layoutobjekter, 117 ms @4× CPU) — også skjermene ingen ser. will-change bare mens en skjerm faktisk glir.
+    var SKJ=['ksHero','ksBook','ksCal','ksSms'].map(function(id){return $(id);}).filter(Boolean), skjC={};
+    function skjermSynlighet(){ SKJ.forEach(function(el){ // xPercent fra GSAPs egen hurtigbuffer; opacity fra inline-stilen GSAP skriver (getProperty('opacity') på en
+      // skjerm GSAP aldri har satt, faller tilbake til getComputedStyle = tvungen stilberegning hvert bilde).
+      var x=+gsap.getProperty(el,'xPercent')||0, o=el.style.opacity===''?1:+el.style.opacity;
+      var synlig=Math.abs(x)<99.9&&o>0.001, glir=synlig&&Math.abs(x)>0.05;
+      var cv=synlig?'':'hidden', wc=glir?'transform':'';
+      if(skjC[el.id+'cv']!==cv){skjC[el.id+'cv']=cv;el.style.contentVisibility=cv;}
+      if(skjC[el.id+'wc']!==wc){skjC[el.id+'wc']=wc;el.style.willChange=wc;} }); }
+    // Pinnen sentreres i plassen under nav-en (innholdet er lavere enn synsfeltet). Er innholdet høyere, står toppen
+    // rett under nav-en. SAMME funksjon brukes av J-krok-landingen (measureTravel → targetCy), så telefonen lander
+    // nøyaktig der slotten står når pinnen låser seg.
+    var ksPinEl=$('ksPin');
+    function ksPinTopp(){ var vhh=window.visualViewport?window.visualViewport.height:window.innerHeight; return Math.round(navH+Math.max(0,(vhh-navH-ksPinEl.offsetHeight)/2)); }
+    // Diagrammene (Få kunder tilbake) skaleres til telefonplassen: min(1, plassens høyde / høyeste diagram). Målt ved bygging
+    // og hver refresh (layout, ikke per scroll-tick). Ingen av diagrammene skal stikke inn i stegteksten under.
+    function fitDia(){ var ov=$('ksDiagrams'), pw=ov&&ov.parentElement; if(!ov||!pw)return; ov.style.setProperty('--dia-s','1');
+      var maks=0; [].forEach.call(ov.querySelectorAll('.dia'),function(d){maks=Math.max(maks,d.offsetHeight);});
+      var sk=maks?Math.min(1,pw.offsetHeight/maks):1; ov.style.setProperty('--dia-s',sk.toFixed(4)); }
+    fitDia(); ScrollTrigger.addEventListener('refresh',fitDia);
+    var st=ScrollTrigger.create({trigger:sec,start:function(){return 'top top+='+ksPinTopp();},end:'+='+dist,pin:'#ksPin',anticipatePin:1,scrub:0.6,animation:tl,invalidateOnRefresh:true,onRefresh:function(){frame();}});
     stRef=st; frame();
 
     // ================= DEL B (steg 2): SINGLE-PHONE — #ksPhone reiser fra hero til ks-plassen =================
@@ -1498,9 +1581,12 @@ window.PinInit=(function(){
       function renderTravel(){
         if(!g.baseW)return;
         var sy=window.scrollY||window.pageYOffset||0;
-        if(mode===null){ if(sy>g.heroStart) travelEnter(); else dockEnter(); }
-        else if(mode==='docked'){ if(sy>g.heroStart) travelEnter(); }          // sømløs ned ved heroStart
-        else { if(sy < g.heroStart-DEADBAND) dockEnter(); }                     // hysterese opp
+        // p = UTJEVNET reise-progresjon (scrub 0.6). Til dokk først når den utjevnede verdien er tilbake på 0 — ellers ville
+        // telefonen hoppet fra banen til hero-plassen mens den fortsatt tar igjen scrollen.
+        var p=reise.p;
+        if(mode===null){ if(sy>g.heroStart||p>0.0005) travelEnter(); else dockEnter(); }
+        else if(mode==='docked'){ if(sy>g.heroStart||p>0.0005) travelEnter(); }   // sømløs ned ved heroStart
+        else { if(sy < g.heroStart-DEADBAND && p<=0.0005) dockEnter(); }          // hysterese opp
         // FASE 1: telefonen følger innholdet via NATIV scroll (dokket, absolutt i sec). Ingen posisjonsskriv per tick.
         if(mode==='docked') return;
         // FASE 2 (fixed): rolig bane — ren scrub-transform (funksjon av progress, ikke rå scrollY).
@@ -1509,7 +1595,6 @@ window.PinInit=(function(){
         // høyre kant og ~60 px under bunnen. Nå: rett linje med svak bue, lett vipp som er 0° i begge ender,
         // og det roterte omrisset holdes innenfor skjermen.
         var cx,cy,scale,rot,mix;
-        var p=cl01((sy-g.heroStart)/Math.max(1,g.ksStart-g.heroStart));
         var e=smoother(p);
         var bue=Math.sin(Math.PI*e);      // 0 i begge ender, 1 midt i banen
         scale=lerp(g.sourceScale,1,e);   // hero-størrelse → NØYAKTIG slot-størrelse
@@ -1530,7 +1615,7 @@ window.PinInit=(function(){
         gsap.set(phoneTravel,{x:cx-g.baseW/2,y:cy-g.baseH/2,scale:scale,rotation:rot,force3D:true});
         // Skjermer + status settes KUN opp til landing (sy<=ksStart). Etter landing eier tidslinja dem
         // (skjerm-xPercent-tweens + statusTick) — vanntett skille, ingen race mot reise-driveren.
-        if(sy<=g.ksStart){
+        if(!landet()){
           // Skjermbytte = ren xPercent-glid, klippet av skjermkanten (ingen opacity-krysstoning).
           gsap.set('#ksHero',{xPercent:-100*mix});
           gsap.set('#ksBook',{xPercent:100*(1-mix)});
@@ -1543,9 +1628,12 @@ window.PinInit=(function(){
           // tidslinja eller reisen oppdaterte sist (utjevningen kan lande dem i hvilken som helst rekkefølge).
           bookSkjerm(tl.progress()*207);
         }
+        skjermSynlighet();
       }
       measureTravel();
-      travelST=ScrollTrigger.create({start:0,end:function(){return st.start;},scrub:true,invalidateOnRefresh:true,
+      // Proxy-tween: ScrollTrigger tar reise.p myk mot scroll-progresjonen (scrub 0.6); renderTravel tegner på hver oppdatering.
+      var reiseTw=gsap.to(reise,{p:1,ease:'none',paused:true,onUpdate:renderTravel});
+      travelST=ScrollTrigger.create({start:0,end:function(){return st.start;},scrub:0.6,animation:reiseTw,invalidateOnRefresh:true,
         onUpdate:renderTravel, onRefresh:function(){measureTravel();mode=null;renderTravel();}});   // mode=null → tving re-dokk/-travel + reposisjonering etter resize/refresh (dokk ellers idempotent)
       renderTravel();
     }
@@ -1562,8 +1650,7 @@ window.PinInit=(function(){
   if(window.PinInit)PinInit.register(bygg);
   // Refresh KUN ved orienteringsendring (ikke visualViewport/adresselinje-resize).
   window.addEventListener('orientationchange',function(){setTimeout(function(){ScrollTrigger.refresh();},250);});
-  function hoppTil(frac){if(!stRef)return;var target=stRef.start+(stRef.end-stRef.start)*frac;
-    if(window.ScrollToPlugin)gsap.to(window,{scrollTo:target,duration:.5,ease:'power1.inOut'});else window.scrollTo(0,target);}
+  function hoppTil(frac){if(!stRef)return;window.bhqRullTil(stRef.start+(stRef.end-stRef.start)*frac);}
   // Kjernefunksjoner-nav: gamle fraksjoner /2,5 (rekkevidden er 2,5× lengre nå).
   navBtns.forEach(function(b){b.addEventListener('click',function(){hoppTil([0.08,0.212,0.332][+b.dataset.step]);});});
   // Få kunder tilbake-nav: fraksjoner av tidslinje-tid (t/250) midt i hvert steg.
@@ -1599,6 +1686,7 @@ window.PinInit=(function(){
       s.style.opacity=op;
       s.style.transform = (inn<1) ? 'translateY('+((1-inn)*14).toFixed(2)+'px)' : '';
       s.classList.toggle('des-seg-off', op<=0.01);
+      var wc=(op>0.01&&op<0.99)?'opacity, transform':''; if(s.style.willChange!==wc)s.style.willChange=wc;   // lag bare mens det toner
       if(op<0.5)s.setAttribute('aria-hidden','true'); else s.removeAttribute('aria-hidden');
     }
     // Utseende (steg 2, t 100–200): blå → gull (t128–138) → rød (t162–172), samtidig i begge rammene.
@@ -1616,15 +1704,24 @@ window.PinInit=(function(){
     function startPx(){ var h=pinEl.offsetHeight, plass=vh()-navH; return 'top top+='+Math.round(navH+Math.max(0,(plass-h)/2)); }
     // Ca. én skjermhøyde scroll per steg.
     function endPx(){ return '+='+Math.round(vh()*N*0.95); }
-    stRef=ScrollTrigger.create({trigger:sec,start:startPx,end:endPx,pin:pinEl,anticipatePin:1,scrub:true,invalidateOnRefresh:true,
-      onUpdate:function(self){tick(self.progress*T);},onRefresh:function(self){tick(self.progress*T);}});
+    // Proxy-tween: ScrollTrigger tar desP.t myk mot scroll-progresjonen (scrub 0.6) — tick tegner på hver oppdatering.
+    var desP={t:0}, desTw=gsap.to(desP,{t:1,ease:'none',paused:true,onUpdate:function(){tick(desP.t*T);}});
+    stRef=ScrollTrigger.create({trigger:sec,start:startPx,end:endPx,pin:pinEl,anticipatePin:1,scrub:0.6,animation:desTw,invalidateOnRefresh:true,
+      onRefresh:function(){tick(desP.t*T);}});
     tick(0);
   }
+  // Forhåndsdekoding: alle bildene i scenen lastes og dekodes FØR scenen når skjermen (IntersectionObserver, 1,5 skjermhøyder
+  // i forveien). Målt 18.11 @4× CPU: 68–86 dekodinger (387–438 ms) skjedde UNDER krysstoningen — bildene var lazy og ble
+  // dekodet først da de ble synlige.
+  (function(){ var bilder=[].slice.call(sec.querySelectorAll('img')); if(!bilder.length||!('IntersectionObserver' in window))return;
+    var io=new IntersectionObserver(function(es){ if(!es.some(function(e){return e.isIntersecting;}))return; io.disconnect();
+      bilder.forEach(function(im){ im.loading='eager'; if(im.decode)im.decode().catch(function(){}); }); },{rootMargin:'150% 0px 150% 0px'});
+    io.observe(sec); })();
   function desReduced(){ sec.classList.add('des-reduced'); segs.forEach(function(s){ s.style.opacity=1; s.classList.remove('des-seg-off'); }); }
   // Stegknappene (desktop til venstre, mobil som rad): hopp til midten av steget.
   navBtns.forEach(function(b,i){ b.addEventListener('click',function(){ if(!stRef)return;
     var y=stRef.start+(stRef.end-stRef.start)*((i*100+50)/T);
-    if(window.ScrollToPlugin)gsap.to(window,{scrollTo:y,duration:.5,ease:'power1.inOut'}); else window.scrollTo(0,y); }); });
+    window.bhqRullTil(y); }); });
   // Registrer scenen til den felles pin-init-en (bygges etter ks, i DOM-rekkefølge — se PinInit øverst).
   // Orienteringsendring: Kjernefunksjoner-scenen kjører allerede én global ScrollTrigger.refresh().
   if(window.PinInit)PinInit.register(reduce?desReduced:desbygg);
@@ -1640,26 +1737,41 @@ window.PinInit=(function(){
   var sec=document.getElementById('finalCta'), inn=document.getElementById('finalCtaInner');
   if(!sec||!inn)return;
   if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
-  var MIN=0.85, planlagt=false;
+  // Utjevning (18.11): målet regnes ut fra scrollposisjonen hvert bilde, og verdien glir mot det (eksponentiell lerp, τ 110 ms,
+  // uavhengig av bildefrekvens). Løkka går bare til verdien har satt seg; will-change står bare mens den går.
+  var MIN=0.85, kjorer=false, naa=null, sist=0, TAU=110, geo=null;
+  // Geometrien bufres (topp i dokumentet + høyde) og måles på nytt bare ved refresh/resize — ingen getBoundingClientRect i
+  // rAF (det tvang en stil-/layoutberegning hvert bilde over hele siden, etter at ScrollTrigger hadde skrevet).
+  function maalGeo(){ var r=sec.getBoundingClientRect(); geo={top:r.top+(window.scrollY||window.pageYOffset||0), h:r.height, H:document.documentElement.scrollHeight}; }
   function vh(){ return window.visualViewport ? window.visualViewport.height : window.innerHeight; }
-  function oppdater(){
-    planlagt=false;
-    var r=sec.getBoundingClientRect(), h=vh(), sy=window.scrollY||window.pageYOffset||0;
-    var maks=Math.max(0, document.documentElement.scrollHeight-h);
-    var fra=sy+r.top-h;                                   // seksjonens topp når bunnen av synsfeltet
-    var til=Math.min(sy+r.top+r.height/2-h/2, maks);      // seksjonen midt i skjermen
+  function maal(){
+    if(!geo)maalGeo();
+    var h=vh(), sy=window.scrollY||window.pageYOffset||0;
+    var maks=Math.max(0, geo.H-h);
+    var fra=geo.top-h;                                    // seksjonens topp når bunnen av synsfeltet
+    var til=Math.min(geo.top+geo.h/2-h/2, maks);          // seksjonen midt i skjermen
     var p=til>fra ? (sy-fra)/(til-fra) : 1; p=p<0?0:p>1?1:p;
-    var e=1-(1-p)*(1-p);                                  // myk landing (ease-out)
-    inn.style.transform='scale('+(MIN+(1-MIN)*e).toFixed(4)+')';
-    inn.style.opacity=(0.55+0.45*e).toFixed(3);
+    return 1-(1-p)*(1-p);                                 // myk landing (ease-out)
   }
-  function planlegg(){ if(!planlagt){ planlagt=true; requestAnimationFrame(oppdater); } }
+  function skriv(e){ inn.style.transform='scale('+(MIN+(1-MIN)*e).toFixed(4)+')'; inn.style.opacity=(0.55+0.45*e).toFixed(3); }
+  function steg(ts){
+    var dt=sist?Math.min(64,ts-sist):16; sist=ts; var m=maal();
+    if(naa===null)naa=m; else naa+=(m-naa)*(1-Math.exp(-dt/TAU));
+    if(Math.abs(m-naa)<0.0005)naa=m;
+    skriv(naa);
+    if(naa!==m){ requestAnimationFrame(steg); } else { kjorer=false; sist=0; inn.style.willChange=''; }
+  }
+  // Løkka startes bare når CTA-en er innen én skjermhøyde av synsfeltet (eller fortsatt glir mot målet).
+  function planlegg(){ if(kjorer)return; if(!geo)maalGeo(); var sy=window.scrollY||window.pageYOffset||0, h=vh();
+    if(naa!==null && (sy+2*h<geo.top || sy>geo.top+geo.h+h))return;
+    kjorer=true; inn.style.willChange='transform, opacity'; requestAnimationFrame(steg); }
+  function nyGeo(){ geo=null; maalGeo(); planlegg(); }
   inn.classList.add('cta-vokser');
   window.addEventListener('scroll',planlegg,{passive:true});
-  window.addEventListener('resize',planlegg);
+  window.addEventListener('resize',nyGeo);
   if(window.visualViewport)window.visualViewport.addEventListener('resize',planlegg);
-  // Pin-spacerne over endrer seksjonens posisjon når ScrollTrigger bygger/refresher.
-  if(window.ScrollTrigger)ScrollTrigger.addEventListener('refresh',planlegg);
+  // Pin-spacerne over endrer seksjonens posisjon når ScrollTrigger bygger/refresher → mål geometrien på nytt.
+  if(window.ScrollTrigger)ScrollTrigger.addEventListener('refresh',nyGeo);
   planlegg();
 })();
 </script>
