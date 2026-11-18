@@ -121,8 +121,8 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
 - **Font:** valg fjernet fra onboarding (alle får Fraunces). Font velges i
   dashbordet etterpå.
 - **Designmodell — LÅST 19.10.2026 (erstatter «Design er låst: 6 paletter, 4 layouter»):**
-  - **v1 (utgående):** dagens palett/layout/stil-velger i «Din side». Beholdes for eksisterende barbere
-    til alle er flyttet.
+  - **v1 (utgående):** palett/layout/stil-velgeren i «Din side». Backend (`sidemal-cjs.cjs`, 23.10.2026) sier at
+    alle barbere er flyttet til v2; v1-koden står til v1-fjerningen. Markedssidene viser bare v2 (funksjoner.html 18.11).
   - **v2 (ny, bak `barbers.sidemal='v2'` i backend):** ÉN fast mal. Fonten påvirker KUN sjappenavnet
     (Inter ellers). Aksent blå `#0071E3` / gull `#B08C32` / rød `#B83A42` / egen; lys/mørk. Ingen layout,
     ingen hero. «Din side» blir fire steg: Profil → Utseende → Bilder → Kontakt, «Se siden» hele veien.
@@ -135,7 +135,11 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
     feil står til de er løst; på mobil (live side) fast rett over bunn-navet. Forkast-dialog bare når en lagring
     har feilet. Ingen sjekkliste-sperre. Mobil først; render 320/375/402/1280. Egen farge med knappkontrast under
     3,0 → varsel, lagring tillatt. Render: `tools/render/dinside-v2-autolagring.mjs` + `dinside-v2.mjs`.
-  - Nye barbere får v1 til Grand Barber er godkjent på v2; deretter v2.
+  - **Nye barbere får ALLTID v2** (backend `61cc558`, 23.10.2026): `startverdierForNyBarber()` gir `sidemal:'v2'`,
+    og kolonne-defaulten er `'v2'` (migrasjon 087). «Nye får v1 til Grand Barber er godkjent» gjelder ikke lenger.
+  - **Ingen «Lagre endringer» i v2** — autolagring (over) har erstattet den. Ikke skriv «Lagre endringer» i markedstekst
+    eller hjelpetekst. (Utdaterte kode-KOMMENTARER som fortsatt nevner den: `dinside-v2.js` ved `bygg()`,
+    `dinside-v2.css` øverst, `dashboard.html` ved v2-oppsettlenka — koden selv har ingen slik knapp.)
 - **Oversikt = uke-rekord-akse; Vekst = måned-rekord-akse.** Persentil + progress-bar bor
   på Oversikt og er UKE-relative (måned har for få datapunkter for meningsfull persentil;
   uke-jakt gir hyppigere motivasjon). «Beste måned» (+ gullstolpe-på-rekord-måned) hører til
@@ -224,6 +228,23 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
   repo. **Blir det flere, steng dem.**
 
 **Arbeidslogger hører ikke hjemme i CLAUDE.md. Bruk git-historikk.**
+
+## site/no/funksjoner.html — «Din egen side» (v2) + avslutning (18.11.2026)
+- **Scenen `#dineegenside`** viser v2: fire steg Profil → Utseende → Bilder → Kontakt på ÉN pin, ren krysstoning (scrub).
+  Hvert steg = ekte dashbord-skjermbilde (`images/ds2-dash-*.webp`, tegnet fra `dinside-v2.js` med mocket API og Grand
+  Barbers prod-data) + ekte bookingside-skjermbilde fra prod (`images/ds2-side-*.webp`, kun GET). Ingen layouter/stiler/paletter.
+- **Utseende-bildet viser bare Grand Barbers ekte aksent** (`#4d8bff`). Aksenten kan IKKE byttes i et skjermbilde ved å
+  sette én CSS-variabel: `v2-css.cjs` avleder `--accent-ink` (knappetekst etter kontrast), `--accent-text` (mørknet til
+  ≥ 4,5 kontrast) og `--accent-soft` (blanding) på serveren. Andre aksenter krever ekte server-render.
+- **Pinnen er så høy som innholdet** og sentreres i synsfeltet (`startPx`). Tidligere var den 100vh med kortere innhold →
+  restplassen ble liggende over «Klar for din egen side?» når pinnen slapp. `margin-top:12vh` på scenen er fjernet (den la seg
+  oppå den tomme bunnen i Kjernefunksjoner-pinnen).
+- **Gjenstående tomrom under «Få kunder tilbake»** (165 px @375, 263 px @1280): `#ksPin` er 100vh med midtstilt innhold.
+  Samme fiks (pin = innholdshøyde) er IKKE gjort der, fordi J-krok-telefonen (låst) lander i `#ksPhoneSlot` inni den pinnen.
+- **CTA-en vokser** 0,85 → 1 (opacity 0,55 → 1) fra seksjonens topp når bunnen av synsfeltet til den står midt i skjermen:
+  egen passiv scroll-lytter + rAF, bare transform/opacity, måler mot `visualViewport` (iOS Safari). Reduced-motion: ingenting.
+  Toppavstand = vanlig seksjonsavstand (56/48). Knappen 17,5 px / 18×44.
+- Vakt: `node tools/render/funksjoner-v2.mjs` (steg, tekster, bilder lastet, pin i synsfeltet, tomrom, CTA-skala, reduced-motion).
 
 ## site/no/index.html — seksjonsrekkefølge (låst 26.06)
 1. Hero (`#top`)

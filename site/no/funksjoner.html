@@ -179,10 +179,11 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
 
 /* ---- VARIANT B: kompakte kort, 2 kol desktop / 1 mobil, lav høyde ---- */
 
-.final-cta{text-align:center;padding:90px 32px 90px}
+.final-cta{text-align:center;padding:56px 32px 90px}   /* topp = vanlig seksjonsavstand (.fx-section 56/48), rett etter Din side-scenen */
 .final-cta h2{font-family:'Inter',-apple-system,system-ui,sans-serif;font-size:clamp(30px,5.5vw,50px);font-weight:800;line-height:1.04;letter-spacing:-.04em;margin-bottom:18px}
 .final-cta p{color:#9a9a9a;font-size:17px;line-height:1.55;max-width:420px;margin:0 auto 34px}
-.final-cta .btn{font-size:16px;padding:16px 38px}
+.final-cta .btn{font-size:17.5px;padding:18px 44px}   /* litt større enn før (16px / 16×38) — sluttstørrelsen etter veksten */
+.final-cta-inner.cta-vokser{transform-origin:50% 50%;will-change:transform,opacity}
 
 .foot{border-top:1px solid #1f1f1f;background:#0a0a0a}
 .foot-wrap{max-width:1100px;margin:0 auto;padding:72px 32px 36px}
@@ -205,6 +206,7 @@ a.fn:focus-visible{outline:2px solid #4d8bff;outline-offset:3px;border-radius:10
   .nav-wrap{padding:0 16px}.nav .logo img{height:19px}
   .ph-hero{padding:80px 24px 4px}
   .fx-section{padding:48px 22px 4px}
+  .final-cta{padding:48px 22px 80px}
   .foot-top{grid-template-columns:1fr;gap:40px;padding-bottom:42px}
   .foot-cols{grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:32px 24px}
   .foot-wrap{padding:56px 24px 32px}
@@ -782,207 +784,60 @@ html{overflow-x:clip}
   .ks-diagrams .lostampwrap{max-width:225px}
 }
 
-/* ==================== DIN EGEN SIDE (scroll-scene, egen pin — overgang + Profil) ==================== */
-/* Samme svarte #0a0a0a som resten av sida — INGEN fargeovergang. Profil-kortet er også #0a0a0a
-   (går i ett med sida, ingen kant/skygge); kun input-feltene har --d-surface #141414 + kant så de
-   synes tydelig. Overgangen fra Vinn tilbake er lik de andre stegene: glir ut, tittel + Profil inn.
-   Kortfarge-token = dashboard.html:351 (--surface #141414), brukt kun på feltene. Mørk only. */
-.des-scene{position:relative;overflow-x:clip;background:#0a0a0a;display:none;margin-top:12vh;
-  --d-surface:#141414;--d-ink:#ffffff;--d-ink2:#cfcfcf;--d-mut:#8a8a8a;--d-line:#242424;--d-line2:#363636;--d-info:#4d8bff}
+/* ==================== DIN EGEN SIDE — v2: fire steg (Profil → Utseende → Bilder → Kontakt) på én pin (18.11.2026) ====================
+   Ekte skjermbilder: dashbordets «Din side» (v2, dinside-v2.js, mocket API med Grand Barbers prod-data) og Grand Barbers
+   bookingside i prod. Ingen layouter, stiler eller paletter — det finnes ikke i v2.
+   ROTÅRSAKER TIL TOMROMMENE (målt 18.11, tools/render/funksjoner-v2.mjs):
+   · Pinnen var 100vh høy med kortere innhold → når den slapp, ble restplassen liggende over «Klar for din egen side?».
+     Nå er pinnen SÅ HØY SOM INNHOLDET og sentreres i synsfeltet (startPx i JS) — ingen død plass bakt inn i pinnen.
+   · margin-top:12vh på scenen la seg OPPÅ den tomme bunnen i Kjernefunksjoner-pinnen (tomrommet under «Få kunder
+     tilbake»). Fjernet.
+   · Layout-steget lot kortene starte under skjermkanten → tittelen sto alene over et tomt felt. Steget finnes ikke i v2. */
+.des-scene{position:relative;overflow-x:clip;background:#0a0a0a;display:none;
+  --d-ink:#ffffff;--d-mut:#8a8a8a;--d-line2:#363636;--d-surface:#141414}
 .des-scene.des-anim{display:block}
-.des-scene *{transition:none!important;animation:none!important}
-.des-pin{position:relative;min-height:420px;z-index:1}
-.des-stage{position:relative;width:100%;height:100%}
-.des-inner{position:relative;z-index:1;width:100%;max-width:1200px;margin:0 auto;padding:0 40px;display:grid;grid-template-columns:170px 1fr 170px;align-items:center;gap:36px}   /* symmetrisk: hovedinnhold (kol 2) sentrert = samme x-senter som tittelen; nav kol 1, tom spacer kol 3 */
-.des-h2{grid-column:1/-1;font-family:'Inter',sans-serif;font-weight:800;font-size:clamp(24px,3.4vw,38px);letter-spacing:-.03em;color:#fff;margin:0;z-index:6}
+.des-pin{position:relative;z-index:1}
+.des-inner{position:relative;width:100%;max-width:1200px;margin:0 auto;padding:24px 40px 8px;display:grid;
+  grid-template-columns:170px 1fr 170px;align-items:center;column-gap:36px}   /* symmetrisk: innholdet (kol 2) under tittelens senter */
+.des-h2{grid-column:1/-1;text-align:center;font-family:'Inter',sans-serif;font-weight:800;font-size:clamp(24px,3.4vw,38px);
+  letter-spacing:-.03em;color:#fff;margin:0 0 18px}
 .des-nav{display:flex;flex-direction:column;gap:20px}
-.des-step-btn{background:none;border:0;color:#fff;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;text-align:left;padding:1px 0;cursor:pointer}
-.des-main{min-width:0}
-/* Tittel + stegtekst ligger OVER kortene (z-index) — layout-kortene glir bak dem mot hjørnet. */
-.des-text{margin:0 0 18px;position:relative;z-index:6}
-.des-step h3{font-family:'Inter',sans-serif;font-weight:800;font-size:clamp(22px,2.6vw,30px);letter-spacing:-.02em;color:#fff;margin:0 0 6px}
-.des-step p{color:#b4b4b4;font-size:16px;line-height:1.5;margin:0}
-.des-dashrow{display:grid;grid-template-columns:1fr 330px;gap:34px;align-items:center}
-/* Profil-kort — klonet .acc/.fld/.savebar (dashboard.html), sømløst mot kortfarge-bakgrunnen */
-.des-card{background:transparent;border:0;border-radius:12px;overflow:hidden;position:relative;height:min(66vh,540px)}
-.des-cardscroll{will-change:transform}
-.des-acc-head{padding:15px 3px 10px}
-.des-acc-title{font-size:18px;font-weight:700;color:var(--d-ink);letter-spacing:-.01em}
-.des-acc-sub{display:block;font-size:13px;color:var(--d-mut);margin-top:4px;line-height:1.5}
-.des-accbody{padding:4px 3px 8px}
-.des-fld{margin-bottom:15px;max-width:560px}
-.des-fld label{display:block;font-size:12px;color:var(--d-mut);font-weight:500;margin-bottom:6px;letter-spacing:-.01em}
-/* Felt i full dashbord-størrelse (border-box → min-height MÅ romme padding: 42px total, ikke 22).
-   Bakgrunn --d-surface #141414 + kant → tydelig synlig mot den svarte sida. Kun teksten animeres. */
-.des-in{width:100%;font:inherit;font-size:15px;padding:10px 12px;border:1px solid var(--d-line2);border-radius:8px;background:var(--d-surface);color:var(--d-ink);min-height:42px;line-height:1.4;white-space:pre-wrap;word-break:break-word}
-.des-in.ta{min-height:76px}
-.des-in.typing::after{content:'';display:inline-block;width:1.5px;height:1em;background:var(--d-info);margin-left:1px;vertical-align:-2px}
-.des-fld-hint{font-size:11.5px;color:var(--d-mut);margin-top:6px;line-height:1.4;letter-spacing:-.01em}
-.des-fld-at{position:relative}
-.des-fld-at .sym{position:absolute;left:12px;top:11px;color:var(--d-mut);font-size:14px;font-weight:600;line-height:1.4;pointer-events:none}
-.des-fld-at .des-in{padding-left:26px}
-.des-savebar{display:flex;align-items:center;gap:13px;margin-top:16px}
-.des-btn{font:inherit;font-weight:600;font-size:14px;padding:10px 22px;border-radius:8px;background:#fff;color:#0a0a0a;border:0}
-.des-btn.hot{box-shadow:0 0 0 3px rgba(77,139,255,.55)}
-/* mykt inn/ut-fade på kortet (feltene glir inn/ut i kortfarge) */
-.des-card::before,.des-card::after{content:'';position:absolute;left:0;right:0;height:44px;z-index:2;pointer-events:none}
-.des-card::before{top:0;background:linear-gradient(to bottom,#0a0a0a,transparent)}
-.des-card::after{bottom:0;background:linear-gradient(to top,#0a0a0a,transparent)}
-/* Preview — EKTE skjermbilde (webp) av grand-barber, ikke levende iframe (statisk: ingen script,
-   ingen demo-besøk/statistikk, ikke klikkbar). Samme ramme/hjørner som dashbordets pvScreen. */
-.des-preview{align-self:center}
-.des-pv-frame{border:1px solid var(--d-line2);border-radius:24px;background:var(--d-surface);overflow:hidden;height:min(58vh,540px);aspect-ratio:281/562;width:auto;max-width:100%;margin:0 auto;position:relative}
-.des-pv-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;display:block}
-.des-pv-cap{font-size:12px;color:var(--d-mut);text-align:center;margin-top:10px}
-/* ANIMERT */
-.des-scene.des-anim .des-pin{height:calc(100vh - var(--nav-h,68px))}
-.des-scene.des-anim .des-inner{height:100%;align-content:center}
-.des-scene.des-anim .des-h2{position:absolute;top:2vh;left:50%;transform:translateX(-50%);white-space:nowrap;margin:0}
-/* MOBIL — kort (fyll) og preview vises sekvensielt (får ikke plass samtidig i pinnet viewport) */
-@media(max-width:899px){
-  .des-inner{grid-template-columns:1fr;gap:12px;padding:0 16px}
-  .des-scene.des-anim .des-pin{height:calc(100svh - var(--nav-h,68px))}
-  /* Flex-kolonne (ikke grid): h2 tar naturlig høyde, main fyller NØYAKTIG resten. Fikser at main
-     med fast 100svh-høyde ble dyttet ned av h2 og overflowet ~57px → layrow sentrerte kortet i en
-     bane som stakk under skjermkanten (kortet havnet for lavt/for lite). */
-  .des-scene.des-anim .des-inner{display:flex;flex-direction:column;padding-top:12px}
-  .des-nav{display:none}
-  /* ALLE steg: stegteksten står rett under tittelen (som tittel→innhold i Kjernefunksjoner), ikke
-     vertikalt sentrert i den høye pinnen — så teksten ligger på samme sted og ikke hopper mellom steg.
-     Høyere spesifisitet enn base-regelen .des-seg{justify-content:center} (som står lenger ned). */
-  .des-scene.des-anim .des-seg{justify-content:flex-start;padding-top:8px;position:relative}
-  .des-scene.des-anim .des-h2{position:relative;top:auto;left:auto;transform:none;text-align:center;font-size:clamp(21px,5.6vw,28px)}
-  .des-text{text-align:center;margin-bottom:12px}
-  .des-dashrow{grid-template-columns:1fr;gap:0}
-  .des-card{height:min(58svh,440px);max-width:420px;margin:0 auto}
-  .des-preview{margin:0 auto}
-  .des-pv-frame{height:min(52svh,360px);max-width:100%}
-}
-
-/* ==================== DIN EGEN SIDE — flersegment (Profil / Layout / Design) på samme pin ==================== */
-/* Nav-stegene til venstre: dempet default, aktivt steg settes hvitt av JS (samme mønster som FKT). */
-.des-nav{gap:18px}
-.des-step-btn{color:#5c5c5c}
-/* Segmentene overlapper i samme grid-celle og krysstoner via opacity — ingen layout-hopp mellom steg.
-   Main får full pinnet høyde så segmentene kan posisjonere seg vertikalt uavhengig. */
-.des-scene.des-anim .des-main{display:grid;height:calc(100vh - var(--nav-h,68px))}
-.des-seg{grid-area:1/1;min-width:0;display:flex;flex-direction:column;justify-content:center}
+.des-step-btn{background:none;border:0;color:#5c5c5c;font-family:'Inter',sans-serif;font-size:15px;font-weight:600;text-align:left;padding:1px 0;cursor:pointer}
+.des-step-btn.on{color:#fff}
+/* Stegene ligger i samme grid-celle og krysstones (opacity) — ingen layout-hopp mellom steg. */
+.des-main{min-width:0;display:grid}
+.des-seg{grid-area:1/1;min-width:0;display:flex;flex-direction:column;align-items:center}
+.des-scene.des-anim .des-seg{will-change:opacity,transform}
 .des-seg-off{pointer-events:none}
-/* Layout-segmentet toppforankres UNDER tittelen (stegteksten kolliderte med «Din egen side»). */
-@media(min-width:900px){#desSegLayout{justify-content:flex-start;padding-top:12vh}
-  #desSegDesign{justify-content:flex-start;padding-top:11vh}
-  /* Layout-raden brer seg over den tomme spacer-kolonnen til høyre (170px + 36px gap) så
-     de fire kortene får plass til å vokse mot 260px-cap-en. Navet (kol 1) er urørt (Q2). */
-  #desSegLayout{margin-right:calc(-170px - 36px)}}
-/* ---- LAYOUT-segment: rad med fire ekte grand-barber-renders ---- */
-.des-layrow{display:grid;grid-template-columns:repeat(4,minmax(0,260px));gap:16px;align-items:start;justify-content:center;margin:0 auto;width:100%}
-.des-lay{opacity:0;will-change:transform,opacity}
-.des-lay-frame{border:1px solid var(--d-line2);border-radius:16px;background:var(--d-surface);overflow:hidden;aspect-ratio:281/562;width:100%;position:relative}
-.des-lay-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;display:block}
-.des-lay-cap{font-size:13px;color:#cfcfcf;text-align:center;margin-top:11px;opacity:.4}
-.des-lay.is-on .des-lay-cap{opacity:1;font-weight:600;color:#fff}
-/* Mobil-merkelapp (kun mobil): navnet på den aktive layouten under den ene forhåndsvisningen. */
-.des-lay-tag{display:none}
+.des-text{margin:0 0 18px;text-align:center;max-width:520px}
+.des-text p{color:#b4b4b4;font-size:16px;line-height:1.5;margin:0}
+/* To rammer side om side: dashbordet til venstre, bookingsiden til høyre. Fast forhold (780×1688) → ingen layout-skift. */
+.des-par{display:flex;justify-content:center;gap:28px}
+.des-fig{margin:0;display:flex;flex-direction:column;align-items:center;min-width:0}
+.des-frame{position:relative;height:min(58vh,560px);aspect-ratio:780/1688;border:1px solid var(--d-line2);border-radius:22px;background:var(--d-surface);overflow:hidden}
+.des-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;display:block}
+.des-fig figcaption{font-size:12.5px;color:var(--d-mut);margin-top:10px}
+.des-note{grid-column:2;text-align:center;font-size:13.5px;line-height:1.5;color:var(--d-mut);margin:16px 0 0}
 @media(max-width:899px){
-  .des-scene.des-anim .des-main{height:auto;flex:1;min-height:0}
-  .des-seg .des-text{text-align:center;margin-bottom:12px}
-  /* Mobil: skrå transportbånd. Alle fire stables i samme celle; JS gir hver sin posisjon på banen
-     (nedre høyre → senter → øvre venstre). Kortbanen sentreres i plassen under stegteksten (margin:auto);
-     større kort → ca. 2 synlige samtidig. */
-  .des-layrow{display:grid;grid-template-columns:1fr;max-width:320px;margin:0 auto;width:100%;flex:1;align-content:center}
-  .des-lay{grid-area:1/1;z-index:1}
-  /* Kort så stort som viewport-høyden tillater. calc(100svh - 210px) reserverer plass til
-     tittel + etikett (ellers klippes bunn/etikett på 320×568). Cap 520px høyde ⇒ maks 260px
-     bredt (281/562-forhold): 260×DPR3 = 780 = kildens bredde → aldri oppskalering. */
-  .des-lay-frame{height:min(520px,calc(100svh - 288px));aspect-ratio:281/562;width:auto;margin:0 auto}
-  /* Layoutnavnet FØLGER hvert kort: står rett UNDER kortets ramme (inne i .des-lay, glir med i banen),
-     aldri oppå bildet. Full opacity/hvit på mobil. */
-  .des-lay-cap{display:block;opacity:1;color:#fff;font-weight:600;font-size:14px;margin-top:10px}
-  .des-lay-tag{display:none}
+  .des-inner{grid-template-columns:1fr;padding:16px 16px 4px}
+  .des-h2{font-size:clamp(21px,5.6vw,28px);margin-bottom:10px}
+  /* Mobil: stegene som én rad under tittelen (aktivt hvitt), så man ser hvor i flyten man er. */
+  .des-nav{flex-direction:row;justify-content:center;gap:16px;margin:0 0 12px}
+  .des-step-btn{font-size:13px}
+  .des-text{margin-bottom:12px}
+  .des-text p{font-size:14.5px}
+  .des-par{gap:12px;width:100%}
+  /* Rammehøyden er det minste av: halve innholdsbredden × 1688/780, og høyden som er igjen i synsfeltet
+     (tittel + stegrad + stegtekst + bildetekst + linja under ≈ 250 px). Da står hele pinnen alltid i synsfeltet. */
+  .des-frame{height:min(calc((100vw - 44px) / 2 * 1688 / 780),calc(100svh - var(--nav-h,68px) - 250px));border-radius:16px}
+  .des-fig figcaption{font-size:12px;margin-top:8px}
+  .des-note{grid-column:1;font-size:13px;margin-top:12px}
 }
-
-/* ==================== DESIGN-segment: klonet dashboard-kort (scopet dd-*) ==================== */
-.des-dcard{height:auto}
-.des-drow2{grid-template-columns:1fr 288px;align-items:center;gap:26px}
-.des-dcard .des-acc-head{padding:2px 3px 4px}
-.des-dcard .des-acc-title{font-size:16px}
-.des-dcard .des-acc-sub{margin-top:1px}
-.dd-ctl{position:relative}
-.dd-lbl{font-size:11px;color:var(--d-mut);font-weight:600;margin:7px 0 3px;letter-spacing:-.01em}
-.dd-focus{transition:none}
-.dd-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:6px}
-.dd-pal{position:relative}
-.dd-card{position:relative;text-align:left;border:1.5px solid var(--d-line2);border-radius:10px;padding:6px 10px;background:var(--d-surface);font:inherit;cursor:default;z-index:1}
-.dd-card.dd-on{border-color:var(--d-info)}
-.dd-pt{display:block;font-size:12.5px;font-weight:600;letter-spacing:-.01em;color:var(--d-ink)}
-.dd-pd{display:block;font-size:10.5px;color:var(--d-mut);margin-top:1px}
-.dd-sw{display:flex;gap:5px;margin-top:5px}
-.dd-sw i{width:13px;height:13px;border-radius:4px;border:1px solid rgba(127,127,127,.35);display:block}
-/* Felles valgramme — ETT element som glir mellom palett-kortene (transform), aldri to rammer. */
-.dd-frame{position:absolute;top:0;left:0;width:1px;height:1px;border:2px solid var(--d-info);border-radius:12px;
-  z-index:2;pointer-events:none;opacity:0;will-change:transform}
-/* Segmentert Lys/Mørk med glidende tommel */
-.dd-mode{position:relative;display:inline-flex;background:var(--d-surface);border:1px solid var(--d-line2);border-radius:9px;padding:3px}
-.dd-modethumb{position:absolute;top:3px;left:3px;height:calc(100% - 6px);border-radius:6px;background:#fff;z-index:0;pointer-events:none;will-change:transform}
-.dd-modebtn{position:relative;z-index:1;appearance:none;border:0;background:0;font:inherit;font-size:12.5px;font-weight:500;color:var(--d-mut);padding:6px 20px;border-radius:6px;cursor:default}
-.des-dcard .des-savebar{margin-top:11px}
-.dd-modebtn.dd-on{color:#0a0a0a}
-/* Fargevelger-panel — overlegg forankret under palett-gridet, skyver ALDRI kortet. */
-.dd-custom-panel{position:absolute;left:0;right:0;z-index:5;padding:14px;border:1.5px solid var(--d-info);border-radius:11px;
-  background:var(--d-surface);opacity:0;transform:translateY(-6px);pointer-events:none;will-change:transform,opacity}
-.dd-cpick{max-width:320px}
-.dd-sv{position:relative;width:100%;height:120px;border-radius:8px;border:1px solid var(--d-line2);
-  background:linear-gradient(to top,#000,transparent),linear-gradient(to right,#fff,hsl(0,100%,50%))}
-.dd-cursor{position:absolute;width:16px;height:16px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none;left:0;top:0;will-change:transform}
-.dd-hue{position:relative;width:100%;height:22px;margin-top:11px;border-radius:99px;background:linear-gradient(to right,#f00,#ff0,#0f0,#0ff,#00f,#f0f,#f00)}
-.dd-huethumb{position:absolute;top:50%;left:0;width:20px;height:20px;border:2px solid #fff;border-radius:50%;box-shadow:0 0 0 1px rgba(0,0,0,.45),0 1px 3px rgba(0,0,0,.5);transform:translate(-50%,-50%);pointer-events:none;will-change:transform}
-.dd-fine{display:flex;gap:10px;align-items:center;margin-top:12px;max-width:320px}
-.dd-prev{width:40px;height:40px;border-radius:8px;border:1px solid var(--d-line2);flex:0 0 auto;background:#000}
-.dd-hex{flex:1;min-width:0;font:inherit;font-size:14px;padding:9px 12px;border:1px solid var(--d-line2);border-radius:8px;background:var(--d-surface);color:var(--d-ink);font-variant-numeric:tabular-nums}
-/* 4-lags forhåndsvisning — alle dekodet, krysstoner via opacity */
-.des-dpv{position:relative}
-.des-dpv-layer{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;display:block;opacity:0;will-change:opacity}
-@media(max-width:899px){
-  /* Mobil: forhåndsvisning øverst, kort under (kortet glir så aktiv del står synlig). */
-  .des-drow2{grid-template-columns:1fr;gap:0}
-  .des-drow2 .des-dpreview{order:-1;margin-bottom:12px}
-  .dd-grid{gap:8px}
-  /* Kortet i FULL størrelse, men bare et vindu er synlig — dd-ctl glir (translateY). #desSegDesign
-     arver justify-content:flex-start + padding-top:8px fra .des-seg → stegteksten står på samme sted
-     som i Profil/Layout. */
-  .des-dcard{position:relative;height:min(33svh,262px);overflow:hidden}
-  .des-dcard .dd-ctl{will-change:transform}
-  /* Headeren («Design» + undertittel) er et OPAKT, fast toppfelt over det glidende dd-ctl-innholdet.
-     Uten dette glir palettkortene (BarberHQ/Din egen) opp BAK den gjennomsiktige headeren og synes
-     gjennom teksten (overlapp på iPhone). Opak bg + z over dd-card (z1)/kort-fade (z2) → palettene
-     glir rent bak headeren i alle scrollposisjoner. */
-  .des-dcard .des-acc-head{position:relative;z-index:3;background:#0a0a0a;box-shadow:0 6px 6px -4px #0a0a0a}
-  .des-dpv{height:min(37svh,250px)}
-  /* Kompakt fargevelger på mobil så SV + kulør + hex får plass i kortvinduet (også 320). */
-  .dd-custom-panel{padding:11px}
-  .dd-sv{height:100px}
-  .dd-hue{margin-top:8px;height:20px}
-  .dd-fine{margin-top:8px}
-  .dd-prev{width:36px;height:36px}
-  .dd-hex{padding:8px 10px;font-size:13px}
-}
-/* 390×600 og kortere: skaler ned FORHÅNDSVISNINGEN (ikke kortet) så fargevelgeren får plass. */
-@media(max-width:899px) and (max-height:660px){
-  .des-dpv{height:min(23svh,138px)}
-  .des-dcard{height:min(41svh,236px)}
-  .dd-sv{height:82px}
-  #desSegDesign .des-text{margin-bottom:6px}
-  .des-drow2 .des-dpreview{margin-bottom:6px}
-}
-/* Reduced-motion: ingen pin/scrub — vis Design-SLUTTILSTANDEN (rød, lys) statisk. Profil/Layout
-   skjules; fargevelger-panelet legges i flyt (ikke overlegg) så hele kortet leses. */
-.des-scene.des-reduced .des-pin,.des-scene.des-reduced .des-main{height:auto}
-.des-scene.des-reduced .des-h2{position:relative;top:auto;left:auto;transform:none;text-align:center;margin:0 0 22px}
-.des-scene.des-reduced #desSegProfil,.des-scene.des-reduced #desSegLayout{display:none}
-.des-scene.des-reduced #desSegDesign{padding-top:0}
-.des-scene.des-reduced .des-dcard{height:auto;overflow:visible}
-.des-scene.des-reduced .des-dcard .dd-ctl{transform:none!important}
-.des-scene.des-reduced .dd-custom-panel{position:static;opacity:1!important;transform:none!important;margin:8px 0 0;pointer-events:auto}
+/* Reduced-motion: ingen pin, ingen krysstoning — alle fire stegene står under hverandre. */
+.des-scene.des-reduced .des-inner{grid-template-columns:1fr}
+.des-scene.des-reduced .des-nav{display:none}
+.des-scene.des-reduced .des-main{display:flex;flex-direction:column;gap:48px}
+.des-scene.des-reduced .des-note{grid-column:1}
 
 </style>
 </head>
@@ -1202,115 +1057,52 @@ html{overflow-x:clip}
   </div>
 </section>
 
-<!-- ===================== DIN EGEN SIDE (scroll-scene, egen pin — overgang + Profil) ===================== -->
+<!-- ===================== DIN EGEN SIDE — v2 (scroll-scene, egen pin): Profil → Utseende → Bilder → Kontakt =====================
+     Bildene er ekte: dashbordets «Din side» (v2) og Grand Barbers bookingside i prod (18.11.2026). Autolagring — ingen lagreknapp. -->
 <section class="des-scene" id="dineegenside" aria-label="Din egen side">
-  <div class="des-pin" id="desPin"><div class="des-stage"><div class="des-inner">
+  <div class="des-pin" id="desPin"><div class="des-inner">
     <h2 class="des-h2">Din egen side</h2>
     <nav class="des-nav" aria-label="Steg">
-      <button class="des-step-btn" type="button" data-seg="0">Profil</button>
-      <button class="des-step-btn" type="button" data-seg="1">Layout</button>
-      <button class="des-step-btn" type="button" data-seg="2">Design</button>
+      <button class="des-step-btn on" type="button" data-seg="0" aria-current="step">Profil</button>
+      <button class="des-step-btn" type="button" data-seg="1">Utseende</button>
+      <button class="des-step-btn" type="button" data-seg="2">Bilder</button>
+      <button class="des-step-btn" type="button" data-seg="3">Kontakt</button>
     </nav>
     <div class="des-main">
-      <!-- SEGMENT 1: Profil (uendret) -->
-      <div class="des-seg" id="desSegProfil">
-      <div class="des-text"><div class="des-step"><p>Legg til info og sosiale medier på bookingsiden din.</p></div></div>
-      <div class="des-dashrow">
-        <div class="des-card" id="desCard"><div class="des-cardscroll" id="desCardScroll">
-          <div class="des-acc-head"><span class="des-acc-title">Profil</span><span class="des-acc-sub">Grunninfo som vises på bookingsiden din.</span></div>
-          <div class="des-accbody">
-            <div class="des-fld"><label>Navn på salongen</label><div class="des-in" data-v="Grand barber"></div></div>
-            <div class="des-fld"><label>Adresse</label><div class="des-in" data-v="Storgata 33, 0184 Oslo"></div><p class="des-fld-hint">Skriv full adresse (gate, nummer, postnr, by) så kunder finner frem i kart. Vil du ikke dele nøyaktig sted, skriv bare byen.</p></div>
-            <div class="des-fld"><label>Spesialitet</label><div class="des-in" data-v="Fades og skjeggtrim"></div></div>
-            <div class="des-fld"><label>Beskrivelse</label><div class="des-in ta" data-v="Sitter i sentrum og har klippet siden 2019."></div></div>
-            <div class="des-fld"><label>Instagram</label><div class="des-fld-at"><span class="sym">@</span><div class="des-in" data-v="barberhq__"></div></div></div>
-            <div class="des-fld"><label>TikTok</label><div class="des-fld-at"><span class="sym">@</span><div class="des-in" data-v="barber_hq_"></div></div></div>
-            <div class="des-fld"><label>Snapchat</label><div class="des-fld-at"><span class="sym">@</span><div class="des-in" data-v="barberhq_"></div></div></div>
-            <div class="des-fld"><label>Telefon</label><div class="des-in" data-v=""></div><p class="des-fld-hint">Kunden ser nummeret på bekreftelsen sin, ikke på selve bookingsiden.</p></div>
-            <div class="des-savebar"><button class="des-btn" id="desSaveBtn" type="button">Lagre profil</button></div>
-          </div>
-        </div></div>
-        <div class="des-preview" id="desPreview">
-          <div class="des-pv-frame"><img id="desPv" src="images/preview-grand-barber.webp" width="780" height="1560" alt="Forhåndsvisning av bookingsiden din" decoding="async" loading="lazy"></div>
-          <p class="des-pv-cap">Slik ser bookingsiden din ut.</p>
+      <div class="des-seg" data-seg="0">
+        <div class="des-text"><p>Spesialitet, adresse og en kort beskrivelse. Mer om deg havner i en egen Om-fane.</p></div>
+        <div class="des-par">
+          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-dash-profil.webp" width="780" height="1688" alt="Dashbordet, Din side: steget Profil" decoding="async" loading="lazy"></div><figcaption>Dashbordet</figcaption></figure>
+          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-side-tjenester.webp" width="780" height="1688" alt="Bookingsiden til Grand barber med tjenestene" decoding="async" loading="lazy"></div><figcaption>Bookingsiden</figcaption></figure>
         </div>
       </div>
-      </div>
-      <!-- SEGMENT 2: Layout — fire ekte grand-barber-renders (Kraftig, mørk) -->
-      <div class="des-seg des-seg-off" id="desSegLayout">
-        <div class="des-text"><div class="des-step"><p>Hero, Profil, Direkte eller Showcase. Opptil 10 bilder i galleriet.</p></div></div>
-        <div class="des-layrow" id="desLayRow">
-          <div class="des-lay" data-idx="0"><div class="des-lay-frame"><img src="images/pv-hero-barberhq-mork.webp" width="780" height="1560" alt="Hero-layout" decoding="async" loading="lazy"></div><p class="des-lay-cap">Hero</p></div>
-          <div class="des-lay" data-idx="1"><div class="des-lay-frame"><img src="images/pv-profil-barberhq-mork.webp" width="780" height="1560" alt="Profil-layout" decoding="async" loading="lazy"></div><p class="des-lay-cap">Profil</p></div>
-          <div class="des-lay" data-idx="2"><div class="des-lay-frame"><img src="images/pv-direkte-barberhq-mork.webp" width="780" height="1560" alt="Direkte-layout" decoding="async" loading="lazy"></div><p class="des-lay-cap">Direkte</p></div>
-          <div class="des-lay" data-idx="3"><div class="des-lay-frame"><img src="images/pv-showcase-barberhq-mork.webp" width="780" height="1560" alt="Showcase-layout" decoding="async" loading="lazy"></div><p class="des-lay-cap">Showcase</p></div>
+      <div class="des-seg des-seg-off" data-seg="1">
+        <div class="des-text"><p>Lys eller mørk bakgrunn. Blå, gull, rød eller din egen farge. Seks skrifter til sjappenavnet.</p></div>
+        <div class="des-par">
+          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-dash-utseende.webp" width="780" height="1688" alt="Dashbordet, Din side: steget Utseende med bakgrunn og aksentfarge" decoding="async" loading="lazy"></div><figcaption>Dashbordet</figcaption></figure>
+          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-side-book.webp" width="780" height="1688" alt="Bookingsiden til Grand barber: velg tjeneste" decoding="async" loading="lazy"></div><figcaption>Bookingsiden</figcaption></figure>
         </div>
-        <p class="des-lay-tag" id="desLayTag">Hero</p>
       </div>
-      <!-- SEGMENT 3: Design — klonet dashboard-kort (scopet) + Wispr-koreografi -->
-      <div class="des-seg des-seg-off" id="desSegDesign">
-        <div class="des-text"><div class="des-step"><p>Velg mellom 16&nbsp;777&nbsp;216 farger, eller bytt palett og lys/mørk.</p></div></div>
-        <div class="des-dashrow des-drow2">
-          <div class="des-card des-dcard" id="desDCard">
-            <div class="des-acc-head"><span class="des-acc-title">Design</span><span class="des-acc-sub">Palett, bakgrunn, stil og layout på bookingsiden din.</span></div>
-            <div class="dd-ctl">
-              <div class="dd-focus" data-focus="palett">
-                <p class="dd-lbl">Palett</p>
-                <div class="dd-grid dd-pal" id="ddPal">
-                  <span class="dd-frame" id="ddPalFrame" aria-hidden="true"></span>
-                  <button class="dd-card" data-idx="0" type="button"><span class="dd-pt">Gull</span><span class="dd-pd">Klassisk</span><span class="dd-sw"><i style="background:#ffffff"></i><i style="background:#b08c32"></i><i style="background:#0a0a0a"></i></span></button>
-                  <button class="dd-card" data-idx="1" type="button"><span class="dd-pt">Lime</span><span class="dd-pd">Signatur</span><span class="dd-sw"><i style="background:#ffffff"></i><i style="background:#d4ff3f"></i><i style="background:#0a0a0a"></i></span></button>
-                  <button class="dd-card" data-idx="2" type="button"><span class="dd-pt">BarberHQ</span><span class="dd-pd">Moderne</span><span class="dd-sw"><i style="background:#0a0a0a"></i><i style="background:#ffffff"></i><i style="background:#0071e3"></i></span></button>
-                  <button class="dd-card dd-cust" data-idx="3" type="button"><span class="dd-pt">Din egen</span><span class="dd-pd" id="ddCustSub">Egen aksentfarge</span><span class="dd-sw"><i style="background:#ffffff"></i><i id="ddCustSw" style="background:#e5484d"></i><i style="background:#0a0a0a"></i></span></button>
-                </div>
-              </div>
-              <!-- Fargevelger — forankret UNDER Din egen, overlegg (skyver ikke kortet). -->
-              <div class="dd-custom-panel" id="ddCustomPanel" aria-hidden="true">
-                <div class="dd-cpick">
-                  <div class="dd-sv" id="ddSV"><span class="dd-cursor" id="ddCursor"></span></div>
-                  <div class="dd-hue" id="ddHue"><span class="dd-huethumb" id="ddHueThumb"></span></div>
-                </div>
-                <div class="dd-fine"><span class="dd-prev" id="ddPrev"></span><span class="dd-hex" id="ddHex">#000000</span></div>
-              </div>
-              <div class="dd-focus" data-focus="bakgrunn">
-                <p class="dd-lbl">Bakgrunn</p>
-                <div class="dd-mode" id="ddMode"><span class="dd-modethumb" id="ddModeThumb" aria-hidden="true"></span><button class="dd-modebtn" data-m="lys" type="button">Lys</button><button class="dd-modebtn" data-m="mork" type="button">Mørk</button></div>
-              </div>
-              <div class="dd-focus" data-focus="ovrig">
-                <p class="dd-lbl">Stil</p>
-                <div class="dd-grid dd-stil">
-                  <button class="dd-card" type="button"><span class="dd-pt">Klassisk</span></button>
-                  <button class="dd-card" type="button"><span class="dd-pt">Signatur</span></button>
-                  <button class="dd-card" type="button"><span class="dd-pt">Moderne</span></button>
-                  <button class="dd-card dd-on" type="button"><span class="dd-pt">Kraftig</span></button>
-                </div>
-                <p class="dd-lbl">Layout</p>
-                <div class="dd-grid dd-lay">
-                  <button class="dd-card" type="button"><span class="dd-pt">Profil</span><span class="dd-pd">Portrett + info</span></button>
-                  <button class="dd-card dd-on" type="button"><span class="dd-pt">Showcase</span><span class="dd-pd">Galleri i front</span></button>
-                  <button class="dd-card" type="button"><span class="dd-pt">Hero</span><span class="dd-pd">Stort forsidebilde</span></button>
-                  <button class="dd-card" type="button"><span class="dd-pt">Direkte</span><span class="dd-pd">Rett til booking</span></button>
-                </div>
-              </div>
-              <div class="des-savebar"><button class="des-btn" id="desDSaveBtn" type="button">Lagre design</button></div>
-            </div>
-          </div>
-          <div class="des-preview des-dpreview">
-            <div class="des-pv-frame des-dpv">
-              <img class="des-dpv-layer" data-l="0" src="images/pv-showcase-barberhq-mork.webp" width="780" height="1560" alt="Bookingside — BarberHQ mørk" decoding="async">
-              <img class="des-dpv-layer" data-l="1" src="images/pv-showcase-lime-mork.webp" width="780" height="1560" alt="Bookingside — Lime mørk" decoding="async">
-              <img class="des-dpv-layer" data-l="2" src="images/pv-showcase-lime-lys.webp" width="780" height="1560" alt="Bookingside — Lime lys" decoding="async">
-              <img class="des-dpv-layer" data-l="3" src="images/pv-showcase-custom-lys.webp" width="780" height="1560" alt="Bookingside — Din egen rød, lys" decoding="async">
-            </div>
-            <p class="des-pv-cap" id="desDCap">Slik ser bookingsiden din ut.</p>
-          </div>
+      <div class="des-seg des-seg-off" data-seg="2">
+        <div class="des-text"><p>Portrett eller logo og opptil 10 bilder av arbeidet ditt. Valgfritt, siden er ferdig uten.</p></div>
+        <div class="des-par">
+          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-dash-bilder.webp" width="780" height="1688" alt="Dashbordet, Din side: steget Bilder med portrett og arbeidene dine" decoding="async" loading="lazy"></div><figcaption>Dashbordet</figcaption></figure>
+          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-side-bilder.webp" width="780" height="1688" alt="Bookingsiden til Grand barber: Bilder-fanen" decoding="async" loading="lazy"></div><figcaption>Bookingsiden</figcaption></figure>
+        </div>
+      </div>
+      <div class="des-seg des-seg-off" data-seg="3">
+        <div class="des-text"><p>Instagram, TikTok og Snapchat på siden. Nummeret ditt ser kunden bare i bookingbekreftelsen.</p></div>
+        <div class="des-par">
+          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-dash-kontakt.webp" width="780" height="1688" alt="Dashbordet, Din side: steget Kontakt" decoding="async" loading="lazy"></div><figcaption>Dashbordet</figcaption></figure>
+          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-side-om.webp" width="780" height="1688" alt="Bookingsiden til Grand barber: Om-fanen med åpningstider" decoding="async" loading="lazy"></div><figcaption>Bookingsiden</figcaption></figure>
         </div>
       </div>
     </div>
-  </div></div></div>
+    <p class="des-note">Alt lagres mens du jobber. Når du publiserer, går siden live.</p>
+  </div></div>
 </section>
 
-<!-- ===================== DIN SIDE (statisk fallback for reduced-motion / no-JS) ===================== -->
+<!-- ===================== DIN SIDE (statisk fallback for no-JS) ===================== -->
 <section class="fx-section" id="dsFallback">
   <h2 class="fx-h2 reveal">Din side</h2>
   <div class="fn-list">
@@ -1321,12 +1113,17 @@ html{overflow-x:clip}
       </div>
     </div>
     <div class="fn reveal">
+      <i class="fn-ico ti ti-palette"></i>
+      <div class="fn-body"><h3>Utseende</h3><p>Lys eller mørk, blå, gull, rød eller din egen farge, seks skrifter.</p></div>
+    </div>
+    <div class="fn reveal">
       <i class="fn-ico ti ti-photo"></i>
-      <div class="fn-body"><h3>Galleri</h3><p>Vis fram arbeidet ditt.</p></div>
+      <div class="fn-body"><h3>Bilder</h3><p>Portrett og opptil 10 bilder av arbeidet ditt.</p></div>
     </div>
   </div>
 </section>
 
+<!-- Avslutnings-CTA: vokser 0,85 → 1 mens den scroller inn (se «Klar for din egen side? vokser inn» nederst). -->
 <section class="final-cta" id="finalCta">
   <div class="final-cta-inner" id="finalCtaInner">
     <h2>Klar for din egen side?</h2>
@@ -1791,225 +1588,92 @@ window.PinInit=(function(){
 </script>
 
 <script>
-/* ===================== DIN EGEN SIDE — egen scroll-scene (overgang + Profil) ===================== */
+/* ===================== DIN EGEN SIDE — v2: fire steg på én pin (18.11.2026) =====================
+   Ren krysstoning styrt av scroll (scrub): t = progresjon × T. Hvert steg eier 100 enheter; rundt hver grense tones det
+   ene ut og det neste inn over OV enheter (det nye glir 14 px opp). Ingen koreografi inni bildene — de er ekte skjermbilder.
+   Pinnen er SÅ HØY SOM INNHOLDET og sentreres i synsfeltet under nav-en (startPx, regnes ut på nytt ved hver refresh), så
+   det aldri blir liggende død plass over CTA-en når pinnen slipper.
+   Reduced-motion: ingen pin — alle fire stegene står under hverandre (CSS .des-reduced). No-JS: #dsFallback. */
 (function(){
   var $=function(id){return document.getElementById(id);};
   var sec=$('dineegenside'); if(!sec)return;
-  var ins=[].slice.call(sec.querySelectorAll('.des-in'));
   var reduce=matchMedia('(prefers-reduced-motion:reduce)').matches;
-  if(!window.gsap||!window.ScrollTrigger){ ins.forEach(function(el){el.textContent=el.dataset.v;}); return; }
-  gsap.registerPlugin(ScrollTrigger);
+  if(!window.gsap||!window.ScrollTrigger)return;   // ingen GSAP: scenen står skjult, #dsFallback vises
+  gsap.registerPlugin(ScrollTrigger); if(window.ScrollToPlugin)gsap.registerPlugin(ScrollToPlugin);
   var dsF=$('dsFallback'); if(dsF)dsF.style.display='none';
   sec.classList.add('des-anim');
-  // T=200: Profil 0–100 (uendret math) · Layout 100–200. (Design legges til som 200+.)
-  // T=330: Profil 0–100 · Layout 100–200 · Design 200–330 (alt på SAMME pin).
-  var T=330, cardScroll=$('desCardScroll'), card=$('desCard'), saveBtn=$('desSaveBtn'),
-      h2=sec.querySelector('.des-h2'), prev=$('desPreview');
-  var segProfil=$('desSegProfil'), segLayout=$('desSegLayout'), segDesign=$('desSegDesign'),
-      navBtns=[].slice.call(sec.querySelectorAll('.des-step-btn')),
-      lays=[].slice.call(sec.querySelectorAll('#desLayRow .des-lay')), layTag=$('desLayTag');
-  var LAYNAMES=['Hero','Profil','Direkte','Showcase'];
-  // Design-segment-refs
-  var ddPalFrame=$('ddPalFrame'), ddModeThumb=$('ddModeThumb'), ddCustomPanel=$('ddCustomPanel'),
-      ddHueThumb=$('ddHueThumb'), ddCursor=$('ddCursor'), ddHex=$('ddHex'), ddPrev=$('ddPrev'),
-      ddCustSub=$('ddCustSub'), saveDBtn=$('desDSaveBtn'), ddCtl=sec.querySelector('#desSegDesign .dd-ctl'),
-      ddPalCards=[].slice.call(sec.querySelectorAll('#ddPal .dd-card')),
-      ddModeBtns=[].slice.call(sec.querySelectorAll('#ddMode .dd-modebtn')),
-      ddFocusPal=sec.querySelector('#desSegDesign [data-focus="palett"]'),
-      ddFocusBak=sec.querySelector('#desSegDesign [data-focus="bakgrunn"]'),
-      ddFocusOvr=sec.querySelector('#desSegDesign [data-focus="ovrig"]'),
-      ddLayers=[].slice.call(sec.querySelectorAll('.des-dpv-layer'));
-  // Målte posisjoner (leses ÉN gang etter last + ved refresh — aldri i onUpdate)
-  var P=[], MODE={lys:0,mork:0}, HUEW=0, SVW=0, SVH=0, BAKOFF=0, CUSTOFF=0;
-  var HEXSTR='#e5484d';
-  var desIsD=true;
+  var pinEl=$('desPin');
+  var segs=[].slice.call(sec.querySelectorAll('.des-seg')), navBtns=[].slice.call(sec.querySelectorAll('.des-step-btn'));
+  var N=segs.length, T=N*100, OV=10, aktiv=-1, stRef=null;
   function cl01(x){return x<0?0:x>1?1:x;}
   function sg(t,a,b){return cl01((t-a)/(b-a));}
-  function ez(x){return x<.5?2*x*x:1-Math.pow(-2*x+2,2)/2;}   // power2.inOut
-  function lerp(a,b,p){return a+(b-a)*p;}
-  function segOff(el,op){if(!el)return;el.style.opacity=op;el.classList.toggle('des-seg-off',op<=0.01);}
-  var N=ins.length, F0=15, F1=82, span=(F1-F0)/N;
-  // ---- LAYOUT-segment: fire ekte renders. Wispr Flow-inspirert: kortene kommer inn HELT NEDENFRA
-  //      (under skjermkanten) med sin skråstilling, og glir opp + roterer på plass til den rette raden
-  //      (0°) — hvert i litt ulikt tempo (staggered vinduer) så de lander forskjøvet. INGEN inntoning:
-  //      full opacity hele veien; kortet er usynlig fordi det er under kanten, ikke fordi det fader.
-  //      Showcase lander sist og markeres. Ren funksjon av t → identisk fram/tilbake, ingen snap.
-  //      ez = power2.inOut. LR (reise-avstand) = én viewporthøyde → start garantert under kanten.
-  var LSTART=[{x:-48,r:-8},{x:34,r:5},{x:-32,r:-6},{x:56,r:8}]; // x-drift + egen rotasjon per kort
-  var LWIN=[[117,157],[124,166],[131,175],[139,185]]; // per-kort gli-vinduer (staggered start+slutt)
-  // mobil: SKRÅ transportbånd — kortene glir inn fra nedre HØYRE hjørne (utenfor kanten), gjennom
-  // senter, og ut øvre VENSTRE hjørne. 2–2,5 kort synlige samtidig (tett stride). Ren transform,
-  // ingen opacity. Kortene glir BAK tittel + stegtekst (høyere z-index). Skråstilt på vei inn, rett
-  // i senter. Siste (Showcase) stopper i senter. CENm er lagt sent nok til at Hero er utenfor kanten
-  // mens segmentet toner inn (108–116) → ingen synlig inntoning på kortet.
-  var LTILT=[-7,6,-6,7];       // per-kort skråstilling
-  var CENm=[134,150,166,182];  // sentertider (16 enheter mellom; Hero utenfor kanten under fade-inn 108–116)
-  function layoutTick(t){
-    var LR = (desIsD?window.innerHeight:(window.visualViewport?window.visualViewport.height:window.innerHeight)) || 800;
-    if(desIsD){
-      // DESKTOP: kortene glir inn ETT OG ETT nedenfra (staggered gli-vinduer LWIN), styrt av scroll
-      // gjennom Layout-segmentet — rekkefølge Hero, Profil, Direkte, Showcase. Full opacity hele veien
-      // (usynlig fordi de er under skjermkanten, ikke fordi de fader; LR = én viewporthøyde). ENESTE
-      // Q1-fiks her: INGEN is-on-markering på desktop (den ga Showcase lavere + fet/hvit etikett). Når
-      // siste kort har landet står alle fire likt — samme topp, lik opacity, like etiketter.
-      lays.forEach(function(el,i){
-        var w=LWIN[i], p=ez(cl01(sg(t,w[0],w[1]))), s=LSTART[i], k=1-p;
-        el.style.opacity=1;                                       // full opacity hele veien
-        el.style.transform='translate('+(s.x*k)+'px,'+(LR*k)+'px) rotate('+(s.r*k)+'deg)';
-        el.classList.remove('is-on');                             // Q1: aldri is-on på desktop
-      });
-    } else {
-      // per-kort forskyvning langs banen: s=+1 ⇒ nede-høyre (delvis synlig), s=+2 helt utenfor;
-      // s=-1 ⇒ oppe-venstre (delvis), s=-2 helt utenfor.
-      var vw=window.innerWidth||375, DX=vw*0.66, DY=LR*0.32;
-      lays.forEach(function(el,i){
-        var s=(CENm[i]-t)/16;                        // +1 nede-høyre · 0 senter · -1 oppe-venstre
-        if(i===3 && t>=CENm[3]) s=0;                 // Showcase blir stående i senter
-        var tilt=LTILT[i]*cl01(s);                   // skråstilt på vei inn (nede-høyre), rett i senter
-        el.style.opacity=1;
-        el.style.transform='translate('+(DX*s)+'px,'+(DY*s)+'px) rotate('+tilt+'deg)';
-        el.classList.remove('is-on');
-      });
-      var cur = t<142?0 : t<158?1 : t<174?2 : 3;     // navnet følger kortet i fokus (nærmest senter)
-      if(layTag)layTag.textContent=LAYNAMES[cur];
+  function tick(t){
+    for(var i=0;i<N;i++){
+      var inn = i===0 ? 1 : sg(t, i*100-OV/2, i*100+OV/2);
+      var ut  = i===N-1 ? 0 : sg(t, (i+1)*100-OV/2, (i+1)*100+OV/2);
+      var op = inn*(1-ut), s=segs[i];
+      s.style.opacity=op;
+      s.style.transform = (inn<1) ? 'translateY('+((1-inn)*14).toFixed(2)+'px)' : '';
+      s.classList.toggle('des-seg-off', op<=0.01);
+      if(op<0.5)s.setAttribute('aria-hidden','true'); else s.removeAttribute('aria-hidden');
     }
-  }
-  function desTick(t){
-    // Tittelen er ankret øverst (top:2vh) og er synlig HELE veien — også mens seksjonen scroller inn
-    // FØR pinnen. Da kommer «Din egen side» inn nesten med én gang Vinn tilbake er ferdig, i stedet
-    // for at hele reisen (~pin-høyden) er svart mens tittelen venter på å fade inn ved pin.
-    if(h2)h2.style.opacity=1;
-    // Din egen side har INGEN glow (bølgelaget fjernet).
-    // ---- segment-krysstoning (kun opacity). Profil er synlig fra start (ingen fade-inn ved pin) så
-    //      hele seksjonen scroller inn som en enhet; fader kun UT mot Layout. ----
-    segOff(segProfil, 1-sg(t,102,110));
-    segOff(segLayout, cl01(sg(t,108,116))*(1-sg(t,200,208)));
-    segOff(segDesign, cl01(sg(t,204,212)));
-    // ---- venstre nav: aktivt steg hvitt (kun desktop; nav skjult på mobil) ----
-    if(desIsD){var aSeg=t<105?0:t<205?1:2;navBtns.forEach(function(b,i){b.style.color=(i===aSeg)?'#fff':'#5c5c5c';});}
-    // ---- PROFIL-fyll (uendret) ----
-    ins.forEach(function(el,i){var a=F0+i*span,b=a+span*0.82;var p=cl01(sg(t,a,b));var v=el.dataset.v||'';
-      el.textContent=v.slice(0,Math.round(p*v.length)); el.classList.toggle('typing', v.length>0&&p>0&&p<1);});
-    if(cardScroll&&card&&card.clientHeight>0){var maxShift=Math.max(0,cardScroll.scrollHeight-card.clientHeight);
-      cardScroll.style.transform='translateY('+(-maxShift*cl01(sg(t,F0,F1+8)))+'px)';}
-    if(saveBtn)saveBtn.classList.toggle('hot', t>=87 && t<102);
-    // mobil: forhåndsvisningen droppet — Layout-steget viser bookingsidene. Profil-kortet står
-    // synlig hele profil-segmentet og glir rett over i Layout. Desktop beholder preview ved siden.
-    if(!desIsD&&prev&&card){card.style.display='block';prev.style.display='none';}
-    else if(prev&&card){card.style.display='block';prev.style.display='block';}
-    // ---- LAYOUT ----
-    layoutTick(t);
-    // ---- DESIGN ----
-    designTick(t);
-  }
-  // ===== DESIGN-segment (Wispr-koreografi) — ren funksjon av t, idempotent, ingen layout-lesing =====
-  // Takt-vinduer (absolutt t). Rytme per takt: 0–20% fokus · 20–50% valg · 50–70% preview · 70–100% pause.
-  var K1=[214,252], K2=[256,292], K3=[296,330];
-  function taktAct(t,K){ var f=sg(t,K[0],K[0]+0.2*(K[1]-K[0])); var pz=sg(t,K[0]+0.7*(K[1]-K[0]),K[1]); return cl01(f)*(1-cl01(pz)); }
-  function palPos(i){ return P[i]||{x:0,y:0}; }
-  function designTick(t){
-    if(t<200){ return; }                       // design-segmentet rører ingenting før sin tur
-    if(!P.length) return;                       // ikke målt ennå
-    // ---- Palett-valgramme: BarberHQ(2) → Lime(1) [K1] → Din egen(3) [K3]. Ett element, transform. ----
-    var fp;
-    if(t<221.6) fp=palPos(2);
-    else if(t<302.4){ var c=cl01(sg(t,221.6,233)); var a=palPos(2),b=palPos(1); fp={x:lerp(a.x,b.x,ez(c)),y:lerp(a.y,b.y,ez(c))}; }
-    else { var c3=cl01(sg(t,302.4,313)); var a3=palPos(1),b3=palPos(3); fp={x:lerp(a3.x,b3.x,ez(c3)),y:lerp(a3.y,b3.y,ez(c3))}; }
-    if(ddPalFrame){ // lite «trykk» når rammen lander på Lime (K1) / Din egen (K3)
-      var land=Math.max(cl01(sg(t,231,233))*(1-sg(t,233,236)), cl01(sg(t,311,313))*(1-sg(t,313,316)));
-      var s=1-0.02*Math.sin(land*Math.PI);
-      ddPalFrame.style.opacity=cl01(sg(t,206,212));
-      ddPalFrame.style.transform='translate('+fp.x+'px,'+fp.y+'px) scale('+s+')';
-    }
-    // ---- Bakgrunn-tommel: Mørk → Lys (transform) ----
-    var mc=cl01(sg(t,263.2,274));
-    if(ddModeThumb)ddModeThumb.style.transform='translateX('+lerp(MODE.mork,MODE.lys,ez(mc))+'px)';
-    if(ddModeBtns.length===2){ddModeBtns[0].classList.toggle('dd-on',mc>=0.5);ddModeBtns[1].classList.toggle('dd-on',mc<0.5);} // [lys,mork]
-    // ---- Fargevelger-panel (K3): åpner som overlegg, skyver ikke kortet ----
-    var open=cl01(sg(t,297,305));
-    if(ddCustomPanel){ddCustomPanel.style.opacity=open;ddCustomPanel.style.transform='translateY('+(-6*(1-open))+'px)';}
-    // kulør + SV-markør + hex glir/skrives mot #E5484D
-    var pc=cl01(sg(t,303,320));
-    if(ddHueThumb&&HUEW)ddHueThumb.style.transform='translate('+(lerp(0.58,0.985,ez(pc))*HUEW)+'px,-50%)';
-    if(ddCursor&&SVW){ // fra blålig default (høyt oppe, høyre) til rød (s.686,v.898)
-      var cx=lerp(0.96,0.686,ez(pc))*SVW, cy=lerp(0.12,0.102,ez(pc))*SVH;
-      ddCursor.style.transform='translate('+cx+'px,'+cy+'px)'; }
-    if(ddHex){var n=Math.round(pc*HEXSTR.length);ddHex.textContent=HEXSTR.slice(0,n)||'#';}
-    var custActive=t>=302.4;
-    if(ddPrev)ddPrev.style.background=custActive?HEXSTR:'#0071e3';
-    if(ddCustSub)ddCustSub.textContent=custActive?HEXSTR:'Egen aksentfarge';
-    // ---- Forhåndsvisning: 4 lag, krysston (a BarberHQ mørk → b Lime mørk → c Lime lys → d rød lys) ----
-    if(ddLayers.length===4){
-      ddLayers[0].style.opacity=1-sg(t,233,241);
-      ddLayers[1].style.opacity=sg(t,233,241)*(1-sg(t,274,282));
-      ddLayers[2].style.opacity=sg(t,274,282)*(1-sg(t,316,324));
-      ddLayers[3].style.opacity=sg(t,316,324);
-    }
-    // ---- Wispr-fokus: fokusert gruppe = 1, resten dempes rolig til 0.4, tilbake til 1 etter takten ----
-    var a1=taktAct(t,K1),a2=taktAct(t,K2),a3=taktAct(t,K3);
-    if(ddFocusPal)ddFocusPal.style.opacity=1-0.6*a2;                 // palett dempes kun under Bakgrunn-takten
-    if(ddFocusBak)ddFocusBak.style.opacity=1-0.6*Math.max(a1,a3);    // bakgrunn dempes under Palett/Din egen
-    if(ddFocusOvr)ddFocusOvr.style.opacity=1-0.6*Math.max(a1,a2,a3); // stil/layout aldri fokusert
-    // ---- MOBIL: kortet glir (translateY) så aktiv seksjon står synlig under forhåndsvisningen ----
-    if(!desIsD&&ddCtl){
-      var g;
-      if(t<258) g=0;                                                   // Palett (BarberHQ→Lime)
-      else if(t<298){ var gb=cl01(sg(t,258,266)); g=lerp(0,BAKOFF,ez(gb)); }   // → Bakgrunn
-      else { var gc=cl01(sg(t,298,306)); g=lerp(BAKOFF,CUSTOFF,ez(gc)); }       // → Din egen + panel
-      ddCtl.style.transform='translateY(-'+g+'px)';
-    } else if(ddCtl){ ddCtl.style.transform='none'; }
-    if(saveDBtn)saveDBtn.classList.toggle('hot', t>=325);
-  }
-  function measureDesign(){
-    if(!ddPalCards.length)return;
-    P=ddPalCards.map(function(c){return {x:c.offsetLeft,y:c.offsetTop};});
-    if(ddPalFrame&&ddPalCards[0]){ddPalFrame.style.width=ddPalCards[0].offsetWidth+'px';ddPalFrame.style.height=ddPalCards[0].offsetHeight+'px';}
-    if(ddModeBtns.length===2&&ddModeThumb){ddModeThumb.style.width=ddModeBtns[0].offsetWidth+'px';MODE={lys:ddModeBtns[0].offsetLeft,mork:ddModeBtns[1].offsetLeft};}
-    var hue=$('ddHue'); HUEW=hue?hue.clientWidth:0;
-    var sv=$('ddSV'); SVW=sv?sv.clientWidth:0; SVH=sv?sv.clientHeight:0;
-    var pal=$('ddPal'); if(ddCustomPanel&&pal)ddCustomPanel.style.top=(pal.offsetTop+pal.offsetHeight+10)+'px';
-    // mobil-glide-mål: bring aktiv seksjon opp under forhåndsvisningen
-    BAKOFF = ddFocusBak?Math.max(0,ddFocusBak.offsetTop-6):0;
-    // vis fargevelger-panelet (takt 3-fokus) med Din egen-kortet så vidt over
-    CUSTOFF = (ddCustomPanel&&pal)?Math.max(0,pal.offsetTop+pal.offsetHeight-8):0;
-  }
-  // Avslutnings-CTA: glir opp (y 40→0 + opacity) scrubbet når den kommer i syne etter siste steg,
-  // og står helt stille når den er på plass. (Reduced-motion/no-JS: statisk synlig via CSS.)
-  function setupCta(){
-    var cta=$('finalCtaInner'); if(!cta)return;
-    gsap.fromTo(cta,{y:40,opacity:0},{y:0,opacity:1,ease:'none',
-      scrollTrigger:{trigger:'#finalCta',start:'top bottom',end:'top 65%',scrub:true}});
+    var a=Math.min(N-1, Math.max(0, Math.floor((t+OV/2)/100)));
+    if(a!==aktiv){ aktiv=a; navBtns.forEach(function(b,i){ b.classList.toggle('on', i===a); if(i===a)b.setAttribute('aria-current','step'); else b.removeAttribute('aria-current'); }); }
   }
   function desbygg(){
     var navEl=document.querySelector('.nav'); var navH=(navEl&&Math.round(navEl.getBoundingClientRect().height))||68;
     document.documentElement.style.setProperty('--nav-h',navH+'px');
-    gsap.matchMedia().add({desktop:'(min-width:900px)',mobile:'(max-width:899px)'},function(ctx){
-      desIsD=!!ctx.conditions.desktop;
-      // desktop 9.9×vh. Mobil kortet ned fra 8.58× til 7.9× etter at Profil-forhåndsvisningen ble
-      // fjernet (ett færre beat på mobil) — desktop uendret.
-      var dist=Math.round((desIsD?window.innerHeight:(window.visualViewport?window.visualViewport.height:window.innerHeight))*(desIsD?9.9:7.9));
-      measureDesign();
-      function frame(self){var t=(self&&typeof self.progress==='number'?self.progress:0)*T;desTick(t);}
-      var st=ScrollTrigger.create({trigger:sec,start:'top top+='+navH,end:'+='+dist,pin:'#desPin',anticipatePin:1,scrub:true,invalidateOnRefresh:true,onUpdate:frame,onRefresh:function(){measureDesign();frame();}});
-      frame({progress:0});
-      return function(){st.kill();};
-    });
-    // CTA-triggeren opprettes ETTER pinnen (i DOM-rekkefølge) så pin-spaceren er lagt ut når
-    // CTA-ens start/end regnes — ellers havner CTA-en for høyt på sida.
-    setupCta();
+    // Høyden måles ved bygg/refresh (visualViewport → iOS-adresselinja får ikke banen til å «puste» mellom refresh).
+    function vh(){ return window.visualViewport ? window.visualViewport.height : window.innerHeight; }
+    // Pinnen sentreres i plassen under nav-en. Er innholdet høyere enn plassen, står toppen rett under nav-en (aldri bak den).
+    function startPx(){ var h=pinEl.offsetHeight, plass=vh()-navH; return 'top top+='+Math.round(navH+Math.max(0,(plass-h)/2)); }
+    // Ca. én skjermhøyde scroll per steg.
+    function endPx(){ return '+='+Math.round(vh()*N*0.95); }
+    stRef=ScrollTrigger.create({trigger:sec,start:startPx,end:endPx,pin:pinEl,anticipatePin:1,scrub:true,invalidateOnRefresh:true,
+      onUpdate:function(self){tick(self.progress*T);},onRefresh:function(self){tick(self.progress*T);}});
+    tick(0);
   }
-  // Reduced-motion: ingen pin/scrub. Vis Design-sluttilstanden (rød, lys) statisk via desTick(T).
-  function desReduced(){
-    var navEl=document.querySelector('.nav'); var navH=(navEl&&Math.round(navEl.getBoundingClientRect().height))||68;
-    document.documentElement.style.setProperty('--nav-h',navH+'px');
-    desIsD=matchMedia('(min-width:900px)').matches;
-    sec.classList.add('des-reduced');
-    ins.forEach(function(el){el.textContent=el.dataset.v;});
-    measureDesign(); desTick(T);
-  }
+  function desReduced(){ sec.classList.add('des-reduced'); segs.forEach(function(s){ s.style.opacity=1; s.classList.remove('des-seg-off'); }); }
+  // Stegknappene (desktop til venstre, mobil som rad): hopp til midten av steget.
+  navBtns.forEach(function(b,i){ b.addEventListener('click',function(){ if(!stRef)return;
+    var y=stRef.start+(stRef.end-stRef.start)*((i*100+50)/T);
+    if(window.ScrollToPlugin)gsap.to(window,{scrollTo:y,duration:.5,ease:'power1.inOut'}); else window.scrollTo(0,y); }); });
   // Registrer scenen til den felles pin-init-en (bygges etter ks, i DOM-rekkefølge — se PinInit øverst).
+  // Orienteringsendring: Kjernefunksjoner-scenen kjører allerede én global ScrollTrigger.refresh().
   if(window.PinInit)PinInit.register(reduce?desReduced:desbygg);
-  if(!reduce)window.addEventListener('orientationchange',function(){setTimeout(function(){ScrollTrigger.refresh();},250);});
+})();
+
+/* ===================== «Klar for din egen side?» vokser inn (18.11.2026) =====================
+   Overskrift, undertekst og knapp skaleres 0,85 → 1 (og 0,55 → 1 i opacity) mens seksjonen scroller inn: 0 når toppen når
+   bunnen av synsfeltet, 1 når seksjonen står midt i skjermen (eller når siden ikke kan scrolle lenger). Koblet til
+   scrollposisjonen, ikke en engangsanimasjon: passiv scroll-lytter → maks ÉN requestAnimationFrame per bilde → bare
+   transform/opacity på ett element (ingen layout-hopp). Ingen ScrollTrigger: måler selv mot visualViewport, så iOS Safari
+   med flytende adresselinje får riktig midtpunkt. prefers-reduced-motion: ingenting kjøres — full størrelse fra start. */
+(function(){
+  var sec=document.getElementById('finalCta'), inn=document.getElementById('finalCtaInner');
+  if(!sec||!inn)return;
+  if(matchMedia('(prefers-reduced-motion:reduce)').matches)return;
+  var MIN=0.85, planlagt=false;
+  function vh(){ return window.visualViewport ? window.visualViewport.height : window.innerHeight; }
+  function oppdater(){
+    planlagt=false;
+    var r=sec.getBoundingClientRect(), h=vh(), sy=window.scrollY||window.pageYOffset||0;
+    var maks=Math.max(0, document.documentElement.scrollHeight-h);
+    var fra=sy+r.top-h;                                   // seksjonens topp når bunnen av synsfeltet
+    var til=Math.min(sy+r.top+r.height/2-h/2, maks);      // seksjonen midt i skjermen
+    var p=til>fra ? (sy-fra)/(til-fra) : 1; p=p<0?0:p>1?1:p;
+    var e=1-(1-p)*(1-p);                                  // myk landing (ease-out)
+    inn.style.transform='scale('+(MIN+(1-MIN)*e).toFixed(4)+')';
+    inn.style.opacity=(0.55+0.45*e).toFixed(3);
+  }
+  function planlegg(){ if(!planlagt){ planlagt=true; requestAnimationFrame(oppdater); } }
+  inn.classList.add('cta-vokser');
+  window.addEventListener('scroll',planlegg,{passive:true});
+  window.addEventListener('resize',planlegg);
+  if(window.visualViewport)window.visualViewport.addEventListener('resize',planlegg);
+  // Pin-spacerne over endrer seksjonens posisjon når ScrollTrigger bygger/refresher.
+  if(window.ScrollTrigger)ScrollTrigger.addEventListener('refresh',planlegg);
+  planlegg();
 })();
 </script>
 
