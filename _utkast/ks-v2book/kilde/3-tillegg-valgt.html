@@ -1,0 +1,1077 @@
+<!DOCTYPE html><html lang="no"><head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex">
+<title>Grand barber</title>
+<style>@font-face{font-family:'Inter';src:url(https://api.trybarberhq.com/fonts/Inter.woff2);font-weight:100 900;font-display:swap}
+@font-face{font-family:'PlusJakartaSans';src:url(https://api.trybarberhq.com/fonts/PlusJakartaSans.woff2) format('woff2');font-weight:700;font-display:swap}
+:root{--bg:#0c0c0c;--surface:#161616;--ink:#f5f5f5;--muted:#a3a3a3;--line:#2a2a2a;--line-2:#3a3a3a;--accent:#4d8bff;--accent-ink:#141210;--accent-text:#4d8bff;--accent-soft:#182338;--danger:#d94b3f;--r:12px;--r-sm:10px;--bilde-kant:transparent;color-scheme:dark}
+/* Faste skala-tokens (like for alle barbere): avstand = headerens 4/8/12/16/20/24/32, to små tekststørrelser
+   og minste berøringsflate. Innført 22.10.2026 for bunnen av bekreft-steget; resten av malen bruker ennå px. */
+:root{--space-1:4px;--space-2:8px;--space-3:12px;--space-4:16px;--space-5:20px;--space-6:24px;--space-7:32px;--fs-display:34px;--fs-title:22px;--fs-small:13px;--fs-micro:12px;--touch-min:44px;
+  /* Codex' valgmarkering (gjennomsiktig aksent): ÉN definisjon for valgt tjeneste, tillegg, dag og tid. */
+  --valgt-flate:color-mix(in srgb,var(--accent) 16%,transparent);--valgt-kant:color-mix(in srgb,var(--accent) 45%,transparent)}
+*{box-sizing:border-box;margin:0;padding:0}
+html{-webkit-text-size-adjust:100%}
+body{font-family:Inter,system-ui,-apple-system,sans-serif;background:var(--bg);color:var(--ink);line-height:1.5;font-size:15px;-webkit-font-smoothing:antialiased;min-height:100dvh}
+button{font:inherit;color:inherit;background:none;border:0;cursor:pointer}
+button:disabled{cursor:default}
+a{color:inherit;text-decoration:none}
+:focus:not(.tab-fokus){outline:none}
+.tab-fokus{outline:2px solid var(--accent-text);outline-offset:2px;border-radius:6px}
+input{font:inherit}
+img{display:block;max-width:100%}
+
+/* ── Ramme ─────────────────────────────────────────────────────────── */
+.frame{width:100%;max-width:520px;margin:0 auto;padding:0 16px 40px}
+@media(min-width:720px){.frame{padding-top:24px}}
+.surface{background:var(--surface);border:1px solid var(--line);border-radius:var(--r)}
+/* Forhåndsvisnings-topplinje (kun forhandsvist, ikke i dashbordets preview): v1-teksten ordrett, malens tokens.
+   Ligger utenfor .frame, så den står øverst over hele flyten. Hårlinja er den samme 1px var(--line) som resten av malen. */
+.pv-topbar{display:flex;align-items:center;justify-content:center;flex-wrap:wrap;gap:var(--space-1) var(--space-3);padding:var(--space-2) var(--space-4);background:var(--surface);border-bottom:1px solid var(--line);font-size:var(--fs-small);color:var(--ink);text-align:center;line-height:1.4}
+.pv-topbar-t{font-weight:500}
+.pv-topbar-a{color:var(--accent-text);font-weight:600;text-decoration:underline;text-underline-offset:.15em;white-space:nowrap}
+.v2-footer{margin:32px 0 0;text-align:center;font-size:12px;color:var(--muted)}
+.v2-footer a{color:var(--muted)}
+.v2-footer a:hover{color:var(--ink)}
+
+/* ── Forside ────────────────────────────────────────────────────────── */
+.v2-top{display:flex;justify-content:flex-end;padding:14px 0 6px}
+.v2-manage{display:inline-flex;align-items:center;gap:6px;font-size:12px;font-weight:500;color:var(--ink);background:color-mix(in srgb,var(--ink) 7%,transparent);padding:8px 12px;border-radius:999px;text-decoration:none}
+.v2-manage:hover{background:color-mix(in srgb,var(--ink) 11%,transparent)}
+.v2-head{display:flex;gap:16px;align-items:flex-start;padding:8px 0 20px}
+.v2-head.har-portrett{align-items:center}
+.v2-portrett{width:72px;height:72px;border-radius:50%;object-fit:cover;flex:0 0 auto;border:1px solid var(--line)}
+.v2-head-tekst{min-width:0;flex:1}
+.v2-navn{font-family:'PlusJakartaSans',Inter,sans-serif;font-weight:700;font-size:clamp(24px,7vw,32px);line-height:1.1;letter-spacing:-0.01em;overflow-wrap:anywhere;margin:0}
+.v2-spes{font-size:14px;color:var(--muted);margin-top:6px}
+.v2-adr{display:inline-flex;align-items:center;gap:6px;font-size:13px;color:var(--muted);margin-top:8px}
+.v2-adr svg{width:14px;height:14px;flex:0 0 auto}
+.v2-adr:hover{color:var(--ink)}
+.v2-bio{font-size:14px;color:var(--ink);line-height:1.55;margin:0 0 16px}
+.v2-sosial{margin:0 0 20px}
+.v2-sosial .social{display:flex;gap:16px}
+.v2-sosial .social-link{display:inline-flex;color:var(--muted)}
+.v2-sosial .social-link:hover{color:var(--ink)}
+.v2-sosial svg{width:20px;height:20px}
+.v2-h2{font-size:22px;font-weight:600;letter-spacing:-.01em;margin:0 0 4px}
+.v2-bestill{padding-top:4px}
+
+.v2-tabs{position:relative}
+.v2-tabs::after{content:"";position:absolute;left:0;bottom:-1px;height:2px;width:var(--line-w,0px);transform:translateX(var(--line-x,0px));background:var(--accent);pointer-events:none;transition:transform .26s cubic-bezier(.22,.61,.36,1),width .26s cubic-bezier(.22,.61,.36,1)}
+@media(prefers-reduced-motion:reduce){.v2-tabs::after{transition:none}}
+
+.v2-tabs{display:flex;gap:6px;margin:4px 0 16px;border-bottom:1px solid var(--line)}
+.v2-tab{flex:0 0 auto;padding:10px 4px;margin-right:14px;font-size:14px;font-weight:500;color:var(--muted);border-bottom:2px solid transparent;margin-bottom:-1px}
+.v2-tab[aria-selected=true]{color:var(--ink);border-bottom-color:transparent}
+.v2-pane[hidden]{display:none}
+/* Tjenesterad — ÉN komponent for forside (lenke) og flytens steg 1 (.service, valg). Kun linjer. */
+.v2-tjenester{display:flex;flex-direction:column;gap:0}
+.v2-tj{display:flex;align-items:center;gap:12px;width:100%;padding:14px 0;border:0;border-bottom:1px solid var(--line);background:none;text-decoration:none;color:inherit;text-align:left;border-radius:0}
+.v2-tjenester>.v2-tj:last-of-type{border-bottom:0}
+.v2-tj-navn{flex:1;min-width:0;font-weight:500;font-size:15px;color:var(--ink);overflow-wrap:anywhere}
+.v2-tj-min{display:block;font-size:12px;color:var(--muted);font-weight:400;margin-top:2px}
+.v2-tj-pris{font-weight:600;font-size:14px;color:var(--ink);white-space:nowrap}
+.v2-tj-pil{color:var(--muted)}
+.v2-tj-hake{display:grid;place-items:center;width:22px;height:22px;border-radius:6px;border:1px solid var(--line-2);background:transparent;flex:0 0 auto;font-size:12px;font-weight:700;color:transparent}
+/* Codex' hake — samme utseende på valgt tjeneste og tillegg. Valgt dag og tid bruker samme flate/kant uten hake (under). */
+.service.selected .v2-tj-hake,.flow-addon.sel .v2-tj-hake{background:var(--valgt-flate);border-color:var(--valgt-kant);color:var(--accent-text)}
+.service.selected .v2-tj-navn{font-weight:600}
+.service.selected .v2-tj-pris{font-weight:700}
+.v2-note{font-size:12px;color:var(--muted);text-align:center;margin:14px 0 0}
+.v2-h3{font-size:14px;font-weight:600;margin:20px 0 6px}
+.v2-tider{font-size:14px}
+.v2-tid{display:flex;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--line)}
+.v2-tid:last-child{border-bottom:0}
+.v2-tid.stengt span:last-child{color:var(--muted)}
+/* Galleri: 2 per rad, like store (1:1), skjøtet. Hjørner og kanter beregnes per bilde (v2-galleri.cjs):
+   r-* = rundet hjørne, e-* = utsatt side (svak kantlinje), o-l/o-t = 1 px overlapp under naboen mot
+   sømmer. Oddetall: siste bilde i samme størrelse, venstrestilt. Ett bilde: full bredde, kvadrat. */
+.v2-galleri{display:grid;grid-template-columns:1fr 1fr;gap:0}
+.v2-galleri .bilde{display:block;aspect-ratio:1/1;position:relative;padding:0;border:0;background:none;cursor:zoom-in;border-radius:0}
+/* Bildet bærer rundingen (inherit). Overlapp mot sømmer: bildet strekker seg 1 px OPP/til VENSTRE
+   (o-t/o-l) inn under et tidligere bilde, som ligger øverst (z-index n − i i markupen). Tomrommet ved
+   oddetall ligger nede til høyre, så overlappen kan aldri stikke ut i det, og hjørnet den ligger under
+   er alltid rett (hjørneregelen) — ingen klipping. Boksene i rutenettet er urørt. */
+.v2-galleri .bilde img{position:absolute;top:0;left:0;width:100%;height:100%;max-width:none;object-fit:cover;display:block;border-radius:inherit}
+/* INGEN plassholderbakgrunn (verken på boksen eller bildet): bakgrunnen og bildeinnholdet rastreres med
+   ulike kanter ved brøkdels-skalering (dashbordets 0.72-forhåndsvisning) → grå/lys søm i skjøtene.
+   Målt 19.10: med bakgrunn 203/186 i sømmen, uten 255. Ruta er tom et øyeblikk mens bildet laster. */
+.v2-galleri .bilde.o-l img{left:-1px;width:calc(100% + 1px)}
+.v2-galleri .bilde.o-t img{top:-1px;height:calc(100% + 1px)}
+.v2-galleri .bilde.r-tl{border-top-left-radius:var(--r)}
+.v2-galleri .bilde.r-tr{border-top-right-radius:var(--r)}
+.v2-galleri .bilde.r-bl{border-bottom-left-radius:var(--r)}
+.v2-galleri .bilde.r-br{border-bottom-right-radius:var(--r)}
+.v2-galleri .bilde::after{content:"";position:absolute;inset:0;border-radius:inherit;pointer-events:none;border:0 solid var(--bilde-kant)}
+.v2-galleri .bilde.e-t::after{border-top-width:1px}
+.v2-galleri .bilde.e-r::after{border-right-width:1px}
+.v2-galleri .bilde.e-b::after{border-bottom-width:1px}
+.v2-galleri .bilde.e-l::after{border-left-width:1px}
+.v2-galleri .bilde.tab-fokus{outline:2px solid var(--accent-text);outline-offset:2px;z-index:20!important}
+.v2-galleri.solo .bilde{grid-column:1/-1}
+/* Lightbox — mørk flate i begge moduser, bildet contain, fokusring i aksent. */
+html.v2-lb-laast,html.v2-lb-laast body{overflow:hidden;overscroll-behavior:none}
+.v2-lb{position:fixed;inset:0;z-index:100;background:#0b0b0b;display:flex;align-items:center;justify-content:center;opacity:0;transition:opacity .18s ease}
+.v2-lb[hidden]{display:none}
+.v2-lb.apen{opacity:1}
+.v2-lb-scene{position:absolute;inset:56px 0 24px;display:flex;align-items:center;justify-content:center;touch-action:pinch-zoom}
+.v2-lb-img{max-width:100%;max-height:100%;object-fit:contain;display:block;user-select:none;-webkit-user-drag:none}
+.v2-lb-topp{position:absolute;top:0;left:0;right:0;height:56px;display:flex;align-items:center;justify-content:space-between;padding:0 12px 0 20px;z-index:2}
+.v2-lb-teller{color:#e6e6e6;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums}
+.v2-lb-lukk{width:44px;height:44px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:18px;display:grid;place-items:center}
+.v2-lb-lukk:hover{background:rgba(255,255,255,.2)}
+.v2-lb-pil{position:absolute;top:50%;transform:translateY(-50%);width:48px;height:48px;border-radius:50%;background:rgba(255,255,255,.12);color:#fff;font-size:28px;line-height:1;display:none;place-items:center;z-index:2}
+.v2-lb-pil:hover{background:rgba(255,255,255,.2)}
+.v2-lb-forrige{left:16px}.v2-lb-neste{right:16px}
+@media(hover:hover) and (pointer:fine){.v2-lb-pil:not([hidden]){display:grid}}
+.v2-lb button.tab-fokus{outline:2px solid var(--accent);outline-offset:3px}
+@media(prefers-reduced-motion:reduce){.v2-lb{transition:none}}
+.v2-tomt{font-size:14px;color:var(--muted);padding:24px 0;text-align:center}
+.v2-om{font-size:14px;line-height:1.6}
+.v2-om p+p{margin-top:10px}
+
+/* ── Bookingflyt (samme markup som flytmodulen) ────────────────────── */
+.flow{padding-bottom:8px}
+.flow-nav{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:14px 0 10px}
+.back-link{display:inline-flex;align-items:center;gap:6px;font-size:13px;font-weight:500;color:var(--muted);padding:6px 0}
+.back-link:hover{color:var(--ink)}
+.flow-brand{font-family:'PlusJakartaSans',Inter,sans-serif;font-weight:700;font-size:18px;letter-spacing:-0.01em;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;min-width:0;max-width:62%;text-align:right}
+/* Stegraden: «Tjeneste → Dato og tid → Opplysninger». Pilene er CSS med tom alt-tekst (leses ikke opp); aktivt
+   steg i tekstfarge og vekt 600, resten dempet. Ikke trykkbar. Skjult «Steg X av N:» i .v2-skjult (booking-flow.cjs). */
+.steps{display:flex;align-items:center;gap:var(--space-2);list-style:none;padding:var(--space-3) 0 var(--space-5);font-size:var(--fs-micro);color:var(--muted);overflow:hidden}
+.steps li{display:flex;align-items:center;gap:var(--space-2);min-width:0;white-space:nowrap}
+.steps li+li::before{content:"→" / "";font-weight:400;color:var(--muted)}
+.steps .active{color:var(--ink);font-weight:600}
+.v2-skjult{position:absolute;width:1px;height:1px;margin:-1px;padding:0;border:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap}
+.flow-title{font-size:22px;font-weight:600;line-height:1.2;letter-spacing:-.01em;margin:4px 0 20px;outline:none}
+.flow-intro{font-size:14px;color:var(--muted);margin:0 0 18px}
+.booking header{padding:0 0 10px}
+.booking h2{font-size:22px;font-weight:600;letter-spacing:-.01em}
+/* Tillegg — foldes ut under valgt tjeneste (flyttes dit av JS). Samme linjestil, innrykket. */
+.v2-tillegg{display:grid;grid-template-rows:0fr;opacity:0;transition:grid-template-rows .22s ease,opacity .18s ease}
+.v2-tillegg.open{grid-template-rows:1fr;opacity:1}
+.v2-tillegg-inner{overflow:hidden;min-height:0}
+/* Tilleggspanelet: svak grå tone utledet fra tekstfargen (7 % --ink inn i --bg — nøytral grå i lys og mørk; 5 % ble lik --surface i mørk),
+   ingen kant, radius --r-sm, luft innvendig. Rett under valgt tjeneste uten hårlinje imellom; hårlinje etter panelet. */
+.v2-tillegg-panel{background:color-mix(in srgb,var(--ink) 7%,var(--bg));border-radius:var(--r-sm);padding:0 var(--space-4)}
+.service[aria-expanded="true"]{border-bottom-color:transparent}
+.v2-tillegg.open{padding-bottom:var(--space-3);border-bottom:1px solid var(--line)}
+.v2-tillegg-lbl{display:flex;justify-content:space-between;gap:var(--space-2);font-size:var(--fs-small);font-weight:500;color:var(--ink);padding:var(--space-3) 0 var(--space-1)}.v2-tillegg-lbl span{font-size:12px;font-weight:400;color:var(--muted)}
+.v2-tj-tillegg{padding:10px 0;gap:10px}
+.v2-tj-tillegg .v2-tj-navn{font-size:14px;font-weight:500}
+.v2-tj-meta{font-size:13px;color:var(--muted);white-space:nowrap}
+.v2-tj-hake.liten{width:22px;height:22px;font-size:12px;border:1px solid var(--line-2);border-radius:6px}.v2-tj-tillegg{min-height:52px;flex-wrap:wrap}.v2-tj-meta{white-space:normal}.v2-valg-total{display:flex;justify-content:center;font-size:14px;font-weight:500;margin-top:20px}.v2-valg-total[hidden]{display:none}
+.flow-addon.sel .v2-tj-navn{font-weight:600}
+.v2-tillegg .v2-tj:last-of-type{border-bottom:0}
+@media(prefers-reduced-motion:reduce){.v2-tillegg{transition:none}}
+.primary{position:relative;display:flex;align-items:center;justify-content:center;gap:8px;width:100%;min-height:52px;padding:14px 48px;border-radius:12px;background:var(--accent);color:var(--accent-ink);font-weight:500;font-size:15px;line-height:1.4;margin-top:18px;transition:filter .16s ease,transform .16s ease}
+.primary>span[aria-hidden=true]{position:absolute;right:20px;font-size:20px;line-height:1;font-weight:400}
+.primary:active:not(:disabled){transform:translateY(1px);filter:brightness(.94)}
+@media(prefers-reduced-motion:reduce){.primary{transition:none}.primary:active:not(:disabled){transform:none}}
+.primary:hover:not(:disabled){filter:brightness(1.05)}
+/* Deaktivert: nøytral, lik for alle aksenter (aldri brun/gjørmete gull). Aksenten først når aktiv. */
+.primary:disabled{background:var(--line);color:var(--muted);opacity:1;filter:none}
+.text-link{font-size:13px;font-weight:500;color:var(--accent-text);padding:4px 0}
+.flow-action{margin-top:4px}
+.flow-foot{font-size:12px;color:var(--muted);text-align:center;margin-top:14px}
+.service-recap{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:0 0 18px;border:0;background:transparent;margin:0}.service-recap .text-link{min-height:44px;flex-shrink:0}
+.service-recap strong{display:block;font-size:14px;font-weight:500}
+.service-recap small{font-size:12px;color:var(--muted)}
+.calendar{padding:14px 0 10px;border:0;border-top:1px solid var(--line);border-radius:0;background:transparent;margin-bottom:14px}
+/* Datovelgeren (BhqDatovelger): delt CSS fra src/klient/datovelger.css, lagt inn HER fordi rekkefølgen teller
+   (etter .tab-fokus, så dagens radius vinner). Bookingsiden kobler variablene til barberens palett. */
+.bhq-dv{--dv-tekst:var(--ink);--dv-dempet:var(--muted);--dv-linje:var(--line);--dv-linje-2:var(--line-2);--dv-hover:var(--accent-soft);--dv-valgt-flate:var(--valgt-flate);--dv-valgt-kant:var(--valgt-kant);--dv-valgt-tekst:var(--accent-text)}
+/* BarberHQ datovelger (BhqDatovelger) — ÉN kilde for kalenderens CSS, bookingsiden og dashbordet.
+   Bookingsiden: lagt inn i V2_CSS der kalenderreglene sto (rekkefølgen teller — etter .tab-fokus).
+   Dashbordet: /book/_/datovelger.css. API og variabler: docs/systemtilstand.md § Datovelger.
+   Farger: --dv-tekst, --dv-dempet, --dv-linje, --dv-linje-2, --dv-hover, --dv-valgt-flate, --dv-valgt-kant,
+   --dv-valgt-tekst. Uten dem er alt nøytralt: grått blandet av tekstfargen, ingen aksent.
+   Containeren (rotelementet) styles av siden selv — her styles bare innholdet.
+   Resettene står i :where() (spesifisitet 0,0,1) så klassereglene under alltid vinner, som før. */
+:where(.bhq-dv),:where(.bhq-dv) *{box-sizing:border-box}
+:where(.bhq-dv) button{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;cursor:pointer}
+:where(.bhq-dv) button:disabled{cursor:default}
+:where(.bhq-dv) h3,:where(.bhq-dv) p{margin:0}
+.bhq-dv-topp{display:flex;align-items:center;justify-content:space-between;margin-bottom:10px}
+.bhq-dv-topp h3{font-size:15px;font-weight:600}
+.bhq-dv-piler{display:flex;gap:6px}
+.bhq-dv-piler button{width:32px;height:32px;min-width:44px;min-height:44px;border-radius:50%;border:1px solid var(--dv-linje,color-mix(in srgb,currentColor 14%,transparent));display:grid;place-items:center;font-size:14px;color:var(--dv-tekst,currentColor)}
+.bhq-dv-piler button:disabled{opacity:.3}
+.bhq-dv-ukedager,.bhq-dv-dager{display:grid;grid-template-columns:repeat(7,1fr);gap:4px}
+.bhq-dv-ukedager span{text-align:center;font-size:11px;color:var(--dv-dempet,color-mix(in srgb,currentColor 55%,transparent));padding:4px 0}
+.bhq-dv-dag{min-height:44px;border-radius:10px;font-size:14px;font-weight:500;display:grid;place-items:center;color:var(--dv-tekst,currentColor)}
+.bhq-dv-dag:hover:not(:disabled):not(.er-valgt){background:var(--dv-hover,color-mix(in srgb,currentColor 8%,transparent))}
+.bhq-dv-dag:disabled{color:var(--dv-dempet,color-mix(in srgb,currentColor 55%,transparent));opacity:.35}
+.bhq-dv-dag.er-idag:not(.er-valgt){box-shadow:inset 0 0 0 1px var(--dv-linje-2,color-mix(in srgb,currentColor 28%,transparent))}
+.bhq-dv-dag.er-valgt{background:var(--dv-valgt-flate,color-mix(in srgb,currentColor 16%,transparent));color:var(--dv-valgt-tekst,currentColor);box-shadow:inset 0 0 0 1px var(--dv-valgt-kant,color-mix(in srgb,currentColor 45%,transparent));font-weight:600}
+.bhq-dv-tom{display:block}
+.bhq-dv-fot{font-size:12px;color:var(--dv-dempet,color-mix(in srgb,currentColor 55%,transparent));margin-top:10px;text-align:center}
+
+.time-panel{margin-bottom:8px}
+.time-heading{display:flex;align-items:baseline;justify-content:space-between;margin:0 0 10px}
+.time-heading h3{font-size:15px;font-weight:600}
+.time-heading span{font-size:12px;color:var(--muted)}
+.time-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+@media(min-width:400px){.time-grid{grid-template-columns:repeat(4,1fr)}}
+.time{padding:11px 0;border:1px solid var(--line);border-radius:var(--r-sm);background:var(--surface);font-size:14px;font-weight:500;text-align:center;color:var(--ink)}
+.time:hover{border-color:var(--line-2)}
+.time.chosen{background:var(--valgt-flate);border-color:var(--valgt-kant);color:var(--accent-text);font-weight:600}
+.selection-line{font-size:13px;color:var(--muted);margin-top:12px}
+.appointment{padding:14px 16px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);margin:0 0 18px}
+.appointment .label{font-size:11px;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);margin-bottom:6px}
+.appointment .date-line{font-size:16px;font-weight:600}
+.appointment .time-line{font-size:13px;color:var(--muted);margin-top:2px}
+.appointment .detail-line{display:flex;justify-content:space-between;gap:12px;font-size:14px;margin-top:10px;padding-top:10px;border-top:1px solid var(--line)}
+.flow-ref{display:flex;flex-direction:column;gap:8px;margin:0 0 14px}
+.flow-ref-line{font-size:13px;line-height:1.45;padding:10px 14px;border-radius:var(--r-sm);border:1px solid var(--line);color:var(--ink)}
+.flow-ref-line.on{border-color:var(--accent);background:var(--accent-soft)}
+.form-total{display:flex;justify-content:space-between;align-items:baseline;font-size:14px;color:var(--muted);margin:0 0 18px}
+.form-total strong{font-size:16px;color:var(--ink);font-weight:600}
+.form-total .flow-strike{text-decoration:line-through;color:var(--muted);font-weight:400;margin-right:6px}
+.form-row{margin:0 0 14px}
+.form-row label{display:block;font-size:13px;font-weight:500;margin-bottom:6px}
+.form-row input{width:100%;padding:13px 14px;border:1px solid var(--line-2);border-radius:var(--r-sm);background:var(--surface);color:var(--ink);font-size:16px}
+.form-row input::placeholder{color:var(--muted)}
+.form-row input:focus{border-color:var(--accent);outline:none}
+.field-note{font-size:12px;color:var(--muted);margin-top:6px}
+.flow-consent-slot{display:none;margin:0 0 16px}.flow-consent-slot.shown{display:block}
+.opt-in{display:flex;gap:10px;align-items:flex-start;font-size:13px;line-height:1.45;padding:12px 14px;border:1px solid var(--line);border-radius:var(--r-sm)}
+.opt-in input{width:18px;height:18px;margin-top:2px;accent-color:var(--accent)}
+.flow-err{color:var(--danger);font-size:13px;margin:0 0 10px;display:none}
+.confirmation-mark{width:52px;height:52px;border-radius:50%;background:var(--accent);color:var(--accent-ink);display:grid;place-items:center;font-size:24px;font-weight:700;margin:8px 0 16px}
+.confirmation-title{font-size:26px;font-weight:600;line-height:1.15;letter-spacing:-.01em;margin:0 0 6px;outline:none}
+.confirmation-copy{font-size:14px;color:var(--muted);margin:0 0 18px}
+/* Detaljkortet (som v1 Moderne): dato liten og dempet, klokkeslettet stort i aksentfargen (som den er), så
+   Navn / Tjeneste / Total med hårlinje over hver rad. Prisen står i tekstfarge. */
+.receipt{padding:var(--space-5) var(--space-4) var(--space-1);border:1px solid var(--line);border-radius:var(--r);background:var(--surface);margin:0 0 var(--space-4)}
+.receipt-lead{padding:0 0 var(--space-5)}
+.receipt-lead p{font-size:var(--fs-micro);color:var(--muted);margin:0 0 var(--space-2)}
+.receipt-lead>strong{display:block;font-size:var(--fs-display);font-weight:500;line-height:1;letter-spacing:-.04em;color:var(--accent);font-variant-numeric:tabular-nums}
+.receipt dl{display:block}
+.receipt dl>div{display:grid;grid-template-columns:auto minmax(0,1fr);gap:var(--space-4);align-items:baseline;padding:var(--space-3) 0;border-top:1px solid var(--line)}
+.receipt dt{font-size:var(--fs-micro);color:var(--muted)}
+.receipt dd{text-align:right;font-size:var(--fs-small);font-weight:500;color:var(--ink);overflow-wrap:anywhere}
+.det-strike{color:var(--muted)}
+.loyalty-row{padding:14px 16px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);margin:0 0 var(--space-4)}
+.loyalty-top{display:flex;justify-content:space-between;align-items:baseline;margin-bottom:10px}
+.loyalty-top h2{font-size:14px;font-weight:600}
+.loyalty-top strong{font-size:16px;font-weight:600}
+.loyalty-top strong span{color:var(--muted);font-weight:400}
+.stamp-track{display:flex;flex-wrap:wrap;gap:6px}
+.stamp{width:22px;height:22px;border-radius:50%;border:1px solid var(--line-2);display:grid;place-items:center;font-size:11px;color:var(--accent-ink)}
+.stamp.filled{background:var(--accent);border-color:var(--accent)}
+.loyalty-caption{font-size:12px;color:var(--muted);margin-top:10px}
+/* Kontaktradene: ingen boks. Ikon i aksentfarge, teksten som dempet understreket lenke; hele raden trykkbar. */
+.visit-details{display:flex;flex-direction:column;margin:0 0 var(--space-4)}
+.visit-details a{display:flex;align-items:center;gap:var(--space-3);min-height:var(--touch-min);color:var(--ink)}
+.visit-details svg{width:var(--space-5);height:var(--space-5);fill:none;stroke:currentColor;stroke-width:1.6;flex:0 0 auto;color:var(--accent)}
+.visit-details a>span{flex:1;min-width:0;overflow-wrap:anywhere;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 35%,transparent);text-underline-offset:.2em}
+.reminder-note{font-size:13px;color:var(--muted);margin:0 0 var(--space-4)}
+.manage-appointment{display:inline-flex;align-items:center;gap:8px;font-size:13px;font-weight:500;color:var(--ink);background:color-mix(in srgb,var(--ink) 7%,transparent);padding:10px 14px;border-radius:999px}
+.manage-appointment:hover{background:color-mix(in srgb,var(--ink) 11%,transparent)}
+/* Sekundærknapp på bekreftelsen («Endre / avbestill»): samme form som .primary (full bredde, min-height
+   52px, radius 12px = --r), men i den halvtransparente grå stilen. Luft over fra teksten. */
+.flow-secondary{display:flex;align-items:center;justify-content:center;width:100%;min-height:52px;margin-top:var(--space-4);padding:var(--space-3) var(--space-4);border-radius:var(--r);background:color-mix(in srgb,var(--ink) 7%,transparent);color:var(--ink);font-weight:500;text-align:center;text-decoration:none}
+.flow-secondary:hover{background:color-mix(in srgb,var(--ink) 11%,transparent)}
+/* Bekreftelsen: kort → kontaktrader → fristteksten har ÉN avstand (--space-4), satt som margin-bottom på
+   blokkene over («Legg i kalender» fjernet 23.10.2026 — fristteksten står nå der knappen sto). */
+/* Bekreftelsens topp: haken (36px = --space-7 + --space-1) til venstre for h1-en på samme rad, sentrert mot
+   tittelens FØRSTE linje: tittelen får padding-top = (hake − én linjehøyde)/2, så midten av linje 1 = midten
+   av haken også når tittelen brytes (text-wrap: balance). --fs-title holder «Timen er bekreftet» på én linje
+   ved 320/375. Sirkel i tekstfarge (--ink) med hake i bakgrunnsfarge (--bg). Gjelder bare .confirmation-head — manage-
+   kvitteringene (Avbestilt / Tid endret) bruker fortsatt den store haken over tittelen. */
+.confirmation-head{--hake:calc(var(--space-7) + var(--space-1));display:flex;align-items:flex-start;gap:var(--space-3);margin:var(--space-2) 0 var(--space-5)}
+.confirmation-head .confirmation-mark{flex:0 0 auto;width:var(--hake);height:var(--hake);margin:0;border-radius:50%;background:var(--ink);color:var(--bg);font-size:var(--fs-title)}
+.confirmation-head .confirmation-title{flex:1;min-width:0;margin:0;font-size:var(--fs-title);line-height:1.2;padding-top:calc((var(--hake) - 1.2em) / 2);text-wrap:balance}
+.bk-card{padding:16px;border:1px solid var(--line);border-radius:var(--r);background:var(--surface);margin:0 0 12px}
+.bk-svc{font-size:15px;font-weight:600;margin-bottom:2px}
+.bk-when{font-size:13px;color:var(--muted);margin-bottom:14px}
+.bk-actions{display:flex;gap:8px}
+.bk-act{flex:1;padding:12px 8px;border-radius:999px;font-size:13px;font-weight:600;border:1px solid var(--line-2);color:var(--ink)}
+.bk-act.primary{margin:0;background:var(--accent);border-color:var(--accent);color:var(--accent-ink);font-size:13px;padding:12px 8px}
+.bk-act.danger{border-color:var(--danger);color:var(--danger)}
+.bk-confirm{margin-top:12px;padding:12px;background:color-mix(in srgb,var(--ink) 6%,transparent);border-radius:var(--r-sm);display:none}
+.bk-confirm.open{display:block}
+.bk-confirm-q{font-size:13px;color:var(--muted);margin-bottom:10px}
+.bk-confirm-btns{display:flex;gap:8px}
+.no-bk{font-size:14px;color:var(--muted);padding:20px 0;text-align:center}
+
+.v2-manage,.manage-appointment,.bk-act{min-height:48px;border-radius:12px;align-items:center;justify-content:center}
+.v2-sosial .social-link{min-width:44px;min-height:44px;align-items:center;justify-content:center}
+.confirmation-mark{background:var(--accent-soft);color:var(--accent-text);border-radius:12px;font-size:28px}
+.confirmation-title{font-size:28px;line-height:1.15}.confirmation-copy{margin-top:12px}
+.time{min-height:48px}
+.form-row{margin-bottom:24px}.form-row label{font-size:14px;margin-bottom:8px}
+.form-row input.tab-fokus{outline:3px solid var(--accent-text);outline-offset:3px;border-color:var(--accent-text)}
+.form-row input[aria-invalid=true]{border:2px solid var(--danger)}
+.empty-actions{display:grid;gap:12px;margin:16px 0}.empty-actions button{min-height:48px;border:1px solid var(--line-2);border-radius:12px;padding:10px}
+.v2-tj-description{display:block;font-size:14px;font-weight:400;line-height:1.45;color:var(--muted);margin:4px 0}
+/* Infolinjene under «Bekreft time» (steg 3): sentrert i knappens kolonne, uten boks, tett sammen.
+   Tekst 35 % mot --ink fra --muted (lysere i mørk modus, mørkere i lys — mer lesbar begge veier;
+   kontrast mot --bg: mørk 10,8:1, lys 8,8:1). «Ingen betaling nå.» framheves med --ink + vekt 600. */
+.flow-info{margin-top:var(--space-4);display:flex;flex-direction:column;gap:var(--space-1);text-align:center;font-size:var(--fs-small);line-height:1.5;color:color-mix(in srgb,var(--ink) 35%,var(--muted))}
+.flow-info p{text-wrap:balance}
+.flow-info-lead{color:var(--ink);font-weight:600}
+/* Footer (alle steg): mindre og dimmere enn infolinjene (--muted: mørk 7,8:1, lys 5,8:1), mer luft over. Lenkene er
+   dempet understreket (ikke standardblå) med berøringsflate ≥ --touch-min. */
+.flow-footer{margin:calc(var(--space-7) + var(--space-2)) 0 0;display:flex;flex-wrap:wrap;justify-content:center;align-items:center;column-gap:var(--space-1);font-size:var(--fs-micro);color:var(--muted)}
+.flow-footer a{display:inline-flex;align-items:center;min-height:var(--touch-min);color:inherit;text-decoration:underline;text-decoration-color:color-mix(in srgb,currentColor 40%,transparent);text-underline-offset:.2em}
+.flow-footer a:hover{color:var(--ink)}
+@media(prefers-reduced-motion:no-preference){.rise-in{animation:riseIn .22s ease-out}}
+@keyframes riseIn{from{opacity:0;transform:translateY(8px)}to{opacity:1;transform:none}}
+</style>
+</head>
+<body>
+<main class="frame"><section class="flow" id="flow-frame"><nav class="flow-nav" aria-label="Booking"><button class="back-link" id="flow-back" type="button"><span aria-hidden="true">←</span>Tilbake</button><div class="flow-brand" aria-label="Grand barber">Grand barber</div></nav><div id="flow-steps"><ol class="steps" aria-label="Bookingsteg"><li class="active" aria-current="step"><span class="v2-skjult">Steg 1 av 3: </span>Tjeneste</li><li class="">Dato og tid</li><li class="">Opplysninger</li></ol></div><div id="flow-body"><div id="flow-step1"><section class="booking" aria-label="Behandlinger"><header><h2>Velg tjeneste</h2></header><div class="v2-tjenester services" id="flow-services"><button class="v2-tj service selected" type="button" role="radio" aria-checked="true" aria-expanded="true" data-id="4fe9638f-3aa9-4cba-bcc4-735e91d5de58" data-min="30" data-price="1000" data-name="Skinfade"><span class="v2-tj-navn">Skinfade<span class="v2-tj-description">Klipp på sidene og kort hår på toppen</span><span class="v2-tj-min">30 min</span></span><span class="v2-tj-pris">1000&nbsp;kr</span><span class="v2-tj-hake" aria-hidden="true">✓</span></button><div class="v2-tillegg open" id="flow-addons" aria-hidden="false"><div class="v2-tillegg-inner"><div class="v2-tillegg-panel"><p class="v2-tillegg-lbl">Legg til <span>Valgfritt</span></p><button class="v2-tj v2-tj-tillegg flow-addon sel" type="button" aria-pressed="true" data-id="acc84caa-1a95-4d14-a2a7-25c3464a9811" data-min="15" data-price="150" data-name="Skjegg"><span class="v2-tj-navn">Skjegg</span><span class="v2-tj-meta">+15 min · +150&nbsp;kr</span><span class="v2-tj-hake liten" aria-hidden="true">✓</span></button><button class="v2-tj v2-tj-tillegg flow-addon" type="button" aria-pressed="false" data-id="1e7d9c57-3e72-445e-a7fd-dfcb1e2fadff" data-min="45" data-price="150" data-name="Vask"><span class="v2-tj-navn">Vask</span><span class="v2-tj-meta">+45 min · +150&nbsp;kr</span><span class="v2-tj-hake liten" aria-hidden="true">✓</span></button></div></div></div><button class="v2-tj service" type="button" role="radio" aria-checked="false" aria-expanded="false" data-id="85378eb6-8b2b-4bf0-837e-542d8e23a8ee" data-min="30" data-price="399" data-name="Saksklipp"><span class="v2-tj-navn">Saksklipp<span class="v2-tj-description">Bare saks ingen maskin</span><span class="v2-tj-min">30 min</span></span><span class="v2-tj-pris">399&nbsp;kr</span><span class="v2-tj-hake" aria-hidden="true">✓</span></button><button class="v2-tj service" type="button" role="radio" aria-checked="false" aria-expanded="false" data-id="a5a4a78e-c1df-4166-a0fa-4341706d2881" data-min="30" data-price="300" data-name="BarneKlipp"><span class="v2-tj-navn">BarneKlipp<span class="v2-tj-description">Barn under 12 år</span><span class="v2-tj-min">30 min</span></span><span class="v2-tj-pris">300&nbsp;kr</span><span class="v2-tj-hake" aria-hidden="true">✓</span></button></div><button class="primary" id="flow-to-date" type="button">Velg dato og tid <span aria-hidden="true">→</span></button></section></div><div id="flow-dynamic" hidden=""></div></div><footer class="flow-footer">Bygget med <a href="https://trybarberhq.com" target="_blank" rel="noopener">BarberHQ</a> · <a href="https://trybarberhq.com/no/personvern" target="_blank" rel="noopener">Personvern</a></footer></section><script nonce="">/* BarberHQ datovelger — window.BhqDatovelger. ÉN kilde for månedskalenderen på bookingsiden og i dashbordet.
+ *
+ * Levering (src/lib/datovelger-kilde.cjs leser denne fila ved oppstart):
+ *   • Bookingsiden: lagt inline foran flyt-skriptet (booking-flow.cjs), i samme <script nonce>.
+ *   • Dashbordet:   script-tagg med src="/book/_/datovelger.js" + stilark-lenke til /book/_/datovelger.css
+ *                   (Netlify-proxyen /book/* → API-et; Cache-Control: no-cache + ETag).
+ *   ⚠ Skriv aldri en avsluttende script-tagg i denne fila, heller ikke i en kommentar: på bookingsiden står
+ *     innholdet inne i en script-blokk (datovelger-kilde.cjs stopper oppstarten om den finnes).
+ * API, farge-variabler og brukseksempel: docs/systemtilstand.md § «Datovelger (BhqDatovelger)».
+ *
+ * Kompatibilitet: dashbordet får alltid nyeste fil ved deploy. API-et under (versjon 1) skal derfor bare
+ * UTVIDES. En endring som bryter det, blir en ny fil (datovelger-v2.js) mens denne står.
+ * Ingen avhengigheter, ES5, ingen innerHTML fra innsendte tekster (bare datoer, tall og faste ord).
+ */
+(function (w) {
+  'use strict';
+  var MND = ['januar', 'februar', 'mars', 'april', 'mai', 'juni', 'juli', 'august', 'september', 'oktober', 'november', 'desember'];
+  var MND_KORT = ['jan', 'feb', 'mar', 'apr', 'mai', 'jun', 'jul', 'aug', 'sep', 'okt', 'nov', 'des'];
+  var DAG = ['søndag', 'mandag', 'tirsdag', 'onsdag', 'torsdag', 'fredag', 'lørdag'];
+  var UKEDAGER = ['M', 'T', 'O', 'T', 'F', 'L', 'S'];
+
+  function pad2(n) { return String(n).padStart(2, '0'); }
+  function iso(y, m, d) { return y + '-' + pad2(m + 1) + '-' + pad2(d); }
+  // min/maks/idag kan være en dato eller en funksjon som gir den — leses ved HVER tegning (bookingsiden:
+  // «i dag» i barberens tz følger klokka også om siden står åpen over midnatt).
+  function les(v) { return typeof v === 'function' ? v() : v; }
+  // «mandag 16. nov» — aria-label på dagknappen.
+  function langDato(s) { var d = new Date(s + 'T12:00:00Z'); return DAG[d.getUTCDay()] + ' ' + d.getUTCDate() + '. ' + MND_KORT[d.getUTCMonth()]; }
+  function forbokstav(s) { s = String(s || ''); return s.charAt(0).toUpperCase() + s.slice(1); }
+  function maanedAv(s) { var p = String(s).split('-'); return { y: +p[0], m: +p[1] - 1 }; }
+
+  function lag(rot, o) {
+    if (!rot) throw new Error('BhqDatovelger.lag: mangler rotelement');
+    o = o || {};
+    var t = {
+      min: o.min, maks: o.maks == null ? null : o.maks, idag: o.idag, valgt: o.valgt || null,
+      // dager: undefined = alle dager i [min, maks] er valgbare · null = laster (alle deaktivert) ·
+      // [{ date, status }] = bare status 'open' er valgbar.
+      harDager: o.dager !== undefined, dager: o.dager
+    };
+    var start = maanedAv(o.maaned || t.valgt || les(t.min));
+    t.y = start.y; t.m = start.m;
+    rot.classList.add('bhq-dv');
+
+    function ym() { return iso(t.y, t.m, 1).slice(0, 7); }
+    function aapen(dato) {
+      if (!t.harDager) return true;
+      if (!t.dager) return false;
+      for (var i = 0; i < t.dager.length; i++) if (t.dager[i].date === dato) return t.dager[i].status === 'open';
+      return false;
+    }
+    function harLedige(maaned) {
+      if (!t.harDager) return true;
+      if (!t.dager) return false;
+      for (var i = 0; i < t.dager.length; i++) if (t.dager[i].status === 'open' && t.dager[i].date.slice(0, 7) === maaned) return true;
+      return false;
+    }
+
+    function tegn() {
+      var y = t.y, m = t.m, min = les(t.min), maks = les(t.maks), idag = les(t.idag) || min, denne = ym();
+      var forskyv = (new Date(y, m, 1).getDay() + 6) % 7, antall = new Date(y, m + 1, 0).getDate();
+      var celler = '';
+      for (var i = 0; i < forskyv; i++) celler += '<span class="bhq-dv-tom" aria-hidden="true"></span>';
+      for (var d = 1; d <= antall; d++) {
+        var dato = iso(y, m, d), valgt = dato === t.valgt, erIdag = dato === idag;
+        var av = (min && dato < min) || (maks && dato > maks) || !aapen(dato);
+        celler += '<button class="bhq-dv-dag ' + (valgt ? 'er-valgt ' : '') + (erIdag ? 'er-idag' : '') + '" type="button" data-date="' + dato +
+          '" aria-label="' + langDato(dato) + '" aria-pressed="' + (valgt ? 'true' : 'false') + '"' + (av ? ' disabled' : '') + '>' + d + '</button>';
+      }
+      var forrigeAv = !!min && denne <= min.slice(0, 7), nesteAv = !!maks && denne >= maks.slice(0, 7);
+      var fot = o.fot ? o.fot({ maaned: denne, laster: t.harDager && !t.dager, harLedige: harLedige(denne) }) : '';
+      rot.innerHTML = '<div class="bhq-dv-topp"><h3>' + forbokstav(MND[m] + ' ' + y) + '</h3><div class="bhq-dv-piler">' +
+        '<button type="button" data-mon="-1" aria-label="Forrige måned"' + (forrigeAv ? ' disabled' : '') + '>←</button>' +
+        '<button type="button" data-mon="1" aria-label="Neste måned"' + (nesteAv ? ' disabled' : '') + '>→</button></div></div>' +
+        '<div class="bhq-dv-ukedager" aria-hidden="true">' + UKEDAGER.map(function (x) { return '<span>' + x + '</span>'; }).join('') + '</div>' +
+        '<div class="bhq-dv-dager">' + celler + '</div>' + (fot || '');
+      if (o.vedTegnet) o.vedTegnet(rot);
+      var dager = rot.querySelectorAll('.bhq-dv-dag:not(:disabled)');
+      for (var k = 0; k < dager.length; k++) dager[k].addEventListener('click', velg);
+      var piler = rot.querySelectorAll('[data-mon]');
+      for (var p = 0; p < piler.length; p++) piler[p].addEventListener('click', bla);
+    }
+    function velg(e) {
+      t.valgt = e.currentTarget.getAttribute('data-date');
+      tegn();
+      if (o.vedValg) o.vedValg(t.valgt);
+    }
+    function bla(e) {
+      var ny = new Date(t.y, t.m + Number(e.currentTarget.getAttribute('data-mon')), 1);
+      t.y = ny.getFullYear(); t.m = ny.getMonth();
+      tegn();
+      if (o.vedMaaned) o.vedMaaned(ym());
+    }
+
+    tegn();
+    return {
+      // Endrer innstillinger og tegner på nytt. Bare nøklene som er med, endres.
+      oppdater: function (n) {
+        n = n || {};
+        if ('min' in n) t.min = n.min;
+        if ('maks' in n) t.maks = n.maks == null ? null : n.maks;
+        if ('idag' in n) t.idag = n.idag;
+        if ('valgt' in n) t.valgt = n.valgt || null;
+        if ('dager' in n) { t.harDager = n.dager !== undefined; t.dager = n.dager; }
+        if ('maaned' in n && n.maaned) { var mm = maanedAv(n.maaned); t.y = mm.y; t.m = mm.m; }
+        tegn();
+      },
+      visMaaned: function (maaned) { var mm = maanedAv(maaned); t.y = mm.y; t.m = mm.m; tegn(); },
+      maaned: ym,
+      valgt: function () { return t.valgt; },
+      fjern: function () { rot.innerHTML = ''; rot.classList.remove('bhq-dv'); }
+    };
+  }
+
+  w.BhqDatovelger = { versjon: 1, lag: lag };
+})(window);
+(function(){
+'use strict';
+function reduceMotion(){return window.matchMedia&&matchMedia('(prefers-reduced-motion:reduce)').matches;}
+function riseIn(el){if(!el||reduceMotion())return;el.style.animation='none';void el.offsetWidth;el.style.animation='flow-rise .22s cubic-bezier(.4,0,.2,1)';}
+var _I={"slug":"grand-barber","tz":"Europe\u002fOslo","services":[{"id":"4fe9638f-3aa9-4cba-bcc4-735e91d5de58","name":"Skinfade","price_nok":1000,"minutes":30,"kind":"hoved","is_addon":false,"description":"Klipp på sidene og kort hår på toppen"},{"id":"85378eb6-8b2b-4bf0-837e-542d8e23a8ee","name":"Saksklipp","price_nok":399,"minutes":30,"kind":"hoved","is_addon":false,"description":"Bare saks ingen maskin"},{"id":"a5a4a78e-c1df-4166-a0fa-4341706d2881","name":"BarneKlipp","price_nok":300,"minutes":30,"kind":"hoved","is_addon":false,"description":"Barn under 12 år"},{"id":"acc84caa-1a95-4d14-a2a7-25c3464a9811","name":"Skjegg","price_nok":150,"minutes":15,"kind":"tillegg","is_addon":true,"description":""},{"id":"1e7d9c57-3e72-445e-a7fd-dfcb1e2fadff","name":"Vask","price_nok":150,"minutes":45,"kind":"tillegg","is_addon":true,"description":""}],"closedWeekdays":[0],"horizonDays":28,"preview":false,"referral":null,"bookingLaast":false,"paymentMethods":["Cash","Vipps"],"shopName":"Grand barber","address":"Storgata 33, 0184 Oslo","contactPhone":"91 23 45 23","reminderEnabled":false,"smsUiEnabled":false,"instagram":"barberhq__","tiktok":"barber_hq_","snapchat":"barberhq_"};
+// Generert fra ENDRINGSFRIST_TIMER (src/lib/endringsfrist.cjs) ved hver rendring — aldri hardkodet her.
+var FRIST_LINJE="Endre eller avbestill senest 2 timer før timen.";
+var SLUG=_I.slug,TZ=_I.tz,SERVICES=_I.services;
+var LAAST=_I.bookingLaast===true, PREVIEW=_I.preview===true;
+var frame=document.getElementById('flow-frame');
+var selId=null,selName=null,selMin=0,selPrice=0;
+var addonIds=[],addonNames=[],addonMin=0,addonPrice=0;
+
+function h(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;').replace(/'/g,'&#39;');}
+
+// Duplisert i booking-module.cjs:calcTot — fiks må speiles.
+function calcTot(){return {price:selPrice+addonPrice,min:selMin+addonMin};}
+// Duplisert i booking-module.cjs:resetAddons — fiks må speiles.
+function resetAddons(){addonIds=[];addonNames=[];addonMin=0;addonPrice=0;document.querySelectorAll('.flow-addon').forEach(function(r){r.classList.remove('sel');r.setAttribute('aria-pressed','false');});}
+
+// Basert på booking-module.cjs:selectMain (tilpasset .service radio-DOM; fetchDays kobles i delsteg 2)
+// — Duplisert i booking-module.cjs:selectMain — fiks må speiles.
+function selectMain(card){
+  if(card.dataset.id===selId)return;
+  document.querySelectorAll('#flow-services .service').forEach(function(c){c.classList.remove('selected');c.setAttribute('aria-checked','false');});
+  card.classList.add('selected');card.setAttribute('aria-checked','true');
+  selDate=null;selSlot=null;daysData=null;selId=card.dataset.id;selName=card.dataset.name;selMin=Number(card.dataset.min);selPrice=Number(card.dataset.price);
+  // Tillegg er globale per barber: valgene beholdes ved bytte (ingen resetAddons). Blokken flyttes rett
+  // under den valgte raden og foldes ut (CSS .open). Ingen hopp i rulleposisjon: raden over står stille.
+  document.querySelectorAll('#flow-services .service').forEach(function(c){c.setAttribute('aria-expanded','false');});
+  var grp=document.getElementById('flow-addons');
+  if(grp){grp.removeAttribute('inert');grp.classList.remove('open');card.insertAdjacentElement('afterend',grp);grp.setAttribute('aria-hidden','false');card.setAttribute('aria-expanded','true');
+    requestAnimationFrame(function(){requestAnimationFrame(function(){grp.classList.add('open');});});}
+  var next=document.getElementById('flow-to-date');if(next)next.disabled=false;
+}
+document.querySelectorAll('#flow-services .service').forEach(function(card){
+  card.addEventListener('click',function(){selectMain(card);});
+});
+// Add-on toggle — Duplisert i booking-module.cjs (add-on click-handler) — fiks må speiles.
+document.querySelectorAll('.flow-addon').forEach(function(row){
+  row.addEventListener('click',function(){
+    selDate=null;selSlot=null;daysData=null;var id=row.dataset.id,idx=addonIds.indexOf(id);
+    if(idx>=0){addonIds.splice(idx,1);addonNames.splice(idx,1);addonMin-=Number(row.dataset.min);addonPrice-=Number(row.dataset.price);row.classList.remove('sel');row.setAttribute('aria-pressed','false');}
+    else{addonIds.push(id);addonNames.push(row.dataset.name);addonMin+=Number(row.dataset.min);addonPrice+=Number(row.dataset.price);row.classList.add('sel');row.setAttribute('aria-pressed','true');}
+  });
+});
+
+// ── Delt fetch med timeout — Duplisert i booking-module.cjs:fetchT — fiks må speiles. ──
+var FETCH_MS_READ=8000, FETCH_MS_WRITE=15000;
+function fetchT(url,opts,ms){
+  var ctrl=new AbortController();
+  var timer=setTimeout(function(){ctrl.abort();},ms||FETCH_MS_READ);
+  return fetch(url,Object.assign({},opts||{},{signal:ctrl.signal}))
+    .then(function(r){clearTimeout(timer);return r;})
+    .catch(function(e){clearTimeout(timer);if(e&&e.name==='AbortError'){var te=new Error('Nettet er tregt akkurat nå — prøv igjen.');te.timeout=true;throw te;}throw e;});
+}
+// Dato-helpere — Duplisert i booking-module.cjs (DAYS_S/MONS/MONS_FULL/fmtDateShort) — fiks må speiles.
+// (fmtDateLong — dagknappenes aria-label — bor nå i datovelgeren, src/klient/datovelger.js:langDato.)
+var DAYS_S=['søn','man','tir','ons','tor','fre','lør'];
+var MONS=['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'];
+var MONS_FULL=['januar','februar','mars','april','mai','juni','juli','august','september','oktober','november','desember'];
+// Stor forbokstav på FØRSTE tegn, resten urørt: «fredag 9. oktober» → «Fredag 9. oktober».
+// Erstatter CSS text-transform:capitalize på datoer — den gir stor forbokstav på HVERT ord («Oktober»).
+// Duplisert i booking-flow-{grotesk,fraunces,jakarta}.cjs:forbokstav — fiks må speiles.
+function forbokstav(s){s=String(s||'');return s.charAt(0).toUpperCase()+s.slice(1);}
+function fmtDateShort(s){var d=new Date(s+'T12:00:00Z');return DAYS_S[d.getUTCDay()]+' '+d.getUTCDate()+'. '+MONS[d.getUTCMonth()];}
+
+// ── Steg 2: dato & tid ─────────────────────────────────────────────────────
+var selDate=null,selSlot=null,daysData=null,monthDate=null,kal=null;
+function pad2(n){return String(n).padStart(2,'0');}
+function isoOf(y,m,d){return y+'-'+pad2(m+1)+'-'+pad2(d);}
+function todayIsoTz(){return new Date().toLocaleDateString('en-CA',{timeZone:TZ});}
+
+function svcRecapHtml(){
+  var tot=calcTot();
+  var name=h(selName)+(addonNames.length?' + '+addonNames.map(h).join(', '):'');
+  return '<div class="service-recap"><div><strong>'+name+'</strong><small>'+tot.min+' min · '+tot.price+' kr</small></div>'+
+    '<button class="text-link" id="flow-endre-svc" type="button">Endre tjeneste</button></div>';
+}
+function renderStep2(){
+  var dyn=document.getElementById('flow-dynamic');if(!dyn)return;
+  var tot=calcTot();
+  dyn.innerHTML=
+    '<h1 class="flow-title" tabindex="-1">Velg dato og tid</h1>'+
+    svcRecapHtml()+
+    '<section class="calendar" id="flow-cal" aria-label="Velg dato"></section>'+
+    '<div id="flow-times"></div>'+
+    '<div class="flow-action"><button class="primary" id="flow-to-details" type="button" disabled>Opplysninger <span aria-hidden="true">→</span></button></div>'+
+    '<p class="flow-foot">'+tot.min+' min · '+tot.price+' kr · Betales på stedet</p>';
+  var er=document.getElementById('flow-endre-svc');if(er)er.addEventListener('click',function(){showStep(1);});
+  var toD=document.getElementById('flow-to-details');if(toD)toD.addEventListener('click',function(){if(selSlot)showStep(3);});
+  if(!monthDate){var t=todayIsoTz().split('-');monthDate=new Date(+t[0],+t[1]-1,1);}
+  lagKalender();
+  loadDays();
+  if(selDate)loadSlots(selDate);
+}
+// /days — logikk basert på booking-module.cjs:fetchDays (samme endepunkt/parametre) — fiks må speiles.
+var daysRequestSeq=0,slotsRequestSeq=0,manageSlotsRequestSeq=0;
+function loadDays(){
+  if(!selId)return;
+  var request=++daysRequestSeq;
+  var url='/api/barbers/'+encodeURIComponent(SLUG)+'/days?service_id='+encodeURIComponent(selId);
+  if(addonIds.length)url+='&addon_ids='+addonIds.map(encodeURIComponent).join(',');
+  fetchT(url,null,FETCH_MS_READ).then(function(r){if(!r.ok)throw new Error('days '+r.status);return r.json();})
+    .then(function(data){if(request!==daysRequestSeq)return;if(data&&data.days){daysData=data.days;renderCalendar();}})
+    .catch(function(e){if(request!==daysRequestSeq)return;console.error('[flow] /days feilet:',e&&e.message);
+      var cal=document.getElementById('flow-cal');if(cal){var f=cal.querySelector('.bhq-dv-fot');if(f)f.innerHTML='Kunne ikke hente ledige dager. <button type="button" id="flow-retry">Prøv igjen</button>';var retry=document.getElementById('flow-retry');if(retry)retry.onclick=loadDays;}});
+}
+// ── Datovelgeren: den delte BhqDatovelger (src/klient/datovelger.js, inline foran dette skriptet) ──
+// ÉN kilde med dashbordet. Bookingsiden: min og «i dag» = todayIsoTz (leses ved hver tegning, i barberens tz),
+// ingen maks (dager utenfor horisonten er aldri 'open' i /days), dager = daysData (null = laster → alt
+// deaktivert). Foten og «Finn neste ledige dag» hører til flyten og bor her (fot/vedTegnet).
+function ymAv(d){return isoOf(d.getFullYear(),d.getMonth(),1).slice(0,7);}
+function kalFot(info){
+  var tom=!info.laster&&!info.harLedige;
+  return '<p class="bhq-dv-fot">'+(tom?'Ingen ledige tider i denne måneden.':'Velg en dag som passer deg.')+'</p>'+(tom?emptyActions():'');
+}
+// Delt av steg 2 og «Velg ny tid» (manage m2): samme oppsett, samme fot. Flyten eier tilstanden og gir
+// den inn (valgt/dager/maaned + tilbakekallene); datovelgeren selv er felles med dashbordet.
+function lagDatovelger(cal,o){
+  return BhqDatovelger.lag(cal,{min:todayIsoTz,idag:todayIsoTz,valgt:o.valgt,dager:o.dager,maaned:o.maaned,
+    fot:kalFot,vedTegnet:o.vedTegnet,vedMaaned:o.vedMaaned,vedValg:o.vedValg});
+}
+function lagKalender(){
+  var cal=document.getElementById('flow-cal');if(!cal)return;
+  kal=lagDatovelger(cal,{valgt:selDate,dager:daysData,maaned:ymAv(monthDate),vedTegnet:wireEmptyActions,
+    vedMaaned:function(ym){var b=ym.split('-');monthDate=new Date(+b[0],+b[1]-1,1);},
+    vedValg:function(dato){selDate=dato;selSlot=null;var nb=document.getElementById('flow-to-details');if(nb)nb.disabled=true;loadSlots(selDate);}});
+}
+// Tegner på nytt med flytens tilstand (etter /days, «Finn neste ledige dag»). Samme navn og kallsteder som før.
+function renderCalendar(){
+  if(!kal||!document.getElementById('flow-cal'))return;
+  kal.oppdater({dager:daysData,valgt:selDate,maaned:ymAv(monthDate)});
+}
+function timePanelMsg(date,msg){return '<section class="time-panel"><div class="time-heading"><h3>'+fmtDateShort(date)+'</h3><span>&nbsp;</span></div><p class="selection-line">'+h(msg)+'</p></section>';}
+// Tidspanelet — delt av steg 2 og «Velg ny tid»: overskrift med dato, rutenett med tider, valglinje.
+// linje = ferdig HTML (kalleren escaper). valgtStart = starts_at for tiden som er valgt (eller null).
+function tidsPanelHtml(date,slots,valgtStart,linjeId,linje){
+  var btns=slots.map(function(s){var chosen=valgtStart===s.starts_at;return '<button class="time'+(chosen?' chosen':'')+'" type="button" aria-pressed="'+chosen+'" data-label="'+h(s.label)+'" data-start="'+h(s.starts_at)+'"'+(s.ends_at?' data-end="'+h(s.ends_at)+'"':'')+'>'+h(s.label)+'</button>';}).join('');
+  return '<section class="time-panel" aria-label="Velg klokkeslett"><div class="time-heading"><h3>'+fmtDateShort(date)+'</h3><span>Ledige klokkeslett</span></div>'+
+    '<div class="time-grid">'+btns+'</div><p class="selection-line" id="'+linjeId+'" aria-live="polite">'+linje+'</p></section>';
+}
+// Trykk på en tid VELGER den (markeres, valglinja oppdateres); vedValg får {label,starts_at,ends_at}.
+function wireTider(wrap,linjeId,date,vedValg){
+  wrap.querySelectorAll('.time').forEach(function(b){b.addEventListener('click',function(){
+    wrap.querySelectorAll('.time').forEach(function(x){x.classList.remove('chosen');x.setAttribute('aria-pressed','false');});b.classList.add('chosen');b.setAttribute('aria-pressed','true');
+    var valgt={label:b.dataset.label,starts_at:b.dataset.start,ends_at:b.dataset.end||null};
+    var sl=document.getElementById(linjeId);if(sl)sl.textContent='Valgt: '+fmtDateShort(date)+' kl. '+valgt.label;
+    vedValg(valgt);
+  });});
+}
+// /slots — logikk basert på booking-module.cjs:fetchSlots (samme endepunkt/parametre) — fiks må speiles.
+function loadSlots(date){
+  var request=++slotsRequestSeq;
+  var wrap=document.getElementById('flow-times');if(!wrap)return;
+  wrap.innerHTML=timePanelMsg(date,'Henter tider…');
+  var addonParam=addonIds.length?'&addon_ids='+addonIds.map(encodeURIComponent).join(','):'';
+  fetchT('/api/barbers/'+encodeURIComponent(SLUG)+'/slots?date='+date+'&service_id='+encodeURIComponent(selId)+addonParam,null,FETCH_MS_READ)
+    .then(function(r){return r.ok?r.json():r.json().then(function(d){throw new Error(d.error||'Feil');});})
+    .then(function(data){
+      if(request!==slotsRequestSeq||date!==selDate)return;
+      if(data.is_closed){wrap.innerHTML=timePanelMsg(date,'Stengt denne dagen.');return;}
+      if(!data.slots||!data.slots.length){wrap.innerHTML=timePanelMsg(date,'Ingen ledige tider denne dagen.')+emptyActions();wireEmptyActions();return;}
+      wrap.innerHTML=tidsPanelHtml(date,data.slots,selSlot?selSlot.starts_at:null,'flow-selline',
+        selSlot?'Valgt: '+fmtDateShort(date)+' kl. '+h(selSlot.label):'Velg et klokkeslett for å fortsette.');
+      wireTider(wrap,'flow-selline',date,function(valgt){
+        selSlot=valgt;
+        var nb=document.getElementById('flow-to-details');if(nb)nb.disabled=false;
+      });
+    })
+    .catch(function(e){if(request!==slotsRequestSeq||date!==selDate)return;wrap.innerHTML=timePanelMsg(date,'Kunne ikke hente tider. Prøv igjen.')+'<button class="manage-appointment" type="button" id="flow-retry-slots">Prøv igjen</button>'+contactLink();document.getElementById('flow-retry-slots').onclick=function(){loadSlots(date);};});
+}
+
+// ── Steg 3: om deg (skjema + samtykke + verving + submit) ──────────────────
+var DAYS_FULL=['søndag','mandag','tirsdag','onsdag','torsdag','fredag','lørdag'];
+// Duplisert i booking-module.cjs:fmtDateFull — fiks må speiles.
+function fmtDateFull(s){var d=new Date(s+'T12:00:00Z');return DAYS_FULL[d.getUTCDay()]+' '+d.getUTCDate()+'. '+MONS_FULL[d.getUTCMonth()];}
+// Duplisert i booking-module.cjs:fmtPhone — fiks må speiles.
+function fmtPhone(v){var dg=String(v||'').replace(/\D/g,'');if(dg.length===10&&dg.slice(0,2)==='47')dg=dg.slice(2);if(dg.length===8)return dg.slice(0,2)+' '+dg.slice(2,4)+' '+dg.slice(4,6)+' '+dg.slice(6,8);return String(v||'').trim();}
+
+// Samtykke- og verving-tilstand (samme variabler/semantikk som booking-module.cjs)
+var consentShown=false,consentCheckedFor=null,consentPending=false,consentCheckPromise=null,submitBusy=false;
+var refInviteActive=!!(_I.referral&&_I.referral.active),refIneligible=false,refBonus=null,refCheckedFor=null;
+
+// Duplisert i booking-module.cjs:effRabatt — fiks må speiles.
+function effRabatt(){if(refInviteActive&&_I.referral)return{pct:_I.referral.pct,rolle:'vervet'};if(refBonus)return{pct:refBonus,rolle:'verver'};return null;}
+// Duplisert i booking-module.cjs:rabattertTotal — fiks må speiles.
+function rabattertTotal(full,pct){return Math.round(full*(1-pct/100));}
+
+function appointmentHtml(){
+  var tot=calcTot();var svc=h(selName)+(addonNames.length?' + '+addonNames.map(h).join(', '):'');
+  return '<div class="appointment"><p class="label">Din time</p>'+
+    '<p class="date-line">'+forbokstav(fmtDateFull(selDate))+'</p>'+
+    '<p class="time-line">Kl. '+h(selSlot.label)+' · '+tot.min+' minutter</p>'+
+    '<div class="detail-line"><span>'+svc+'</span><span>'+tot.price+' kr</span></div></div>';
+}
+// Betalingsmetoder er REN INFO (ikke chips/knapper, ikke et valg — sendes aldri til backend).
+// «på stedet» (ikke «i salongen») — kjernemålgruppa er DM-barberere uten fast salong.
+// Referansen viste ingen metoder fordi sample-dataen manglet dem, ikke som stil-valg — så vi viser
+// dem når barberen har lagt dem inn (nyttig for kunden uansett stil). Samme logikk som grotesk.
+// OVERSETTELSE SKJER I VISNINGEN, ikke i dataen: barberens lagrede verdi (f.eks. «Cash») er urørt;
+// PAY_LABELS mapper kjente verdier til norske etiketter, ukjente slipper gjennom rått. Vipps først.
+// Duplisert i booking-module.cjs / booking-flow-grotesk.cjs (PAY_LABELS/PAY_ORDER/payLabels) — fiks må speiles.
+var PAY_LABELS={cash:'kontant',kontant:'kontant',vipps:'Vipps',kort:'kort',card:'kort',faktura:'faktura',invoice:'faktura'};
+var PAY_ORDER=['vipps'];   // prioritet: Vipps først; resten beholder lagret rekkefølge
+function payLabels(){
+  var mapped=(_I.paymentMethods||[]).filter(Boolean).map(function(m){var k=String(m).toLowerCase().trim();return {k:k,label:PAY_LABELS[k]||String(m)};});
+  mapped.sort(function(a,b){var ai=PAY_ORDER.indexOf(a.k),bi=PAY_ORDER.indexOf(b.k);ai=ai<0?99:ai;bi=bi<0?99:bi;return ai-bi;});
+  return mapped.map(function(x){return h(x.label);});
+}
+// Betalings-SETNINGEN rett under «Bekreft time» (steg 3). REN INFO — ingen pengestrøm.
+//   Tomt → «Ingen betaling nå. Du betaler hos barberen.» · Fylt → «… med {metoder} hos barberen.»
+//   «eller» før siste (1: «Vipps» · 2: «Vipps eller kontant» · 3+: «Vipps, kort eller kontant»).
+//   Returnerer HTML: «Ingen betaling nå.» i .flow-info-lead (framhevet), resten vanlig (metodene er h()-escapet).
+// ⚠ Join-logikken DUPLISERT (arkitektur A) i booking-module.cjs:renderPmHtml + booking-flow-{grotesk,fraunces}.cjs:payNote — fiks må speiles, identisk.
+function payNote(){var lead='<span class="flow-info-lead">Ingen betaling nå.</span> ';var m=payLabels();if(!m.length)return lead+'Du betaler hos barberen.';var liste=m.length===1?m[0]:m.slice(0,-1).join(', ')+' eller '+m[m.length-1];return lead+'Du betaler med '+liste+' hos barberen.';}
+// Duplisert i booking-module.cjs:renderRefSlot/refLine — fiks må speiles.
+function refLine(on,txt){return '<div class="flow-ref-line'+(on?' on':'')+'">'+txt+'</div>';}
+function renderRefSlot(){
+  var el=document.getElementById('flow-ref');if(!el)return;var html='';
+  if(refInviteActive&&_I.referral)html+=refLine(true,'−'+_I.referral.pct+'% velkomstrabatt, trekkes av barberen');
+  else if(refIneligible)html+=refLine(false,'Rabatten gjelder nye kunder.');
+  if(refBonus&&!(refInviteActive&&_I.referral))html+=refLine(true,'−'+refBonus+'% verve-bonus, trekkes av barberen');
+  el.innerHTML=html;
+}
+// Duplisert i booking-module.cjs:fillSummary (tilpasset .form-total) — fiks må speiles.
+function fillTotal(){
+  var el=document.getElementById('flow-total-val');if(!el)return;var tot=calcTot();var rab=effRabatt();
+  el.innerHTML=rab?('<span class="flow-strike">'+tot.price+' kr</span>'+rabattertTotal(tot.price,rab.pct)+' kr'):(tot.price+' kr');
+}
+
+function renderStep3(){
+  var dyn=document.getElementById('flow-dynamic');if(!dyn)return;
+  dyn.innerHTML=
+    '<h1 class="flow-title" tabindex="-1">Opplysninger</h1>'+
+    '<p class="flow-intro">Bare navn og mobilnummer, så er vi klare.</p>'+
+    appointmentHtml()+
+    '<div class="flow-ref" id="flow-ref"></div>'+
+    // MODERNE-REFERANSEN: total-linja ligger OVER «Fullt navn» (samme som Klassisk-referansen — de
+    // deler demo-base). Grotesk har den UNDER (sin opprinnelige plass). Total-linja viser KUN label +
+    // beløp; betalingsmetodene står ÉN gang — i payNote() under knappen.
+    '<div class="form-total"><span>Total</span><strong id="flow-total-val"></strong></div>'+
+    // Ekte <form> (display:contents → INGEN layout-endring) for nettleser-autofyll ved submit. Ingen lagring hos oss.
+    '<form id="flow-form" style="display:contents" novalidate>'+
+    '<div class="form-row"><label for="flow-cname">Fullt navn</label><input id="flow-cname" name="name" aria-describedby="flow-err" autocomplete="name" maxlength="100" placeholder="Fornavn og etternavn"></div>'+
+    '<div class="form-row"><label for="flow-cphone">Mobilnummer</label><input id="flow-cphone" name="phone" aria-describedby="flow-err" type="tel" inputmode="tel" autocomplete="tel" maxlength="20" placeholder="Mobilnummer">'+(_I.reminderEnabled?'<p class="field-note">Vi sender deg en påminnelse på SMS før timen.</p>':'')+'</div>'+
+    (_I.smsUiEnabled?'<div class="flow-consent-slot" id="flow-consent-slot"><label class="opt-in"><input type="checkbox" id="flow-cconsent">Ja, send meg SMS fra '+h(_I.shopName||'din barber')+' om ny klipp. Meld av når som helst.</label></div>':'')+
+    '<p class="flow-err" id="flow-err" role="alert"></p>'+
+    '<div class="flow-action"><button class="primary" id="flow-sub" type="submit"'+(LAAST?' disabled':'')+'>'+(LAAST?'Siden tar ikke imot bookinger ennå':'Bekreft time')+' <span aria-hidden="true">→</span></button></div>'+
+    '</form>'+
+    // Infolinjene under knappen (to linjer som hører sammen). Fristlinja = FRIST_LINJE (fra konstanten).
+    '<div class="flow-info"><p>'+payNote()+'</p><p>'+h(FRIST_LINJE)+'</p></div>';
+  renderRefSlot();fillTotal();
+  var back=document.getElementById('flow-back');
+  wireStep3();
+}
+
+function wireStep3(){
+  var phoneEl=document.getElementById('flow-cphone');
+  var consentSlot=document.getElementById('flow-consent-slot');
+  // Samtykke-oppslag på blur — Duplisert i booking-module.cjs (consent blur-handler + race-guard) — fiks må speiles.
+  // B-fix bevart: INGEN spekulativ ekspandering på blur; layout endres KUN når svaret er kjent, så
+  // #flow-sub aldri flyttes synkront av klikkets egen blur (det spiste klikket før).
+  if(phoneEl&&consentSlot){
+    phoneEl.addEventListener('blur',function(){
+      if(PREVIEW)return;
+      var v=phoneEl.value.trim();
+      if(!v){consentSlot.className='flow-consent-slot';consentShown=false;consentCheckedFor=null;consentPending=false;consentCheckPromise=null;return;}
+      if(v===consentCheckedFor)return;
+      consentCheckedFor=v;consentShown=false;consentPending=true;
+      consentCheckPromise=fetchT('/api/barbers/'+encodeURIComponent(SLUG)+'/sms-consent-check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:v})},FETCH_MS_READ)
+        .then(function(r){return r.json();})
+        .then(function(d){if(phoneEl.value.trim()!==v)return;consentPending=false;if(d&&d.show_consent===true){consentSlot.className='flow-consent-slot shown';consentShown=true;}else{consentSlot.className='flow-consent-slot';consentShown=false;}})
+        .catch(function(){if(phoneEl.value.trim()!==v)return;consentPending=false;consentSlot.className='flow-consent-slot shown';consentShown=true;});
+    });
+    // Verving-oppslag på blur — Duplisert i booking-module.cjs (referral blur-handler) — fiks må speiles.
+    phoneEl.addEventListener('blur',function(){
+      if(PREVIEW)return;
+      var v=phoneEl.value.trim();
+      if(!v){refBonus=null;refIneligible=false;refInviteActive=!!(_I.referral&&_I.referral.active);renderRefSlot();fillTotal();refCheckedFor=null;return;}
+      if(v===refCheckedFor)return;refCheckedFor=v;
+      fetchT('/api/barbers/'+encodeURIComponent(SLUG)+'/referral-bonus-check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:v})},FETCH_MS_READ)
+        .then(function(r){return r.json();}).then(function(d){if(phoneEl.value.trim()!==v)return;refBonus=(d&&d.bonus===true)?(d.pct||0):null;renderRefSlot();fillTotal();}).catch(function(){});
+      if(_I.referral&&_I.referral.active){
+        fetchT('/api/barbers/'+encodeURIComponent(SLUG)+'/new-customer-check',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:v})},FETCH_MS_READ)
+          .then(function(r){return r.json();}).then(function(d){if(phoneEl.value.trim()!==v)return;var elig=(d&&d.referral_eligible===true);refInviteActive=elig;refIneligible=!elig;renderRefSlot();fillTotal();}).catch(function(){});
+      }
+    });
+  }
+  var subBtn=document.getElementById('flow-sub');
+  var flowForm=document.getElementById('flow-form');
+  if(subBtn&&LAAST){subBtn.disabled=true;}
+  if(subBtn&&flowForm){
+    flowForm.addEventListener('submit',function(e){
+      e.preventDefault();
+      if(submitBusy)return;
+      var name=document.getElementById('flow-cname').value.trim();
+      var phone=document.getElementById('flow-cphone').value.trim();
+      var errEl=document.getElementById('flow-err');errEl.style.display='none';document.querySelectorAll('[aria-invalid]').forEach(function(e){e.removeAttribute('aria-invalid');});
+      if(LAAST){errEl.textContent='Denne siden tar ikke imot bookinger ennå.';errEl.style.display='block';return;}
+      if(PREVIEW){errEl.textContent='Forhåndsvisning — booking sendes ikke herfra.';errEl.style.display='block';return;}
+      if(!name){document.getElementById('flow-cname').setAttribute('aria-invalid','true');document.getElementById('flow-cname').focus();errEl.textContent='Fyll inn navn.';errEl.style.display='block';return;}
+      if(!phone){document.getElementById('flow-cphone').setAttribute('aria-invalid','true');document.getElementById('flow-cphone').focus();errEl.textContent='Fyll inn telefonnummer.';errEl.style.display='block';return;}
+      if(!selSlot){errEl.textContent='Gå tilbake og velg en tid.';errEl.style.display='block';return;}
+      var wasShownBefore=consentShown;
+      // Race-vern — Duplisert i booking-module.cjs (submit consentPending-gren) — fiks må speiles.
+      if(consentPending&&consentCheckPromise){
+        submitBusy=true;var bw=document.getElementById('flow-sub');bw.disabled=true;bw.textContent='Et øyeblikk…';
+        consentCheckPromise.then(function(){submitBusy=false;bw.disabled=false;bw.innerHTML='Bekreft time <span aria-hidden="true">→</span>';afterConsent(name,phone,errEl,wasShownBefore);});
+        return;
+      }
+      afterConsent(name,phone,errEl,wasShownBefore);
+    });
+  }
+}
+// Duplisert i booking-module.cjs:afterConsent — fiks må speiles.
+function afterConsent(name,phone,errEl,wasShownBefore){
+  if(consentShown&&!wasShownBefore){errEl.textContent='Se over SMS-valget under før du booker.';errEl.style.display='block';var cs=document.getElementById('flow-consent-slot');if(cs&&cs.scrollIntoView)cs.scrollIntoView({block:'nearest'});return;}
+  doSubmit(name,phone,errEl);
+}
+// Duplisert i booking-module.cjs:doSubmit (POST + 409 + timeout + samtykke) — fiks må speiles.
+function doSubmit(name,phone,errEl){
+  var btn=document.getElementById('flow-sub');btn.disabled=true;btn.textContent='Sender…';
+  var payload={customer_name:name,customer_phone:phone,service_id:selId,addon_ids:addonIds,starts_at:selSlot.starts_at};
+  var REF=(new URLSearchParams(location.search)).get('ref');if(REF)payload.ref=REF;
+  if(consentShown)payload.sms_consent=document.getElementById('flow-cconsent').checked===true;
+  fetchT('/api/barbers/'+encodeURIComponent(SLUG)+'/bookings',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify(payload)},FETCH_MS_WRITE)
+    .then(function(r){if(r.status===409){var te=new Error('taken');te.taken=true;throw te;}if(!r.ok)return r.json().then(function(d){throw new Error(d.error||'Feil '+r.status);});return r.json();})
+    .then(function(data){showSuccess(data,name);})
+    .catch(function(e){
+      btn.disabled=false;btn.innerHTML='Bekreft time <span aria-hidden="true">→</span>';
+      if(e&&e.timeout){errEl.textContent='Nettet er tregt akkurat nå. Vi vet ikke om bookingen ble bekreftet — vent litt og last siden på nytt før du prøver igjen.';errEl.style.display='block';return;}
+      if(e&&e.taken){selSlot=null;showStep(2);var nb=document.getElementById('flow-to-details');if(nb)nb.disabled=true;setTimeout(function(){if(selDate)loadSlots(selDate);},50);return;}
+      errEl.textContent=e.message||'Noe gikk galt. Prøv igjen.';errEl.style.display='block';
+    });
+}
+// ── Steg 4: bekreftelse (kvittering + stempelkort + besøksdetaljer) ─────────
+var bookingDone=false;
+// Stempelkort — referansens dot-track, drevet av booking-svarets loyalty-objekt (IKKE mock).
+// Vises KUN for medlem (loyalty.active). Fylte prikker = fullførte klipp (stamps_n); en booking
+// øker ALDRI stamps_n (den er ikke fullført ennå). carries_reward → «Belønningen din er klar».
+// (Lojalitetsdata kommer fra samme loyalty-objekt som booking-module.cjs:showSuccess leser.)
+function loyaltyRow(loy){
+  if(!loy||!loy.active)return '';
+  var goal=loy.threshold_m||10;
+  var n=loy.carries_reward?goal:Math.min(goal,Math.max(0,loy.stamps_n||0));
+  var dots='';for(var i=0;i<goal;i++)dots+='<span class="stamp'+(i<n?' filled':'')+'" aria-hidden="true">'+(i<n?'✓':'')+'</span>';
+  var cap=loy.carries_reward
+    ? '<b>Belønningen din er klar.</b> Du har fullført '+goal+' klipp.'
+    : 'Når '+goal+' klipp er fullført, får du belønningen din.';
+  return '<section class="loyalty-row" aria-label="Stempelkort"><div class="loyalty-top"><h2>Stempelkortet ditt</h2>'+
+    '<strong>'+n+'<span> / '+goal+'</span></strong></div>'+
+    '<div class="stamp-track" role="img" aria-label="'+n+' av '+goal+' klipp fullført">'+dots+'</div>'+
+    '<p class="loyalty-caption">'+cap+'</p></section>';
+}
+// Duplisert i booking-module.cjs:showSuccess (loyalty-tilstandene + rabattert total) — fiks må speiles.
+function showSuccess(data,name){
+  bookingDone=true;
+  var tot=calcTot();var svc=h(selName)+(addonNames.length?' + '+addonNames.map(h).join(', '):'');
+  var loy=data&&data.loyalty;
+  var carries=loy&&loy.active&&loy.carries_reward;
+  var totVal=(carries&&loy.price_after_nok!=null)
+    ? tot.min+' min · <s class="det-strike" style="color:var(--on-dark-muted);text-decoration:line-through;margin-right:4px">'+tot.price+' kr</s>'+loy.price_after_nok+' kr'
+    : tot.min+' min · '+tot.price+' kr';
+  // Trimmet: et felt med bare mellomrom er tomt — ellers rendres en tom rad med en tom Maps-/tel:-lenke.
+  var addr=String(_I.address||'').trim(), tel=String(_I.contactPhone||'').trim();
+  var info='';
+  if(addr){var maps='https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(addr);
+    info+='<a href="'+maps+'" target="_blank" rel="noopener"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M19 10c0 5-7 11-7 11S5 15 5 10a7 7 0 1 1 14 0Z"/><circle cx="12" cy="10" r="2.5"/></svg><span>'+h(addr)+'</span></a>';}
+  var telHref=telHrefAv(tel);if(telHref){
+    info+='<a href="tel:'+telHref+'"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="m7 3 3 5-2 2c1 3 3 5 6 6l2-2 5 3c0 3-2 4-4 4C10 21 3 14 3 7c0-2 1-4 4-4Z"/></svg><span>'+h(tel)+'</span></a>';}
+  // Bekreftelsens påminnelse-løfte: KUN når booking-POST-svaret sier at påminnelsen faktisk sendes
+  // (SMS-sperren på bookingtidspunktet). Duplisert i booking-module.cjs:showSuccess — fiks må speiles.
+  var reminder=(data&&data.paaminnelse_sendes===true)?'<p class="reminder-note">Påminnelse på SMS til <strong>'+fmtPhone(document.getElementById('flow-cphone')?document.getElementById('flow-cphone').value:'')+'</strong> dagen før.</p>':'';
+  var dyn=document.getElementById('flow-dynamic');
+  dyn.innerHTML=
+    // Haken (dekorativ) til venstre for tittelen på samme rad — .confirmation-head i v2-css.cjs.
+    '<div class="confirmation-head"><div class="confirmation-mark" aria-hidden="true">✓</div>'+
+    '<h1 class="confirmation-title" tabindex="-1">Timen er bekreftet</h1></div>'+
+    // Detaljkortet som v1 Moderne: dato (liten, dempet) over klokkeslettet (stort, aksent), så Navn/Tjeneste/Total.
+    '<section class="receipt" aria-label="Bookingdetaljer"><div class="receipt-lead"><p>'+forbokstav(fmtDateFull(selDate))+'</p><strong>'+h(selSlot.label)+'</strong></div>'+
+      '<dl><div><dt>Navn</dt><dd>'+h(name)+'</dd></div><div><dt>Tjeneste</dt><dd>'+svc+'</dd></div><div><dt>Total</dt><dd>'+totVal+'</dd></div></dl></section>'+
+    loyaltyRow(loy)+
+    (info?'<section class="visit-details" aria-label="Besøksinformasjon">'+info+'</section>':'')+
+    reminder+
+    '<p class="field-note">'+h(FRIST_LINJE)+'</p><button class="flow-secondary" id="flow-manage" type="button">Endre / avbestill</button>';
+  setSteps(3); // alle tre haket (done); terminal skjerm
+  var s=document.getElementById('flow-steps');if(s)s.innerHTML='';
+  var back=document.getElementById('flow-back');if(back)back.innerHTML='<span aria-hidden="true">←</span>Forsiden';
+  var mg=document.getElementById('flow-manage');if(mg)mg.addEventListener('click',enterManage);
+  window.scrollTo(0,0);
+}
+
+// tel:-mål av barberens telefonnummer: bare sifre og +, tom streng uten sifre. Delt av telefonraden på
+// bekreftelsen og «Ring barberen».
+function telHrefAv(tel){var href=String(tel||'').trim().replace(/[^\d+]/g,'');return /\d/.test(href)?href:'';}
+// «Ring barberen» — BARE i fristtilstanden i «Velg ny tid» (unntak fra «telefon kun på bekreftelsen»,
+// Henrik 16.11.2026; se CLAUDE.md). Uten pil: ↗ er forbeholdt kontaktknappen til sosiale medier under.
+function ringKnapp(){var href=telHrefAv(_I.contactPhone);return href?'<a class="manage-appointment" href="tel:'+href+'">Ring barberen</a>':'';}
+// Kontaktknapp til FØRSTE gyldige sosiale kanal (Instagram → TikTok → Snapchat). ↗ er et bevisst unntak
+// fra «ingen skrå piler» (22.10), og gjelder BARE denne knappen (Henrik 16.11.2026; se CLAUDE.md).
+// tillatt (valgfri): bare disse kanalene, f.eks. ['instagram','tiktok'] i fristtilstanden (ikke Snapchat,
+// Henrik 16.11.2026). Uten argument: alle tre, som før (steg 2).
+function contactLink(tillatt){
+ var networks=[['instagram','Instagram','https://www.instagram.com/'],['tiktok','TikTok','https://www.tiktok.com/@'],['snapchat','Snapchat','https://www.snapchat.com/add/']];
+ for(var i=0;i<networks.length;i++){if(tillatt&&tillatt.indexOf(networks[i][0])<0)continue;var n=networks[i],handle=String(_I[n[0]]||'').replace(/^@/,'');if(handle&&/^[a-zA-Z0-9._-]+$/.test(handle))return '<a class="manage-appointment" target="_blank" rel="noopener" href="'+n[2]+encodeURIComponent(handle)+'">Kontakt på '+n[1]+' <span aria-hidden="true">↗</span></a>';}
+ return '';
+}
+function emptyActions(){return '<div class="empty-actions"><button type="button" class="flow-next-open">Finn neste ledige dag</button>'+contactLink()+'</div>';}
+// «Finn neste ledige dag» — delt av steg 2 og «Velg ny tid». Første 'open' dag etter «etter»
+// (valgt dag, ellers siste dag i viste måned). gaaTil(dag) gjør flytens eget valg; ingen dag → knappen av.
+function sisteIMaaned(md){var last=new Date(md.getFullYear(),md.getMonth()+1,0);return isoOf(last.getFullYear(),last.getMonth(),last.getDate());}
+function nesteAapneDag(dager,etter){return (dager||[]).filter(function(d){return d.status==='open'&&d.date>etter;}).sort(function(a,b){return a.date.localeCompare(b.date);})[0]||null;}
+function wireNesteLedig(finn,gaaTil){
+  document.querySelectorAll('.flow-next-open').forEach(function(b){b.onclick=function(){
+    var next=finn();
+    if(next)gaaTil(next.date);
+    else{b.textContent='Ingen flere tider i bookingperioden';b.disabled=true;}
+  };});
+}
+function wireEmptyActions(){
+  wireNesteLedig(function(){return nesteAapneDag(daysData,selDate||sisteIMaaned(monthDate));},function(dato){
+    selDate=dato;selSlot=null;var bits=dato.split('-');monthDate=new Date(+bits[0],+bits[1]-1,1);var nb=document.getElementById('flow-to-details');if(nb)nb.disabled=true;renderCalendar();loadSlots(selDate);
+  });
+}
+// ── Steg 5: manage (oppslag / avbestill / endre) ───────────────────────────
+// Portert fra booking-module.cjs (enterManage/showMStep/lookup/renderBookings/doCancel/
+// enterReschedule/loadManageSlots/doReschedule/fmtBk*). DOM rendret i #flow-dynamic. computeSlots/
+// slotToUTC er FJERNET her (05.11.2026): flytte-tidene regnes ut på serveren (…/reschedule-slots).
+// «Velg ny tid» (16.11.2026): samme datovelger og tidspanel som steg 2. Dagene fra …/reschedule-days
+// (samme motor som /days, egen time utelatt, endringsfristen sjekket), tidene fra …/reschedule-slots.
+// Trykk på en tid velger den; «Flytt timen →» bekrefter (som «Opplysninger →» i steg 2).
+var manageMode=false,mSelBk=null,mPhone=null,mSelSlot=null;
+var mDays=null,mSelDate=null,mMonth=null,mKal=null,mDaysSeq=0,mFlytter=false;
+// Duplisert i booking-module.cjs:fmtBkDate/fmtBkTime — fiks må speiles.
+function fmtBkDate(iso){return new Intl.DateTimeFormat('nb-NO',{timeZone:TZ,weekday:'long',day:'numeric',month:'long'}).format(new Date(iso));}
+function fmtBkTime(iso){var p=new Intl.DateTimeFormat('en-US',{timeZone:TZ,hour:'2-digit',minute:'2-digit',hour12:false}).formatToParts(new Date(iso)).reduce(function(a,x){a[x.type]=x.value;return a;},{});return(p.hour==='24'?'00':p.hour)+':'+p.minute;}
+function manageShell(title,intro,body){
+  return '<h1 class="flow-title" tabindex="-1">'+title+'</h1>'+(intro?'<p class="flow-intro">'+intro+'</p>':'')+body;
+}
+// Duplisert i booking-module.cjs:enterManage — fiks må speiles.
+function enterManage(){
+  manageMode=true;
+  var s=document.getElementById('flow-steps');if(s)s.innerHTML='';
+  var st1=document.getElementById('flow-step1');if(st1)st1.hidden=true;
+  var dyn=document.getElementById('flow-dynamic');if(dyn)dyn.hidden=false;
+  var back=document.getElementById('flow-back');if(back)back.innerHTML='<span aria-hidden="true">←</span>Tilbake';
+  showMStep('m0');window.scrollTo(0,0);
+}
+function exitManage(){manageMode=false;var back=document.getElementById('flow-back');if(back)back.innerHTML='<span aria-hidden="true">←</span>Tilbake';showStep(1);}
+// Duplisert i booking-module.cjs:showMStep (render pr. steg) — fiks må speiles.
+function showMStep(id){
+  var dyn=document.getElementById('flow-dynamic');if(!dyn)return;
+  if(id==='m0'){
+    dyn.innerHTML=manageShell('Endre eller avbestill','Skriv inn mobilnummeret du booket med.',
+      '<div class="form-row"><label for="m-phone">Mobilnummer</label><input id="m-phone" type="tel" inputmode="tel" autocomplete="tel" placeholder="Mobilnummer"></div>'+
+      '<p class="flow-err" id="m-lookup-err"></p>'+
+      '<div class="flow-action"><button class="primary" id="m-lookup-btn" type="button">Finn time <span aria-hidden="true">→</span></button></div>');
+    var lb=document.getElementById('m-lookup-btn');if(lb)lb.addEventListener('click',doLookup);
+  }else if(id==='m1'){
+    dyn.innerHTML=manageShell('Din time','',(mBookings&&mBookings.length?'<div id="m-bk-list"></div>':'<p class="no-bk">Ingen kommende timer.</p>')+
+      '<button class="text-link" id="m-back0" type="button" style="margin-top:8px">← Nytt s&oslash;k</button>');
+    renderBookings(mBookings||[]);
+    var b0=document.getElementById('m-back0');if(b0)b0.addEventListener('click',function(){showMStep('m0');});
+  }else if(id==='m2'){
+    var dur=Math.round((new Date(mSelBk.ends_at)-new Date(mSelBk.starts_at))/60000);
+    mSelSlot=null;mSelDate=null;mDays=null;mFlytter=false;
+    // Kalenderen starter i måneden den nåværende timen ligger i (barberens tz), ikke inneværende måned.
+    var bkDag=new Date(mSelBk.starts_at).toLocaleDateString('en-CA',{timeZone:TZ}).split('-');mMonth=new Date(+bkDag[0],+bkDag[1]-1,1);
+    dyn.innerHTML=manageShell('Velg ny tid','<strong>'+h(mSelBk.service)+'</strong> · '+dur+' min',
+      '<div id="m-velg">'+
+        '<section class="calendar" id="m-cal" aria-label="Velg dato"></section>'+
+        '<div id="m-times"></div>'+
+        '<div class="flow-action"><button class="primary" id="m-flytt" type="button" disabled>Flytt timen <span aria-hidden="true">→</span></button></div>'+
+      '</div>'+
+      '<button class="text-link" id="m-back1" type="button" style="margin-top:12px">← Tilbake til timen</button>');
+    lagManageKalender();
+    var fl=document.getElementById('m-flytt');if(fl)fl.addEventListener('click',function(){if(mSelSlot&&!mFlytter)doReschedule();});
+    var b1=document.getElementById('m-back1');if(b1)b1.addEventListener('click',function(){mDaysSeq++;manageSlotsRequestSeq++;showMStep('m1');});
+    loadManageDays();
+  }else if(id==='m3'){
+    dyn.innerHTML='<div class="confirmation-mark" aria-hidden="true">✓</div><h1 class="confirmation-title" tabindex="-1">'+mResultH+'</h1><p class="confirmation-copy">'+mResultSub+'</p><button class="manage-appointment" id="m-front" type="button">Til forsiden</button>';
+    var mf=document.getElementById('m-front');if(mf)mf.addEventListener('click',exitManage);
+  }
+  window.scrollTo(0,0);
+}
+var mBookings=null,mResultH='',mResultSub='';
+// Duplisert i booking-module.cjs (m-lookup-handler) — fiks må speiles.
+function doLookup(){
+  var phone=document.getElementById('m-phone').value.trim();
+  var errEl=document.getElementById('m-lookup-err');errEl.style.display='none';
+  if(!phone){document.getElementById('m-phone').setAttribute('aria-invalid','true');document.getElementById('m-phone').focus();errEl.textContent='Skriv inn telefonnummer.';errEl.style.display='block';return;}
+  var btn=document.getElementById('m-lookup-btn');btn.disabled=true;btn.textContent='Søker…';
+  fetchT('/api/barbers/'+encodeURIComponent(SLUG)+'/lookup-booking',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:phone})},FETCH_MS_READ)
+    .then(function(r){return r.ok?r.json():r.json().then(function(d){throw new Error(d.error||'Feil');});})
+    .then(function(data){btn.disabled=false;btn.innerHTML='Finn time <span aria-hidden="true">→</span>';
+      if(!data.bookings||!data.bookings.length){errEl.textContent='Ingen time funnet på dette nummeret.';errEl.style.display='block';return;}
+      mPhone=phone;mBookings=data.bookings;showMStep('m1');})
+    .catch(function(e){btn.disabled=false;btn.innerHTML='Finn time <span aria-hidden="true">→</span>';errEl.textContent=e.message||'Noe gikk galt.';errEl.style.display='block';});
+}
+// Duplisert i booking-module.cjs:renderBookings — fiks må speiles.
+function renderBookings(bookings){
+  var list=document.getElementById('m-bk-list');if(!list)return;list.innerHTML='';
+  bookings.forEach(function(bk){
+    var card=document.createElement('div');card.className='bk-card';var cid='cc-'+bk.id;
+    card.innerHTML='<div class="bk-svc">'+h(bk.service)+'</div><div class="bk-when">'+forbokstav(fmtBkDate(bk.starts_at))+' · '+fmtBkTime(bk.starts_at)+'</div>'+
+      '<div class="bk-actions"><button class="bk-act primary" data-a="reschedule" type="button">Endre tid</button>'+
+      '<button class="bk-act danger" data-a="cancel" type="button">Avbestill</button></div>'+
+      '<div class="bk-confirm" id="'+cid+'"><p class="bk-confirm-q">Er du sikker på at du vil avbestille denne timen?</p>'+
+      '<div class="bk-confirm-btns"><button class="bk-act danger" data-a="confirm-cancel" type="button">Ja, avbestill</button>'+
+      '<button class="bk-act" data-a="abort-cancel" type="button">Avbryt</button></div></div>';
+    card.querySelector('[data-a=cancel]').addEventListener('click',function(){document.getElementById(cid).classList.add('open');});
+    card.querySelector('[data-a=abort-cancel]').addEventListener('click',function(){document.getElementById(cid).classList.remove('open');});
+    card.querySelector('[data-a=confirm-cancel]').addEventListener('click',function(){doCancel(bk.id,cid);});
+    card.querySelector('[data-a=reschedule]').addEventListener('click',function(){mSelBk=bk;showMStep('m2');});
+    list.appendChild(card);
+  });
+}
+// Duplisert i booking-module.cjs:doCancel — fiks må speiles.
+function doCancel(bookingId,cid){
+  var ci=document.getElementById(cid);if(ci)ci.classList.remove('open');
+  fetchT('/api/barbers/'+encodeURIComponent(SLUG)+'/bookings/'+bookingId+'/cancel',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:mPhone})},FETCH_MS_WRITE)
+    .then(function(r){return r.ok?r.json():r.json().then(function(d){throw new Error(d.error||'Feil');});})
+    .then(function(){mResultH='Avbestilt';mResultSub='Timen er avbestilt. Vi ses en annen gang!';showMStep('m3');})
+    .catch(function(e){
+      var msg=(e&&e.timeout)?'Nettet er tregt akkurat nå. Vi vet ikke om timen ble avbestilt — sjekk, eller prøv igjen.':(e.message||'Kunne ikke avbestille. Prøv igjen.');
+      var el=document.getElementById('m1-err');if(el){el.textContent=msg;el.style.display='block';}else{var l=document.getElementById('m-bk-list');if(l){var p=document.createElement('p');p.className='flow-err';p.id='m1-err';p.textContent=msg;p.style.display='block';l.parentNode.insertBefore(p,l);}}});
+}
+// «Velg ny tid»: datovelgeren med flytte-dagene. Samme lagDatovelger som steg 2.
+function lagManageKalender(){
+  var cal=document.getElementById('m-cal');if(!cal)return;
+  mKal=lagDatovelger(cal,{valgt:mSelDate,dager:mDays,maaned:ymAv(mMonth),vedTegnet:wireManageTomme,
+    vedMaaned:function(ym){var b=ym.split('-');mMonth=new Date(+b[0],+b[1]-1,1);},
+    vedValg:function(dato){mSelDate=dato;mSelSlot=null;settFlyttKnapp();loadManageSlots();}});
+}
+function tegnManageKalender(){if(mKal&&document.getElementById('m-cal'))mKal.oppdater({dager:mDays,valgt:mSelDate,maaned:ymAv(mMonth)});}
+function wireManageTomme(){
+  wireNesteLedig(function(){return nesteAapneDag(mDays,mSelDate||sisteIMaaned(mMonth));},function(dato){
+    mSelDate=dato;mSelSlot=null;settFlyttKnapp();var bits=dato.split('-');mMonth=new Date(+bits[0],+bits[1]-1,1);tegnManageKalender();loadManageSlots();
+  });
+}
+function settFlyttKnapp(){var b=document.getElementById('m-flytt');if(b)b.disabled=!mSelSlot||mFlytter;}
+// Flytte-dagene (POST …/reschedule-days): samme motor som /days, kundens egen time utelatt. 400 = serverens
+// beskjed til kunden (endringsfristen) — vises i stedet for kalenderen. Under den, i samme .empty-actions
+// som «Ingen ledige tider» i steg 2: «Ring barberen» (har barberen telefon), så første av Instagram/TikTok
+// (Snapchat vises ikke her). Maks to knapper; ingen kanal → bare teksten.
+function loadManageDays(){
+  var request=++mDaysSeq;
+  fetchT('/api/barbers/'+encodeURIComponent(SLUG)+'/bookings/'+encodeURIComponent(mSelBk.id)+'/reschedule-days',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:mPhone})},FETCH_MS_READ)
+    .then(function(r){return r.ok?r.json():r.json().then(function(d){var e=new Error(d.error||'Feil');e.status=r.status;throw e;});})
+    .then(function(data){if(request!==mDaysSeq)return;mDays=(data&&data.days)||[];tegnManageKalender();})
+    .catch(function(e){if(request!==mDaysSeq)return;
+      if(e&&e.status===400){var v=document.getElementById('m-velg'),k=ringKnapp()+contactLink(['instagram','tiktok']);if(v)v.innerHTML='<p class="selection-line" id="m-frist">'+h(e.message)+'</p>'+(k?'<div class="empty-actions">'+k+'</div>':'');return;}
+      console.error('[flow] reschedule-days feilet:',e&&e.message);
+      var cal=document.getElementById('m-cal');if(cal){var f=cal.querySelector('.bhq-dv-fot');if(f)f.innerHTML='Kunne ikke hente ledige dager. <button type="button" id="m-retry">Prøv igjen</button>';var retry=document.getElementById('m-retry');if(retry)retry.onclick=loadManageDays;}});
+}
+// v2-avvik fra booking-module.cjs:loadManageSlots: tidene kommer FERDIG UTREGNET fra serveren
+// (POST …/reschedule-slots = samme motor som /slots, kundens egen time utelatt), ikke fra
+// /availability + en klient-computeSlots. Rutenett, pauser og «Samle bookinger» finnes da bare der.
+// Kundens nåværende starttid vises ikke (å «flytte» til samme tid er ingen endring).
+function loadManageSlots(notice){
+  var wrap=document.getElementById('m-times');if(!wrap||!mSelDate||!mSelBk)return;
+  // Eget sekvensnummer: et tregt svar for en tidligere valgt dato skal ikke overskrive tidene.
+  var request=++manageSlotsRequestSeq,day=mSelDate;
+  wrap.innerHTML=timePanelMsg(day,'Henter tider…');
+  fetchT('/api/barbers/'+encodeURIComponent(SLUG)+'/bookings/'+encodeURIComponent(mSelBk.id)+'/reschedule-slots',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:mPhone,date:day})},FETCH_MS_READ)
+    .then(function(r){return r.ok?r.json():r.json().then(function(d){throw new Error(d.error||'Feil');});})
+    .then(function(data){
+      if(request!==manageSlotsRequestSeq||mSelDate!==day)return;
+      if(data.is_closed){wrap.innerHTML=timePanelMsg(day,'Stengt denne dagen.');return;}
+      var slots=(data.slots||[]).filter(function(s){return s.starts_at!==mSelBk.starts_at;});
+      if(!slots.length){wrap.innerHTML=timePanelMsg(day,'Ingen ledige tider denne dagen.')+emptyActions();wireManageTomme();return;}
+      wrap.innerHTML=tidsPanelHtml(day,slots,null,'m-selline',h(notice||'Velg et klokkeslett for å fortsette.'));
+      wireTider(wrap,'m-selline',day,function(valgt){mSelSlot=valgt;settFlyttKnapp();});
+    })
+    .catch(function(e){if(request!==manageSlotsRequestSeq||mSelDate!==day)return;
+      wrap.innerHTML=timePanelMsg(day,'Kunne ikke hente tider. Prøv igjen.')+'<button class="manage-appointment" type="button" id="m-retry-slots">Prøv igjen</button>'+contactLink();
+      document.getElementById('m-retry-slots').onclick=function(){loadManageSlots();};});
+}
+// Duplisert i booking-module.cjs:doReschedule (PATCH + 409/timeout) — fiks må speiles.
+// v2: kalles fra «Flytt timen →» (ikke ved trykk på en tid). mFlytter hindrer dobbel innsending.
+function doReschedule(){
+  var btn=document.getElementById('m-flytt'),valgt=mSelSlot;
+  mFlytter=true;settFlyttKnapp();if(btn)btn.textContent='Flytter…';
+  var ferdig=function(){mFlytter=false;if(btn)btn.innerHTML='Flytt timen <span aria-hidden="true">→</span>';settFlyttKnapp();};
+  fetchT('/api/barbers/'+encodeURIComponent(SLUG)+'/bookings/'+mSelBk.id+'/reschedule',{method:'PATCH',headers:{'Content-Type':'application/json'},body:JSON.stringify({phone:mPhone,starts_at:valgt.starts_at,ends_at:valgt.ends_at})},FETCH_MS_WRITE)
+    .then(function(r){if(r.status===409){var te=new Error('taken');te.taken=true;throw te;}return r.ok?r.json():r.json().then(function(d){throw new Error(d.error||'Feil');});})
+    .then(function(){mFlytter=false;mResultH='Tid endret';mResultSub='Timen er flyttet til '+fmtBkDate(valgt.starts_at)+' kl. '+fmtBkTime(valgt.starts_at)+'.';showMStep('m3');})
+    .catch(function(e){
+      if(e&&e.taken){mSelSlot=null;ferdig();loadManageSlots('Den tiden ble nettopp tatt. Velg en annen.');return;}
+      ferdig();
+      var sl=document.getElementById('m-selline');if(sl)sl.textContent=(e&&e.timeout)?'Nettet er tregt akkurat nå. Vi vet ikke om tiden ble endret — sjekk, eller prøv igjen.':(e.message||'Kunne ikke endre tid. Prøv igjen.');
+    });
+}
+
+// ── Steg-navigasjon (stegflyt) ─────────────────────────────────────────────
+var STEP_LABELS=['Tjeneste','Dato og tid','Opplysninger'];
+// Samme markup som serverens stepsHtml (piler i CSS, skjult «Steg X av N:» på aktivt steg). Ingen understrek.
+function stepsMarkup(active){return '<ol class="steps" aria-label="Bookingsteg">'+STEP_LABELS.map(function(s,i){return '<li class="'+(i===active?'active':i<active?'done':'')+'"'+(i===active?' aria-current="step"':'')+'>'+(i===active?'<span class="v2-skjult">Steg '+(i+1)+' av '+STEP_LABELS.length+': </span>':'')+s+'</li>';}).join('')+'</ol>';}
+function setSteps(active){var s=document.getElementById('flow-steps');if(s)s.innerHTML=stepsMarkup(active);}
+function showStep(n){
+  var step1=document.getElementById('flow-step1'),dyn=document.getElementById('flow-dynamic');
+  if(n===1){setSteps(0);if(step1)step1.hidden=false;if(dyn){dyn.hidden=true;dyn.innerHTML='';}riseIn(step1);window.scrollTo(0,0);return;}
+  if(step1)step1.hidden=true;if(dyn)dyn.hidden=false;
+  if(n===2){setSteps(1);renderStep2();}
+  else if(n===3){setSteps(2);renderStep3();}
+  riseIn(dyn); // swipe up-overgang (~220ms, reduced-motion respektert) — delt med Signatur/Klassisk
+  var t=dyn&&dyn.querySelector('.flow-title');if(t&&t.focus)try{t.focus({preventScroll:true});}catch(e){}
+  window.scrollTo(0,0);
+}
+var toDate=document.getElementById('flow-to-date');
+if(toDate){toDate.addEventListener('click',function(){if(!selId)return;showStep(2);});}
+// Topp-tilbake: under manage → ut av manage; etter bekreftelse → forsiden; ellers → steg 1.
+var backBtn=document.getElementById('flow-back');
+if(backBtn){backBtn.addEventListener('click',function(){
+  if(manageMode){exitManage();return;}
+  if(bookingDone){window.location.href='/'+encodeURIComponent(SLUG);return;}
+  var dyn=document.getElementById('flow-dynamic');
+  if(dyn&&!dyn.hidden){showStep(1);return;}
+  window.location.href='/'+encodeURIComponent(SLUG);
+});}
+// ?manage=1 → åpne manage direkte (samme inngang som topbar/forside-lenka «Endre / avbestill» bruker).
+if((new URLSearchParams(location.search)).get('manage')==='1'){enterManage();}
+// ?service=<id> fra forsidens tjenesterader (v2): forhåndsvelg tjenesten og gå rett til dato/tid.
+// Ukjent id → ingenting skjer (steg 1 som vanlig). Manage har forrang.
+(function(){var sid=(new URLSearchParams(location.search)).get('service');if(!sid||manageMode)return;
+  var card=document.querySelector('#flow-services .service[data-id="'+String(sid).replace(/["]/g,'')+'"]');
+  if(card){selectMain(card);
+    var chosen=(new URLSearchParams(location.search)).get('addon_ids');
+    if(chosen){var ids=chosen.split(',');document.querySelectorAll('.flow-addon').forEach(function(row){if(ids.indexOf(row.dataset.id)>=0)row.click();});}
+    showStep(2);}})();
+})();</script></main>
+<script nonce="">(function(){var tab=false,d=document;d.addEventListener("keydown",function(e){if(e.key==="Tab"){tab=true;setTimeout(function(){tab=false;},0);}},true);d.addEventListener("pointerdown",function(){tab=false;},true);d.addEventListener("focusin",function(e){var t=e.target;if(tab&&t&&t.classList)t.classList.add("tab-fokus");tab=false;},true);d.addEventListener("focusout",function(e){var t=e.target;if(t&&t.classList)t.classList.remove("tab-fokus");},true);})();</script>
+
+
+</body></html>

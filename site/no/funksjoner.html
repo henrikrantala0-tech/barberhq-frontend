@@ -28,7 +28,7 @@
 <meta name="description" content="Alt du trenger for å fylle stolen: selvbooking, automatisk rebooking, verving, kalender-synk, SMS-påminnelser og din egen side.">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Bebas+Neue&family=Plus+Jakarta+Sans:wght@700&display=swap" rel="stylesheet">
 <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/@tabler/icons-webfont@3.1.0/dist/tabler-icons.min.css">
 <style>
 *{margin:0;padding:0;box-sizing:border-box}
@@ -297,6 +297,13 @@ html{overflow-x:clip}
 .ks-scene .ks-cal .ks-overlay{flex:1;display:flex;flex-direction:column}
 .ks-scene .ks-cal .ks-topbar{display:flex;align-items:center;gap:10px;padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0}
 .ks-scene .ks-cal .ks-datebtn{border:1px solid var(--line-2);background:var(--surface);color:var(--ink);font:inherit;font-size:14px;font-weight:600;padding:8px 14px;border-radius:8px;letter-spacing:-.01em;display:inline-flex;align-items:center;gap:6px}
+/* Topplinja som dashbordet (byggCal, 18.11): «I dag» når valgt dag ≠ i dag (.cal-today) og «Legg til booking» (.cal-add —
+   under 480 px bare plusstegnet, 36×36 på --ink). */
+.ks-scene .ks-cal .ks-today{border:0;background:0;color:var(--info);font:inherit;font-size:13px;font-weight:600;padding:8px 4px}
+.ks-scene .ks-cal .ks-add{margin-left:auto;border:0;background:var(--ink);color:var(--surface);width:36px;height:36px;padding:0;border-radius:8px;display:inline-flex;align-items:center;justify-content:center;flex-shrink:0}
+.ks-scene .ks-cal .ks-add svg{width:18px;height:18px}
+.ks-scene .ks-cal .ks-add + .ks-close{margin-left:0}
+.ks-scene .ks-cal .ks-today[hidden]{display:none}
 .ks-scene .ks-cal .ks-close{margin-left:auto;border:0;background:var(--surface);color:var(--mut);width:36px;height:36px;border-radius:8px;font-size:18px;line-height:1;display:flex;align-items:center;justify-content:center}
 .ks-scene .ks-cal .ks-daystrip{display:flex;gap:7px;overflow-x:auto;padding:12px 16px;border-bottom:1px solid var(--line);flex-shrink:0;scrollbar-width:none}
 .ks-scene .ks-cal .ks-daystrip::-webkit-scrollbar{display:none}
@@ -333,215 +340,125 @@ html{overflow-x:clip}
 .ks-scene .ks-cal .ks-blk-time{flex:0 0 auto;font-size:10.5px;font-weight:400;color:var(--mut);line-height:1.2;font-variant-numeric:tabular-nums}
 .ks-scene .ks-cal .ks-blk-svc{display:block;font-size:10.5px;color:var(--mut);line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 @media(prefers-reduced-motion:reduce){.ks-scene .ks-cal .ks-block,.ks-scene .ks-cal .ks-now{transition:none}}
-.ks-scene .pv-book{--bg:#ffffff;--surface:#f4f4f4;--ink:#0a0a0a;--ink-soft:#717171; --accent:#0071e3;--accent-ink:#ffffff;--accent-text:#0068d1;--line:#e2e2e2; --fs-hero:26px;--fs-title:22px;--fs-section:16px;--fs-body:14px;--fs-small:13px;--fs-micro:11px;--fw-bold:700;--fw-medium:600;--fw-regular:400;--radius-card:13px;--radius-pill:99px;--badge-bg:color-mix(in srgb,var(--ink) 8%,transparent);--badge-ink:var(--ink);
-  position:relative;
-  background:var(--bg);color:var(--ink);font-family:'Inter',system-ui,sans-serif;
-  line-height:1.5;height:100%;overflow:hidden}
-.ks-scene .pv-book{--bg: #ffffff; --surface: #f4f4f4; --ink: #0a0a0a; --ink-soft: #717171; --accent: #0071e3; --accent-ink: #ffffff; --accent-text: #0068d1; --line: #e2e2e2; --fs-hero: 26px; --fs-title: 22px; --fs-section: 16px; --fs-body: 14px; --fs-small: 13px; --fs-micro: 11px; --fw-bold: 700; --fw-medium: 600; --fw-regular: 400; --radius-card: 13px; --radius-pill: 99px; --badge-bg: color-mix(in srgb,var(--ink) 8%,transparent); --badge-ink: var(--ink);}
-.ks-scene .pv-book *{margin: 0px; padding: 0px; box-sizing: border-box;}
-.ks-scene .pv-book{text-size-adjust: 100%;}
-.ks-scene .pv-book{background: var(--bg); color: var(--ink); font-family: Inter, -apple-system, system-ui, sans-serif; line-height: 1.5; -webkit-font-smoothing: antialiased; min-height: 693px; overflow-x: hidden;}
-.ks-scene .pv-book .cover{position: relative; min-height: 693px; display: flex; flex-direction: column; text-align: center; padding: 56px 0px 0px; transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s, filter 0.55s;}
-.ks-scene .pv-book .cover.pushed{transform: scale(0.94); opacity: 0.5; filter: blur(2px);}
-.ks-scene .pv-book .cover > h1, .ks-scene .pv-book .cover > .sub, .ks-scene .pv-book .cover > .see, .ks-scene .pv-book .cover > .bio{margin-left: 28px; margin-right: 28px;}
-.ks-scene .pv-book .cover h1, .ks-scene .pv-book .cover .pv-cover-h1{font-family: "Bebas Neue", "Oswald", Impact, sans-serif; font-weight: 400; font-synthesis: none; font-size: 35.2px; letter-spacing: 0.05em; line-height: 1; color: var(--ink);}
-.ks-scene .pv-book .cover .sub{margin-top: 14px; font-size: var(--fs-small); letter-spacing: 0.1em; color: var(--ink-soft); text-transform: uppercase; font-weight: var(--fw-medium);}
-.ks-scene .pv-book .cover .bio{margin: 16px auto 0px; max-width: 340px; font-size: 15.5px; line-height: 1.55; color: var(--ink); opacity: 0.86; font-family: Inter, sans-serif;}
-.ks-scene .pv-book .cover-gallery{display: grid; grid-template-columns: repeat(2, 1fr); gap: 0px; width: 100%; margin: 34px 0px 0px; position: relative; border-radius: 6px; overflow: hidden;}
-.ks-scene .pv-book .cover-gallery img{width: 100%; aspect-ratio: 3 / 4; object-fit: cover; display: block;}
-.ks-scene .pv-book .cover-gallery::before{content: ""; position: absolute; top: 0px; left: 0px; right: 0px; height: 90px; z-index: 2; pointer-events: none; background: linear-gradient(to bottom,var(--bg),transparent);}
-.ks-scene .pv-book .cover-gallery::after{content: ""; position: absolute; bottom: 0px; left: 0px; right: 0px; height: 90px; z-index: 2; pointer-events: none; background: linear-gradient(to top,var(--bg),transparent);}
-.ks-scene .pv-book .addr{display: inline-flex; align-items: center; gap: 6px; margin-top: 10px; font-size: var(--fs-body); color: var(--ink-soft); font-weight: 500; line-height: 1.4; text-decoration: none;}
-.ks-scene .pv-book .addr svg{opacity: 0.85;}
-.ks-scene .pv-book a.addr{color: var(--accent-text); transition: opacity 0.15s;}
-.ks-scene .pv-book a.addr:hover{opacity: 0.8;}
-.ks-scene .pv-book .cover > .addr{align-self: center;}
-.ks-scene .pv-book .sheet{position: fixed; inset: 0px; z-index: 20; background: var(--bg); transform: translateY(100%); transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1); overflow-y: auto;}
-.ks-scene .pv-book .sheet.open{transform: translateY(0px);}
-.ks-scene .pv-book .sheet-inner{max-width: 480px; margin: 0px auto; padding: max(56px,env(safe-area-inset-top)) 24px 56px;}
-.ks-scene .pv-book .back-sheet{display: inline-flex; align-items: center; gap: 7px; background: none; border: 0px; cursor: pointer; color: var(--ink-soft); font-style: inherit; font-variant: inherit; font-stretch: inherit; line-height: inherit; font-family: inherit; font-optical-sizing: inherit; font-size-adjust: inherit; font-kerning: inherit; font-feature-settings: inherit; font-variation-settings: inherit; font-language-override: inherit; font-size: var(--fs-body); font-weight: var(--fw-medium); padding: 10px 0px; margin-bottom: 18px; transition: color 0.15s;}
-.ks-scene .pv-book .back-sheet:hover{color: var(--ink);}
-.ks-scene .pv-book .see-float{white-space: nowrap; position: absolute; left: 50%; bottom: 24px; transform: translateX(-50%); z-index: 15; display: inline-flex; align-items: center; justify-content: center; gap: 9px; background: color-mix(in srgb,var(--accent) 92%,transparent); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); color: var(--accent-ink); font-family: Inter, sans-serif; font-size: var(--fs-section); font-weight: var(--fw-medium); border: 0px; border-radius: var(--radius-pill); padding: 15px 40px; cursor: pointer; box-shadow: rgba(0, 113, 227, 0.32) 0px 12px 34px -8px; transition: opacity 0.15s, transform 0.15s;}
-.ks-scene .pv-book .see-float:hover{transform: translateX(-50%) translateY(-2px);}
-.ks-scene .pv-book .acc-wrap{}
-.ks-scene .pv-book .acc-section{border-bottom: 1px solid var(--line);}
-.ks-scene .pv-book .acc-section:first-child{border-top: 1px solid var(--line);}
-.ks-scene .pv-book .acc-hd{display: flex; align-items: center; gap: 10px; padding: 15px 20px; min-height: 54px; user-select: none;}
-.ks-scene .pv-book .acc-section.locked .acc-hd{opacity: 0.38; pointer-events: none;}
-.ks-scene .pv-book .acc-n{width: 22px; height: 22px; border-radius: 50%; display: flex; align-items: center; justify-content: center; font-size: 11px; font-weight: 700; flex-shrink: 0; background: var(--accent); color: var(--accent-ink);}
-.ks-scene .pv-book .acc-section.locked .acc-n{background: var(--line); color: var(--ink-soft);}
-.ks-scene .pv-book .acc-t{font-size: var(--fs-body); font-weight: var(--fw-bold); flex: 1 1 0%; color: var(--ink);}
-.ks-scene .pv-book .acc-sum{font-size: var(--fs-small); color: var(--ink-soft); flex: 1 1 0%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; display: none;}
-.ks-scene .pv-book .acc-chk{color: var(--accent); font-size: 16px; flex-shrink: 0; display: none;}
-.ks-scene .pv-book .acc-endre{font-size: var(--fs-small); color: var(--accent); font-weight: var(--fw-medium); background: none; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; font-family: Inter, sans-serif; flex-shrink: 0; padding: 4px 0px 4px 8px; display: none;}
-.ks-scene .pv-book .acc-section.done .acc-t{display: none;}
-.ks-scene .pv-book .acc-section.done .acc-sum{display: block;}
-.ks-scene .pv-book .acc-section.done .acc-chk{display: inline;}
-.ks-scene .pv-book .acc-section.done .acc-endre{display: inline;}
-.ks-scene .pv-book .acc-bd{display: grid; grid-template-rows: 0fr; transition: grid-template-rows 250ms;}
-.ks-scene .pv-book .acc-bd.open{grid-template-rows: 1fr;}
-.ks-scene .pv-book .acc-in{overflow: hidden; min-height: 0px;}
-.ks-scene .pv-book .acc-content{padding: 0px 20px 24px;}
-.ks-scene .pv-book .bk-svc-lbl{font-size: var(--fs-micro); letter-spacing: 0.08em; text-transform: uppercase; color: var(--ink-soft); font-weight: var(--fw-medium); margin: 0px 0px 10px;}
-.ks-scene .pv-book .svc-card{display: flex; align-items: center; width: 100%; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r,12px); padding: 12px 13px; cursor: pointer; transition: border-color 0.12s; text-align: left; margin-bottom: 8px; font-family: Inter, sans-serif;}
-.ks-scene .pv-book .svc-card.sel{border-color: var(--accent);}
-.ks-scene .pv-book .svc-lft{flex: 1 1 0%; display: flex; flex-direction: column; gap: 2px;}
-.ks-scene .pv-book .svc-nm{font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--ink);}
-.ks-scene .pv-book .svc-meta{font-size: var(--fs-micro); color: var(--ink-soft);}
-.ks-scene .pv-book .chk{font-size: var(--fs-section); color: var(--line); flex-shrink: 0; margin-left: 10px; transition: color 0.12s; font-style: normal;}
-.ks-scene .pv-book .svc-card.sel .chk{color: var(--accent);}
-.ks-scene .pv-book .addon-group{margin: 12px 0px 16px; padding-left: 12px; border-left: 2px solid var(--line); display: flex; flex-direction: column; gap: 11px;}
-.ks-scene .pv-book .addon-group[hidden]{display: none;}
-.ks-scene .pv-book .addon-lbl{font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin: 0px;}
-.ks-scene .pv-book .addon-row{display: flex; align-items: center; gap: 10px; width: 100%; text-align: left; background: none; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; padding: 0px; cursor: pointer; font-family: Inter, sans-serif; -webkit-tap-highlight-color: transparent;}
-.ks-scene .pv-book .addon-box{width: 18px; height: 18px; border-radius: 5px; border: 1.5px solid var(--line); flex: 0 0 auto; display: flex; align-items: center; justify-content: center; transition: background 0.12s, border-color 0.12s;}
-.ks-scene .pv-book .addon-row.sel .addon-box{background: var(--accent); border-color: var(--accent);}
-.ks-scene .pv-book .addon-tick{display: none; font-size: 12px; line-height: 1; color: var(--accent-ink); font-weight: var(--fw-bold);}
-.ks-scene .pv-book .addon-row.sel .addon-tick{display: block;}
-.ks-scene .pv-book .addon-nm{flex: 1 1 0%; font-size: var(--fs-body); font-weight: var(--fw-medium); color: var(--ink);}
-.ks-scene .pv-book .addon-pr{font-size: var(--fs-small); color: var(--ink-soft);}
-.ks-scene .pv-book .acc-next, .ks-scene .pv-book .next2-btn{display: block; width: 100%; margin-top: 20px; background: var(--accent); color: var(--accent-ink); border-radius: var(--r,12px); padding: 13px; font-size: var(--fs-section); font-weight: var(--fw-bold); letter-spacing: 0.02em; transition: opacity 0.12s; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; font-family: Inter, sans-serif;}
-.ks-scene .pv-book .acc-next:disabled, .ks-scene .pv-book .next2-btn:disabled{background: color-mix(in srgb,var(--ink) 12%,var(--bg)); color: var(--ink); cursor: not-allowed;}
-.ks-scene .pv-book .acc-next:active:not(:disabled), .ks-scene .pv-book .next2-btn:active:not(:disabled){opacity: 0.82;}
-.ks-scene .pv-book .date-strip{display: flex; gap: 7px; overflow-x: auto; padding-bottom: 4px; margin-bottom: 16px; scrollbar-width: none; scroll-snap-type: x;}
-.ks-scene .pv-book .date-strip::-webkit-scrollbar{display: none;}
-.ks-scene .pv-book .date-chip{flex-shrink: 0; display: flex; flex-direction: column; align-items: center; padding: 7px 9px; border: 1.5px solid var(--line); border-radius: var(--r-sm,8px); cursor: pointer; min-width: 44px; transition: border-color 0.12s, background 0.12s; background: none; font-family: Inter, sans-serif; scroll-snap-align: start;}
-.ks-scene .pv-book .date-chip.sel{border-color: var(--accent); background: color-mix(in srgb,var(--accent) 12%,transparent);}
-.ks-scene .pv-book .date-chip.closed, .ks-scene .pv-book .date-chip:disabled{opacity: 0.3; cursor: not-allowed;}
-.ks-scene .pv-book .dc-wd{font-size: var(--fs-micro); font-weight: var(--fw-bold); text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-soft);}
-.ks-scene .pv-book .dc-mo{font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.04em; color: var(--accent); display: none;}
-.ks-scene .pv-book .date-chip.month-start .dc-wd{display: none;}
-.ks-scene .pv-book .date-chip.month-start .dc-mo{display: block;}
-.ks-scene .pv-book .date-chip.today .dc-d{color: var(--accent);}
-.ks-scene .pv-book .dc-d{font-size: var(--fs-section); font-weight: var(--fw-bold); line-height: 1.2; color: var(--ink);}
-.ks-scene .pv-book .dc-dot{width: 4px; height: 4px; border-radius: 50%; background: var(--accent); margin: 2px auto 0px; visibility: hidden;}
-.ks-scene .pv-book .date-chip.open .dc-dot{visibility: visible;}
-.ks-scene .pv-book .dc-full{font-size: 9px; font-weight: 700; text-transform: uppercase; letter-spacing: 0.03em; color: var(--ink-soft); margin: 1px auto 0px; display: none;}
-.ks-scene .pv-book .date-chip.full .dc-full{display: block;}
-.ks-scene .pv-book .date-chip.full{opacity: 0.5;}
-.ks-scene .pv-book .slots-hdr{font-size: var(--fs-micro); font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft); margin-bottom: 10px;}
-.ks-scene .pv-book .slots-grid{display: grid; grid-template-columns: repeat(4, 1fr); gap: 7px;}
-.ks-scene .pv-book .slot-btn{background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r-sm,8px); padding: 10px 4px; font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--ink); transition: border-color 0.12s; font-family: Inter, sans-serif; cursor: pointer;}
-.ks-scene .pv-book .slot-btn.sel{border-color: var(--accent); color: var(--accent);}
-.ks-scene .pv-book .slot-skel{background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r-sm,8px); padding: 10px 4px; animation: 1.2s ease-in-out 0s infinite normal none running bk-pulse;}
-@keyframes bk-pulse { 
-  0%, 100% { opacity: 0.35; }
-  50% { opacity: 0.75; }
-}
-.ks-scene .pv-book .slot-msg{font-size: var(--fs-small); color: var(--ink-soft); padding: 12px 0px; text-align: center;}
-.ks-scene .pv-book .hidden{display: none;}
-.ks-scene .pv-book .full-card{background: var(--surface); border: 1px solid var(--line); border-radius: var(--r,12px); padding: 14px 16px; margin-bottom: 12px; display: none;}
-.ks-scene .pv-book .full-card.visible{display: block;}
-.ks-scene .pv-book .full-card-msg{font-size: var(--fs-small); color: var(--ink-soft); margin-bottom: 8px;}
-.ks-scene .pv-book .full-card-next{display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-small); font-weight: var(--fw-medium); color: var(--accent); background: none; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; font-family: Inter, sans-serif; padding: 0px;}
-.ks-scene .pv-book .sum-box{background: var(--surface); border: 1px solid var(--line); border-radius: var(--r,12px); padding: 13px 14px; margin-bottom: 14px;}
-.ks-scene .pv-book .sum-row{display: flex; justify-content: space-between; font-size: var(--fs-small); color: var(--ink-soft); padding: 3px 0px;}
-.ks-scene .pv-book .sum-row strong{color: var(--ink); font-weight: var(--fw-medium);}
-.ks-scene .pv-book .sum-strike{text-decoration: line-through; color: var(--ink-soft); font-weight: var(--fw-regular); margin-right: 3px;}
-.ks-scene .pv-book .fld{display: flex; flex-direction: column; gap: 6px; margin-bottom: 12px;}
-.ks-scene .pv-book .fld label{font-size: var(--fs-small); font-weight: var(--fw-bold); letter-spacing: 0.06em; text-transform: uppercase; color: var(--ink-soft);}
-.ks-scene .pv-book .fld input{background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r,12px); padding: 12px 14px; font-size: var(--fs-section); font-family: Inter, sans-serif; color: var(--ink); outline: none; -webkit-text-fill-color: var(--ink);}
-.ks-scene .pv-book .fld input:focus{border-color: var(--accent);}
-.ks-scene .pv-book .fld input::placeholder{color: var(--ink-soft); opacity: 0.5; -webkit-text-fill-color: var(--ink-soft);}
-.ks-scene .pv-book .form-err{color: rgb(224, 92, 75); font-size: var(--fs-small); margin-bottom: 10px; display: none;}
-.ks-scene .pv-book .consent-slot{display: none; margin-bottom: 12px;}
-.ks-scene .pv-book .consent-slot.loading, .ks-scene .pv-book .consent-slot.shown{display: block;}
-.ks-scene .pv-book .consent-slot.loading .consent-box{visibility: hidden;}
-.ks-scene .pv-book .consent-box{display: flex; gap: 10px; align-items: flex-start; padding: 12px 14px; background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r,12px); cursor: pointer;}
-.ks-scene .pv-book .consent-box input{margin-top: 1px; width: 18px; height: 18px; accent-color: var(--accent); flex: 0 0 auto;}
-.ks-scene .pv-book .consent-txt{font-size: var(--fs-small); color: var(--ink); line-height: 1.45;}
-.ks-scene .pv-book .ref-slot{display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px;}
-.ks-scene .pv-book .ref-line{font-size: var(--fs-small); line-height: 1.45; padding: 10px 13px; border-radius: var(--r,12px); background: var(--surface); border: 1.5px solid var(--line); color: var(--ink);}
-.ks-scene .pv-book .ref-invite, .ks-scene .pv-book .ref-bonus{border-color: var(--accent);}
-.ks-scene .pv-book .ref-note{color: var(--ink-soft,var(--ink));}
-.ks-scene .pv-book .sub-btn{display: block; width: 100%; background: var(--accent); color: var(--accent-ink); border-radius: var(--r,12px); padding: 14px; font-size: var(--fs-section); font-weight: var(--fw-bold); letter-spacing: 0.02em; transition: opacity 0.12s; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; cursor: pointer; font-family: Inter, sans-serif;}
-.ks-scene .pv-book .sub-btn:active{opacity: 0.85;}
-.ks-scene .pv-book .sub-btn:disabled{opacity: 0.5; cursor: not-allowed;}
-.ks-scene .pv-book .pay-note{font-size: var(--fs-micro); color: var(--ink-soft); text-align: center; margin-top: 10px; line-height: 1.4;}
-.ks-scene .pv-book .success-wrap{text-align: center; padding: 40px 20px;}
-.ks-scene .pv-book .success-ico{width: 64px; height: 64px; border-radius: 50%; background: rgb(62, 207, 126); display: flex; align-items: center; justify-content: center; margin: 0px auto 18px;}
-.ks-scene .pv-book .success-h{font-family: "Bebas Neue", "Oswald", Impact, sans-serif; font-size: var(--fs-hero); font-weight: var(--fw-bold); letter-spacing: 0.02em; margin-bottom: 6px; color: var(--ink);}
-.ks-scene .pv-book .success-sub{font-size: var(--fs-small); color: var(--ink-soft); margin-bottom: 22px;}
-.ks-scene .pv-book .success-det{background: var(--surface); border: 1px solid var(--line); border-radius: var(--r,12px); padding: 14px 16px; text-align: left; margin-bottom: 18px;}
-.ks-scene .pv-book .det-row{display: flex; justify-content: space-between; align-items: flex-start; font-size: var(--fs-small); padding: 5px 0px; border-bottom: 1px solid var(--line);}
-.ks-scene .pv-book .det-row:last-child{border-bottom-width: medium; border-bottom-style: none; border-bottom-color: currentcolor; padding-bottom: 0px;}
-.ks-scene .pv-book .det-lbl{color: var(--ink-soft); flex-shrink: 0; margin-right: 10px;}
-.ks-scene .pv-book .det-val{font-size: var(--fs-section); font-weight: var(--fw-medium); text-align: right; color: var(--ink);}
-.ks-scene .pv-book .det-row:first-child{padding-top: 0px;}
-.ks-scene .pv-book .conf-adr{display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-small); color: var(--ink-soft); text-decoration: none; margin: 0px 0px 10px;}
-.ks-scene .pv-book .conf-adr span{border-bottom: 1px solid var(--line);}
-.ks-scene .pv-book .conf-tel{display: flex; justify-content: center; align-items: center; gap: 5px; font-size: var(--fs-small); color: var(--ink-soft); text-decoration: none; margin: 0px 0px 10px;}
-.ks-scene .pv-book .conf-tel span{border-bottom: 1px solid var(--line);}
-.ks-scene .pv-book .manage-badge{position: absolute; top: 16px; right: 16px; z-index: 5; display: inline-flex; align-items: center; padding: 7px 14px; border-radius: var(--radius-pill); background: var(--badge-bg); color: var(--badge-ink); font-size: var(--fs-small); font-weight: var(--fw-medium); text-decoration: none; line-height: 1; white-space: nowrap; backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px);}
-.ks-scene .pv-book .social{display: flex; justify-content: center; align-items: center; gap: 10px; margin-top: 8px; align-self: center;}
-.ks-scene .pv-book .social-link{display: inline-flex; align-items: center; justify-content: center; width: 44px; height: 44px; color: var(--ink); transition: opacity 0.15s ease;}
-.ks-scene .pv-book .social-link:hover{opacity: 0.6;}
-.ks-scene .pv-book .manage-link-btn{display: inline-flex; align-items: center; gap: 5px; font-size: var(--fs-small); color: var(--ink-soft); cursor: pointer; background: none; border-width: medium; border-style: none; border-color: currentcolor; border-image: initial; padding: 4px 0px; font-family: Inter, sans-serif;}
-.ks-scene .pv-book .manage-mode #bk-book, .ks-scene .pv-book .manage-mode .bk-footer{display: none !important;}
-.ks-scene .pv-book .bk-card{background: var(--surface); border: 1.5px solid var(--line); border-radius: var(--r,12px); padding: 16px; margin: 0px 0px 12px;}
-.ks-scene .pv-book .bk-svc{font-size: var(--fs-section); font-weight: var(--fw-bold); margin-bottom: 3px;}
-.ks-scene .pv-book .bk-when{font-size: var(--fs-small); color: var(--ink-soft); margin-bottom: 14px;}
-.ks-scene .pv-book .bk-actions{display: flex; gap: 8px;}
-.ks-scene .pv-book .bk-act{flex: 1 1 0%; padding: 10px 8px; border-radius: var(--r-sm,8px); font-size: var(--fs-small); font-weight: var(--fw-bold); font-family: Inter, sans-serif; border: 1.5px solid var(--line); background: none; color: var(--ink); cursor: pointer; transition: border-color 0.12s;}
-.ks-scene .pv-book .bk-act.primary{background: var(--accent); color: var(--accent-ink); border-color: var(--accent);}
-.ks-scene .pv-book .bk-act.danger{border-color: var(--danger,#e05c4b); color: var(--danger,#e05c4b);}
-.ks-scene .pv-book .bk-confirm{margin-top: 12px; padding: 12px; background: var(--bg); border: 1px solid var(--line); border-radius: var(--r-sm,8px); display: none;}
-.ks-scene .pv-book .bk-confirm.open{display: block;}
-.ks-scene .pv-book .bk-confirm-btns{display: flex; gap: 8px;}
-.ks-scene .pv-book .bk-footer{text-align: center; margin-top: 28px; font-size: 12.5px; color: var(--ink-soft);}
-.ks-scene .pv-book .bk-footer a{color: var(--ink-soft); text-decoration: none; border-bottom: 1px solid var(--line);}
-@keyframes fi { 
-  0% { opacity: 0; transform: translateY(5px); }
-  100% { opacity: 1; transform: none; }
-}
-/* ↑ Klonet CSS slutter her. Under: NØYTRALISERING, ikke endring.
-   Reglene her retter bare det som er meningsløst i en fastbreddet klon. De legger
-   ALDRI på spacing: forrige runde ga .cover 20px padding (kilden har «56px 0 120px» —
-   null horisontalt, innrykket kommer fra h1{margin:0 28px}) og .sheet-inner 20px der
-   kilden har 24px. Til sammen 86px mindre plass til tittelen enn produktet gir. */
-/* position:fixed inne i et transformert element forankres til DET, ikke viewporten —
-   arket ble en grå flate på størrelse med hele sida. */
-.ks-scene .pv-book .sheet{position:static;transform:none;inset:auto;z-index:auto;transition:none;display:none}
-.ks-scene .pv-book .sheet-inner{max-width:none}
-/* Samme felle for CTA-en og «endre/avbestill»: begge er position:fixed. Å gi .pv-scale
-   riktig høyde er IKKE nok — fixed forankres til nærmeste transformerte forfar, og hvilken
-   det er, avhenger av hvor transform/will-change tilfeldigvis står. Målt havnet knappen
-   52px UNDER skjermen. Vi gjør forankringen eksplisitt i stedet for å gjette. */
-/* Skjermflatens origo pinnes. Kildens body er sentrerende, og siden body mappes til
-   klonens rot, ble det 320px brede innholdet SENTRERT i en 236px boks — 42px overflyt på
-   hver side, altså 57 designpiksler skjevt, og høyre kant klippet. Målt mot fasiten:
-   galleriet lå på 57..377 i stedet for 0..320. */
-.ks-scene .pv-book .pv-scale{position:absolute;top:0;left:0}
-/* «Se tjenester» er nå en INLINE knapp nederst i cover (sticky→static i klonen), og
-   «Endre/avbestill» er flyttet til en .manage-badge absolutt-posisjonert i cover (som er
-   position:relative). Ingen av dem er lenger fixed, så den gamle absolute-forankringen
-   trengs ikke — snapshot-layouten (Kraftig/showcase) har knappen i dokumentflyten. */
-/* «Scroll» i en klon som ikke KAN scrolle. Ekte side har overflow-y:auto på det
-   fixed arket, og modulen scroller til trinn 3 når det åpnes. Her er arket statisk inne
-   i overflow:hidden, så trinn 3 ble klippet rett under samtykkeboksen: «Bekreft booking»
-   og betalingsnoten lå utenfor skjermen, og bildet så ut som om knappen manglet.
-   Arket flyttes i stedet, styrt av én variabel — da kan animasjonen «scrolle» til
-   skjemaet slik produktet gjør. Transformen ligger bak .vis-scroll, ikke på .sheet rett
-   fram: en transform lager en containing block for absolutt-posisjonerte etterkommere,
-   og den skal ikke oppstå i tilstander som ikke trenger den. */
-.ks-scene .pv-book.vis-scroll .sheet{transform:translateY(var(--pv-scroll,0px));
-  transition:transform .55s cubic-bezier(.4,0,.2,1)}
-@media (prefers-reduced-motion:reduce){.ks-scene .pv-book.vis-scroll .sheet{transition:none}}
-
-/* «Se tjenester» sentreres med translateX(-50%). Den generelle .pv-anim-btn.pv-press-
-   regelen ville satt transform:scale(.96) og slettet sentreringen — egen regel beholder begge. */
-.ks-scene .pv-book .see-float.pv-press{transform:translateX(-50%) scale(.96)}
-
-/* Tilstandene styres av én klasse på .pv-book — samme klasser render-testen setter. */
-.ks-scene .pv-book.vis-sheet .cover,
-.ks-scene .pv-book.vis-sheet .see-float{display:none}
-.ks-scene .pv-book.vis-sheet .sheet{display:block}
-.ks-scene .pv-book .success-wrap{display:none}
-/* Success: skjul trinn-lista OG «Tilbake» (snapshot 6 har back-sheet display:none), men
-   BEHOLD «Bygget med BarberHQ»-footeren — den er synlig i bekreftelsen i snapshotet. */
-.ks-scene .pv-book.vis-success .acc-wrap,
-.ks-scene .pv-book.vis-success .back-sheet{display:none}
-.ks-scene .pv-book.vis-success .success-wrap{display:block}
+/* ==================== SELVBOOKING-TELEFONEN: v2-bookingen (Grand Barber) — 18.11.2026 ====================
+   Innholdet mellom KS-V2BOOK-CSS-markørene er GENERERT av _utkast/ks-v2book/bygg.mjs fra den ekte v2-bookingsiden
+   (sidens egen <style>, scopet til .ks-scene .v2b). Ikke rediger der — kjør `node _utkast/ks-v2book/bygg.mjs --skriv`.
+   Reglene ETTER markørene er klonens egne og retter bare det som er meningsløst i en fastbreddet klon (ingen ny spacing
+   i innholdet). Erstatter v1-klonen (bookingmodulen med nummererte trekkspill, datostripe og «Til bekreftelse»). */
+/* KS-V2BOOK-CSS:START */
+/* ===== Selvbooking-telefonen: v2-bookingen (Grand Barber) — GENERERT av _utkast/ks-v2book/bygg.mjs, ikke rediger for hånd.
+   Kilde: den ekte v2-bookingsiden i prod 18.11.2026 (sidens egen <style>), scopet til .ks-scene .v2b. ===== */
+.ks-scene .v2b{--bg: #0c0c0c; --surface: #161616; --ink: #f5f5f5; --muted: #a3a3a3; --line: #2a2a2a; --line-2: #3a3a3a; --accent: #4d8bff; --accent-ink: #141210; --accent-text: #4d8bff; --accent-soft: #182338; --danger: #d94b3f; --r: 12px; --r-sm: 10px; --bilde-kant: transparent; color-scheme: dark;}
+.ks-scene .v2b{--space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-7: 32px; --fs-display: 34px; --fs-title: 22px; --fs-small: 13px; --fs-micro: 12px; --touch-min: 44px; --valgt-flate: color-mix(in srgb,var(--accent) 16%,transparent); --valgt-kant: color-mix(in srgb,var(--accent) 45%,transparent);}
+.ks-scene .v2b *{box-sizing: border-box; margin: 0px; padding: 0px;}
+.ks-scene .v2b{text-size-adjust: 100%;}
+.ks-scene .v2b{font-family: Inter, system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.5; font-size: 15px; -webkit-font-smoothing: antialiased; min-height: 848.00px;}
+.ks-scene .v2b button{font: inherit; color: inherit; background: none; border: 0px; cursor: pointer;}
+.ks-scene .v2b button:disabled{cursor: default;}
+.ks-scene .v2b a{color: inherit; text-decoration: none;}
+.ks-scene .v2b :focus:not(.tab-fokus){outline: none;}
+.ks-scene .v2b .frame{width: 100%; max-width: 520px; margin: 0px auto; padding: 0px 16px 40px;}
+.ks-scene .v2b .v2-tjenester{display: flex; flex-direction: column; gap: 0px;}
+.ks-scene .v2b .v2-tj{display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 0px; border-top: 0px; border-right: 0px; border-left: 0px; border-image: initial; border-bottom: 1px solid var(--line); background: none; text-decoration: none; color: inherit; text-align: left; border-radius: 0px;}
+.ks-scene .v2b .v2-tjenester > .v2-tj:last-of-type{border-bottom: 0px;}
+.ks-scene .v2b .v2-tj-navn{flex: 1 1 0%; min-width: 0px; font-weight: 500; font-size: 15px; color: var(--ink); overflow-wrap: anywhere;}
+.ks-scene .v2b .v2-tj-min{display: block; font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px;}
+.ks-scene .v2b .v2-tj-pris{font-weight: 600; font-size: 14px; color: var(--ink); white-space: nowrap;}
+.ks-scene .v2b .v2-tj-hake{display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--line-2); background: transparent; flex: 0 0 auto; font-size: 12px; font-weight: 700; color: transparent;}
+.ks-scene .v2b .service.selected .v2-tj-hake,.ks-scene .v2b .flow-addon.sel .v2-tj-hake{background: var(--valgt-flate); border-color: var(--valgt-kant); color: var(--accent-text);}
+.ks-scene .v2b .service.selected .v2-tj-navn{font-weight: 600;}
+.ks-scene .v2b .service.selected .v2-tj-pris{font-weight: 700;}
+.ks-scene .v2b .flow{padding-bottom: 8px;}
+.ks-scene .v2b .flow-nav{display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0px 10px;}
+.ks-scene .v2b .back-link{display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--muted); padding: 6px 0px;}
+.ks-scene .v2b .back-link:hover{color: var(--ink);}
+.ks-scene .v2b .flow-brand{font-family: PlusJakartaSans, Inter, sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0px; max-width: 62%; text-align: right;}
+.ks-scene .v2b .steps{display: flex; align-items: center; gap: var(--space-2); list-style: none; padding: var(--space-3) 0 var(--space-5); font-size: var(--fs-micro); color: var(--muted); overflow: hidden;}
+.ks-scene .v2b .steps li{display: flex; align-items: center; gap: var(--space-2); min-width: 0px; white-space: nowrap;}
+.ks-scene .v2b .steps li + li::before{content: "→" / ""; font-weight: 400; color: var(--muted);}
+.ks-scene .v2b .steps .active{color: var(--ink); font-weight: 600;}
+.ks-scene .v2b .v2-skjult{position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0px; border: 0px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;}
+.ks-scene .v2b .flow-title{font-size: 22px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; margin: 4px 0px 20px; outline: none;}
+.ks-scene .v2b .booking header{padding: 0px 0px 10px;}
+.ks-scene .v2b .booking h2{font-size: 22px; font-weight: 600; letter-spacing: -0.01em;}
+.ks-scene .v2b .v2-tillegg{display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 0.22s, opacity 0.18s;}
+.ks-scene .v2b .v2-tillegg.open{grid-template-rows: 1fr; opacity: 1;}
+.ks-scene .v2b .v2-tillegg-inner{overflow: hidden; min-height: 0px;}
+.ks-scene .v2b .v2-tillegg-panel{background: color-mix(in srgb,var(--ink) 7%,var(--bg)); border-radius: var(--r-sm); padding: 0 var(--space-4);}
+.ks-scene .v2b .service[aria-expanded="true"]{border-bottom-color: transparent;}
+.ks-scene .v2b .v2-tillegg.open{padding-bottom: var(--space-3); border-bottom: 1px solid var(--line);}
+.ks-scene .v2b .v2-tillegg-lbl{display: flex; justify-content: space-between; gap: var(--space-2); font-size: var(--fs-small); font-weight: 500; color: var(--ink); padding: var(--space-3) 0 var(--space-1);}
+.ks-scene .v2b .v2-tillegg-lbl span{font-size: 12px; font-weight: 400; color: var(--muted);}
+.ks-scene .v2b .v2-tj-tillegg{padding: 10px 0px; gap: 10px;}
+.ks-scene .v2b .v2-tj-tillegg .v2-tj-navn{font-size: 14px; font-weight: 500;}
+.ks-scene .v2b .v2-tj-meta{font-size: 13px; color: var(--muted); white-space: nowrap;}
+.ks-scene .v2b .v2-tj-hake.liten{width: 22px; height: 22px; font-size: 12px; border: 1px solid var(--line-2); border-radius: 6px;}
+.ks-scene .v2b .v2-tj-tillegg{min-height: 52px; flex-wrap: wrap;}
+.ks-scene .v2b .v2-tj-meta{white-space: normal;}
+.ks-scene .v2b .flow-addon.sel .v2-tj-navn{font-weight: 600;}
+.ks-scene .v2b .v2-tillegg .v2-tj:last-of-type{border-bottom: 0px;}
+.ks-scene .v2b .primary{position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 52px; padding: 14px 48px; border-radius: 12px; background: var(--accent); color: var(--accent-ink); font-weight: 500; font-size: 15px; line-height: 1.4; margin-top: 18px; transition: filter 0.16s, transform 0.16s;}
+.ks-scene .v2b .primary > span[aria-hidden="true"]{position: absolute; right: 20px; font-size: 20px; line-height: 1; font-weight: 400;}
+.ks-scene .v2b .primary:active:not(:disabled){transform: translateY(1px); filter: brightness(0.94);}
+.ks-scene .v2b .primary:hover:not(:disabled){filter: brightness(1.05);}
+.ks-scene .v2b .primary:disabled{background: var(--line); color: var(--muted); opacity: 1; filter: none;}
+.ks-scene .v2b .text-link{font-size: 13px; font-weight: 500; color: var(--accent-text); padding: 4px 0px;}
+.ks-scene .v2b .flow-action{margin-top: 4px;}
+.ks-scene .v2b .flow-foot{font-size: 12px; color: var(--muted); text-align: center; margin-top: 14px;}
+.ks-scene .v2b .service-recap{display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0px 0px 18px; border: 0px; background: transparent; margin: 0px;}
+.ks-scene .v2b .service-recap .text-link{min-height: 44px; flex-shrink: 0;}
+.ks-scene .v2b .service-recap strong{display: block; font-size: 14px; font-weight: 500;}
+.ks-scene .v2b .service-recap small{font-size: 12px; color: var(--muted);}
+.ks-scene .v2b .calendar{padding: 14px 0px 10px; border-right: 0px; border-bottom: 0px; border-left: 0px; border-image: initial; border-top: 1px solid var(--line); border-radius: 0px; background: transparent; margin-bottom: 14px;}
+.ks-scene .v2b .bhq-dv{--dv-tekst: var(--ink); --dv-dempet: var(--muted); --dv-linje: var(--line); --dv-linje-2: var(--line-2); --dv-hover: var(--accent-soft); --dv-valgt-flate: var(--valgt-flate); --dv-valgt-kant: var(--valgt-kant); --dv-valgt-tekst: var(--accent-text);}
+.ks-scene .v2b :where(.bhq-dv),.ks-scene .v2b :where(.bhq-dv) *{box-sizing: border-box;}
+.ks-scene .v2b :where(.bhq-dv) button{font: inherit; color: inherit; background: none; border: 0px; padding: 0px; margin: 0px; cursor: pointer;}
+.ks-scene .v2b :where(.bhq-dv) button:disabled{cursor: default;}
+.ks-scene .v2b :where(.bhq-dv) h3,.ks-scene .v2b :where(.bhq-dv) p{margin: 0px;}
+.ks-scene .v2b .bhq-dv-topp{display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;}
+.ks-scene .v2b .bhq-dv-topp h3{font-size: 15px; font-weight: 600;}
+.ks-scene .v2b .bhq-dv-piler{display: flex; gap: 6px;}
+.ks-scene .v2b .bhq-dv-piler button{width: 32px; height: 32px; min-width: 44px; min-height: 44px; border-radius: 50%; border: 1px solid var(--dv-linje,color-mix(in srgb,currentColor 14%,transparent)); display: grid; place-items: center; font-size: 14px; color: var(--dv-tekst,currentColor);}
+.ks-scene .v2b .bhq-dv-piler button:disabled{opacity: 0.3;}
+.ks-scene .v2b .bhq-dv-ukedager,.ks-scene .v2b .bhq-dv-dager{display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;}
+.ks-scene .v2b .bhq-dv-ukedager span{text-align: center; font-size: 11px; color: var(--dv-dempet,color-mix(in srgb,currentColor 55%,transparent)); padding: 4px 0px;}
+.ks-scene .v2b .bhq-dv-dag{min-height: 44px; border-radius: 10px; font-size: 14px; font-weight: 500; display: grid; place-items: center; color: var(--dv-tekst,currentColor);}
+.ks-scene .v2b .bhq-dv-dag:hover:not(:disabled):not(.er-valgt){background: var(--dv-hover,color-mix(in srgb,currentColor 8%,transparent));}
+.ks-scene .v2b .bhq-dv-dag:disabled{color: var(--dv-dempet,color-mix(in srgb,currentColor 55%,transparent)); opacity: 0.35;}
+.ks-scene .v2b .bhq-dv-dag.er-idag:not(.er-valgt){box-shadow: inset 0 0 0 1px var(--dv-linje-2,color-mix(in srgb,currentColor 28%,transparent));}
+.ks-scene .v2b .bhq-dv-dag.er-valgt{background: var(--dv-valgt-flate,color-mix(in srgb,currentColor 16%,transparent)); color: var(--dv-valgt-tekst,currentColor); box-shadow: inset 0 0 0 1px var(--dv-valgt-kant,color-mix(in srgb,currentColor 45%,transparent)); font-weight: 600;}
+.ks-scene .v2b .bhq-dv-tom{display: block;}
+.ks-scene .v2b .bhq-dv-fot{font-size: 12px; color: var(--dv-dempet,color-mix(in srgb,currentColor 55%,transparent)); margin-top: 10px; text-align: center;}
+.ks-scene .v2b .time-panel{margin-bottom: 8px;}
+.ks-scene .v2b .time-heading{display: flex; align-items: baseline; justify-content: space-between; margin: 0px 0px 10px;}
+.ks-scene .v2b .time-heading h3{font-size: 15px; font-weight: 600;}
+.ks-scene .v2b .time-heading span{font-size: 12px; color: var(--muted);}
+.ks-scene .v2b .time-grid{display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;}
+.ks-scene .v2b .time{padding: 11px 0px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); font-size: 14px; font-weight: 500; text-align: center; color: var(--ink);}
+.ks-scene .v2b .time:hover{border-color: var(--line-2);}
+.ks-scene .v2b .time.chosen{background: var(--valgt-flate); border-color: var(--valgt-kant); color: var(--accent-text); font-weight: 600;}
+.ks-scene .v2b .selection-line{font-size: 13px; color: var(--muted); margin-top: 12px;}
+.ks-scene .v2b .time{min-height: 48px;}
+.ks-scene .v2b .v2-tj-description{display: block; font-size: 14px; font-weight: 400; line-height: 1.45; color: var(--muted); margin: 4px 0px;}
+.ks-scene .v2b .flow-footer{margin: calc(var(--space-7) + var(--space-2)) 0 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; column-gap: var(--space-1); font-size: var(--fs-micro); color: var(--muted);}
+.ks-scene .v2b .flow-footer a{display: inline-flex; align-items: center; min-height: var(--touch-min); color: inherit; text-decoration: underline color-mix(in srgb, currentcolor 40%, transparent); text-underline-offset: 0.2em;}
+.ks-scene .v2b .flow-footer a:hover{color: var(--ink);}
+/* KS-V2BOOK-CSS:SLUTT */
+/* Skjermflaten: 390-design (ekte telefonbredde, som kalenderen) skalert til skjermen. Toppinnrykket er statuslinja +
+   Dynamic Island: på en ekte telefon står nettleserens statuslinje over siden (kilden har ingen safe-area-regel). */
+.ks-scene .v2b{position:relative;height:100%;min-height:0;overflow:hidden;text-align:start}   /* start = den ekte sidens standard (telefonskjermens isolasjon setter left) */
+.ks-scene .v2b .pv-scale{position:absolute;top:0;left:0;width:390px;padding-top:50px;transform:scale(calc(67.728cqw / 390px))}
+/* Når klonen «scroller» (v2bTick flytter .frame), klippes innholdet under statuslinja — ellers blander teksten seg med
+   klokka og ikonene. Ren klipping, ingen ny avstand. */
+.ks-scene .v2b .pv-scale{height:848px;clip-path:inset(50px 0 0 0)}
+/* Steg 1 og steg 2 ligger i samme celle og byttes av v2bTick (den ekte siden bytter innhold i samme flate). */
+.ks-scene .v2b #ksv2-flow-body{display:grid}
+.ks-scene .v2b #ksV2S1,.ks-scene .v2b #ksV2S2{grid-area:1/1;min-width:0}
+/* Knappen nederst: sidens deaktiverte .primary med den aktive (#ksNext2) lagt oppå — aktiv tones inn ved t27. */
+.ks-scene .v2b .ksv2-action{position:relative}
+.ks-scene .v2b #ksNext2{position:absolute;left:0;right:0;bottom:0}
+/* Uten animasjon (no-JS / reduced-motion): steg 2 i sluttilstand (v2bTick(1e3) ved lasting). */
+.ks-scene:not(.ks-anim) .v2b #ksV2S1{visibility:hidden}
 
 /* ==================== KJERNEFUNKSJONER SCROLL-SCENE (100% scrub) ==================== */
 .ks-scene{position:relative;overflow-x:clip;background:#0a0a0a}
@@ -622,12 +539,9 @@ html{overflow-x:clip}
 .ks-scene .phone-statusbar .sb-r{display:flex;align-items:center;gap:1.3cqw}
 .ks-scene .phone-statusbar .sb-bars{width:4cqw}.ks-scene .phone-statusbar .sb-wifi{width:3.8cqw}.ks-scene .phone-statusbar .sb-batt{width:5.6cqw}
 .ks-scene .pv-scale{transform-origin:top left;width:320px;transform:scale(calc(67.728cqw / 320px))}
-/* Kalenderen legges ut i EKTE telefonbredde (390 CSS-px) og skaleres ned til skjermen (skjermbredde/390),
-   ellers blir dashbord-skriftene for store i den smale skjermen. Booking beholder 320-design. */
+/* Kalenderen OG v2-bookingen legges ut i EKTE telefonbredde (390 CSS-px) og skaleres ned til skjermen (skjermbredde/390),
+   ellers blir skriftene for store i den smale skjermen. (v2-bookingens pv-scale står ved KS-V2BOOK-markørene.) */
 .ks-scene .ks-cal .pv-scale{position:absolute;top:0;left:0;width:390px;transform:scale(calc(67.728cqw / 390px))}
-.ks-scene .pv-book{position:relative;min-height:700px;height:700px;background:var(--bg);overflow:hidden}
-.ks-scene .pv-book .sheet{display:block;position:static;inset:auto;transform:none;background:var(--bg);height:auto}
-.ks-scene .pv-book .sheet-inner{max-width:none;margin:0;padding:52px 18px 24px}
 .ks-scene .ks-cal{height:853px}.ks-scene .ks-cal .ks-root{min-height:853px;height:853px;padding-top:56px}   /* 390-design skjermhøyde (390*700/320) + status-klaring */
 .ks-scene .ks-block{left:6px;right:6px;padding:5px 8px;overflow:hidden;opacity:0}
 .ks-scene .ls{position:relative;width:320px;height:700px;background:radial-gradient(120% 80% at 50% 0%,#141826 0%,#0a0a10 55%,#050509 100%);color:#fff;display:flex;flex-direction:column;align-items:center;padding-top:82px;overflow:hidden}
@@ -921,20 +835,15 @@ html{overflow-x:clip}
         <div class="ks-phone-slot" id="ksPhoneSlot"><div class="ks-bg" id="ksBg" aria-hidden="true"></div><div class="ks-phone-travel" id="ksPhoneTravel">
         <div class="phone" id="ksPhone">
   <div class="phone-screen"><div class="hp-screens">
-    <div class="hp-screen s-book" id="ksBook"><div class="pv-book vis-sheet"><div class="pv-scale"><section class="sheet"><div class="sheet-inner"><div class="acc-wrap">
-      <div class="acc-section done"><div class="acc-hd"><span class="acc-n">1</span><span class="acc-t">Velg tjeneste</span><span class="acc-chk">&#10003;</span><span class="acc-sum">Skinfade &middot; 350 kr</span><button class="acc-endre" type="button">Endre</button></div></div>
-      <div class="acc-section"><div class="acc-hd"><span class="acc-n">2</span><span class="acc-t">Dato og tid</span></div><div class="acc-bd open"><div class="acc-in"><div class="acc-content">
-        <div class="date-strip" id="ksDateStrip"></div>
-        <p class="slot-msg" id="ksSlotHint">Velg en dato for &aring; se ledige tider</p>
-        <p class="slots-hdr" id="ksSlotsHdr">Ledige tider</p>
-        <div class="slots-grid" id="ksSlotsGrid"></div>
-        <button class="next2-btn" id="ksNext2" type="button">Til bekreftelse &middot; 30 min &middot; 350 kr</button>
-      </div></div></div></div>
-    </div></div></section></div></div></div>
+    <div class="hp-screen s-book" id="ksBook">
+<!-- KS-V2BOOK-HTML:START -->
+<div class="v2b"><div class="pv-scale"><main class="frame"><section class="flow" id="ksv2-flow-frame"><nav class="flow-nav" aria-label="Booking"><button class="back-link" id="ksv2-flow-back" type="button"><span aria-hidden="true">←</span>Tilbake</button><div class="flow-brand" aria-label="Grand barber">Grand barber</div></nav><div id="ksv2-flow-steps"><ol class="steps" aria-label="Bookingsteg"><li class="active" aria-current="step" id="ksV2Li1"><span class="v2-skjult">Steg 1 av 3: </span>Tjeneste</li><li class="" id="ksV2Li2">Dato og tid</li><li class="" id="ksV2Li3">Opplysninger</li></ol></div><div id="ksv2-flow-body"><div id="ksV2S1"><section class="booking" aria-label="Behandlinger"><header><h2>Velg tjeneste</h2></header><div class="v2-tjenester services" id="ksv2-flow-services"><button class="v2-tj service selected" type="button" role="radio" aria-checked="true" aria-expanded="true" data-min="30" data-price="1000" data-name="Skinfade"><span class="v2-tj-navn">Skinfade<span class="v2-tj-description">Klipp på sidene og kort hår på toppen</span><span class="v2-tj-min">30 min</span></span><span class="v2-tj-pris">1000&nbsp;kr</span><span class="v2-tj-hake" aria-hidden="true">✓</span></button><div class="v2-tillegg open" id="ksv2-flow-addons" aria-hidden="false"><div class="v2-tillegg-inner"><div class="v2-tillegg-panel"><p class="v2-tillegg-lbl">Legg til <span>Valgfritt</span></p><button class="v2-tj v2-tj-tillegg flow-addon sel" type="button" aria-pressed="true" data-min="15" data-price="150" data-name="Skjegg"><span class="v2-tj-navn">Skjegg</span><span class="v2-tj-meta">+15 min · +150&nbsp;kr</span><span class="v2-tj-hake liten" aria-hidden="true">✓</span></button><button class="v2-tj v2-tj-tillegg flow-addon" type="button" aria-pressed="false" data-min="45" data-price="150" data-name="Vask"><span class="v2-tj-navn">Vask</span><span class="v2-tj-meta">+45 min · +150&nbsp;kr</span><span class="v2-tj-hake liten" aria-hidden="true">✓</span></button></div></div></div><button class="v2-tj service" type="button" role="radio" aria-checked="false" aria-expanded="false" data-min="30" data-price="399" data-name="Saksklipp"><span class="v2-tj-navn">Saksklipp<span class="v2-tj-description">Bare saks ingen maskin</span><span class="v2-tj-min">30 min</span></span><span class="v2-tj-pris">399&nbsp;kr</span><span class="v2-tj-hake" aria-hidden="true">✓</span></button><button class="v2-tj service" type="button" role="radio" aria-checked="false" aria-expanded="false" data-min="30" data-price="300" data-name="BarneKlipp"><span class="v2-tj-navn">BarneKlipp<span class="v2-tj-description">Barn under 12 år</span><span class="v2-tj-min">30 min</span></span><span class="v2-tj-pris">300&nbsp;kr</span><span class="v2-tj-hake" aria-hidden="true">✓</span></button></div><button class="primary" id="ksV2Cta1" type="button">Velg dato og tid <span aria-hidden="true">→</span></button></section></div><div id="ksV2S2"><h1 class="flow-title">Velg dato og tid</h1><div class="service-recap"><div><strong>Skinfade + Skjegg</strong><small>45 min · 1150&nbsp;kr</small></div><button class="text-link" id="ksv2-flow-endre-svc" type="button">Endre tjeneste</button></div><section class="calendar bhq-dv" id="ksv2-flow-cal" aria-label="Velg dato"><div class="bhq-dv-topp"><h3 id="ksV2Mnd">November 2026</h3><div class="bhq-dv-piler"><button type="button" data-mon="-1" aria-label="Forrige måned" disabled="">←</button><button type="button" data-mon="1" aria-label="Neste måned">→</button></div></div><div class="bhq-dv-ukedager" aria-hidden="true"><span>M</span><span>T</span><span>O</span><span>T</span><span>F</span><span>L</span><span>S</span></div><div class="bhq-dv-dager" id="ksV2Dager"></div><p class="bhq-dv-fot">Velg en dag som passer deg.</p></section><div id="ksV2Tider"><section class="time-panel" aria-label="Velg klokkeslett"><div class="time-heading"><h3 id="ksV2TidDag">ons 18. nov</h3><span>Ledige klokkeslett</span></div><div class="time-grid"><button class="time" type="button" aria-pressed="false" data-label="11:00" id="ksV2Tid">11:00</button><button class="time" type="button" aria-pressed="false" data-label="11:30">11:30</button><button class="time" type="button" aria-pressed="false" data-label="13:30">13:30</button><button class="time" type="button" aria-pressed="false" data-label="14:00">14:00</button><button class="time" type="button" aria-pressed="false" data-label="14:30">14:30</button><button class="time" type="button" aria-pressed="false" data-label="15:00">15:00</button><button class="time" type="button" aria-pressed="false" data-label="15:30">15:30</button><button class="time" type="button" aria-pressed="false" data-label="16:00">16:00</button><button class="time" type="button" aria-pressed="false" data-label="16:30">16:30</button><button class="time" type="button" aria-pressed="false" data-label="17:00">17:00</button></div><p class="selection-line" id="ksV2Valgt" aria-live="polite">Valgt: ons 18. nov kl. 11:30</p></section></div><div class="flow-action ksv2-action"><button class="primary" type="button" disabled="">Opplysninger <span aria-hidden="true">→</span></button><button class="primary" id="ksNext2" type="button">Opplysninger <span aria-hidden="true">→</span></button></div><p class="flow-foot">45 min · 1150&nbsp;kr · Betales på stedet</p></div></div><footer class="flow-footer">Bygget med <a>BarberHQ</a> · <a>Personvern</a></footer></section></main></div></div>
+<!-- KS-V2BOOK-HTML:SLUTT -->
+    </div>
     <div class="hp-screen s-cal" id="ksCal"><div class="ks-cal"><div class="pv-scale"><div class="ks-root"><div class="ks-overlay">
-      <div class="ks-topbar"><button class="ks-datebtn" type="button"><span id="ksCalDateBtn">fre</span> &#9662;</button><button class="ks-close" type="button">&#10005;</button></div>
+      <div class="ks-topbar"><button class="ks-datebtn" type="button"><span id="ksCalDateBtn">fre</span> &#9662;</button><button class="ks-today" type="button" id="ksCalToday">I dag</button><button class="ks-add" type="button" aria-label="Legg til booking"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 5v14M5 12h14" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg></button><button class="ks-close" type="button">&#10005;</button></div>
       <div class="ks-daystrip" id="ksCalStrip"></div>
-      <div class="ks-grid"><div class="ks-scroll"><div class="ks-axis" id="ksCalAxis"></div><div class="ks-days"><div class="ks-day"><div class="ks-dayhead is-today" id="ksCalDayhead">fre</div><div class="ks-daybody" id="ksCalBody"></div></div></div></div></div>
+      <div class="ks-grid"><div class="ks-scroll"><div class="ks-axis" id="ksCalAxis"></div><div class="ks-days"><div class="ks-day"><div class="ks-dayhead" id="ksCalDayhead">fre</div><div class="ks-daybody" id="ksCalBody"></div></div></div></div></div>
     </div></div></div></div></div>
     <div class="hp-screen s-sms" id="ksSms"><div class="pv-scale"><div class="ls">
       <div class="ls-glow" id="ksLsGlow"></div><div class="ls-time" id="ksLsTime">20:14</div><div class="ls-date" id="ksLsDate">torsdag</div>
@@ -1221,11 +1130,56 @@ window.PinInit=(function(){
   var MO=['jan','feb','mar','apr','mai','jun','jul','aug','sep','okt','nov','des'],MOF=['januar','februar','mars','april','mai','juni','juli','august','september','oktober','november','desember'];
   function nextFriday(){var d=new Date();var a=(5-d.getDay()+7)%7;if(a===0)a=7;d.setDate(d.getDate()+a);d.setHours(0,0,0,0);return d;}
   var FRI=nextFriday(),THU=new Date(FRI);THU.setDate(THU.getDate()-1);
-  var strip=$('ksDateStrip');
-  for(var i=0;i<8;i++){var d=new Date(FRI);d.setDate(d.getDate()+i);var cl=(d.getDay()===0);var b=document.createElement('button');b.type='button';b.className='date-chip'+(cl?' closed':' open')+(i===0?' today':'');b.innerHTML='<span class="dc-wd">'+WD[d.getDay()]+'</span><span class="dc-mo">'+MO[d.getMonth()]+'</span><span class="dc-d">'+d.getDate()+'</span><span class="dc-dot"></span>';if(cl)b.disabled=true;strip.appendChild(b);}
-  var friChip=strip.querySelector('.date-chip');
-  ['11:00','11:30','13:30','14:00','14:30','15:00','15:30','16:00','16:30','17:00'].forEach(function(t){var b=document.createElement('button');b.type='button';b.className='slot-btn';b.textContent=t;if(t==='11:00')b.id='ksSlot11';$('ksSlotsGrid').appendChild(b);});
-  var slot11=$('ksSlot11');
+  // ===== Selvbooking-telefonen (v2-bookingen, 18.11.2026): TO SCENER, tilstandene som REN funksjon av t =====
+  // Markupen er den ekte v2-siden (KS-V2BOOK-HTML, generert av _utkast/ks-v2book/bygg.mjs — også klokkeslettene).
+  //   Scene 1 — Velg tjeneste (Skinfade + Skjegg krysset av): «Velg dato og tid →» trykkes t8–10.
+  //   Sideskifte t10–14: hele siden tones kort ut og inn (som et nytt steg i den ekte flyten); scrollposisjonen settes
+  //   mens den er ute — ingen scrolling inne i telefonen.
+  //   Scene 2 — Dato og tid i FAST scrollposisjon (de nederste ukene, klokkeslettene og knappen i skjermen): fredagen t16
+  //   (klokkeslettene kommer, som på den ekte siden), 11:00 t23, «Opplysninger →» aktiv t27, trykk t33. Ferdig før t40.
+  var V2MND=['Januar','Februar','Mars','April','Mai','Juni','Juli','August','September','Oktober','November','Desember'];
+  var v2s1=$('ksV2S1'),v2s2=$('ksV2S2'),v2li1=$('ksV2Li1'),v2li2=$('ksV2Li2'),v2cta1=$('ksV2Cta1'),v2tider=$('ksV2Tider'),
+      v2tid=$('ksV2Tid'),v2valgt=$('ksV2Valgt'),v2next=$('ksNext2'),v2fri=null,v2steg=-1,
+      v2frame=v2s1?v2s1.closest('.frame'):null,v2maks=0;
+  // Scene 2 står scrollet helt ned (steg 2 er høyere enn skjermen, som på den ekte siden i 844 px). Avstanden MÅLES
+  // (innholdets høyde + toppinnrykk − skjermhøyden i 390-design, 848), den gjettes ikke.
+  function v2Maks(){ if(!v2maks&&v2frame&&v2frame.offsetHeight)v2maks=Math.max(0,v2frame.offsetHeight+50-848+12); return v2maks; }
+  (function(){
+    if(!v2s1)return;
+    var I=new Date();I.setHours(0,0,0,0);
+    var y=FRI.getFullYear(),m=FRI.getMonth(),n=new Date(y,m+1,0).getDate(),forst=(new Date(y,m,1).getDay()+6)%7;
+    var mnd=$('ksV2Mnd'); mnd.textContent=V2MND[m]+' '+y;
+    var forrige=mnd.parentNode.querySelector('[data-mon="-1"]');
+    if(forrige){ if(y===I.getFullYear()&&m===I.getMonth())forrige.setAttribute('disabled','');else forrige.removeAttribute('disabled'); }
+    var h='';for(var k=0;k<forst;k++)h+='<span class="bhq-dv-tom" aria-hidden="true"></span>';
+    for(var d=1;d<=n;d++){var dt=new Date(y,m,d),stengt=dt<I||dt.getDay()===0;   // Grand Barber: stengt søndag
+      h+='<button class="bhq-dv-dag'+(+dt===+I?' er-idag':'')+'" type="button"'+(stengt?' disabled':'')+(+dt===+FRI?' id="ksV2Fri"':'')+'>'+d+'</button>';}
+    $('ksV2Dager').innerHTML=h; v2fri=$('ksV2Fri');
+    var dag=WD[FRI.getDay()]+' '+FRI.getDate()+'. '+MO[FRI.getMonth()];
+    $('ksV2TidDag').textContent=dag; v2valgt.textContent='Valgt: '+dag+' kl. 11:00';
+  })();
+  function v2bTick(t){
+    if(!v2s1)return;
+    function s(a,b){var x=(t-a)/(b-a);return x<0?0:x>1?1:x;}
+    var steg=t>=12?2:1;
+    v2frame.style.opacity=steg===1?(1-s(10,12)):s(12,14);   // sideskiftet: ut t10–12, inn t12–14
+    v2s1.style.visibility=steg===2?'hidden':''; v2s2.style.visibility=steg===1?'hidden':'';
+    v2cta1.style.opacity=(t>=8&&t<10)?'.82':'';                 // trykk på «Velg dato og tid →»
+    if(steg!==v2steg){ v2steg=steg;
+      v2li1.className=steg===2?'done':'active'; v2li2.className=steg===2?'active':'';
+      v2li1.innerHTML=(steg===2?'':'<span class="v2-skjult">Steg 1 av 3: </span>')+'Tjeneste';
+      v2li2.innerHTML=(steg===2?'<span class="v2-skjult">Steg 2 av 3: </span>':'')+'Dato og tid';
+      if(steg===2){v2li1.removeAttribute('aria-current');v2li2.setAttribute('aria-current','step');}
+      else{v2li1.setAttribute('aria-current','step');v2li2.removeAttribute('aria-current');} }
+    if(v2fri){v2fri.classList.toggle('er-valgt',t>=16);v2fri.setAttribute('aria-pressed',t>=16?'true':'false');}
+    v2tider.style.opacity=s(16,18);
+    v2tid.classList.toggle('chosen',t>=23);
+    v2valgt.style.opacity=s(23,26);
+    v2next.style.opacity=s(27,31)*(1-.18*s(33,36));
+    var rull=steg===2?v2Maks():0;                               // fast posisjon i scene 2 — ingen bevegelse
+    v2frame.style.transform=rull>0?'translateY('+(-rull).toFixed(1)+'px)':'';
+  }
+  v2bTick(1e3);   // sluttilstand som standard (no-JS/reduced-motion); scenen setter riktig t når den bygges.
   // #ksCal (steg 2) = SAMME rike full-dags-kalender som hero: 10:00–15:00, 10 bookinger, datostripe med
   // antall. Gjenbruker ks-cal-strukturen (320-design + pv-scale, definert høyde). Blokkene er synlige (.ks-in).
   (function(){
@@ -1233,20 +1187,26 @@ window.PinInit=(function(){
         RSVC={Skinfade:'#4d8bff',Saksklipp:'#3ecf7e',BarneKlipp:'#e0844a'},RDEMO={0:0,1:5,2:4,3:6,4:7,5:8,6:9},
         RBOOK=[{n:'Mehmet D.',s:'Skinfade',a:600,b:625},{n:'Khaled N.',s:'Saksklipp',a:625,b:650},{n:'Mahmoud S.',s:'BarneKlipp',a:650,b:675},{n:'Ali F.',s:'Skinfade',a:675,b:700},{n:'Ahmed O.',s:'Skinfade',a:720,b:750},{n:'Henrik M.',s:'Saksklipp',a:750,b:780},{n:'Nabil D.',s:'BarneKlipp',a:780,b:810},{n:'Jonas B.',s:'Skinfade',a:810,b:840},{n:'Usman M.',s:'Saksklipp',a:840,b:870},{n:'Emre Y.',s:'BarneKlipp',a:870,b:900},{n:'Yusuf K.',s:'Skinfade',a:900,b:925},{n:'Omar T.',s:'Saksklipp',a:930,b:960},{n:'Bilal R.',s:'BarneKlipp',a:960,b:985},{n:'Sami H.',s:'Skinfade',a:990,b:1020}];
     function rp(n){return(n<10?'0':'')+n;} function rhhmm(m){return Math.floor(m/60)+':'+rp(m%60);}
-    $('ksCalDateBtn').textContent=WD[FRI.getDay()]+' '+FRI.getDate()+'. '+MO[FRI.getMonth()];
-    $('ksCalDayhead').textContent=WDU[FRI.getDay()]+' '+FRI.getDate()+'. '+MO[FRI.getMonth()].toUpperCase();
+    // Tekstene som dashbordet: datoknappen = calHeadText (I dag / «Fredag 20. nov»), «I dag»-knappen bare når valgt dag ≠ i dag,
+    // dagsoverskriften = dayHead (I dag / I morgen / «FRE 20. NOV»), blå (is-today) bare for dagens dato.
+    var RDAG=['Søndag','Mandag','Tirsdag','Onsdag','Torsdag','Fredag','Lørdag'],RI=new Date();RI.setHours(0,0,0,0);
+    var rdiff=Math.round((FRI-RI)/86400000);
+    $('ksCalDateBtn').textContent=rdiff===0?'I dag':RDAG[FRI.getDay()]+' '+FRI.getDate()+'. '+MO[FRI.getMonth()];
+    $('ksCalToday').hidden=(rdiff===0);
+    var rh=$('ksCalDayhead'); rh.textContent=rdiff===0?'I dag':rdiff===1?'I morgen':WDU[FRI.getDay()]+' '+FRI.getDate()+'. '+MO[FRI.getMonth()].toUpperCase();
+    rh.classList.toggle('is-today',rdiff===0);
     var cs=$('ksCalStrip');cs.innerHTML='';
     for(var j=-1;j<=5;j++){var d=new Date(FRI);d.setDate(FRI.getDate()+j);var isSel=(j===0),cnt=(d.getDay()===0?0:(isSel?14:RDEMO[d.getDay()]));
-      var c=document.createElement('div');c.className='ks-chip'+(isSel?' active is-today':'');
+      var c=document.createElement('div');c.className='ks-chip'+(isSel?' active':'')+(+d===+RI?' is-today':'');
       c.innerHTML='<span class="ks-chip-wd">'+WDU[d.getDay()]+'</span><span class="ks-chip-d">'+d.getDate()+'</span><span class="ks-chip-count">'+(cnt||'')+'</span>';cs.appendChild(c);}
     var ax=$('ksCalAxis');ax.innerHTML='';for(var m=RSTART;m<REND;m+=60){var e=document.createElement('div');e.className='ks-hour';e.style.height=(60*PPM)+'px';e.innerHTML='<span>'+rhhmm(m)+'</span>'+((m+30<REND)?'<span class="ks-half">'+rhhmm(m+30)+'</span>':'');ax.appendChild(e);}
     var body=$('ksCalBody');body.innerHTML='';body.style.height=((REND-RSTART)*PPM)+'px';body.style.position='relative';
     for(var mm=RSTART;mm<REND;mm+=60){var l=document.createElement('div');l.className='ks-hourline';l.style.top=((mm-RSTART)*PPM)+'px';body.appendChild(l);var hf=mm+30;if(hf<REND){var hl=document.createElement('div');hl.className='ks-halfline';hl.style.top=((hf-RSTART)*PPM)+'px';body.appendChild(hl);}}
     RBOOK.forEach(function(bk){var d=document.createElement('div');d.className='ks-block ks-in';d.style.top=((bk.a-RSTART)*PPM)+'px';d.style.height=((bk.b-bk.a)*PPM)+'px';d.style.setProperty('--ks-blk',RSVC[bk.s]);
-      d.innerHTML='<div class="ks-blk-top"><span class="ks-blk-name">'+bk.n+'</span><span class="ks-blk-time">'+rhhmm(bk.a)+'</span></div><span class="ks-blk-svc">'+bk.s+'</span>';body.appendChild(d);});
+      d.innerHTML='<div class="ks-blk-top"><span class="ks-blk-name">'+bk.n+'</span><span class="ks-blk-time">'+rhhmm(bk.a)+'–'+rhhmm(bk.b)+'</span></div><span class="ks-blk-svc">'+bk.s+'</span>';body.appendChild(d);});
   })();
   $('ksLsDate').textContent=WDF[THU.getDay()]+' '+THU.getDate()+'. '+MOF[THU.getMonth()];
-  $('ksLsMsg').textContent='Hei Marcus! Minner om timen din hos Grand Barber i morgen kl 11:00.';
+  $('ksLsMsg').textContent='Hei Marcus! Minner om timen din hos Grand barber i morgen kl 11:00.';   // navnet slik prod skriver det (= bookingklonen)
 
   // Lojalitet-stempler (portert fra diag7-harness) — bygges alltid, brukes kun i animert sti.
   (function(){var w=$('loStamps');if(!w)return;for(var i=0;i<10;i++){var d=document.createElement('div');d.className='lostamp'+(i===9?' tenth':'');d.id='loS'+i;d.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="#fff" stroke-width="3.4" stroke-linecap="round" stroke-linejoin="round"><path d="M20 6L9 17l-5-5"/></svg>';w.appendChild(d);}})();
@@ -1290,8 +1250,8 @@ window.PinInit=(function(){
     if(ksHeroEl)gsap.set('#ksHero',{xPercent:0});   // #ksHero (hero-kalender) synlig ved t=0; driveren glir den ut under reisen
     gsap.set(phone,{opacity:1,y:0}); gsap.set('#ksBg',{opacity:0});   // telefonen ER til stede fra t=0 (kom fra hero)
     gsap.set('.ks-step',{opacity:0,y:0}); gsap.set('.ks-step[data-step="0"]',{opacity:1,y:0});
-    gsap.set('#ksSlotsHdr',{opacity:0}); gsap.set('#ksSlotsGrid',{opacity:0}); gsap.set('#ksNext2',{opacity:0}); gsap.set('#ksSlotHint',{opacity:1});
-    gsap.set('#ksBadgeA',{opacity:0}); gsap.set('#ksBadgeB',{opacity:0}); gsap.set('#ksStatus',{opacity:1,color:'#0a0a0a'});   // badge skjult under reisen; status mørk (booking-baseline)
+    // (Bookingtelefonens starttilstand settes av v2bTick(0) via frame() — ingen gsap.set her.)
+    gsap.set('#ksBadgeA',{opacity:0}); gsap.set('#ksBadgeB',{opacity:0}); gsap.set('#ksStatus',{opacity:1,color:'#ffffff'});   // badge skjult under reisen; status hvit (v2-bookingen er mørk)
     gsap.set('#ksNav1',{opacity:0});   // stegnav skjult under reisen (desktop), fader inn ved landing
     gsap.set('#ksBlock',{opacity:0}); gsap.set('#ksBlkGlow',{opacity:0});
     if(isD){navBtns.forEach(function(b,ix){gsap.set(b,{color:ix===0?WHITE:DIM});});}
@@ -1386,10 +1346,8 @@ window.PinInit=(function(){
     if(isD){tl.fromTo('#ksNav1',{opacity:0},{opacity:1,duration:8},0);}
     // STEG 1: tekst inn (y 20→0), så bookingmarkeringer. PAUSE ~36-40.
     tl.fromTo('.ks-step[data-step="0"]',{y:20,opacity:0},{y:0,opacity:1,duration:7},8);
-    tl.to('#ksSlotHint',{opacity:0,duration:4},16).to('#ksSlotsHdr',{opacity:1,duration:4},16).to('#ksSlotsGrid',{opacity:1,duration:4},16);
-    tl.to(friChip,{borderColor:ACC,backgroundColor:'rgba(0,113,227,.12)',duration:4},16);
-    tl.to(slot11,{borderColor:ACC,color:ACC,duration:4},23);
-    tl.to('#ksNext2',{opacity:1,duration:4},27).to('#ksNext2',{opacity:.82,duration:3},33);
+    // Bookingtelefonen (v2): dag t16, klokkeslett t23, «Opplysninger →» t27, trykk t33 — drives av v2bTick(t) i frame()
+    // (ren funksjon av t, samme takt som v1-klonens tweens). Steg 1 → 2 («Velg dato og tid →») skjer t10–14.
     // OVERGANG 1→2 (40-49): tekst ut (y -12) med OVERLAPP, skjerminnhold bytter, merkelapp. Telefonkropp ~stille (≤6px).
     tl.to('.ks-step[data-step="0"]',{y:-12,opacity:0,duration:6},40);
     tl.fromTo('.ks-step[data-step="1"]',{y:20,opacity:0},{y:0,opacity:1,duration:7},44);
@@ -1571,7 +1529,7 @@ window.PinInit=(function(){
       if(phoneTravel){phoneTravel.classList.remove('is-travelling');phoneTravel.classList.remove('is-docked');gsap.set(phoneTravel,{clearProps:'all'});
         if(phoneSlot)phoneSlot.appendChild(phoneTravel);}   // tilbake i sloten (statisk plass) før ev. ny matchMedia-oppbygging
       gsap.set(['#ksHero','#ksBook'],{clearProps:'all'});
-      tl.kill();st.kill();loTl.kill();loReset();gsap.set([phone,'.ks-step','#ksBook','#ksCal','#ksSms','#ksBlock','#ksBlkGlow','#ksBg','#ksNext2','#ksSlotHint','#ksSlotsHdr','#ksSlotsGrid','#ksStatus','#ksBadgeA','#ksBadgeB','#ksH2','#ksH2b','#ksNav1','#ksNav2','#ksDiagrams','.ks-badge',friChip,slot11].concat(navBtns).concat(navBtns2),{clearProps:'all'});};
+      tl.kill();st.kill();loTl.kill();loReset();gsap.set([phone,'.ks-step','#ksBook','#ksCal','#ksSms','#ksBlock','#ksBlkGlow','#ksBg','#ksNext2','#ksStatus','#ksBadgeA','#ksBadgeB','#ksH2','#ksH2b','#ksNav1','#ksNav2','#ksDiagrams','.ks-badge',friChip,slot11].concat(navBtns).concat(navBtns2),{clearProps:'all'});};
    });
   }
   // Registrer scenen til den felles pin-init-en (bygges i DOM-rekkefølge, ÉN refresh — se PinInit øverst).

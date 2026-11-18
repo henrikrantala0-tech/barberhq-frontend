@@ -1,0 +1,97 @@
+/* ===== Selvbooking-telefonen: v2-bookingen (Grand Barber) — GENERERT av _utkast/ks-v2book/bygg.mjs, ikke rediger for hånd.
+   Kilde: den ekte v2-bookingsiden i prod 18.11.2026 (sidens egen <style>), scopet til .ks-scene .v2b. ===== */
+.ks-scene .v2b{--bg: #0c0c0c; --surface: #161616; --ink: #f5f5f5; --muted: #a3a3a3; --line: #2a2a2a; --line-2: #3a3a3a; --accent: #4d8bff; --accent-ink: #141210; --accent-text: #4d8bff; --accent-soft: #182338; --danger: #d94b3f; --r: 12px; --r-sm: 10px; --bilde-kant: transparent; color-scheme: dark;}
+.ks-scene .v2b{--space-1: 4px; --space-2: 8px; --space-3: 12px; --space-4: 16px; --space-5: 20px; --space-6: 24px; --space-7: 32px; --fs-display: 34px; --fs-title: 22px; --fs-small: 13px; --fs-micro: 12px; --touch-min: 44px; --valgt-flate: color-mix(in srgb,var(--accent) 16%,transparent); --valgt-kant: color-mix(in srgb,var(--accent) 45%,transparent);}
+.ks-scene .v2b *{box-sizing: border-box; margin: 0px; padding: 0px;}
+.ks-scene .v2b{text-size-adjust: 100%;}
+.ks-scene .v2b{font-family: Inter, system-ui, -apple-system, sans-serif; background: var(--bg); color: var(--ink); line-height: 1.5; font-size: 15px; -webkit-font-smoothing: antialiased; min-height: 848.00px;}
+.ks-scene .v2b button{font: inherit; color: inherit; background: none; border: 0px; cursor: pointer;}
+.ks-scene .v2b button:disabled{cursor: default;}
+.ks-scene .v2b a{color: inherit; text-decoration: none;}
+.ks-scene .v2b :focus:not(.tab-fokus){outline: none;}
+.ks-scene .v2b .frame{width: 100%; max-width: 520px; margin: 0px auto; padding: 0px 16px 40px;}
+.ks-scene .v2b .v2-tjenester{display: flex; flex-direction: column; gap: 0px;}
+.ks-scene .v2b .v2-tj{display: flex; align-items: center; gap: 12px; width: 100%; padding: 14px 0px; border-top: 0px; border-right: 0px; border-left: 0px; border-image: initial; border-bottom: 1px solid var(--line); background: none; text-decoration: none; color: inherit; text-align: left; border-radius: 0px;}
+.ks-scene .v2b .v2-tjenester > .v2-tj:last-of-type{border-bottom: 0px;}
+.ks-scene .v2b .v2-tj-navn{flex: 1 1 0%; min-width: 0px; font-weight: 500; font-size: 15px; color: var(--ink); overflow-wrap: anywhere;}
+.ks-scene .v2b .v2-tj-min{display: block; font-size: 12px; color: var(--muted); font-weight: 400; margin-top: 2px;}
+.ks-scene .v2b .v2-tj-pris{font-weight: 600; font-size: 14px; color: var(--ink); white-space: nowrap;}
+.ks-scene .v2b .v2-tj-hake{display: grid; place-items: center; width: 22px; height: 22px; border-radius: 6px; border: 1px solid var(--line-2); background: transparent; flex: 0 0 auto; font-size: 12px; font-weight: 700; color: transparent;}
+.ks-scene .v2b .service.selected .v2-tj-hake,.ks-scene .v2b .flow-addon.sel .v2-tj-hake{background: var(--valgt-flate); border-color: var(--valgt-kant); color: var(--accent-text);}
+.ks-scene .v2b .service.selected .v2-tj-navn{font-weight: 600;}
+.ks-scene .v2b .service.selected .v2-tj-pris{font-weight: 700;}
+.ks-scene .v2b .flow{padding-bottom: 8px;}
+.ks-scene .v2b .flow-nav{display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 14px 0px 10px;}
+.ks-scene .v2b .back-link{display: inline-flex; align-items: center; gap: 6px; font-size: 13px; font-weight: 500; color: var(--muted); padding: 6px 0px;}
+.ks-scene .v2b .back-link:hover{color: var(--ink);}
+.ks-scene .v2b .flow-brand{font-family: PlusJakartaSans, Inter, sans-serif; font-weight: 700; font-size: 18px; letter-spacing: -0.01em; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; min-width: 0px; max-width: 62%; text-align: right;}
+.ks-scene .v2b .steps{display: flex; align-items: center; gap: var(--space-2); list-style: none; padding: var(--space-3) 0 var(--space-5); font-size: var(--fs-micro); color: var(--muted); overflow: hidden;}
+.ks-scene .v2b .steps li{display: flex; align-items: center; gap: var(--space-2); min-width: 0px; white-space: nowrap;}
+.ks-scene .v2b .steps li + li::before{content: "→" / ""; font-weight: 400; color: var(--muted);}
+.ks-scene .v2b .steps .active{color: var(--ink); font-weight: 600;}
+.ks-scene .v2b .v2-skjult{position: absolute; width: 1px; height: 1px; margin: -1px; padding: 0px; border: 0px; overflow: hidden; clip-path: inset(50%); white-space: nowrap;}
+.ks-scene .v2b .flow-title{font-size: 22px; font-weight: 600; line-height: 1.2; letter-spacing: -0.01em; margin: 4px 0px 20px; outline: none;}
+.ks-scene .v2b .booking header{padding: 0px 0px 10px;}
+.ks-scene .v2b .booking h2{font-size: 22px; font-weight: 600; letter-spacing: -0.01em;}
+.ks-scene .v2b .v2-tillegg{display: grid; grid-template-rows: 0fr; opacity: 0; transition: grid-template-rows 0.22s, opacity 0.18s;}
+.ks-scene .v2b .v2-tillegg.open{grid-template-rows: 1fr; opacity: 1;}
+.ks-scene .v2b .v2-tillegg-inner{overflow: hidden; min-height: 0px;}
+.ks-scene .v2b .v2-tillegg-panel{background: color-mix(in srgb,var(--ink) 7%,var(--bg)); border-radius: var(--r-sm); padding: 0 var(--space-4);}
+.ks-scene .v2b .service[aria-expanded="true"]{border-bottom-color: transparent;}
+.ks-scene .v2b .v2-tillegg.open{padding-bottom: var(--space-3); border-bottom: 1px solid var(--line);}
+.ks-scene .v2b .v2-tillegg-lbl{display: flex; justify-content: space-between; gap: var(--space-2); font-size: var(--fs-small); font-weight: 500; color: var(--ink); padding: var(--space-3) 0 var(--space-1);}
+.ks-scene .v2b .v2-tillegg-lbl span{font-size: 12px; font-weight: 400; color: var(--muted);}
+.ks-scene .v2b .v2-tj-tillegg{padding: 10px 0px; gap: 10px;}
+.ks-scene .v2b .v2-tj-tillegg .v2-tj-navn{font-size: 14px; font-weight: 500;}
+.ks-scene .v2b .v2-tj-meta{font-size: 13px; color: var(--muted); white-space: nowrap;}
+.ks-scene .v2b .v2-tj-hake.liten{width: 22px; height: 22px; font-size: 12px; border: 1px solid var(--line-2); border-radius: 6px;}
+.ks-scene .v2b .v2-tj-tillegg{min-height: 52px; flex-wrap: wrap;}
+.ks-scene .v2b .v2-tj-meta{white-space: normal;}
+.ks-scene .v2b .flow-addon.sel .v2-tj-navn{font-weight: 600;}
+.ks-scene .v2b .v2-tillegg .v2-tj:last-of-type{border-bottom: 0px;}
+.ks-scene .v2b .primary{position: relative; display: flex; align-items: center; justify-content: center; gap: 8px; width: 100%; min-height: 52px; padding: 14px 48px; border-radius: 12px; background: var(--accent); color: var(--accent-ink); font-weight: 500; font-size: 15px; line-height: 1.4; margin-top: 18px; transition: filter 0.16s, transform 0.16s;}
+.ks-scene .v2b .primary > span[aria-hidden="true"]{position: absolute; right: 20px; font-size: 20px; line-height: 1; font-weight: 400;}
+.ks-scene .v2b .primary:active:not(:disabled){transform: translateY(1px); filter: brightness(0.94);}
+.ks-scene .v2b .primary:hover:not(:disabled){filter: brightness(1.05);}
+.ks-scene .v2b .primary:disabled{background: var(--line); color: var(--muted); opacity: 1; filter: none;}
+.ks-scene .v2b .text-link{font-size: 13px; font-weight: 500; color: var(--accent-text); padding: 4px 0px;}
+.ks-scene .v2b .flow-action{margin-top: 4px;}
+.ks-scene .v2b .flow-foot{font-size: 12px; color: var(--muted); text-align: center; margin-top: 14px;}
+.ks-scene .v2b .service-recap{display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 0px 0px 18px; border: 0px; background: transparent; margin: 0px;}
+.ks-scene .v2b .service-recap .text-link{min-height: 44px; flex-shrink: 0;}
+.ks-scene .v2b .service-recap strong{display: block; font-size: 14px; font-weight: 500;}
+.ks-scene .v2b .service-recap small{font-size: 12px; color: var(--muted);}
+.ks-scene .v2b .calendar{padding: 14px 0px 10px; border-right: 0px; border-bottom: 0px; border-left: 0px; border-image: initial; border-top: 1px solid var(--line); border-radius: 0px; background: transparent; margin-bottom: 14px;}
+.ks-scene .v2b .bhq-dv{--dv-tekst: var(--ink); --dv-dempet: var(--muted); --dv-linje: var(--line); --dv-linje-2: var(--line-2); --dv-hover: var(--accent-soft); --dv-valgt-flate: var(--valgt-flate); --dv-valgt-kant: var(--valgt-kant); --dv-valgt-tekst: var(--accent-text);}
+.ks-scene .v2b :where(.bhq-dv),.ks-scene .v2b :where(.bhq-dv) *{box-sizing: border-box;}
+.ks-scene .v2b :where(.bhq-dv) button{font: inherit; color: inherit; background: none; border: 0px; padding: 0px; margin: 0px; cursor: pointer;}
+.ks-scene .v2b :where(.bhq-dv) button:disabled{cursor: default;}
+.ks-scene .v2b :where(.bhq-dv) h3,.ks-scene .v2b :where(.bhq-dv) p{margin: 0px;}
+.ks-scene .v2b .bhq-dv-topp{display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px;}
+.ks-scene .v2b .bhq-dv-topp h3{font-size: 15px; font-weight: 600;}
+.ks-scene .v2b .bhq-dv-piler{display: flex; gap: 6px;}
+.ks-scene .v2b .bhq-dv-piler button{width: 32px; height: 32px; min-width: 44px; min-height: 44px; border-radius: 50%; border: 1px solid var(--dv-linje,color-mix(in srgb,currentColor 14%,transparent)); display: grid; place-items: center; font-size: 14px; color: var(--dv-tekst,currentColor);}
+.ks-scene .v2b .bhq-dv-piler button:disabled{opacity: 0.3;}
+.ks-scene .v2b .bhq-dv-ukedager,.ks-scene .v2b .bhq-dv-dager{display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px;}
+.ks-scene .v2b .bhq-dv-ukedager span{text-align: center; font-size: 11px; color: var(--dv-dempet,color-mix(in srgb,currentColor 55%,transparent)); padding: 4px 0px;}
+.ks-scene .v2b .bhq-dv-dag{min-height: 44px; border-radius: 10px; font-size: 14px; font-weight: 500; display: grid; place-items: center; color: var(--dv-tekst,currentColor);}
+.ks-scene .v2b .bhq-dv-dag:hover:not(:disabled):not(.er-valgt){background: var(--dv-hover,color-mix(in srgb,currentColor 8%,transparent));}
+.ks-scene .v2b .bhq-dv-dag:disabled{color: var(--dv-dempet,color-mix(in srgb,currentColor 55%,transparent)); opacity: 0.35;}
+.ks-scene .v2b .bhq-dv-dag.er-idag:not(.er-valgt){box-shadow: inset 0 0 0 1px var(--dv-linje-2,color-mix(in srgb,currentColor 28%,transparent));}
+.ks-scene .v2b .bhq-dv-dag.er-valgt{background: var(--dv-valgt-flate,color-mix(in srgb,currentColor 16%,transparent)); color: var(--dv-valgt-tekst,currentColor); box-shadow: inset 0 0 0 1px var(--dv-valgt-kant,color-mix(in srgb,currentColor 45%,transparent)); font-weight: 600;}
+.ks-scene .v2b .bhq-dv-tom{display: block;}
+.ks-scene .v2b .bhq-dv-fot{font-size: 12px; color: var(--dv-dempet,color-mix(in srgb,currentColor 55%,transparent)); margin-top: 10px; text-align: center;}
+.ks-scene .v2b .time-panel{margin-bottom: 8px;}
+.ks-scene .v2b .time-heading{display: flex; align-items: baseline; justify-content: space-between; margin: 0px 0px 10px;}
+.ks-scene .v2b .time-heading h3{font-size: 15px; font-weight: 600;}
+.ks-scene .v2b .time-heading span{font-size: 12px; color: var(--muted);}
+.ks-scene .v2b .time-grid{display: grid; grid-template-columns: repeat(3, 1fr); gap: 8px;}
+.ks-scene .v2b .time{padding: 11px 0px; border: 1px solid var(--line); border-radius: var(--r-sm); background: var(--surface); font-size: 14px; font-weight: 500; text-align: center; color: var(--ink);}
+.ks-scene .v2b .time:hover{border-color: var(--line-2);}
+.ks-scene .v2b .time.chosen{background: var(--valgt-flate); border-color: var(--valgt-kant); color: var(--accent-text); font-weight: 600;}
+.ks-scene .v2b .selection-line{font-size: 13px; color: var(--muted); margin-top: 12px;}
+.ks-scene .v2b .time{min-height: 48px;}
+.ks-scene .v2b .v2-tj-description{display: block; font-size: 14px; font-weight: 400; line-height: 1.45; color: var(--muted); margin: 4px 0px;}
+.ks-scene .v2b .flow-footer{margin: calc(var(--space-7) + var(--space-2)) 0 0; display: flex; flex-wrap: wrap; justify-content: center; align-items: center; column-gap: var(--space-1); font-size: var(--fs-micro); color: var(--muted);}
+.ks-scene .v2b .flow-footer a{display: inline-flex; align-items: center; min-height: var(--touch-min); color: inherit; text-decoration: underline color-mix(in srgb, currentcolor 40%, transparent); text-underline-offset: 0.2em;}
+.ks-scene .v2b .flow-footer a:hover{color: var(--ink);}
