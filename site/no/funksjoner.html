@@ -630,10 +630,15 @@ html{overflow-x:clip}
 /* ==================== FÅ KUNDER TILBAKE — diagram-overlay (samme pin) ==================== */
 /* Diagrammene ligger over telefon-posisjonen i .ks-phonewrap. opacity:0 til overgangen. */
 .ks-scene .ks-phonewrap{position:relative}
-.ks-diagrams{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%);width:440px;pointer-events:none;opacity:0;z-index:2}
+/* Diagrammene ERSTATTER telefonen visuelt, så de forankres til telefonplassen (.ks-phonewrap = slot + merkelapp) og skaleres
+   ned til den når de er høyere (--dia-s, målt i fitDia ved hver refresh). Før: sentrert i hele .ks-inner og i egen høyde →
+   @320×568 var Vinn tilbake-kortet 393 px mot en telefonplass på 311 px, og Mathias Lund-raden lå 12 px over «Vinn tilbake»-
+   teksten. (Og med tittelen i flyten ville sentrum i .ks-inner flyttet diagrammene opp mot tittelen.) 18.11.2026 */
+.ks-phonewrap{position:relative}
+.ks-diagrams{position:absolute;left:50%;top:50%;transform:translate(-50%,-50%) scale(var(--dia-s,1));width:440px;pointer-events:none;opacity:0;z-index:2}
 /* Desktop: høyre-forankret til telefonens høyre kant → samme luft til stegteksten som i
    Kjernefunksjoner (var 4px for lojalitet/vinn tilbake, nå ≥54px). Klar av stegnavet til venstre. */
-@media(min-width:900px){.ks-diagrams{left:50%;transform:translate(-50%,-50%);width:380px}}   /* diagram sentrert på telefonplassen = midt på siden, som tittelen */
+@media(min-width:900px){.ks-diagrams{left:50%;transform:translate(-50%,-50%) scale(var(--dia-s,1));width:380px}}   /* diagram sentrert på telefonplassen = midt på siden, som tittelen */
 .ks-diagrams .dia{position:absolute;left:0;right:0;top:50%;transform:translateY(-50%);opacity:0}
 .ks-diagrams .dsvg{width:100%;height:auto;display:block;overflow:visible}
 .ks-diagrams .edge{stroke:#2b2b33;stroke-width:2;fill:none;stroke-linecap:round}
