@@ -23,7 +23,9 @@ const LANDING  = 'index';
 const BLOKKER = {
   'nav-links': /<div class="nav-links">[\s\S]*?<\/div>/,
   'nav-panel': /<div class="nav-panel"[^>]*>[\s\S]*?<\/div>/,
-  'footer':    /<footer[\s\S]*?<\/footer>/,
+  // Sidens EGEN footer (footer.foot). Ikke «første <footer>»: funksjoner.html har en klon av bookingsiden i Selvbooking-
+  // telefonen med sin egen <footer class="flow-footer"> («Bygget med BarberHQ»), som da ble lest som sidefooteren (18.11.2026).
+  'footer':    /<footer class="foot">[\s\S]*?<\/footer>/,
 };
 
 function lenker(side, re) {

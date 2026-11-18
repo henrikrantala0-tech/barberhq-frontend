@@ -138,8 +138,7 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
   - **Nye barbere får ALLTID v2** (backend `61cc558`, 23.10.2026): `startverdierForNyBarber()` gir `sidemal:'v2'`,
     og kolonne-defaulten er `'v2'` (migrasjon 087). «Nye får v1 til Grand Barber er godkjent» gjelder ikke lenger.
   - **Ingen «Lagre endringer» i v2** — autolagring (over) har erstattet den. Ikke skriv «Lagre endringer» i markedstekst
-    eller hjelpetekst. (Utdaterte kode-KOMMENTARER som fortsatt nevner den: `dinside-v2.js` ved `bygg()`,
-    `dinside-v2.css` øverst, `dashboard.html` ved v2-oppsettlenka — koden selv har ingen slik knapp.)
+    eller hjelpetekst, heller ikke i kode-kommentarer (de tre siste ble rettet 18.11).
 - **Oversikt = uke-rekord-akse; Vekst = måned-rekord-akse.** Persentil + progress-bar bor
   på Oversikt og er UKE-relative (måned har for få datapunkter for meningsfull persentil;
   uke-jakt gir hyppigere motivasjon). «Beste måned» (+ gullstolpe-på-rekord-måned) hører til
@@ -233,18 +232,70 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
 - **Scenen `#dineegenside`** viser v2: fire steg Profil → Utseende → Bilder → Kontakt på ÉN pin, ren krysstoning (scrub).
   Hvert steg = ekte dashbord-skjermbilde (`images/ds2-dash-*.webp`, tegnet fra `dinside-v2.js` med mocket API og Grand
   Barbers prod-data) + ekte bookingside-skjermbilde fra prod (`images/ds2-side-*.webp`, kun GET). Ingen layouter/stiler/paletter.
-- **Utseende-bildet viser bare Grand Barbers ekte aksent** (`#4d8bff`). Aksenten kan IKKE byttes i et skjermbilde ved å
-  sette én CSS-variabel: `v2-css.cjs` avleder `--accent-ink` (knappetekst etter kontrast), `--accent-text` (mørknet til
-  ≥ 4,5 kontrast) og `--accent-soft` (blanding) på serveren. Andre aksenter krever ekte server-render.
+- **Utseende-steget toner blå → gull → rød** (begge rammene, `.des-lag`, styrt av desTick — pinnen er ikke lengre; reduced-motion:
+  gull). Bookingbildene er prod-siden med backendens EGNE `v2Tokens()` lagt på `:root` (alle variablene: `--accent`,
+  `--accent-ink`, `--accent-text`, `--accent-soft` …). ⚠ Aksenten kan IKKE byttes ved å sette én variabel: `v2-css.cjs` avleder
+  knappetekst (kontrast), lesbar tekstfarge (≥ 4,5) og blandingsflate på serveren — bruk alltid hele `v2Tokens().vars`.
 - **Pinnen er så høy som innholdet** og sentreres i synsfeltet (`startPx`). Tidligere var den 100vh med kortere innhold →
   restplassen ble liggende over «Klar for din egen side?» når pinnen slapp. `margin-top:12vh` på scenen er fjernet (den la seg
   oppå den tomme bunnen i Kjernefunksjoner-pinnen).
-- **Gjenstående tomrom under «Få kunder tilbake»** (165 px @375, 263 px @1280): `#ksPin` er 100vh med midtstilt innhold.
-  Samme fiks (pin = innholdshøyde) er IKKE gjort der, fordi J-krok-telefonen (låst) lander i `#ksPhoneSlot` inni den pinnen.
 - **CTA-en vokser** 0,85 → 1 (opacity 0,55 → 1) fra seksjonens topp når bunnen av synsfeltet til den står midt i skjermen:
   egen passiv scroll-lytter + rAF, bare transform/opacity, måler mot `visualViewport` (iOS Safari). Reduced-motion: ingenting.
   Toppavstand = vanlig seksjonsavstand (56/48). Knappen 17,5 px / 18×44.
-- Vakt: `node tools/render/funksjoner-v2.mjs` (steg, tekster, bilder lastet, pin i synsfeltet, tomrom, CTA-skala, reduced-motion).
+- Vakt: `node tools/render/funksjoner-v2.mjs` (steg, tekster, bilder lastet, aksentlagene, pin i synsfeltet, tomrom, CTA-skala,
+  reduced-motion).
+
+## site/no/funksjoner.html — utjevning og ytelse (18.11.2026)
+- **Utjevning:** alle ScrollTrigger-scener har `scrub:0.6`. Kjernefunksjoner: `frame()` leser den UTJEVNEDE tidslinja
+  (`tl.eventCallback('onUpdate', frame)`); Din side og J-kroken bruker proxy-tweens (`desP`, `reise`) som ScrollTrigger tar myk.
+  CTA-en lerper (τ 110 ms) mot målet. `PinInit.snapp()` setter all utjevning rett på målet etter refresh (reload midt i siden
+  skal ikke «fly»). Testene bruker samme `PinInit.snapp()` etter hopp; J-krok-landingen måles etter EKTE innsvinging (< 0,3 px).
+- **J-kroken:** banen er uendret, bare utjevnet. Til dokk først når den utjevnede verdien er 0, og startpunktet følger hero-plassen
+  bare når man har scrollet tilbake over overgangen — ellers hopper telefonen mellom bane og hero-plass. ÉN betingelse for hvem
+  som eier skjermene: `landet()` (reisen helt fram). I det reisen lander, tegner driveren også `#ksBook` (`bookSkjerm`) — ellers
+  avhenger utfallet av om tidslinja eller reisen oppdaterte sist.
+- **Lenis** (`lenis@1.1.20`): KUN desktop (`hover:hover` + `pointer:fine`), aldri touch, aldri reduced-motion. `lenis.on('scroll',
+  ScrollTrigger.update)` + `gsap.ticker`. Programmatisk rulling via `window.bhqRullTil(y)`. ⚠ Lenis' egen `scrollTo` klemmer mot
+  en sidehøyde den måler asynkront (før pin-spacerne) — bruk nativ `scrollTo` + `lenis.resize()` når siden nettopp er bygget.
+- **Ankerlenke inn til siden (`#dineegenside`):** scenene er `display:none` til de er bygget og pinnene endrer layouten, så
+  nettleserens hopp ved lasting treffer feil. PinInit hopper selv etter HVER refresh (også ved `load`) til brukeren scroller.
+- **Skjermene i telefonen:** `content-visibility:hidden` når en skjerm er helt utenfor (`skjermSynlighet`), `will-change` bare mens
+  den glir. Målt: J-krok-overgangen (absolute → fixed) bygde layout for hele telefonen (822 av 1287 objekter) — 175 → 73 ms @4×.
+  Les ALDRI `gsap.getProperty(el,'opacity')` per bilde på et element GSAP ikke har satt (faller til getComputedStyle = tvungen stil).
+- **Skriv bare når verdien er endret** i scene-tikkene (`sv()` i Kjernefunksjoner): `textContent`/`setAttribute` hvert bilde ga
+  layout + maling i Få kunder tilbake (maling 340 → 111 ms, layout 106 → 33 ms @4×, 1280).
+- **Din side-bildene:** `srcset` 390w/780w (`ds2-*-390.webp`), forhåndsdekodet (`decode()`) 1,5 skjermhøyder før scenen.
+- **CTA-en:** geometrien bufres (refresh/resize); ingen `getBoundingClientRect` i rAF.
+- Profilering: engangsskript i scratchpad (Chrome-sporing, CPU 4×, jevn scroll, per scene). Tall i commit-meldingen.
+
+## site/no/funksjoner.html — Kjernefunksjoner-scenen (18.11.2026)
+- **Selvbooking-telefonen (`#ksBook`) er v2-bookingen**, GENERERT fra den ekte prod-siden: `node _utkast/ks-v2book/bygg.mjs --skriv`
+  scoper sidens egen `<style>` til `.ks-scene .v2b` og skriver CSS + markup mellom `KS-V2BOOK-*`-markørene. Ikke rediger der.
+  Byggeskriptet vurderer `@media` ved 390 px (telefon), regner vw/dvh om til px, dropper @font-face/@keyframes og regler som
+  ikke treffer klonen (basis-selektor, pseudo strippet), og avbryter ved viewport-enheter/`position:fixed` igjen. Kilden (prod,
+  kun GET, stoppet før Opplysninger) ligger i `_utkast/ks-v2book/kilde/`. Klonens egne regler står ETTER markørene (390-skala,
+  toppinnrykk for statuslinja, steg 1/2 i samme celle, aktiv knapp oppå den deaktiverte, klipp under statuslinja).
+- **To scener** (Henrik 18.11), drevet av `v2bTick(t)` i `frame()` som ren funksjon av t: scene 1 Velg tjeneste (Skinfade + Skjegg),
+  «Velg dato og tid →» trykkes t8–10 · sideskifte t10–14 (hele siden tones kort ut/inn, scrollposisjonen settes mens den er ute) ·
+  scene 2 Dato og tid i FAST scrollposisjon (nederste uker, klokkeslett og knapp i skjermen): fredagen t16 (klokkeslettene kommer,
+  som på den ekte siden), 11:00 t23, «Opplysninger →» aktiv t27, trykk t33. INGEN scrolling inne i telefonen. Ferdig før t40.
+- **Klokkeslettene settes av bygg.mjs** (kildens egen `button.time` klonet for hver tid, 11:00 valgt) — SMS-påminnelsen sier
+  «kl 11:00» og «Grand barber» (navnet slik prod skriver det). Statuslinja er hvit hele veien (alle fire skjermene er mørke).
+- **Skjermeiere i J-kroken:** før landing (`scrollY ≤ st.start`) setter reise-driveren `#ksHero`/`#ksBook` ut fra banen; etter
+  landing holder driveren `#ksHero` landet og `bookSkjerm(t)` i `frame()` eier `#ksBook` (ut t41–49). Samme betingelse begge
+  steder. Før (til 18.11) satte reisen skjermene bare fram til landing → reload/hopp midt i scenen lot hero-kalenderen stå.
+  Vakta laster siden på nytt og hopper midt i scenen (t20/t60, 375/1280).
+- **Kalenderen følger dashbordet** (byggCal): «I dag» (når valgt dag ≠ i dag) + «+» (Legg til booking) i topplinja, datoknapp
+  «Fredag 20. nov», dagsoverskrift blå bare for i dag, blokktid start–slutt.
+- **Pinnen = innholdets høyde, sentrert** (`ksPinTopp`), tittelen i flyten på alle bredder. J-krok-landingen (`measureTravel →
+  targetCy`) bruker SAMME `ksPinTopp()` — endres pin-starten, MÅ landingen følge. Målt etter: tittel → telefon 24 px på desktop
+  (var 137 px @1920×1080, 317 px @2560×1440); landing ≤ 0,3 px på 320–2560.
+- **«Få kunder tilbake»-diagrammene er forankret til telefonplassen** (`.ks-phonewrap`) og skaleres ned til den (`--dia-s`, `fitDia`
+  ved hver refresh). Før stakk Vinn tilbake-kortet 12 px inn i stegteksten @320×568.
+- **Gjenstående synlig luft** under «Få kunder tilbake» på desktop (~210 px): kortet står midt i telefonens plass (614 px høy),
+  og den tomme halvdelen under kortet er resten — ikke død plass i pinnen (vakta sjekker at pinnen ikke har noen).
+- Vakt: `node tools/render/funksjoner-ks.mjs` (tilstandene, klonen mot den ekte siden — beregnede stiler, 37 elementer —, kalenderen,
+  landing, pin, tomrom, diagram-overlapp).
 
 ## site/no/index.html — seksjonsrekkefølge (låst 26.06)
 1. Hero (`#top`)

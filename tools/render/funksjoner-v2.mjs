@@ -36,6 +36,11 @@ const STEG = ['Profil', 'Utseende', 'Bilder', 'Kontakt'];
 const V1_ORD = /16\s?777\s?216|Showcase|\bDirekte\b|\bHero\b|Klassisk|Signatur|\bModerne\b|Kraftig|\bLime\b|Lagre design|Lagre profil|Lagre endringer/;
 
 const browser = await chromium.launch();
+// Utjevning (scrub 0.6 / Lenis): etter et scroll-hopp settes scenene på målet med sidens egen PinInit.snapp(), så målingene
+// ser sluttilstanden uten å vente på at utjevningen glir dit.
+const hopp = async (page, y, ms = 250) => { await page.evaluate(y => scrollTo(0, y), y); await page.waitForTimeout(40);
+  await page.evaluate(() => { if (window.PinInit && PinInit.snapp) PinInit.snapp(); }); await page.waitForTimeout(ms); };
+
 const sjekker = []; const sjekk = (navn, ok, detalj='') => sjekker.push({ navn, ok:!!ok, detalj });
 const bilder = [];
 
@@ -51,7 +56,7 @@ async function aapne({ bredde, reduce = false }) {
   await page.goto(URL_, { waitUntil:'networkidle' });
   // Scroll gjennom siden så pin-spacerne og lazy-bildene er på plass, og tilbake.
   const H = await page.evaluate(() => document.documentElement.scrollHeight);
-  for (let y = 0; y < H; y += 300) { await page.evaluate(y => scrollTo(0, y), y); await page.waitForTimeout(12); }
+  for (let y = 0; y < H; y += 300) { await hopp(page, y, 12); }
   await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(250);
   return { ctx, page, errs, ute, hoyde };
 }
@@ -75,33 +80,49 @@ for (const bredde of [320, 375, 1280]) {
   const sideTekst = await page.evaluate(() => document.body.innerText);
   sjekk(`${tag}: ingen v1-ord på siden`, !V1_ORD.test(sideTekst), (sideTekst.match(V1_ORD) || [''])[0]);
   for (let i = 0; i < 4; i++) {
-    await page.evaluate(y => scrollTo(0, y), Math.round(pin.start + (pin.end - pin.start) * (i*100 + 50) / 400)); await page.waitForTimeout(250);
+    await hopp(page, Math.round(pin.start + (pin.end - pin.start) * (i*100 + 50) / 400), 250);
     const m = await page.evaluate(i => {
       const segs = [...document.querySelectorAll('#dineegenside .des-seg')].map(s => +getComputedStyle(s).opacity);
       const seg = document.querySelectorAll('#dineegenside .des-seg')[i];
       const aktiv = [...document.querySelectorAll('#dineegenside .des-step-btn')].filter(b => b.classList.contains('on')).map(b => b.textContent);
       const pinR = document.getElementById('desPin').getBoundingClientRect(), navH = document.querySelector('.nav').getBoundingClientRect().height;
-      const imgs = [...seg.querySelectorAll('img')].map(im => ({ ok: im.complete && im.naturalWidth === 780, src: im.getAttribute('src') }));
+      // srcset (390w / 780w): bildet skal være lastet og SKARPT NOK — naturlig bredde ≥ visningsbredde × pikseltetthet (90 %).
+      const imgs = [...seg.querySelectorAll('img')].map(im => { const vis = im.parentElement.getBoundingClientRect().width * devicePixelRatio;
+        // naturalWidth er visningsbredden ved srcset (w-deskriptorer) — filbredden leses av currentSrc (390 eller 780).
+        const fil = /-390\.webp$/.test(im.currentSrc || '') ? 390 : 780;
+        return { ok: im.complete && im.naturalWidth > 0 && fil >= vis * 0.9, src: (im.currentSrc || '').split('/').pop(), fil, vis: Math.round(vis) }; });
       return { segs, aktiv, tekst: seg.querySelector('.des-text p').textContent, imgs, pinTop: Math.round(pinR.top), pinBunn: Math.round(pinR.bottom), navH: Math.round(navH), vh: innerHeight,
         of: document.documentElement.scrollWidth - innerWidth };
     }, i);
     sjekk(`${tag} steg ${i+1}: bare «${STEG[i]}» synlig, riktig knapp aktiv`, m.segs.every((o, j) => j === i ? o > .99 : o < .01) && m.aktiv.join() === STEG[i], JSON.stringify({ s:m.segs, a:m.aktiv }));
     sjekk(`${tag} steg ${i+1}: godkjent tekst`, m.tekst === TEKST[i], m.tekst);
-    sjekk(`${tag} steg ${i+1}: begge bildene lastet (780 px)`, m.imgs.length === 2 && m.imgs.every(x => x.ok), JSON.stringify(m.imgs));
+    // Utseende (steg 2) har tre lag per ramme (blå / gull / rød) — 6 bilder; de andre stegene 2.
+    sjekk(`${tag} steg ${i+1}: alle bildene lastet og skarpe nok (srcset)`, m.imgs.length === (i === 1 ? 6 : 2) && m.imgs.every(x => x.ok), JSON.stringify(m.imgs));
+    if (i === 1) {
+      // Aksenten toner blå → gull → rød mens steget er aktivt (t 100–200), samtidig i begge rammene.
+      const lagVed = async t => { await hopp(page, Math.round(pin.start + (pin.end - pin.start) * t / 400), 200);
+        return page.evaluate(() => { const w = {}; document.querySelectorAll('#dineegenside .des-lag').forEach(im => { const k = im.dataset.aks; w[k] = Math.max(w[k] || 0, +getComputedStyle(im).opacity); });
+          const n = {}; document.querySelectorAll('#dineegenside .des-lag').forEach(im => { const k = im.dataset.aks; n[k] = (n[k] || 0) + (+getComputedStyle(im).opacity > .99 ? 1 : 0); }); return { w, n }; }); };
+      const b1 = await lagVed(115), g1 = await lagVed(150), r1 = await lagVed(185);
+      sjekk(`${tag} Utseende: blå → gull → rød (begge rammene)`, b1.n.blaa === 2 && g1.n.gull === 2 && r1.n.roed === 2 && b1.w.gull < .01 && g1.w.blaa < .01 && g1.w.roed < .01 && r1.w.gull < .01,
+        JSON.stringify({ blaa: b1, gull: g1, roed: r1 }));
+      if (bredde !== 1280) { await lagVed(150); const fil = path.join(OUT, `utseende-gull-${bredde}.png`); await page.screenshot({ path:fil }); bilder.push(fil); }
+      await hopp(page, Math.round(pin.start + (pin.end - pin.start) * (i*100 + 50) / 400), 200);
+    }
     sjekk(`${tag} steg ${i+1}: hele pinnen i synsfeltet under nav-en, ingen overflow`, m.pinTop >= m.navH - 1 && m.pinBunn <= m.vh + 1 && m.of <= 0, JSON.stringify({ t:m.pinTop, b:m.pinBunn, nav:m.navH, vh:m.vh, of:m.of }));
     if (bredde !== 1280) { const fil = path.join(OUT, `steg-${i+1}-${STEG[i].toLowerCase()}-${bredde}.png`); await page.screenshot({ path:fil }); bilder.push(fil); }
     else if (i === 1) { const fil = path.join(OUT, `steg-2-utseende-1280.png`); await page.screenshot({ path:fil }); bilder.push(fil); }
   }
   // Tomrom under tittelen: fra «Din egen side» til første synlige innhold under (midt i steg 1 og i overgangen 1→2).
   for (const [navn, t] of [['steg 1', 50], ['overgang 1→2', 100]]) {
-    await page.evaluate(y => scrollTo(0, y), Math.round(pin.start + (pin.end - pin.start) * t / 400)); await page.waitForTimeout(250);
+    await hopp(page, Math.round(pin.start + (pin.end - pin.start) * t / 400), 250);
     const gap = await page.evaluate(SYNLIG_ => { const h2 = document.querySelector('#dineegenside .des-h2').getBoundingClientRect().bottom;
       const neste = eval(SYNLIG_).filter(x => x.t >= h2 - 1).map(x => x.t); return Math.round(Math.min(...neste) - h2); }, SYNLIG);
     sjekk(`${tag}: under «Din egen side» (${navn}) ≤ 24 px tomt`, gap <= 24, gap + ' px');
   }
   // Tomrom over CTA-en: sist synlige innhold i scenen → CTA-tittelen.
   { const ctaTop = await page.evaluate(() => document.querySelector('#finalCta h2').getBoundingClientRect().top + scrollY);
-    await page.evaluate(y => scrollTo(0, y), Math.round(ctaTop - hoyde + 120)); await page.waitForTimeout(300);
+    await hopp(page, Math.round(ctaTop - hoyde + 120), 300);
     const g = await page.evaluate(SYNLIG_ => { const h2 = document.querySelector('#finalCta h2').getBoundingClientRect().top;
       const over = eval(SYNLIG_).filter(x => x.b <= h2 + 1 && !x.e.closest('#finalCta')).map(x => x.b);
       return { gap: Math.round(h2 - Math.max(...over)), pad: parseFloat(getComputedStyle(document.getElementById('finalCta')).paddingTop) }; }, SYNLIG);
@@ -112,7 +133,7 @@ for (const bredde of [320, 375, 1280]) {
     // Tittelens posisjon FØR pinnen (målt fra toppen — etter pinnen står den pinnede boksen flyttet til sluttposisjonen).
     await page.evaluate(() => scrollTo(0, 0)); await page.waitForTimeout(150);
     const desH2 = await page.evaluate(() => document.querySelector('#dineegenside .des-h2').getBoundingClientRect().top + scrollY);
-    await page.evaluate(y => scrollTo(0, y), Math.round(Math.max(ks, desH2 - hoyde + 120))); await page.waitForTimeout(300);
+    await hopp(page, Math.round(Math.max(ks, desH2 - hoyde + 120)), 300);
     const gap = await page.evaluate(SYNLIG_ => { const h2 = document.querySelector('#dineegenside .des-h2').getBoundingClientRect().top;
       const over = eval(SYNLIG_).filter(x => x.b <= h2 + 1 && !x.e.closest('#dineegenside')).map(x => x.b); return over.length ? Math.round(h2 - Math.max(...over)) : null; }, SYNLIG);
     console.log(`  ${tag}: under «Få kunder tilbake» → «Din egen side»: ${gap} px`); }
@@ -120,7 +141,8 @@ for (const bredde of [320, 375, 1280]) {
   { const g = await page.evaluate(() => { const r = document.getElementById('finalCta').getBoundingClientRect(); return { top: r.top + scrollY, h: r.height, H: document.documentElement.scrollHeight }; });
     const fra = g.top - hoyde, til = Math.min(g.top + g.h/2 - hoyde/2, g.H - hoyde);
     const skala = [], layout = [];
-    for (let k = 0; k <= 10; k++) { await page.evaluate(y => scrollTo(0, y), Math.round(fra + (til - fra) * k / 10)); await page.waitForTimeout(80);
+    // CTA-en lerper mot målet (τ 110 ms) — vent til den har satt seg ved hvert målepunkt.
+    for (let k = 0; k <= 10; k++) { await hopp(page, Math.round(fra + (til - fra) * k / 10), 800);
       const m = await page.evaluate(() => { const inn = document.getElementById('finalCtaInner'), c = getComputedStyle(inn); const mx = c.transform === 'none' ? 1 : new DOMMatrix(c.transform).a;
         const s = document.getElementById('finalCta').getBoundingClientRect(); return { s: mx, op: +c.opacity, secH: Math.round(s.height), innH: inn.offsetHeight }; });
       skala.push(+m.s.toFixed(3)); layout.push(m.secH + '/' + m.innH); }
@@ -144,8 +166,41 @@ for (const bredde of [375]) {
     synlig: getComputedStyle(document.getElementById('dineegenside')).display, cta: getComputedStyle(document.getElementById('finalCtaInner')).transform }));
   sjekk(`reduced ${bredde}: ingen pin, alle fire stegene synlige`, !m.pinnet && m.red && m.synlig === 'block' && m.segs.length === 4 && m.segs.every(o => o === 1), JSON.stringify(m));
   sjekk(`reduced ${bredde}: CTA i full størrelse uten transform`, m.cta === 'none', m.cta);
+  const lag = await page.evaluate(() => [...document.querySelectorAll('#dineegenside .des-lag')].filter(im => +getComputedStyle(im).opacity > .99).map(im => im.dataset.aks));
+  sjekk(`reduced ${bredde}: Utseende viser gull (begge rammene)`, lag.length === 2 && lag.every(a => a === 'gull'), JSON.stringify(lag));
   sjekk(`reduced ${bredde}: ingen pageerror`, errs.length === 0, errs.join('|'));
   await ctx.close();
+}
+
+// Lenis (jevn sidescroll): KUN desktop med mus/styreplate — ikke touch, ikke reduced-motion. Tastatur scroller fortsatt, og en
+// ankerlenke inn til siden (#dineegenside) lander der den skal.
+{
+  const lenisAktiv = page => page.evaluate(() => ({ lenis: !!window.bhqLenis, klasse: document.documentElement.classList.contains('lenis') }));
+  const d = await aapne({ bredde:1280 });
+  const l = await lenisAktiv(d.page);
+  sjekk('Lenis: aktiv på desktop (mus/styreplate)', l.lenis && l.klasse, JSON.stringify(l));
+  await d.page.evaluate(() => scrollTo(0, 0)); await d.page.waitForTimeout(400);
+  const tast = {};
+  for (const k of ['PageDown', 'Space', 'ArrowDown']) { const y0 = await d.page.evaluate(() => scrollY);
+    await d.page.keyboard.press(k); await d.page.waitForTimeout(700); tast[k] = Math.round(await d.page.evaluate(() => scrollY) - y0); }
+  sjekk('Lenis: tastaturet scroller fortsatt (Page Down, mellomrom, pil ned)', tast.PageDown > 200 && tast.Space > 200 && tast.ArrowDown > 10, JSON.stringify(tast));
+  sjekk('Lenis desktop: ingen pageerror', d.errs.length === 0, d.errs.join('|').slice(0, 160));
+  await d.ctx.close();
+  const m = await aapne({ bredde:375 });
+  const lm = await lenisAktiv(m.page);
+  sjekk('Lenis: IKKE på touch (375, isMobile/hasTouch)', !lm.lenis && !lm.klasse, JSON.stringify(lm));
+  await m.ctx.close();
+  const r = await aapne({ bredde:1280, reduce:true });
+  const lr = await lenisAktiv(r.page);
+  sjekk('Lenis: IKKE med prefers-reduced-motion', !lr.lenis && !lr.klasse, JSON.stringify(lr));
+  await r.ctx.close();
+  // Ankerlenke inn til siden: funksjoner.html#dineegenside → scenen står i synsfeltet etter lasting.
+  const actx = await browser.newContext({ viewport:{ width:1280, height:900 } }); const ap = await actx.newPage();
+  await ap.route('**/*', rr => { const u = new URL(rr.request().url()); return (u.hostname === 'localhost' || /cdnjs|jsdelivr|gstatic|googleapis/.test(u.hostname)) ? rr.fallback() : rr.abort(); });
+  await ap.goto(URL_ + '#dineegenside', { waitUntil:'networkidle' }); await ap.waitForTimeout(1500);
+  const anker = await ap.evaluate(() => { const r = document.getElementById('dineegenside').getBoundingClientRect(); return { top: Math.round(r.top), bunn: Math.round(r.bottom), vh: innerHeight }; });
+  sjekk('Ankerlenke #dineegenside: scenen står i synsfeltet', anker.top < anker.vh && anker.bunn > 0, JSON.stringify(anker));
+  await actx.close();
 }
 
 await browser.close(); server.close();
