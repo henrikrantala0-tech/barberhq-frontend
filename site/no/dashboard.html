@@ -4301,9 +4301,18 @@ function ovsPaaVeiHtml(pv, medStrek){
   if(rn>0) h+='<span class="pv-samtykke">'+(rb.med_samtykke||0)+' av '+rn+' har SMS-samtykke i dag</span>';
   return h+'</div>';
 }
+// Overskrift + periodevelger (Vekst-tilstand og feiltilstand). Står alltid, så barbereren kan bytte periode = prøve igjen.
+function ovsHentetHodeHtml(pfx){
+  return '<h2 class="ovs-etikett ovs-etikett-alene" id="'+(pfx||'ovs')+'HentetH">Hentet inn av BarberHQ</h2>'+ovsAttrVelgerHtml(pfx);
+}
+// /attribution feilet (nett/5xx): overskrift + velger står, dempet linje der tallene skulle vært. Før ble hele
+// seksjonen tømt (høyde 0) — barbereren så ingenting og hadde ingen velger å prøve igjen med.
+function ovsHentetFeilHtml(pfx){
+  return ovsHentetHodeHtml(pfx)+'<p class="hi-feil">Kunne ikke hente tallene akkurat nå.</p>';
+}
 function ovsHentetVekstHtml(data, pfx){
   var hi=data.hentetInn, total=(hi&&hi.total)||{count:0,revenue:0};
-  var h='<h2 class="ovs-etikett ovs-etikett-alene" id="'+(pfx||'ovs')+'HentetH">Hentet inn av BarberHQ</h2>'+ovsAttrVelgerHtml(pfx);
+  var h=ovsHentetHodeHtml(pfx);
   if(!hi){
     // Vekst/trial MEN hentetInn mangler → backend shape-drift. Ærlig feiltilstand, aldri oppsalg. PÅ VEI er ekte for begge planer.
     console.warn('[hentet-inn] hentetInn mangler for ikke-Basis konto (effective_plan='+(_billing&&_billing.effective_plan)+', grunn='+(_billing&&_billing.effective_plan_grunn)+') — viser På vei uten beløp.');
@@ -4356,7 +4365,9 @@ async function tegnHentetInn(wrap, pfx){
   var seq=wrap._seq;
   var data=await api.attribution(ovsAttrPeriod);
   if(seq!==wrap._seq) return;   // et nyere valg (eller plan-bytte) har overtatt mens kallet var i lufta
-  if(!data){ wrap.innerHTML=''; return; } // feil/401 → tomt, ingen krasj
+  // Feil → overskrift + velger + dempet feillinje (begge verter). Bytte periode i velgeren henter på nytt.
+  // (401 redirigeres av apiFetch før vi kommer hit.)
+  if(!data){ wrap.innerHTML=ovsHentetFeilHtml(pfx); return; }
   // Forsvar-i-dybden: Basis skal ALDRI vise ekte hentetInn-tall (backend gater: !krevVekst). erBasis() leses
   // på nytt etter svaret — billing kan ha landet underveis.
   wrap.innerHTML = erBasis() ? ovsHentetGratisHtml(pfx) : ovsHentetVekstHtml(data, pfx);
