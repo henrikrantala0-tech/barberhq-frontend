@@ -1368,7 +1368,8 @@ window.PinInit=(function(){
     // OVERGANG 1→2 (40-49): tekst ut (y -12) med OVERLAPP, skjerminnhold bytter, merkelapp. Telefonkropp ~stille (≤6px).
     tl.to('.ks-step[data-step="0"]',{y:-12,opacity:0,duration:6},40);
     tl.fromTo('.ks-step[data-step="1"]',{y:20,opacity:0},{y:0,opacity:1,duration:7},44);
-    tl.to('#ksBook',{xPercent:-100,duration:8},41).fromTo('#ksCal',{xPercent:100},{xPercent:0,duration:8},41);
+    // #ksBook ut (t41–49) settes av bookSkjerm(t) i frame() — se «SKJERMEIERE» under. Kalenderen glir inn som før.
+    tl.fromTo('#ksCal',{xPercent:100},{xPercent:0,duration:8},41);
     // (#ksStatus-fargen drives av statusTick(t) i frame() — scrubbet ren funksjon, ikke .to-tween.)
     tl.to('#ksBadgeA',{opacity:0,duration:5},42).to('#ksBadgeB',{opacity:1,duration:5},43);
     if(isD){tl.to(navBtns[0],{color:DIM,duration:5},40).to(navBtns[1],{color:WHITE,duration:5},43);}
@@ -1533,8 +1534,14 @@ window.PinInit=(function(){
           // Skjermbytte = ren xPercent-glid, klippet av skjermkanten (ingen opacity-krysstoning).
           gsap.set('#ksHero',{xPercent:-100*mix});
           gsap.set('#ksBook',{xPercent:100*(1-mix)});
-          // Statuslinja (telefon-nivå, skarp) bytter farge i takt: hvit på mørk kalender → mørk på lys booking.
-          var gL=Math.round(255-245*mix); gsap.set('#ksStatus',{color:'rgb('+gL+','+gL+','+gL+')'});
+          // Statuslinja er hvit hele veien: hero-kalenderen OG v2-bookingen er mørke (v1-arket var lyst → mørk tekst).
+          gsap.set('#ksStatus',{color:'rgb(255,255,255)'});
+        } else {
+          // Forbi landingen (reload, hopp, rask scroll forbi siste reise-tick): hero-skjermen er ute. #ksBook eies av frame().
+          gsap.set('#ksHero',{xPercent:-100}); gsap.set('#ksStatus',{color:'rgb(255,255,255)'});
+          // Overlevering: i det reisen lander, tegnes #ksBook av tidslinja med EN GANG — ellers avhenger utfallet av om
+          // tidslinja eller reisen oppdaterte sist (utjevningen kan lande dem i hvilken som helst rekkefølge).
+          bookSkjerm(tl.progress()*207);
         }
       }
       measureTravel();
