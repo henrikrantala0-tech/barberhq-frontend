@@ -93,11 +93,8 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .ph-hero h1{font-family:'Inter',-apple-system,system-ui,sans-serif;font-weight:800;font-size:clamp(34px,7vw,60px);line-height:1.05;letter-spacing:-.04em}
 .ph-hero p{color:#b4b4b4;font-size:clamp(16px,2.2vw,18px);line-height:1.6;max-width:540px;margin:24px auto 0}
 
-/* Hero-produktvisual — gjenbrukt booking-mockup (statisk cover) fra forsidens
-   produktkarusell. iPhone-rammen (.iph*) er kopiert ordrett fra index.html (den er
-   avscoped/ren form der). Ingen ny mockup, ingen JS: .pv-scale sporer rammebredden via
-   cqw (samme cqw-triks som .iph --fscale), så den fyller skjermen på alle bredder uten
-   settTelefonSkala(). Den animerte .sheet er utelatt — kun forsida (cover) vises. */
+/* Hero-produktvisual — iPhone-rammen (.iph*) er kopiert ordrett fra index.html (avscoped/ren form der).
+   Skjermen viser kalenderen (.hv-cal, bygges av JS «HERO-VISUAL»); --fscale sporer rammebredden via cqw. */
 .fx-hero-visual{display:flex;justify-content:center;padding:48px 20px 0}
 .fx-phone{display:flex;justify-content:center}   /* midtstill selve telefonkroppen (.pv-phoneframe), ikke .hero-viz-boksen */
 .fx-phone .pv-phoneframe{width:min(290px,84vw);container-type:inline-size}
@@ -121,24 +118,7 @@ body{background:#0a0a0a;font-family:'Inter',-apple-system,system-ui,sans-serif;c
 .iph-btn.volup{top:calc(432px*var(--fscale));height:calc(80px*var(--fscale))}
 .iph-btn.voldn{top:calc(528px*var(--fscale));height:calc(80px*var(--fscale))}
 .iph-btn.power{top:calc(452px*var(--fscale));height:calc(122px*var(--fscale))}
-/* Skjerm-innhold: booking-cover, designet på 320px, skalert til skjermbredden (frame*0.9088). */
-.fx-phone .pv-scale{transform-origin:top left;will-change:transform;width:320px;transform:scale(calc(90.88cqw / 320px))}
-.fx-phone .pv-book{--bg:#ffffff;--surface:#f4f4f4;--ink:#0a0a0a;--ink-soft:#717171;--accent:#0071e3;--accent-ink:#ffffff;--accent-text:#0068d1;--line:#e2e2e2;--fs-hero:26px;--fs-title:22px;--fs-section:16px;--fs-body:14px;--fs-small:13px;--fs-micro:11px;--fw-bold:700;--fw-medium:600;--fw-regular:400;--radius-card:13px;--radius-pill:99px;--badge-bg:color-mix(in srgb,var(--ink) 8%,transparent);--badge-ink:var(--ink);
-  position:relative;background:var(--bg);color:var(--ink);font-family:Inter,-apple-system,system-ui,sans-serif;line-height:1.5;-webkit-font-smoothing:antialiased;min-height:693px;overflow:hidden}
-.fx-phone .pv-book .cover{position:relative;min-height:693px;display:flex;flex-direction:column;text-align:center;padding:56px 0 0}
-.fx-phone .pv-book .cover .pv-cover-h1{font-family:"Bebas Neue","Oswald",Impact,sans-serif;font-weight:400;font-synthesis:none;font-size:35.2px;letter-spacing:.05em;line-height:1;color:var(--ink)}
-.fx-phone .pv-book .cover .sub{margin-top:14px;font-size:var(--fs-small);letter-spacing:.1em;color:var(--ink-soft);text-transform:uppercase;font-weight:var(--fw-medium)}
-.fx-phone .pv-book .cover .bio{margin:16px auto 0;max-width:340px;font-size:15.5px;line-height:1.55;color:var(--ink);opacity:.86;font-family:Inter,sans-serif}
-.fx-phone .pv-book .addr{display:inline-flex;align-items:center;gap:6px;margin-top:10px;font-size:var(--fs-body);color:var(--accent-text);font-weight:500;line-height:1.4;text-decoration:none;align-self:center}
-.fx-phone .pv-book .addr svg{opacity:.85}
-.fx-phone .pv-book .social{display:flex;justify-content:center;align-items:center;gap:10px;margin-top:8px;align-self:center}
-.fx-phone .pv-book .social-link{display:inline-flex;align-items:center;justify-content:center;width:44px;height:44px;color:var(--ink)}
-.fx-phone .pv-book .cover-gallery{display:grid;grid-template-columns:repeat(2,1fr);gap:0;width:100%;margin:34px 0 0;position:relative;border-radius:6px;overflow:hidden}
-.fx-phone .pv-book .cover-gallery img{width:100%;aspect-ratio:3/4;object-fit:cover;display:block}
-.fx-phone .pv-book .cover-gallery::before{content:"";position:absolute;top:0;left:0;right:0;height:90px;z-index:2;pointer-events:none;background:linear-gradient(to bottom,var(--bg),transparent)}
-.fx-phone .pv-book .cover-gallery::after{content:"";position:absolute;bottom:0;left:0;right:0;height:90px;z-index:2;pointer-events:none;background:linear-gradient(to top,var(--bg),transparent)}
-.fx-phone .pv-book .manage-badge{position:absolute;top:16px;right:16px;z-index:5;display:inline-flex;align-items:center;padding:7px 14px;border-radius:var(--radius-pill);background:var(--badge-bg);color:var(--badge-ink);font-size:var(--fs-small);font-weight:var(--fw-medium);text-decoration:none;line-height:1;white-space:nowrap}
-.fx-phone .pv-book .see-float{white-space:nowrap;position:absolute;left:50%;bottom:24px;transform:translateX(-50%);z-index:15;display:inline-flex;align-items:center;justify-content:center;gap:9px;background:var(--accent);color:var(--accent-ink);font-family:Inter,sans-serif;font-size:var(--fs-section);font-weight:var(--fw-medium);border:0;border-radius:var(--radius-pill);padding:15px 40px;box-shadow:rgba(0,113,227,.32) 0 12px 34px -8px}
+/* (Den døde .fx-phone .pv-book/.pv-scale-klonen av booking-coveret er fjernet 18.11.2026 — hero-telefonen viser kalenderen.) */
 
 /* ============================ SEKSJONER + FUNKSJONSLISTE ============================ */
 /* Funksjonsliste (ren liste). */

@@ -2,7 +2,7 @@
    Godkjent 22.10.2026 (prototype tools/render/prototyper/dinside-v2-oppsett.html). Mobil først:
      • fast topp: tittel + «Forhåndsvis» (under 1024 px) og en segmentert kontroll med fire like celler (min. 44 px)
      • steginnhold: tittel, én hjelpelinje, etiketter over feltene, hårlinjer mellom delene
-     • bunnbar i én rad («← Tilbake» + «Neste →» / «Lagre endringer»): FAST bare i oppsettet (fokusmodus, bunn-navet er da
+     • bunnbar i én rad («← Tilbake» + «Neste →» / «Publiser siden» — ingen lagreknapp, autolagring): FAST bare i oppsettet (fokusmodus, bunn-navet er da
        skjult); i vanlig Din side ligger den nederst i innholdet (bunn-navet står). Aldri to faste barer samtidig.
        Bunnluften står på PANELET (#design) og er lik høyden på det som er fast, så ingenting havner bak.
      • fra 1024 px: fast telefonramme med forhåndsvisningen til høyre; under det åpner «Forhåndsvis» en fullskjermflate

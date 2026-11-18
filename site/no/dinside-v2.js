@@ -198,8 +198,8 @@
   /* ══ Bygg markup (én gang) ═════════════════════════════════════════════════════════════════════════
      Godkjent 22.10.2026 (prototype tools/render/prototyper/dinside-v2-oppsett.html): fast topp med tittel + «Forhåndsvis»
      (mobil) og en segmentert kontroll med fire like celler; steginnhold = tittel + én hjelpelinje, etiketter over feltene,
-     hårlinjer mellom delene; fast bunnbar i én rad. Ingen sjekkliste og ingen egen publiser-knapp: «Lagre endringer»
-     publiserer når siden ikke er live (POST /din-side/lagre med publiser:true). */
+     hårlinjer mellom delene; fast bunnbar i én rad. Ingen sjekkliste og ingen lagreknapp (autolagring, 12.11.2026): siste steg
+     har «Publiser siden» når siden ikke er live (POST /din-side/lagre med publiser:true). */
   function bygg(rot) {
     rot.innerHTML =
       '<div id="dv2Varsler"></div>' +
