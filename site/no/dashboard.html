@@ -420,10 +420,6 @@
     --ov-a1:#3ecf7e;--ov-a2:rgba(62,207,126,.55);--ov-a3:rgba(62,207,126,.28);
   }
   html[data-theme="dark"] .btn{background:#fff;color:#0a0a0a}
-  /* Valgt periode-pille: merke-default-blå #2563eb (landing-CTA-en «Prøv gratis»), bevisst
-     dypere enn --info (#4d8bff) som resten av dashbord-aksenten bruker — Henrik 30.08. Gjelder
-     kun periode-pillene (#segs/#attrPeriod); .segs-val-verdipillene har egen regel under. */
-  html[data-theme="dark"] .segs button[aria-selected=true]{background:#2563eb;color:#fff}
   html[data-theme="dark"] .sw input:checked + .sl{background:#4d8bff}
   /* .themebtn er FJERNET 08.08 — tema velges nå med to .preset-kort, ikke en toggle-knapp. */
   .nav{overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
@@ -1616,18 +1612,16 @@
   #rebookPreview + .seg-line{margin-top:16px}
   .seg-unit{font-size:12.5px;color:var(--mut-2)}
   /* Verdi-piller (rebooking-intervall + hvem-får-rabatt). En VERDI, ikke en av/på-tilstand.
-     Derfor IKKE blå — blå betyr «på» ellers i dashbordet (.sw, og .segs på Oversikt der pillen
-     er et valgt filter). Valgt pille markeres med lysere ramme + svak flate. Ingen container-boks
-     rundt gruppa (flat, variant B).
-     Må stå etter den mørke .segs-regelen for å vinne på like spesifisitet. */
+     Derfor IKKE blå — blå betyr «på» ellers i dashbordet (.sw). Valgt pille markeres med lysere
+     ramme + svak flate. Ingen container-boks rundt gruppa (flat, variant B).
+     Må stå etter .segs-reglene øverst for å vinne på like spesifisitet. (Den mørke blå
+     .segs-regelen for periodepillene er slettet 18.11 — periodevelgerne er .ovs-seg.) */
   .segs-val{background:none;border:0;border-radius:0;padding:0;gap:6px}
   .segs-val button{border:1px solid var(--line);border-radius:8px;padding:6px 11px;color:var(--mut)}
   .segs-val button[aria-selected=true]{background:var(--line);color:var(--ink);border-color:var(--line-2)}
   html[data-theme="dark"] .segs-val button[aria-selected=true]{background:var(--line);color:var(--ink);border-color:var(--line-2)}
   /* .acc-lead er FJERNET — siste bruk var i Verving, der acc-sub nå forklarer mekanismen.
      (Rebooking sin ble slått sammen med noten tidligere samme dag.) */
-  .acc-badge[hidden]{display:none}
-  .acc-badge{display:inline-flex;align-items:center;justify-content:center;min-width:19px;height:19px;padding:0 6px;border-radius:99px;background:rgba(77,139,255,.14);color:#4d8bff;font-size:11px;font-weight:700}
 
   /* ---- Vinn-tilbake høyre-kontekst + toast ---- */
   .wb-ctx{font-size:11.5px;color:var(--mut);line-height:1.4}
@@ -3194,12 +3188,7 @@
      knappene til 44px (scopet, rører ikke andre outline-knapper). Matcher touch-mål-jobben i f955de8. */
   .plakat-gen .btn-outline{min-height:44px}
   /* ===== «Lag story»-generator (ledige timer) ===== */
-  /* Åpent generatorkort i Vekst — .gen-card (ikke .acc), står utenfor skjoldVekstFlater → aldri låst. */
-  .gen-card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:18px 18px 20px;margin-top:14px}
-  .gen-card-h{display:flex;flex-direction:column;gap:5px;margin-bottom:14px}
-  .gen-card-title{font-size:15px;font-weight:600;color:var(--ink)}
-  .gen-card-sub{font-size:13px;color:var(--mut);line-height:1.45}
-  .gen-card .gen-card-btn{min-height:44px;width:100%;justify-content:center}
+  /* Inngangen i Vekst er raden #accStory (.vk-rad, DEL-seksjonen) — utenfor skjoldVekstFlater → aldri låst. */
   /* Fullskjerm-editor (samme idiom som .plakat-overlay) */
   .story-overlay{position:fixed;inset:0;z-index:1000;background:var(--bg);display:none;flex-direction:column}
   .story-overlay.vis{display:flex}
@@ -5780,7 +5769,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   if(PANEL_TO_HASH[id])location.hash=PANEL_TO_HASH[id];
 }));
 // ── Oversikt periodevelger: to rullende piller (uke/2uker) + tredje pille = måneds-nedtrekk ──
-// Egen state (curPeriod / valgt ym), uavhengig av Veksts #attrPeriod (deler kun CSS). Rullende pill →
+// Egen state (curPeriod / valgt ym), uavhengig av «Hentet inn»-perioden (ovsAttrPeriod). Rullende pill →
 // sliceDaily via loadOversikt. Meny «Denne måneden» = curPeriod 'maaned' (inneværende); historisk ym →
 // /stats/month (samme oppførsel som gamle #monthSel-handler). Kun ÉN aktiv om gangen → aldri to som ser
 // aktive ut: velgPill avmarkerer tredje pille + nullstiller meny; velgMaaned avmarkerer de rullende.
@@ -8848,7 +8837,7 @@ anvendHash(); // åpne panelet fra location.hash (ukjent/tom → standardpanel).
    med en gang og telles ikke. Usikkerhet går alltid mot «ulagret»: da vises en stripe i stedet for en
    automatisk ny lasting, så ingenting barbereren har skrevet forsvinner. */
 var _ulagrede=new Set(), _sisteKlikk=null;
-var ULAGRET_SEKSJON='.kt-rad, .acc, .ideacard, .subcard, .dinside-cta, .gen-card, #plakatOverlay';
+var ULAGRET_SEKSJON='.kt-rad, .acc, .ideacard, .subcard, .dinside-cta, #plakatOverlay';
 document.addEventListener('input',function(e){
   var t=e.target;
   if(!e.isTrusted||!t||!t.matches)return;
