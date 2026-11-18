@@ -736,6 +736,13 @@ html{overflow-x:clip}
 .des-frame{position:relative;height:min(58vh,560px);aspect-ratio:780/1688;border:1px solid var(--d-line2);border-radius:22px;background:var(--d-surface);overflow:hidden}
 .des-frame img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;object-position:top;display:block}
 .des-fig figcaption{font-size:12.5px;color:var(--d-mut);margin-top:10px}
+/* Utseende-steget: tre lag per ramme (blå / gull / rød), tonet av desTick mens steget er aktivt — pinnen blir ikke lengre.
+   Bookingsiden er prod-siden med backendens EGNE v2Tokens() for hver aksent (alle avledede verdier: --accent, --accent-ink,
+   --accent-text, --accent-soft …); dashbordet har samme aksent valgt. Uten JS: blå. Reduced-motion: gull. */
+.des-lag{opacity:0}
+.des-lag[data-aks="blaa"]{opacity:1}
+.des-scene.des-reduced .des-lag{opacity:0!important}
+.des-scene.des-reduced .des-lag[data-aks="gull"]{opacity:1!important}
 .des-note{grid-column:2;text-align:center;font-size:13.5px;line-height:1.5;color:var(--d-mut);margin:16px 0 0}
 @media(max-width:899px){
   .des-inner{grid-template-columns:1fr;padding:16px 16px 4px}
@@ -993,8 +1000,8 @@ html{overflow-x:clip}
       <div class="des-seg des-seg-off" data-seg="1">
         <div class="des-text"><p>Lys eller mørk bakgrunn. Blå, gull, rød eller din egen farge. Seks skrifter til sjappenavnet.</p></div>
         <div class="des-par">
-          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-dash-utseende.webp" width="780" height="1688" alt="Dashbordet, Din side: steget Utseende med bakgrunn og aksentfarge" decoding="async" loading="lazy"></div><figcaption>Dashbordet</figcaption></figure>
-          <figure class="des-fig"><div class="des-frame"><img src="images/ds2-side-book.webp" width="780" height="1688" alt="Bookingsiden til Grand barber: velg tjeneste" decoding="async" loading="lazy"></div><figcaption>Bookingsiden</figcaption></figure>
+          <figure class="des-fig"><div class="des-frame"><img class="des-lag" data-aks="blaa" src="images/ds2-dash-utseende-blaa.webp" srcset="images/ds2-dash-utseende-blaa-390.webp 390w, images/ds2-dash-utseende-blaa.webp 780w" sizes="(max-width:899px) 46vw, 260px" width="780" height="1688" alt="Dashbordet, Din side: steget Utseende med blå aksentfarge valgt" decoding="async" loading="lazy"><img class="des-lag" data-aks="gull" src="images/ds2-dash-utseende-gull.webp" srcset="images/ds2-dash-utseende-gull-390.webp 390w, images/ds2-dash-utseende-gull.webp 780w" sizes="(max-width:899px) 46vw, 260px" width="780" height="1688" alt="Dashbordet, Din side: steget Utseende med gull aksentfarge valgt" decoding="async" loading="lazy"><img class="des-lag" data-aks="roed" src="images/ds2-dash-utseende-roed.webp" srcset="images/ds2-dash-utseende-roed-390.webp 390w, images/ds2-dash-utseende-roed.webp 780w" sizes="(max-width:899px) 46vw, 260px" width="780" height="1688" alt="Dashbordet, Din side: steget Utseende med rød aksentfarge valgt" decoding="async" loading="lazy"></div><figcaption>Dashbordet</figcaption></figure>
+          <figure class="des-fig"><div class="des-frame"><img class="des-lag" data-aks="blaa" src="images/ds2-side-book-blaa.webp" srcset="images/ds2-side-book-blaa-390.webp 390w, images/ds2-side-book-blaa.webp 780w" sizes="(max-width:899px) 46vw, 260px" width="780" height="1688" alt="Bookingsiden til Grand barber med blå aksentfarge" decoding="async" loading="lazy"><img class="des-lag" data-aks="gull" src="images/ds2-side-book-gull.webp" srcset="images/ds2-side-book-gull-390.webp 390w, images/ds2-side-book-gull.webp 780w" sizes="(max-width:899px) 46vw, 260px" width="780" height="1688" alt="Bookingsiden til Grand barber med gull aksentfarge" decoding="async" loading="lazy"><img class="des-lag" data-aks="roed" src="images/ds2-side-book-roed.webp" srcset="images/ds2-side-book-roed-390.webp 390w, images/ds2-side-book-roed.webp 780w" sizes="(max-width:899px) 46vw, 260px" width="780" height="1688" alt="Bookingsiden til Grand barber med rød aksentfarge" decoding="async" loading="lazy"></div><figcaption>Bookingsiden</figcaption></figure>
         </div>
       </div>
       <div class="des-seg des-seg-off" data-seg="2">
@@ -1569,7 +1576,7 @@ window.PinInit=(function(){
   sec.classList.add('des-anim');
   var pinEl=$('desPin');
   var segs=[].slice.call(sec.querySelectorAll('.des-seg')), navBtns=[].slice.call(sec.querySelectorAll('.des-step-btn'));
-  var N=segs.length, T=N*100, OV=10, aktiv=-1, stRef=null;
+  var N=segs.length, T=N*100, OV=10, aktiv=-1, stRef=null, lag=[].slice.call(sec.querySelectorAll('.des-lag'));
   function cl01(x){return x<0?0:x>1?1:x;}
   function sg(t,a,b){return cl01((t-a)/(b-a));}
   function tick(t){
@@ -1582,6 +1589,9 @@ window.PinInit=(function(){
       s.classList.toggle('des-seg-off', op<=0.01);
       if(op<0.5)s.setAttribute('aria-hidden','true'); else s.removeAttribute('aria-hidden');
     }
+    // Utseende (steg 2, t 100–200): blå → gull (t128–138) → rød (t162–172), samtidig i begge rammene.
+    var g=sg(t,128,138), r=sg(t,162,172), w={blaa:1-g, gull:g*(1-r), roed:r};
+    for(var k=0;k<lag.length;k++){ var lv=w[lag[k].getAttribute('data-aks')]; lag[k].style.opacity=lv; var lw=(lv>0.001&&lv<0.999)?'opacity':''; if(lag[k].style.willChange!==lw)lag[k].style.willChange=lw; }
     var a=Math.min(N-1, Math.max(0, Math.floor((t+OV/2)/100)));
     if(a!==aktiv){ aktiv=a; navBtns.forEach(function(b,i){ b.classList.toggle('on', i===a); if(i===a)b.setAttribute('aria-current','step'); else b.removeAttribute('aria-current'); }); }
   }
