@@ -5355,13 +5355,17 @@ async function loadMomentum(){
 
 // Åpne et Vekst-trekkspill fra en annen fane (brukes av «Drevet av» → vinn tilbake).
 function aapneVekstAkkordion(sel){
-  if(typeof switchPanel==='function') switchPanel('vekst');
-  // switchPanel klikker nav-knappen (kan lazy-rendre) → åpne akkordionen på neste tick.
-  setTimeout(function(){
+  function aapne(){
     var head=document.querySelector(sel+' .acc-head');
     if(head && head.getAttribute('aria-expanded')!=='true') head.click();
     var acc=document.querySelector(sel); if(acc) acc.scrollIntoView({behavior:'smooth',block:'start'});
-  },70);
+  }
+  // Står vi allerede på Vekst («Se lista →» i Vekst-fanens egen Hentet inn): bare åpne og scrolle. switchPanel ville
+  // klikket nav-knappen igjen og lastet hele fanen på nytt (loadVekst + SMS/verving/vinn tilbake/lojalitet, ~8 GET-er).
+  if(typeof aktivtPanel==='function' && aktivtPanel()==='vekst'){ aapne(); return; }
+  if(typeof switchPanel==='function') switchPanel('vekst');
+  // switchPanel klikker nav-knappen (kan lazy-rendre) → åpne akkordionen på neste tick.
+  setTimeout(aapne,70);
 }
 
 /* ---- «Hentet inn» på Vekst-fanen = SAMME komponent som Oversikt (renderVekstHentet → tegnHentetInn, Henrik 17.11).
