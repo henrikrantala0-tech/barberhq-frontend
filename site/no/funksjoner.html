@@ -565,10 +565,15 @@ html{overflow-x:clip}
 .ks-scene .ls-app{display:flex;align-items:center;gap:7px;margin-bottom:5px}
 .ks-scene .ls-appicon{width:20px;height:20px;border-radius:5px;background:#0a0a0a;color:#fff;font-weight:800;font-size:12px;display:flex;align-items:center;justify-content:center}
 .ks-scene .ls-appicon b{color:#4d8bff}.ks-scene .ls-appname{font-size:12.5px;font-weight:700;flex:1}.ks-scene .ls-when{font-size:11.5px;color:#6b6b70}.ks-scene .ls-msg{font-size:13.5px;line-height:1.35;color:#111}
-/* ANIMERT (kun JS + ikke reduced-motion) */
-.ks-scene.ks-anim .ks-pin{height:calc(100vh - var(--nav-h,68px))}
-.ks-scene.ks-anim .ks-inner{height:100%;align-content:center}
-.ks-scene.ks-anim .ks-h2wrap{position:absolute;top:7vh;left:50%;transform:translateX(-50%)}
+/* ANIMERT (kun JS + ikke reduced-motion)
+   Pinnen er SÅ HØY SOM INNHOLDET og sentreres i synsfeltet under nav-en (ksPinTopp i JS) — samme modell som Din side.
+   Før: pinnen var 100vh med innholdet midtstilt → når den slapp, ble restplassen liggende som tomrom under «Få kunder
+   tilbake» (165 px @375, 263 px @1280). Og på desktop sto tittelen absolutt på 7vh/18px mens innholdet var sentrert
+   i 100vh → tomrom mellom tittel og telefon som vokste med skjermhøyden (137 px @1920×1080, 317 px @2560×1440).
+   Nå står tittelen i flyten (grid-rad 1) på alle bredder, rett over telefonraden. (18.11.2026) */
+.ks-scene.ks-anim .ks-pin{height:auto}
+.ks-scene.ks-anim .ks-inner{align-content:start}
+.ks-scene.ks-anim .ks-h2wrap{position:relative;top:auto;left:auto;transform:none;text-align:center}
 .ks-scene.ks-anim .ks-h2{white-space:nowrap;margin:0}
 .ks-scene.ks-anim .ks-text .ks-step{position:absolute;top:0;left:0}
 /* STATISK / reduced-motion / no-JS */
@@ -585,9 +590,10 @@ html{overflow-x:clip}
    toppen (var 7vh → overlappet telefonen på korte vinduer), og telefonen får mer vertikal reserve (−160)
    så den — selv sentrert — lander under tittelen på 1280×720 OG 1440×900. */
 @media(min-width:900px){
-  .ks-scene.ks-anim .ks-h2wrap{top:18px}
-  .ks-scene.ks-anim .ks-inner{padding-top:64px}   /* skyv (sentrerte) telefonrekka ned under tittelen på korte vinduer */
-  .ks-phone-slot{width:min(340px, calc((100vh - var(--nav-h,68px) - 160px) / 1.806))}
+  /* Tittelen står i flyten (over): 24 px til telefonraden + 12 px luft over og under innholdet. Telefonens reserve (−160)
+     dekker tittel (~61) + rad-gap (24) + merkelapp (~32) + luft, så pinnen alltid får plass i synsfeltet. */
+  .ks-scene.ks-anim .ks-inner{row-gap:24px;padding-top:12px;padding-bottom:12px}
+  .ks-phone-slot{width:min(340px, calc((100svh - var(--nav-h,68px) - 160px) / 1.806))}
   /* SYMMETRI: telefonen (kol 2) skal stå NØYAKTIG midt på siden, samme x-senter som den sentrerte
      tittelen. Symmetriske sidekolonner → telefonsenteret = .ks-inner-senteret. Stegnav nær telefonens
      venstre kant, stegtekst nær høyre kant. */
@@ -609,8 +615,7 @@ html{overflow-x:clip}
 @media(max-width:899px){
   /* IKKE text-align:center på .ks-inner — det arves inn i telefonskjermene. Kun stegteksten sentreres. */
   .ks-inner{grid-template-columns:1fr;gap:14px;padding:0 16px;justify-items:center}
-  .ks-scene.ks-anim .ks-pin{height:calc(100svh - var(--nav-h,68px))}
-  .ks-scene.ks-anim .ks-inner{align-content:start;padding-top:14px}   /* overskrift med luft under nav, ikke sentrert-klemt */
+  .ks-scene.ks-anim .ks-inner{padding-top:14px;padding-bottom:14px}   /* pinnen = innholdets høyde, sentrert (se ANIMERT) */
   .ks-scene.ks-anim .ks-nav,.ks-scene.ks-anim .ks-navwrap{display:none}
   .ks-scene.ks-anim .ks-h2wrap{position:relative;top:auto;left:auto;transform:none;text-align:center}
   .ks-scene.ks-anim .ks-h2{font-size:clamp(21px,5.6vw,28px)}
@@ -1442,9 +1447,9 @@ window.PinInit=(function(){
            sourceCx:heroRect.left+heroRect.width/2,
            sourceDocTop:heroRect.top+sy,
            sourceH:baseH*sourceScale,
-           // slot→pin-relasjonen er layout-fast (uendret før/under pinning). Pinnen låses ved navH.
+           // slot→pin-relasjonen er layout-fast (uendret før/under pinning). Pinnen låses ved ksPinTopp() (sentrert).
            targetCx:slotRect.left+baseW/2,
-           targetCy:navH+(slotRect.top-pinRect.top)+baseH/2,
+           targetCy:ksPinTopp()+(slotRect.top-pinRect.top)+baseH/2,
            heroStart:Math.max(0,heroRect.top+sy-navH),
            ksStart:st.start,
            vw:document.documentElement.clientWidth,
@@ -1496,7 +1501,9 @@ window.PinInit=(function(){
         var bue=Math.sin(Math.PI*e);      // 0 i begge ender, 1 midt i banen
         scale=lerp(g.sourceScale,1,e);   // hero-størrelse → NØYAKTIG slot-størrelse
         rot=TILT_MAKS*bue;                // lett vipp, rolig inn og ut
-        var sx=g.sourceCx, syc=navH+g.sourceH/2, ex=g.targetCx, ey=g.targetCy;
+        // Startpunktet er hero-plassen (navH ved heroStart, som før). Bare når man har scrollet tilbake OVER overgangen mens
+        // reisen ennå tar igjen, følger det hero-plassen ned — så p=0 alltid ligger nøyaktig på den dokkede telefonen.
+        var sx=g.sourceCx, syc=navH+Math.max(0,g.heroStart-sy)+g.sourceH/2, ex=g.targetCx, ey=g.targetCy;
         cx=lerp(sx,ex,e)+g.vw*BUE_ANDEL*bue;   // svak bue mot høyre
         cy=lerp(syc,ey,e);
         // Hold det roterte, skalerte omrisset innenfor skjermen (MARG px). Tonet inn/ut med bue → start og
