@@ -68,7 +68,12 @@ async function aapne({ plan, bredde, tema }) {
     if (p === '/api/dashboard/referrals') return J([]);
     if (p === '/api/dashboard/loyalty') return J(LOYAL);
     if (p === '/api/dashboard/momentum') return J({ show:false });
-    if (p === '/api/dashboard/sms-preview') return J({ kind:u.searchParams.get('kind'), body:'Hei Jonas! Påminnelse om timen din hos Grand Barber i morgen kl. 11:30.', tegn:70, segmenter:1, gsm7:true, transaksjonell:true });
+    // Ulik tekst per type, samme form som prod-svaret (buildPaaminnelseBody / buildRebookingBody i backend).
+    // Før ga mocken påminnelsesteksten for begge, så Rebooking-forhåndsvisningen så feil ut i testen.
+    if (p === '/api/dashboard/sms-preview') { const k = u.searchParams.get('kind');
+      return k==='rebooking'
+        ? J({ kind:k, body:'Hei Jonas! Klar for ny time hos Grand Barber? trybarberhq.com/grand-barber\n\nAvmeld: trybarberhq.com/a/EKSEMPEL01', tegn:112, segmenter:1, gsm7:true, transaksjonell:false })
+        : J({ kind:k, body:'Hei Jonas! Minner om timen din hos Grand Barber i morgen kl 14:00.', tegn:66, segmenter:1, gsm7:true, transaksjonell:true }); }
     if (p === '/api/dashboard/aktivering') return J({ har_booking:true });
     return J(/images|bookings|services|hours|customers/.test(p) ? [] : {}); });
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
@@ -149,6 +154,24 @@ for (const [plan, id] of [['vekst','accWinback'],['vekst','accVerv'],['vekst','a
   await page.setViewportSize({ width:375, height:Math.ceil(bunn)+40 }); await page.waitForTimeout(150);
   const fil = path.join(OUT, `utfoldet-${plan==='vekst'?'vekst':'gratis'}-${id}-dark-375.png`);
   await page.screenshot({ path:fil, fullPage:true, clip:{ x:0, y:Math.max(0,top-56), width:375, height:(bunn-top)+80 } }); bilder.push(fil);   // fullPage: clip i side-koordinater (klikket kan ha scrollet)
+  await ctx.close();
+}
+
+// Rebooking utfoldet @320/375 (Vekst, mørk): forhåndsvisningen skal vise REBOOKING-teksten, ikke påminnelsen,
+// og forklaringslinja for ikke-transaksjonell SMS. SMS-påminnelsen sjekkes motsatt vei.
+for (const bredde of [320, 375]) {
+  const { ctx, page, errs } = await aapne({ plan:'vekst', bredde, tema:'dark' });
+  await page.click('#accRebook .acc-head'); await page.click('#accPaam .acc-head'); await page.waitForTimeout(700);
+  const t = await page.evaluate(() => ({ rb: document.querySelector('#rebookPreview').innerText.replace(/\s+/g,' '),
+    pm: document.querySelector('#paamPreview').innerText.replace(/\s+/g,' '), of: document.documentElement.scrollWidth - innerWidth }));
+  sjekk(`Rebooking utfoldet ${bredde}: rebooking-tekst + samtykke-linje, ikke påminnelsen`,
+    /Klar for ny time hos Grand Barber\?/.test(t.rb) && /Avmeld:/.test(t.rb) && /samtykket/.test(t.rb) && !/Minner om timen/.test(t.rb), t.rb);
+  sjekk(`SMS-påminnelse utfoldet ${bredde}: påminnelse-tekst, ikke rebooking`, /Minner om timen/.test(t.pm) && !/Klar for ny time/.test(t.pm) && /krever ikke samtykke/.test(t.pm), t.pm);
+  sjekk(`Rebooking utfoldet ${bredde}: ingen pageerror / overflow`, errs.length===0 && t.of<=0, errs.join('|').slice(0,120)+' of='+t.of);
+  const r = await page.evaluate(() => { const a = document.getElementById('accRebook').getBoundingClientRect(); return { top:a.top+scrollY, bunn:a.bottom+scrollY }; });
+  await page.setViewportSize({ width:bredde, height:Math.ceil(r.bunn)+40 }); await page.waitForTimeout(150);
+  const fil = path.join(OUT, `rebooking-preview-vekst-dark-${bredde}.png`);
+  await page.screenshot({ path:fil, fullPage:true, clip:{ x:0, y:Math.max(0,r.top-56), width:bredde, height:(r.bunn-r.top)+80 } }); bilder.push(fil);
   await ctx.close();
 }
 
