@@ -2,12 +2,12 @@
 // Invariant som voktes: de tre pillene står på ÉN linje, like brede segmenter, uten tekst-klipp
 // og uten å dytte dokumentet i horisontal overflow — på alle smale bredder.
 //
-// Mekanismen er .perbar / .perbar-btn (display:flex; .perbar-btn{flex:1;min-width:0;white-space:nowrap}),
-// IKKE den gamle .segs:not(.segs-val) (den klassen bærer nå bare verdi-pillene #rebookPills/#vervRecipient).
+// Mekanismen er .ovs-seg / .ovs-seg-btn (display:flex; .ovs-seg-btn{flex:1;min-width:0;white-space:nowrap}, 17.11).
+// .perbar (Veksts gamle #attrPeriod) er slettet; .segs bærer bare verdi-pillene #rebookPills/#vervRecipient.
 //
-// ⚠ #segs og #attrPeriod INNEHOLDER en skjult .perseg-meny (måned-/lengre-dropdownen) med egne <button>.
+// ⚠ #segs INNEHOLDER en skjult .perseg-meny (måned-dropdownen) med egne <button>.
 //   Et naivt querySelectorAll('button') sveiper dem med (0-brede, top 0) og gir falsk skjevhet/overflow —
-//   derfor måler vi KUN direkte-barn .perbar-btn. (Denne fella ga en falsk «pillene brekker»-rapport.)
+//   derfor måler vi KUN direkte-barn .ovs-seg-btn. (Denne fella ga en falsk «pillene brekker»-rapport.)
 //
 //   node tools/render/periodepiller.mjs
 //

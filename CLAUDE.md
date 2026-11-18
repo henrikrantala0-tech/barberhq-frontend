@@ -488,7 +488,10 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
   IKKE lenger fane. **Gratis (`erBasis`):** FAST tekst «Flere klipp fra kundene du har. Og nye i tillegg.» + tre rader
   uten tall + «179 kr/mnd · eks. mva» + «Se Vekst» (`aapneAbonnement`). INGEN `/attribution`-kall på Gratis, ingen
   maskerte rader, ingen PÅ VEI. De gamle Oversikt-byggerne (`diTitle`, `diHentetInnHtml`, `diPaaVeiHtml`, `.di-card`/
-  `.di-pv-*`) er SLETTET; `diRaderHtml`/`diTotalHtml`/`diBasis*` lever videre for Vekst-fanen.
+  `.di-pv-*`) er SLETTET. Vekst-fanens byggere (`diRaderHtml`/`diTotalHtml`/`diArmRad`/`diBasis*`/`koblePaaVeiCta`) og
+  `renderAttribusjon` er OGSÅ SLETTET (17.11) — Vekst tegner samme komponent (`tegnHentetInn`). Bare `.di-off-badge` lever.
+  **Feil fra `/attribution`** → overskrift + periodevelger står, dempet «Kunne ikke hente tallene akkurat nå.» (`.hi-feil`)
+  der tallene skulle vært; periodebytte henter på nytt. Gjelder begge verter. Vakt: `tools/render/hentet-inn-feil.mjs`.
 - **«Drevet av BarberHQ» (Oversikt) — historikk før 17.11:** `renderDrivenBy` henter ekte `GET /api/dashboard/attribution?period=uke|2uker|maaned` (session) via `api.attribution` for ikke-basis — mock (`MOCK_ATTRIBUTION` + `USE_MOCK`) fjernet i `fa02e3f`. Ved Basis-plan vises eksempeltall bak lås i stedet (Basis-visning, INGEN API-kall — lekker aldri ekte tall). Totalen kommer fra backendens autoritative `data.total {count,revenue}` (efaa553), gjort til ENESTE kilde i `46701a3` (klient-sum `attribSum` fjernet; mangler total → feilstate, aldri klient-sum). Tre rader (rebooking/verving/vinn tilbake); 0-rad «0 klipp · 0 kr», alle tre 0 → «Her bygger verdien seg opp». Delta «fra forrige uke» kun på uke-pill (2uker−uke), aldri på eksempeldata. Skjult på historisk måned. **✅ ATTRIBUSJONSSAKEN LUKKET (14.09.2026):** lojalitet er fjernet som attribusjonskategori i BÅDE frontend og backend — begge repos pushet og prod-verifisert (backend `67e2826` «lojalitet er ingen arm — kategori fjernet, rabatt beholdt», som bygger på `98ae355`; frontend `25faaa5`). **Ikke flagg `98ae355`/`67e2826` som upushet — de ER på origin/main.** Totalen summerer nå de TRE armene panelet viser (verving/vinn tilbake/rebooking); lojalitet-noden står igjen i API-et men teller IKKE. `renderDrivenBy` henter hardkodet `siste_maaned` (frikoblet fra #segs). Rebooking-raden viser ekte tall + dempet «SMS av»-badge når `sms_rebooking_enabled=false` (`3372d19`) → synlige rader summerer alltid til vist total. **Tom total (`count===0`) → én dempet linje «Ingenting hentet inn ennå.» (`25faaa5`)** — ERSTATTER de eldre «0 klipp · 0 kr»/«Her bygger verdien seg opp» nevnt tidligere i denne bulleten.
 
 ### Lojalitetsprogram (Vekst-fanen)
@@ -939,13 +942,11 @@ Alle gjøremål står i C:\Users\henri\Desktop\barberhq-plan\PLAN.md.
   `9ee04ca`, pris-0 `5fe012d`). Verktøy: `tools/render/mobil-gjennomgang.mjs`.
 - **Bunn-nav på mobil** — BYGGET (`75a7386`), innhold klarer baren (`4abe4a1`). Ikke lenger «vurder».
 - **Like periode-piller på 320** — `#segs` + `#ovsAttrPeriod` (Oversikt) + `#vkAttrPeriod` (Vekst) står på ÉN linje,
-  like segmenter, uten klipp/overflow (målt 320–430). **Mekanismen er `.perbar`/`.perbar-btn`**
-  (`.perbar{display:flex}` + `.perbar-btn{flex:1;min-width:0;white-space:nowrap}`), IKKE lenger
-  `.segs:not(.segs-val)` — `9ee04ca` brukte den klassen, men markupen ble siden bygget om til `.perbar`,
-  og `.segs` bærer nå BARE verdi-pillene (`#rebookPills`/`#vervRecipient`, som skal wrappe). ⚠ Den gamle
-  teksten her påsto `.segs:not(.segs-val){display:flex;width:100%}` + `button{flex:1}` — død beskrivelse,
-  rettet. Voktet av `tools/render/periodepiller.mjs` (`rader===1` @320/360/375/390; sveiper KUN direkte-barn
-  `.perbar-btn` — den skjulte `.perseg-meny`-dropdownen i baren ga ellers falsk «brekker til to linjer»).
+  like segmenter, uten klipp/overflow (målt 320–430). **Mekanismen er `.ovs-seg`/`.ovs-seg-btn`** (17.11)
+  (`.ovs-seg{display:flex}` + `.ovs-seg-btn{flex:1;min-width:0;white-space:nowrap}`, 12px under 360px). `.perbar` er
+  SLETTET (var Veksts gamle `#attrPeriod`), og `.segs` bærer BARE verdi-pillene (`#rebookPills`/`#vervRecipient`, som skal
+  wrappe). Voktet av `tools/render/periodepiller.mjs` (`rader===1` @320/360/375/390; sveiper KUN direkte-barn
+  `.ovs-seg-btn` — den skjulte `.perseg-meny`-dropdownen i `#segs` ga ellers falsk «brekker til to linjer»).
 - **Pris-0-markør i tjeneste-lista** — `5fe012d`: rød kant + «Sett pris».
 - **Kalender-dagvelger på mobil starter på i dag** — `7d76c8c` (rotårsak i rekkevidden, ikke scroll-hack).
 
