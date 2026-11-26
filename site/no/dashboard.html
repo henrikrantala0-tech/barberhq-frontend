@@ -345,9 +345,13 @@
   .ed-uke[aria-pressed=true]{color:var(--ed-blaa);font-weight:700}
   .ed-uke:disabled{opacity:.35;cursor:default}
   .ed-dag{appearance:none;position:relative;height:46px;min-width:0;padding:0;border:0;background:transparent;font:inherit;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;-webkit-tap-highlight-color:transparent;transition:opacity .2s}
-  .ed-dag::before{content:"";position:absolute;inset:2px 2px;border-radius:10px;background:transparent;transition:background-color .2s ease-out}
-  .ed-n{position:relative;width:28px;height:28px;line-height:28px;border-radius:50%;text-align:center;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;transition:color .2s ease-out,box-shadow .2s ease-out}
-  .ed-p{position:relative;width:5px;height:5px;border-radius:50%;background:transparent;transition:background-color .2s ease-out,transform .2s ease-out}
+  /* ÉN sirkel per dag (.ed-n), sentrert om tallet med grid i en flex-kolonne — ingen absolutt plassering. Alle
+     tilstander tegnes på den: valgt = fylt blå, i dag = ring (inset), valgt + i dag = fylt blå + ring utenfor
+     (outline-offset). Prikken står sentrert under sirkelen og beholder statusfargen også når dagen er valgt.
+     Diameter 32 (28 under 360 px: 28 + 2×(2 + 1,5) = 35 = kolonnebredden på 320). */
+  .ed-n{--ed-d:32px;width:var(--ed-d);height:var(--ed-d);flex:0 0 auto;display:grid;place-items:center;border-radius:50%;font-size:14px;font-weight:500;line-height:1;font-variant-numeric:tabular-nums;background:transparent;transition:background-color .2s ease-out,color .2s ease-out,box-shadow .2s ease-out}
+  @media(max-width:359px){ .ed-n{--ed-d:28px} }
+  .ed-p{flex:0 0 auto;width:5px;height:5px;border-radius:50%;background:transparent;transition:background-color .2s ease-out,transform .2s ease-out}
   .ed-dag.s-faste .ed-p{background:var(--ed-gronn)}
   .ed-dag.s-egne .ed-p{background:var(--ed-blaa)}
   .ed-dag.s-stengt .ed-n{color:var(--mut-2)}
@@ -357,19 +361,21 @@
   .ed-dag.forbi,.ed-dag.etter{opacity:.3;cursor:default}
   .ed-dag.forbi .ed-p,.ed-dag.etter .ed-p{background:transparent}
   .ed-dag.valgt{opacity:1}
-  .ed-dag.valgt::before{background:var(--ed-blaa)}
   .ed-dag.valgt>span{opacity:1}
-  .ed-dag.valgt .ed-n{color:#fff;font-weight:600}
-  .ed-dag.valgt.s-stengt .ed-n{color:rgba(255,255,255,.62)}
-  .ed-dag.valgt.idag .ed-n{box-shadow:inset 0 0 0 1.5px #fff}
-  .ed-dag.valgt.s-faste .ed-p,.ed-dag.valgt.s-egne .ed-p{background:#fff}
+  .ed-dag.valgt .ed-n{background:var(--ed-blaa);color:#fff;font-weight:600;box-shadow:none}
+  .ed-dag.valgt.s-stengt .ed-n{color:rgba(255,255,255,.7)}
+  .ed-dag.valgt.idag .ed-n{outline:1.5px solid var(--ink-2);outline-offset:2px}
   .ed-dag.bytt .ed-p{transform:scale(1.6)}   /* kort puls når en lagring endrer dagen */
-  .ed-dag:focus-visible,.ed-uke:focus-visible,.ed-rad:focus-visible{outline:2px solid var(--ed-blaa);outline-offset:-2px}
+  /* Fokusring bare ved tastatur (html.tastatur, se <head>) — :focus-visible alene gir ring ved trykk i WebKit.
+     Den globale :where(button)-ringen ville tegnet et rektangel rundt hele cellen; her tegnes den på sirkelen. */
+  html.tastatur .ed-dag:focus{outline:none}
+  html.tastatur .ed-dag:focus .ed-n{outline:2px solid #4d8bff;outline-offset:2px}
+  html.tastatur .ed-uke:focus,html.tastatur .ed-rad:focus{outline:2px solid #4d8bff;outline-offset:-2px}
   @media(hover:hover){
-    .ed-dag:not(:disabled):not(.valgt):hover::before{background:var(--ov-seg-sel)}
+    .ed-dag:not(:disabled):not(.valgt):hover .ed-n{background:var(--ov-seg-sel)}
     .ed-uke:not(:disabled):hover{color:var(--ink)}
   }
-  .ed-grid.stille *,.ed-grid.stille *::before{transition:none!important}
+  .ed-grid.stille *{transition:none!important}
   .ed-forkl{display:flex;flex-wrap:wrap;gap:6px 16px;margin:12px 0 0;font-size:12px;color:var(--mut)}
   .ed-forkl span{display:inline-flex;align-items:center;gap:6px}
   .ed-fk-p{width:6px;height:6px;border-radius:50%;display:inline-block}
@@ -377,7 +383,8 @@
   .ed-fk-n{font-weight:500;color:var(--mut-2);font-size:12px}
   .ed-horisont{margin:8px 0 0;font-size:12.5px;color:var(--mut);line-height:1.5}
   .ed-liste-h{margin:26px 0 2px;font-size:13.5px;font-weight:600;letter-spacing:-.01em}
-  .ed-rad{appearance:none;display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:0 4px;border:0;border-bottom:1px solid var(--ov-hair);background:transparent;font:inherit;color:var(--ink);text-align:left;cursor:pointer;border-radius:0}
+  .ed-rad{appearance:none;display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:0 4px;border:0;background:transparent;font:inherit;color:var(--ink);text-align:left;cursor:pointer;border-radius:0}
+  .ed-rad+.ed-rad{border-top:1px solid var(--ov-hair)}   /* linje bare mellom rader — ingen under siste (seksjonsskillet følger) */
   .ed-rad-dato{flex:1;min-width:0;font-size:14px;font-weight:500;letter-spacing:-.01em}
   .ed-rad-tid{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink)}
   .ed-rad-tid.stengt{color:var(--mut);font-weight:500}
@@ -399,11 +406,17 @@
   .ed-fjern{appearance:none;position:relative;border:0;background:transparent;font:inherit;font-size:13.5px;font-weight:500;color:var(--info);cursor:pointer;padding:8px 0}
   .ed-fjern::after{content:"";position:absolute;inset:-4px -8px}
   .ed-valg{margin-bottom:0}
+  .ed-tilbake{appearance:none;position:relative;display:inline-block;margin:10px 0 0;padding:4px 0;border:0;background:transparent;font:inherit;font-size:13px;font-weight:500;color:var(--mut);text-decoration:underline;text-underline-offset:3px;cursor:pointer}
+  .ed-tilbake::after{content:"";position:absolute;inset:-8px -6px}
+  .ed-tilbake:disabled{cursor:default;opacity:.5}
+  @media(hover:hover){ .ed-tilbake:not(:disabled):hover{color:var(--ink)} }
+  .ed-tilbake[hidden]{display:none}
   .ed-valg .ovs-seg-btn{height:40px;font-size:13.5px}
   .ed-valg .ovs-seg-btn:disabled{cursor:default}
   .ed-tider{margin-top:14px}
   .ed-tider[hidden]{display:none}
-  .ed-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .ed-chips{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-bottom:12px}
+  .ed-chips-etikett{font-size:12px;font-weight:500;color:var(--mut);margin-right:2px}
   .ed-chips:empty{display:none}
   .ed-chip{appearance:none;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--ov-seg-line);border-radius:999px;background:transparent;font:inherit;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);cursor:pointer;position:relative}
   .ed-chip::after{content:"";position:absolute;inset:-4px 0}
@@ -416,14 +429,15 @@
   .ed-tid input[type=time]{width:100%;min-width:0;box-sizing:border-box;font-size:16px;font-variant-numeric:tabular-nums}
   .ed-pause{margin:10px 0 0;font-size:12.5px;color:var(--mut);line-height:1.5}
   .ed-pause p{margin:0}
-  .ed-lagre{display:block;width:100%;min-height:46px;margin-top:14px;font-size:14px}
+  .ed-lagre{display:block;width:100%;min-height:46px;margin-top:16px;font-size:14px}
   .ed-lagre:disabled{opacity:.4;cursor:default}
   .ed-lagre[hidden],.ed-pause[hidden],.ed-chips[hidden]{display:none}   /* author display slår UA [hidden] */
   .ed-feil{margin:12px 0 0;font-size:13px;color:var(--bad);line-height:1.5}
   .ed-feil[hidden]{display:none}
   .ed-adv-h{margin:0 0 6px;font-size:14px;font-weight:600}
-  .ed-adv-liste{max-height:34vh;overflow-y:auto;border-top:1px solid var(--ov-hair)}
-  .ed-adv-rad{display:flex;align-items:baseline;gap:10px;padding:10px 0;border-bottom:1px solid var(--ov-hair);font-size:13.5px}
+  .ed-adv-liste{max-height:34vh;overflow-y:auto}
+  .ed-adv-rad{display:flex;align-items:baseline;gap:10px;padding:10px 0;font-size:13.5px}
+  .ed-adv-rad+.ed-adv-rad{border-top:1px solid var(--ov-hair)}
   .ed-adv-navn{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
   .ed-adv-tid{flex-shrink:0;color:var(--mut);font-variant-numeric:tabular-nums}
   .ed-adv-s{margin:12px 0 0;font-size:13px;color:var(--ink-2);line-height:1.5}
@@ -439,7 +453,7 @@
   @media(max-width:719px){ #edToast{bottom:calc(var(--bunn-nav-h) + env(safe-area-inset-bottom) + var(--ed-ark-h,0px) + 12px)} }
   @media(prefers-reduced-motion:reduce){
     .ed-ark,.ed-ark.inn,#edToast{transition:none}
-    .ed-dag,.ed-dag::before,.ed-n,.ed-p{transition:none}
+    .ed-dag,.ed-n,.ed-p{transition:none}
     .ed-dag.bytt .ed-p{transform:none}
   }
 
@@ -2626,9 +2640,9 @@
     <p class="pub-err" id="hoursErr"></p>
 
     <!-- ENKELTDAGER (datoavvik, GET/PUT/DELETE /api/dashboard/date-overrides): overstyrer Faste tider på
-         bestemte datoer — Åpen med egne tider, Stengt, eller tilbake til Faste tider. Trykk på dager (eller
-         ukenummer) bygger et utvalg; arket (#edArk, nederst i body) glir opp når minst én dag er valgt.
-         Lagres ved bekreftelse — ingen lagre-knapp utenom «Lagre» etter manuell tidsendring. Se Enkeltdager i JS. -->
+         bestemte datoer — Åpen med egne tider eller Stengt, eller «Tilbakestill til faste tider». Trykk på dager
+         (eller ukenummer) bygger et utvalg; arket (#edArk, før hovedskriptet) glir opp når minst én dag er valgt.
+         Ingenting lagres før «Lagre N dager» (eller tilbakestillingen). Se Enkeltdager i JS. -->
     <div class="ed" id="enkeltdager">
       <p class="svc-group-h">Enkeltdager</p>
       <div class="ed-kal">
@@ -3528,7 +3542,8 @@
 </div>
 
 <!-- Enkeltdager-arket (Tjenester & tider). Ikke modalt: kalenderen over kan trykkes mens arket er åpent.
-     Hovedvisning (tre valg + tider) og advarselsvisning (berørte bookinger fra dry_run) bytter i samme ark. -->
+     Hovedvisning (Åpen | Stengt + tider + «Lagre N dager») og advarselsvisning (berørte bookinger fra dry_run)
+     bytter i samme ark. Segment og «Sist brukt» lagrer ingenting — bare «Lagre N dager» og tilbakestillingen. -->
 <div class="ed-ark" id="edArk" role="region" aria-label="Valgte dager" inert>
   <div class="ed-ark-topp">
     <p class="ed-ark-tittel" id="edArkTittel"></p>
@@ -3538,18 +3553,18 @@
     <div class="ovs-seg ed-valg" role="group" aria-label="Velg for dagene">
       <button type="button" class="ovs-seg-btn" data-ed="apen" aria-pressed="false">Åpen</button>
       <button type="button" class="ovs-seg-btn" data-ed="stengt" aria-pressed="false">Stengt</button>
-      <button type="button" class="ovs-seg-btn" data-ed="faste" aria-pressed="false">Faste tider</button>
     </div>
+    <button type="button" class="ed-tilbake" id="edTilbake" hidden>Tilbakestill til faste tider</button>
     <div class="ed-tider" id="edTider" hidden>
-      <div class="ed-chips" id="edChips"></div>
+      <div class="ed-chips" id="edChips" hidden></div>
       <div class="ed-tidrad">
         <label class="ed-tid"><span>Fra</span><input type="time" step="900" id="edFra"></label>
         <label class="ed-tid"><span>Til</span><input type="time" step="900" id="edTil"></label>
       </div>
       <div class="ed-pause" id="edPause" hidden></div>
-      <button type="button" class="btn ed-lagre" id="edLagre" hidden>Lagre</button>
     </div>
     <p class="ed-feil" id="edFeil" role="alert" hidden></p>
+    <button type="button" class="btn ed-lagre" id="edLagre" disabled>Lagre</button>
   </div>
   <div class="ed-adv" id="edAdvarsel" hidden>
     <p class="ed-adv-h" id="edAdvH"></p>
@@ -5862,7 +5877,7 @@ function hentAvvik(tving){
 }
 
 window.Enkeltdager=(function(){
-  var ED={ym:null,valgt:new Set(),apenBruker:false,skitten:false,fylt:null,opptatt:false,vent:null,forsok:null,angre:null,toastT:null,sveipT:-1e9,klar:false};
+  var ED={ym:null,valgt:new Set(),valg:null,valgBruker:false,rort:false,opptatt:false,vent:null,forsok:null,angre:null,toastT:null,sveipT:-1e9,klar:false};
   var SIST='bhq-ed-sist';
   var UKEDAG_FLERTALL=['mandager','tirsdager','onsdager','torsdager','fredager','lørdager','søndager'];
   var REDUSERT=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)');
@@ -5875,7 +5890,6 @@ window.Enkeltdager=(function(){
   function kanVelges(ymd){return ymd>=idag()&&ymd<=maks();}
   function fasteFor(ymd){ if(!_fasteLagret)return null; var wd=(edDato(ymd).getDay()+6)%7; return _fasteLagret.find(function(h){return h.day===wd;})||null; }
   function status(ymd){ var av=AVVIK.map[ymd]; if(av)return av.closed?'stengt':'egne'; var f=fasteFor(ymd); return (f&&f.on)?'faste':'stengt'; }
-  function vindu(t){return t.open+'–'+t.close;}
   function ukedagNavn(ymd){return DAYS[(edDato(ymd).getDay()+6)%7];}
   function datoKort(ymd){var d=edDato(ymd);return d.getDate()+'. '+MONTHS[d.getMonth()].slice(0,3);}
   function datoLang(ymd){var d=edDato(ymd),s=d.getDate()+'. '+MONTHS[d.getMonth()];return d.getFullYear()!==edDato(idag()).getFullYear()?s+' '+d.getFullYear():s;}
@@ -5958,8 +5972,10 @@ window.Enkeltdager=(function(){
 
   // ── Utvalg ──
   function veksle(ymd){ if(!kanVelges(ymd))return; if(ED.valgt.has(ymd))ED.valgt.delete(ymd); else ED.valgt.add(ymd); utvalgEndret(); }
-  function utvalgEndret(){ ED.vent=null; if(!ED.valgt.size){ ED.apenBruker=false; ED.skitten=false; } else if(!ED.skitten) ED.fylt=null; oppdaterCeller(); tegnListe(); oppdaterArk(); }
-  function tomUtvalg(){ ED.valgt.clear(); ED.apenBruker=false; ED.skitten=false; ED.fylt=null; ED.vent=null; }
+  // Regel B (Henrik 26.11): det barberen har valgt/skrevet blir stående mens arket er åpent og gjelder alle valgte
+  // dager. Utvalget tømt → alt nullstilles (neste åpning forhåndsutfylles på nytt).
+  function utvalgEndret(){ ED.vent=null; if(!ED.valgt.size)nullstill(); oppdaterCeller(); tegnListe(); oppdaterArk(); }
+  function nullstill(){ ED.valgt.clear(); ED.valg=null; ED.valgBruker=false; ED.rort=false; ED.vent=null; }
 
   // ── Arket ──
   function sortertValg(){return Array.from(ED.valgt).filter(kanVelges).sort();}
@@ -5971,8 +5987,10 @@ window.Enkeltdager=(function(){
     if(n[0]==='faste'||n[0]==='stengt')return n[0];
     var av=AVVIK.map[a[0]]; return {open:av.open_time,close:av.close_time};
   }
-  // Forhåndsutfylling: én dag (eller alle) med egne tider → de tidene; ellers første dags faste tider;
-  // stengt ukedag → sist brukte; ellers 10:00–18:00.
+  // Valget arket står på før barberen har trykket: alle med samme egne tider → Åpen, alle stengt via unntak → Stengt.
+  function startValg(){ var fl=felles(); return (fl&&typeof fl==='object')?'apen':fl==='stengt'?'stengt':null; }
+  // Forhåndsutfylling av Fra/Til (bare så lenge Fra/Til ikke er rørt): felles egne tider → de; ellers første dags
+  // faste tider; stengt ukedag → sist brukte; ellers 10:00–18:00.
   function forslag(){
     var fl=felles(); if(fl&&typeof fl==='object')return fl;
     var a=sortertValg(), f=a.length?fasteFor(a[0]):null;
@@ -5980,25 +5998,21 @@ window.Enkeltdager=(function(){
     var s=lesSist(); if(s.length)return s[0];
     return {open:'10:00',close:'18:00'};
   }
-  function chips(){
-    var ut=[], sett={};
-    function legg(t,etikett){ var k=t.open+'-'+t.close; if(sett[k]||!(t.open<t.close))return; sett[k]=1; ut.push({open:t.open,close:t.close,etikett:etikett||''}); }
-    lesSist().forEach(function(t){legg(t);});
-    (_fasteLagret||[]).forEach(function(h){ if(h.on&&h.start&&h.end) legg({open:h.start,close:h.end}); });
-    return ut.slice(0,6);
-  }
+  // «Sist brukt» (maks 3, denne enheten). Ingen → hele raden skjult. Et trykk fyller bare Fra/Til.
   function tegnChips(){
-    var c=el('edChips'), v={open:fra.value,close:til.value};
-    c.innerHTML=chips().map(function(t){
-      var p=(t.open===v.open&&t.close===v.close);
+    var c=el('edChips'), s=lesSist().filter(function(t){return t.open<t.close;});
+    if(!s.length){ c.hidden=true; c.innerHTML=''; return; }
+    c.innerHTML='<span class="ed-chips-etikett">Sist brukt</span>'+s.map(function(t){
+      var p=(t.open===fra.value&&t.close===til.value);
       return '<button type="button" class="ed-chip" data-open="'+t.open+'" data-close="'+t.close+'" aria-pressed="'+(p?'true':'false')+'">'+t.open+'–'+t.close+'</button>';
     }).join('');
+    c.hidden=false;
   }
   // «Pause 12:00–12:30 gjelder også denne dagen.» når ukedagens pause (Faste tider) faller innenfor Fra–Til.
   // Flere dager: én linje per pause, med ukedagene den gjelder.
   function tegnPause(){
     var p=el('edPause'), o=fra.value, c=til.value, a=sortertValg();
-    if(!o||!c||!(o<c)){ p.hidden=true; p.innerHTML=''; return; }
+    if(ED.valg!=='apen'||!o||!c||!(o<c)){ p.hidden=true; p.innerHTML=''; return; }
     var per={};
     a.forEach(function(k){
       var f=fasteFor(k), b=f&&f.breaks&&f.breaks[0];
@@ -6013,9 +6027,11 @@ window.Enkeltdager=(function(){
     });
     p.innerHTML=linjer.map(function(t){return '<p>'+esc(t)+'</p>';}).join(''); p.hidden=!linjer.length;
   }
+  // «Lagre 1 dag» / «Lagre 4 dager». Av uten valg, og ved Åpen når Fra ikke er før Til.
   function tegnLagreKnapp(){
-    var b=el('edLagre'); b.hidden=!ED.skitten;
-    b.disabled=!(fra.value&&til.value&&fra.value<til.value)||ED.opptatt;
+    var b=el('edLagre'), n=sortertValg().length;
+    b.textContent='Lagre '+(n===1?'1 dag':n+' dager');
+    b.disabled=ED.opptatt||!ED.valg||(ED.valg==='apen'&&!(fra.value&&til.value&&fra.value<til.value));
   }
   function visFeil(tekst,igjen){
     var f=el('edFeil');
@@ -6029,17 +6045,12 @@ window.Enkeltdager=(function(){
     if(!n){ lukkArk(); return; }
     el('edArkTittel').textContent=n===1?'1 dag valgt':n+' dager valgt';
     el('edHoved').hidden=!!ED.vent; el('edAdvarsel').hidden=!ED.vent;
-    var fl=felles(), egne=fl&&typeof fl==='object';
-    var aktiv=ED.apenBruker||egne?'apen':fl;
-    ark.querySelectorAll('.ed-valg [data-ed]').forEach(function(b){ b.setAttribute('aria-pressed',b.dataset.ed===aktiv?'true':'false'); b.disabled=ED.opptatt; });
-    var visTider=ED.apenBruker||egne;
-    el('edTider').hidden=!visTider;
-    if(visTider&&!ED.skitten){
-      var f=forslag(), k=f.open+'-'+f.close;
-      if(ED.fylt!==k){ fra.value=f.open; til.value=f.close; ED.fylt=k; }
-    }
-    if(visTider){ tegnChips(); tegnPause(); }
-    tegnLagreKnapp();
+    if(!ED.valgBruker) ED.valg=startValg();
+    if(!ED.rort){ var f=forslag(); fra.value=f.open; til.value=f.close; }
+    ark.querySelectorAll('.ed-valg [data-ed]').forEach(function(b){ b.setAttribute('aria-pressed',b.dataset.ed===ED.valg?'true':'false'); b.disabled=ED.opptatt; });
+    var tb=el('edTilbake'); tb.hidden=!sortertValg().some(function(k){return !!AVVIK.map[k];}); tb.disabled=ED.opptatt;
+    el('edTider').hidden=ED.valg!=='apen';
+    tegnChips(); tegnPause(); tegnLagreKnapp();
     apneArk();
   }
   var ro=null;
@@ -6060,21 +6071,21 @@ window.Enkeltdager=(function(){
   function settOpptatt(v){ ED.opptatt=v; ark.setAttribute('aria-busy',v?'true':'false'); ark.querySelectorAll('button').forEach(function(b){ if(b.id!=='edFjern')b.disabled=v; }); if(!v)oppdaterArk(); }
 
   // ── Lagring ──
-  async function kall(metode,body){
-    var r; try{ r=await apiFetch('/api/dashboard/date-overrides',{method:metode,body:JSON.stringify(body)}); }
+  async function kall(metode,body,sti){
+    var r; try{ r=await apiFetch(sti||'/api/dashboard/date-overrides',{method:metode,body:JSON.stringify(body)}); }
     catch(e){ return {ok:false,error:kontaktFeil(e)}; }
     if(!r)return {ok:false,error:''};
     var j=await r.json().catch(function(){return null;});
     if(r.ok&&j)return {ok:true,data:j};
-    return {ok:false,error:(j&&j.error)||('Kunne ikke lagre enkeltdagene (feil '+r.status+'). Prøv igjen.')};
+    return {ok:false,error:(j&&j.error)||('Kunne ikke lagre (feil '+r.status+'). Prøv igjen.')};
   }
   function kropp(h){ return h.closed?{closed:true}:{closed:false,open_time:h.open,close_time:h.close}; }
-  // Ved bekreftelse: dry_run (PUT for Åpen/Stengt, DELETE for Faste tider) → tom berorte = lagre; ellers advarsel.
-  // Feil → ingenting lagres.
+  // Ved «Lagre N dager» / «Tilbakestill»: dry_run (PUT for Åpen/Stengt, DELETE for tilbakestilling) → tom berorte =
+  // lagre; ellers advarsel. Feil → ingenting lagres.
   async function bekreft(h){
     if(ED.opptatt)return;
     var datoer=sortertValg(); if(!datoer.length)return;
-    if(h.faste){ datoer=datoer.filter(function(k){return AVVIK.map[k];}); if(!datoer.length){ tomUtvalg(); tegnAlt(); return; } }
+    if(h.faste){ datoer=datoer.filter(function(k){return AVVIK.map[k];}); if(!datoer.length)return; }
     ED.forsok=h; visFeil(''); settOpptatt(true);
     var berorte=null;
     try{
@@ -6090,30 +6101,33 @@ window.Enkeltdager=(function(){
     if(berorte.length){ ED.vent={h:h,datoer:datoer}; settOpptatt(false); visAdvarsel(berorte); return; }
     await lagre(h,datoer);
   }
-  function visAdvarsel(berorte){
+  // Berørte bookinger som rader (navn · dato · tid). Delt av arket og bekreftelsen i «Tidene mine varierer».
+  function bookingRader(berorte){
     berorte.sort(function(a,b){return new Date(a.start)-new Date(b.start);});
-    el('edAdvH').textContent=berorte.length===1?'1 booking havner utenfor':berorte.length+' bookinger havner utenfor';
-    el('edAdvListe').innerHTML=berorte.map(function(b){
+    return berorte.map(function(b){
       var dato=b.dato||edYmd(new Date(calDayKey(b.start)));
       return '<div class="ed-adv-rad"><span class="ed-adv-navn">'+esc(b.name||'Uten navn')+'</span><span class="ed-adv-tid">'+ukedagNavn(dato).slice(0,3)+' '+datoKort(dato)+' · '+timeOnly(b.start)+'</span></div>';
     }).join('');
+  }
+  function antallTekst(n){ return n===1?'1 booking havner utenfor':n+' bookinger havner utenfor'; }
+  function visAdvarsel(berorte){
+    el('edAdvH').textContent=antallTekst(berorte.length);
+    el('edAdvListe').innerHTML=bookingRader(berorte);
     oppdaterArk();
   }
   async function lagre(h,datoer){
     settOpptatt(true);
     var foer=datoer.map(function(k){return [k,AVVIK.map[k]?Object.assign({},AVVIK.map[k]):null];});
     var r=h.faste?await kall('DELETE',{dates:datoer}):await kall('PUT',Object.assign({dates:datoer},kropp(h)));
-    if(!r.ok){ ED.vent=null; settOpptatt(false); visFeil(r.error||'Kunne ikke lagre enkeltdagene. Prøv igjen.'); return; }
+    if(!r.ok){ ED.vent=null; settOpptatt(false); visFeil(r.error||'Kunne ikke lagre. Prøv igjen.'); return; }
     datoer.forEach(function(k){ if(h.faste)delete AVVIK.map[k]; else AVVIK.map[k]=h.closed?{closed:true,open_time:null,close_time:null}:{closed:false,open_time:h.open,close_time:h.close}; });
     if(!h.faste&&!h.closed)huskSist(h.open,h.close);
-    ED.vent=null;
-    if(h.faste||h.closed) tomUtvalg();
-    else { ED.skitten=false; ED.fylt=h.open+'-'+h.close; }
-    settOpptatt(false);
-    tegnAlt(datoer); kalenderEndret();
+    nullstill(); settOpptatt(false);   // lagret → arket lukkes og nullstilles (regel B)
+    tegnAlt(datoer); kalenderEndret(); sjekklisteEndret();
     visToast(foer);
   }
   function kalenderEndret(){ try{ if(CAL&&CAL.open&&CAL.dombuilt)renderCal(); }catch(_){} }
+  function sjekklisteEndret(){ try{ if(typeof oppdaterSjekkliste==='function')oppdaterSjekkliste(); }catch(_){} }
 
   // ── Toast + Angre ──
   function visToast(foer){
@@ -6138,8 +6152,8 @@ window.Enkeltdager=(function(){
       var t=el('edToast'); el('edToastTekst').textContent='Klarte ikke å angre.'; el('edAngre').hidden=true;
       t.hidden=false; requestAnimationFrame(function(){ t.classList.add('inn'); }); clearTimeout(ED.toastT); ED.toastT=setTimeout(skjulToast,4000);
     }
-    ED.skitten=false; ED.fylt=null; settOpptatt(false);
-    tegnAlt(snap.map(function(s){return s[0];})); kalenderEndret();
+    settOpptatt(false);
+    tegnAlt(snap.map(function(s){return s[0];})); kalenderEndret(); sjekklisteEndret();
   }
 
   // ── Hendelser ──
@@ -6171,25 +6185,26 @@ window.Enkeltdager=(function(){
     if(!ED.ym||ED.ym.y!==d.getFullYear()||ED.ym.m!==d.getMonth()){ var n=(d.getFullYear()*12+d.getMonth())-ymTall(ED.ym); ED.ym={y:d.getFullYear(),m:d.getMonth()}; tegnMaaned(n>0?1:-1); }
     veksle(ymd);
   });
-  el('edFjern').addEventListener('click',function(){ tomUtvalg(); oppdaterCeller(); tegnListe(); oppdaterArk(); });
+  el('edFjern').addEventListener('click',function(){ nullstill(); oppdaterCeller(); tegnListe(); oppdaterArk(); });
+  // Segmentet lagrer ingenting — det velger bare hva «Lagre N dager» gjør.
   ark.querySelector('.ed-valg').addEventListener('click',function(e){
     var b=e.target.closest('[data-ed]'); if(!b||b.disabled)return;
-    var v=b.dataset.ed;
-    if(v==='apen'){ ED.apenBruker=true; oppdaterArk(); return; }
-    ED.apenBruker=false; ED.skitten=false;
-    bekreft(v==='stengt'?{closed:true}:{faste:true});
+    ED.valg=b.dataset.ed; ED.valgBruker=true; visFeil(''); oppdaterArk();
   });
+  el('edTilbake').addEventListener('click',function(){ bekreft({faste:true}); });
+  // «Sist brukt» fyller bare Fra/Til (og velger Åpen) — lagrer ingenting.
   el('edChips').addEventListener('click',function(e){
     var c=e.target.closest('.ed-chip'); if(!c||ED.opptatt)return;
-    fra.value=c.dataset.open; til.value=c.dataset.close; ED.skitten=false; ED.fylt=c.dataset.open+'-'+c.dataset.close;
-    tegnChips(); tegnPause(); tegnLagreKnapp();
-    bekreft({closed:false,open:c.dataset.open,close:c.dataset.close});
+    fra.value=c.dataset.open; til.value=c.dataset.close; ED.rort=true; ED.valg='apen'; ED.valgBruker=true;
+    oppdaterArk();
   });
-  // Manuell endring av Fra/Til → «Lagre» vises; lagring først ved trykk (ikke når feltet lukkes).
-  function tidEndret(){ ED.skitten=(fra.value+'-'+til.value)!==ED.fylt; tegnChips(); tegnPause(); tegnLagreKnapp(); }
+  function tidEndret(){ ED.rort=true; tegnChips(); tegnPause(); tegnLagreKnapp(); }
   fra.addEventListener('input',tidEndret); til.addEventListener('input',tidEndret);
   fra.addEventListener('change',tidEndret); til.addEventListener('change',tidEndret);
-  el('edLagre').addEventListener('click',function(){ if(!(fra.value<til.value))return; bekreft({closed:false,open:fra.value,close:til.value}); });
+  el('edLagre').addEventListener('click',function(){
+    if(el('edLagre').disabled)return;
+    bekreft(ED.valg==='stengt'?{closed:true}:{closed:false,open:fra.value,close:til.value});
+  });
   el('edAvbryt').addEventListener('click',function(){ ED.vent=null; oppdaterArk(); });
   el('edLagreLikevel').addEventListener('click',function(){ var v=ED.vent; if(!v||ED.opptatt)return; lagre(v.h,v.datoer); });
   el('edAngre').addEventListener('click',angre);
@@ -6209,7 +6224,7 @@ window.Enkeltdager=(function(){
     last:last,
     fasteEndret:function(){ if(ED.klar)tegnAlt(); else tegn(); },
     horisontEndret:function(){ if(ED.klar){ oppdaterCeller(); tegnHorisont(); } },
-    forlat:function(){ tomUtvalg(); lukkArk(); if(ED.angre)skjulToast(); if(ED.klar){ oppdaterCeller(); tegnListe(); } }
+    forlat:function(){ nullstill(); lukkArk(); if(ED.angre)skjulToast(); if(ED.klar){ oppdaterCeller(); tegnListe(); } }
   };
 })();
 
