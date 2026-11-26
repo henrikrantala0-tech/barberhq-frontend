@@ -167,6 +167,13 @@ Verifisert på 320/375. **Pushet — ligger sammen med layout-galleriet i `aa7ac
 - **Render før deploy** når det gjelder visuelle endringer. Playwright
   (Chromium, `device_scale_factor=2`). Fonter (Fraunces/Inter variable TTF)
   fra `raw.githubusercontent.com/google/fonts`.
+- **⚠ Tidsfelt (`input[type=time]`/`date`) sjekkes ALLTID på ekte iPhone via en Netlify draft-URL før commit.**
+  Playwright-WebKit viser IKKE iOS sine native kontroller (minimumsbredde, plassering av verdien) — 26.11.2026 var
+  alle render-testene grønne mens Til-feltet gikk ut av arket på Henriks iPhone. Draft: kopi av `site/` i scratchpad →
+  `netlify deploy --no-build --dir <kopi>` (aldri `--prod`; `--no-build` bruker ingen byggekreditter). Dashbordet kan
+  ikke logge inn fra draft-origin (CORS-porten + iOS ITP), så kopien får et fetch-stub først i `<head>` som svarer
+  ALLE `/api/`-kall med testdata — stubben ligger bare i kopien, aldri i repoet. Verifiser lokalt at 0 kall når
+  `api.trybarberhq.com` før opplasting. Ingen commit/push før Henrik har godkjent på telefonen.
 - **⚠ Playwright-tester og drafter skal ALDRI sende skjema eller skrivende kall (POST/PUT/PATCH/
   DELETE) mot prod-API-et (`api.trybarberhq.com`).** Bruk `page.route`-mock. Brent oss: autofyll-
   diagnosen (`booking-inspect.mjs`) drev den LIVE grand-barber-bookingsida uten mock og klikket seg
@@ -489,11 +496,13 @@ Datoavvik i dashbordet (backend 089, `GET/PUT/DELETE /api/dashboard/date-overrid
   {days: alle stengt, breaks: [], dry_run:true}` lister berørte bookinger; «Pausene dine fjernes.» bare med pauser;
   «Sett som stengt» → samme PUT uten dry_run. I varierer er `#fasteTider` skjult og Enkeltdager sier «Ingen dager er åpne
   før du åpner dem her.». Tilbake til «Faste ukedager» = bare visning (`MODUS.lokal`) til en åpen dag lagres.
-- **⚠ Tidsfelt og iOS:** `input[type=time]` har en bred innebygd minimumsbredde på iOS. Grid-kolonner med `1fr`
-  (= `minmax(auto,1fr)`) og flex-elementer med `min-width:auto` kan aldri bli smalere enn den → Fra/Til overlappet.
-  Rotfiks: `minmax(0,1fr)` (arket, «Fra [ ] til [ ]» på én rad) / `minmax(0,max-content)` (Faste tider-raden er grid) +
-  `min-width:0; width:100%` på feltene. Vakt: overlappsmålingen i testen, Chromium + WebKit med iPhone-profil. Hjulet
-  selv må sjekkes på ekte iPhone — Playwright-WebKit er motoren, ikke iOS-kontrollene.
+- **⚠ Tidsfelt og iOS:** Safari gir `input[type=time]` NATIV styling — bred minimumsbredde og verdien høyt i boksen.
+  Grid-kolonner med `1fr` (= `minmax(auto,1fr)`) og flex-elementer med `min-width:auto` kan aldri bli smalere enn
+  feltet. Rotfiks (felles regel for arket og Faste tider): `-webkit-appearance:none; appearance:none; width:100%;
+  min-width:0; box-sizing:border-box; height:44px; line-height:42px` (høyden minus rammen) +
+  `::-webkit-date-and-time-value{text-align:center;margin:0}`. Hjulet kommer fortsatt (styres av `type="time"`).
+  Arket: «Fra» og «Til» OVER hvert sitt felt, `grid-template-columns:minmax(0,1fr) minmax(0,1fr)`. Faste tider-raden:
+  grid med `minmax(0,120px)` for feltene. Vakt: overlappsmålingen i testen — men se regelen om ekte iPhone over.
 - **Kalender:** sju kolonner, mandag først, ingen ukenummer/uke-valg. Sirkel 40 px (34 under 360), hele cellen er
   trykkflate (≥ 38 × 50). Status = fylling i sirkelen: vanlig åpen = svak grønn, endret = svak blå, stengt = ingen +
   dempet tall; valgt = fylt blå; i dag = ring; valgt + i dag = fylt + ring utenfor. Tokens `--ed-fyll-vanlig`/

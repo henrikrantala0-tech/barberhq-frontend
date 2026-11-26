@@ -302,9 +302,13 @@
      Trykk folder ut kompakte fra/til-felt (arver input[type=time]-bredden = samme som
      åpningstidene), kun én dag om gangen. Ramme på .day-wrap; skjult på stengt dag. */
   .day-wrap{border-bottom:1px solid var(--line)}
-  #hoursList .day{border-bottom:0;padding-bottom:5px;display:grid;grid-template-columns:auto auto minmax(0,max-content) auto minmax(0,max-content)}
-  #hoursList .day input[type=time]{width:100%;min-width:0;box-sizing:border-box}   /* iOS-minimumsbredde: se .ed-tidrad */
-  #hoursList .day input[type=time]::-webkit-date-and-time-value,.ed-tidrad input[type=time]::-webkit-date-and-time-value{text-align:left;min-width:0}
+  #hoursList .day{border-bottom:0;padding-bottom:5px;display:grid;grid-template-columns:auto auto minmax(0,120px) auto minmax(0,120px)}
+  /* ⚠ Tidsfelt på ekte iOS: Safari gir input[type=time] NATIV styling — egen minimumsbredde og egen plassering av verdien
+     (høyt i boksen). Playwright-WebKit gjengir ikke dette, så det må sjekkes på ekte iPhone (draft-URL, se CLAUDE.md).
+     appearance:none fjerner den native rammen/bredden; hjulet styres av type="time" og kommer fortsatt. Fast høyde 44
+     (som min-height før) og verdien sentrert begge veier: line-height = høyden minus rammen (2 × 1 px). */
+  #hoursList .day input[type=time],.ed-tidrad input[type=time]{-webkit-appearance:none;appearance:none;display:block;width:100%;min-width:0;box-sizing:border-box;height:44px;min-height:44px;line-height:42px;padding:0 6px;text-align:center;font-size:16px;font-variant-numeric:tabular-nums}
+  #hoursList .day input[type=time]::-webkit-date-and-time-value,.ed-tidrad input[type=time]::-webkit-date-and-time-value{text-align:center;margin:0;min-width:0}
   /* Dempet pause-tekst under dagraden, sentrert under de to tidsboksene (JS-plassert via
      centerPauseTexts — flukter på alle bredder). Dagnavn-kolonnen tom. Ikke klikkbar, ingen felt. */
   .pause-under{position:relative;height:16px;margin-bottom:9px}
@@ -427,7 +431,7 @@
   .ed-tider[hidden]{display:none}
   .ed-chips{display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin-top:12px}
   .ed-vanlige{grid-column:1/-1;display:flex;align-items:center;min-height:44px;padding:6px 12px;box-sizing:border-box;border:1px solid var(--line-2);border-radius:7px;background:var(--bg);font:inherit;font-size:16px;color:var(--ink);text-align:left;cursor:pointer;appearance:none}
-  .ed-tidrad.vanlige input[type=time],.ed-tidrad.vanlige .ed-tid-l{display:none}   /* må slå .ed-tidrad input[type=time]{display:block} */
+  .ed-tidrad.vanlige .ed-tid{display:none}
   .ed-tidrad:not(.vanlige) .ed-vanlige{display:none}
   .ed-chips:empty{display:none}
   .ed-chip{appearance:none;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--ov-seg-line);border-radius:999px;background:transparent;font:inherit;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);cursor:pointer;position:relative}
@@ -435,11 +439,10 @@
   .ed-chip small{font-size:11.5px;font-weight:500;color:var(--mut)}
   .ed-chip[aria-pressed=true]{border-color:var(--ed-blaa);color:var(--ed-blaa)}
   .ed-chip[aria-pressed=true] small{color:inherit;opacity:.8}
-  /* iOS gir input[type=time] en bred innebygd minimumsbredde. Med 1fr (= minmax(auto,1fr)) kunne kolonnen aldri bli
-     smalere enn den, og Fra og Til overlappet. minmax(0,1fr) + min-width:0 + width:100% lar layouten styre bredden. */
-  .ed-tidrad{display:grid;grid-template-columns:auto minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:10px}
-  .ed-tid-l{font-size:14px;font-weight:500;color:var(--mut)}
-  .ed-tidrad input[type=time]{display:block;width:100%;min-width:0;box-sizing:border-box;font-size:16px;font-variant-numeric:tabular-nums}
+  /* «Fra» og «Til» over hvert sitt felt, to like kolonner. minmax(0,1fr): kolonnen kan krympe under feltets egen bredde. */
+  .ed-tidrad{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+  .ed-tid{display:flex;flex-direction:column;gap:6px;min-width:0}
+  .ed-tid-l{font-size:12px;font-weight:600;color:var(--mut)}
   .ed-pause{margin:10px 0 0;font-size:12.5px;color:var(--mut);line-height:1.5}
   .ed-pause p{margin:0}
   .ed-lagre{display:block;width:100%;min-height:46px;margin-top:16px;font-size:14px}
@@ -3594,8 +3597,8 @@
     </div>
     <div class="ed-tider" id="edTider" hidden>
       <div class="ed-tidrad">
-        <label class="ed-tid-l" for="edFra">Fra</label><input type="time" step="900" id="edFra">
-        <label class="ed-tid-l ed-til" for="edTil">til</label><input type="time" step="900" id="edTil">
+        <div class="ed-tid"><label class="ed-tid-l" for="edFra">Fra</label><input type="time" step="900" id="edFra"></div>
+        <div class="ed-tid"><label class="ed-tid-l" for="edTil">Til</label><input type="time" step="900" id="edTil"></div>
         <!-- «Vanlige tider» (dager med ulike faste tider): står i stedet for feltene. Trykk → tilbake til klokkeslett. -->
         <button type="button" class="ed-vanlige" id="edVanlige">Vanlige tider</button>
       </div>
