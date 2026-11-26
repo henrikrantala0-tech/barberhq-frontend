@@ -330,6 +330,12 @@
      Status: grønn prikk = Faste tider (åpen), blå prikk = egne tider, dempet tall = stengt. I dag = ring,
      valgt = blå fylt flate, passert/utenfor 400 dager = dimmet og av, etter bookingvinduet = litt dempet.
      Cellene oppdateres PÅ STEDET (oppdaterCeller) så fargene toner over ved lagring. */
+  .at-modus{margin:14px 0 4px}
+  .at-modus .ovs-seg-btn{height:40px;font-size:13px}
+  @media(max-width:359px){ .at-modus .ovs-seg-btn{font-size:12px;letter-spacing:-.02em} }   /* «Tidene mine varierer» får plass på 320 */
+  #fasteTider[hidden],.ed-varier[hidden]{display:none}
+  .ed-varier{margin:2px 0 4px;font-size:13px;color:var(--mut);line-height:1.5}
+  .at-modus:not([hidden]) ~ #fasteTider[hidden] + .ed{margin-top:18px}
   .ed{margin-top:30px}
   .ed-kal{margin-top:8px;-webkit-user-select:none;user-select:none}
   .ed-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
@@ -465,6 +471,14 @@
   .pause-modal-close{position:absolute;top:14px;right:14px;appearance:none;border:0;background:var(--bg);width:32px;height:32px;border-radius:8px;cursor:pointer;color:var(--mut);font-size:16px;line-height:1}
   .pause-modal-h{font-size:18px;font-weight:700;letter-spacing:-.02em;padding-right:36px}
   .pause-modal-s{font-size:12.5px;color:var(--mut);margin:4px 0 12px}
+  .at-bekr-t{margin:8px 0 0;font-size:14px;line-height:1.55;color:var(--ink-2)}
+  .at-bekr-t[hidden]{display:none}
+  .at-bekr-b{margin-top:14px}
+  .at-bekr-b[hidden]{display:none}
+  .at-bekr-b .ed-adv-h{margin:0 0 4px}
+  .at-bekr-knapper{display:flex;gap:10px;margin-top:18px}
+  .at-bekr-knapper .btn,.at-bekr-knapper .btn-outline{flex:1;min-height:46px;font-size:14px}
+  .at-bekr-knapper .btn:disabled{opacity:.4;cursor:default}
   .pause-modal-list{display:flex;flex-direction:column}
   .pm-row{display:flex;align-items:center;gap:10px;flex-wrap:wrap;row-gap:8px;padding:11px 0;border-top:1px solid var(--line)}
   .pm-check{display:flex;align-items:center;gap:10px;cursor:pointer;min-width:0}
@@ -2628,16 +2642,25 @@
 
     <p class="block-h">Arbeidstider</p>
     <p class="block-s">Kunder kan bare booke i tidene du slår på. Endringer gjelder nye luker — eksisterende bookinger står.</p>
-    <p class="svc-group-h">Faste tider</p>
-    <div class="card" id="hoursList"><div class="loading">Laster …</div></div>
-    <!-- Åpner pause-modalen. Teksten blir «Endre pauser» når minst én dag har pause. -->
-    <button class="pause-btn" id="pauseBtn" type="button">Legg til pause</button>
-    <div class="savebar">
-      <button class="btn" id="saveHours">Lagre arbeidstider</button>
-      <span class="saved" id="hoursSaved">Lagret ✓</span>
+    <!-- Modus: UTLEDES av sist lagrede ukedagstider (alle stengt = «Tidene mine varierer»), ingen egen kolonne.
+         «varierer» mens noen ukedager er åpne → bekreftelsesark (#atBekreft) → PUT /hours med alle stengt.
+         Skjult til arbeidstidene er lastet. -->
+    <div class="ovs-seg at-modus" id="atModus" role="group" aria-label="Arbeidstider" hidden>
+      <button type="button" class="ovs-seg-btn" data-modus="faste" aria-pressed="false">Faste ukedager</button>
+      <button type="button" class="ovs-seg-btn" data-modus="varierer" aria-pressed="false">Tidene mine varierer</button>
     </div>
-    <!-- Ordrett feilmelding fra PUT /hours (409 booking-kollisjon / 400 validering). -->
-    <p class="pub-err" id="hoursErr"></p>
+    <div id="fasteTider">
+      <p class="svc-group-h">Faste tider</p>
+      <div class="card" id="hoursList"><div class="loading">Laster …</div></div>
+      <!-- Åpner pause-modalen. Teksten blir «Endre pauser» når minst én dag har pause. -->
+      <button class="pause-btn" id="pauseBtn" type="button">Legg til pause</button>
+      <div class="savebar">
+        <button class="btn" id="saveHours">Lagre arbeidstider</button>
+        <span class="saved" id="hoursSaved">Lagret ✓</span>
+      </div>
+      <!-- Ordrett feilmelding fra PUT /hours (409 booking-kollisjon / 400 validering). -->
+      <p class="pub-err" id="hoursErr"></p>
+    </div>
 
     <!-- ENKELTDAGER (datoavvik, GET/PUT/DELETE /api/dashboard/date-overrides): overstyrer Faste tider på
          bestemte datoer — Åpen med egne tider eller Stengt, eller «Tilbakestill til faste tider». Trykk på dager
@@ -2645,6 +2668,7 @@
          Ingenting lagres før «Lagre N dager» (eller tilbakestillingen). Se Enkeltdager i JS. -->
     <div class="ed" id="enkeltdager">
       <p class="svc-group-h">Enkeltdager</p>
+      <p class="ed-varier" id="edVarier" hidden>Ingen dager er åpne før du åpner dem her.</p>
       <div class="ed-kal">
         <div class="ed-head">
           <button type="button" class="ed-pil" id="edForrige" aria-label="Forrige måned"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
@@ -3573,6 +3597,25 @@
     <div class="ed-adv-knapper">
       <button type="button" class="btn-outline" id="edAvbryt">Avbryt</button>
       <button type="button" class="btn" id="edLagreLikevel">Lagre likevel</button>
+    </div>
+  </div>
+</div>
+<!-- «Tidene mine varierer» mens noen ukedager er åpne: bekreftelse før alle ukedager lagres som stengt
+     (PUT /hours). Bookinglisten kommer fra PUT /hours dry_run (berorte). Skallet er pause-modalens. -->
+<div class="pause-modal-backdrop" id="atBekreft" role="dialog" aria-modal="true" aria-labelledby="atBekreftH" hidden>
+  <div class="pause-modal">
+    <button class="pause-modal-close" id="atBekreftX" type="button" aria-label="Lukk">×</button>
+    <p class="pause-modal-h" id="atBekreftH">Tidene mine varierer</p>
+    <p class="at-bekr-t" id="atBekreftTekst">Alle faste dager settes som stengt. Du åpner dagene du jobber i kalenderen under. Dager du allerede har lagt inn beholdes.</p>
+    <div class="at-bekr-b" id="atBekreftBookinger" hidden>
+      <p class="ed-adv-h" id="atBekreftBH"></p>
+      <div class="ed-adv-liste" id="atBekreftListe"></div>
+      <p class="ed-adv-s">Bookingene avlyses ikke automatisk.</p>
+    </div>
+    <p class="ed-feil" id="atBekreftFeil" role="alert" hidden></p>
+    <div class="at-bekr-knapper">
+      <button type="button" class="btn-outline" id="atBekreftAvbryt">Avbryt</button>
+      <button type="button" class="btn" id="atBekreftOk">Sett som stengt</button>
     </div>
   </div>
 </div>
@@ -6156,6 +6199,70 @@ window.Enkeltdager=(function(){
     tegnAlt(snap.map(function(s){return s[0];})); kalenderEndret(); sjekklisteEndret();
   }
 
+  // ── Modus: «Faste ukedager» | «Tidene mine varierer» ──
+  // Utledes av sist LAGREDE ukedagstider: alle stengt = varierer. MODUS.lokal='faste' = barberen har valgt
+  // «Faste ukedager» mens alle fortsatt er stengt (bare visning, til han lagrer en åpen dag).
+  var MODUS={lokal:null};
+  var BEKREFT_TEKST='Alle faste dager settes som stengt. Du åpner dagene du jobber i kalenderen under. Dager du allerede har lagt inn beholdes.';
+  function alleStengt(){ return !!_fasteLagret&&_fasteLagret.every(function(h){return !h.on;}); }
+  function harPauser(){ return !!_fasteLagret&&_fasteLagret.some(function(h){var b=h.on&&h.breaks&&h.breaks[0];return !!(b&&b.start&&b.end);}); }
+  function modus(){ if(!_fasteLagret)return null; return alleStengt()&&MODUS.lokal!=='faste'?'varierer':'faste'; }
+  function tegnModus(){
+    var m=modus(), box=el('atModus');
+    box.hidden=!m;
+    box.querySelectorAll('[data-modus]').forEach(function(b){ b.setAttribute('aria-pressed',b.dataset.modus===m?'true':'false'); });
+    el('fasteTider').hidden=(m==='varierer');
+    el('edVarier').hidden=(m!=='varierer');
+  }
+  // Alle sju ukedager stengt, med de lagrede klokkeslettene beholdt (de står klare når en dag slås på igjen).
+  // Pausene sendes ikke: backend tillater ikke pause på stengt dag.
+  function stengteDager(){ return _fasteLagret.map(function(h){ return {weekday:(h.day+1)%7,is_closed:true,open_time:h.start||'09:00',close_time:h.end||'17:00'}; }); }
+  function bekreftFeil(tekst,igjen){
+    var f=el('atBekreftFeil');
+    if(!tekst){ f.hidden=true; f.textContent=''; return; }
+    f.textContent=tekst+(igjen?' ':'');
+    if(igjen){ var b=document.createElement('button'); b.type='button'; b.className='retry-lenke'; b.textContent='Prøv igjen'; b.addEventListener('click',igjen); f.appendChild(b); }
+    f.hidden=false;
+  }
+  async function sjekkBekreft(){
+    var ok=el('atBekreftOk'); ok.disabled=true; bekreftFeil('');
+    var r=await kall('PUT',{days:stengteDager(),breaks:[],dry_run:true},'/api/dashboard/hours');
+    if(el('atBekreft').hidden)return;
+    if(!r.ok||!Array.isArray(r.data.berorte)){ bekreftFeil('Klarte ikke å sjekke bookingene.',sjekkBekreft); return; }
+    var b=r.data.berorte, boks=el('atBekreftBookinger');
+    boks.hidden=!b.length;
+    if(b.length){ el('atBekreftBH').textContent=antallTekst(b.length); el('atBekreftListe').innerHTML=bookingRader(b); }
+    ok.disabled=false;
+  }
+  function aapneBekreft(){
+    el('atBekreftTekst').textContent=BEKREFT_TEKST+(harPauser()?' Pausene dine fjernes.':'');
+    el('atBekreftBookinger').hidden=true; el('atBekreftOk').textContent='Sett som stengt';
+    el('atBekreft').hidden=false; document.body.style.overflow='hidden';
+    sjekkBekreft();
+  }
+  function lukkBekreft(){ el('atBekreft').hidden=true; document.body.style.overflow=''; tegnModus(); }
+  async function settSomStengt(){
+    var ok=el('atBekreftOk'); if(ok.disabled)return;
+    ok.disabled=true; ok.textContent='Lagrer …'; bekreftFeil('');
+    var r=await kall('PUT',{days:stengteDager(),breaks:[]},'/api/dashboard/hours');
+    ok.textContent='Sett som stengt';
+    if(!r.ok){ ok.disabled=false; bekreftFeil(r.error||'Kunne ikke lagre arbeidstidene. Prøv igjen.'); return; }
+    MODUS.lokal=null; lukkBekreft();
+    await loadArbeidstider();   // ny lagret kopi → modus «varierer», Enkeltdager tegnes mot stengte ukedager
+    sjekklisteEndret();
+  }
+  el('atModus').addEventListener('click',function(e){
+    var b=e.target.closest('[data-modus]'); if(!b)return;
+    var v=b.dataset.modus; if(v===modus())return;
+    if(v==='faste'){ MODUS.lokal='faste'; tegnModus(); return; }
+    if(alleStengt()){ MODUS.lokal=null; tegnModus(); return; }   // allerede stengt — bare visning
+    aapneBekreft();
+  });
+  el('atBekreftOk').addEventListener('click',settSomStengt);
+  el('atBekreftAvbryt').addEventListener('click',lukkBekreft);
+  el('atBekreftX').addEventListener('click',lukkBekreft);
+  el('atBekreft').addEventListener('click',function(e){ if(e.target===this)lukkBekreft(); });
+
   // ── Hendelser ──
   grid.addEventListener('click',function(e){
     if(performance.now()-ED.sveipT<120)return;   // klikket som eventuelt følger selve sveipet — ikke neste trykk
@@ -6222,7 +6329,7 @@ window.Enkeltdager=(function(){
   }
   return {
     last:last,
-    fasteEndret:function(){ if(ED.klar)tegnAlt(); else tegn(); },
+    fasteEndret:function(){ if(!alleStengt())MODUS.lokal=null; tegnModus(); if(ED.klar)tegnAlt(); else tegn(); },
     horisontEndret:function(){ if(ED.klar){ oppdaterCeller(); tegnHorisont(); } },
     forlat:function(){ nullstill(); lukkArk(); if(ED.angre)skjulToast(); if(ED.klar){ oppdaterCeller(); tegnListe(); } }
   };
@@ -9040,7 +9147,11 @@ async function hentSjekklisteData(){
     _sjekkData.bilderPortrett  =iSlot('portrett');
     _sjekkData.bilderHero      =iSlot('hero');
     _sjekkData.tjenesterMedPris=(((svc&&svc.hoved)||[])).filter(function(s){return Number(s.price)>0;}).length;
-    _sjekkData.apneDager       =(Array.isArray(hrs)?hrs:[]).filter(function(d){return !d.is_closed;}).length;
+    // Samme regel som backend (dinSide.js apen_dag): åpen ukedag med begge tider ELLER kommende åpent unntak
+    // (Enkeltdager). Uten unntakene ville «Tidene mine varierer» alltid se ut som «ingen åpen dag».
+    await hentAvvik(); var idagStr=osloTodayStr();
+    _sjekkData.apneDager       =(Array.isArray(hrs)?hrs:[]).filter(function(d){return !d.is_closed&&d.open_time&&d.close_time;}).length
+                               +Object.keys(AVVIK.map).filter(function(k){return k>=idagStr&&!AVVIK.map[k].closed;}).length;
     _sjekkData.profilUtfylt    =[prof.bio,prof.tagline,prof.address].filter(function(v){return (v||'').trim();}).length;
   }catch(e){ console.error('sjekkliste-data feilet:',e); }
   renderSjekkliste();
