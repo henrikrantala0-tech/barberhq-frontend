@@ -67,6 +67,9 @@
        Mørk tema = designets verdier nøyaktig (under html[data-theme="dark"]); her lyse motstykker. */
     --ov-hair:#ebebeb;--ov-seg-line:#e2e2e2;--ov-seg-sel:#e9e9e9;--ov-btn-line:#d4d4d4;--ov-null:#e2e2e2;
     --ov-a1:#1a7a44;--ov-a2:rgba(26,122,68,.55);--ov-a3:rgba(26,122,68,.28);
+    /* Enkeltdager (Tjenester & tider): statusprikkene + valgt dag. Mørk tema = designets verdier nøyaktig;
+       her mørkere motstykker så prikkene bærer mot hvit flate (grønn 3,5:1, blå 5,2:1). */
+    --ed-gronn:#1f9d55;--ed-blaa:#2563eb;
   }
   *{margin:0;padding:0;box-sizing:border-box}
   /* Dashbordet ligger fast som en app: manipulation fjerner dobbelttrykk-zoom + 300ms-forsinkelsen
@@ -322,6 +325,124 @@
     .bk-rad-sel{flex-direction:column;align-items:stretch;gap:6px}
     .bk-rad-sel .bk-select{margin-left:0;width:100%}
   }
+  /* ── Enkeltdager (datoavvik) ──────────────────────────────────────────────────────────────────────
+     Månedsrutenett mandag først + smal ukenummer-kolonne. 320 px: innhold 272 = 26 + 7×35 (ingen scroll).
+     Status: grønn prikk = Faste tider (åpen), blå prikk = egne tider, dempet tall = stengt. I dag = ring,
+     valgt = blå fylt flate, passert/utenfor 400 dager = dimmet og av, etter bookingvinduet = litt dempet.
+     Cellene oppdateres PÅ STEDET (oppdaterCeller) så fargene toner over ved lagring. */
+  .ed{margin-top:30px}
+  .ed-kal{margin-top:8px;-webkit-user-select:none;user-select:none}
+  .ed-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
+  .ed-mnd{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .ed-pil{appearance:none;flex-shrink:0;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--ov-seg-line);border-radius:10px;background:transparent;color:var(--ink);cursor:pointer;padding:0}
+  .ed-pil svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
+  .ed-pil:disabled{opacity:.3;cursor:default}
+  .ed-ukedager,.ed-grid{display:grid;grid-template-columns:26px repeat(7,minmax(0,1fr))}
+  .ed-ukedager span{font-size:11px;font-weight:600;color:var(--mut);text-align:center;padding:8px 0 4px}
+  .ed-flate{touch-action:pan-y;overflow:hidden}
+  .ed-grid>.loading,.ed-grid>.wb-empty{grid-column:1/-1}
+  .ed-uke{appearance:none;border:0;background:transparent;font:inherit;font-size:11px;font-weight:500;color:var(--mut);height:46px;padding:0;cursor:pointer;border-radius:8px;font-variant-numeric:tabular-nums;-webkit-tap-highlight-color:transparent}
+  .ed-uke[aria-pressed=true]{color:var(--ed-blaa);font-weight:700}
+  .ed-uke:disabled{opacity:.35;cursor:default}
+  .ed-dag{appearance:none;position:relative;height:46px;min-width:0;padding:0;border:0;background:transparent;font:inherit;color:var(--ink);cursor:pointer;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;-webkit-tap-highlight-color:transparent;transition:opacity .2s}
+  .ed-dag::before{content:"";position:absolute;inset:2px 2px;border-radius:10px;background:transparent;transition:background-color .2s ease-out}
+  .ed-n{position:relative;width:28px;height:28px;line-height:28px;border-radius:50%;text-align:center;font-size:14px;font-weight:500;font-variant-numeric:tabular-nums;transition:color .2s ease-out,box-shadow .2s ease-out}
+  .ed-p{position:relative;width:5px;height:5px;border-radius:50%;background:transparent;transition:background-color .2s ease-out,transform .2s ease-out}
+  .ed-dag.s-faste .ed-p{background:var(--ed-gronn)}
+  .ed-dag.s-egne .ed-p{background:var(--ed-blaa)}
+  .ed-dag.s-stengt .ed-n{color:var(--mut-2)}
+  .ed-dag.idag .ed-n{box-shadow:inset 0 0 0 1.5px var(--ink-2)}
+  .ed-dag.ute>span{opacity:.45}
+  .ed-dag.vindu{opacity:.6}
+  .ed-dag.forbi,.ed-dag.etter{opacity:.3;cursor:default}
+  .ed-dag.forbi .ed-p,.ed-dag.etter .ed-p{background:transparent}
+  .ed-dag.valgt{opacity:1}
+  .ed-dag.valgt::before{background:var(--ed-blaa)}
+  .ed-dag.valgt>span{opacity:1}
+  .ed-dag.valgt .ed-n{color:#fff;font-weight:600}
+  .ed-dag.valgt.s-stengt .ed-n{color:rgba(255,255,255,.62)}
+  .ed-dag.valgt.idag .ed-n{box-shadow:inset 0 0 0 1.5px #fff}
+  .ed-dag.valgt.s-faste .ed-p,.ed-dag.valgt.s-egne .ed-p{background:#fff}
+  .ed-dag.bytt .ed-p{transform:scale(1.6)}   /* kort puls når en lagring endrer dagen */
+  .ed-dag:focus-visible,.ed-uke:focus-visible,.ed-rad:focus-visible{outline:2px solid var(--ed-blaa);outline-offset:-2px}
+  @media(hover:hover){
+    .ed-dag:not(:disabled):not(.valgt):hover::before{background:var(--ov-seg-sel)}
+    .ed-uke:not(:disabled):hover{color:var(--ink)}
+  }
+  .ed-grid.stille *,.ed-grid.stille *::before{transition:none!important}
+  .ed-forkl{display:flex;flex-wrap:wrap;gap:6px 16px;margin:12px 0 0;font-size:12px;color:var(--mut)}
+  .ed-forkl span{display:inline-flex;align-items:center;gap:6px}
+  .ed-fk-p{width:6px;height:6px;border-radius:50%;display:inline-block}
+  .ed-fk-faste{background:var(--ed-gronn)} .ed-fk-egne{background:var(--ed-blaa)}
+  .ed-fk-n{font-weight:500;color:var(--mut-2);font-size:12px}
+  .ed-horisont{margin:8px 0 0;font-size:12.5px;color:var(--mut);line-height:1.5}
+  .ed-liste-h{margin:26px 0 2px;font-size:13.5px;font-weight:600;letter-spacing:-.01em}
+  .ed-rad{appearance:none;display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:0 4px;border:0;border-bottom:1px solid var(--ov-hair);background:transparent;font:inherit;color:var(--ink);text-align:left;cursor:pointer;border-radius:0}
+  .ed-rad-dato{flex:1;min-width:0;font-size:14px;font-weight:500;letter-spacing:-.01em}
+  .ed-rad-tid{font-size:13.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink)}
+  .ed-rad-tid.stengt{color:var(--mut);font-weight:500}
+  .ed-rad .ed-p{flex-shrink:0;background:var(--ed-blaa)}
+  .ed-rad.s-stengt .ed-p{background:transparent;box-shadow:inset 0 0 0 1px var(--mut-2)}
+  .ed-rad.valgt .ed-rad-dato{color:var(--ed-blaa);font-weight:600}
+  @media(hover:hover){ .ed-rad:hover{background:var(--ov-seg-sel)} }
+  .ed-tom{margin:10px 0 0;font-size:13px;color:var(--mut)}
+  .ed-plass{height:var(--ed-ark-h,0px)}
+
+  /* Arket: fast nederst (over bunn-navet på mobil), 680 px sentrert på desktop. Glir opp 200 ms ease-out.
+     Ikke modalt og uten bakteppe — kalenderen over kan trykkes og scrolles mens det er åpent. */
+  .ed-ark{position:fixed;left:0;right:0;bottom:0;z-index:115;background:var(--surface);border:1px solid var(--line);border-bottom:0;border-radius:16px 16px 0 0;box-shadow:0 -10px 32px rgba(0,0,0,.22);padding:14px 20px calc(18px + env(safe-area-inset-bottom));max-height:72vh;max-height:72dvh;overflow-y:auto;overscroll-behavior:contain;transform:translateY(calc(100% + 24px));visibility:hidden;transition:transform .2s cubic-bezier(.2,.8,.2,1),visibility 0s linear .2s}
+  .ed-ark.inn{transform:none;visibility:visible;transition:transform .2s cubic-bezier(.2,.8,.2,1)}
+  @media(min-width:720px){ .ed-ark{left:50%;right:auto;width:680px;margin-left:-340px} }
+  @media(max-width:719px){ .ed-ark{bottom:calc(var(--bunn-nav-h) + env(safe-area-inset-bottom));padding-bottom:16px} body.fokus .ed-ark{bottom:0;padding-bottom:calc(16px + env(safe-area-inset-bottom))} }
+  .ed-ark-topp{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:36px;margin-bottom:10px}
+  .ed-ark-tittel{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .ed-fjern{appearance:none;position:relative;border:0;background:transparent;font:inherit;font-size:13.5px;font-weight:500;color:var(--info);cursor:pointer;padding:8px 0}
+  .ed-fjern::after{content:"";position:absolute;inset:-4px -8px}
+  .ed-valg{margin-bottom:0}
+  .ed-valg .ovs-seg-btn{height:40px;font-size:13.5px}
+  .ed-valg .ovs-seg-btn:disabled{cursor:default}
+  .ed-tider{margin-top:14px}
+  .ed-tider[hidden]{display:none}
+  .ed-chips{display:flex;flex-wrap:wrap;gap:8px;margin-bottom:12px}
+  .ed-chips:empty{display:none}
+  .ed-chip{appearance:none;display:inline-flex;align-items:center;gap:6px;min-height:36px;padding:0 12px;border:1px solid var(--ov-seg-line);border-radius:999px;background:transparent;font:inherit;font-size:13px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);cursor:pointer;position:relative}
+  .ed-chip::after{content:"";position:absolute;inset:-4px 0}
+  .ed-chip small{font-size:11.5px;font-weight:500;color:var(--mut)}
+  .ed-chip[aria-pressed=true]{border-color:var(--ed-blaa);color:var(--ed-blaa)}
+  .ed-chip[aria-pressed=true] small{color:inherit;opacity:.8}
+  .ed-tidrad{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+  .ed-tid{display:flex;flex-direction:column;gap:5px;min-width:0}
+  .ed-tid span{font-size:12px;font-weight:600;color:var(--mut)}
+  .ed-tid input[type=time]{width:100%;min-width:0;box-sizing:border-box;font-size:16px;font-variant-numeric:tabular-nums}
+  .ed-pause{margin:10px 0 0;font-size:12.5px;color:var(--mut);line-height:1.5}
+  .ed-pause p{margin:0}
+  .ed-lagre{display:block;width:100%;min-height:46px;margin-top:14px;font-size:14px}
+  .ed-lagre:disabled{opacity:.4;cursor:default}
+  .ed-lagre[hidden],.ed-pause[hidden],.ed-chips[hidden]{display:none}   /* author display slår UA [hidden] */
+  .ed-feil{margin:12px 0 0;font-size:13px;color:var(--bad);line-height:1.5}
+  .ed-feil[hidden]{display:none}
+  .ed-adv-h{margin:0 0 6px;font-size:14px;font-weight:600}
+  .ed-adv-liste{max-height:34vh;overflow-y:auto;border-top:1px solid var(--ov-hair)}
+  .ed-adv-rad{display:flex;align-items:baseline;gap:10px;padding:10px 0;border-bottom:1px solid var(--ov-hair);font-size:13.5px}
+  .ed-adv-navn{flex:1;min-width:0;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .ed-adv-tid{flex-shrink:0;color:var(--mut);font-variant-numeric:tabular-nums}
+  .ed-adv-s{margin:12px 0 0;font-size:13px;color:var(--ink-2);line-height:1.5}
+  .ed-adv-knapper{display:flex;gap:10px;margin-top:14px}
+  .ed-adv-knapper .btn,.ed-adv-knapper .btn-outline{flex:1;min-height:46px;font-size:14px}
+  .ed-adv[hidden],#edHoved[hidden]{display:none}
+  .ed-ark #edHoved,.ed-ark .ed-adv{transition:opacity .15s}
+  .ed-ark[aria-busy=true] #edHoved,.ed-ark[aria-busy=true] .ed-adv{opacity:.6;transition-delay:.15s}   /* raske kall blinker ikke */
+  /* Toast «Lagret · Angre»: .bkn-ok (tar trykk), løftet over arket når det er åpent. */
+  #edToast{bottom:calc(26px + var(--ed-ark-h,0px));opacity:0;transform:translateX(-50%) translateY(8px);transition:opacity .2s ease-out,transform .2s ease-out,bottom .2s ease-out}
+  #edToast.inn{opacity:1;transform:translateX(-50%)}
+  @media(min-width:720px){ #edToast{bottom:calc(26px + var(--ed-ark-h,0px))} }
+  @media(max-width:719px){ #edToast{bottom:calc(var(--bunn-nav-h) + env(safe-area-inset-bottom) + var(--ed-ark-h,0px) + 12px)} }
+  @media(prefers-reduced-motion:reduce){
+    .ed-ark,.ed-ark.inn,#edToast{transition:none}
+    .ed-dag,.ed-dag::before,.ed-n,.ed-p{transition:none}
+    .ed-dag.bytt .ed-p{transform:none}
+  }
+
   /* Pause-modal: bunn-ark mobil / sentrert modal desktop (samme idiom som detaljflaten). */
   .pause-modal-backdrop{position:fixed;inset:0;z-index:600;background:rgba(10,10,10,.5);display:flex;align-items:flex-end;justify-content:center}
   .pause-modal-backdrop[hidden]{display:none}
@@ -418,6 +539,7 @@
     --violet:#b18cf0;--sky:#5cc4f0;   /* tjeneste-posisjon 5/6, lysere på mørk tema */
     --ov-hair:#1a1a1a;--ov-seg-line:#1f1f1f;--ov-seg-sel:#262626;--ov-btn-line:#2a2a2a;--ov-null:#262626;
     --ov-a1:#3ecf7e;--ov-a2:rgba(62,207,126,.55);--ov-a3:rgba(62,207,126,.28);
+    --ed-gronn:#3ecf7e;--ed-blaa:#4d8bff;
   }
   html[data-theme="dark"] .btn{background:#fff;color:#0a0a0a}
   html[data-theme="dark"] .sw input:checked + .sl{background:#4d8bff}
@@ -2492,6 +2614,7 @@
 
     <p class="block-h">Arbeidstider</p>
     <p class="block-s">Kunder kan bare booke i tidene du slår på. Endringer gjelder nye luker — eksisterende bookinger står.</p>
+    <p class="svc-group-h">Faste tider</p>
     <div class="card" id="hoursList"><div class="loading">Laster …</div></div>
     <!-- Åpner pause-modalen. Teksten blir «Endre pauser» når minst én dag har pause. -->
     <button class="pause-btn" id="pauseBtn" type="button">Legg til pause</button>
@@ -2501,6 +2624,27 @@
     </div>
     <!-- Ordrett feilmelding fra PUT /hours (409 booking-kollisjon / 400 validering). -->
     <p class="pub-err" id="hoursErr"></p>
+
+    <!-- ENKELTDAGER (datoavvik, GET/PUT/DELETE /api/dashboard/date-overrides): overstyrer Faste tider på
+         bestemte datoer — Åpen med egne tider, Stengt, eller tilbake til Faste tider. Trykk på dager (eller
+         ukenummer) bygger et utvalg; arket (#edArk, nederst i body) glir opp når minst én dag er valgt.
+         Lagres ved bekreftelse — ingen lagre-knapp utenom «Lagre» etter manuell tidsendring. Se Enkeltdager i JS. -->
+    <div class="ed" id="enkeltdager">
+      <p class="svc-group-h">Enkeltdager</p>
+      <div class="ed-kal">
+        <div class="ed-head">
+          <button type="button" class="ed-pil" id="edForrige" aria-label="Forrige måned"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <p class="ed-mnd" id="edMnd" aria-live="polite"></p>
+          <button type="button" class="ed-pil" id="edNeste" aria-label="Neste måned"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+        </div>
+        <div class="ed-ukedager" aria-hidden="true"><span></span><span>M</span><span>T</span><span>O</span><span>T</span><span>F</span><span>L</span><span>S</span></div>
+        <div class="ed-flate" id="edFlate"><div class="ed-grid" id="edGrid"><div class="loading">Laster …</div></div></div>
+      </div>
+      <div class="ed-forkl" aria-hidden="true"><span><i class="ed-fk-p ed-fk-faste"></i>Faste tider</span><span><i class="ed-fk-p ed-fk-egne"></i>Egne tider</span><span><b class="ed-fk-n">8</b>Stengt</span></div>
+      <p class="ed-horisont" id="edHorisont"></p>
+      <p class="ed-liste-h">Kommende endringer</p>
+      <div class="ed-liste" id="edListe"></div>
+    </div>
 
     <!-- BOOKINGREGLER: lagres med en gang ved endring (GET/PUT /api/dashboard/booking-settings),
          ikke med «Lagre arbeidstider» — derfor egen blokk under knappen. Kontrollene er av til GET
@@ -2525,6 +2669,9 @@
       <div class="bk-status"><span class="saved" id="bkSaved">Lagret ✓</span></div>
       <p class="sett-err" id="bkErr" hidden></p>
     </div>
+    <!-- Plass under innholdet så hele kalenderen kan scrolles fram over Enkeltdager-arket. Høyden = arkets
+         (--ed-ark-h, ResizeObserver) og vokser bare nedover → ingenting over flytter seg når arket åpnes. -->
+    <div class="ed-plass" id="edPlass" aria-hidden="true"></div>
   </section>
 
   <!-- DESIGN -->
@@ -3380,6 +3527,44 @@
   </div>
 </div>
 
+<!-- Enkeltdager-arket (Tjenester & tider). Ikke modalt: kalenderen over kan trykkes mens arket er åpent.
+     Hovedvisning (tre valg + tider) og advarselsvisning (berørte bookinger fra dry_run) bytter i samme ark. -->
+<div class="ed-ark" id="edArk" role="region" aria-label="Valgte dager" inert>
+  <div class="ed-ark-topp">
+    <p class="ed-ark-tittel" id="edArkTittel"></p>
+    <button type="button" class="ed-fjern" id="edFjern">Fjern valg</button>
+  </div>
+  <div id="edHoved">
+    <div class="ovs-seg ed-valg" role="group" aria-label="Velg for dagene">
+      <button type="button" class="ovs-seg-btn" data-ed="apen" aria-pressed="false">Åpen</button>
+      <button type="button" class="ovs-seg-btn" data-ed="stengt" aria-pressed="false">Stengt</button>
+      <button type="button" class="ovs-seg-btn" data-ed="faste" aria-pressed="false">Faste tider</button>
+    </div>
+    <div class="ed-tider" id="edTider" hidden>
+      <div class="ed-chips" id="edChips"></div>
+      <div class="ed-tidrad">
+        <label class="ed-tid"><span>Fra</span><input type="time" step="900" id="edFra"></label>
+        <label class="ed-tid"><span>Til</span><input type="time" step="900" id="edTil"></label>
+      </div>
+      <div class="ed-pause" id="edPause" hidden></div>
+      <button type="button" class="btn ed-lagre" id="edLagre" hidden>Lagre</button>
+    </div>
+    <p class="ed-feil" id="edFeil" role="alert" hidden></p>
+  </div>
+  <div class="ed-adv" id="edAdvarsel" hidden>
+    <p class="ed-adv-h" id="edAdvH"></p>
+    <div class="ed-adv-liste" id="edAdvListe"></div>
+    <p class="ed-adv-s">Bookingene avlyses ikke automatisk.</p>
+    <div class="ed-adv-knapper">
+      <button type="button" class="btn-outline" id="edAvbryt">Avbryt</button>
+      <button type="button" class="btn" id="edLagreLikevel">Lagre likevel</button>
+    </div>
+  </div>
+</div>
+<div class="bkn-ok ed-toast" id="edToast" role="status" aria-live="polite" hidden>
+  <div class="bkn-ok-tekst"><strong id="edToastTekst">Lagret</strong></div>
+  <button class="bkn-ok-vis" id="edAngre" type="button">Angre</button>
+</div>
 <script src="palett.js"></script>
 <script src="lib/cropper.min.js"></script>
 <script>
@@ -5579,8 +5764,10 @@ async function loadArbeidstider(){
   try{ h=await api.hours(); }catch(e){ h=null; }
   if(!h){ feilMedRetry($("#hoursList"),'Klarte ikke å laste arbeidstidene.',loadArbeidstider); loadGoogleStatus(); return; }
   hours=h; _ulagret.timer=false;
+  _fasteLagret=JSON.parse(JSON.stringify(h));   // Enkeltdager leser LAGREDE tider, ikke det som redigeres
   if(btn)btn.disabled=false;
   renderHoursList();
+  if(window.Enkeltdager)Enkeltdager.fasteEndret();
   loadGoogleStatus();
 }
 // ─── Bookingregler: «Samle bookinger» + «Kunder kan booke inntil» ───
@@ -5613,6 +5800,7 @@ async function loadBookingInnst(){
   err.hidden=true;
   _bkLagret={cluster_bookings:v.cluster_bookings, booking_horizon_days:v.booking_horizon_days};
   visBookingInnst(_bkLagret);
+  if(window.Enkeltdager)Enkeltdager.horisontEndret();
   bkLaas(false);
 }
 async function lagreBookingInnst(patch){
@@ -5631,10 +5819,395 @@ async function lagreBookingInnst(patch){
     err.textContent=res.error; err.hidden=false;
   }
   visBookingInnst(_bkLagret);   // suksess: speil backend; feil: rull tilbake til siste lagrede
+  if(window.Enkeltdager)Enkeltdager.horisontEndret();
   bkLaas(false);
 }
 $("#bkSamle").addEventListener("change",function(){ lagreBookingInnst({cluster_bookings:this.checked}); });
 $("#bkHorisont").addEventListener("change",function(){ lagreBookingInnst({booking_horizon_days:Number(this.value)}); });
+
+// ─── Enkeltdager (datoavvik, backend 089) ───────────────────────────────────────────────────────────
+// Kontrakt (barberhq-backend src/routes/dashboard.js «Datoavvik»):
+//   GET    /api/dashboard/date-overrides?from&to → {overrides:[{date,closed,open_time,close_time}]} (maks 400 dager/kall)
+//   PUT    {dates,closed,open_time?,close_time?,dry_run?} → {ok,lagret,bookinger,berorte:[{id,dato,start,end,name,service,kilde}]}
+//          berorte = bookingene som havner UTENFOR de nye tidene (ukedagens pauser er tatt med). dry_run:true lagrer ingenting.
+//   DELETE {dates,dry_run?} → tilbake til Faste tider. Svar som PUT: {ok,…,berorte}; dry_run:true fjerner ingenting.
+// AVVIK er ÉN kilde for unntakene: Enkeltdager tegner fra den, og bookingkalenderens dagTimer() leser den.
+// Datoer er barberens kalenderdatoer som 'YYYY-MM-DD' (osloTodayStr); Date-objekter her er lokal midnatt for
+// den datoen og brukes bare til kalenderregning (ukedag, månedsgrenser), aldri til klokkeslett.
+var AVVIK={map:{},lastet:false,p:null};
+var AVVIK_MAKS_DAGER=400;   // = backendens AVVIK_MAKS (maks dager fram og maks dager per GET)
+var _fasteLagret=null;      // sist LAGREDE Faste tider (kopi fra loadArbeidstider) — ulagrede endringer teller ikke
+function edPad(n){return String(n).padStart(2,'0');}
+function edYmd(d){return d.getFullYear()+'-'+edPad(d.getMonth()+1)+'-'+edPad(d.getDate());}
+function edDato(ymd){var p=String(ymd).split('-');return new Date(+p[0],+p[1]-1,+p[2]);}
+function edPluss(ymd,n){var d=edDato(ymd);d.setDate(d.getDate()+n);return edYmd(d);}
+function edAvvikFra(o){return {closed:!!o.closed,open_time:o.closed?null:(o.open_time||'').slice(0,5),close_time:o.closed?null:(o.close_time||'').slice(0,5)};}
+// Henter unntakene fra 14 dager bakover (bookingkalenderens vindu) til 400 dager fram — to kall, fordi ett
+// kall maks dekker 400 dager. tving=true henter på nytt. Feil → false, kartet står som det var.
+function hentAvvik(tving){
+  if(AVVIK.p&&!tving)return AVVIK.p;
+  var idag=osloTodayStr();
+  var deler=[[edPluss(idag,-14),edPluss(idag,-1)],[idag,edPluss(idag,AVVIK_MAKS_DAGER)]];
+  var p=Promise.all(deler.map(function(d){
+    return apiFetch('/api/dashboard/date-overrides?from='+d[0]+'&to='+d[1]).then(function(r){ if(!r||!r.ok)throw new Error('avvik'); return r.json(); });
+  })).then(function(svar){
+    var m={}; svar.forEach(function(j){ (j&&j.overrides||[]).forEach(function(o){ if(o&&o.date)m[o.date]=edAvvikFra(o); }); });
+    AVVIK.map=m; AVVIK.lastet=true; return true;
+  }).catch(function(){ if(AVVIK.p===p)AVVIK.p=null; return false; });
+  AVVIK.p=p; return p;
+}
+
+window.Enkeltdager=(function(){
+  var ED={ym:null,valgt:new Set(),apenBruker:false,skitten:false,fylt:null,opptatt:false,vent:null,forsok:null,angre:null,toastT:null,sveipT:-1e9,klar:false};
+  var SIST='bhq-ed-sist';
+  var UKEDAG_FLERTALL=['mandager','tirsdager','onsdager','torsdager','fredager','lørdager','søndager'];
+  var REDUSERT=window.matchMedia&&matchMedia('(prefers-reduced-motion: reduce)');
+  function el(id){return document.getElementById(id);}
+  var grid=el('edGrid'), ark=el('edArk'), fra=el('edFra'), til=el('edTil');
+  function idag(){return osloTodayStr();}
+  function maks(){return edPluss(idag(),AVVIK_MAKS_DAGER);}
+  function horisont(){ var h=(_bkLagret&&_bkLagret.booking_horizon_days)||CONFIG.BOOKING_HORIZON||28; return Number(h)||28; }
+  function sisteBookbar(){return edPluss(idag(),horisont());}   // inklusivt: i dag + horisont (backend lastBookableDate)
+  function kanVelges(ymd){return ymd>=idag()&&ymd<=maks();}
+  function fasteFor(ymd){ if(!_fasteLagret)return null; var wd=(edDato(ymd).getDay()+6)%7; return _fasteLagret.find(function(h){return h.day===wd;})||null; }
+  function status(ymd){ var av=AVVIK.map[ymd]; if(av)return av.closed?'stengt':'egne'; var f=fasteFor(ymd); return (f&&f.on)?'faste':'stengt'; }
+  function vindu(t){return t.open+'–'+t.close;}
+  function ukedagNavn(ymd){return DAYS[(edDato(ymd).getDay()+6)%7];}
+  function datoKort(ymd){var d=edDato(ymd);return d.getDate()+'. '+MONTHS[d.getMonth()].slice(0,3);}
+  function datoLang(ymd){var d=edDato(ymd),s=d.getDate()+'. '+MONTHS[d.getMonth()];return d.getFullYear()!==edDato(idag()).getFullYear()?s+' '+d.getFullYear():s;}
+  function radDato(ymd){return ukedagNavn(ymd)+' '+datoKort(ymd);}
+  function isoUke(d){var t=new Date(d.getFullYear(),d.getMonth(),d.getDate());t.setDate(t.getDate()+3-((t.getDay()+6)%7));var f=new Date(t.getFullYear(),0,4);return 1+Math.round(((t-f)/864e5-3+((f.getDay()+6)%7))/7);}
+  function stille(){return !!(REDUSERT&&REDUSERT.matches);}
+
+  // ── Sist brukte tider (per enhet; ren bekvemmelighet) ──
+  function lesSist(){ try{ var a=JSON.parse(localStorage.getItem(SIST)||'[]'); return Array.isArray(a)?a.filter(function(x){return x&&/^\d\d:\d\d$/.test(x.open)&&/^\d\d:\d\d$/.test(x.close);}).slice(0,3):[]; }catch(_){ return []; } }
+  function huskSist(open,close){ try{ var a=lesSist().filter(function(x){return !(x.open===open&&x.close===close);}); a.unshift({open:open,close:close}); localStorage.setItem(SIST,JSON.stringify(a.slice(0,3))); }catch(_){} }
+
+  // ── Kalender ──
+  function grenser(){ var t=edDato(idag()), m=edDato(maks()); return {min:{y:t.getFullYear(),m:t.getMonth()},max:{y:m.getFullYear(),m:m.getMonth()}}; }
+  function ymTall(ym){return ym.y*12+ym.m;}
+  function tegnMaaned(retning){
+    var g=grenser(); if(!ED.ym||ymTall(ED.ym)<ymTall(g.min))ED.ym={y:g.min.y,m:g.min.m};
+    if(ymTall(ED.ym)>ymTall(g.max))ED.ym={y:g.max.y,m:g.max.m};
+    var y=ED.ym.y,m=ED.ym.m, forste=new Date(y,m,1), siste=new Date(y,m+1,0);
+    var d=new Date(y,m,1-((forste.getDay()+6)%7)), slutt=new Date(y,m+1,6-((siste.getDay()+6)%7));
+    var html='';
+    while(d<=slutt){
+      var uke=isoUke(d), dager=[], rad='';
+      for(var i=0;i<7;i++){
+        var ymd=edYmd(d); dager.push(ymd);
+        rad+='<button type="button" class="ed-dag'+(d.getMonth()!==m?' ute':'')+'" data-ymd="'+ymd+'"><span class="ed-n">'+d.getDate()+'</span><span class="ed-p"></span></button>';
+        d.setDate(d.getDate()+1);
+      }
+      html+='<button type="button" class="ed-uke" data-uke="'+dager.join(',')+'" aria-label="Uke '+uke+'">'+uke+'</button>'+rad;
+    }
+    grid.classList.add('stille'); grid.innerHTML=html; oppdaterCeller();
+    requestAnimationFrame(function(){ requestAnimationFrame(function(){ grid.classList.remove('stille'); }); });
+    var navn=MONTHS[m]; el('edMnd').textContent=navn.charAt(0).toUpperCase()+navn.slice(1)+' '+y;
+    el('edForrige').disabled=ymTall(ED.ym)<=ymTall(g.min);
+    el('edNeste').disabled=ymTall(ED.ym)>=ymTall(g.max);
+    if(retning&&!stille()&&grid.animate) grid.animate([{transform:'translateX('+(retning*28)+'px)',opacity:0},{transform:'none',opacity:1}],{duration:200,easing:'cubic-bezier(.2,.8,.2,1)'});
+  }
+  function celleLabel(ymd,st){
+    var av=AVVIK.map[ymd], f=fasteFor(ymd);
+    var s=ukedagNavn(ymd)+' '+datoLang(ymd)+': ';
+    if(st==='egne')s+='egne tider '+av.open_time+'–'+av.close_time;
+    else if(st==='faste')s+='faste tider '+f.start+'–'+f.end;
+    else s+='stengt';
+    return s;
+  }
+  // Setter klasser på cellene PÅ STEDET (ingen ny markup) → CSS-overgangene på prikk/tall/flate virker.
+  // endret = datoer som nettopp ble lagret → kort puls på prikken.
+  function oppdaterCeller(endret){
+    var t=idag(), mx=maks(), sb=sisteBookbar();
+    grid.querySelectorAll('.ed-dag').forEach(function(b){
+      var ymd=b.dataset.ymd, st=status(ymd), forbi=ymd<t, etter=ymd>mx, valgt=ED.valgt.has(ymd);
+      var c=b.classList;
+      c.toggle('forbi',forbi); c.toggle('etter',etter); c.toggle('idag',ymd===t);
+      c.toggle('vindu',!forbi&&!etter&&ymd>sb);
+      c.toggle('s-faste',st==='faste'); c.toggle('s-egne',st==='egne'); c.toggle('s-stengt',st==='stengt');
+      c.toggle('valgt',valgt);
+      b.disabled=forbi||etter;
+      b.setAttribute('aria-pressed',valgt?'true':'false');
+      b.setAttribute('aria-label',celleLabel(ymd,st));
+      if(endret&&endret.indexOf(ymd)>=0&&!stille()){ c.add('bytt'); setTimeout(function(){c.remove('bytt');},220); }
+    });
+    grid.querySelectorAll('.ed-uke').forEach(function(u){
+      var dg=u.dataset.uke.split(',').filter(kanVelges);
+      u.disabled=!dg.length;
+      u.setAttribute('aria-pressed',(dg.length&&dg.every(function(x){return ED.valgt.has(x);}))?'true':'false');
+    });
+  }
+  function tegnHorisont(){ el('edHorisont').textContent='Kundene kan booke frem til '+datoLang(sisteBookbar())+'.'; }
+  function tegnListe(){
+    var t=idag(), keys=Object.keys(AVVIK.map).filter(function(k){return k>=t;}).sort();
+    var l=el('edListe');
+    if(!keys.length){ l.innerHTML='<p class="ed-tom">Ingen kommende endringer.</p>'; return; }
+    l.innerHTML=keys.map(function(k){
+      var av=AVVIK.map[k];
+      return '<button type="button" class="ed-rad'+(av.closed?' s-stengt':'')+(ED.valgt.has(k)?' valgt':'')+'" data-ymd="'+k+'" aria-pressed="'+(ED.valgt.has(k)?'true':'false')+'">'
+        +'<span class="ed-p"></span><span class="ed-rad-dato">'+radDato(k)+'</span>'
+        +'<span class="ed-rad-tid'+(av.closed?' stengt':'')+'">'+(av.closed?'Stengt':av.open_time+'–'+av.close_time)+'</span></button>';
+    }).join('');
+  }
+  function tegnAlt(endret){ oppdaterCeller(endret); tegnListe(); tegnHorisont(); oppdaterArk(); }
+
+  // ── Utvalg ──
+  function veksle(ymd){ if(!kanVelges(ymd))return; if(ED.valgt.has(ymd))ED.valgt.delete(ymd); else ED.valgt.add(ymd); utvalgEndret(); }
+  function utvalgEndret(){ ED.vent=null; if(!ED.valgt.size){ ED.apenBruker=false; ED.skitten=false; } else if(!ED.skitten) ED.fylt=null; oppdaterCeller(); tegnListe(); oppdaterArk(); }
+  function tomUtvalg(){ ED.valgt.clear(); ED.apenBruker=false; ED.skitten=false; ED.fylt=null; ED.vent=null; }
+
+  // ── Arket ──
+  function sortertValg(){return Array.from(ED.valgt).filter(kanVelges).sort();}
+  // Felles tilstand for utvalget: 'faste' | 'stengt' | {open,close} (alle har samme egne tider) | null (blandet).
+  function felles(){
+    var a=sortertValg(); if(!a.length)return null;
+    var n=a.map(function(k){var av=AVVIK.map[k]; return !av?'faste':av.closed?'stengt':av.open_time+'-'+av.close_time;});
+    if(!n.every(function(x){return x===n[0];}))return null;
+    if(n[0]==='faste'||n[0]==='stengt')return n[0];
+    var av=AVVIK.map[a[0]]; return {open:av.open_time,close:av.close_time};
+  }
+  // Forhåndsutfylling: én dag (eller alle) med egne tider → de tidene; ellers første dags faste tider;
+  // stengt ukedag → sist brukte; ellers 10:00–18:00.
+  function forslag(){
+    var fl=felles(); if(fl&&typeof fl==='object')return fl;
+    var a=sortertValg(), f=a.length?fasteFor(a[0]):null;
+    if(f&&f.on&&f.start&&f.end)return {open:f.start,close:f.end};
+    var s=lesSist(); if(s.length)return s[0];
+    return {open:'10:00',close:'18:00'};
+  }
+  function chips(){
+    var ut=[], sett={};
+    function legg(t,etikett){ var k=t.open+'-'+t.close; if(sett[k]||!(t.open<t.close))return; sett[k]=1; ut.push({open:t.open,close:t.close,etikett:etikett||''}); }
+    lesSist().forEach(function(t){legg(t);});
+    (_fasteLagret||[]).forEach(function(h){ if(h.on&&h.start&&h.end) legg({open:h.start,close:h.end}); });
+    return ut.slice(0,6);
+  }
+  function tegnChips(){
+    var c=el('edChips'), v={open:fra.value,close:til.value};
+    c.innerHTML=chips().map(function(t){
+      var p=(t.open===v.open&&t.close===v.close);
+      return '<button type="button" class="ed-chip" data-open="'+t.open+'" data-close="'+t.close+'" aria-pressed="'+(p?'true':'false')+'">'+t.open+'–'+t.close+'</button>';
+    }).join('');
+  }
+  // «Pause 12:00–12:30 gjelder også denne dagen.» når ukedagens pause (Faste tider) faller innenfor Fra–Til.
+  // Flere dager: én linje per pause, med ukedagene den gjelder.
+  function tegnPause(){
+    var p=el('edPause'), o=fra.value, c=til.value, a=sortertValg();
+    if(!o||!c||!(o<c)){ p.hidden=true; p.innerHTML=''; return; }
+    var per={};
+    a.forEach(function(k){
+      var f=fasteFor(k), b=f&&f.breaks&&f.breaks[0];
+      if(!b||!b.start||!b.end||!(b.start<c&&b.end>o))return;
+      var nk=b.start+'–'+b.end; (per[nk]=per[nk]||{dager:{}}).dager[(edDato(k).getDay()+6)%7]=1;
+    });
+    var linjer=Object.keys(per).map(function(nk){
+      if(a.length===1)return 'Pause '+nk+' gjelder også denne dagen.';
+      var d=Object.keys(per[nk].dager).map(Number).sort().map(function(i){return UKEDAG_FLERTALL[i];});
+      var liste=d.length>1?d.slice(0,-1).join(', ')+' og '+d[d.length-1]:d[0];
+      return 'Pause '+nk+' gjelder også på '+liste+'.';
+    });
+    p.innerHTML=linjer.map(function(t){return '<p>'+esc(t)+'</p>';}).join(''); p.hidden=!linjer.length;
+  }
+  function tegnLagreKnapp(){
+    var b=el('edLagre'); b.hidden=!ED.skitten;
+    b.disabled=!(fra.value&&til.value&&fra.value<til.value)||ED.opptatt;
+  }
+  function visFeil(tekst,igjen){
+    var f=el('edFeil');
+    if(!tekst){ f.hidden=true; f.textContent=''; return; }
+    f.textContent=tekst;
+    if(igjen){ f.textContent=tekst+' '; var b=document.createElement('button'); b.type='button'; b.className='retry-lenke'; b.textContent='Prøv igjen'; b.addEventListener('click',igjen); f.appendChild(b); }
+    f.hidden=false;
+  }
+  function oppdaterArk(){
+    var n=ED.valgt.size;
+    if(!n){ lukkArk(); return; }
+    el('edArkTittel').textContent=n===1?'1 dag valgt':n+' dager valgt';
+    el('edHoved').hidden=!!ED.vent; el('edAdvarsel').hidden=!ED.vent;
+    var fl=felles(), egne=fl&&typeof fl==='object';
+    var aktiv=ED.apenBruker||egne?'apen':fl;
+    ark.querySelectorAll('.ed-valg [data-ed]').forEach(function(b){ b.setAttribute('aria-pressed',b.dataset.ed===aktiv?'true':'false'); b.disabled=ED.opptatt; });
+    var visTider=ED.apenBruker||egne;
+    el('edTider').hidden=!visTider;
+    if(visTider&&!ED.skitten){
+      var f=forslag(), k=f.open+'-'+f.close;
+      if(ED.fylt!==k){ fra.value=f.open; til.value=f.close; ED.fylt=k; }
+    }
+    if(visTider){ tegnChips(); tegnPause(); }
+    tegnLagreKnapp();
+    apneArk();
+  }
+  var ro=null;
+  function maalArk(){ var h=ark.classList.contains('inn')?Math.ceil(ark.getBoundingClientRect().height):0; document.documentElement.style.setProperty('--ed-ark-h',h+'px'); }
+  function apneArk(){
+    if(ark.classList.contains('inn'))return;
+    ark.removeAttribute('inert'); ark.classList.add('inn');
+    if(!ro&&window.ResizeObserver){ ro=new ResizeObserver(maalArk); ro.observe(ark); }
+    maalArk();
+  }
+  function lukkArk(){
+    if(!ark.classList.contains('inn'))return;
+    ark.classList.remove('inn'); ark.setAttribute('inert','');
+    document.documentElement.style.setProperty('--ed-ark-h','0px');
+    visFeil('');
+  }
+  // Mens et kall er i lufta: alle knapper i arket av (unntatt «Fjern valg»). Av igjen → oppdaterArk setter «Lagre» riktig.
+  function settOpptatt(v){ ED.opptatt=v; ark.setAttribute('aria-busy',v?'true':'false'); ark.querySelectorAll('button').forEach(function(b){ if(b.id!=='edFjern')b.disabled=v; }); if(!v)oppdaterArk(); }
+
+  // ── Lagring ──
+  async function kall(metode,body){
+    var r; try{ r=await apiFetch('/api/dashboard/date-overrides',{method:metode,body:JSON.stringify(body)}); }
+    catch(e){ return {ok:false,error:kontaktFeil(e)}; }
+    if(!r)return {ok:false,error:''};
+    var j=await r.json().catch(function(){return null;});
+    if(r.ok&&j)return {ok:true,data:j};
+    return {ok:false,error:(j&&j.error)||('Kunne ikke lagre enkeltdagene (feil '+r.status+'). Prøv igjen.')};
+  }
+  function kropp(h){ return h.closed?{closed:true}:{closed:false,open_time:h.open,close_time:h.close}; }
+  // Ved bekreftelse: dry_run (PUT for Åpen/Stengt, DELETE for Faste tider) → tom berorte = lagre; ellers advarsel.
+  // Feil → ingenting lagres.
+  async function bekreft(h){
+    if(ED.opptatt)return;
+    var datoer=sortertValg(); if(!datoer.length)return;
+    if(h.faste){ datoer=datoer.filter(function(k){return AVVIK.map[k];}); if(!datoer.length){ tomUtvalg(); tegnAlt(); return; } }
+    ED.forsok=h; visFeil(''); settOpptatt(true);
+    var berorte=null;
+    try{
+      var s=h.faste?await kall('DELETE',{dates:datoer,dry_run:true})
+                   :await kall('PUT',Object.assign({dates:datoer,dry_run:true},kropp(h)));
+      if(!s.ok||!Array.isArray(s.data.berorte))throw 0;
+      berorte=s.data.berorte;
+    }catch(_){
+      settOpptatt(false);
+      visFeil('Klarte ikke å sjekke bookingene.',function(){ bekreft(ED.forsok); });
+      return;
+    }
+    if(berorte.length){ ED.vent={h:h,datoer:datoer}; settOpptatt(false); visAdvarsel(berorte); return; }
+    await lagre(h,datoer);
+  }
+  function visAdvarsel(berorte){
+    berorte.sort(function(a,b){return new Date(a.start)-new Date(b.start);});
+    el('edAdvH').textContent=berorte.length===1?'1 booking havner utenfor':berorte.length+' bookinger havner utenfor';
+    el('edAdvListe').innerHTML=berorte.map(function(b){
+      var dato=b.dato||edYmd(new Date(calDayKey(b.start)));
+      return '<div class="ed-adv-rad"><span class="ed-adv-navn">'+esc(b.name||'Uten navn')+'</span><span class="ed-adv-tid">'+ukedagNavn(dato).slice(0,3)+' '+datoKort(dato)+' · '+timeOnly(b.start)+'</span></div>';
+    }).join('');
+    oppdaterArk();
+  }
+  async function lagre(h,datoer){
+    settOpptatt(true);
+    var foer=datoer.map(function(k){return [k,AVVIK.map[k]?Object.assign({},AVVIK.map[k]):null];});
+    var r=h.faste?await kall('DELETE',{dates:datoer}):await kall('PUT',Object.assign({dates:datoer},kropp(h)));
+    if(!r.ok){ ED.vent=null; settOpptatt(false); visFeil(r.error||'Kunne ikke lagre enkeltdagene. Prøv igjen.'); return; }
+    datoer.forEach(function(k){ if(h.faste)delete AVVIK.map[k]; else AVVIK.map[k]=h.closed?{closed:true,open_time:null,close_time:null}:{closed:false,open_time:h.open,close_time:h.close}; });
+    if(!h.faste&&!h.closed)huskSist(h.open,h.close);
+    ED.vent=null;
+    if(h.faste||h.closed) tomUtvalg();
+    else { ED.skitten=false; ED.fylt=h.open+'-'+h.close; }
+    settOpptatt(false);
+    tegnAlt(datoer); kalenderEndret();
+    visToast(foer);
+  }
+  function kalenderEndret(){ try{ if(CAL&&CAL.open&&CAL.dombuilt)renderCal(); }catch(_){} }
+
+  // ── Toast + Angre ──
+  function visToast(foer){
+    ED.angre=foer;
+    var t=el('edToast'); el('edToastTekst').textContent='Lagret'; el('edAngre').hidden=false;
+    t.hidden=false; requestAnimationFrame(function(){ t.classList.add('inn'); });
+    clearTimeout(ED.toastT); ED.toastT=setTimeout(skjulToast,5000);
+  }
+  function skjulToast(){ var t=el('edToast'); clearTimeout(ED.toastT); ED.angre=null; t.classList.remove('inn'); setTimeout(function(){ if(!t.classList.contains('inn'))t.hidden=true; },stille()?0:220); }
+  async function angre(){
+    var snap=ED.angre; if(!snap||ED.opptatt)return;
+    skjulToast(); settOpptatt(true);
+    var tilFaste=snap.filter(function(s){return !s[1];}).map(function(s){return s[0];}), grupper={};
+    snap.forEach(function(s){ if(!s[1])return; var b=s[1].closed?{closed:true}:{closed:false,open_time:s[1].open_time,close_time:s[1].close_time}; var n=JSON.stringify(b); (grupper[n]=grupper[n]||{body:b,dates:[]}).dates.push(s[0]); });
+    var kallene=Object.keys(grupper).map(function(n){ return kall('PUT',Object.assign({dates:grupper[n].dates},grupper[n].body)); });
+    if(tilFaste.length)kallene.push(kall('DELETE',{dates:tilFaste}));
+    var svar=await Promise.all(kallene);
+    if(svar.every(function(s){return s.ok;})){
+      snap.forEach(function(s){ if(s[1])AVVIK.map[s[0]]=s[1]; else delete AVVIK.map[s[0]]; });
+    } else {
+      await hentAvvik(true);   // delvis feil → vis det backend faktisk har
+      var t=el('edToast'); el('edToastTekst').textContent='Klarte ikke å angre.'; el('edAngre').hidden=true;
+      t.hidden=false; requestAnimationFrame(function(){ t.classList.add('inn'); }); clearTimeout(ED.toastT); ED.toastT=setTimeout(skjulToast,4000);
+    }
+    ED.skitten=false; ED.fylt=null; settOpptatt(false);
+    tegnAlt(snap.map(function(s){return s[0];})); kalenderEndret();
+  }
+
+  // ── Hendelser ──
+  grid.addEventListener('click',function(e){
+    if(performance.now()-ED.sveipT<120)return;   // klikket som eventuelt følger selve sveipet — ikke neste trykk
+    var d=e.target.closest('.ed-dag'); if(d&&!d.disabled){ veksle(d.dataset.ymd); return; }
+    var u=e.target.closest('.ed-uke'); if(u&&!u.disabled){
+      var dg=u.dataset.uke.split(',').filter(kanVelges), alle=dg.every(function(x){return ED.valgt.has(x);});
+      dg.forEach(function(x){ if(alle)ED.valgt.delete(x); else ED.valgt.add(x); }); utvalgEndret();
+    }
+  });
+  function bla(n){ var g=grenser(), ny={y:ED.ym.y,m:ED.ym.m+n}; if(ny.m<0){ny.m=11;ny.y--;} if(ny.m>11){ny.m=0;ny.y++;} if(ymTall(ny)<ymTall(g.min)||ymTall(ny)>ymTall(g.max))return; ED.ym=ny; tegnMaaned(n); }
+  el('edForrige').addEventListener('click',function(){bla(-1);});
+  el('edNeste').addEventListener('click',function(){bla(1);});
+  // Sveip sideveis bytter måned (touch/penn). touch-action:pan-y på flaten → loddrett scroll virker som før.
+  (function(){
+    var f=el('edFlate'), sx=0, sy=0, aktiv=false;
+    f.addEventListener('pointerdown',function(e){ if(e.pointerType==='mouse')return; aktiv=true; sx=e.clientX; sy=e.clientY; });
+    f.addEventListener('pointercancel',function(){ aktiv=false; });
+    f.addEventListener('pointerup',function(e){
+      if(!aktiv)return; aktiv=false;
+      var dx=e.clientX-sx, dy=e.clientY-sy;
+      if(Math.abs(dx)>44&&Math.abs(dx)>Math.abs(dy)*1.4){ ED.sveipT=performance.now(); bla(dx<0?1:-1); }
+    });
+  })();
+  el('edListe').addEventListener('click',function(e){
+    var r=e.target.closest('.ed-rad'); if(!r)return;
+    var ymd=r.dataset.ymd, d=edDato(ymd);
+    if(!ED.ym||ED.ym.y!==d.getFullYear()||ED.ym.m!==d.getMonth()){ var n=(d.getFullYear()*12+d.getMonth())-ymTall(ED.ym); ED.ym={y:d.getFullYear(),m:d.getMonth()}; tegnMaaned(n>0?1:-1); }
+    veksle(ymd);
+  });
+  el('edFjern').addEventListener('click',function(){ tomUtvalg(); oppdaterCeller(); tegnListe(); oppdaterArk(); });
+  ark.querySelector('.ed-valg').addEventListener('click',function(e){
+    var b=e.target.closest('[data-ed]'); if(!b||b.disabled)return;
+    var v=b.dataset.ed;
+    if(v==='apen'){ ED.apenBruker=true; oppdaterArk(); return; }
+    ED.apenBruker=false; ED.skitten=false;
+    bekreft(v==='stengt'?{closed:true}:{faste:true});
+  });
+  el('edChips').addEventListener('click',function(e){
+    var c=e.target.closest('.ed-chip'); if(!c||ED.opptatt)return;
+    fra.value=c.dataset.open; til.value=c.dataset.close; ED.skitten=false; ED.fylt=c.dataset.open+'-'+c.dataset.close;
+    tegnChips(); tegnPause(); tegnLagreKnapp();
+    bekreft({closed:false,open:c.dataset.open,close:c.dataset.close});
+  });
+  // Manuell endring av Fra/Til → «Lagre» vises; lagring først ved trykk (ikke når feltet lukkes).
+  function tidEndret(){ ED.skitten=(fra.value+'-'+til.value)!==ED.fylt; tegnChips(); tegnPause(); tegnLagreKnapp(); }
+  fra.addEventListener('input',tidEndret); til.addEventListener('input',tidEndret);
+  fra.addEventListener('change',tidEndret); til.addEventListener('change',tidEndret);
+  el('edLagre').addEventListener('click',function(){ if(!(fra.value<til.value))return; bekreft({closed:false,open:fra.value,close:til.value}); });
+  el('edAvbryt').addEventListener('click',function(){ ED.vent=null; oppdaterArk(); });
+  el('edLagreLikevel').addEventListener('click',function(){ var v=ED.vent; if(!v||ED.opptatt)return; lagre(v.h,v.datoer); });
+  el('edAngre').addEventListener('click',angre);
+
+  // ── Livssyklus ──
+  function tegn(){
+    if(!_fasteLagret||!AVVIK.lastet)return;
+    ED.klar=true; tegnMaaned(0); tegnListe(); tegnHorisont(); oppdaterArk();
+  }
+  async function last(){
+    if(!ED.klar) grid.innerHTML='<div class="loading">Laster …</div>';
+    var ok=await hentAvvik(true);
+    if(!ok){ feilMedRetry(grid,'Klarte ikke å laste enkeltdagene.',last); el('edListe').innerHTML=''; return; }
+    tegn();
+  }
+  return {
+    last:last,
+    fasteEndret:function(){ if(ED.klar)tegnAlt(); else tegn(); },
+    horisontEndret:function(){ if(ED.klar){ oppdaterCeller(); tegnHorisont(); } },
+    forlat:function(){ tomUtvalg(); lukkArk(); if(ED.angre)skjulToast(); if(ED.klar){ oppdaterCeller(); tegnListe(); } }
+  };
+})();
 
 function pauseTekst(p){return 'Pause '+(p.start||'')+'–'+(p.end||'');}
 function harPause(h){return !!(h.on&&h.breaks&&h.breaks[0]&&h.breaks[0].start&&h.breaks[0].end);}
@@ -5748,6 +6321,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   const id=t.dataset.panel;if(!id)return; // «Mer»-toggle er også .nav button, men har ingen panel
   if(window.DinSideV2&&DinSideV2.fangBytte(t))return;   // v2: ulagrede endringer på Din side → dialog, bytte stoppet
   if(id!=="design"&&window.DinSideV2)DinSideV2.forlat();
+  if(id!=="tjenester"&&window.Enkeltdager)Enkeltdager.forlat();
   document.querySelectorAll(".nav button").forEach(x=>x.setAttribute("aria-selected","false"));
   t.setAttribute("aria-selected","true");
   document.querySelectorAll(".panel").forEach(p=>p.classList.remove("active"));
@@ -5756,7 +6330,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   if(id==="oversikt"){loadOversikt();loadAktivering();}
   if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();loadLoyalty();}
   if(id==="abonnement"){loadSmsInnstillinger();}   // Konto-bryteren deler sms_paaminnelse_enabled med Vekst
-  if(id==="tjenester"){ if(!_ulagret.svc)loadTjenester(); if(!_ulagret.timer)loadArbeidstider(); loadBookingInnst(); }   // ulagret → behold det barberen har skrevet
+  if(id==="tjenester"){ if(!_ulagret.svc)loadTjenester(); if(!_ulagret.timer)loadArbeidstider(); loadBookingInnst(); if(window.Enkeltdager)Enkeltdager.last(); }   // ulagret → behold det barberen har skrevet
   // «Din side» laster alle tre trekkspillene. loadProfil FØRST — den fyller Profil-feltene
   // (navn/adresse/bio/tagline) som bor i dette panelet, før vi bruker tid på design + bilder.
   // loadProfil hentes alltid (header/slug/_lagretProfil), men fyller bare felt uten ulagrede endringer.
