@@ -4853,6 +4853,7 @@ async function calFetch(){
   var bs=await api.bookings();                    // 30 bakover + alle framtidige
   var hr=await apiFetch('/api/dashboard/hours');  // RÅ (ikke api.hours(), som tvinger NULL→09:00/17:00)
   CAL.hours=(hr&&hr.ok)?await hr.json():[];        // {weekday(0=søn),is_closed,open_time,close_time}
+  await hentAvvik();                               // Enkeltdager-unntakene (dagTimer). Feil → ukedagstidene alene.
   var sv=await apiFetch('/api/dashboard/services'); // {hoved,tillegg}, sortert på sort
   var svj=(sv&&sv.ok)?await sv.json():{};
   // KUN hovedtjenester gir posisjon/farge. Nøkkel = service_id (ikke navn); posisjon = indeks i
@@ -4893,6 +4894,9 @@ function dagSegmenter(key){
   return out.sort(function(a,c){return (a.segStart-c.segStart)||(new Date(a.b.start)-new Date(c.b.start));});
 }
 function dagTimer(key){   // → {closed} | {open,close} i minutter. getDay() 0=søn matcher /hours weekday.
+  // Enkeltdager (datoavvik) overstyrer ukedagen: samme AVVIK-kart som Tjenester & tider tegner fra.
+  var av=AVVIK.map[edYmd(new Date(key))];
+  if(av){ if(av.closed)return{closed:true}; var ao=hmMin(av.open_time), ac=hmMin(av.close_time); if(ao!=null&&ac!=null&&ac>ao)return{closed:false,open:ao,close:ac}; }
   var row=CAL.hours.find(function(h){return Number(h.weekday)===new Date(key).getDay();});
   if(row&&row.is_closed)return{closed:true};
   var o=row?hmMin(row.open_time):null, c=row?hmMin(row.close_time):null;
