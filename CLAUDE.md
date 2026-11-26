@@ -481,6 +481,30 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
   tittelfeltet fikk annen bakgrunn enn bryterkolonnen. Render: `tools/render/vekst-kort.mjs`.
 - **Kundeside bygges fra `barbers`-raden** (ikke `orders.payload`): alt barbereren endrer (design, layout, font, adresse, bio, bilder, tjenester) når bookingsiden. Oppslag via `barbers.slug`, status-gating via `barbers.page_status`. `savedLayout` er skilt fra `design.layout` — Bilder-fanen leser alltid lagret DB-verdi.
 
+### Enkeltdager (Tjenester & tider → Arbeidstider, 26.11.2026)
+Datoavvik i dashbordet (backend 089, `GET/PUT/DELETE /api/dashboard/date-overrides`). «Arbeidstider» har to deler:
+«Faste tider» (ukedagslista, uendret, «Lagre arbeidstider») og «Enkeltdager».
+- **Kalender:** månedsrutenett mandag først + ukenummer-kolonne (26 px; 7×35 på 320). Sveip sideveis/piler; ikke bakover
+  forbi inneværende måned, ikke forbi i dag + 400 (backendens tak). Grønn prikk = Faste tider (åpen), blå = egne tider,
+  dempet tall = stengt; i dag = ring; valgt = blå flate; passert = dimmet og av; etter bookingvinduet (i dag +
+  `booking_horizon_days`, inklusivt) litt dempet + «Kundene kan booke frem til …». Nabomånedenes dager vises lysere og kan
+  velges. Fargene: `--ed-gronn`/`--ed-blaa` (mørk #3ecf7e/#4d8bff, lys #1f9d55/#2563eb). Cellene oppdateres PÅ STEDET
+  (`oppdaterCeller`), ikke ny markup — ellers dør fargeovergangen ved lagring.
+- **Utvalg:** trykk på dag/ukenummer/rad i «Kommende endringer» legger til eller fjerner. Arket (`#edArk`, fast nederst, over
+  bunn-navet, ikke modalt) glir opp 200 ms. `#edPlass` (høyde = `--ed-ark-h`, ResizeObserver) gjør at kalenderen kan scrolles
+  over arket uten layoutsprang. Arket og toasten står i markupen FØR hovedskriptet — IIFE-en binder dem ved oppstart.
+- **Lagring:** Åpen/Stengt → `PUT {dry_run:true}`, Faste tider → `DELETE {dry_run:true}`; tom `berorte` → samme kall uten
+  dry_run. Ellers advarsel (navn, dato, tid, «Bookingene avlyses ikke automatisk.», «Lagre likevel»/«Avbryt»). Feiler
+  dry_run → ingenting lagres, «Klarte ikke å sjekke bookingene. Prøv igjen». Chip lagrer direkte; manuell Fra/Til → «Lagre»
+  (av når Fra ≥ Til), aldri lagring når feltet lukkes (iOS). Stengt/Faste tider tømmer utvalget og lukker arket; Åpen lar det
+  stå. Toast «Lagret» + Angre ~5 s: Angre skriver tilbake øyeblikksbildet (DELETE for datoer uten unntak, PUT per gruppe).
+  Pauselinja: ukedagens pause (Faste tider) gjelder også på unntaksdager — backend legger den på; ikke noe pausefelt.
+- **Én kilde:** `AVVIK.map` (`hentAvvik`, −14 … +400 dager i to GET-er). Bookingkalenderens `dagTimer()` leser den:
+  stengt unntak = stengt dag, egne tider i stedet for ukedagens. `_fasteLagret` = sist LAGREDE Faste tider (fra
+  `loadArbeidstider`), ikke det som redigeres.
+- **⚠ `[hidden]`:** `.ed-lagre` har `display:block` → egen `[hidden]{display:none}`-regel. Testen måler `checkVisibility()`.
+- Vakt: `node tools/render/enkeltdager.mjs` (mock med dry_run/berorte på PUT og DELETE; feiler ved prod-kall).
+
 ### Oversikt-fanen (redesign 17.11.2026)
 Kilde: Henriks `oversikt-vekst` / `oversikt-gratis` / `hentet-inn-vekst-tom` (.dc.html). Render + vakter:
 `tools/render/oversikt-redesign.mjs` (320/375/1280 × mørk/lys; `… gratis` = bare den tilstandens bilder).
