@@ -483,45 +483,50 @@ Hvordan systemet fungerer NÅ. Forløp/debugging-historikk ligger i git-historik
 
 ### Arbeidstider: modus + Enkeltdager (Tjenester & tider, 26.11.2026)
 Datoavvik i dashbordet (backend 089, `GET/PUT/DELETE /api/dashboard/date-overrides`). «Arbeidstider» = modusbryter →
-«Faste tider» (ukedagslista, uendret, «Lagre arbeidstider») → «Enkeltdager».
+«Faste tider» (ukedagslista, «Lagre arbeidstider») → «Enkeltdager».
 - **Modus «Faste ukedager» | «Tidene mine varierer»** (`#atModus`): UTLEDES av sist lagrede ukedagstider — alle stengt =
-  varierer. Ingen egen kolonne. «varierer» mens noen ukedager er åpne → bekreftelsesark (`#atBekreft`, pause-modalens skall):
-  `PUT /hours {days: alle stengt, breaks: [], dry_run:true}` → berørte bookinger listes; «Pausene dine fjernes.» bare når
-  barberen har pauser; «Sett som stengt» → samme PUT uten dry_run (klokkeslettene beholdes på de stengte dagene). I varierer
-  er `#fasteTider` skjult og Enkeltdager viser «Ingen dager er åpne før du åpner dem her.». Tilbake til «Faste ukedager»
-  er bare visning (`MODUS.lokal`) til en åpen dag lagres. Dry_run-feil → «Sett som stengt» av.
-- **Kalender:** månedsrutenett mandag først + ukenummer-kolonne (26 px; 7×35 på 320). Sveip sideveis/piler; ikke bakover
-  forbi inneværende måned, ikke forbi i dag + 400 (backendens tak). Grønn prikk = Faste tider (åpen), blå = egne tider,
-  dempet tall = stengt; passert = dimmet og av; etter bookingvinduet (i dag + `booking_horizon_days`, inklusivt) litt
-  dempet + «Kundene kan booke frem til …». Nabomånedenes dager vises lysere og kan velges. Fargene: `--ed-gronn`/`--ed-blaa`
-  (mørk #3ecf7e/#4d8bff, lys #1f9d55/#2563eb). Cellene oppdateres PÅ STEDET (`oppdaterCeller`) — ellers dør overgangen.
-- **ÉN sirkel per dag** (`.ed-n`, 32 px / 28 under 360), sentrert med grid i en flex-kolonne — aldri absolutt plassering.
-  I dag = ring (inset), valgt = fylt blå, valgt + i dag = fylt + ring utenfor (outline-offset). Prikken står under sirkelen
-  og beholder statusfargen også når dagen er valgt. Fokusring bare under `html.tastatur` (på sirkelen) — `:focus-visible`
-  alene ga ring ved trykk i WebKit, og den globale `:where(button)`-ringen tegnet et rektangel rundt cellen.
-- **Utvalg:** trykk på dag/ukenummer/rad i «Kommende endringer» legger til eller fjerner. Arket (`#edArk`, fast nederst, over
-  bunn-navet, ikke modalt) glir opp 200 ms. `#edPlass` (høyde = `--ed-ark-h`) lar kalenderen scrolles over arket uten
-  layoutsprang. Arket, bekreftelsen og toasten står i markupen FØR hovedskriptet — IIFE-en binder dem ved oppstart.
-- **Arket:** Åpen | Stengt (lagrer ingenting) · «Tilbakestill til faste tider» (dempet lenke, bare når en valgt dag har
-  unntak) · Fra/Til + «Sist brukt» (maks 3, localStorage, raden skjult uten historikk; fyller bare Fra/Til) · pauselinja ·
-  ÉN knapp «Lagre 1 dag» / «Lagre N dager» (av uten valg, og ved Åpen når Fra ≥ Til).
-  **Regel B (Henrik 26.11):** det barberen har valgt/skrevet står mens arket er åpent og gjelder alle valgte dager;
-  forhåndsutfylling bare når Fra/Til er urørt (felles egne tider → de; ellers første dags faste tider; stengt ukedag →
-  sist brukte; ellers 10–18). «Fjern valg» og lagring lukker og nullstiller. (En ulagret Til fra én dag som ble stående
-  da utvalget endret seg, så ut som feil forhåndsutfylling 26.11 — det er regel B, ikke ukedagsindeksen.)
-- **Lagring:** «Lagre» → `PUT {dry_run:true}`; «Tilbakestill» → `DELETE {dry_run:true}` (svar `{ok, fjernet, berorte}`, frontend
-  leser bare `berorte`). Tom `berorte` → samme kall uten dry_run; ellers advarsel («N bookinger havner utenfor», navn/dato/tid,
-  «Bookingene avlyses ikke automatisk.», «Lagre likevel»/«Avbryt»). Feilet dry_run → ingenting lagres. Toast «Lagret» + Angre
-  ~5 s (DELETE for datoer uten unntak, PUT per gruppe). Ukedagens pause gjelder også på unntaksdager (backend) — ikke noe pausefelt.
-- **Én kilde:** `AVVIK.map` (`hentAvvik`, −14 … +400 dager i to GET-er). Bookingkalenderens `dagTimer()` leser den.
-  Publiseringssjekklista (`_sjekkData.apneDager`) teller åpne ukedager med tider + kommende åpne unntak — samme regel som
-  backend `dinSide.js` (`apen_dag`). `_fasteLagret` = sist LAGREDE Faste tider (fra `loadArbeidstider`).
-- **Linjer:** radene i «Kommende endringer» og advarselen har skillelinje bare MELLOM rader (`.ed-rad+.ed-rad`) — ingen under
-  siste, ellers dobbel strek mot seksjonsskillet.
-- **⚠ `[hidden]`:** elementer med egen `display` (`.ed-lagre`, `.ed-tilbake`, `.ed-chips` …) har egen `[hidden]{display:none}`.
-  Testen måler `checkVisibility()`, aldri `.hidden`.
+  varierer. Ingen egen kolonne. «varierer» mens noen ukedager er åpne → bekreftelsesark (`#atBekreft`): `PUT /hours
+  {days: alle stengt, breaks: [], dry_run:true}` lister berørte bookinger; «Pausene dine fjernes.» bare med pauser;
+  «Sett som stengt» → samme PUT uten dry_run. I varierer er `#fasteTider` skjult og Enkeltdager sier «Ingen dager er åpne
+  før du åpner dem her.». Tilbake til «Faste ukedager» = bare visning (`MODUS.lokal`) til en åpen dag lagres.
+- **⚠ Tidsfelt og iOS:** `input[type=time]` har en bred innebygd minimumsbredde på iOS. Grid-kolonner med `1fr`
+  (= `minmax(auto,1fr)`) og flex-elementer med `min-width:auto` kan aldri bli smalere enn den → Fra/Til overlappet.
+  Rotfiks: `minmax(0,1fr)` (arket, «Fra [ ] til [ ]» på én rad) / `minmax(0,max-content)` (Faste tider-raden er grid) +
+  `min-width:0; width:100%` på feltene. Vakt: overlappsmålingen i testen, Chromium + WebKit med iPhone-profil. Hjulet
+  selv må sjekkes på ekte iPhone — Playwright-WebKit er motoren, ikke iOS-kontrollene.
+- **Kalender:** sju kolonner, mandag først, ingen ukenummer/uke-valg. Sirkel 40 px (34 under 360), hele cellen er
+  trykkflate (≥ 38 × 50). Status = fylling i sirkelen: vanlig åpen = svak grønn, endret = svak blå, stengt = ingen +
+  dempet tall; valgt = fylt blå; i dag = ring; valgt + i dag = fylt + ring utenfor. Tokens `--ed-fyll-vanlig`/
+  `--ed-fyll-endret`/`--ed-tall-fylt` (mørk: 18 % + hvitt tall; lys: mørkere farger + mørkt tall ≥ 4,5:1). Nabomåneder og
+  dager etter bookingvinduet (i dag + `booking_horizon_days`) beholder fyllingen, dempet. «Trykk på dagene du vil endre.»
+  over, «Vanlig · Endret · Stengt» under. Cellene oppdateres PÅ STEDET (`oppdaterCeller`). Fokusring bare under
+  `html.tastatur` (`:focus-visible` alene ga ring ved trykk i WebKit).
+- **Arket** (`#edArk`, fast nederst, ikke modalt, `#edPlass` lar kalenderen scrolles over det): tittel i ord («Søndag 29.
+  november» / «4 dager: 30. nov – 3. des» / «4 dager valgt» + datoene), statuslinje («Vanligvis 10:00–18:00» / «Vanligvis
+  stengt» / «Endret: …» / «Dagene har ulike tider nå»), «Jobber | Stengt» (lagrer ingenting), «Fra [ ] til [ ]», én
+  hurtigvalg-rad uten etikett («Vanlig 10–18» / «Vanlige tider» ved ulike faste / ingen ved stengt ukedag, så maks to sist
+  brukte som ikke er like de faste — fyller bare feltene; «Vanlige tider» viser teksten over feltraden), «Lagre» /
+  «Lagre N dager».
+- **Forhåndsvalg** (bare så lenge barberen ikke har valgt/skrevet — **regel B**: det som er skrevet står mens arket er
+  åpent; «Fjern valg» og lagring nullstiller): alle stengt → Jobber + sist brukte, ellers de vanligste faste tidene (flest
+  ukedager; likt → først i uka); alle åpne med like tider → Jobber + tidene; åpne med ulike → Jobber, tomme felt;
+  blanding åpne/stengte → ingenting valgt.
+- **Lagreregel per dato:** resultat likt ukedagens faste tider (samme tider, eller Stengt på stengt ukedag) → DELETE (bare
+  der et unntak finnes); ellers PUT. Én lagring kan gi begge: dry_run på begge (`PUT`/`DELETE {dry_run:true}`, frontend leser
+  bare `berorte`), én samlet advarsel («N bookinger havner utenfor», «Bookingene avlyses ikke automatisk.», «Lagre likevel»
+  / «Avbryt»), feilet dry_run → ingenting lagres. Ingenting å endre → ingen kall. Toast «Lagret» + Angre ~5 s setter ALLE
+  datoene tilbake. Et unntak lik de faste tidene (eldre data) vises som vanlig overalt (`endring()`/`likFaste()`).
+  Ukedagens pause gjelder også på unntaksdager (backend) — pauselinja sier fra.
+- **Én kilde:** `AVVIK.map` (`hentAvvik`, −14 … +400 dager). Bookingkalenderens `dagTimer()` leser den. Publiseringssjekklista
+  teller åpne ukedager med tider + kommende åpne unntak (= backend `dinSide.js` `apen_dag`). `_fasteLagret` = sist LAGREDE
+  Faste tider.
+- **⚠ `[hidden]` og spesifisitet:** elementer med egen `display` har egen `[hidden]{display:none}`; «Vanlige tider»-modus må
+  slå `.ed-tidrad input[type=time]{display:block}` (samme spesifisitet → bruk `[type=time]` i skjul-regelen). Testen måler
+  `checkVisibility()`, aldri `.hidden`.
+- **⚠ WebKit:** «ResizeObserver loop completed …» kommer ustabilt på Tjenester også uten Enkeltdager (kjent, PLAN.md);
+  testen ignorerer akkurat den meldingen i WebKit.
 - Vakt: `node tools/render/enkeltdager.mjs` (mock med dry_run/berorte på date-overrides PUT/DELETE og /hours PUT; feiler ved
-  prod-kall). Dekker sirkelen, arket, regel B, alle sju ukedager, modus, sjekklista.
+  prod-kall; Chromium + WebKit-iPhone; skjermbilder `.render-ut/enkeltdager-<motor>-<bredde>-*.png`).
 
 ### Oversikt-fanen (redesign 17.11.2026)
 Kilde: Henriks `oversikt-vekst` / `oversikt-gratis` / `hentet-inn-vekst-tom` (.dc.html). Render + vakter:
