@@ -2,7 +2,8 @@
 // (Henrik 17.11.2026).
 //
 // Begge diagrammene tegner stolpen med SAMME renderer (stolpeHtml) og SAMME klasse (.stolpe):
-//   ett fyll fra colorForRatio (via stolpeFarge — ingen gradient) · gull (STOLPE_GULL) bare på Vekst-rekordmåneden,
+//   grunnfargen fra colorForRatio (via stolpeFarge) med dybde-gradient i SAMME farge (color-mix, 27.11 — vaktes av
+//   stolper-dybde.mjs) · gull (STOLPE_GULL) bare på Vekst-rekordmåneden,
 //   med dempet glød · radius 4 i toppen / 0 i bunnen · 0-verdi = 3px strek i --ov-null · Oversikt 110px stolpeområde.
 // Vakter: kildekoden (begge render-funksjonene kaller stolpeHtml, ingen egen farge/gradient), DOM (alle stolper har
 // .stolpe, ingen gradient, riktig radius), og at SAMME ratio gir SAMME farge på begge faner (0,25 / 0,5 / 0,75 / 0,9).
@@ -79,7 +80,7 @@ for (const tema of ['dark','light']) {
     const ov = await page.evaluate(MAAL, '#chartBars');
     const spor = await page.evaluate(() => Math.round(document.querySelector('#chartBars .cbar-spor').getBoundingClientRect().height));
     const nullFarge = await page.evaluate(() => { const d=document.createElement('div'); d.style.background='var(--ov-null)'; document.body.appendChild(d); const c=getComputedStyle(d).backgroundColor; d.remove(); return c; });
-    sjekk(`${tag}: Oversikt ${P.n} stolper, alle .stolpe, ingen gradient`, ov.length===P.n && ov.every(b => b.stolpe && !b.gradient), ov.length+' '+ov.filter(b=>!b.stolpe||b.gradient).length);
+    sjekk(`${tag}: Oversikt ${P.n} stolper, alle .stolpe, gradient bare på stolper med verdi`, ov.length===P.n && ov.every(b => b.stolpe && b.gradient===!b.null), ov.length+' '+ov.filter(b=>!b.stolpe||b.gradient===b.null).length);
     sjekk(`${tag}: Oversikt radius 4 topp / 0 bunn`, ov.filter(b=>!b.null).every(b => b.rTopp==='4px' && b.rBunn==='0px'), ov[ov.length-1].rTopp+'/'+ov[ov.length-1].rBunn);
     sjekk(`${tag}: Oversikt 110px område, høyeste stolpe 110px`, spor===110 && Math.max(...ov.map(b=>b.h))===110, spor+' / '+Math.max(...ov.map(b=>b.h)));
     sjekk(`${tag}: Oversikt 0-dager = 3px i --ov-null`, ov.filter(b=>b.null).length>0 && ov.filter(b=>b.null).every(b => b.h===3 && b.farge===nullFarge), ov.filter(b=>b.null).map(b=>b.h+' '+b.farge).join(','));
@@ -104,7 +105,7 @@ for (const tema of ['dark','light']) {
     await page.evaluate(() => switchPanel('vekst')); await page.waitForSelector('#trend .mcol'); await page.waitForTimeout(400);
     await page.evaluate(() => window.scrollTo(0,0));
     const vk = await page.evaluate(MAAL, '#trend');
-    sjekk(`${tag}: Vekst 6 måneder, alle .stolpe, ingen gradient`, vk.length===6 && vk.every(b => b.stolpe && !b.gradient), vk.length+'');
+    sjekk(`${tag}: Vekst 6 måneder, alle .stolpe, gradient bare på stolper med verdi`, vk.length===6 && vk.every(b => b.stolpe && b.gradient===!b.null), vk.length+'');
     sjekk(`${tag}: Vekst radius 4 topp / 0 bunn`, vk.filter(b=>!b.null).every(b => b.rTopp==='4px' && b.rBunn==='0px'));
     sjekk(`${tag}: Vekst tom måned = 3px i --ov-null`, vk.filter(b=>b.null).length===1 && vk.filter(b=>b.null).every(b => b.h===3 && b.farge===nullFarge), vk.filter(b=>b.null).map(b=>b.h+' '+b.farge).join(','));
     const rek = vk.filter(b => b.rekord);

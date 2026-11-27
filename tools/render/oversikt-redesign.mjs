@@ -7,7 +7,7 @@
 //     «Tjeneste · varighet», alle passert → «Ingen flere bookinger i dag.»
 //   - Kommende: dager etter i dag, «N neste 7 dager», «Onsdag 18. nov», ingen avlyste, ingen utenfor 7 døgn.
 //   - Nøkkeltall: .ovs-seg valgt = nøytral flate (aldri blå), tallfargene arvet (Kunder --info, omsetning
-//     #35d07a), ÉN linje under tallene, 110px stolpeområde (felles .stolpe, se stolper-felles.mjs), 0-dag = 3px, ensfarget fyll (ingen gradient).
+//     #35d07a), ÉN linje under tallene, 110px stolpeområde (felles .stolpe, se stolper-felles.mjs), 0-dag = 3px, dybde-gradient i stolpens egen farge (se stolper-dybde.mjs).
 //   - Ingen «Hentet inn»-seksjon og ingen /attribution-kall fra Oversikt (Vekst og Gratis).
 //   - Header: én rad, navnet 20px på mobil / 26px på desktop, INGEN dato i headeren — datoen står i I DAG-etiketten
 //     («I DAG · TIRSDAG 17. NOV»). Detaljene vaktes av header-lenke.mjs. Bunn-nav: nytt Oversikt-ikon (fire fliser).
@@ -192,7 +192,7 @@ for (const t of Object.keys(TILSTANDER).filter(k => !KUN || k===KUN)) for (const
       sporHoyde: q('#chartBars .cbar-spor').getBoundingClientRect().height,
       antallStolper: bars.length,
       nullHoyde: bars.filter(b=>b.classList.contains('null')).map(b=>b.getBoundingClientRect().height),
-      gradient: bars.some(b=>/gradient/.test(getComputedStyle(b).backgroundImage)),
+      gradient: bars.filter(b=>!b.classList.contains('null')).every(b=>/linear-gradient/.test(getComputedStyle(b).backgroundImage)),
       idagLbl: cs(q('#chartBars .cbar-col.idag .cbar-lbl > span'),'color'),
       hentetInn: !!q('#drivenBy, #drivenByWrap, .hi-total, .pv-blokk') || /Hentet inn av BarberHQ/.test(q('#oversikt').innerText),
       sisteSek: qa('#oversikt section.ovs-sek').pop()?.id,
@@ -221,7 +221,7 @@ for (const t of Object.keys(TILSTANDER).filter(k => !KUN || k===KUN)) for (const
   sjekk('Én linje: «Beste uke: 14 768 kr · august»', norm(d.note)==='Beste uke: 14 768 kr · august' && d.noteLinjer===1, d.note+' ('+d.noteLinjer+' linjer)');
   sjekk('Stolpeområde 110px, 7 stolper', Math.round(d.sporHoyde)===110 && d.antallStolper===7, d.sporHoyde+' / '+d.antallStolper);
   sjekk('0-dag (søndag) = 3px', d.nullHoyde.length===1 && Math.round(d.nullHoyde[0])===3, JSON.stringify(d.nullHoyde));
-  sjekk('Stolper ensfarget (ingen gradient)', !d.gradient);
+  sjekk('Stolper med dybde-gradient (felles .stolpe)', d.gradient);
   sjekk('I dag-etikett under diagrammet er hvit', d.idagLbl==='rgb(255, 255, 255)', d.idagLbl);
   sjekk('Ingen «Hentet inn»-seksjon; Nøkkeltall er siste seksjon', !d.hentetInn && d.sisteSek==='ovsTall', d.sisteSek);
   sjekk('Oversikt henter ikke /attribution', st.attrKall.length===0, JSON.stringify(st.attrKall));
