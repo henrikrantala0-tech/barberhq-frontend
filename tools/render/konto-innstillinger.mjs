@@ -126,7 +126,9 @@ for (const bredde of [320, 375, 1280]) {
     sjekk(m.rekke.every(s => m.overskrifter[s] === OVERSKRIFT[s]), `${id}: overskrifter ${JSON.stringify(Object.values(m.overskrifter))}`);
     sjekk(m.trekkspill === 0 && m.piler.length === 1 && m.piler[0] === 'smsLoggFold', `${id}: ingen trekkspill, eneste pil = SMS-loggen (${m.piler})`);
     sjekk(m.bunnSist, `${id}: Logg ut står nederst`);
-    sjekk(await vis(page, '#kontoStatus'), `${id}: abonnementsstatus synlig uten å trykke («${await tekst(page, '#kontoStatus')}»)`);
+    // Gratis: plan-linja («Du er på Gratis · 0 kr/mnd») ER statusen — statuskortet er skjult der (Vekst-kortet, 27.11.2026).
+    const statusSel = scen.startsWith('gratis') ? '#abPlan' : '#kontoStatus';
+    sjekk(await vis(page, statusSel), `${id}: abonnementsstatus synlig uten å trykke («${await tekst(page, statusSel)}»)`);
     if (scen.startsWith('gratis')) {
       sjekk(await vis(page, '#smsSaldoRad'), `${id}: SMS-saldo synlig uten å trykke («${await tekst(page, '#smsSaldoRad')}»)`);
       sjekk((await vis(page, '#smsPaamRad')) === (scen === 'gratis-120'), `${id}: bryter-rad ${scen === 'gratis-120' ? 'vist' : 'skjult ved saldo 0'}`);

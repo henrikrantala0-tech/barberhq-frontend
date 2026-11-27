@@ -15,8 +15,9 @@
 //   • «Oppgrader til Vekst» → POST /billing/checkout med {plan:'vekst'} → navigerer til url
 //   • Stripe-retur: session_id → ÉN synk, «Aktiverer Vekst …» mens den går, suksess-/ventebanner;
 //     live=1 uten session_id → ventebanner, INGEN synk; avbrutt → «Du kan oppgradere når som helst.»
-//   • trial-nudgen og info-ikonet ved «Send etter» er FJERNET; «Drevet av»-prislinja, lås-flatene (Gratis) har
-//     ny tekst (Din side-CTA-en og suksesskortet er fjernet 27.11.2026)
+//   • Gratis = plan-linja + Vekst-salgskortet (ingen statuskort); Vekst aktiv = bunnlinja «179 kr/mnd eks. mva · 100 SMS
+//     inkludert» + «Hentet inn» (27.11.2026 — detaljene i konto-vekst.mjs)
+//   • trial-nudgen og info-ikonet ved «Send etter» er FJERNET; lås-flatene (Gratis) har ny tekst
 //   • INGEN request når prod (api.trybarberhq.com): alt under /api/** mockes, resten avbrytes
 //
 // page.on('pageerror') er syntaks-vakten: en parse-feil i dashboard-JS-en tar ned ALT stille.
@@ -50,49 +51,45 @@ const prove    = (x={})=>({...base(), effective_plan:'vekst', effective_plan_gru
                           trial_start_at:new Date(Date.now()-18*864e5).toISOString(), ...x});
 const vekstSub = (x={})=>({...base(), subscription_status:'active', plan:'vekst', effective_plan:'vekst',
                           effective_plan_grunn:'subscription', ...x});
-
+// vent: status / tekst / plan / bunn / trekk / knapp (regex eller '—' = skjult), salg/hentet/fin/manage/av/avpub (bool)
 // vent: status / tekst / tall / sub / knapp (regex eller '—' = skjult), opp/fin/manage/av/avpub (bool)
 const TILSTANDER=[
   { id:'1-gratis-ikke-live', b:gratis({page_status:'forhandsvist'}),
-    vent:{status:/^● Gratis$/, tekst:/^Bookingsiden, kalenderen og dashbordet er gratis\.$/,
-          tall:/^0 kr\/ mnd$/, knapp:'—', opp:true, fin:false, manage:false, av:false, avpub:false, lenke:false} },
+    vent:{plan:/^Du er på Gratis · 0 kr\/mnd$/, salg:true, status:'—', knapp:'—', fin:false, manage:false, av:false, avpub:false, lenke:false} },
   { id:'1-gratis', desktop:true, b:gratis(),
-    vent:{status:/^● Gratis$/, tekst:/^Bookingsiden, kalenderen og dashbordet er gratis\.$/,
-          tall:/^0 kr\/ mnd$/, knapp:'—', opp:true, fin:false, manage:false, av:false, avpub:false} },
+    vent:{plan:/^Du er på Gratis · 0 kr\/mnd$/, salg:true, status:'—', knapp:'—', fin:false, manage:false, av:false, avpub:false} },
   { id:'2-prove', b:prove(),
     vent:{status:/^● Vekst, prøveperiode$/,
           tekst:/^12 dager igjen\. Deretter går du over til Gratis, og siden blir stående\.Vil du beholde rebooking, verving og SMS-påminnelser\?$/,
-          tall:'—', knapp:/^Oppgrader til Vekst$/, opp:false, fin:true, manage:false, av:false, avpub:false} },
+          plan:'—', bunn:'—', knapp:/^Oppgrader til Vekst$/, salg:false, fin:true, manage:false, av:false, avpub:false} },
   { id:'2-prove-A-ikke-live', b:prove({page_status:'forhandsvist'}),
     vent:{status:/^● Vekst, prøveperiode$/, knapp:/^Oppgrader til Vekst$/, fin:true, av:false, avpub:false, lenke:false} },
   { id:'3-vekst', desktop:true, b:vekstSub(),
-    vent:{status:/^● Vekst er aktivt$/, tekst:/^100 SMS inkludert hver måned\.$/, tall:/^179 kr\/ mnd eks\. mva$/,
-          sub:'—', knapp:'—', opp:false, fin:true, manage:true, av:false, avpub:false} },
+    vent:{status:/^● Vekst er aktivt$/, tekst:/^$/, bunn:/^179 kr\/mnd eks\. mva · 100 SMS inkludert$/, hentet:true, trekk:'—', knapp:'—', salg:false, fin:true, manage:true, av:false, avpub:false} },
   { id:'3-vekst-A-ikke-live', b:vekstSub({page_status:'forhandsvist'}),
-    vent:{status:/^● Vekst er aktivt$/, tekst:/^100 SMS inkludert hver måned\.$/, tall:/^179 kr\/ mnd eks\. mva$/, knapp:'—',
-          fin:true, manage:true, av:false, avpub:false, lenke:false} },
+    vent:{status:/^● Vekst er aktivt$/, tekst:/^$/, bunn:/^179 kr\/mnd eks\. mva · 100 SMS inkludert$/, hentet:true, knapp:'—', fin:true, manage:true, av:false, avpub:false, lenke:false} },
   { id:'3-vekst-B-trialing', b:vekstSub({subscription_status:'trialing', effective_plan_grunn:'trial_vindu', trial_days_left:9,
                                           trial_ends_at:NOV14}),
-    vent:{status:/^● Vekst er aktivt$/, tall:/^179 kr\/ mnd eks\. mva$/, sub:/^Første trekk 14\. november\.$/,
+    vent:{status:/^● Vekst er aktivt$/, tekst:/^$/, bunn:/^179 kr\/mnd eks\. mva · 100 SMS inkludert$/, hentet:true, trekk:/^Første trekk 14\. november\.$/,
           knapp:'—', fin:true, manage:true} },
   { id:'4-oppsagt', b:vekstSub({cancel_at_period_end:true, current_period_end:NOV14}),
     vent:{status:/^● Vekst til 14\. november$/, tekst:/^Deretter går du over til Gratis, og siden blir stående\.$/,
-          tall:'—', knapp:'—', opp:false, fin:false, manage:true, av:false} },
+          bunn:'—', hentet:false, knapp:'—', salg:false, fin:false, manage:true, av:false} },
   { id:'5-betaling-feilet', b:vekstSub({subscription_status:'past_due', needs_attention:true, attention_grunn:'past_due'}),
     vent:{status:/^● Betalingen feilet$/, statusRod:true,
           tekst:/^Oppdater kortet for å beholde Vekst\. SMS er satt på pause til betalingen går gjennom\.$/,
-          tall:'—', knapp:/^Oppdater betaling$/, opp:false, fin:false, manage:false, av:false} },
+          bunn:'—', hentet:false, knapp:/^Oppdater betaling$/, salg:false, fin:false, manage:false, av:false} },
   { id:'reserve-anomali', b:gratis({subscription_status:'active', effective_plan_grunn:'anomali_status_uten_plan'}),
-    vent:{status:/^● Abonnementsstatus utilgjengelig$/, tekst:/Tilgangen din er upåvirket/, knapp:'—', opp:false} },
+    vent:{status:/^● Abonnementsstatus utilgjengelig$/, tekst:/Tilgangen din er upåvirket/, knapp:'—', salg:false} },
 ];
 // Kun tekst-sjekk (ingen skjermbilder) — kantene i kontoTilstand.
 const KANTER=[
   { id:'2-prove-1-dag', b:prove({trial_days_left:1}), vent:{tekst:/^1 dag igjen\. Deretter/} },
-  { id:'3-B-uten-trial_ends_at', b:vekstSub({subscription_status:'trialing', trial_ends_at:null}), vent:{status:/^● Vekst er aktivt$/, sub:'—'} },
+  { id:'3-B-uten-trial_ends_at', b:vekstSub({subscription_status:'trialing', trial_ends_at:null}), vent:{status:/^● Vekst er aktivt$/, trekk:'—'} },
   { id:'4-uten-dato→reserve', b:vekstSub({cancel_at_period_end:true, current_period_end:null}), vent:{status:/^● Abonnementsstatus utilgjengelig$/} },
   { id:'gammel-basis-sub→reserve', b:gratis({subscription_status:'active', plan:'basis', effective_plan_grunn:'subscription'}), vent:{status:/^● Abonnementsstatus utilgjengelig$/, knapp:'—'} },
-  { id:'canceled→gratis', b:gratis({subscription_status:'canceled', plan:'vekst'}), vent:{status:/^● Gratis$/, opp:true, av:false} },
-  { id:'prove-utlopt→gratis', b:gratis({trial_days_left:0, trial_start_at:new Date(Date.now()-40*864e5).toISOString()}), vent:{status:/^● Gratis$/} },
+  { id:'canceled→gratis', b:gratis({subscription_status:'canceled', plan:'vekst'}), vent:{plan:/^Du er på Gratis · 0 kr\/mnd$/, salg:true, status:'—', av:false} },
+  { id:'prove-utlopt→gratis', b:gratis({trial_days_left:0, trial_start_at:new Date(Date.now()-40*864e5).toISOString()}), vent:{plan:/^Du er på Gratis · 0 kr\/mnd$/, salg:true, status:'—'} },
 ];
 
 const PROFIL={hasPassword:true,name:'Henrik',shop:'Grand Barber',email:'h@g.no',slug:'grand-barber'};
@@ -113,6 +110,8 @@ async function stubApi(page,{billing,put,sync,checkout,settings}={}){
     if(p==='/api/dashboard/billing/checkout'){ logg.checkoutBody=req.postData(); return json(checkout||{url:`http://localhost:${PORT}/__stripe-mock`}); }
     if(p==='/api/dashboard/profile') return json(PROFIL);
     if(p==='/api/dashboard/settings'&&req.method()==='GET'&&settings) return json(settings);
+    if(p==='/api/dashboard/attribution') return json({paaVei:{}, hentetInn:{period:u.searchParams.get('period'), total:{count:3,revenue:1350},
+      rebooking:{count:1,revenue:450,aktivert:true}, vinnTilbake:{count:1,revenue:450}, vervet:{count:1,revenue:450}}});
     if(p==='/api/dashboard/loyalty') return json({enabled:false,threshold:10,pct:100,participants:[],eligible:[],totals:{}});
     if(p==='/api/dashboard/preview') return route.fulfill({status:200,contentType:'text/html',body:'<html><body></body></html>'});
     return json(/images|bookings|recent|services|hours|referrals|winback|rebooking/.test(p)?[]:{});
@@ -130,12 +129,14 @@ async function maalKort(page){
     status: await tekstAv(page,'#kontoStatus'),
     statusRod: await page.$eval('#kontoStatus',e=>e.classList.contains('bad')).catch(()=>false),
     tekst:  await tekstAv(page,'#kontoTekst'),
-    tall:   await tekstAv(page,'#kontoTall'),
-    sub:    await tekstAv(page,'#kontoTallSub'),
+    plan:   await tekstAv(page,'#abPlan'),
+    bunn:   await tekstAv(page,'#abBunn'),
+    trekk:  await tekstAv(page,'#abTrekk'),
+    hentet: await synlig(page,'#abHentet'),
+    salg:   await synlig(page,'#kontoVekst'),
     knapp:  await tekstAv(page,'#kontoAksjon'),
     knappBtn: await page.$eval('#kontoAksjon',e=>e.className==='btn').catch(()=>false),
-    opp:    await synlig(page,'#kontoOpp'),
-    oppTekst: await tekstAv(page,'#kontoOpp'),
+    salgTekst: await tekstAv(page,'#kontoVekst'),
     fin:    await synlig(page,'#kontoFin'),
     finTekst: await tekstAv(page,'#kontoFin'),
     manage: await synlig(page,'#manageSub'),
@@ -145,7 +146,7 @@ async function maalKort(page){
     lenke:  await synlig(page,'#pubLink'),
     lenkeOverAvpub: await page.evaluate(()=>{const a=document.getElementById('kontoAvpub'),l=document.getElementById('pubLink');
                       return !!(a&&l&&(a.compareDocumentPosition(l)&Node.DOCUMENT_POSITION_FOLLOWING));}),
-    kortTekst: await page.$eval('#kontoAbonnement .subcard',e=>e.innerText).catch(()=>''),
+    kortTekst: await page.$eval('#kontoAbonnement',e=>e.innerText).catch(()=>''),
   };
 }
 function sjekkVent(m,v){
@@ -154,13 +155,13 @@ function sjekkVent(m,v){
     if(forvent==='—'){ if(verdi!=='—') f.push(`${navn} skulle vært skjult, var «${verdi}»`); }
     else if(forvent instanceof RegExp){ if(!forvent.test(verdi)) f.push(`${navn} «${verdi}» ≠ ${forvent}`); }
     else if(verdi!==forvent) f.push(`${navn}=${verdi} (ventet ${forvent})`); };
-  for(const k of ['status','tekst','tall','sub','knapp','opp','fin','manage','av','avpub','lenke']) t(k,m[k],v[k]);
+  for(const k of ['status','tekst','plan','bunn','trekk','hentet','salg','knapp','fin','manage','av','avpub','lenke']) t(k,m[k],v[k]);
   if(v.statusRod && !m.statusRod) f.push('merket er ikke rødt (.bad)');
   // Hovedhandlingen er ALLTID primærknappen (.btn), aldri en dempet .lnk-quiet (arv fra konto-checkout-knapp).
   if(v.knapp instanceof RegExp && !m.knappBtn) f.push('hovedknappen er ikke .btn');
   if(v.fin && m.finTekst!==FIN) f.push(`finskrift «${m.finTekst}»`);
-  if(v.opp && !(m.oppTekst.includes('Vekst · 179 kr / mnd eks. mva') && m.oppTekst.includes('Rebooking, vinn tilbake, verving, lojalitet og attribusjon. 100 SMS inkludert hver måned.')
-               && m.oppTekst.includes('Oppgrader til Vekst') && m.oppTekst.includes(FIN))) f.push(`oppgraderingsboks «${m.oppTekst}»`);
+  if(v.salg && !(m.salgTekst.includes('Det som fyller stolen.') && m.salgTekst.includes('179 kr/mnd eks. mva')
+               && m.salgTekst.includes('Oppgrader til Vekst') && m.salgTekst.includes('Ingen binding. Si opp når du vil.'))) f.push(`salgskort «${m.salgTekst}»`);
   const pub=m.kortTekst.match(/ikke publisert|Fullfør siden din|Se forhåndsvisning|tar ikke imot bookinger|Publiser/i);
   if(pub) f.push(`publiseringstekst i kortet: «${pub[0]}»`);
   const gammel=m.kortTekst.match(/Alt inkludert|Ingen binding — du kan si opp|30 dager|prøv gratis|Basis|Legg inn kort|Fortsett med|—/i);
@@ -215,10 +216,10 @@ for(const c of KANTER){
 }
 
 // ── 3. Oppgrader → checkout med {plan:'vekst'} → navigerer til Stripe-url ──
-for(const [navn,b,sel] of [['fra Gratis-boksen',gratis(),'#kontoOppBtn'],['fra prøveperioden',prove(),'#kontoAksjon']]){
+for(const [navn,b,sel] of [['fra Vekst-kortet',gratis(),'#kontoOppBtn'],['fra prøveperioden',prove(),'#kontoAksjon']]){
   const {page,errs,logg}=await nySide(375,{billing:()=>b});
   await aapneKonto(page);
-  await Promise.all([page.waitForURL('**/__stripe-mock',{timeout:5000}).catch(()=>{}), page.click(sel)]);
+  await Promise.all([page.waitForURL('**/__stripe-mock',{timeout:5000}).catch(()=>{}), page.$eval(sel,e=>e.click())]);   // salgskortet svever → aldri «stabilt» for page.click
   const f=[];
   if(logg.checkoutBody!=='{"plan":"vekst"}') f.push(`body ${logg.checkoutBody}`);
   if(!page.url().endsWith('/__stripe-mock')) f.push(`url ${page.url()}`);
@@ -261,8 +262,8 @@ for(const [navn,b,sel] of [['fra Gratis-boksen',gratis(),'#kontoOppBtn'],['fra p
   push('retur: synk feiler → siste kjente + ventebanner', [
     ...(logg.sync===1?[]:[`synk-kall ${logg.sync}`]),
     ...(banner==='Det kan ta et minutt før Vekst vises. Last inn siden på nytt.'?[]:[`banner «${banner}»`]),
-    ...sjekkVent(m,{status:/^● Gratis$/, opp:true}),
-    ...(m.oppTekst.includes('Aktiverer')?['«Aktiverer» henger igjen']:[])], errs);
+    ...sjekkVent(m,{plan:/^Du er på Gratis · 0 kr\/mnd$/, salg:true, status:'—'}),
+    ...(m.salgTekst.includes('Aktiverer')?['«Aktiverer» henger igjen']:[])], errs);
   await page.locator('#abonnement').screenshot({path:path.join(OUT,'375-retur-feil.png')});
   await page.close();
 }
@@ -294,19 +295,6 @@ for(const b of [320,375]){
     if(b===375) push('2.1 trial-nudge fjernet', finnes?['#trialNudge finnes fortsatt']:[], errs);
     await page.screenshot({path:path.join(OUT,`${b}-oversikt-uten-nudge.png`),clip:{x:0,y:0,width:b,height:760}});
     await page.close();
-    // «Hentet inn av BarberHQ» (attribusjonskortet i Vekst-fanen) på Gratis: prislinja under
-    // «Oppgrader til Vekst». diBasisCtaPris rendres KUN der (Oversikt har ingen CTA).
-    const g=await nySide(b,{billing:()=>gratis()});
-    // «Hentet inn» (Oversikt) på Gratis — Oversikt-redesign 17.11: PÅ VEI og Gratis-noten er borte; i stedet pris + «Se Vekst».
-    await g.page.waitForTimeout(600);
-    const grPris=await tekstAv(g.page,'#drivenBy .gr-pris b'), grCta=await tekstAv(g.page,'#drivenBy .gr-cta');
-    if(b===375) push('Hentet inn (Oversikt) på Gratis: «179 kr/mnd» + «Se Vekst»', (grPris==='179 kr/mnd'&&grCta==='Se Vekst')?[]:[`«${grPris}» / «${grCta}»`], g.errs);
-    await g.page.locator('#drivenBy').screenshot({path:path.join(OUT,`${b}-drevet-av-paa-vei.png`)});
-    await g.page.$eval('button[data-panel="vekst"]',x=>x.click()); await g.page.waitForTimeout(900);
-    const pris=await g.page.$eval('#vekstHentet .gr-pris',e=>e.innerText).catch(()=>'');   // Vekst-fanen: samme Gratis-blokk som Oversikt (17.11)
-    if(b===375) push('Hentet inn (Vekst-fanen): prislinje «179 kr/mnd eks. mva»', pris.replace(/\s+/g,' ')==='179 kr/mnd eks. mva'?[]:[`«${pris}»`], g.errs);
-    await g.page.locator('#vekstHentetWrap').screenshot({path:path.join(OUT,`${b}-hentet-inn-gratis.png`)});
-    await g.page.close();
   }
   { // 2.2 info-ikonet ved «Send etter» er FJERNET: Rebooking-kortet i prøveperioden, rebooking på
     const {page,errs}=await nySide(b,{billing:()=>prove(), settings:{sms_paaminnelse_enabled:true, sms_rebooking_enabled:true, rebooking_interval_days:35}});

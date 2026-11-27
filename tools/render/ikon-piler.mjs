@@ -152,7 +152,7 @@ for (const bredde of [320, 375, 1280]) {
     sjekk(!errs.length, `${k} ett bilde: JS-feil`, errs.join('; '));
     await ctx.close(); }
 
-  // ── Oversikt: «Fullfør siden din» (ikke live), «Lag story …» (tvunget), «Se lista» (ovsPaaVeiHtml), månedsknappen ──
+  // ── Oversikt: «Fullfør siden din» (ikke live), «Lag story …» (tvunget), månedsknappen («Se lista» forsvant med «Hentet inn», 27.11.2026) ──
   { const { ctx, page, errs, m } = await ny(bredde, { billing: v2({ page_status: 'forhandsvist', publisert_at: null }) });
     await page.evaluate(() => { try { sessionStorage.setItem('dv2OppsettLukket', '1'); } catch (_) {} if (typeof avsluttFokus === 'function') avsluttFokus(); });
     await fane(page, 'oversikt');
@@ -161,12 +161,6 @@ for (const bredde of [320, 375, 1280]) {
     await page.evaluate(() => { const b = document.getElementById('storyOpenOversikt'); if (b) b.hidden = false; });   // tvunget
     await sjekkEl(page, '#storyOpenOversikt', `${k} «Lag story med ledige timer» (tvunget)`, { form: 'pil-h', etter: true });
     await bilde(page, '#storyOpenOversikt', `${k}-oversikt-lag-story`);
-    await page.evaluate(() => { const d = document.createElement('div'); d.id = 'testPaaVei'; d.style.cssText = 'padding:12px 0';
-      d.innerHTML = ovsPaaVeiHtml({ winback: { borte: 3, no_show: 1 }, rebooking: { naar_vindu_30d: 2, med_samtykke: 2 } }, false);
-      const s = document.getElementById('ovsTall') || document.querySelector('#oversikt'); s.parentNode.insertBefore(d, s); });
-    await page.waitForTimeout(300);   // <use> mot ikoner.svg lastes asynkront for nye elementer
-    await sjekkEl(page, '#testPaaVei [data-di-winback]', `${k} «Se lista» (PÅ VEI)`, { form: 'pil-h', etter: true });
-    await bilde(page, '#testPaaVei .pv-rad', `${k}-oversikt-se-lista`);
     await sjekkEl(page, '#maanedBtn', `${k} månedsknappen`, { form: 'chevron', ned: true, etter: true });
     await bilde(page, '#maanedBtn', `${k}-oversikt-maanedknapp`, 10);
     sjekk(!errs.length && m.prod === 0, `${k} Oversikt: JS-feil / prod`, errs.join('; '));

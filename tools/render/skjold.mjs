@@ -1,5 +1,5 @@
 // tools/render/skjold.mjs — Vekst-gating (Basis-visning) i dashbordet. NY MODELL (13.09):
-//   MÅLING (#drivenBy/#attrKort/#momentumCard) = SKJOLD (overlay + eksempel, teaser, ikke lesbar).
+//   MÅLING (#momentumCard) = SKJOLD (overlay + eksempel, teaser, ikke lesbar).
 //   HANDLING (#accRebook/#accWinback/#accVerv/#accLoyal) = LESBAR + «Vekst»-låsindikator (.laas-merke, 17.11),
 //     INGEN overlay, kontroller disabled (ALDRI .acc-head → seksjonen kan åpnes/leses).
 // Billing-varianter:
@@ -94,8 +94,7 @@ function router(variant, forbudt403, state, putLog) {
 
 // type: 'maaling' → forvent overlay (skjold). 'funksjon' → forvent badge + INGEN overlay + kontroller disabled.
 const FLATER = [
-  { navn:'drivenBy',     type:'maaling',  panel:'oversikt', host:'#drivenBy' },
-  { navn:'attribusjon',  type:'maaling',  panel:'vekst', host:'#vekstHentet' },   // samme komponent som Oversikt (17.11)
+  // drivenBy / attribusjon («Hentet inn») er fjernet fra Oversikt og Vekst 27.11.2026.
   { navn:'momentum',     type:'maaling',  panel:'vekst', host:'#momentumCard' },
   { navn:'rebooking',    type:'funksjon', panel:'vekst', host:'#accRebook' },
   { navn:'vinn-tilbake', type:'funksjon', panel:'vekst', host:'#accWinback' },

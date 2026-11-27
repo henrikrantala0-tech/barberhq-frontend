@@ -48,7 +48,7 @@ const VILKAR_SMS={ p:['BarberHQ sender tre typer meldinger til kundene dine på 
     'Rebooking på Vekst: en melding når det er en stund siden sist, som du selv slår på og styrer intervallet for. Den sendes bare til kunder som har sagt ja, og aldri til noen som har meldt seg av.',
     'Vervevarsel på Vekst: en melding til en kunde som har vervet noen, når belønningen er klar.'] };
 const PRIS_UNDER='Bookingsiden, kalenderen og dashbordet koster ingenting.';
-const KONTO_GRATIS='Bookingsiden, kalenderen og dashbordet er gratis.';
+const KONTO_GRATIS='Du er på Gratis · 0 kr/mnd';   // plan-linja over Vekst-kortet (27.11.2026)
 const FIN='Etter 100 SMS: 1,21 kr per SMS på neste faktura. Maks 400 kr i måneden.';
 const PAAM='Kunden får én SMS dagen før timen. Færre glemte avtaler.';
 const GAMMEL=/uten tidsfrist|depositum|30 dager gratis|gratis prøveperiode|prøveperiode\b|Basis|89 kr|med mindre du endrer det|kvelden før|tas bookingsiden ned/i;
@@ -171,14 +171,15 @@ for(const b of [320,375]){
     const {page,errs}=await aapne('dashboard.html',b,gratis);
     await page.$eval('button[data-panel="abonnement"]',x=>x.click());
     await page.waitForTimeout(400);   // Konto: abonnementskortet står alltid åpent
-    const fin=norm(await page.$eval('#kontoOppFin',e=>e.textContent));
-    const gratisTekst=norm(await page.$eval('#kontoTekst',e=>e.textContent));
+    await page.emulateMedia({reducedMotion:'reduce'});   // Vekst-kortet svever → aldri «stabilt» for element-skjermbilder
+    const fin=norm(await page.$eval('#kontoVekst .ab-salg-fin',e=>e.textContent));
+    const gratisTekst=norm(await page.$eval('#abPlan',e=>e.textContent));
     await page.locator('#kontoAbonnement').screenshot({path:path.join(OUT,`${b}-konto-gratis.png`)});
-    await page.locator('#kontoOpp').screenshot({path:path.join(OUT,`${b}-konto-finskrift.png`)});
+    await page.locator('#kontoVekst .ab-salg-fin').screenshot({path:path.join(OUT,`${b}-konto-finskrift.png`)});
     await page.$eval('button[data-panel="vekst"]',x=>x.click()); await page.waitForTimeout(600);
     const paam=norm(await page.$eval('#accPaam .acc-sub',e=>e.textContent));
     await page.locator('#accPaam').screenshot({path:path.join(OUT,`${b}-vekst-sms-paaminnelse.png`)});
-    if(b===375) push('dashboard: Konto Gratis-tekst + finskrift + Vekst-påminnelse',[...(gratisTekst===KONTO_GRATIS?[]:[`Gratis-tekst «${gratisTekst}»`]),...(fin===FIN?[]:[`finskrift «${fin}»`]),...(paam===PAAM?[]:[`påminnelse «${paam}»`]),...(paam.includes('—')?['tankestrek']:[])],errs);
+    if(b===375) push('dashboard: Konto Gratis-tekst + finskrift + Vekst-påminnelse',[...(gratisTekst===KONTO_GRATIS?[]:[`Gratis-tekst «${gratisTekst}»`]),...(fin===FIN   /* Vekst-kortet har samme SMS-tekst som de andre kortene (Henrik 27.11.2026) */?[]:[`finskrift «${fin}»`]),...(paam===PAAM?[]:[`påminnelse «${paam}»`]),...(paam.includes('—')?['tankestrek']:[])],errs);
     await page.close();
   }
 }

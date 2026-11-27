@@ -14,9 +14,7 @@
 // (scroll-reveal fyrer aldri) og falsk overlapp (sticky header males på scroll-offsetet).
 // Målingene er uavhengige av skuddet — getBoundingClientRect leser layout, ikke det synlige.
 //
-// Konto-tilstandene er en KOPI av lista i konto-lenke.mjs. Å eksportere derfra ville krevd
-// at det scriptet ble delt i data og kjøring; det er en endring i en committet fil, og denne
-// runden skal ikke endre noe. Holdes i synk manuelt — de er rene data.
+// Konto-tilstandene: et utvalg billing-svar (live/ikke live, prøve, Vekst, betaling feilet).
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -107,7 +105,7 @@ const ATTRIBUSJON={period:'uke',rebooking:{count:6,revenue:2700},
 const SMS_PREVIEW={body:'Hei Markus! Minner om timen din i morgen kl 14:00 hos Grand Barber.',
                    transaksjonell:true};
 
-// Konto-tilstandene — kopi fra konto-lenke.mjs, se filhodet.
+// Konto-tilstandene — se filhodet.
 const dagerSiden=n=>iso(-n);
 const KONTO=[
   ['B-live-prove',        prove({page_status:'live'})],
@@ -152,7 +150,7 @@ async function roOgVent(page){
 const LISTER={
   // #bookingList (full booking-liste) ble fjernet i 007bf32: bookingene ligger nå i «Kommende» + kalenderen bak
   // «Åpne kalender» (#calOverlay .cal-block), som måles eget sted under (kalenderBlokker).
-  oversikt:[['#stats',2],['#chartBars',7],['#drivenBy',1],['#upcomingList',1]],
+  oversikt:[['#stats',2],['#chartBars',7],['#upcomingList',1]],
   vekst:   [['#wbList',1]],
   tjenester:[['#hovedList',3],['#tilleggList',2],['#hoursList',7],['#payList',2]],
   design:  [['#sideAccs',3]],

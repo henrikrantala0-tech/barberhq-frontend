@@ -8,7 +8,7 @@
 // .stolpe, ingen gradient, riktig radius), og at SAMME ratio gir SAMME farge på begge faner (0,25 / 0,5 / 0,75 / 0,9).
 // Testdata = sammenligningsdataene (des. 2026, maks 4000 kr, alle fargetrinn + 0-dager + rekorduke) + Vekst-måneder
 // med samme ratioer, rekordmåned og en tom måned. Klokka låst til 31.12.2026 → «Denne måneden» = 31 stolper.
-// «kr» etter de store tallene ARVER tallets farge (grønn / gull, også Hentet inn-totalen og Vekst-totalen), og Oversikt har
+// «kr» etter de store tallene ARVER tallets farge (grønn / gull), og Oversikt har
 // INGEN kort/ramme/bakgrunn bak nøkkeltallene og stolpene (står rett på sidens bakgrunn).
 // Skjermbilder → .render-ut/stolper-felles/ på sidens EGEN bakgrunn (#0a0a0a / #fafafa) helt ut i kanten:
 //   A rekord (gull) | uten rekord (grønn) | Vekst, og B/C 2 uker og måned | Vekst — 375, mørk + lys.
@@ -87,17 +87,14 @@ for (const tema of ['dark','light']) {
     const kr = await page.evaluate(() => {
       const v = document.getElementById('estRevValue').closest('.ovs-kpi-v'), u = v.querySelector('.u'), n = document.getElementById('estRevValue');
       const cv = getComputedStyle(v), cu = getComputedStyle(u), cn = getComputedStyle(n);
-      const ht = document.querySelector('.hi-total'), hu = ht && ht.querySelector('.u');
       const boks = ['#ovsTall','#stats','.chart-wrap','#chartBars'].map(sel => { const c = getComputedStyle(document.querySelector(sel));
         return sel+':'+c.backgroundColor+'/'+c.borderTopWidth+'/'+c.borderLeftWidth+'/'+c.boxShadow; });
-      return { gull:v.classList.contains('rekord-gull'), uFarge:cu.color, vFarge:cv.color, nFarge:cn.color, uFyll:cu.webkitTextFillColor, nFyll:cn.webkitTextFillColor, uVekt:cu.fontWeight,
-        htFarge: ht && getComputedStyle(ht).color, huFarge: hu && getComputedStyle(hu).color, boks };
+      return { gull:v.classList.contains('rekord-gull'), uFarge:cu.color, vFarge:cv.color, nFarge:cn.color, uFyll:cu.webkitTextFillColor, nFyll:cn.webkitTextFillColor, uVekt:cu.fontWeight, boks };
     });
     if (P.id.startsWith('1')) {
       const gullForvent = P.id==='1-siste-uke';
       sjekk(`${tag}: ${gullForvent?'gull':'grønt'} tall — «kr» arver (samme farge/fyll som tallet), vekt 300`, kr.gull===gullForvent && kr.uFarge===kr.vFarge && kr.uFyll===kr.nFyll && kr.uVekt==='300'
         && (gullForvent ? kr.uFyll==='rgba(0, 0, 0, 0)' : kr.uFarge==='rgb(53, 208, 122)'), JSON.stringify(kr));
-      sjekk(`${tag}: Hentet inn-totalen — «kr» samme farge som tallet`, kr.htFarge && kr.huFarge===kr.htFarge, kr.htFarge+' / '+kr.huFarge);
     }
     sjekk(`${tag}: Oversikt — ingen kort/ramme/bakgrunn bak nøkkeltall og stolper`, kr.boks.every(b => /:rgba\(0, 0, 0, 0\)\/0px\/0px\/none$/.test(b)), kr.boks.join(' | '));
     const s0 = await page.evaluate(() => document.getElementById('segs').getBoundingClientRect().top + scrollY), s1 = await page.evaluate(() => document.querySelector('.chart-wrap').getBoundingClientRect().bottom + scrollY);
@@ -107,9 +104,6 @@ for (const tema of ['dark','light']) {
     await page.evaluate(() => switchPanel('vekst')); await page.waitForSelector('#trend .mcol'); await page.waitForTimeout(400);
     await page.evaluate(() => window.scrollTo(0,0));
     const vk = await page.evaluate(MAAL, '#trend');
-    if (P.id==='1-siste-uke') { await page.waitForSelector('#vekstHentet .hi-total', { timeout:8000 }).catch(()=>{});
-      const dk = await page.evaluate(() => { const t = document.querySelector('#vekstHentet .hi-total'), k = t && t.querySelector('.u'); return t ? [getComputedStyle(t).color, getComputedStyle(k).color] : null; });
-      sjekk(`${tag}: Vekst-totalen — «kr» samme farge som tallet`, dk && dk[0]===dk[1], JSON.stringify(dk)); }
     sjekk(`${tag}: Vekst 6 måneder, alle .stolpe, ingen gradient`, vk.length===6 && vk.every(b => b.stolpe && !b.gradient), vk.length+'');
     sjekk(`${tag}: Vekst radius 4 topp / 0 bunn`, vk.filter(b=>!b.null).every(b => b.rTopp==='4px' && b.rBunn==='0px'));
     sjekk(`${tag}: Vekst tom måned = 3px i --ov-null`, vk.filter(b=>b.null).length===1 && vk.filter(b=>b.null).every(b => b.h===3 && b.farge===nullFarge), vk.filter(b=>b.null).map(b=>b.h+' '+b.farge).join(','));

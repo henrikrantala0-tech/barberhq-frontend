@@ -6,7 +6,7 @@
 //   - Rader: navn 15/600, beskrivelse 13/400 dempet/1.45, 16px vertikal padding.
 //   - Høyre side: bryter 46×28 (Automatikk), chevron (Personlig, antall foran på Vinn tilbake), «Lag story» (Del).
 //   - Gratis: lås + «Vekst» (ingen blå pille), «Kjøp SMS for å sende påminnelser» + pil-ikon som blå lenke.
-//   - Hentet inn = SAMME komponent som Oversikt (3/6/12 mnd), ingen gammel velger (#attrPeriod), ingen doble id-er.
+//   - ingen «Hentet inn» (fjernet 27.11.2026 — tallene står på Konto), ingen gammel velger (#attrPeriod), ingen doble id-er.
 //   - Nye tekster: Vinn tilbake / Lojalitet / Ledige timer.
 // Skjermbilder → .render-ut/vekst-liste/: hele fanen (Gratis/Vekst × 320/375 × mørk/lys) + hver utfoldet rad @375 mørk
 // (Vekst) og Vinn tilbake utfoldet på Gratis. Alt /api/** mockes.
@@ -78,7 +78,7 @@ async function aapne({ plan, bredde, tema }) {
     return J(/images|bookings|services|hours|customers/.test(p) ? [] : {}); });
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'networkidle' });
   await page.evaluate(() => switchPanel('vekst'));
-  await page.waitForSelector('#vekstHentet h2', { timeout:10000 });
+  await page.waitForSelector('#accRebook .acc-head', { timeout:10000 });
   await page.waitForTimeout(700);
   await page.evaluate(() => { window.scrollTo(0,0); return document.fonts && document.fonts.ready; });
   return { ctx, page, errs };
@@ -104,7 +104,7 @@ const MAAL = () => {
     kjopFarge: cs(q('#paamKjopLenke'),'color'), kjopDekor: cs(q('#paamKjopLenke'),'textDecorationLine'),
     tekster: { vinn: q('#accWinback .acc-sub').textContent, loyal: q('#accLoyal .acc-sub').textContent, story: q('#accStory').innerText.replace(/\s+/g,' ') },
     storyKnapp: (() => { const b = q('#storyOpen'); return b ? Math.round(b.getBoundingClientRect().height)+'/'+cs(b,'borderTopLeftRadius') : null; })(),
-    hentet: !!q('#vekstHentet #vkHentetH'), velger: q('#vkAttrPeriod') ? [...q('#vkAttrPeriod').querySelectorAll('button')].map(b=>b.textContent).join('|') : null,
+    hentet: !!q('#vekstHentet, #vkHentetH, #vkAttrPeriod') || /Hentet inn av BarberHQ/.test(q('#vekst').innerText),
     gammelVelger: !!q('#attrPeriod'), dobbeltId, kpiBoks: !!q('#vekstStats .stat') && cs(q('#vekstStats'),'borderTopWidth')!=='0px',
     overflow: document.documentElement.scrollWidth - innerWidth, info: getComputedStyle(document.documentElement).getPropertyValue('--info').trim() };
 };
@@ -118,7 +118,7 @@ for (const plan of ['vekst','basis']) for (const tema of ['dark','light']) for (
   sjekk(`${tag}: ingen bokser rundt radene (KPI-boksene står)`, m.boksRader.length===0 && m.kpiBoks, JSON.stringify(m.boksRader));
   sjekk(`${tag}: etiketter AUTOMATIKK / PERSONLIG / DEL, 32px mellom seksjonene`, JSON.stringify(m.etiketter)==='["AUTOMATIKK","PERSONLIG","DEL"]' && m.sek.every(x=>x===32), JSON.stringify(m.etiketter)+' '+m.sek);
   sjekk(`${tag}: rad — navn 15/600, beskrivelse 13/400/1.45, 16px padding, hårlinje`, m.tittel==='15px 600' && m.sub==='13px 400 18.85px' && m.radPad==='16px' && m.hairline==='1px', JSON.stringify({ t:m.tittel, s:m.sub, p:m.radPad, h:m.hairline }));
-  sjekk(`${tag}: Hentet inn = Oversikt-komponenten (3/6/12 mnd), ingen gammel velger, ingen doble id-er`, m.hentet && (plan==='basis' || m.velger==='3 mnd|6 mnd|12 mnd') && !m.gammelVelger && m.dobbeltId.length===0, m.velger+' '+JSON.stringify(m.dobbeltId));
+  sjekk(`${tag}: ingen «Hentet inn» (fjernet 27.11.2026), ingen gammel velger, ingen doble id-er`, !m.hentet && !m.gammelVelger && m.dobbeltId.length===0, JSON.stringify(m.dobbeltId));
   sjekk(`${tag}: tekster (Vinn tilbake / Lojalitet / Ledige timer)`, m.tekster.vinn==='Kunder som ikke møtte opp, eller har vært borte lenge. En personlig melding fra deg.'
     && m.tekster.loyal==='Ett stempel per klipp. Gratis eller rabattert klipp når kortet er fullt.' && /^Ledige timer Story til Instagram eller TikTok med de neste ledige timene\. Lag story$/.test(m.tekster.story), JSON.stringify(m.tekster));
   sjekk(`${tag}: «Lag story» 40px / radius 8`, m.storyKnapp==='40/8px', m.storyKnapp);

@@ -123,24 +123,7 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) {
   }
 }
 function document_harGammelVelger(html){ return /id="attrPeriod"/.test(html); }
-// «På vei» (Oversikt-redesign 17.11): «N kunder nærmer seg rebooking» + samtykkelinja bare når noen når vinduet;
-// 0 → «Ingen kunder nærmer seg rebooking ennå» uten samtykkelinje.
-for (const bredde of [320, 375]) for (const n of [0, 5]) {
-  PAA_VEI_N = n;
-  const { page, errs } = await side(bredde, 'dark', false);
-  await page.evaluate(() => switchPanel('oversikt')); await page.waitForTimeout(1200);   // «På vei» står i «Drevet av» på Oversikt
-  const pv = await page.$$eval('#drivenBy .pv-blokk', bs => bs.filter(b => b.offsetParent).map(b => ({
-    txt: (b.querySelector('.pv-dempet') || {}).textContent, samtykke: b.querySelector('.pv-samtykke') ? b.querySelector('.pv-samtykke').textContent : null })));
-  const ok = pv.length > 0 && pv.every(x => (n === 0 ? x.txt === 'Ingen kunder nærmer seg rebooking ennå' && x.samtykke === null
-    : x.txt === `${n} kunder nærmer seg rebooking` && x.samtykke === `3 av ${n} har SMS-samtykke i dag`));
-  sjekk(ok, `${bredde} På vei med ${n} i vinduet: ${JSON.stringify(pv[0] || 'ikke rendret')}`);
-  if (pv.length) {
-    await page.mouse.move(0, 0);
-    const blokk = page.locator('#drivenBy .pv-blokk').first();
-    await blokk.screenshot({ path: path.join(OUT, `paa-vei-${n}-${bredde}.png`) });
-  }
-  sjekk(errs.length === 0, `${bredde} På vei ${n}: JS-feil ${errs.join(' | ')}`); await page.close();
-}
+// «På vei» bodde i «Hentet inn av BarberHQ» på Oversikt — fjernet 27.11.2026, sjekken med den.
 PAA_VEI_N = 0;
 sjekk(apiForsok === apiMocket, `alle ${apiForsok} kall mot api.trybarberhq.com besvart av mocken — ingen nådde prod`);
 sjekk(skriv.length === 0, `skrivende kall: ${skriv.join(', ') || 0}`);

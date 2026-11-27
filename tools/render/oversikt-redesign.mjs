@@ -1,19 +1,14 @@
 // Oversikt-redesign (17.11.2026) — render + vakter for hele Oversikt-fanen.
 //
-// Kilde: oversikt-vekst / oversikt-gratis / hentet-inn-vekst-tom (.dc.html, Henrik). Fire rammefrie seksjoner:
-// I DAG → KOMMENDE → NØKKELTALL → HENTET INN AV BARBERHQ. Testen tegner fire tilstander på 320/375/1280 i
-// mørk OG lys modus (24 skjermbilder), og sjekker det som ikke synes på øyemål:
+// Kilde: oversikt-vekst / oversikt-gratis (.dc.html, Henrik). Tre rammefrie seksjoner: I DAG → KOMMENDE → NØKKELTALL
+// («Hentet inn av BarberHQ» er fjernet 27.11.2026 — tallene står i Vekst-kortet på Konto, se konto-vekst.mjs).
+// Testen tegner tre tilstander på 320/375/1280 i mørk OG lys modus, og sjekker det som ikke synes på øyemål:
 //   - I dag: passerte timer skjules, «N igjen», neste booking stort, «Neste kunde · om …» fra fast klokke,
 //     «Tjeneste · varighet», alle passert → «Ingen flere bookinger i dag.»
 //   - Kommende: dager etter i dag, «N neste 7 dager», «Onsdag 18. nov», ingen avlyste, ingen utenfor 7 døgn.
 //   - Nøkkeltall: .ovs-seg valgt = nøytral flate (aldri blå), tallfargene arvet (Kunder --info, omsetning
 //     #35d07a), ÉN linje under tallene, 110px stolpeområde (felles .stolpe, se stolper-felles.mjs), 0-dag = 3px, ensfarget fyll (ingen gradient).
-//   - Hentet inn (Vekst): egen periode (3 mnd standard → 6 mnd sender siste_6mnd), total, stripe med tre biter,
-//     rekkefølge Rebooking / Vinn tilbake / Verving, PÅ VEI «N kunder å hente inn» = borte + no_show, og
-//     reserven (dagens passerer_innen_30d) når feltene mangler. Klikk på panelet bytter IKKE fane.
-//   - Hentet inn (Gratis): FAST overskrift «Flere klipp fra kundene du har. Og nye i tillegg.» (Henrik 17.11 —
-//     ingen borte-tall), ingen /attribution-kall, ingen maskerte rader, ingen kronebeløp utenom prisen, «Se Vekst» → Konto.
-//   - Tomtilstand (total = 0): «Ingen kunder hentet inn ennå.», rader med «—», PÅ VEI vises.
+//   - Ingen «Hentet inn»-seksjon og ingen /attribution-kall fra Oversikt (Vekst og Gratis).
 //   - Header: én rad, navnet 20px på mobil / 26px på desktop, INGEN dato i headeren — datoen står i I DAG-etiketten
 //     («I DAG · TIRSDAG 17. NOV»). Detaljene vaktes av header-lenke.mjs. Bunn-nav: nytt Oversikt-ikon (fire fliser).
 //   - Ingen horisontal overflow, ingen pageerror, ingen forespørsel slipper forbi mocken.
@@ -82,11 +77,7 @@ const STATS_GRATIS = {
 };
 
 const PAAVEI_NY = { rebooking:{naar_vindu_30d:2,med_samtykke:1}, winback:{ foerste_passerer_60:'2026-12-03', passerer_innen_30d:5, borte:12, no_show:5 } };
-const PAAVEI_GAMMEL = { rebooking:{naar_vindu_30d:2,med_samtykke:1}, winback:{ foerste_passerer_60:'2026-12-03', passerer_innen_30d:5 } };   // backend uten borte/no_show
-const HENTET = { period:'siste_3mnd', total:{count:14,revenue:4850},
-  rebooking:{count:8,revenue:2300,aktivert:true}, vinnTilbake:{count:4,revenue:1550}, vervet:{count:2,revenue:1000} };
-const HENTET_TOM = { period:'siste_3mnd', total:{count:0,revenue:0},
-  rebooking:{count:0,revenue:0,aktivert:true}, vinnTilbake:{count:0,revenue:0}, vervet:{count:0,revenue:0} };
+
 
 const bill = (plan) => plan==='vekst'
   ? { subscription_status:'active', plan:'vekst', effective_plan:'vekst', effective_plan_grunn:'subscription', page_status:'live',
@@ -95,9 +86,8 @@ const bill = (plan) => plan==='vekst'
       days_left:null, trial_days_left:null, needs_attention:false, sms_pakke_kan_kjopes:false };
 
 const TILSTANDER = {
-  'vekst':             { plan:'vekst', bookinger:BOOKINGER_FULL,   stats:STATS_FULL,   attr:{ paaVei:PAAVEI_NY, hentetInn:HENTET } },
-  'vekst-tom':         { plan:'vekst', bookinger:BOOKINGER_FULL,   stats:STATS_FULL,   attr:{ paaVei:PAAVEI_NY, hentetInn:HENTET_TOM } },
-  // Gratis: én variant — teksten er fast og leser ingen tall. attr sendes likevel, så vakta ser at den IKKE hentes.
+  'vekst':             { plan:'vekst', bookinger:BOOKINGER_FULL,   stats:STATS_FULL,   attr:{ paaVei:PAAVEI_NY } },
+  // attr sendes likevel, så vakta ser at den IKKE hentes (Oversikt kaller ikke /attribution lenger).
   'gratis':            { plan:'basis', bookinger:BOOKINGER_TOMDAG, stats:STATS_GRATIS, attr:{ paaVei:{ ...PAAVEI_NY, winback:{ ...PAAVEI_NY.winback, borte:17, no_show:3 } } }, story:true },
 };
 
@@ -139,7 +129,6 @@ async function aapne(t, { bredde, tema, naa=NAA, attrOverride=null }) {
     return J(/images|recent|services|hours|referrals|customers/.test(p) ? [] : {});
   });
   await page.goto(`http://localhost:${PORT}/no/dashboard.html`, { waitUntil:'domcontentloaded' });
-  await page.waitForSelector('#drivenBy h2', { timeout:15000 });
   await page.waitForSelector('#idagInnhold .idag-neste, #idagInnhold .idag-tom', { timeout:15000 });
   await page.waitForSelector('#chartBars .cbar-col', { timeout:15000 });
   await page.evaluate(() => document.fonts && document.fonts.ready);
@@ -148,7 +137,7 @@ async function aapne(t, { bredde, tema, naa=NAA, attrOverride=null }) {
 }
 const norm = s => (s||'').replace(/[\s  ]+/g,' ').trim();
 
-// ── 1) Skjermbilder: 4 tilstander × 320/375/1280 × mørk/lys ──────────────────────────────────────────────
+// ── 1) Skjermbilder: tilstandene × 320/375/1280 × mørk/lys ──────────────────────────────────────────────
 const KUN = process.argv[2];   // valgfritt: bare skjermbilder av én tilstand
 for (const t of Object.keys(TILSTANDER).filter(k => !KUN || k===KUN)) for (const tema of ['dark','light']) for (const bredde of [320,375,1280]) {
   const { ctx, page, st } = await aapne(t, { bredde, tema });
@@ -205,13 +194,8 @@ for (const t of Object.keys(TILSTANDER).filter(k => !KUN || k===KUN)) for (const
       nullHoyde: bars.filter(b=>b.classList.contains('null')).map(b=>b.getBoundingClientRect().height),
       gradient: bars.some(b=>/gradient/.test(getComputedStyle(b).backgroundImage)),
       idagLbl: cs(q('#chartBars .cbar-col.idag .cbar-lbl > span'),'color'),
-      hentetEtikett: q('#ovsHentetH')?.innerText,
-      attrValgt: q('#ovsAttrPeriod [aria-pressed="true"]')?.textContent,
-      total: norm2(q('.hi-total')?.textContent), totalSub: q('.hi-sub')?.textContent,
-      stripe: qa('.hi-stripe > span').length,
-      arm: qa('.hi-rad .hi-navn').map(e=>e.childNodes[0].textContent),
-      armKr: qa('.hi-rad .hi-kr').map(e=>norm2(e.textContent)),
-      paavei: norm2(q('.pv-blokk')?.textContent),
+      hentetInn: !!q('#drivenBy, #drivenByWrap, .hi-total, .pv-blokk') || /Hentet inn av BarberHQ/.test(q('#oversikt').innerText),
+      sisteSek: qa('#oversikt section.ovs-sek').pop()?.id,
       ikonRects: document.querySelectorAll('#ic-oversikt rect').length,
       kort: qa('#oversikt .ovs-sek').filter(s=>{ const c=getComputedStyle(s); return parseFloat(c.borderTopWidth)>0 && parseFloat(c.borderLeftWidth)>0; }).length,
       smaTrykk: qa('#oversikt button, #oversikt a').filter(e=>e.offsetParent && !e.closest('.perseg-meny') && !e.classList.contains('ovs-seg-btn') && e.getBoundingClientRect().height<44).map(e=>(e.id||e.className)+':'+Math.round(e.getBoundingClientRect().height)),
@@ -227,7 +211,7 @@ for (const t of Object.keys(TILSTANDER).filter(k => !KUN || k===KUN)) for (const
   sjekk('Kommende: «4 neste 7 dager»', d.komAntall==='4 neste 7 dager', d.komAntall);
   sjekk('Kommende: dagsoverskrifter', JSON.stringify(d.komDager)==='["Onsdag 18. nov","Torsdag 19. nov","Lørdag 21. nov"]', JSON.stringify(d.komDager));
   sjekk('Kommende: ingen i dag/avlyst/utenfor vindu', !d.komNavn.some(n=>/Emre|Avlyst|Utenfor/.test(n)), JSON.stringify(d.komNavn));
-  sjekk('Etiketter i versaler, rekkefølge', JSON.stringify(d.etiketter.slice(0,4))==='["I DAG · TIRSDAG 17. NOV","KOMMENDE","NØKKELTALL","HENTET INN AV BARBERHQ"]', JSON.stringify(d.etiketter));
+  sjekk('Etiketter i versaler, rekkefølge', JSON.stringify(d.etiketter)==='["I DAG · TIRSDAG 17. NOV","KOMMENDE","NØKKELTALL"]', JSON.stringify(d.etiketter));
   sjekk('Etikett-stil 11.5px/600/#8a8a8a', /^11\.5px 600 .* rgb\(138, 138, 138\)$/.test(d.etikettStil), d.etikettStil);
   sjekk('Seg valgt = #262626 (ikke blå), hvit tekst', d.segValgtBg==='rgb(38, 38, 38)' && d.segValgtFarge==='rgb(255, 255, 255)', d.segValgtBg+' / '+d.segValgtFarge);
   sjekk('Seg-container ≥44px (trykkflate)', d.segHoyde>=44, d.segHoyde);
@@ -239,38 +223,21 @@ for (const t of Object.keys(TILSTANDER).filter(k => !KUN || k===KUN)) for (const
   sjekk('0-dag (søndag) = 3px', d.nullHoyde.length===1 && Math.round(d.nullHoyde[0])===3, JSON.stringify(d.nullHoyde));
   sjekk('Stolper ensfarget (ingen gradient)', !d.gradient);
   sjekk('I dag-etikett under diagrammet er hvit', d.idagLbl==='rgb(255, 255, 255)', d.idagLbl);
-  sjekk('Hentet inn: 3 mnd valgt som standard', d.attrValgt==='3 mnd', d.attrValgt);
-  sjekk('Hentet inn: første kall er siste_3mnd', st.attrKall.includes('siste_3mnd') && !st.attrKall.includes('siste_maaned'), JSON.stringify(st.attrKall));
-  sjekk('Hentet inn: total «4 850 kr», «14 klipp …»', d.total==='4 850 kr' && d.totalSub==='14 klipp fra kunder BarberHQ hentet tilbake', d.total+' | '+d.totalSub);
-  sjekk('Hentet inn: stripe med tre biter', d.stripe===3, d.stripe);
-  sjekk('Hentet inn: rekkefølge Rebooking/Vinn tilbake/Verving', JSON.stringify(d.arm)==='["Rebooking","Vinn tilbake","Verving"]', JSON.stringify(d.arm));
-  sjekk('Hentet inn: kronebeløp per rad', JSON.stringify(d.armKr)==='["2 300 kr","1 550 kr","1 000 kr"]', JSON.stringify(d.armKr));
-  sjekk('PÅ VEI: «17 kunder å hente inn» (borte 12 + no_show 5)', /17 kunder å hente inn/.test(d.paavei), d.paavei);
-  sjekk('PÅ VEI: «2 kunder nærmer seg rebooking» + samtykkelinja', /2 kunder nærmer seg rebooking/.test(d.paavei) && /1 av 2 har SMS-samtykke i dag/.test(d.paavei), d.paavei);
+  sjekk('Ingen «Hentet inn»-seksjon; Nøkkeltall er siste seksjon', !d.hentetInn && d.sisteSek==='ovsTall', d.sisteSek);
+  sjekk('Oversikt henter ikke /attribution', st.attrKall.length===0, JSON.stringify(st.attrKall));
   sjekk('Ingen rammer rundt seksjonene', d.kort===0, d.kort);
   sjekk('Trykkflater ≥44px', d.smaTrykk.length===0, d.smaTrykk.join(', '));
   sjekk('Bunn-nav: Oversikt-ikon = fire fliser', d.ikonRects===4, d.ikonRects);
 
-  // Periodebytte i Hentet inn: 6 mnd → siste_6mnd, uten fanebytte. Klikk i panelet bytter ikke fane.
-  await page.click('#ovsAttrPeriod [data-ovs-attr="siste_6mnd"]');
-  await page.waitForFunction(() => document.querySelector('#ovsAttrPeriod [aria-pressed="true"]')?.textContent==='6 mnd');
-  await page.click('.hi-total');
-  const etter = await page.evaluate(() => ({ aktiv: document.querySelector('.panel.active').id, segUke: document.querySelector('#segs [data-p="uke"]').getAttribute('aria-selected') }));
-  sjekk('6 mnd sender siste_6mnd', st.attrKall.includes('siste_6mnd'), JSON.stringify(st.attrKall));
-  sjekk('Klikk i Hentet inn bytter ikke fane', etter.aktiv==='oversikt', etter.aktiv);
-  sjekk('Hentet inn-periode rører ikke Nøkkeltall-velgeren', etter.segUke==='true');
   // Nøkkeltall 2 uker: gap krymper, 14 stolper, rekordlinja forsvinner ikke ut av én linje.
   await page.click('#segs [data-p="2uker"]');
   await page.waitForFunction(() => document.querySelectorAll('#chartBars .cbar-col').length===14);
   const to = await page.evaluate(() => ({ gap: getComputedStyle(document.getElementById('chartBars')).columnGap, attr: null }));
   sjekk('2 uker: 14 stolper, gap 4px', to.gap==='4px', to.gap);
-  // «Se lista →» → Vekst-fanen; navnet er 20px også der (mobil).
-  await page.click('#segs [data-p="uke"]');
-  await page.waitForSelector('#drivenBy [data-di-winback]');
-  await page.click('#drivenBy [data-di-winback]');
+  // Navnet er 20px også på Vekst-fanen (mobil).
+  await page.evaluate(() => switchPanel('vekst'));
   await page.waitForTimeout(200);
-  const v = await page.evaluate(() => ({ aktiv: document.querySelector('.panel.active').id, navn: getComputedStyle(document.getElementById('barberName')).fontSize }));
-  sjekk('«Se lista →» åpner Vekst', v.aktiv==='vekst', v.aktiv);
+  const v = await page.evaluate(() => ({ navn: getComputedStyle(document.getElementById('barberName')).fontSize }));
   sjekk('Navnet 20px også på Vekst-fanen (mobil)', v.navn==='20px', v.navn);
   sjekk('vekst-interaksjon: ingen pageerror', st.errs.length===0, st.errs.join(' | ').slice(0,160));
   await ctx.close();
@@ -286,56 +253,17 @@ for (const t of Object.keys(TILSTANDER).filter(k => !KUN || k===KUN)) for (const
   sjekk('måned: ingen pageerror', st.errs.length===0, st.errs.join(' | '));
   await ctx.close();
 }
-{ // Reserve: backend uten borte/no_show → dagens tall (passerer_innen_30d = 5)
-  const { ctx, page } = await aapne('vekst', { bredde:375, tema:'dark', attrOverride:{ paaVei:PAAVEI_GAMMEL, hentetInn:HENTET } });
-  const t = await page.evaluate(() => document.querySelector('.pv-blokk').textContent.replace(/\s+/g,' '));
-  sjekk('Reserve uten borte-feltene: «5 kunder å hente inn»', /5 kunder å hente inn/.test(t), t);
-  await ctx.close();
-}
-{ // Vinn tilbake = 0 → «Første kunde passerer 60 dager 3. des»
-  const { ctx, page } = await aapne('vekst', { bredde:375, tema:'dark', attrOverride:{ paaVei:{ rebooking:{naar_vindu_30d:0,med_samtykke:0}, winback:{ foerste_passerer_60:'2026-12-03', passerer_innen_30d:0, borte:0, no_show:0 } }, hentetInn:HENTET } });
-  const t = await page.evaluate(() => document.querySelector('.pv-blokk').textContent.replace(/\s+/g,' '));
-  sjekk('Vinn tilbake 0: «Første kunde passerer 60 dager 3. des»', /Første kunde passerer 60 dager 3\. des/.test(t), t);
-  sjekk('Rebooking 0: ingen samtykkelinje', !/SMS-samtykke/.test(t), t);
-  await ctx.close();
-}
-{ // Tomtilstand
-  const { ctx, page } = await aapne('vekst-tom', { bredde:375, tema:'dark' });
-  const d = await page.evaluate(() => ({ h: document.querySelector('.hi-tom-h')?.textContent, streker: document.querySelectorAll('.hi-rad .hi-strek').length,
-    total: !!document.querySelector('.hi-total'), stripe: !!document.querySelector('.hi-stripe'), paavei: !!document.querySelector('.pv-blokk.med-strek') }));
-  sjekk('Tom: «Ingen kunder hentet inn ennå.»', d.h==='Ingen kunder hentet inn ennå.', d.h);
-  sjekk('Tom: tre rader med «—», ingen total/stripe', d.streker===3 && !d.total && !d.stripe, JSON.stringify(d));
-  sjekk('Tom: PÅ VEI vises', d.paavei);
-  await ctx.close();
-}
-for (const [t, forventet] of [['gratis','Flere klipp fra kundene du har. Og nye i tillegg.']]) {
+for (const t of ['gratis']) {
   const { ctx, page, st } = await aapne(t, { bredde:375, tema:'dark' });
   const d = await page.evaluate(() => {
-    const w = document.getElementById('drivenBy');
-    return { h: w.querySelector('.gr-h')?.innerText.replace(/\s+/g,' '), p: w.querySelector('.gr-p')?.textContent, tagg: w.querySelector('.ovs-tagg')?.textContent,
-      maskert: w.querySelectorAll('.di-basis-laast').length, rader: [...w.querySelectorAll('.gr-rad .hi-navn')].map(e=>e.textContent),
-      kr: (w.textContent.replace(/179 kr\/mnd/,'').match(/\d[\d\s ]*kr/g)||[]), pris: w.querySelector('.gr-pris')?.innerText.replace(/\s+/g,' '),
-      paavei: !!w.querySelector('.pv-blokk'), velger: !!w.querySelector('#ovsAttrPeriod'),
+    return { hentetInn: !!document.querySelector('#drivenBy, .gr-h') || /Hentet inn av BarberHQ|Se Vekst/.test(document.getElementById('oversikt').innerText),
       idag: document.querySelector('#idagInnhold').textContent, idagAnt: document.querySelector('#idagAntall').textContent,
       story: !!document.getElementById('storyOpenOversikt').offsetParent, storyLinje: document.getElementById('storyLedigeLinje').textContent };
   });
-  sjekk(`${t}: overskrift «${forventet}»`, d.h===forventet, d.h);
-  sjekk(`${t}: undertekst «Med Vekst ser du her hva det henter inn, i kroner.»`, d.p==='Med Vekst ser du her hva det henter inn, i kroner.', d.p);
-  sjekk(`${t}: overskriften bruker ikke borte-tallet (17)`, !/17/.test(d.h||''), d.h);
+  sjekk(`${t}: ingen «Hentet inn» / «Se Vekst» på Oversikt`, !d.hentetInn);
   sjekk(`${t}: ingen /attribution-kall på Gratis`, st.attrKall.length===0, JSON.stringify(st.attrKall));
-  sjekk(`${t}: «Med Vekst»-tagg`, d.tagg==='Med Vekst', d.tagg);
-  sjekk(`${t}: ingen maskerte rader`, d.maskert===0, d.maskert);
-  sjekk(`${t}: tre rader uten tall`, JSON.stringify(d.rader)==='["Rebooking","Vinn tilbake","Verving"]' && d.kr.length===0, JSON.stringify(d.kr));
-  sjekk(`${t}: «179 kr/mnd · eks. mva»`, d.pris==='179 kr/mnd eks. mva', d.pris);
-  sjekk(`${t}: ingen PÅ VEI / periodevelger på Gratis`, !d.paavei && !d.velger);
   sjekk(`${t}: tom dag «Ingen bookinger i dag.» / «0 igjen»`, d.idag==='Ingen bookinger i dag.' && d.idagAnt==='0 igjen', d.idag+' / '+d.idagAnt);
   sjekk(`${t}: story-lenke + «Du har 6 ledige timer i dag»`, d.story && d.storyLinje==='Du har 6 ledige timer i dag', d.storyLinje);
-  if (t==='gratis') {
-    await page.click('#drivenBy [data-di-oppgrader]');
-    await page.waitForTimeout(250);
-    const aktiv = await page.evaluate(() => document.querySelector('.panel.active').id);
-    sjekk('gratis: «Se Vekst» → Konto', aktiv==='abonnement', aktiv);
-  }
   sjekk(`${t}: ingen pageerror`, st.errs.length===0, st.errs.join(' | ').slice(0,160));
   await ctx.close();
 }

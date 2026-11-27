@@ -2,7 +2,7 @@
 //   1. Vekst-fanens påminnelse-bryter viser FAKTISK tilstand: Gratis med 0 SMS → av + deaktivert, samme låste
 //      stil som Rebooking (.handlingslaas), dempet lenke «Kjøp SMS for å sende påminnelser», og ethvert trykk i
 //      kortet (bryter, tittel) åpner Konto → SMS. Innstillingen (dataset.verdi) røres ikke. Saldo > 0: uendret.
-//   1b. «eks. mva» brytes alltid samlet (NBSP) — Konto-boksen (#kontoOppH), målt på 320/375.
+//   1b. «eks. mva» brytes alltid samlet (NBSP) — Vekst-kortet på Konto (.ab-salg-pris), målt på 320/375.
 //   2. Avbrutt SMS-kjøp (?sms_pakke_avbrutt=1) → banner i SMS-seksjonen + URL ryddet.
 //   3. Feilet synk etter SMS-kjøp → ventebanner om SMS, ikke Vekst (Vekst-kjøp beholder Vekst-teksten).
 //   4. kontoTilstand: oppsagt under Stripe-prøve (trialing + cancel_at_period_end) → tilstand 4, ikke 3.
@@ -139,10 +139,10 @@ for(const w of [320,375]){
         const i=tn.textContent.search(/eks\./), r=document.createRange();
         const rect=(a,b)=>{ r.setStart(tn,a); r.setEnd(tn,b); return r.getClientRects()[0].top; };
         return Math.abs(rect(i,i+4)-rect(i+5,i+8))<2 ? 'samlet' : 'DELT'; };
-      return {oppH:sjekk(document.getElementById('kontoOppH'))};
+      return {oppH:sjekk(document.querySelector('#kontoVekst .ab-salg-pris span'))};
     });
-    const f=[]; if(delt.oppH!=='samlet') f.push(`#kontoOppH ${delt.oppH}`);
-    await page.$eval('#kontoOpp',e=>e.scrollIntoView({block:'center'})); await page.waitForTimeout(200);
+    const f=[]; if(delt.oppH!=='samlet') f.push(`.ab-salg-pris ${delt.oppH}`);
+    await page.$eval('#kontoVekst',e=>e.scrollIntoView({block:'center'})); await page.waitForTimeout(200);
     const fil=path.join(OUT,`konto-vekstboks-${w}.png`); await page.screenshot({path:fil}); bilder.push(fil);
     push(`${w} «eks. mva» samlet`,f,errs); await page.close();
   }
