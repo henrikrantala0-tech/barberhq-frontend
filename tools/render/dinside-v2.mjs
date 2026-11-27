@@ -66,7 +66,7 @@ async function maal(page, ctx) {
     const knapper = [...document.querySelectorAll('#dinsideV2 button, #dinsideV2 input[type=color]')].filter(b => b.offsetParent !== null && !b.closest('[hidden]'));
     const smaa = knapper.filter(b => { const r = b.getBoundingClientRect(); return r.height < 40 || r.width < 40; })
       .map(b => `${(b.textContent || b.getAttribute('aria-label') || b.className).trim().slice(0, 18)} ${Math.round(b.getBoundingClientRect().width)}×${Math.round(b.getBoundingClientRect().height)}`);
-    return { overflow: document.documentElement.scrollWidth - vw, smaa, v1Synlig: ['#sideAccs', '#dinsideCta', '#fokusBar', '.side-wrap'].filter(s => { const e = document.querySelector(s); return e && e.offsetParent !== null; }) };
+    return { overflow: document.documentElement.scrollWidth - vw, smaa, v1Synlig: ['#sideAccs', '#fokusBar', '.side-wrap'].filter(s => { const e = document.querySelector(s); return e && e.offsetParent !== null; }) };
   });
   sjekk(r.overflow <= 0, `${ctx}: horisontal overflow`, r.overflow + ' px');
   sjekk(!r.smaa.length, `${ctx}: trykkflater under 40 px`, r.smaa.join(' · '));
@@ -436,16 +436,23 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
   await ctx.close();
 }
 {
-  // 2n. Tjenestebeskrivelsen er v2-kun: v1-barber ser ikke feltet, v2-barber ser det (også når billing svarer etter tjenestene).
+  // 2n. Tjenestebeskrivelsen er v2-kun: i lista (.tj-besk) og i arket (#tjArkBesk / «+ Legg til beskrivelse»). v1 ser ingen av
+  //     delene; v2 ser dem også når billing svarer etter tjenestene (lista tegnes på nytt når sidemal blir kjent).
   const TJ = { hoved: [{ name: 'Skin fade', price: 450, min: 45, description: 'Med vask og styling' }, { name: 'Klipp', price: 350, min: 30 }], tillegg: [{ name: 'Skjegg', price: 150, min: 15 }] };
   const tilTjenester = async page => { await page.evaluate(() => document.querySelector('.nav button[data-panel="tjenester"]').click()); await page.waitForTimeout(900); };
-  const beskr = page => page.$$eval('.svc-description', es => es.map(e => ({ v: e.value, synlig: e.offsetParent !== null })));
+  const beskr = page => page.$$eval('#hovedList .tj-besk', es => es.map(e => ({ v: e.textContent, synlig: e.offsetParent !== null })));
+  const ark = async page => { await page.click('#hovedList .tj-rad[data-i="0"] [data-tj="rediger"]'); await page.waitForTimeout(150);
+    const r = await page.evaluate(() => ({ felt: document.getElementById('tjArkBesk').checkVisibility(), verdi: document.getElementById('tjArkBeskFelt').value,
+      lenke: document.getElementById('tjArkBeskLenke').checkVisibility() }));
+    await page.click('#tjArkLukk'); return r; };
   for (const sm of ['v2', 'v1']) {
     const { ctx, page, errs } = await ny({ bredde: 375, mock: { sidemal: sm, tjenester: TJ } });
     await tilTjenester(page);
     const b = await beskr(page);
-    if (sm === 'v2') sjekk(b.length === 2 && b.every(x => x.synlig) && b[0].v === 'Med vask og styling', 'v2: beskrivelsesfelt ved hver hovedtjeneste (ikke tillegg)', JSON.stringify(b));
-    else sjekk(b.length === 0, 'v1: ingen beskrivelsesfelt', JSON.stringify(b));
+    const a = await ark(page);
+    if (sm === 'v2') sjekk(b.length === 1 && b[0].synlig && b[0].v === 'Med vask og styling' && a.felt && a.verdi === 'Med vask og styling',
+      'v2: beskrivelsen i lista og i arket (bare hovedtjenesten som har den)', JSON.stringify([b, a]));
+    else sjekk(b.length === 0 && !a.felt && !a.lenke, 'v1: ingen beskrivelse i lista eller arket', JSON.stringify([b, a]));
     sjekk(!errs.length, `${sm} tjenester: pageerror`, errs.join('; '));
     await ctx.close();
   }
@@ -455,10 +462,10 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
     await installerDinSideMock(page, { tjenester: TJ, billingForsinkelse: 1500 });
     await page.goto(URL_.replace('#dinside', '#tjenester'), { waitUntil: 'commit' });
     await page.waitForTimeout(700);
-    const foer = await page.$$eval('.svc-description', es => es.length);
+    const foer = await page.$$eval('#hovedList .tj-besk', es => es.length);
     await page.waitForTimeout(2200);
-    const etter = await page.$$eval('.svc-description', es => es.length);
-    sjekk(foer === 0 && etter === 2, 'v2: beskrivelsesfeltet dukker opp når billing svarer etter tjenestene', `før=${foer} etter=${etter}`);
+    const etter = await page.$$eval('#hovedList .tj-besk', es => es.length);
+    sjekk(foer === 0 && etter === 1, 'v2: beskrivelsen dukker opp i lista når billing svarer etter tjenestene', `før=${foer} etter=${etter}`);
     await ctx.close();
   }
 }
@@ -672,7 +679,7 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
   // 2h. INGEN v1-flate synlig på v2 — i noen tilstand (billing ikke svart ennå, billing feilet, etter lagring,
   //     etter fanebytte og tilbake, etter reload, ?velkommen=1, ulike bredder). Rotårsaken som ble funnet 19.10:
   //     før billing hadde svart hadde body ingen sidemal-klasse, og da sto hele v1-flaten synlig.
-  const V1_SEL = '#design .v1-kun, #design #sideAccs, #design .side-wrap, #design #dinsideLive, #design #dinsideCta, #design #fokusBar, #design #accProfil, #design #accBilder, #design #accDesign';
+  const V1_SEL = '#design .v1-kun, #design #sideAccs, #design .side-wrap, #design #dinsideLive, #design #fokusBar, #design #accProfil, #design #accBilder, #design #accDesign';
   const v1Synlig = page => page.evaluate(sel => [...document.querySelectorAll(sel)].filter(e => e.offsetParent !== null || getComputedStyle(e).position === 'fixed').map(e => e.id || e.className.split(' ')[0]), V1_SEL);
   // «Publiser siden» var en v1-markør, men er v2s publiseringsknapp fra 12.11.2026 (sider som ikke er live) — ikke med her.
   const v1Tekst = page => page.evaluate(() => { const p = document.querySelector('#design'); const t = (p.innerText || ''); return ['Design siden din', 'Endringer vises i forhåndsvisningen', 'Trykk på en boks'].filter(s => t.includes(s)); });

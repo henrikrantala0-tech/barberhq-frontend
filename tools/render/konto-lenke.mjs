@@ -1,8 +1,7 @@
 // Lenke-blokka i Konto (#pubLink) etter at den ble tilstandsstyrt av page_status.
-// Tre tilstander skal falle ut av fem billing-svar:
+// To tilstander skal falle ut av billing-svarene:
 //   live         → hele URL-en + kopi-ikonknapp (.pub-copy — lenkefeltet er delt med «Din side»)
-//   forhandsvist → «Se forhåndsvisning» + note, INGEN kopier-knapp
-//   nedtatt/draft→ ingenting
+//   ellers       → ingenting (forhandsvist også: «Se forhåndsvisning» + noten er fjernet fra Konto 27.11.2026)
 // Verifiserer også at det som havner på utklippstavla starter med https:// — uten protokoll
 // autolinker verken Instagram eller SMS lenka, og da er den halvveis ubrukelig.
 import http from 'node:http';
@@ -40,7 +39,7 @@ const TILSTANDER=[
   ['F-active-live',       vekst({page_status:'live'}),
                           {lenke:true, kopier:true,  note:false}],
   ['A-forhandsvist',      gratis({page_status:'forhandsvist'}),
-                          {lenke:true, kopier:false, note:true}],
+                          {lenke:false,kopier:false, note:false}],
   ['draft',               gratis({page_status:'draft'}),
                           {lenke:false,kopier:false, note:false}],
   // Samme tilstand som B, men uten navigator.clipboard — usikker kontekst eller avvist

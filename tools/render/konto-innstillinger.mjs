@@ -5,7 +5,7 @@
 // alltid synlig, SMS-kortet kun på Gratis, Konto-radene (Navn/E-post/Passord) med «Endre» i samme rad — ett
 // og flere åpne, Lagre (PUT /profile, POST /set-password) og Avbryt, «Ikke satt» uten passord, tema som
 // segmentert valg, SMS-logg med antall denne måneden (forbruk.sendt_maaned) som eneste fold, Hjelp-lenker,
-// Avpubliser KUN nederst (dempet, ikke rød), Logg ut, lenker til Konto scroller til seksjonen, varselprikk,
+// ingen «Avpubliser» (fjernet 27.11.2026), Logg ut nederst, lenker til Konto scroller til seksjonen, varselprikk,
 // og Tjenester-fanens kalenderplassering (arvet fra den gamle testen). Alt /api/** mockes; ingenting når prod.
 //
 //   node tools/render/konto-innstillinger.mjs
@@ -103,7 +103,7 @@ const FORVENT_REKKE = { 'gratis-0': ['kontoAbonnement', 'kontoSms', 'kontoKonto'
   'gratis-120': ['kontoAbonnement', 'kontoSms', 'kontoKonto', 'kontoUtseende', 'kontoSmsLogg', 'kontoHjelp'],
   'vekst': ['kontoAbonnement', 'kontoKonto', 'kontoUtseende', 'kontoSmsLogg', 'kontoHjelp'],
   'prove': ['kontoAbonnement', 'kontoKonto', 'kontoUtseende', 'kontoSmsLogg', 'kontoHjelp'] };
-const OVERSKRIFT = { kontoAbonnement: 'Abonnement og publisering', kontoSms: 'SMS-påminnelser', kontoKonto: 'Konto',
+const OVERSKRIFT = { kontoAbonnement: 'Abonnement', kontoSms: 'SMS-påminnelser', kontoKonto: 'Konto',
   kontoUtseende: 'Utseende', kontoSmsLogg: 'SMS-logg', kontoHjelp: 'Hjelp' };
 
 for (const bredde of [320, 375, 1280]) {
@@ -125,7 +125,7 @@ for (const bredde of [320, 375, 1280]) {
     sjekk(JSON.stringify(m.rekke) === JSON.stringify(FORVENT_REKKE[scen]), `${id}: seksjoner ${m.rekke.join(' → ')}`);
     sjekk(m.rekke.every(s => m.overskrifter[s] === OVERSKRIFT[s]), `${id}: overskrifter ${JSON.stringify(Object.values(m.overskrifter))}`);
     sjekk(m.trekkspill === 0 && m.piler.length === 1 && m.piler[0] === 'smsLoggFold', `${id}: ingen trekkspill, eneste pil = SMS-loggen (${m.piler})`);
-    sjekk(m.bunnSist, `${id}: Avpubliser/Logg ut står nederst`);
+    sjekk(m.bunnSist, `${id}: Logg ut står nederst`);
     sjekk(await vis(page, '#kontoStatus'), `${id}: abonnementsstatus synlig uten å trykke («${await tekst(page, '#kontoStatus')}»)`);
     if (scen.startsWith('gratis')) {
       sjekk(await vis(page, '#smsSaldoRad'), `${id}: SMS-saldo synlig uten å trykke («${await tekst(page, '#smsSaldoRad')}»)`);
@@ -135,11 +135,11 @@ for (const bredde of [320, 375, 1280]) {
     sjekk(await tekst(page, '#navnVerdi') === 'Henrik Rantala' && await tekst(page, '#kontoEpost') === 'henrik@grandbarber.no'
       && await tekst(page, '#pwVerdi') === '••••••••', `${id}: verdier Navn/E-post/Passord`);
     sjekk(await page.$$eval('#kontoKonto [data-endre]', b => b.map(x => x.dataset.endre).join(',')) === 'radNavn,radPassord', `${id}: «Endre» på Navn og Passord, ikke E-post`);
-    // Avpubliser: bare nederst, dempet (ikke rød), synlig når siden er live
-    const av = await page.evaluate(() => { const b = document.getElementById('unpublish');
-      return { iBunn: !!b.closest('.kt-bunn'), iKort: !!b.closest('.subcard'), antall: [...document.querySelectorAll('#abonnement button, #abonnement a')].filter(x => /Avpubliser/.test(x.textContent)).length,
-        farge: getComputedStyle(b).color, synlig: b.style.display !== 'none' }; });
-    sjekk(av.iBunn && !av.iKort && av.antall === 1 && av.synlig && av.farge !== 'rgb(192, 89, 74)', `${id}: Avpubliser kun nederst, dempet (${av.farge})`);
+    // «Avpubliser bookingside» er fjernet (27.11.2026): ingen knapp, ingen feilflate, ingenting med teksten i Konto
+    const av = await page.evaluate(() => ({ knapp: !!document.getElementById('unpublish'), feil: !!document.getElementById('avpubErr'),
+      tekst: [...document.querySelectorAll('#abonnement button, #abonnement a')].filter(x => /Avpubliser/.test(x.textContent)).length,
+      bunn: [...document.querySelectorAll('.kt-bunn button')].map(b => b.textContent.trim()).join('|') }));
+    sjekk(!av.knapp && !av.feil && av.tekst === 0 && av.bunn === 'Logg ut', `${id}: ingen Avpubliser — bunnen er bare «${av.bunn}»`);
     sjekk(await vis(page, '#loggUt'), `${id}: Logg ut synlig`);
     // SMS-logg: antall denne måneden, lukket til trykk
     sjekk(await tekst(page, '#smsMaanedTall') === '37 SMS' && !(await vis(page, '#smsLoggList')), `${id}: SMS-logg «${await tekst(page, '#smsMaanedTall')}», lukket`);
@@ -232,7 +232,7 @@ for (const bredde of [320, 375, 1280]) {
   sjekk(errs.length === 0, `SMS-lenke: JS-feil ${errs.join(' | ')}`);
   await page.close();
 }
-for (const bredde of [320, 375]) { // Passord: ikke satt / satt / glemt-lenken, avpubliseringsfeil, publiseringsfeil, SMS-kortet
+for (const bredde of [320, 375, 1280]) { // Passord: ikke satt / satt / glemt-lenken, bunnen av Konto, ingen publiseringsblokk (ikke live), SMS-kortet
   { const { page, errs, logg } = await side(bredde, { scen: 'vekst', harPassord: false });
     sjekk(await tekst(page, '#pwVerdi') === 'Ikke satt' && await tekst(page, '#radPassord [data-endre]') === 'Lag passord', `${bredde} ikke satt: «Ikke satt» + «Lag passord»`);
     await page.click('#radPassord [data-endre]'); await page.waitForTimeout(200);
@@ -253,37 +253,19 @@ for (const bredde of [320, 375]) { // Passord: ikke satt / satt / glemt-lenken, 
       `${bredde} glemt: POST /api/send-magic-link {email, formaal:'reset'} + «${await tekst(page, '#pwForgotOk')}»`);
     await page.locator('#kontoKonto').screenshot({ path: path.join(OUT, `passord-glemt-${bredde}.png`) });
     sjekk(errs.length === 0, `${bredde} satt/glemt: JS-feil ${errs.join(' | ')}`); await page.close(); }
-  { // Avpublisering feiler → feilen står rett ved knappen nederst, ikke i #pubErr
-    const { page, errs, logg, dialoger } = await side(bredde, { scen: 'vekst', godta: true, pageStatus: () => [500, { error: 'Kunne ikke avpublisere. Prøv igjen.' }] });
-    await page.click('#unpublish'); await page.waitForTimeout(900);
-    const pos = await page.evaluate(() => { const b = document.getElementById('unpublish').getBoundingClientRect(), e = document.getElementById('avpubErr').getBoundingClientRect();
-      return { avstand: Math.round(e.top - b.bottom) }; });
-    sjekk(logg.pageStatus.join() === 'forhandsvist' && dialoger.length === 1 && await vis(page, '#avpubErr') && await tekst(page, '#avpubErr') === 'Kunne ikke avpublisere. Prøv igjen.'
-      && !(await vis(page, '#pubErr')) && pos.avstand >= 0 && pos.avstand < 24, `${bredde} avpubliseringsfeil ved knappen (avstand ${pos.avstand}px), #pubErr tom`);
+  { // Bunnen av Konto (live side): bare «Logg ut» — skjermbilde
+    const { page, errs } = await side(bredde, { scen: 'vekst' });
     await page.addStyleTag({ content: '.bunn-nav{visibility:hidden!important}' });
     const r = await page.evaluate(() => { const a = document.getElementById('kontoHjelp').getBoundingClientRect(), b = document.querySelector('.konto-brand').getBoundingClientRect();
-      return { y: a.bottom + scrollY - 10, h: b.top - a.bottom + 20 }; });
-    await page.screenshot({ path: path.join(OUT, `avpublisering-feil-${bredde}.png`), clip: { x: 0, y: r.y, width: bredde, height: r.h }, fullPage: true });
-    sjekk(errs.length === 0, `${bredde} avpublisering: JS-feil ${errs.join(' | ')}`); await page.close(); }
-  { // Publisering (tilstand 0) feiler → feilen blir i abonnementskortet
-    const { page, errs } = await side(bredde, { scen: 'gratis-0', billing: () => ({ ...SCEN['gratis-0'](), page_status: 'forhandsvist' }),
-      pageStatus: () => [400, { error: 'Minst én tjeneste med pris kreves for å gå live' }] });
-    await page.click('#kontoAksjon'); await page.waitForTimeout(900);
-    sjekk(await vis(page, '#pubErr') && !!(await page.$('#kontoAbonnement #pubErr')) && /Minst én tjeneste/.test(await tekst(page, '#pubErr')) && !(await vis(page, '#avpubErr')),
-      `${bredde} publiseringsfeil i abonnementskortet: «${await tekst(page, '#pubErr')}»`);
-    sjekk(errs.length === 0, `${bredde} publisering: JS-feil ${errs.join(' | ')}`); await page.close(); }
-  { // Publiser-knappen på «Din side» feiler → feilen står ved den knappen, ikke i #pubErr i Konto
-    const { page, errs } = await side(bredde, { scen: 'gratis-0', billing: () => ({ ...SCEN['gratis-0'](), page_status: 'forhandsvist' }),
-      pageStatus: () => [400, { error: 'Minst én tjeneste med pris kreves for å gå live' }] });
-    await page.evaluate(() => switchPanel('design')); await page.waitForTimeout(900);
-    await page.click('#dinsidePubliser'); await page.waitForTimeout(900);
-    const pos = await page.evaluate(() => { const b = document.getElementById('dinsidePubliser').getBoundingClientRect(), e = document.getElementById('dinsidePubErr').getBoundingClientRect();
-      return Math.round(e.top - b.bottom); });
-    sjekk(await vis(page, '#dinsidePubErr') && /Minst én tjeneste/.test(await tekst(page, '#dinsidePubErr')) && await page.$eval('#pubErr', e => e.style.display !== 'block') && pos >= 0 && pos < 60,
-      `${bredde} Din side: publiseringsfeil ved «Publiser siden» (avstand ${pos}px), #pubErr i Konto tom`);
-    await page.addStyleTag({ content: '.bunn-nav{visibility:hidden!important}' });
-    await page.locator('#dinsideCta').screenshot({ path: path.join(OUT, `dinside-publiser-feil-${bredde}.png`) });
-    sjekk(errs.length === 0, `${bredde} Din side publiser: JS-feil ${errs.join(' | ')}`); await page.close(); }
+      return { y: a.bottom + scrollY - 10, h: b.bottom - a.bottom + 30 }; });
+    await page.screenshot({ path: path.join(OUT, `konto-bunn-${bredde}.png`), clip: { x: 0, y: r.y, width: bredde, height: r.h }, fullPage: true });
+    sjekk(errs.length === 0, `${bredde} bunn: JS-feil ${errs.join(' | ')}`); await page.close(); }
+  { // Ikke live (Gratis): ingen publiseringsblokk i Konto (fjernet 27.11.2026) — kortet er som når siden er live
+    const { page, errs } = await side(bredde, { scen: 'gratis-0', billing: () => ({ ...SCEN['gratis-0'](), page_status: 'forhandsvist' }) });
+    const t = await page.$eval('#kontoAbonnement', e => e.innerText);
+    const pub = t.match(/ikke publisert|Fullfør siden din|Se forhåndsvisning|tar ikke imot bookinger|Publiser/i);
+    sjekk(!pub && !(await page.$('#kontoAvpub, #kontoFullfor, #kontoMikro')), `${bredde} ikke live: ingen publiseringsblokk i Konto${pub ? ' («' + pub[0] + '»)' : ''}`);
+    sjekk(errs.length === 0, `${bredde} ikke live: JS-feil ${errs.join(' | ')}`); await page.close(); }
   { // opprett-passord.html?bytt=1 → «Lag nytt passord»; uten bytt → «Lag et passord»
     for (const [q, h] of [['?bytt=1', 'Lag nytt passord'], ['', 'Lag et passord']]) {
       const page = await browser.newPage({ viewport: { width: bredde, height: 800 }, deviceScaleFactor: 2 });
@@ -352,7 +334,7 @@ for (const bredde of [320, 375]) { // Passord: ikke satt / satt / glemt-lenken, 
 { // Gammel backend uten sendt_maaned → intet tall; needs_attention → prikk ved overskriften
   const { page, errs } = await side(375, { scen: 'gratis-0', smsTall: false, billing: () => ({ ...SCEN['gratis-0'](), needs_attention: true }) });
   sjekk(await tekst(page, '#smsMaanedTall') === '' , 'SMS-logg uten sendt_maaned: intet tall');
-  sjekk(await vis(page, '#kontoAccDot') && await vis(page, '#kontoAbonnement .kt-h #kontoAccDot'), 'needs_attention: prikk ved «Abonnement og publisering»');
+  sjekk(await vis(page, '#kontoAccDot') && await vis(page, '#kontoAbonnement .kt-h #kontoAccDot'), 'needs_attention: prikk ved «Abonnementering»');
   sjekk(errs.length === 0, `gammel backend: JS-feil ${errs.join(' | ')}`);
   await page.close();
 }

@@ -6,7 +6,7 @@
 // opprett-passord og #dinside blir en tom chrome-error-flate; se
 // memory/reference_dashboard_playwright_mock.md).
 //
-// To varianter: 'forhandsvist' (publiser-CTA synlig) og 'live' (grønn status + lenke).
+// To varianter: 'forhandsvist' (ikke live — ingen publiser-CTA siden 27.11.2026) og 'live' (grønn status + lenke).
 // Bygg videre på denne for COMMIT C–G — den er MENT å gjenbrukes, ikke være en engangs.
 //
 //   node tools/render/dinside.mjs
@@ -51,8 +51,8 @@ const IMAGES = [
   { id: 2, slot: 'galleri', url: '/no/images/layout-profil.webp',   sort_order: 1 },
   { id: 3, slot: 'galleri', url: '/no/images/layout-hero.webp',     sort_order: 2 },
 ];
-// Sjekkliste-data: bilder(3)✓ · tjenester(pris)✓ · åpningstider✓ · profil(bio/spes/adr tomme)✗ ·
-// publiser(forhandsvist)✗ → 3/5. Viser både fullførte (hake+gjennomstreking) og åpne rader.
+// Sjekkliste-data: bilder(3)✓ · tjenester(pris)✓ · åpningstider✓ · profil(bio/spes/adr tomme)✗ → 3/4
+// («Publiser siden»-raden er fjernet 27.11.2026). Viser både fullførte (hake+gjennomstreking) og åpne rader.
 const SERVICES = { hoved: [ { name: 'Herreklipp', price: 350, min: 30 }, { name: 'Skjeggtrim', price: 200, min: 20 } ], tillegg: [] };
 const HOURS = [1,2,3,4,5].map(wd => ({ weekday: wd, is_closed: false, open_time: '10:00', close_time: '18:00', breaks: [] }))
   .concat([6,0].map(wd => ({ weekday: wd, is_closed: true, open_time: '10:00', close_time: '18:00', breaks: [] })));
@@ -64,7 +64,7 @@ function billing(variant) {
     needs_attention: false, attention_grunn: null, plan: 'vekst', effective_plan: 'vekst',
     effective_plan_grunn: 'trial_vindu', cancel_at_period_end: false, current_period_end: null, trial_ends_at: null,
   };
-  return { // forhandsvist — publiser-CTA synlig, Gratis (prismodell 09.10: full billing-shape)
+  return { // forhandsvist — ikke live, Gratis (prismodell 09.10: full billing-shape)
     subscription_status: null, page_status: 'forhandsvist',
     trial_start_at: null, trial_days_left: null, needs_attention: false, attention_grunn: null,
     plan: null, effective_plan: 'basis', effective_plan_grunn: 'gratis',
@@ -104,7 +104,6 @@ function makeRouter(variant) {
     if (p === '/api/dashboard/services')        return json(SERVICES);
     if (p === '/api/dashboard/hours')           return json(HOURS);
     if (p === '/api/dashboard/billing/status')  return json(billing(variant));
-    if (p === '/api/dashboard/page-status')      return json({ ok: true, ...billing('forhandsvist'), page_status: 'live' }); // PUT (publiser) — full shape, Gratis
     if (p === '/api/dashboard/preview')         return route.fulfill({ status: 200, contentType: 'text/html', body: PREVIEW_HTML });
     // Alt annet init rører (stats/bookings/winback/attribution/settings/google/…):
     // liste-formede endepunkt → [], resten → {}. Init må ikke krasje.
@@ -133,9 +132,7 @@ function maal(page) {
       barSynlig:   vis(bar),
       barStatisk:  pos ? (pos !== 'fixed' && pos !== 'sticky') : null,
       xSynlig:     vis(document.querySelector('#fokusX')),
-      ctaSynlig:   vis(document.querySelector('#dinsideCta')),
       ideaSynlig:  vis(document.querySelector('.ideacard')),
-      publiser:    (document.querySelector('#fokusPubliser') || {}).textContent || '',
       utforsk:     (document.querySelector('#fokusUtforsk') || {}).textContent || '',
       previewTegn: previewLen,
       accsTop:     top(document.querySelector('.side-accs')),
@@ -158,14 +155,14 @@ function maalPill(page) {
       inlineBorte:    document.querySelector('#dinsideSjekkliste') === null,
       fokus:          document.body.classList.contains('fokus'),
       navSynlig:      (innerWidth<=719 ? vis(document.querySelector('.bunn-nav')) : vis(document.querySelector('nav.nav'))),
-      ctaSynlig:      vis(document.querySelector('#dinsideCta')),
+      publiserKnapper: [...document.querySelectorAll('#design button, #sjekkPopover button')].filter(b => /Publiser/.test(b.textContent)).length,
       fokusBar:       vis(document.querySelector('#fokusBar')),
     };
   });
 }
 
 // Tre tilstander per bredde: fokus (UTEN pill, fokus-bar) · vanlig m/pill · popover åpen (vanlig).
-// Pill KUN i vanlig. forhandsvist mock-barber (3/5: bilder+tjenester+tider ✓, profil+publiser ✗).
+// Pill KUN i vanlig. forhandsvist mock-barber (3/4: bilder+tjenester+tider ✓, profil ✗).
 const rad = [];
 for (const bredde of [320, 402, 1280]) {
   // ── Tilstand 1: FOKUS uten pill — fokus-baren fra C eier CTA-en ──────────────────
@@ -206,7 +203,7 @@ for (const bredde of [320, 402, 1280]) {
     // Radklikk lukker popover FØR navigasjon (rad 4 = profil)
     await page.click('#sjekkPopover .sjekk-rad[data-act="profil"]'); await page.waitForTimeout(300);
     const etterRad = await page.evaluate(() => (document.querySelector('#sjekkPopover') || {}).hidden);
-    rad.push({ tilstand: 'vanlig', bredde, fokus: m.fokus, nav: m.navSynlig, cta: m.ctaSynlig,
+    rad.push({ tilstand: 'vanlig', bredde, fokus: m.fokus, nav: m.navSynlig, publiserKnapper: m.publiserKnapper,
       pill: m.pillSynlig, ring: m.ring, popFør: m.popoverSkjult, popEtter: panel.popoverSynlig,
       pRader: panel.pRader, pDone: panel.pDone, pTeller: panel.pTeller, radLukker: etterRad === true,
       jsfeil: errs.length ? errs.join('; ') : 'ingen' });
@@ -218,36 +215,15 @@ const fk = rad.filter(r => r.tilstand === 'fokus');
 const vn = rad.filter(r => r.tilstand === 'vanlig');
 const okFokus = fk.every(r => r.fokus && r.navSkjult && r.pillSkjult && r.fokusBar
   && r.inlineBorte && r.jsfeil === 'ingen');
-const okVanlig = vn.every(r => !r.fokus && r.nav && r.cta && r.pill && r.ring === '3/5'
-  && r.popFør === true && r.popEtter === true && r.pRader === 5 && r.pDone === 3 && r.pTeller === '3 av 5'
+const okVanlig = vn.every(r => !r.fokus && r.nav && r.publiserKnapper === 0 && r.pill && r.ring === '3/4'
+  && r.popFør === true && r.popEtter === true && r.pRader === 4 && r.pDone === 3 && r.pTeller === '3 av 4'
   && r.radLukker === true && r.jsfeil === 'ingen');
 sjekk(okFokus, '\nFokus OK (INGEN pill, fokus-bar synlig, nav skjult, inline-container borte)');
-sjekk(okVanlig, 'Vanlig OK (pill 3/5 + nav+CTA synlig, klikk → popover 3/5, radklikk lukker)');
+sjekk(okVanlig, 'Vanlig OK (pill 3/4 + nav synlig, ingen «Publiser»-knapp, klikk → popover 3/4, radklikk lukker)');
 
-// ── COMMIT F: suksesskort etter publisering · live-tilstand med header-lenke ─────────
+// ── COMMIT F: live-tilstand med header-lenke (suksesskortet er fjernet 27.11.2026) ─────────
 const radF = [];
 for (const bredde of [320, 402, 1280]) {
-  // Tilstand 1: publiser (forhandsvist → klikk #dinsidePubliser → PUT → suksesskort)
-  {
-    const page = await browser.newPage({ viewport: { width: bredde, height: 900 }, deviceScaleFactor: 2 });
-    const errs = []; page.on('pageerror', e => errs.push(e.message));
-    await page.route('**/api/**', makeRouter('forhandsvist'));
-    await page.goto(`http://localhost:${PORT}/no/dashboard.html#dinside`, { waitUntil: 'networkidle' });
-    await page.waitForTimeout(1600);
-    await page.click('#dinsidePubliser'); await page.waitForTimeout(600);
-    const m = await page.evaluate(() => {
-      const vis = el => { if (!el) return false; const r = el.getBoundingClientRect();
-        return getComputedStyle(el).display !== 'none' && r.width > 0 && r.height > 0; };
-      const ov = document.querySelector('#suksessOverlay');
-      return { kort: vis(ov) && !ov.hidden, tittel: (document.querySelector('#suksessTittel') || {}).textContent || '',
-        lenke: !!document.querySelector('#suksessLenke .pub-url'),
-        linjer: [...document.querySelectorAll('.suksess-linje')].map(e => e.textContent).join(' | ') };
-    });
-    await page.screenshot({ path: `${OUT}/f-suksess-${bredde}.png`, fullPage: false });
-    radF.push({ tilstand: 'suksesskort', bredde, kort: m.kort, tittel: m.tittel, lenke: m.lenke,
-      linjer: m.linjer, jsfeil: errs.length ? errs.join('; ') : 'ingen' });
-    await page.close();
-  }
   // Tilstand 2: live-tilstand med header-lenke (kort lukket) + kollisjonssjekk i headeren
   {
     const page = await browser.newPage({ viewport: { width: bredde, height: 900 }, deviceScaleFactor: 2 });
@@ -264,23 +240,18 @@ for (const bredde of [320, 402, 1280]) {
       // Header på én rad på alle bredder (Henrik 17.11): lenketeksten er synlig overalt — «/slug» på mobil, full URL på desktop.
       const lenkeEl = '#headerLenke .pub-url';
       return { headerLenke: vis(document.querySelector(lenkeEl)),
-        kortSkjult: (document.querySelector('#suksessOverlay') || {}).hidden,
         headerKlaring: klaring, bodyOverflow: document.documentElement.scrollWidth - window.innerWidth };
     });
     await page.screenshot({ path: `${OUT}/f-live-${bredde}.png`, fullPage: false, clip: { x: 0, y: 0, width: bredde, height: 220 } });
-    radF.push({ tilstand: 'live-header', bredde, headerLenke: m.headerLenke, kortSkjult: m.kortSkjult,
+    radF.push({ tilstand: 'live-header', bredde, headerLenke: m.headerLenke,
       headerKlaring: m.headerKlaring, bodyOverflow: m.bodyOverflow, jsfeil: errs.length ? errs.join('; ') : 'ingen' });
     await page.close();
   }
 }
 console.table(radF);
-const s1 = radF.filter(r => r.tilstand === 'suksesskort');
 const s2 = radF.filter(r => r.tilstand === 'live-header');
-const okKort = s1.every(r => r.kort && r.tittel === 'Siden din er klar.' && r.lenke
-  && /Legg lenka i bioen og del den på\sstory/.test(r.linjer) && /Nå får vi første booking gjennom\sden\./.test(r.linjer) && r.jsfeil === 'ingen');
-const okLive = s2.every(r => r.headerLenke && r.kortSkjult === true && r.headerKlaring > 4
+const okLive = s2.every(r => r.headerLenke && r.headerKlaring > 4
   && r.bodyOverflow <= 0 && r.jsfeil === 'ingen');
-sjekk(okKort, '\nSuksesskort OK (synlig, «Siden din er klar.», lenke, bio/story + første booking)');
-sjekk(okLive, 'Live-header OK (lenke synlig, kort skjult, ingen kollisjon/overflow)');
+sjekk(okLive, '\nLive-header OK (lenke synlig, ingen kollisjon/overflow)');
 await browser.close(); server.close();
 ferdig();   // minst én NEI -> exit 1 (fixtures/sjekk.mjs)

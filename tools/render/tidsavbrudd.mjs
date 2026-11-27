@@ -2,7 +2,7 @@
 // Et kall som HENGER (route som aldri svarer) spoles fram med page.clock, uten å vente i sanntid.
 // Verifiserer at knappen går tilbake til normal tilstand og at «Fikk ikke kontakt. Prøv igjen.» vises:
 //   1. Vekst: påminnelse-bryteren (lagreSmsInnstilling via api.saveSettings) — rulles tilbake, feiltekst.
-//   2. Konto: «Publiser bookingsiden» (PUT /page-status) — knappen tilbake, feiltekst i #pubErr.
+//   (2. Konto-publisering er fjernet 27.11.2026: «Fullfør siden din» åpner Din side og har ingen nettverkskall.)
 //   3. Tjenester: «Lagre» i betalingsarket (#tjArk) — knappen tilbake, arket står, kontaktteksten i arket.
 //   4. Lojalitet: «Legg til» (api.loyaltyOptIn) — knappen tilbake, toast med kontaktteksten.
 //   5. «Lag story»: preview som henger / svarer 500 / svarer 403 → #storyFeil; ekte story-HTML → ingen feil.
@@ -102,26 +102,6 @@ for(const w of [320,375]){
     const t=await synligTekst(page,'#paamErr'); if(t!==KONTAKT) f.push(`feiltekst «${t}»`);
     await bilde(page,`paam-${w}`,'#accPaam');
     push(`${w} påminnelse-bryter`,f,errs); await page.close();
-  }
-  // 2. Publiser bookingsiden (Konto)
-  {
-    const {page,errs}=await nySide(w,{billing:base({page_status:'forhandsvist'}),heng:[['PUT','/api/dashboard/page-status']]});
-    await page.$eval('button[data-panel="abonnement"]',b=>b.click()); await page.waitForTimeout(300);
-    const orig=await page.$eval('#kontoAksjon',b=>b.textContent.trim());
-    await page.click('#kontoAksjon'); await spol(page,5000);
-    const f=[];
-    const under=await page.$eval('#kontoAksjon',b=>b.textContent.trim());
-    if(under!=='Lagrer …') f.push(`før 15 s: «${under}»`);
-    await spol(page,11000);
-    const b=await page.$eval('#kontoAksjon',b=>({t:b.textContent.trim(),d:b.disabled}));
-    if(b.d||b.t!==orig) f.push(`knapp «${b.t}» disabled=${b.d}`);
-    const t=await synligTekst(page,'#pubErr'); if(t!==KONTAKT) f.push(`feiltekst «${t}»`);
-    // Rød som #paamErr (.sett-err) — .subcard p gjorde den grå før.
-    const farger=await page.evaluate(()=>{ const p=document.createElement('p'); p.className='sett-err'; document.body.appendChild(p);
-      const c=[getComputedStyle(document.getElementById('pubErr')).color, getComputedStyle(p).color]; p.remove(); return c; });
-    if(farger[0]!==farger[1]) f.push(`farge ${farger[0]} ≠ #paamErr ${farger[1]}`);
-    await bilde(page,`publiser-${w}`,'#kontoAbonnement');
-    push(`${w} publiser`,f,errs); await page.close();
   }
 }
 // 3. Betaling: «Lagre» i arket (siden 27.11.2026) → knappen tilbake, arket står, feilen i arket (ingen alert)

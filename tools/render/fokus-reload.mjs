@@ -1,8 +1,8 @@
 // tools/render/fokus-reload.mjs — verifiserer at fokusmodus OVERLEVER reload (COMMIT 4).
 //   node tools/render/fokus-reload.mjs
 // Full syklus i ÉN context (sessionStorage + mock-state overlever page.reload()):
-//   param → fokus → reload → fortsatt fokus → X → reload → vanlig → publiser → reload → vanlig
-// Stateful mock: PUT /page-status flipper barberen til live, så reload etter publisering gir vanlig.
+//   param → fokus → reload → fortsatt fokus → X → reload → vanlig → siden blir live → reload → vanlig
+// Stateful mock: state.live flippes av testen (publiseringen skjer i Din side-oppsettet, ikke i fokuslinja).
 
 import http from 'node:http'; import fs from 'node:fs'; import path from 'node:path';
 import { chromium } from 'playwright';
@@ -24,16 +24,14 @@ const PROFILE = { slug:'grand-barber', email:'g@b.no', hasPassword:true, name:'H
 const DESIGN  = { palette:'minimal', font:'fraunces', layout:'showcase', mode:'mork' };
 const PREVIEW = '<!DOCTYPE html><html><body style="background:#0a0a0a"></body></html>';
 
-// Stateful router per context: forhandsvist til PUT /page-status, deretter live.
-function makeStatefulRouter() {
-  const state = { live:false };
+// Stateful router per context: forhandsvist til testen setter state.live, deretter live.
+function makeStatefulRouter(state = { live:false }) {
   return route => {
     const req = route.request(); const p = new URL(req.url()).pathname;
     const json = o => route.fulfill({ status:200, contentType:'application/json', body:JSON.stringify(o) });
     if (p === '/api/dashboard/profile')       return json(PROFILE);
     if (p === '/api/dashboard/design')          return json(DESIGN);
     if (p === '/api/dashboard/preview')         return route.fulfill({ status:200, contentType:'text/html', body:PREVIEW });
-    if (p === '/api/dashboard/page-status') { if (req.method()==='PUT') state.live = true; return json(gratis({ page_status:'live' })); }   // full shape — et delvis svar avvises av erBillingShape
     if (p === '/api/dashboard/billing/status')  return json(gratis({ page_status: state.live?'live':'forhandsvist' }));
     return json(/images|bookings|recent|services|hours|stats|attribution|winback|referrals|rebooking|sms-logg/.test(p) ? [] : {});
   };
@@ -50,7 +48,8 @@ const browser = await chromium.launch();
 const rad = [];
 for (const bredde of [320, 402, 1280]) {
   const ctx = await browser.newContext({ viewport:{ width:bredde, height:900 }, deviceScaleFactor:2 });
-  await ctx.route('**/api/**', makeStatefulRouter());
+  const state = { live:false };
+  await ctx.route('**/api/**', makeStatefulRouter(state));
   const page = await ctx.newPage();
   const errs = []; page.on('pageerror', e => errs.push(e.message));
 
@@ -65,10 +64,10 @@ for (const bredde of [320, 402, 1280]) {
   await page.reload({ waitUntil:'networkidle' }); await page.waitForTimeout(1500);
   const d = await maal(page);                                  // reload → fortsatt vanlig
   await page.screenshot({ path:`${OUT}/fokusrl-vanlig-${bredde}.png`, fullPage:false });
-  // Re-inn i fokus, publiser fra fokus-baren → flagg skal ryddes, reload → vanlig
+  // Re-inn i fokus, siden blir live (publisert i Din side-oppsettet) → reload → vanlig, flagget ryddet
   await page.goto(`${U}?velkommen=1#dinside`, { waitUntil:'networkidle' }); await page.waitForTimeout(1200);
-  await page.click('#fokusPubliser',{timeout:3000}).catch(()=>{}); await page.waitForTimeout(800);
-  const e = await maal(page);                                  // publiser → fokus av + flagg ryddet
+  const e = await maal(page);                                  // fortsatt fokus før publisering
+  state.live = true;
   await page.reload({ waitUntil:'networkidle' }); await page.waitForTimeout(1500);
   const f = await maal(page);                                  // reload → vanlig (live)
   await page.screenshot({ path:`${OUT}/fokusrl-publisert-${bredde}.png`, fullPage:false });
@@ -78,14 +77,14 @@ for (const bredde of [320, 402, 1280]) {
     B_reloadFokus:     b.fokus && b.flag==='1' && !b.nav && b.url==='#dinside',   // ← selve bugfixen
     C_XVanlig:         !c.fokus && c.flag===null && c.nav,
     D_reloadVanlig:    !d.fokus && d.flag===null && d.nav,
-    E_publiserFokusAv: !e.fokus && e.flag===null,
+    E_fokusForLive:    e.fokus && e.flag==='1',
     F_reloadVanlig:    !f.fokus && f.flag===null && f.nav,
     jsfeil: errs.length ? errs.join('; ') : 'ingen' });
   await ctx.close();
 }
 console.table(rad);
-const ok = rad.every(r => r.A_paramFokus && r.B_reloadFokus && r.C_XVanlig && r.D_reloadVanlig && r.E_publiserFokusAv && r.F_reloadVanlig && r.jsfeil==='ingen');
-sjekk(ok, '\nFokus overlever reload · X/publiser rydder · reload→vanlig · ingen JS-feil');
+const ok = rad.every(r => r.A_paramFokus && r.B_reloadFokus && r.C_XVanlig && r.D_reloadVanlig && r.E_fokusForLive && r.F_reloadVanlig && r.jsfeil==='ingen');
+sjekk(ok, '\nFokus overlever reload · X og live rydder · reload→vanlig · ingen JS-feil');
 
 // ── Auto-reload etter deploy MENS fokusmodus er på (22.10.2026) ─────────────────────────────────────────────
 // Dashbordet laster seg selv inn på nytt når det kommer i forgrunnen og HEAD /no/dashboard.html har ny ETag, og
