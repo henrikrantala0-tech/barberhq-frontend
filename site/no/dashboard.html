@@ -1081,7 +1081,7 @@
      ingen max-width: den fyller kolonnen (uten det ble det luft rundt en kappet stolpe). */
   .mcol{flex:1 1 0;max-width:96px;display:flex;flex-direction:column;align-items:center;justify-content:flex-end;gap:6px;min-width:0}
   .mval{font-size:12px;font-weight:700;font-variant-numeric:tabular-nums;color:var(--ink-2);letter-spacing:-.01em}
-  .mbar{width:100%}   /* fyll, radius, 0-strek og rekord-glød kommer fra den FELLES .stolpe (stolpeHtml) — samme som Oversikt */ /* transition:height fjernet — Vekst-stolpene animerer ikke (innerHTML-rebuild), men den persistente height-transisjonen ga samme iOS-repaint-feil ved temabytte som .cbar-bar */
+  .mbar{width:100%}   /* fyll, radius, 0-strek, rekord-glød og entré kommer fra den FELLES .stolpe (stolpeHtml/stolpeEntre) — samme som Oversikt */
   .mlbl{font-size:11px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em}
   /* Gull-tallet gjenbruker .rekord-gull (samme gradient + glød som Oversikts rekord-KPI) — se renderMonthChart */
   /* ----- Stolpediagram (omsetning) ----- */
@@ -1094,14 +1094,14 @@
   .chartbars.nmnd{gap:2px}
   .cbar-col{flex:1;display:flex;flex-direction:column;align-items:center;gap:9px;min-width:0}
   .cbar-spor{width:100%;height:110px;display:flex;align-items:flex-end;justify-content:center}
-  /* Entré-/vekst-animasjonen skalerer med transform (scaleY), ikke height — height-transition ga
-     hvert stolpe-lag en iOS-repaint-feil ved temabytte. transform-origin:bottom → vokser opp fra aksen. */
-  .cbar-bar{width:100%;max-width:56px;transform-origin:bottom;transition:transform .25s ease}   /* fyll/radius/0-strek: .stolpe */
+  /* Entréen (stolpeEntre) skalerer med transform (scaleY), ikke height — height-transition ga hvert stolpe-lag en
+     iOS-repaint-feil ved temabytte. transform-origin:bottom (på .stolpe) → vokser opp fra aksen. */
+  .cbar-bar{width:100%;max-width:56px}   /* fyll/radius/0-strek/entré: .stolpe */
   /* ══ FELLES STOLPE (Henrik 17.11) — Oversikt (#chartBars) OG Vekst-fanens månedsdiagram (#trend) bruker samme
      renderer (stolpeHtml) og samme klasse. Grunnfarge fra colorForRatio + myk 3D (under), radius 4 i toppen / 0 i bunnen,
      0-verdi = 3px flat strek i --ov-null (#262626 mørk), rekord = gull med DEMPET glød (bare den stolpen). Høyden og
      etikettene (tall over / ukedag under) styres per fane. Vakt: tools/render/stolper-felles.mjs. ══ */
-  .stolpe{border-radius:4px 4px 0 0;background:var(--stolpe-farge)}
+  .stolpe{border-radius:4px 4px 0 0;background:var(--stolpe-farge);transform-origin:bottom}
   /* Dybde — «myk 3D» (Henrik 27.11.2026, valgt blant A–G): vannrett gradient i stolpens EGEN farge — kantene 75 % farge +
      svart, midten 75 % farge + hvitt — blandet fra grunnfargen (--stolpe-farge) med color-mix, aldri en hardkodet farge per
      stolpe. Indre skygger (lys venstre, mørk høyre) og en myk skygge mot bunnlinja. Gjelder også gullstolpen (gløden står).
@@ -1171,7 +1171,7 @@
   .rekord-puls{animation:rekordPuls .7s ease-out 1}
   /* Reduced-motion (lag 3+4): nøytraliser HELE diagrammets bevegelse + rekord-puls (gull-farge står — ikke bevegelse) */
   @media (prefers-reduced-motion: reduce){
-    .cbar-bar{transition:none}
+    .stolpe,.mval{transition:none!important;transform:none!important;opacity:1!important}
     .cbar-col.active .cbar-bar{animation:none}
     .chartbars.scanning .cbar-col{transition:none}
     .rekord-puls{animation:none}
@@ -4121,9 +4121,8 @@ function renderBarChart(data,period){
     return '<div class="cbar-col'+(idag?' idag':'')+'"><div class="cbar-spor">'+stolpeHtml({ ratio:d.kr/max, hoyde:h, klasse:'cbar-bar' })+'</div><div class="'+lblCls+'">'+lbl+'</div></div>';
   }).join("");
   chartDays=data; clearSel(); // lag 2: HUD leser herfra; nullstill til default ved (re)render
-  var entering=!chartEntered; // lag 3: entré kun første render
-  if(!prefersReduced()) animateBars(entering); // reduced → hopp: stolper står allerede på target
-  if(entering) chartEntered=true; // sett uansett så entré aldri re-kjører (pill/tab)
+  stolpeEntre(cb);      // felles entré: hver (re)tegning — også periodebytte og tilbake til fanen — når diagrammet synes
+  chartEntered=true;    // KPI-tell-opp (loadOversikt) bare første gang
 }
 // ----- Diagram-HUD + magnetisk touch (lag 2, additivt overlay — rører ikke lag 1) -----
 var chartDays=[], selIdx=-1;
@@ -4199,32 +4198,50 @@ function initChartTouch(){
   });
   _chartBars.addEventListener('pointercancel',function(){ scanning=false; tapClearIdx=-1; });
 }
-// ----- Entré-animasjon + tell-opp (lag 3, additivt — via height, ikke transform → ingen konflikt med lag 2-løft) -----
-var chartEntered=false;
+// ----- Entré-animasjon (FELLES for Oversikt #chartBars og Vekst #trend, Henrik 27.11.2026) + tell-opp -----
+var chartEntered=false;   // KPI-tell-opp på Oversikt bare første gang (loadOversikt)
 var rekordPulsed=false; // lag 4: puls kun første gang rekord-tilstanden vises
-var UNIFORM_MS=150, OUT_QUART='cubic-bezier(.165,.84,.44,1)';
-// Entré (valgt variant D): stagger-step mellom stolper + stolpe-varighet, med hardt tak på total entré-tid.
-var ENTRY_STEP=95, ENTRY_RISE=350, ENTRY_MAX_TOTAL=3000; // (N-1)*step + rise ≤ 3000ms → 90-heatmap kappes, sprenger aldri
 function prefersReduced(){ return !!(window.matchMedia && matchMedia('(prefers-reduced-motion: reduce)').matches); }
-function animateBars(entering){
-  // Alt C: entré-/vekst-animasjonen bruker transform: scaleY (origin bottom), IKKE height.
-  // Høyden står fast (satt i renderBarChart-markupen); vi skalerer bare 0→1 opp fra aksen.
-  // height-transition ga hvert stolpe-lag en iOS-repaint-feil ved temabytte; transform gjør ikke det.
-  var bars=_chartBars.querySelectorAll('.cbar-bar');
-  for(var j=0;j<bars.length;j++){ bars[j].style.transition='none'; bars[j].style.transform='scaleY(0)'; } // født på full høyde → snap til skala 0
-  void _chartBars.offsetHeight; // tving reflow (skala 0 males før flipp)
-  var N=bars.length;
-  // Clamp: hvis (N-1)*step + rise ville overstige taket, skaleres steppet ned så total = taket.
-  // Mye stagger på få stolper (tydelig kaskade), lite på mange (90-heatmap holder seg ≤ ENTRY_MAX_TOTAL).
-  var step=(N>1 && (N-1)*ENTRY_STEP+ENTRY_RISE>ENTRY_MAX_TOTAL) ? Math.floor((ENTRY_MAX_TOTAL-ENTRY_RISE)/(N-1)) : ENTRY_STEP;
-  for(var i=0;i<bars.length;i++){
-    var b=bars[i];
-    b.style.transitionProperty='transform';
-    b.style.transitionTimingFunction=OUT_QUART;
-    b.style.transitionDuration=(entering?ENTRY_RISE:UNIFORM_MS)+'ms';
-    b.style.transitionDelay=(entering? i*step : 0)+'ms'; // stagger kun ved entré (venstre→høyre)
-    b.style.transform='scaleY(1)'; // flipp → transition kjører scaleY 0→1
+// Stolpene vokser opp fra bunnlinja én etter én: scaleY 0→1 (origin bottom), 700 ms, cubic-bezier(.2,.8,.2,1), 60 ms mellom.
+// Tallene over stolpene (.mval, Vekst) toner inn når stolpen er oppe. Bare transform og opacity (jevnt på iPhone).
+// Starter når diagrammet kommer til syne (IntersectionObserver) — ikke ved lasting; på mobil ligger det ofte under bretten.
+// Kalles ved HVER tegning: periodebytte på Oversikt og tilbake til fanen (switchPanel laster og tegner på nytt) kjører den
+// igjen. Skjult fane (display:none) skjærer aldri → venter til fanen vises. Reduced motion: ferdige stolper, ingen animasjon.
+var STOLPE_MS=700, STOLPE_STEG=60, STOLPE_KURVE='cubic-bezier(.2,.8,.2,1)', STOLPE_TALL_MS=250;
+var _stolpeIO=null;
+function stolpeEntre(beholder){
+  if(!beholder) return;
+  var bars=beholder.querySelectorAll('.stolpe'), tall=beholder.querySelectorAll('.mval');
+  clearTimeout(beholder._stolpeRydd);
+  if(prefersReduced() || !('IntersectionObserver' in window)){ beholder._stolpeVenter=false; return; }   // står ferdige
+  for(var i=0;i<bars.length;i++){ bars[i].style.transition='none'; bars[i].style.transform='scaleY(0)'; }
+  for(var j=0;j<tall.length;j++){ tall[j].style.transition='none'; tall[j].style.opacity='0'; }
+  beholder._stolpeVenter=true;
+  if(!_stolpeIO) _stolpeIO=new IntersectionObserver(function(entries){
+    entries.forEach(function(e){
+      if(!e.isIntersecting || !e.target._stolpeVenter) return;
+      _stolpeIO.unobserve(e.target); stolpeSpill(e.target);
+    });
+  },{threshold:0.3});
+  _stolpeIO.unobserve(beholder); _stolpeIO.observe(beholder);   // ny observe → nytt førstesvar, også for samme element
+}
+function stolpeSpill(beholder){
+  beholder._stolpeVenter=false;
+  void beholder.offsetHeight;   // skala 0 males før flippen
+  var cols=beholder.children, n=0;
+  for(var i=0;i<cols.length;i++){
+    var bar=cols[i].querySelector('.stolpe'); if(!bar) continue;
+    var forsink=n*STOLPE_STEG; n++;
+    bar.style.transition='transform '+STOLPE_MS+'ms '+STOLPE_KURVE+' '+forsink+'ms';
+    bar.style.transform='scaleY(1)';
+    var tall=cols[i].querySelector('.mval');
+    // will-change holder tallets eget lag til ryddingen — ellers gir hver ferdig inntoning (opacity → 1) en ny layout.
+    if(tall){ tall.style.willChange='opacity'; tall.style.transition='opacity '+STOLPE_TALL_MS+'ms ease '+(forsink+STOLPE_MS)+'ms'; tall.style.opacity='1'; }
   }
+  // Rydd inline-stilene etterpå, så lag 2 (løft ved trykk på Oversikt) ikke arver forsinkelsen.
+  beholder._stolpeRydd=setTimeout(function(){
+    beholder.querySelectorAll('.stolpe,.mval').forEach(function(el){ el.style.transition=''; el.style.transform=''; el.style.opacity=''; el.style.willChange=''; });
+  }, Math.max(0,n-1)*STOLPE_STEG+STOLPE_MS+STOLPE_TALL_MS+50);
 }
 function countUp(el,target,ms,fmt){
   if(!el)return;
@@ -5355,6 +5372,7 @@ function renderMonthChart(stats){
       +stolpeHtml({ ratio:c/max, hoyde:hgt, rekord:isRecord, klasse:'mbar' })   // FELLES med Oversikt
       +'<div class="mlbl">'+monthLbl(m.ym).slice(0,3)+'</div></div>';
   }).join("");
+  stolpeEntre(el);   // felles entré (samme som Oversikt) — starter når diagrammet kommer til syne
 }
 
 async function loadVekst(){
