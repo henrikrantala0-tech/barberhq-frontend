@@ -74,6 +74,8 @@
 
   function $(s, r) { return (r || document).querySelector(s); }
   function $$(s, r) { return Array.prototype.slice.call((r || document).querySelectorAll(s)); }
+  // Pil-ikon: dashbordets ikonHtml (definisjonen er site/no/ikoner.svg). Faller til ingenting uten dashbordet.
+  function ik(navn) { return typeof window.ikonHtml === 'function' ? window.ikonHtml(navn) : ''; }
   function lagEl(tag, attrs, tekst) {
     var e = document.createElement(tag);
     if (attrs) Object.keys(attrs).forEach(function (k) {
@@ -253,14 +255,14 @@
           // automatisk); side som ikke er live «← Tilbake» + «Publiser siden».
           '<div class="dv2-bar" id="dv2Bar"><div class="dv2-bar-inn">' +
             '<p class="dv2-status" id="dv2Status" role="status" aria-live="polite"></p>' +
-            '<div class="dv2-bar-rad"><button type="button" class="dv2-btn" id="dv2Tilbake">← Tilbake</button>' +
-              '<button type="button" class="dv2-btn prim hoved" id="dv2Neste">Neste →</button>' +
+            '<div class="dv2-bar-rad"><button type="button" class="dv2-btn" id="dv2Tilbake">' + ik('pil-v') + 'Tilbake</button>' +
+              '<button type="button" class="dv2-btn prim hoved" id="dv2Neste">Neste' + ik('pil-h') + '</button>' +
               '<button type="button" class="dv2-btn prim hoved" id="dv2Publiser" hidden>Publiser siden</button></div>' +
             '<p class="dv2-hjelpelinje" id="dv2Hjelpelinje" hidden>Når du publiserer, går siden live og kundene kan booke.</p>' +
           '</div></div>' +
         '</div>' +
         '<aside class="dv2-pv" id="dv2Pv" aria-label="Forhåndsvisning av siden din">' +
-          '<div class="dv2-pv-topp"><button type="button" class="dv2-btn liten dv2-pv-lukk" id="dv2PvLukk">← Tilbake</button><span class="dv2-pv-tittel">Forhåndsvisning</span>' +
+          '<div class="dv2-pv-topp"><button type="button" class="dv2-btn liten dv2-pv-lukk" id="dv2PvLukk">' + ik('pil-v') + 'Tilbake</button><span class="dv2-pv-tittel">Forhåndsvisning</span>' +
             '<div class="dv2-visning" role="group" aria-label="Hva skal vises"><button type="button" data-side="forside" aria-pressed="true">Forside</button><button type="button" data-side="book" aria-pressed="false">Bookingside</button></div></div>' +
           '<div class="dv2-ramme" id="dv2Ramme"><iframe id="dv2Iframe" title="Forhåndsvisning av siden din" sandbox="allow-scripts"></iframe></div>' +
         '</aside>' +
@@ -1077,11 +1079,19 @@
       var v = lagEl('div', { class: 'dv2-verktoy' });
       if (valgt) {
         var idx = g.indexOf(valgt);
-        v.appendChild(lagEl('p', null, 'Bilde ' + (idx + 1) + ' av ' + n + ' er valgt. Rekkefølgen er slik kunden ser den, rad for rad.'));
+        v.appendChild(lagEl('p', null, 'Rekkefølgen er slik kunden ser den, rad for rad.'));
+        // Rekkefølge (27.11.2026): «Rekkefølge» + [←] «2 av 5» [→] — flytter det valgte bildet én plass i galleriet (flytt).
+        // Bare med to eller flere bilder. Første bilde: venstre av; siste: høyre av.
+        if (n > 1) {
+          var rk = lagEl('div', { class: 'dv2-rekkefolge' });
+          rk.appendChild(lagEl('span', { class: 'dv2-etikett', id: 'dv2RekkeEtikett' }, 'Rekkefølge'));
+          var rr = lagEl('div', { class: 'dv2-rekke-rad', role: 'group', 'aria-labelledby': 'dv2RekkeEtikett' });
+          var tidl = lagEl('button', { type: 'button', class: 'dv2-btn dv2-ikonknapp', 'data-h': 'tidligere', 'aria-label': 'Flytt bildet tidligere' }); tidl.innerHTML = ik('pil-v'); tidl.disabled = idx === 0;
+          var sen = lagEl('button', { type: 'button', class: 'dv2-btn dv2-ikonknapp', 'data-h': 'senere', 'aria-label': 'Flytt bildet senere' }); sen.innerHTML = ik('pil-h'); sen.disabled = idx === n - 1;
+          rr.appendChild(tidl); rr.appendChild(lagEl('span', { class: 'dv2-rekke-pos', 'aria-live': 'polite' }, (idx + 1) + ' av ' + n)); rr.appendChild(sen);
+          rk.appendChild(rr); v.appendChild(rk);
+        }
         var hh = lagEl('div', { class: 'dv2-handl' });
-        var tidl = lagEl('button', { type: 'button', class: 'dv2-btn liten', 'data-h': 'tidligere' }, '← Tidligere'); tidl.disabled = idx === 0;
-        var sen = lagEl('button', { type: 'button', class: 'dv2-btn liten', 'data-h': 'senere' }, 'Senere →'); sen.disabled = idx === n - 1;
-        hh.appendChild(tidl); hh.appendChild(sen);
         hh.appendChild(lagEl('button', { type: 'button', class: 'dv2-btn liten', 'data-h': 'beskjaer', 'data-id': valgt.id }, 'Beskjær'));
         hh.appendChild(lagEl('button', { type: 'button', class: 'dv2-btn liten farlig', 'data-h': 'slett', 'data-id': valgt.id }, 'Slett'));
         v.appendChild(hh);

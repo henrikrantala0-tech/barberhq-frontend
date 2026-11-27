@@ -196,6 +196,14 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 .consent-note{font-size:13px;line-height:1.5;color:#9a9a9a;text-align:center;margin-top:12px}
 .consent-note a{color:#4d8bff;text-decoration:underline}
 .consent-note a:hover{text-decoration:none}
+  /* ── Pil- og chevron-ikoner (27.11.2026) ── ÉN definisjon: site/no/ikoner.svg (<symbol> pil-h / pil-v / chevron), brukt via
+     <svg class="ikon"><use href="ikoner.svg#…"></use></svg> — markup fra JS via ikonHtml(). Ingen tekstpiler (→ ← › ‹ ▾).
+     Pil på knapper som går videre/tilbake; chevron på rader som åpner eller folder ut (.ikon.ned = pekende ned).
+     .m-ikon på elementet: ikonet vertikalt sentrert med teksten, 6 px avstand. */
+  .ikon{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;overflow:visible}
+  .ikon.ned{transform:rotate(90deg)}
+  .m-ikon{display:inline-flex;align-items:center;gap:6px}
+  .m-ikon[hidden]{display:none}
 </style>
 </head>
 <body>
@@ -203,7 +211,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
 <nav class="nav" id="nav">
   <div class="nav-wrap">
     <a class='logo' href='/no/' aria-label='BarberHQ'><img src='logo/barberhq-ordmerke-mork-transparent.svg' alt='BarberHQ' width='107' height='22'></a>
-    <a href='/no/' style='color:#bdbdbd;font-size:14.5px;font-weight:500;text-decoration:none'>&larr; Tilbake</a>
+    <a class='m-ikon' href='/no/' style='color:#bdbdbd;font-size:14.5px;font-weight:500;text-decoration:none'><svg class="ikon" aria-hidden="true" focusable="false"><use href="ikoner.svg#pil-v"></use></svg>Tilbake</a>
   </div>
 </nav>
 <header class="ob-hero">
@@ -216,7 +224,7 @@ a:focus-visible,button:focus-visible,[tabindex]:focus-visible{outline:2px solid 
     <div class="field"><label for="o-name">Navn</label><input type="text" id="o-name" autocomplete="name" placeholder="Ditt navn"></div>
     <div class="field"><label for="o-shop">Navn på salongen</label><input type="text" id="o-shop" autocomplete="organization" placeholder="Blir navnet på siden din" maxlength="100"></div>
     <div class="field"><label for="o-email">E-post</label><input type="email" id="o-email" autocomplete="email" inputmode="email" placeholder="E-posten du logger inn med"></div>
-    <button type="button" class="btn btn-fill ob-submit" onclick="submitOb()">Neste &rarr;</button>
+    <button type="button" class="btn btn-fill ob-submit m-ikon" onclick="submitOb()">Neste<svg class="ikon" aria-hidden="true" focusable="false"><use href="ikoner.svg#pil-h"></use></svg></button>
   </div>
   <div class="ob-card ob-step2" id="obStep2">
     <div class="stepind"><span class="d"></span><span class="d on"></span></div>

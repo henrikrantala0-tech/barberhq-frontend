@@ -33,7 +33,7 @@ body.sm-v2 #design .ideacard{display:none!important}   /* v2: «Ideer & ønsker�
 .dv2-lasting.feil{color:var(--bad)}
 
 /* ── Knapper ─────────────────────────────────────────────────────────────── */
-.dv2-btn{appearance:none;font:inherit;font-weight:600;font-size:var(--dv2-tekst);min-height:var(--dv2-trykk);padding:0 var(--dv2-s2);border-radius:var(--dv2-radius);cursor:pointer;border:1px solid var(--line-2);background:transparent;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:var(--dv2-s1);line-height:1.2}
+.dv2-btn{appearance:none;font:inherit;font-weight:600;font-size:var(--dv2-tekst);min-height:var(--dv2-trykk);padding:0 var(--dv2-s2);border-radius:var(--dv2-radius);cursor:pointer;border:1px solid var(--line-2);background:transparent;color:var(--ink);display:inline-flex;align-items:center;justify-content:center;gap:6px;line-height:1.2}   /* 6 px = avstanden til pil-ikonet (.ikon) */
 .dv2-btn:hover{border-color:var(--ink)}
 /* Ringen KUN ved tastaturnavigering — html.tastatur settes av dashbordets <head>-skript (Tab/piltaster), fjernes ved
    trykk/klikk. Skrivefelt har kantfargen sin; tabindex="-1" (overskrifter koden fokuserer) får ingen ring. */
@@ -150,6 +150,11 @@ body.fokus #dinsideV2 .fld input,body.fokus #dinsideV2 .fld textarea{scroll-marg
 .dv2-verktoy{margin-top:var(--dv2-s2)}
 .dv2-verktoy p{margin:0;font-size:var(--dv2-liten);color:var(--mut);line-height:1.6}
 .dv2-verktoy .dv2-handl{margin-top:var(--dv2-s2)}
+/* Rekkefølge (Bilder): «Rekkefølge» + kvadratiske ikonknapper (44×44, samme ramme som .dv2-btn) rundt «2 av 5». */
+.dv2-rekkefolge{margin-top:var(--dv2-s2)}
+.dv2-rekke-rad{display:flex;align-items:center;gap:var(--dv2-s15)}
+.dv2-ikonknapp{width:var(--dv2-trykk);height:var(--dv2-trykk);min-height:var(--dv2-trykk);padding:0;flex:none}
+.dv2-rekke-pos{font-size:14px;color:var(--mut);min-width:4.5em;text-align:center;font-variant-numeric:tabular-nums}
 .dv2-tomt{padding:var(--dv2-s4) var(--dv2-s2);text-align:center;color:var(--mut);font-size:var(--dv2-liten);background:var(--surface);border-radius:var(--dv2-radius);line-height:1.5}
 .dv2-teller-rad{display:flex;justify-content:space-between;align-items:baseline;margin:0 0 var(--dv2-s15);font-size:var(--dv2-tekst);font-weight:600}
 .dv2-teller-rad span{font-weight:400;color:var(--mut)}
@@ -248,7 +253,7 @@ body.fokus .dv2-bar-inn{max-width:calc(var(--dv2-innhold) - var(--dv2-s3) * 2);m
 .dv2-fullfor[hidden]{display:none}
 .dv2-fullfor strong{display:block;font-size:15px;font-weight:600;letter-spacing:-.01em;line-height:1.3}
 .dv2-fullfor .under{display:block;font-size:13.5px;font-weight:400;line-height:1.5;color:var(--mut);margin-top:var(--dv2-s05)}
-.dv2-fullfor .pil{font-size:1.25rem;color:var(--info)}
+.dv2-fullfor .pil{color:var(--info)}   /* chevron-ikonet (.ikon) — rad som åpner oppsettet */
 
 /* ── Dialog (ulagrede endringer, slett bilde) ────────────────────────────── */
 .dv2-dialog-bak{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.5);display:flex;align-items:center;justify-content:center;padding:16px}

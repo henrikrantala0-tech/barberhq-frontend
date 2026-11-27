@@ -351,7 +351,6 @@
   .ed-head{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:4px}
   .ed-mnd{margin:0;font-size:15px;font-weight:600;letter-spacing:-.01em}
   .ed-pil{appearance:none;flex-shrink:0;width:44px;height:44px;display:inline-flex;align-items:center;justify-content:center;border:1px solid var(--ov-seg-line);border-radius:10px;background:transparent;color:var(--ink);cursor:pointer;padding:0}
-  .ed-pil svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
   .ed-pil:disabled{opacity:.3;cursor:default}
   .ed-ukedager,.ed-grid{display:grid;grid-template-columns:repeat(7,minmax(0,1fr))}
   .ed-ukedager span{font-size:11px;font-weight:600;color:var(--mut);text-align:center;padding:8px 0 4px}
@@ -589,6 +588,15 @@
   .nav{overflow-x:auto;scrollbar-width:none}.nav::-webkit-scrollbar{display:none}
   .nav button{white-space:nowrap}
   /* Bunn-nav ikon. Aktiv fyll via --ac (settes på fanen ved aria-current). */
+  /* ── Pil- og chevron-ikoner (27.11.2026) ── ÉN definisjon: site/no/ikoner.svg (<symbol> pil-h / pil-v / chevron), brukt via
+     <svg class="ikon"><use href="ikoner.svg#…"></use></svg> — markup fra JS via ikonHtml(). Ingen tekstpiler (→ ← › ‹ ▾).
+     Pil på knapper som går videre/tilbake; chevron på rader som åpner eller folder ut (.ikon.ned = pekende ned).
+     .m-ikon på elementet: ikonet vertikalt sentrert med teksten, 6 px avstand. */
+  .ikon{width:16px;height:16px;flex:none;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round;vertical-align:middle;overflow:visible}
+  .ikon.ned{transform:rotate(90deg)}
+  .ikon.venstre{transform:rotate(180deg)}
+  .m-ikon{display:inline-flex;align-items:center;gap:6px}
+  .m-ikon[hidden]{display:none}
   .nav-ico{width:24px;height:24px;fill:none;stroke:currentColor;stroke-width:1.75;stroke-linecap:round;stroke-linejoin:round}
   /* ══ Bunn-nav (mobil ≤719px — SAMME breakpoint som dropdown byttet på). Full-bredde bar, sticky i
      bunn; faneraden capper på 480px sentrert (ellers 143px/fane på 719). Flate/kant = kort-tokens
@@ -1705,6 +1713,8 @@
      og på mørk bakgrunn forsvant den nesten helt. */
   .acc-chev{flex-shrink:0;color:var(--ink-2);font-size:16px;line-height:1;transition:transform .18s;margin-top:3px}
   .acc-head[aria-expanded="true"] .acc-chev{transform:rotate(180deg)}
+  /* Chevron-ikonet (.ikon.ned peker ned): åpen = peker opp. (Vekst-radenes egne svg.acc-chev er urørt.) */
+  .acc-head[aria-expanded="true"] .acc-chev.ikon,.kt-fold[aria-expanded="true"] .acc-chev.ikon{transform:rotate(-90deg)}
   /* Hover kun der enheten har ekte hover: på touch blir :hover hengende etter et trykk, og tittelfeltet
      fikk da en annen bakgrunn enn bryterkolonnen ved siden av. I rader med bryter (.acc-row) tones hele
      raden, så kortet aldri har to bakgrunner side om side. */
@@ -1900,7 +1910,7 @@
   .kt-fold[aria-expanded="true"] .acc-chev{transform:rotate(180deg)}
   .kt-lenke{text-decoration:none;color:inherit}
   .kt-lenke .kt-etikett{flex:1}
-  .kt-pil{color:var(--mut);font-size:20px;line-height:1}
+  .kt-pil{color:var(--mut)}
   /* «Ideer og ønsker»: dempet rad som foldes ut. Etiketten dempet (ikke en hovedhandling); pila snus når den er åpen. */
   .kt-ide>summary{list-style:none;cursor:pointer;border-top:0}   /* ikke .kt-lenke: raden er ingen lenke, den folder ut feltet */
   .kt-ide>summary:hover{background:rgba(127,127,127,.06)}
@@ -1962,7 +1972,7 @@
 </svg>
 <div class="demo-banner" id="demoBanner" role="alert">
   <strong>Forhåndsvisning.</strong> Tallene og innholdet her er eksempeldata — de viser <strong>ikke</strong> ekte aktivitet.
-  &nbsp;<a href="/no/kom-i-gang.html">Opprett din egen side →</a>
+  &nbsp;<a class="m-ikon" href="/no/kom-i-gang.html">Opprett din egen side<svg class="ikon" aria-hidden="true" focusable="false"><use href="ikoner.svg#pil-h"></use></svg></a>
 </div>
 <!-- Ny versjon av dashbordet er deployet mens siden sto åpen, og barbereren har ulagrede endringer
      (uten ulagrede endringer lastes siden bare inn på nytt). Vises av nyVersjonSjekk(). -->
@@ -2022,7 +2032,7 @@
 
     <!-- v2, siden ikke live: lenke tilbake til oppsettet (fokusmodus). Ingen publiser-knapp her — «Publiser siden» står
          på siste steg i oppsettet (autolagring, ingen lagreknapp). Synlighet: DinSideV2.tegnFullfor (fra billing). Stil: dinside-v2.css. -->
-    <button type="button" class="dv2-fullfor" id="dv2Fullfor" hidden><span><strong>Fullfør siden din</strong><span class="under">Fortsett oppsettet der du slapp.</span></span><span class="pil" aria-hidden="true">→</span></button>
+    <button type="button" class="dv2-fullfor" id="dv2Fullfor" hidden><span><strong>Fullfør siden din</strong><span class="under">Fortsett oppsettet der du slapp.</span></span><svg class="ikon pil" aria-hidden="true" focusable="false"><use href="ikoner.svg#chevron"></use></svg></button>
 
     <!-- «Få din første booking» (13.10). Vises KUN når page_status==='live' og GET /aktivering gir
          har_booking===false — feiler kallet eller mangler feltet, vises ingenting. Forsvinner av seg selv
@@ -2128,7 +2138,7 @@
            /ledige gir vis_banner=true for i dag eller i morgen (loadStoryLedigeLinje — dagens regel, uendret).
            Begge false / 404 / feil → verken lenke eller linje (stille). -->
       <p class="ovs-story-linje" id="storyLedigeLinje" hidden></p>
-      <button type="button" class="ovs-lenke" id="storyOpenOversikt" hidden>Lag story med ledige timer →</button>
+      <button type="button" class="ovs-lenke m-ikon" id="storyOpenOversikt" hidden>Lag story med ledige timer<svg class="ikon" aria-hidden="true" focusable="false"><use href="ikoner.svg#pil-h"></use></svg></button>
       <!-- Ingen ledige tider de neste dagene (/story/ledige-timer/data har_ledige:false): lenke og linje
            skjules, og denne står i stedet. Backend nekter da også preview/render (409 ingen_ledige_tider). -->
       <p class="ovs-story-fullt" id="storyFullt" hidden>Fullt de neste dagene</p>
@@ -2163,7 +2173,7 @@
       <div class="ovs-seg" id="segs" role="tablist" aria-label="Periode for nøkkeltall">
         <button class="ovs-seg-btn" role="tab" aria-selected="true" data-p="uke">Siste uke</button>
         <button class="ovs-seg-btn" role="tab" aria-selected="false" data-p="2uker">Siste 2 uker</button>
-        <button class="ovs-seg-btn ovs-seg-bred" id="maanedBtn" aria-haspopup="listbox" aria-expanded="false" aria-selected="false"><span class="pb-full">Denne måneden</span><span class="pb-kort">Denne mnd</span> ▾</button>
+        <button class="ovs-seg-btn ovs-seg-bred m-ikon" id="maanedBtn" aria-haspopup="listbox" aria-expanded="false" aria-selected="false"><span class="pb-full">Denne måneden</span><span class="pb-kort">Denne mnd</span><svg class="ikon ned" aria-hidden="true" focusable="false"><use href="ikoner.svg#chevron"></use></svg></button>
         <div class="perseg-meny" id="maanedMeny" role="listbox" aria-label="Måneder" hidden>
           <button type="button" role="option" data-ym="" aria-selected="false">Denne måneden</button>
         </div>
@@ -2254,7 +2264,7 @@
         </div>
         <p class="sett-err" id="paamErr" hidden></p>
         <!-- Gratis med 0 SMS: ingenting sendes, så bryteren står AV og deaktivert (oppdaterPaamVekst). -->
-        <p class="paam-kjop" id="paamKjop" hidden><a href="#" id="paamKjopLenke">Kjøp SMS for å sende påminnelser →</a></p>
+        <p class="paam-kjop" id="paamKjop" hidden><a class="m-ikon" href="#" id="paamKjopLenke">Kjøp SMS for å sende påminnelser<svg class="ikon" aria-hidden="true" focusable="false"><use href="ikoner.svg#pil-h"></use></svg></a></p>
         <div class="acc-body" hidden>
           <!-- Startinnholdet ER fallbacken. Svarer ikke /sms-preview — eller kjører JS-en
                aldri — blir noten stående, og trekkspillet åpner til noe i stedet for ingenting.
@@ -2501,7 +2511,7 @@
   <!-- ===== KAMPANJEPLAKATER — fullskjerm-editor (Lag 1: skjelett + navigasjon) ===== -->
   <div class="plakat-overlay" id="plakatOverlay" role="dialog" aria-modal="true" aria-label="Generer plakat">
     <div class="plakat-top">
-      <button class="plakat-back" id="plakatBack" type="button" hidden>‹ Tilbake</button>
+      <button class="plakat-back m-ikon" id="plakatBack" type="button" hidden><svg class="ikon" aria-hidden="true" focusable="false"><use href="ikoner.svg#pil-v"></use></svg>Tilbake</button>
       <span class="plakat-tittel" id="plakatTittel">Velg plakat</span>
       <button class="plakat-x" id="plakatX" type="button" aria-label="Lukk">×</button>
     </div>
@@ -2612,9 +2622,9 @@
       <p class="ed-hint">Trykk på dagene du vil endre.</p>
       <div class="ed-kal">
         <div class="ed-head">
-          <button type="button" class="ed-pil" id="edForrige" aria-label="Forrige måned"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 5l-7 7 7 7"/></svg></button>
+          <button type="button" class="ed-pil" id="edForrige" aria-label="Forrige måned"><svg class="ikon venstre" aria-hidden="true" focusable="false"><use href="ikoner.svg#chevron"></use></svg></button>
           <p class="ed-mnd" id="edMnd" aria-live="polite"></p>
-          <button type="button" class="ed-pil" id="edNeste" aria-label="Neste måned"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 5l7 7-7 7"/></svg></button>
+          <button type="button" class="ed-pil" id="edNeste" aria-label="Neste måned"><svg class="ikon" aria-hidden="true" focusable="false"><use href="ikoner.svg#chevron"></use></svg></button>
         </div>
         <div class="ed-ukedager" aria-hidden="true"><span>M</span><span>T</span><span>O</span><span>T</span><span>F</span><span>L</span><span>S</span></div>
         <div class="ed-flate" id="edFlate"><div class="ed-grid" id="edGrid"><div class="loading">Laster …</div></div></div>
@@ -2686,7 +2696,7 @@
               <span class="acc-title">Profil</span>
               <span class="acc-sub">Grunninfo som vises på bookingsiden din.</span>
             </span>
-            <span class="acc-chev">▾</span>
+            <svg class="ikon ned acc-chev" aria-hidden="true" focusable="false"><use href="ikoner.svg#chevron"></use></svg>
           </button>
           <div class="acc-body" hidden>
             <div class="fld"><label>Navn på salongen</label><input id="pf-shop" type="text"><p class="fld-err" id="shopErr" hidden>Salongnavnet kan ikke være tomt.</p></div>
@@ -2719,7 +2729,7 @@
               <span class="acc-title">Bilder</span>
               <span class="acc-sub">Trykk på en boks for å laste opp bilde til den plassen.</span>
             </span>
-            <span class="acc-chev">▾</span>
+            <svg class="ikon ned acc-chev" aria-hidden="true" focusable="false"><use href="ikoner.svg#chevron"></use></svg>
           </button>
           <div class="acc-body" hidden>
             <p class="slot-hint" id="layoutHint"></p>
@@ -2743,7 +2753,7 @@
               <span class="acc-title">Design</span>
               <span class="acc-sub">Palett, bakgrunn, stil og layout på bookingsiden din.</span>
             </span>
-            <span class="acc-chev">▾</span>
+            <svg class="ikon ned acc-chev" aria-hidden="true" focusable="false"><use href="ikoner.svg#chevron"></use></svg>
           </button>
           <div class="acc-body" hidden>
             <div class="design-controls">
@@ -3027,7 +3037,7 @@
             <span class="kt-rad-topp">
               <span class="kt-etikett">Sendt denne måneden</span>
               <span class="kt-verdi kt-hel" id="smsMaanedTall"></span>
-              <span class="acc-chev" aria-hidden="true">▾</span>
+              <svg class="ikon ned acc-chev" aria-hidden="true" focusable="false"><use href="ikoner.svg#chevron"></use></svg>
             </span>
           </button>
           <div class="kt-rad kt-rad-blokk" id="smsLoggBody" hidden>
@@ -3044,9 +3054,9 @@
       <section class="kt-seksjon" id="kontoHjelp">
         <h2 class="kt-h">Hjelp</h2>
         <div class="kt-kort">
-          <a class="kt-rad kt-lenke" href="/no/support.html" target="_blank" rel="noopener"><span class="kt-rad-topp"><span class="kt-etikett">Support</span><span class="kt-pil" aria-hidden="true">›</span></span></a>
-          <a class="kt-rad kt-lenke" href="/no/vilkar.html"><span class="kt-rad-topp"><span class="kt-etikett">Vilkår</span><span class="kt-pil" aria-hidden="true">›</span></span></a>
-          <a class="kt-rad kt-lenke" href="/no/vilkar.html#personvern"><span class="kt-rad-topp"><span class="kt-etikett">Personvern</span><span class="kt-pil" aria-hidden="true">›</span></span></a>
+          <a class="kt-rad kt-lenke" href="/no/support.html" target="_blank" rel="noopener"><span class="kt-rad-topp"><span class="kt-etikett">Support</span><svg class="ikon kt-pil" aria-hidden="true" focusable="false"><use href="ikoner.svg#chevron"></use></svg></span></a>
+          <a class="kt-rad kt-lenke" href="/no/vilkar.html"><span class="kt-rad-topp"><span class="kt-etikett">Vilkår</span><svg class="ikon kt-pil" aria-hidden="true" focusable="false"><use href="ikoner.svg#chevron"></use></svg></span></a>
+          <a class="kt-rad kt-lenke" href="/no/vilkar.html#personvern"><span class="kt-rad-topp"><span class="kt-etikett">Personvern</span><svg class="ikon kt-pil" aria-hidden="true" focusable="false"><use href="ikoner.svg#chevron"></use></svg></span></a>
         </div>
         <div class="kt-kort kt-feedback">
           <div class="kt-rad kt-rad-blokk">
@@ -3070,7 +3080,7 @@
              Markupen er duplisert fra «Din side» (to tekstfelt kan ikke være samme node), men handleren er det IKKE. -->
         <div class="kt-kort">
           <details class="kt-ide">
-            <summary class="kt-rad"><span class="kt-rad-topp"><span class="kt-etikett" id="fbLbl-konto-ide">Ideer og ønsker</span><span class="kt-pil" aria-hidden="true">›</span></span></summary>
+            <summary class="kt-rad"><span class="kt-rad-topp"><span class="kt-etikett" id="fbLbl-konto-ide">Ideer og ønsker</span><svg class="ikon kt-pil" aria-hidden="true" focusable="false"><use href="ikoner.svg#chevron"></use></svg></span></summary>
             <div class="kt-rad kt-rad-blokk">
               <p class="block-s">Ønsker du en ny funksjon, farge eller layout? Send oss, vi leser alt.</p>
               <div class="ideacard ideacard-flat">
@@ -3114,7 +3124,7 @@
   .cal-monthpick{position:absolute;top:56px;left:16px;z-index:20;background:var(--surface);border:1px solid var(--line);border-radius:12px;box-shadow:0 8px 28px rgba(0,0,0,.18);padding:12px;width:280px}
   .cal-monthpick[hidden]{display:none}
   .cal-mp-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
-  .cal-mp-head button{appearance:none;border:0;background:var(--bg);width:30px;height:30px;border-radius:7px;cursor:pointer;color:var(--ink);font-size:15px}
+  /* Månedsvelgerens forrige/neste = Enkeltdagers knapper (.ed-pil, chevron venstre/høyre) — de to kalenderne er like. */
   .cal-mp-title{font-size:13.5px;font-weight:700}
   .cal-mp-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
   .cal-mp-wd{font-size:10.5px;color:var(--mut);text-align:center;padding:4px 0;font-weight:600}
@@ -3863,6 +3873,9 @@ function switchPanel(id){document.querySelector('.nav button[data-panel="'+id+'"
 const wait=ms=>new Promise(r=>setTimeout(r,ms));
 const pct=(a,b)=>b?Math.round(a/b*100):0;
 function esc(s){return(s||"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]))}
+// Pil-/chevron-ikon som markup (definisjonen er ÉN: site/no/ikoner.svg). navn: 'pil-h' | 'pil-v' | 'chevron'; kl: f.eks. 'ned'.
+// Brukes også av dinside-v2.js (window.ikonHtml). Se .ikon / .m-ikon i CSS.
+function ikonHtml(navn,kl){return '<svg class="ikon'+(kl?' '+kl:'')+'" aria-hidden="true" focusable="false"><use href="ikoner.svg#'+navn+'"></use></svg>';}
 
 let curPeriod="uke";
 
@@ -4478,9 +4491,9 @@ function ovsPaaVeiHtml(pv, medStrek){
   var n=ovsHenteInnAntall(wb), dato=pvDato(wb.foerste_passerer_60);
   var h='<div class="pv-blokk'+(medStrek?' med-strek':'')+'"><h3 class="ovs-etikett">På vei</h3>';
   if(n>0){
-    h+='<div class="pv-rad"><span class="pv-tekst">'+kunderTekst(n)+' å hente inn</span><button type="button" class="ovs-lenke" data-di-winback>Se lista →</button></div>';
+    h+='<div class="pv-rad"><span class="pv-tekst">'+kunderTekst(n)+' å hente inn</span><button type="button" class="ovs-lenke m-ikon" data-di-winback>Se lista'+ikonHtml('pil-h')+'</button></div>';
   }else if(dato){   // ingen klare ennå, men en passerer snart (valg 6)
-    h+='<div class="pv-rad"><span class="pv-tekst">Første kunde passerer 60 dager '+dato+'</span><button type="button" class="ovs-lenke" data-di-winback>Se lista →</button></div>';
+    h+='<div class="pv-rad"><span class="pv-tekst">Første kunde passerer 60 dager '+dato+'</span><button type="button" class="ovs-lenke m-ikon" data-di-winback>Se lista'+ikonHtml('pil-h')+'</button></div>';
   }else{
     h+='<div class="pv-rad"><span class="pv-tekst">Ingen kunder å hente inn ennå</span></div>';
   }
@@ -5024,7 +5037,7 @@ function renderGrid(){
   });
   $("#calDays").innerHTML=cols;
   oppdaterKalenderBannere(keys);   // Commit 2: «Lag story»-banner øverst i dagen når /ledige gir vis_banner
-  var db=$("#calDateBtn");if(db)db.textContent=calHeadText(CAL.active)+' ▾';
+  var db=$("#calDateBtn");if(db)db.innerHTML=esc(calHeadText(CAL.active))+ikonHtml('chevron','ned');
   var tb=$("#calToday");if(tb)tb.hidden=(CAL.active===osloTodayKey());   // «I dag» kun når valgt ≠ i dag
   tegnNaaStrek(keys,y);
 }
@@ -5088,7 +5101,7 @@ function toggleMonthpick(forceClose){var mp=$("#calMonthpick");if(!mp)return;
 function renderMonthpick(){
   var mp=$("#calMonthpick"),y=mpYm.y,m=mpYm.m,startWd=(new Date(y,m,1).getDay()+6)%7,dim=new Date(y,m+1,0).getDate();
   var todayKey=osloTodayKey();
-  var html='<div class="cal-mp-head"><button data-mp="-1">‹</button><span class="cal-mp-title">'+MONTHS[m]+' '+y+'</span><button data-mp="1">›</button></div><div class="cal-mp-grid">';
+  var html='<div class="cal-mp-head"><button class="ed-pil" data-mp="-1" aria-label="Forrige måned">'+ikonHtml('chevron','venstre')+'</button><span class="cal-mp-title">'+MONTHS[m]+' '+y+'</span><button class="ed-pil" data-mp="1" aria-label="Neste måned">'+ikonHtml('chevron')+'</button></div><div class="cal-mp-grid">';
   ['M','T','O','T','F','L','S'].forEach(function(w){html+='<span class="cal-mp-wd">'+w+'</span>';});
   for(var i=0;i<startWd;i++)html+='<span></span>';
   for(var dd=1;dd<=dim;dd++){var k=new Date(y,m,dd);k.setHours(0,0,0,0);k=k.getTime();var dis=(k<CAL.minKey||k>CAL.maxKey);
@@ -6487,7 +6500,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   var mBtn=document.getElementById('maanedBtn'), mMeny=document.getElementById('maanedMeny');
   if(!segs||!mBtn||!mMeny)return;
   var pills=[].slice.call(segs.querySelectorAll(':scope > button[data-p]'));   // uke, 2uker (IKKE maanedBtn — den har ingen data-p)
-  var DENNE='<span class="pb-full">Denne måneden</span><span class="pb-kort">Denne mnd</span> ▾';
+  var DENNE='<span class="pb-full">Denne måneden</span><span class="pb-kort">Denne mnd</span>'+ikonHtml('chevron','ned');
   function lukk(){ mMeny.hidden=true; mBtn.setAttribute('aria-expanded','false'); }
   function menyValg(ym){ [].slice.call(mMeny.querySelectorAll('button[role=option]')).forEach(function(o){ o.setAttribute('aria-selected', o.getAttribute('data-ym')===ym?'true':'false'); }); }
   function menyNullstill(){ [].slice.call(mMeny.querySelectorAll('button[role=option]')).forEach(function(o){ o.setAttribute('aria-selected','false'); }); }
@@ -6501,7 +6514,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
     pills.forEach(function(x){ x.setAttribute('aria-selected','false'); });
     mBtn.setAttribute('aria-selected','true'); menyValg(ym); lukk();
     if(!ym){ mBtn.innerHTML=DENNE; curPeriod='maaned'; loadOversikt(); return; }   // inneværende måned = pill-modus 'maaned'
-    mBtn.textContent=maanedKort(ym)+' ▾';
+    mBtn.innerHTML=esc(maanedKort(ym))+ikonHtml('chevron','ned');
     var resp=await api.statsMonth(ym);
     if(!resp)return;                        // 401→redirigert, ellers feil: la valget stå, ingen krasj
     var monthDays=sliceMonth(resp.days||[],ym);
