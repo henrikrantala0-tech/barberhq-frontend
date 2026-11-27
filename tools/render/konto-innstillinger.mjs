@@ -362,7 +362,7 @@ for (const bredde of [320, 375]) { // Passord: ikke satt / satt / glemt-lenken, 
     await page.$eval('button[data-panel="tjenester"]', b => b.click()); await page.waitForTimeout(1200);
     const t = await page.evaluate(() => {
       const g = document.querySelector('#gcal').getBoundingClientRect(); const h = document.querySelector('#hoursList').getBoundingClientRect();
-      const forste = document.querySelector('#tjenester .svc-group-h'); const f = forste ? forste.getBoundingClientRect() : null;
+      const forste = document.querySelector('#tjenester .tt-h1'); const f = forste ? forste.getBoundingClientRect() : null;
       return { overTjenester: !f || g.bottom <= f.top, overTider: g.bottom <= h.top };
     });
     sjekk(t.overTjenester && t.overTider, `${bredde} Tjenester: Google Kalender øverst`);

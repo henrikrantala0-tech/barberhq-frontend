@@ -4,7 +4,7 @@
 //
 // Måler mot de felles stilene i dashboard.html, ikke mot tall skrevet her:
 //   • fanetittel  #dv2Tittel  ↔ .panel-h i Tjenester & tider (font-size, font-weight)
-//   • felt        Profil-feltene (input + textarea-skrift) og @-feltene ↔ tjenestefeltene (.svc-row-h input): høyde, skrift
+//   • felt        Profil-feltene (input + textarea-skrift) og @-feltene ↔ tjenestefeltene (arket #tjArk, .tj-inp): høyde, skrift
 //   • knapp       «Forhåndsvis» ↔ #gcalBtn (.btn-outline, dashbordets sekundærknapp): høyde, skrift, padding; ingen <svg>
 // Bilder (.render-ut/dinside-storrelse/): Din side Profil, Utseende, Bilder, Kontakt og Tjenester & tider @320/375, mørk.
 // Alle API-kall mockes (fixtures/dinside-v2.mjs); exit 1 ved avvik eller request mot prod.
@@ -59,7 +59,8 @@ for (const w of [320, 375]) {
   await page.$eval('button[data-panel="tjenester"]', b => b.click());
   await page.waitForTimeout(700);
   const refTittel = await stil(page, '#tjenester .panel-h');
-  const refFelt   = await stil(page, '#hovedList .svc-row-h input');
+  await page.click('#hovedList .tj-rad [data-tj="rediger"]');   // tjenestefeltene står i arket (#tjArk) siden 27.11.2026
+  const refFelt   = await stil(page, '#tjArkNavn');
   const refKnapp  = await stil(page, '#gcalBtn');
   await page.screenshot({ path: `${OUT}/${NAVN}-tjenester-${w}.png` });
   ok(errs.length === 0, `Tjenester: ingen pageerror (${errs.join(' | ')})`);

@@ -1,7 +1,7 @@
 // tools/render/komma-og-feilstater.mjs — regresjonstest for input-robusthet + feilstater.
 // Dekker fire funn fra bug-runden 21.09:
 //   H-1  onboarding-pris leser komma («45,5»→46, «1 500»→1500, negativ→synlig feil)
-//   L-12 varighet leser komma begge steder; ugyldig/tom → SYNLIG feil, ikke stille 30
+//   L-12 varighet leser komma begge steder; ugyldig/tom → SYNLIG feil (dashbordet: under Min-feltet i skjemaet), ikke stille 30
 //   M-6  arbeidstider: GET-feil → feilstate + «Prøv igjen», Lagre disabled, ALDRI oppdiktede tider
 //   M-8  Oversikt: hard nettverksfeil (abort) på /stats+/bookings → feilstate + retry, ikke evig «Laster …»
 //   L-3  pris/min fra backend koerses til tall + esc → ingen attributt-injeksjon
@@ -96,31 +96,34 @@ async function dash(cfg, fn) {
   return out;
 }
 
-// ── L-12 dashboard: komma + tom varighet → rød .svc-min + flagg + Lagre disabled ─────────
+// ── L-12 dashboard: komma i pris/varighet leses; tom varighet → feil UNDER Varighet-feltet i arket, ingen lagring ─────────
+// (Tjenestene er en liste siden 27.11.2026: «Rediger» åpner arket #tjArk → «Lagre» lagrer med en gang.)
 {
   const r = await dash({}, async (page) => {
     await page.evaluate(() => switchPanel('tjenester'));
     await page.waitForTimeout(600);
-    await page.fill('#hovedList .svc-row-h:nth-of-type(1) .svc-pris', '45,5'); await page.waitForTimeout(80);
-    await page.fill('#hovedList .svc-row-h:nth-of-type(1) .svc-min', '30,5'); await page.waitForTimeout(80);
-    const ok = await page.evaluate(() => ({ price:hoved[0].price, min:hoved[0].min, save:document.querySelector('#saveSvc').disabled }));
-    await page.fill('#hovedList .svc-row-h:nth-of-type(1) .svc-min', ''); await page.waitForTimeout(80);
+    await page.click('#hovedList .tj-rad[data-i="0"] [data-tj="rediger"]');
+    await page.fill('#tjArkPris', '45,5');
+    await page.fill('#tjArkMin', '30,5');
+    await page.click('#tjArkLagre'); await page.waitForTimeout(300);
+    const ok = await page.evaluate(() => ({ price:hoved[0].price, min:hoved[0].min, lukket:document.getElementById('tjArk').hidden }));
+    await page.click('#hovedList .tj-rad[data-i="0"] [data-tj="rediger"]');
+    await page.fill('#tjArkMin', '');
+    await page.click('#tjArkLagre'); await page.waitForTimeout(150);
     await page.screenshot({ path:`${OUT}/kf-l12-dash-tom-varighet.png`, clip:{x:0,y:0,width:390,height:360} });
     const tom = await page.evaluate(() => {
-      const row = document.querySelector('#hovedList .svc-row-h:nth-of-type(1)');
-      const min = row.querySelector('.svc-min'), flag = row.querySelector('.svc-flag');
-      return { rød:min.classList.contains('min-0'), flagg:flag.textContent, vis:!flag.hidden,
-        save:document.querySelector('#saveSvc').disabled, err:document.querySelector('#svcErr').textContent };
+      const fe = [...document.querySelectorAll('#tjArk .fld-err')].find(e => !e.hidden);
+      return { felt: fe && fe.closest('.fld').querySelector('.tj-inp').dataset.f, tekst: fe && fe.textContent,
+        aapen: !document.getElementById('tjArk').hidden, min: hoved[0].min };
     });
-    return { kommaPris:ok.price===46, kommaMin:ok.min===31, gyldigSave:ok.save===false,
-      tomRød:tom.rød, tomFlagg:tom.flagg==='Sett varighet'&&tom.vis, tomSave:tom.save, tomErr:!!tom.err };
+    return { kommaPris:ok.price===46, kommaMin:ok.min===31, gyldigLagret:ok.lukket,
+      tomFeil: tom.felt==='min' && /varighet/.test(tom.tekst||''), tomIkkeLagret: tom.aapen && tom.min===31 };
   });
   sjekk('L-12 dashboard komma-pris «45,5»→46', r.kommaPris, r.jsfeil);
   sjekk('L-12 dashboard komma-varighet «30,5»→31', r.kommaMin);
-  sjekk('L-12 dashboard gyldig → Lagre aktiv', r.gyldigSave);
-  sjekk('L-12 dashboard tom varighet → rød .svc-min', r.tomRød);
-  sjekk('L-12 dashboard tom varighet → «Sett varighet»-flagg', r.tomFlagg);
-  sjekk('L-12 dashboard tom varighet → Lagre disabled + feiltekst', r.tomSave && r.tomErr);
+  sjekk('L-12 dashboard gyldig → lagret, arket lukkes', r.gyldigLagret);
+  sjekk('L-12 dashboard tom varighet → feil under Varighet-feltet', r.tomFeil);
+  sjekk('L-12 dashboard tom varighet → ikke lagret, arket står', r.tomIkkeLagret);
   sjekk('L-12 dashboard ingen JS-feil', r.jsfeil==='ingen', r.jsfeil);
 }
 
@@ -129,15 +132,15 @@ async function dash(cfg, fn) {
   const r = await dash({ services:{ hoved:[{ name:'Klipp', price:'" onfocus=alert(1) x="', min:'"><img src=x onerror=alert(2)>' }], tillegg:[] } }, async (page) => {
     await page.evaluate(() => switchPanel('tjenester'));
     await page.waitForTimeout(600);
-    return page.evaluate(() => {
-      const row = document.querySelector('#hovedList .svc-row-h:nth-of-type(1)');
-      return { prisVal:row.querySelector('.svc-pris').value, minVal:row.querySelector('.svc-min').value,
-        onfocus:row.innerHTML.includes('onfocus'), onerror:row.innerHTML.includes('onerror'),
-        arrPris:hoved[0].price, arrMin:hoved[0].min };
-    });
+    const liste = await page.evaluate(() => { const l = document.querySelector('#hovedList');
+      return { meta:l.querySelector('.tj-rad .tj-meta').textContent, onfocus:l.innerHTML.includes('onfocus'), onerror:l.innerHTML.includes('onerror'), arrPris:hoved[0].price, arrMin:hoved[0].min }; });
+    await page.click('#hovedList .tj-rad [data-tj="rediger"]');
+    const skjema = await page.evaluate(() => { const f = document.getElementById('tjArk');
+      return { pris:f.querySelector('[data-f="price"]').value, min:f.querySelector('[data-f="min"]').value, onfocus:f.innerHTML.includes('onfocus'), onerror:f.innerHTML.includes('onerror') }; });
+    return { ...liste, skjema };
   });
-  sjekk('L-3 ond pris-streng → value «0», ingen onfocus', r.prisVal==='0' && !r.onfocus, r.jsfeil);
-  sjekk('L-3 ond min-streng → value «0», ingen onerror', r.minVal==='0' && !r.onerror);
+  sjekk('L-3 ond pris-streng → «Sett pris» i lista, tomt felt, ingen onfocus', /^Sett pris/.test(r.meta) && r.skjema.pris==='' && !r.onfocus && !r.skjema.onfocus, r.jsfeil);
+  sjekk('L-3 ond min-streng → tomt felt, ingen onerror', r.skjema.min==='' && !r.onerror && !r.skjema.onerror);
   sjekk('L-3 arr koerset til tall (0)', r.arrPris===0 && r.arrMin===0);
   sjekk('L-3 ingen JS-feil', r.jsfeil==='ingen', r.jsfeil);
 }

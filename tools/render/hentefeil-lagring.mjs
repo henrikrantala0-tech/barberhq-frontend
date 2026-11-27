@@ -1,9 +1,10 @@
 // tools/render/hentefeil-lagring.mjs — feilet henting skal aldri kunne overskrive ekte data (14.10.2026).
-//   • GET /services feiler (500 / nettverksfeil): «Klarte ikke å laste tjenestene.» + «Prøv igjen», «Lagre
-//     tjenester» og «+ Legg til» av, INGEN PUT /services selv ved tvunget klikk, ingen demotjenester
-//     (Skinnfade/Klipp/Skjegg/Hårvask) noe sted. «Prøv igjen» → ekte tjenester, lagring sender dem.
-//   • GET /settings feiler: «Klarte ikke å laste betalingsmetodene.», «Lagre betaling» av, INGEN PUT
+//   • GET /services feiler (500 / nettverksfeil): «Klarte ikke å laste tjenestene.» + «Prøv igjen», «+ Legg til» av,
+//     tvunget klikk åpner INGEN ark og sender INGEN PUT /services, ingen demotjenester (Skinnfade/Klipp/Skjegg/Hårvask)
+//     noe sted. «Prøv igjen» → ekte tjenester, en lagring (Rediger → Lagre) sender dem.
+//   • GET /settings feiler: «Klarte ikke å laste betalingsmetodene.», «+ Legg til betalingsmetode» av, INGEN PUT
 //     /payment-methods (før: {methods:[]} slettet Vipps/Kort). «Prøv igjen» → Vipps/Kort, lagring sender dem.
+//   (Tjenester og betaling er lister + ark (#tjArk) siden 27.11.2026 — «Lagre tjenester»/«Lagre betaling» er borte.)
 // Alt under /api/** mockes; ingen request når api.trybarberhq.com (forsøk === fanget).
 import http from 'node:http';
 import fs from 'node:fs';
@@ -62,15 +63,16 @@ for(const w of [320,375]){
     const {page,errs,put}=await nySide(w,st);
     const f=[];
     const t=await page.$eval('#hovedList',e=>e.innerText.trim()); if(!t.startsWith('Klarte ikke å laste tjenestene.')) f.push(`liste «${t.slice(0,60)}»`);
-    for(const id of ['saveSvc','addHoved','addTillegg']) if(!(await page.$eval('#'+id,b=>b.disabled))) f.push(`#${id} ikke av`);
+    for(const id of ['addHoved','addTillegg']) if(!(await page.$eval('#'+id,b=>b.disabled))) f.push(`#${id} ikke av`);
     if(await demo(page)) f.push('demotjenester synlige');
-    await page.$eval('#saveSvc',b=>b.dispatchEvent(new MouseEvent('click',{bubbles:true}))); await page.waitForTimeout(400);
+    await page.$eval('#addHoved',b=>b.dispatchEvent(new MouseEvent('click',{bubbles:true}))); await page.waitForTimeout(400);
+    if(!(await page.$eval('#tjArk',a=>a.hidden))) f.push('arket åpnet før hentingen har lyktes');
     if(put.some(x=>x.p==='/api/dashboard/services')) f.push('PUT /services sendt');
     if(feil===500) await bilde(page,`tjenester-feil-${w}`,'#hovedList');
     // Prøv igjen → ekte tjenester, lagring sender dem
     st.svc='ok'; await page.$eval('#hovedList .retry-lenke',b=>b.click()); await page.waitForTimeout(500);
-    if(await page.$eval('#saveSvc',b=>b.disabled)) f.push('lagre fortsatt av etter vellykket henting');
-    await page.$eval('#saveSvc',b=>b.click()); await page.waitForTimeout(500);
+    if(await page.$eval('#addHoved',b=>b.disabled)) f.push('«+ Legg til» fortsatt av etter vellykket henting');
+    await page.$eval('#hovedList .tj-rad [data-tj="rediger"]',b=>b.click()); await page.$eval('#tjArkLagre',b=>b.click()); await page.waitForTimeout(500);
     const sendt=put.find(x=>x.p==='/api/dashboard/services');
     if(!sendt||!/Herreklipp/.test(sendt.body)||/Skinnfade/.test(sendt.body)) f.push(`lagret ${sendt?sendt.body.slice(0,80):'ingenting'}`);
     push(`${w} /services ${feil}`,f,errs.filter(e=>!/Failed to fetch/.test(e))); await page.close();
@@ -81,13 +83,14 @@ for(const w of [320,375]){
     const {page,errs,put}=await nySide(w,st);
     const f=[];
     const t=await page.$eval('#payList',e=>e.innerText.trim()); if(!t.startsWith('Klarte ikke å laste betalingsmetodene.')) f.push(`liste «${t.slice(0,60)}»`);
-    for(const id of ['savePay','addPay']) if(!(await page.$eval('#'+id,b=>b.disabled))) f.push(`#${id} ikke av`);
-    await page.$eval('#savePay',b=>b.dispatchEvent(new MouseEvent('click',{bubbles:true}))); await page.waitForTimeout(400);
+    for(const id of ['addPay']) if(!(await page.$eval('#'+id,b=>b.disabled))) f.push(`#${id} ikke av`);
+    await page.$eval('#addPay',b=>b.dispatchEvent(new MouseEvent('click',{bubbles:true}))); await page.waitForTimeout(400);
+    if(!(await page.$eval('#tjArk',a=>a.hidden))) f.push('arket åpnet før hentingen har lyktes');
     if(put.some(x=>x.p==='/api/dashboard/payment-methods')) f.push('PUT /payment-methods sendt (ville slettet Vipps/Kort)');
     await bilde(page,`betaling-feil-${w}`,'#payList');
     st.settings='ok'; await page.$eval('#payList .retry-lenke',b=>b.click()); await page.waitForTimeout(500);
-    const verdier=await page.$$eval('#payList input',i=>i.map(x=>x.value)); if(verdier.join()!=='Vipps,Kort') f.push(`etter retry ${verdier.join()}`);
-    await page.$eval('#savePay',b=>b.click()); await page.waitForTimeout(500);
+    const verdier=await page.$$eval('#payList .tj-navn',i=>i.map(x=>x.textContent)); if(verdier.join()!=='Vipps,Kort') f.push(`etter retry ${verdier.join()}`);
+    await page.$eval('#payList .tj-rad [data-tj="rediger"]',b=>b.click()); await page.$eval('#tjArkLagre',b=>b.click()); await page.waitForTimeout(500);
     const sendt=put.find(x=>x.p==='/api/dashboard/payment-methods');
     if(!sendt||sendt.body!=='{"methods":["Vipps","Kort"]}') f.push(`lagret ${sendt?sendt.body:'ingenting'}`);
     push(`${w} /settings 500 → betaling`,f,errs); await page.close();

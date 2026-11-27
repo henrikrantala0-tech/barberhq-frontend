@@ -3,7 +3,7 @@
 // Verifiserer at knappen går tilbake til normal tilstand og at «Fikk ikke kontakt. Prøv igjen.» vises:
 //   1. Vekst: påminnelse-bryteren (lagreSmsInnstilling via api.saveSettings) — rulles tilbake, feiltekst.
 //   2. Konto: «Publiser bookingsiden» (PUT /page-status) — knappen tilbake, feiltekst i #pubErr.
-//   3. Tjenester: «Lagre betaling» (medLagreKnapp) — knappen tilbake, alert med kontaktteksten.
+//   3. Tjenester: «Lagre» i betalingsarket (#tjArk) — knappen tilbake, arket står, kontaktteksten i arket.
 //   4. Lojalitet: «Legg til» (api.loyaltyOptIn) — knappen tilbake, toast med kontaktteksten.
 //   5. «Lag story»: preview som henger / svarer 500 / svarer 403 → #storyFeil; ekte story-HTML → ingen feil.
 //   6. Før 15 s: knappen står fortsatt i «… pågår» (tidsavbruddet slår ikke inn for tidlig).
@@ -124,16 +124,20 @@ for(const w of [320,375]){
     push(`${w} publiser`,f,errs); await page.close();
   }
 }
-// 3. Lagre betaling (medLagreKnapp → alert)
+// 3. Betaling: «Lagre» i arket (siden 27.11.2026) → knappen tilbake, arket står, feilen i arket (ingen alert)
 {
   const {page,errs,dialoger}=await nySide(375,{billing:vekst(),heng:[['PUT','/api/dashboard/payment-methods']]});
   await page.$eval('button[data-panel="tjenester"]',b=>b.click()); await page.waitForTimeout(300);
-  await page.click('#savePay'); await spol(page,16000);
+  await page.$eval('#addPay',b=>b.click()); await page.fill('#tjArkNavn','Vipps');
+  await page.click('#tjArkLagre'); await spol(page,16000);
   const f=[];
-  const b=await page.$eval('#savePay',b=>({t:b.textContent.trim(),d:b.disabled}));
-  if(b.d||b.t!=='Lagre betaling') f.push(`knapp «${b.t}» disabled=${b.d}`);
-  if(!dialoger.includes(KONTAKT)) f.push(`alert ${JSON.stringify(dialoger)}`);
-  push('lagre betaling (medLagreKnapp)',f,errs); await page.close();
+  const b=await page.$eval('#tjArkLagre',b=>({t:b.textContent.trim(),d:b.disabled}));
+  if(b.d||b.t!=='Lagre') f.push(`knapp «${b.t}» disabled=${b.d}`);
+  const s=await page.evaluate(()=>({verdi:document.getElementById('tjArkNavn').value, feil:document.getElementById('tjArkFeil').textContent}));
+  if(s.verdi!=='Vipps') f.push(`verdien «${s.verdi}» står ikke`);
+  if(s.feil!==KONTAKT) f.push(`feiltekst «${s.feil}»`);
+  if(dialoger.length) f.push(`alert ${JSON.stringify(dialoger)}`);
+  push('lagre betaling (arket)',f,errs); await page.close();
 }
 // 4. Lojalitet «Legg til» (api.loyaltyOptIn → kontaktSvar)
 {

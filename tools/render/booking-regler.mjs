@@ -80,7 +80,7 @@ const les = page => page.evaluate(() => ({
 async function skjerm(page, navn) {
   // Fra «Arbeidstider»-overskriften til slutten av bookingreglene.
   const box = await page.evaluate(() => {
-    const h = [...document.querySelectorAll('#tjenester .block-h')].find(e => e.textContent.trim() === 'Arbeidstider');
+    const h = [...document.querySelectorAll('#tjenester .tt-h1')].find(e => e.textContent.trim() === 'Arbeidstider');
     const a = h.getBoundingClientRect(), b = document.querySelector('#bkRegler').getBoundingClientRect();
     return { y: a.top + scrollY - 16, h: b.bottom - a.top + 32 };
   });

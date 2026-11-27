@@ -1,7 +1,8 @@
 // tools/render/fanebytte-ulagret.mjs — fanebytte sletter ikke ulagrede endringer (14.10.2026).
 // Et område lastes på nytt ved fanebytte bare når det IKKE har ulagrede endringer, og alltid etter vellykket
 // lagring. Før lastet Tjenester og Din side alt på nytt hver gang, så endringen forsvant uten advarsel.
-//   1. Pris (Tjenester): endret pris står etter Din side → Tjenester; ingen ny GET /services.
+//   1. Pris (Tjenester): åpent ark med endret pris står etter Din side → Tjenester; ingen ny GET /services.
+//      (Tjenestene er en liste + ark (#tjArk) siden 27.11.2026 — et åpent tjenesteark teller som ulagret.)
 //   2. Åpningstid (Tjenester): endret start står; ingen ny GET /hours.
 //   3. Palett (Din side): valgt palett står etter Oversikt → Din side; ingen ny GET /design.
 //   4. Bio (Din side → Profil): utkastet står; GET /profile hentes, men feltet røres ikke.
@@ -62,18 +63,19 @@ const skriv=async(page,sel,verdi)=>{ await page.fill(sel,verdi); };   // fill gi
 {
   const {page,errs,get}=await nySide();
   await fane(page,'tjenester');
-  await skriv(page,'#hovedList input[data-f="price"], #hovedList .svc-price, #hovedList input[inputmode="decimal"]','399');
+  await page.click('#hovedList .tj-rad [data-tj="rediger"]');
+  await skriv(page,'#tjArkPris','399');
   const startSel='#hoursList input[data-f="start"][data-i="1"]';
   await skriv(page,startSel,'08:00');
   const g0={svc:get['/api/dashboard/services']||0,hrs:get['/api/dashboard/hours']||0};
   await fane(page,'design'); await fane(page,'tjenester');
   const f=[];
-  const pris=await page.$eval('#hovedList input[inputmode="decimal"]',e=>e.value);
+  const pris=await page.$eval('#tjArkPris',e=>e.value);
   if(pris!=='399') f.push(`pris etter fanebytte «${pris}»`);
   const start=await page.$eval(startSel,e=>e.value); if(start!=='08:00') f.push(`åpningstid «${start}»`);
   // sjekklista: «Legg til tjenester» mens prisen er ulagret
   await page.evaluate(()=>typeof sjekkGaaTil==='function'&&sjekkGaaTil('tjenester')); await page.waitForTimeout(400);
-  const pris2=await page.$eval('#hovedList input[inputmode="decimal"]',e=>e.value); if(pris2!=='399') f.push(`pris etter sjekkliste «${pris2}»`);
+  const pris2=await page.$eval('#tjArkPris',e=>e.value); if(pris2!=='399') f.push(`pris etter sjekkliste «${pris2}»`);
   const g1={svc:get['/api/dashboard/services']||0,hrs:get['/api/dashboard/hours']||0};
   // GET /services kan komme fra sjekklistens egen datahenting (hentSjekklisteData) — men skjemaet skal ikke røres.
   if(g1.hrs>g0.hrs+1) f.push(`GET /hours ${g0.hrs}→${g1.hrs}`);
@@ -114,8 +116,9 @@ const skriv=async(page,sel,verdi)=>{ await page.fill(sel,verdi); };   // fill gi
   await fane(page,'oversikt'); await fane(page,'tjenester');
   const f=[];
   const b=get['/api/dashboard/services']||0; if(b<=a) f.push('uten endringer: ikke hentet på nytt');
-  await skriv(page,'#hovedList input[inputmode="decimal"]','399');
-  await page.$eval('#saveSvc',x=>x.click()); await page.waitForTimeout(600);
+  await page.click('#hovedList .tj-rad [data-tj="rediger"]');
+  await skriv(page,'#tjArkPris','399');
+  await page.$eval('#tjArkLagre',x=>x.click()); await page.waitForTimeout(600);
   if(!put.includes('/api/dashboard/services')) f.push('lagring ble ikke sendt');
   const c=get['/api/dashboard/services']||0;
   await fane(page,'oversikt'); await fane(page,'tjenester');

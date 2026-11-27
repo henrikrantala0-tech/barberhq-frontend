@@ -85,7 +85,7 @@ const SVAR={
   '/api/dashboard/hours':[0,1,2,3,4,5,6].map(wd=>({weekday:wd,is_closed:wd===0,
                              open_time:'10:00',close_time:wd===6?'16:00':'18:00'})),
   // payment_methods bor på /settings, IKKE på /payment-methods — den siste er kun PUT.
-  // Uten dem her seeder loadPayment én tom rad, og #payList=1 leses som en tom liste.
+  // Uten dem her er #payList tom (ingen rader) og leses som en tom liste.
   '/api/dashboard/settings':{sms_paaminnelse_enabled:true,sms_rebooking_enabled:true,
     rebooking_interval_days:35,referral_reward_recipient:'begge',referral_discount_pct:20,
     payment_methods:['Vipps','Kort','Kontant']},

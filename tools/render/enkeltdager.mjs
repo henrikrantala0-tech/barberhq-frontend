@@ -172,7 +172,7 @@ async function tilKalender(page) {
   await vent(page, 120);
 }
 async function tilArbeidstider(page) {
-  await page.evaluate(() => { const h = [...document.querySelectorAll('#tjenester .block-h')].find(e => e.textContent.trim() === 'Arbeidstider'); scrollTo(0, h.getBoundingClientRect().top + scrollY - 16); });
+  await page.evaluate(() => { const h = [...document.querySelectorAll('#tjenester .tt-h1')].find(e => e.textContent.trim() === 'Arbeidstider'); scrollTo(0, h.getBoundingClientRect().top + scrollY - 16); });
   await vent(page, 120);
 }
 async function radOverArk(page, ymd) {
