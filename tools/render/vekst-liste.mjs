@@ -2,7 +2,8 @@
 //
 // Kilde: vekst-liste-aktiv / vekst-liste-gratis (.dc.html). Vakter:
 //   - Ingen bokser utenom KPI-boksene (#vekstStats): rader har ingen bakgrunn/ramme, bare hårlinje under.
-//   - Etiketter AUTOMATIKK / PERSONLIG / DEL (11.5/600/.08em/versaler/dempet), 32px mellom seksjonene.
+//   - Etiketter DEL / AUTOMATIKK / PERSONLIG (11.5/600/.08em/versaler/dempet), 32px mellom seksjonene. DEL («Lag story»)
+//     står rett under diagrammet siden 27.11.2026 (Henrik) — rekkefølgen vaktes også av forste-booking.mjs.
 //   - Rader: navn 15/600, beskrivelse 13/400 dempet/1.45, 16px vertikal padding.
 //   - Høyre side: bryter 46×28 (Automatikk), chevron (Personlig, antall foran på Vinn tilbake), «Lag story» (Del).
 //   - Gratis: lås + «Vekst» (ingen blå pille), «Kjøp SMS for å sende påminnelser» + pil-ikon som blå lenke.
@@ -116,7 +117,7 @@ for (const plan of ['vekst','basis']) for (const tema of ['dark','light']) for (
   const tag = `${plan==='vekst'?'Vekst':'Gratis'} ${tema} ${bredde}`;
   sjekk(`${tag}: ingen pageerror / overflow`, errs.length===0 && m.overflow<=0, errs.join('|').slice(0,120)+' of='+m.overflow);
   sjekk(`${tag}: ingen bokser rundt radene (KPI-boksene står)`, m.boksRader.length===0 && m.kpiBoks, JSON.stringify(m.boksRader));
-  sjekk(`${tag}: etiketter AUTOMATIKK / PERSONLIG / DEL, 32px mellom seksjonene`, JSON.stringify(m.etiketter)==='["AUTOMATIKK","PERSONLIG","DEL"]' && m.sek.every(x=>x===32), JSON.stringify(m.etiketter)+' '+m.sek);
+  sjekk(`${tag}: etiketter DEL / AUTOMATIKK / PERSONLIG, 32px mellom seksjonene`, JSON.stringify(m.etiketter)==='["DEL","AUTOMATIKK","PERSONLIG"]' && m.sek.every(x=>x===32), JSON.stringify(m.etiketter)+' '+m.sek);
   sjekk(`${tag}: rad — navn 15/600, beskrivelse 13/400/1.45, 16px padding, hårlinje`, m.tittel==='15px 600' && m.sub==='13px 400 18.85px' && m.radPad==='16px' && m.hairline==='1px', JSON.stringify({ t:m.tittel, s:m.sub, p:m.radPad, h:m.hairline }));
   sjekk(`${tag}: ingen «Hentet inn» (fjernet 27.11.2026), ingen gammel velger, ingen doble id-er`, !m.hentet && !m.gammelVelger && m.dobbeltId.length===0, JSON.stringify(m.dobbeltId));
   sjekk(`${tag}: tekster (Vinn tilbake / Lojalitet / Ledige timer)`, m.tekster.vinn==='Kunder som ikke møtte opp, eller har vært borte lenge. En personlig melding fra deg.'

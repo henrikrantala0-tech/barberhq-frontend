@@ -1,19 +1,21 @@
-// «Få din første booking» (Oversikt) — GET /api/dashboard/aktivering + POST /aktivering/steg (backend 1647f62).
+// «Få din første booking» (Oversikt) + «Lag story» på Vekst-fanen — ombygd 27.11.2026 (Henrik).
 //
-// Verifiserer (måler tekst og synlighet, ikke bare bilde) i Microsoft Edge (channel 'msedge'):
-//   • synlig KUN når page_status==='live' og har_booking===false; skjult ved har_booking true,
-//     upublisert side, 500 fra /aktivering og svar uten har_booking
-//   • låst copy (tittel, undertekst, steg 1–3, knappetekster) + svarmeldingen med barberens EGEN slug
-//   • ingen priser / Vekst-salg i seksjonen
-//   • kryss: lokalt med en gang → POST {steg,ferdig}; 200 → står; 403 (demo) → rulles tilbake, ingen melding
-//   • «Kopier svarmelding» → utklippstavla har meldingen + steget krysses; «Kopier lenke» → full lenke
-//   • «Lag story» → story-generatoren åpner + steget krysses
-//   • kryss overlever reload (lagret på serveren — mocken holder tilstanden, ikke nettleseren)
-//   • hjemskjerm-kortet (iPhone-UA) vises ALDRI samtidig med åpne steg: skjult mens stegene står åpne,
-//     synlig når seksjonen er krympet, har_booking er true, siden er upublisert eller /aktivering feiler;
-//     lukket kort (14 dager) forblir lukket også når seksjonen krympes
-//   • INGEN request mot prod: alt under /api/** mockes, resten avbrytes
-// Skjermbilder: 320 og 375, lys og mørk.
+// Kontrakt: GET /api/dashboard/aktivering → { har_bookingside_booking, har_booking }. Bare bookinger fra bookingsiden
+// teller («Legg til booking» = kilde 'manuell' gjør ikke). Mangler har_bookingside_booking, brukes har_booking.
+// Verifiserer (måler tekst, rekkefølge og synlighet med checkVisibility, ikke bare bilde):
+//   • ny barber (live, ingen bookingside-booking): seksjonen RETT under I DAG, rammefri (ingen kant/bakgrunn/radius),
+//     låste tekster, tre steg, ingen kryss, ingen pris/Vekst; Kommende skjult uten kommende bookinger og synlig med en
+//     manuell booking; Nøkkeltall skjult til minst én fullført booking; story-inngangen i I DAG skjult OG ikke meldt
+//     til backend (POST /ledige/vist); hjemskjerm-kortet (iPhone) venter
+//   • kopier → utklippstavla + melding nederst («Svar kopiert» / «Lenke kopiert»), knappeteksten står; «Lag story» åpner
+//     generatoren; INGEN skrivende kall fra seksjonen (POST /aktivering/steg finnes ikke lenger)
+//   • reserve: bare har_booking → som før; 500 / upublisert / mangler felt → ingenting
+//   • rett etter første booking: stegene borte, «Første booking er inne.» (grønn, hake) ÉN gang — reload → borte;
+//     aldri for en barber som ikke har sett stegene i denne nettleseren; hjemskjerm-kortet kommer
+//   • Vekst-fanen: «Lag story» (DEL) rett under «Kunder per måned», før Automatikk; uten data er tallene, diagrammet og
+//     tom-teksten borte, og fanen starter med «Lag story» → Automatikk → Personlig
+//   • INGEN request mot prod: alt under /api/** mockes, resten avbrytes og telles
+// Skjermbilder (mørk, 320/375/1280): oversikt-ny, oversikt-etter, vekst-uten, vekst-med → .render-ut/forste-booking/
 import http from 'node:http';
 import fs from 'node:fs';
 import path from 'node:path';
@@ -22,7 +24,6 @@ import { chromium } from 'playwright';
 const ROOT = path.resolve(import.meta.dirname, '../../site');
 const OUT  = process.env.OUT || path.resolve(import.meta.dirname, '../../.render-ut/forste-booking');
 fs.mkdirSync(OUT,{recursive:true});
-
 const MIME={'.html':'text/html; charset=utf-8','.js':'text/javascript; charset=utf-8','.css':'text/css',
             '.webp':'image/webp','.png':'image/png','.svg':'image/svg+xml','.json':'application/json'};
 const server=http.createServer((q,r)=>{const f=path.join(ROOT,decodeURIComponent(q.url.split('?')[0]));
@@ -31,254 +32,220 @@ const server=http.createServer((q,r)=>{const f=path.join(ROOT,decodeURIComponent
 await new Promise(r=>server.listen(0,r));
 const PORT=server.address().port;
 
+// Fast «nå»: fredag 27.11.2026 10:10 Oslo (UTC+1).
+const NAA=new Date('2026-11-27T09:10:00Z');
 const SLUG='saxe-cuts';
-const KRYMPET='Lenka er delt. Første booking kommer når en kunde bruker den.';
 const MELDING=`Yes 👌 Se ledige tider og book her: trybarberhq.com/${SLUG}`;
-const PROFIL={hasPassword:true,name:'Sander',shop:'Saxe Cuts',email:'s@s.no',slug:SLUG};
+const PROFIL={hasPassword:true,name:'Sander',shop:'Saxe Cuts',email:'s@example.no',slug:SLUG};
 const billing=(x={})=>({ subscription_status:null, page_status:'live', plan:null, effective_plan:'basis',
   effective_plan_grunn:'gratis', trial_start_at:null, trial_days_left:null, trial_ends_at:null, days_left:null,
-  needs_attention:false, attention_grunn:null, cancel_at_period_end:false, current_period_end:null, ...x });
-const steg=(x={})=>({svarmelding:false,bio:false,story:false,...x});
+  needs_attention:false, attention_grunn:null, cancel_at_period_end:false, current_period_end:null, sms_pakke_kan_kjopes:false, ...x });
+const VEKST=billing({subscription_status:'active',plan:'vekst',effective_plan:'vekst',effective_plan_grunn:'subscription',current_period_end:'2026-12-27T00:00:00Z'});
+const bk=(id,name,service,startZ,min,x={})=>{const s=new Date(startZ);return {id,name,service,start:s.toISOString(),end:new Date(s.getTime()+min*60000).toISOString(),status:'bekreftet',kilde:'bookingside',...x};};
+const MANUELL=[bk(31,'Ola Nordmann','Klipp','2026-11-28T11:00:00Z',30,{kilde:'manuell'})];      // lørdag 12:00, «Legg til booking»
+const FORSTE=[bk(41,'Jonas Berg','Fade','2026-11-28T13:30:00Z',40)];                             // lørdag 14:30, via bookingsiden
+const STATS_TOM={daily:[],months:[],months_with_data:[],completed_all_time:0,record_customers_month:null,weekly_revenue:[]};
+const dag=(d,revenue,count)=>({day:d,revenue,count,new:1,returning:count-1});
+const STATS_MED={daily:[dag('2026-11-20',1400,3),dag('2026-11-24',2100,5),dag('2026-11-26',900,2)],
+  months:[{ym:'2026-06',customers:18},{ym:'2026-07',customers:24},{ym:'2026-08',customers:21},{ym:'2026-09',customers:30},{ym:'2026-10',customers:27},{ym:'2026-11',customers:22}],
+  months_with_data:['2026-06','2026-07','2026-08','2026-09','2026-10','2026-11'], completed_all_time:142,
+  record_customers_month:{ym:'2026-09',customers:30}, current_week_revenue:3000, best_week_revenue:6000, best_week_start:'2026-09-07', weekly_revenue:[]};
 
-let prodSluppet=0, prodAvbrutt=0;
-// state.aktivering: objekt som GET svarer med (eller {status}); state.post: 'ok' | 403 | 500. Mocken
-// holder kryssene (som serveren), så reload viser det som ble lagret.
-async function stubApi(page,state){
-  state.poster=[];
-  page.on('request',q=>{ if(new URL(q.url()).hostname==='api.trybarberhq.com') prodSluppet++; });
-  await page.route(u=>u.hostname==='api.trybarberhq.com',r=>{ prodAvbrutt++; return r.abort(); });
-  await page.route('**/api/**',async route=>{
-    const req=route.request(); const p=new URL(req.url()).pathname;
-    if(new URL(req.url()).hostname==='api.trybarberhq.com') prodAvbrutt++;
-    const json=(o,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(o)});
-    if(p==='/api/dashboard/aktivering/steg'&&req.method()==='POST'){
-      const b=JSON.parse(req.postData()||'{}'); state.poster.push(b);
-      if(state.post!=='ok') return json({error:'Ikke tilgjengelig i forhåndsvisning'},state.post);
-      state.aktivering.steg={...state.aktivering.steg,[b.steg]:b.ferdig};
-      return json({steg:state.aktivering.steg});
-    }
-    if(req.method()!=='GET') return json({},500);   // ingen andre skrivende kall
-    if(p==='/api/dashboard/aktivering') return state.aktivering.status ? json({},state.aktivering.status) : json(state.aktivering);
-    if(p==='/api/dashboard/billing/status') return json(state.billing);
-    if(p==='/api/dashboard/profile') return json(PROFIL);
-    if(p==='/api/dashboard/loyalty') return json({enabled:false,threshold:10,pct:100,participants:[],eligible:[],totals:{}});
-    if(p==='/api/dashboard/preview') return route.fulfill({status:200,contentType:'text/html',body:'<html><body></body></html>'});
-    return json(/images|bookings|recent|services|hours|referrals|winback|rebooking/.test(p)?[]:{});
-  });
-}
-
-const browser=await chromium.launch({channel:'msedge'});
-const IPHONE='Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1';
-async function nySide(bredde,tema,state,{userAgent,hsLukket}={}){
-  const ctx=await browser.newContext({viewport:{width:bredde,height:900},deviceScaleFactor:2,colorScheme:tema,
-    ...(userAgent?{userAgent,isMobile:true,hasTouch:true}:{}),
-    permissions:['clipboard-read','clipboard-write']});
+let prodSluppet=0;
+async function nySide(bredde,st,{iphone=false,init={},tema='dark'}={}){
+  const ctx=await browser.newContext({viewport:{width:bredde,height:900},deviceScaleFactor:2,colorScheme:tema,reducedMotion:'reduce',
+    ...(iphone?{userAgent:IPHONE,hasTouch:true}:{}), permissions:['clipboard-read','clipboard-write']});
   const page=await ctx.newPage();
-  await page.addInitScript(t=>{ try{ localStorage.setItem('bhq-theme',t); }catch(e){} },tema);
-  if(hsLukket) await page.addInitScript(()=>{ try{ localStorage.setItem('bhq-hjemskjerm-skjult',JSON.stringify({t:Date.now(),n:1})); }catch(e){} });
-  const errs=[]; page.on('pageerror',e=>errs.push(e.message)); page.on('dialog',d=>d.dismiss());
-  await stubApi(page,state);
-  await page.goto(`http://localhost:${PORT}/no/dashboard.html`,{waitUntil:'networkidle'});
-  await page.waitForTimeout(300);
-  return {ctx,page,errs};
-}
-const synlig=page=>page.$eval('#forsteBooking',e=>!e.hidden&&e.offsetParent!==null).catch(()=>false);
-const kryss=page=>page.$$eval('#forsteBooking .fb-kryss',bs=>bs.map(b=>b.getAttribute('aria-checked')==='true'));
-const rapport=[]; const push=(n,f,errs=[])=>rapport.push({sjekk:n,resultat:(f.length||errs.length)?'✗ '+[...f,...errs.map(e=>'JS: '+e)].join(' | '):'OK ✓'});
-
-// ── Synlighet + skjermbilder ──────────────────────────────────────────────────────────────
-const VIS=[
-  {id:'uten-kryss', b:billing(), a:{har_booking:false,steg:steg()}, vis:true},
-  {id:'med-kryss',  b:billing(), a:{har_booking:false,steg:steg({svarmelding:true,bio:true})}, vis:true},
-  {id:'krympet', b:billing(), a:{har_booking:false,steg:steg({svarmelding:true,bio:true,story:true})}, vis:true, krympet:true},
-  {id:'krympet-har-booking', b:billing(), a:{har_booking:true,steg:steg({svarmelding:true,bio:true,story:true})}, vis:false},
-  {id:'har-booking',b:billing(), a:{har_booking:true,steg:steg()}, vis:false},
-  {id:'upublisert', b:billing({page_status:'forhandsvist'}), a:{har_booking:false,steg:steg()}, vis:false},
-  {id:'api-feil',   b:billing(), a:{status:500}, vis:false},
-  {id:'mangler-felt',b:billing(), a:{steg:steg()}, vis:false, ettSkudd:true},
-];
-for(const c of VIS){
-  for(const bredde of [320,375]) for(const tema of ['light','dark']){
-    if(c.ettSkudd && (bredde!==375||tema!=='light')) continue;
-    const state={billing:c.b, aktivering:JSON.parse(JSON.stringify(c.a)), post:'ok'};
-    const {ctx,page,errs}=await nySide(bredde,tema,state);
-    const f=[];
-    const v=await synlig(page);
-    if(v!==c.vis) f.push(`synlig=${v}, ventet ${c.vis}`);
-    if(c.krympet){
-      const t=await page.$eval('#forsteBooking',e=>e.innerText.replace(/\s+/g,' ').trim());
-      if(t!==KRYMPET+' Vis stegene') f.push(`krympet tekst «${t}»`);
-      if(!(await page.$eval('#fbFull',e=>e.hidden))) f.push('stegene står åpne');
-      const forst=await page.$eval('#oversikt',e=>{const k=[...e.children].find(x=>x.offsetParent!==null);return k&&k.id;});
-      if(forst!=='forsteBooking') f.push(`ikke øverst på Oversikt (først: ${forst})`);
-      if(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth)) f.push('horisontal scroll');
-      await page.locator('#forsteBooking').screenshot({path:path.join(OUT,`${c.id}-${bredde}-${tema}.png`)});
-      await page.screenshot({path:path.join(OUT,`${c.id}-kontekst-${bredde}-${tema}.png`),clip:{x:0,y:0,width:bredde,height:420}});
-    }else if(c.vis){
-      const t=await page.$eval('#forsteBooking',e=>e.innerText);
-      for(const forvent of ['Få din første booking','Siden din er live. Nå gjelder det å få kundene dit.',
-        'Svar kundene med lenka','Når noen spør om time på Snap eller Instagram: send dette i stedet for å avtale tiden selv.',
-        MELDING,'Kopier svarmelding','Legg lenka i Instagram-bioen','Kopier lenke','Legg ut en story','Lag story'])
-        if(!t.includes(forvent)) f.push(`mangler «${forvent}»`);
-      if(/grand-barber|kr\b|Vekst|Oppgrader|\d+\s*\/\s*3|%/.test(t)) f.push(`forbudt innhold: «${t.match(/grand-barber|kr\b|Vekst|Oppgrader|\d+\s*\/\s*3|%/)[0]}»`);
-      const k=await kryss(page), vent=['svarmelding','bio','story'].map(s=>c.a.steg[s]);
-      if(JSON.stringify(k)!==JSON.stringify(vent)) f.push(`kryss ${JSON.stringify(k)} ≠ ${JSON.stringify(vent)}`);
-      const forst=await page.$eval('#oversikt',e=>{const k=[...e.children].find(x=>x.offsetParent!==null);return k&&k.id;});
-      if(forst!=='forsteBooking') f.push(`ikke øverst på Oversikt (først: ${forst})`);
-      const bred=await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth);
-      if(bred) f.push('horisontal scroll');
-      await page.locator('#forsteBooking').screenshot({path:path.join(OUT,`${c.id}-${bredde}-${tema}.png`)});
-    }else{
-      await page.screenshot({path:path.join(OUT,`${c.id}-${bredde}-${tema}.png`)});
-    }
-    push(`${c.id} ${bredde} ${tema}`,f,errs);
-    await ctx.close();
-  }
-}
-
-// ── Interaksjon ────────────────────────────────────────────────────────────────────────
-{ // kryss for hånd → POST, står; reload → fortsatt krysset (serveren holder det)
-  const state={billing:billing(), aktivering:{har_booking:false,steg:steg()}, post:'ok'};
-  let {ctx,page,errs}=await nySide(375,'light',state); const f=[];
-  await page.click('li[data-steg="bio"] .fb-kryss');
-  if((await kryss(page))[1]!==true) f.push('ikke krysset lokalt');
-  await page.waitForTimeout(300);
-  if(JSON.stringify(state.poster)!==JSON.stringify([{steg:'bio',ferdig:true}])) f.push(`POST ${JSON.stringify(state.poster)}`);
-  await page.reload({waitUntil:'networkidle'}); await page.waitForTimeout(300);
-  if((await kryss(page))[1]!==true) f.push('krysset forsvant ved reload');
-  await page.click('li[data-steg="bio"] .fb-kryss'); await page.waitForTimeout(300);
-  if((await kryss(page))[1]!==false) f.push('kunne ikke fjerne krysset');
-  if(JSON.stringify(state.poster.at(-1))!==JSON.stringify({steg:'bio',ferdig:false})) f.push(`fjern-POST ${JSON.stringify(state.poster.at(-1))}`);
-  push('kryss → POST → reload',f,errs); await ctx.close();
-}
-{ // 403 (demo) → rulles tilbake uten melding
-  const state={billing:billing(), aktivering:{har_booking:false,steg:steg()}, post:403};
-  const {ctx,page,errs}=await nySide(375,'light',state); const f=[];
-  const foer=await page.$eval('body',e=>e.innerText);
-  await page.click('li[data-steg="svarmelding"] .fb-kryss');
-  const umiddelbart=(await kryss(page))[0];
+  await page.clock.setFixedTime(NAA);
+  await page.addInitScript(([t,init])=>{ try{ localStorage.setItem('bhq-theme',t); for(const k in init) localStorage.setItem(k,init[k]); }catch(e){} },[tema,init]);
+  const s={errs:[],skriv:[],aktKall:0};
+  page.on('pageerror',e=>s.errs.push(e.message)); page.on('dialog',d=>d.dismiss());
+  // Alt mot prod-verten som ikke er /api/** avbrytes og telles (skal være 0); /api/** besvares av mocken under.
+  await page.route(u=>u.hostname==='api.trybarberhq.com'&&!u.pathname.startsWith('/api/'),r=>{ prodSluppet++; return r.abort(); });
+  await page.route('**/api/**',async route=>{
+    const req=route.request(), u=new URL(req.url()), p=u.pathname;
+    const J=(o,status=200)=>route.fulfill({status,contentType:'application/json',body:JSON.stringify(o)});
+    if(req.method()!=='GET'){ s.skriv.push(req.method()+' '+p); return J({ok:true}); }   // besvares lokalt, aldri videre
+    if(p==='/api/dashboard/aktivering'){ s.aktKall++; return st.akt.status ? J({},st.akt.status) : J(st.akt); }
+    if(p==='/api/dashboard/billing/status') return J(st.billing||billing());
+    if(p==='/api/dashboard/profile') return J(PROFIL);
+    if(p==='/api/dashboard/stats') return J(st.stats||STATS_TOM);
+    if(p==='/api/dashboard/bookings') return J(st.bookinger||[]);
+    if(p==='/api/dashboard/ledige'){ const dato=u.searchParams.get('dato');
+      return J(dato==='2026-11-27'?{dato,antall:5,vis_banner:true,stengt:false}:{dato,antall:0,vis_banner:false}); }
+    if(p==='/api/dashboard/story/ledige-timer/data') return J({tjenester:2,har_ledige:true,apne_dager:4,tilgjengelige_dager:4,dager:[]});
+    if(p==='/api/dashboard/loyalty') return J({enabled:false,threshold:10,pct:100,participants:[],eligible:[],totals:{}});
+    if(p==='/api/dashboard/preview') return route.fulfill({status:200,contentType:'text/html',body:'<html><body></body></html>'});
+    return J(/images|recent|services|hours|referrals|winback|customers|date-overrides/.test(p)?[]:{});
+  });
+  await page.goto(`http://localhost:${PORT}/no/dashboard.html`,{waitUntil:'domcontentloaded'});
+  await page.waitForSelector('#idagInnhold .idag-tom, #idagInnhold .idag-neste',{timeout:15000});
+  await page.waitForFunction(()=>typeof _aktiveringKjent!=='undefined'&&_aktiveringKjent&&(_billingKjent||_billingFeilet),null,{timeout:15000});
+  await page.evaluate(()=>document.fonts&&document.fonts.ready);
   await page.waitForTimeout(400);
-  if(umiddelbart!==true) f.push('ikke krysset lokalt før POST');
-  if((await kryss(page))[0]!==false) f.push('ikke rullet tilbake etter 403');
-  const toast=await page.$eval('#toast',e=>e.classList.contains('show')?e.textContent:'').catch(()=>'');
-  if(toast) f.push(`toast «${toast}»`);
-  const etter=await page.$eval('body',e=>e.innerText);
-  if(/Ikke tilgjengelig|feil|Kunne ikke/i.test(etter.replace(foer,''))) f.push('feilmelding vist');
-  push('403 → tilbakerulling, ingen melding',f,errs); await ctx.close();
+  return {ctx,page,s};
 }
-{ // 500 på POST → rulles tilbake
-  const state={billing:billing(), aktivering:{har_booking:false,steg:steg({story:true})}, post:500};
-  const {ctx,page,errs}=await nySide(375,'light',state); const f=[];
-  await page.click('li[data-steg="story"] .fb-kryss'); await page.waitForTimeout(400);
-  if((await kryss(page))[2]!==true) f.push('fjernet kryss ble ikke rullet tilbake');
-  push('500 → tilbakerulling',f,errs); await ctx.close();
+const IPHONE='Mozilla/5.0 (iPhone; CPU iPhone OS 18_5 like Mac OS X) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/18.5 Mobile/15E148 Safari/604.1';
+const browser=await chromium.launch();
+const rapport=[]; let feil=0;
+const sjekk=(ok,navn,detalj='')=>{ rapport.push({sjekk:navn,resultat:ok?'OK ✓':'✗ '+String(detalj).slice(0,160)}); if(!ok) feil++; };
+const norm=t=>(t||'').replace(/[\s  ]+/g,' ').trim();
+
+// Tilstanden på Oversikt: synlige barn av #oversikt i rekkefølge + seksjonsdetaljer.
+const tilstand=page=>page.evaluate(()=>{
+  const v=el=>!!el&&el.checkVisibility();
+  const fb=document.getElementById('forsteBooking'), cs=getComputedStyle(fb);
+  return {
+    rekke:[...document.getElementById('oversikt').children].filter(v).map(e=>e.id||e.className),
+    fb:v(fb), steg:v(document.getElementById('fbFull')), inne:v(document.getElementById('fbInne')),
+    tekst:fb.innerText, kommende:v(document.getElementById('ovsKommende')), tall:v(document.getElementById('ovsTall')),
+    story:v(document.getElementById('storyOpenOversikt'))||v(document.getElementById('storyLedigeLinje'))||v(document.getElementById('storyFullt')),
+    hs:v(document.getElementById('hsKort')),
+    ramme:[cs.borderTopWidth,cs.borderLeftWidth,cs.borderRightWidth,cs.backgroundColor,cs.borderTopLeftRadius].join(' '),
+    kryss:document.querySelectorAll('#forsteBooking .fb-kryss, #forsteBooking [role=checkbox], #fbKrympet, #fbVis').length,
+    sist:[...document.querySelectorAll('#oversikt > .ovs-sek')].filter(v).map(e=>e.classList.contains('ovs-sek-sist')),
+    overflow:document.documentElement.scrollWidth-innerWidth,
+  };
+});
+async function skudd(page,navn,bredde){
+  const h=await page.evaluate(()=>document.documentElement.scrollHeight);
+  await page.setViewportSize({width:bredde,height:h}); await page.waitForTimeout(150);
+  await page.screenshot({path:path.join(OUT,`${navn}-${bredde}.png`),fullPage:true});
+  await page.setViewportSize({width:bredde,height:900});
 }
-{ // kopier svarmelding + kopier lenke → utklippstavla + kryss
-  const state={billing:billing(), aktivering:{har_booking:false,steg:steg()}, post:'ok'};
-  const {ctx,page,errs}=await nySide(375,'light',state); const f=[];
-  await page.click('[data-fb-handling="svarmelding"]'); await page.waitForTimeout(300);
-  const c1=await page.evaluate(()=>navigator.clipboard.readText());
-  if(c1!==MELDING) f.push(`utklipp 1 «${c1}»`);
-  await page.click('[data-fb-handling="bio"]'); await page.waitForTimeout(300);
-  const c2=await page.evaluate(()=>navigator.clipboard.readText());
-  if(c2!==`https://trybarberhq.com/${SLUG}`) f.push(`utklipp 2 «${c2}»`);
-  const k=await kryss(page); if(!(k[0]&&k[1]&&!k[2])) f.push(`kryss ${JSON.stringify(k)}`);
-  push('kopier → utklippstavle + kryss',f,errs); await ctx.close();
-}
-{ // krympet → «Vis stegene» åpner → fjern kryss (POST) → stegene står åpne → kryss igjen → krympes
-  const state={billing:billing(), aktivering:{har_booking:false,steg:steg({svarmelding:true,bio:true,story:true})}, post:'ok'};
-  const {ctx,page,errs}=await nySide(375,'light',state); const f=[];
-  const full=()=>page.$eval('#fbFull',e=>!e.hidden), krymp=()=>page.$eval('#fbKrympet',e=>!e.hidden);
-  await page.click('#fbVis'); await page.waitForTimeout(100);
-  if(!(await full())||(await krymp())) f.push('«Vis stegene» åpnet ikke');
-  await page.click('li[data-steg="bio"] .fb-kryss'); await page.waitForTimeout(300);
-  if(JSON.stringify(state.poster.at(-1))!==JSON.stringify({steg:'bio',ferdig:false})) f.push(`POST ${JSON.stringify(state.poster.at(-1))}`);
-  if(!(await full())) f.push('stegene lukket etter fjernet kryss');
-  await page.click('li[data-steg="bio"] .fb-kryss'); await page.waitForTimeout(300);
-  if(!(await krymp())) f.push('krympet ikke igjen når alle tre ble krysset');
-  push('krympet → Vis stegene → fjern/sett kryss',f,errs); await ctx.close();
-}
-{ // krympet, så fjernes et kryss på serveren (annen enhet) → reload → stegene åpne automatisk
-  const state={billing:billing(), aktivering:{har_booking:false,steg:steg({svarmelding:true,bio:true,story:true})}, post:'ok'};
-  const {ctx,page,errs}=await nySide(375,'light',state); const f=[];
-  if(!(await page.$eval('#fbKrympet',e=>!e.hidden))) f.push('ikke krympet ved start');
-  state.aktivering.steg.story=false;
-  await page.reload({waitUntil:'networkidle'}); await page.waitForTimeout(300);
-  if(!(await page.$eval('#fbFull',e=>!e.hidden))) f.push('stegene åpnet ikke');
-  push('krympet → kryss fjernet → åpent',f,errs); await ctx.close();
-}
-{ // 403 mens stegene er åpnet fra krympet: tilbakerulling holder dem åpne (ingen hopp)
-  const state={billing:billing(), aktivering:{har_booking:false,steg:steg({svarmelding:true,bio:true,story:true})}, post:403};
-  const {ctx,page,errs}=await nySide(375,'light',state); const f=[];
-  await page.click('#fbVis'); await page.click('li[data-steg="story"] .fb-kryss'); await page.waitForTimeout(400);
-  if((await kryss(page))[2]!==true) f.push('ikke rullet tilbake');
-  if(!(await page.$eval('#fbFull',e=>!e.hidden))) f.push('stegene klappet sammen etter tilbakerulling');
-  push('krympet + 403 → tilbakerullet',f,errs); await ctx.close();
-}
-{ // Lag story → generatoren åpner + kryss
-  const state={billing:billing(), aktivering:{har_booking:false,steg:steg()}, post:'ok'};
-  const {ctx,page,errs}=await nySide(375,'light',state); const f=[];
-  await page.click('[data-fb-handling="story"]'); await page.waitForTimeout(500);
-  const apen=await page.$eval('#storyOverlay',e=>getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().height>0);
-  if(!apen) f.push('story-generatoren åpnet ikke');
-  if((await kryss(page))[2]!==true) f.push('story ikke krysset');
-  push('Lag story → generator + kryss',f,errs); await ctx.close();
+const TEKSTER=['Få din første booking','Siden din er klar. Tre ting som får kundene til å bruke den.',
+  'Svar med lenka når noen spør om time',MELDING,'Kopier svar','Legg lenka i Instagram-bioen','Kopier lenke',
+  'Del ledige timer på story','Lag story'];
+
+// ── 1) Ny barber, 320/375/1280 (mobil med iPhone-UA, så hjemskjerm-kortet er en kandidat) ─────────────────
+for(const bredde of [320,375,1280]){
+  const {ctx,page,s}=await nySide(bredde,{akt:{har_bookingside_booking:false,har_booking:false}},{iphone:bredde<720});
+  const t=await tilstand(page), k=`ny ${bredde}`;
+  sjekk(t.fb&&t.steg&&!t.inne,`${k}: stegene vises`,JSON.stringify(t));
+  sjekk(t.rekke.indexOf('forsteBooking')===t.rekke.indexOf('ovsIdag')+1,`${k}: rett under I DAG`,t.rekke.join(','));
+  for(const x of TEKSTER) if(!norm(t.tekst).includes(x)) sjekk(false,`${k}: tekst «${x}»`,norm(t.tekst));
+  sjekk(/1\s*Svar med lenka[\s\S]*2\s*Legg lenka[\s\S]*3\s*Del ledige/.test(t.tekst),`${k}: tre nummererte steg i rekkefølge`,norm(t.tekst));
+  sjekk(!/\bkr\b|Vekst|Oppgrader|Ferdig|Vis stegene|Lenka er delt/.test(t.tekst),`${k}: ingen pris/Vekst/kryss-tekst`,norm(t.tekst));
+  sjekk(t.kryss===0,`${k}: ingen kryss eller krympet visning`,t.kryss);
+  sjekk(t.ramme==='0px 0px 0px rgba(0, 0, 0, 0) 0px',`${k}: rammefri (ingen kant/bakgrunn/radius)`,t.ramme);
+  sjekk(!t.kommende,`${k}: Kommende skjult uten kommende bookinger`);
+  sjekk(!t.tall,`${k}: Nøkkeltall skjult uten fullført booking`);
+  sjekk(!t.story,`${k}: story-inngangen i I DAG skjult`);
+  sjekk(!s.skriv.some(x=>/ledige\/vist/.test(x)),`${k}: skjult story-linje meldes ikke som vist`,s.skriv.join(','));
+  sjekk(!t.hs,`${k}: hjemskjerm-kortet venter`);
+  sjekk(t.sist.length&&t.sist.at(-1)&&t.sist.slice(0,-1).every(x=>!x),`${k}: bare siste synlige seksjon uten hårlinje`,JSON.stringify(t.sist));
+  sjekk(t.overflow<=0,`${k}: ingen horisontal overflow`,t.overflow);
+  sjekk(s.errs.length===0,`${k}: ingen pageerror`,s.errs.join(' | '));
+  if(bredde===375){
+    const m=await page.evaluate(()=>{const g=s=>getComputedStyle(document.querySelector(s));
+      return {h:g('#forsteBooking .fb-h').fontSize+'/'+g('#forsteBooking .fb-h').fontWeight, t:g('.fb-tittel').fontSize+'/'+g('.fb-tittel').fontWeight,
+        nr:g('.fb-nr').fontWeight, knapp:document.querySelector('.fb-knapp').getBoundingClientRect().height};});
+    sjekk(m.h==='17px/600'&&m.t==='15px/600'&&m.nr==='600'&&m.knapp>=40,`${k}: tittel 17/600, steg 15/600, nr 600, knapp ≥ 40`,JSON.stringify(m));
+  }
+  await skudd(page,'oversikt-ny',bredde);
+  await ctx.close();
 }
 
-// ── Hjemskjerm-kortet og første booking (iPhone) ─────────────────────────────────────────
-const hsSynlig=page=>page.$eval('#hsKort',e=>!e.hidden&&e.offsetParent!==null).catch(()=>false);
-const fbApen=page=>page.$eval('#forsteBooking',e=>!e.hidden&&e.offsetParent!==null&&!e.classList.contains('fb-krympet')).catch(()=>false);
-const ALLE=steg({svarmelding:true,bio:true,story:true});
-const HS=[
-  {id:'hs-ny-barber', a:{har_booking:false,steg:steg()},                  fb:'apen',    hs:false, skudd:true},
-  {id:'hs-krympet',   a:{har_booking:false,steg:ALLE},                    fb:'krympet', hs:true,  skudd:true},
-  {id:'hs-har-booking',a:{har_booking:true,steg:steg()},                  fb:'skjult',  hs:true,  skudd:true},
-  {id:'hs-upublisert', b:billing({page_status:'forhandsvist'}), a:{har_booking:false,steg:steg()}, fb:'skjult', hs:true},
-  {id:'hs-api-feil',  a:{status:500},                                     fb:'skjult',  hs:true},
-  {id:'hs-krympet-lukket', a:{har_booking:false,steg:ALLE}, hsLukket:true, fb:'krympet', hs:false},
+// ── 2) Interaksjon: kopier + Lag story, ingen skriv ──────────────────────────────────────────────────
+{ const {ctx,page,s}=await nySide(375,{akt:{har_bookingside_booking:false,har_booking:false}});
+  const toast=()=>page.$eval('#toast',e=>e.textContent.trim());
+  await page.click('[data-fb-handling="svarmelding"]'); await page.waitForTimeout(250);
+  const c1=await page.evaluate(()=>navigator.clipboard.readText()), t1=await toast();
+  sjekk(c1===MELDING&&t1==='Svar kopiert',`kopier svar → utklippstavla + «Svar kopiert»`,`${c1} | ${t1}`);
+  sjekk(await page.$eval('[data-fb-handling="svarmelding"]',b=>b.textContent.trim())==='Kopier svar','knappeteksten står («Kopier svar»)');
+  await page.click('[data-fb-handling="bio"]'); await page.waitForTimeout(250);
+  const c2=await page.evaluate(()=>navigator.clipboard.readText()), t2=await toast();
+  sjekk(c2===`https://trybarberhq.com/${SLUG}`&&t2==='Lenke kopiert',`kopier lenke → full lenke + «Lenke kopiert»`,`${c2} | ${t2}`);
+  await page.click('[data-fb-handling="story"]'); await page.waitForTimeout(400);
+  sjekk(await page.$eval('#storyOverlay',e=>getComputedStyle(e).display!=='none'&&e.getBoundingClientRect().height>0),'«Lag story» åpner generatoren');
+  sjekk(!s.skriv.some(x=>/aktivering/.test(x)),'ingen POST /aktivering/steg',s.skriv.join(','));
+  sjekk(s.errs.length===0,'interaksjon: ingen pageerror',s.errs.join(' | '));
+  await ctx.close();
+}
+
+// ── 3) Kildene: manuell booking, reserve, feil ──────────────────────────────────────────────────────
+const KILDER=[
+  {id:'manuell booking (bookingside=false, har_booking=true)', akt:{har_bookingside_booking:false,har_booking:true}, bookinger:MANUELL, fb:true, kommende:true},
+  {id:'reserve: bare har_booking=false', akt:{har_booking:false,steg:{}}, fb:true},
+  {id:'reserve: bare har_booking=true',  akt:{har_booking:true,steg:{}},  fb:false},
+  {id:'bookingside=true',                akt:{har_bookingside_booking:true,har_booking:true}, fb:false},
+  {id:'upublisert',  akt:{har_bookingside_booking:false,har_booking:false}, billing:billing({page_status:'forhandsvist'}), fb:false},
+  {id:'500 fra /aktivering', akt:{status:500}, fb:false},
+  {id:'mangler feltene', akt:{steg:{}}, fb:false},
 ];
-for(const c of HS){
-  for(const bredde of [320,375]) for(const tema of (c.skudd?['light','dark']:['light'])){
-    const state={billing:c.b||billing(), aktivering:JSON.parse(JSON.stringify(c.a)), post:'ok'};
-    const {ctx,page,errs}=await nySide(bredde,tema,state,{userAgent:IPHONE,hsLukket:c.hsLukket});
-    const f=[];
-    const fbVis=await synlig(page), krymp=await page.$eval('#forsteBooking',e=>e.classList.contains('fb-krympet')).catch(()=>false);
-    const fb=!fbVis?'skjult':(krymp?'krympet':'apen');
-    if(fb!==c.fb) f.push(`første booking=${fb}, ventet ${c.fb}`);
-    const hs=await hsSynlig(page);
-    if(hs!==c.hs) f.push(`hjemskjerm-kort synlig=${hs}, ventet ${c.hs}`);
-    if(hs && await fbApen(page)) f.push('begge synlige med åpne steg');
-    if(fb==='krympet'&&hs){
-      const rekke=await page.$eval('#oversikt',e=>[...e.children].filter(x=>x.offsetParent!==null).slice(0,2).map(x=>x.id).join(','));
-      if(rekke!=='forsteBooking,hsKort') f.push(`rekkefølge ${rekke}`);
-    }
-    if(c.skudd) await page.screenshot({path:path.join(OUT,`${c.id}-${bredde}-${tema}.png`),clip:{x:0,y:0,width:bredde,height:900}});
-    push(`${c.id} ${bredde} ${tema}`,f,errs);
-    await ctx.close();
+for(const c of KILDER){
+  const {ctx,page,s}=await nySide(375,{akt:c.akt,billing:c.billing,bookinger:c.bookinger});
+  const t=await tilstand(page);
+  sjekk(t.fb===c.fb&&(!c.fb||t.steg),`${c.id}: seksjonen ${c.fb?'vises':'skjult'}`,JSON.stringify({fb:t.fb,steg:t.steg,inne:t.inne}));
+  sjekk(!t.inne,`${c.id}: ingen «Første booking er inne.» uten å ha sett stegene`);
+  if(c.kommende!==undefined) sjekk(t.kommende===c.kommende,`${c.id}: Kommende ${c.kommende?'vises (alle kilder)':'skjult'}`);
+  if(!c.fb) sjekk(t.story,`${c.id}: story-inngangen i I DAG står som før`);
+  sjekk(s.errs.length===0,`${c.id}: ingen pageerror`,s.errs.join(' | '));
+  await ctx.close();
+}
+
+// ── 4) Rett etter første booking ─────────────────────────────────────────────────────────────────────
+for(const bredde of [320,375,1280]){
+  const st={akt:{har_bookingside_booking:true,har_booking:true},bookinger:FORSTE};
+  const {ctx,page,s}=await nySide(bredde,st,{iphone:bredde<720,init:{'bhq-fb-sett':'1'}});
+  const t=await tilstand(page), k=`etter ${bredde}`;
+  sjekk(t.fb&&t.inne&&!t.steg&&norm(t.tekst)==='Første booking er inne.',`${k}: stegene borte, «Første booking er inne.»`,JSON.stringify({fb:t.fb,inne:t.inne,steg:t.steg,tekst:t.tekst}));
+  sjekk(t.rekke.indexOf('forsteBooking')===t.rekke.indexOf('ovsIdag')+1,`${k}: linja står der seksjonen sto`,t.rekke.join(','));
+  const m=await page.evaluate(()=>{const p=document.getElementById('fbInne');return {farge:getComputedStyle(p).color,
+    good:getComputedStyle(document.documentElement).getPropertyValue('--good').trim(),hake:!!p.querySelector('use[href$="#hake"]')};});
+  sjekk(m.hake,`${k}: hake-ikon`);
+  sjekk(t.kommende,`${k}: Kommende viser bookingen`);
+  sjekk(!t.tall,`${k}: Nøkkeltall fortsatt skjult (ingen fullført booking)`);
+  sjekk(t.story,`${k}: story-inngangen i I DAG er tilbake`);
+  if(bredde<720) sjekk(t.hs,`${k}: hjemskjerm-kortet vises nå`);
+  sjekk(t.overflow<=0&&s.errs.length===0,`${k}: ingen overflow / pageerror`,t.overflow+' '+s.errs.join(' | '));
+  if(bredde===375) sjekk(/rgb\(62, 207, 126\)/.test(m.farge),`${k}: grønn linje (--good)`,m.farge+' '+m.good);
+  await skudd(page,'oversikt-etter',bredde);
+  if(bredde===375){
+    const lagret=await page.evaluate(()=>localStorage.getItem('bhq-fb-inne-vist'));
+    await page.reload({waitUntil:'domcontentloaded'});
+    await page.waitForSelector('#idagInnhold .idag-tom, #idagInnhold .idag-neste'); await page.waitForTimeout(500);
+    const t2=await tilstand(page);
+    sjekk(lagret==='1'&&!t2.fb,`${k}: reload → linja er borte (vist én gang)`,JSON.stringify({lagret,fb:t2.fb}));
   }
+  await ctx.close();
 }
-{ // krympet (kort synlig) → «Vis stegene» → kortet skjules → fjern kryss → fortsatt skjult → kryss igjen → kortet tilbake
-  const state={billing:billing(), aktivering:{har_booking:false,steg:steg({svarmelding:true,bio:true,story:true})}, post:'ok'};
-  const {ctx,page,errs}=await nySide(375,'light',state,{userAgent:IPHONE}); const f=[];
-  if(!(await hsSynlig(page))) f.push('kortet ikke synlig i krympet tilstand');
-  await page.click('#fbVis'); await page.waitForTimeout(100);
-  if(await hsSynlig(page)) f.push('kortet synlig etter «Vis stegene»');
-  await page.click('li[data-steg="bio"] .fb-kryss'); await page.waitForTimeout(300);
-  if(await hsSynlig(page)) f.push('kortet synlig med et steg uten kryss');
-  await page.click('li[data-steg="bio"] .fb-kryss'); await page.waitForTimeout(300);
-  if(!(await hsSynlig(page))) f.push('kortet kom ikke tilbake da seksjonen krympet');
-  push('hjemskjerm-kort følger krymping',f,errs); await ctx.close();
+{ // fullført booking → Nøkkeltall tilbake
+  const {ctx,page}=await nySide(375,{akt:{har_bookingside_booking:true,har_booking:true},stats:STATS_MED,bookinger:FORSTE});
+  const t=await tilstand(page);
+  sjekk(t.tall&&t.sist.at(-1)===true,'fullført booking: Nøkkeltall vises (siste seksjon)',JSON.stringify(t.sist));
+  await ctx.close();
 }
-{ // ny barber krysser alle tre (via knapper) → seksjonen krympes → kortet vises
-  const state={billing:billing(), aktivering:{har_booking:false,steg:steg({svarmelding:true,bio:true})}, post:'ok'};
-  const {ctx,page,errs}=await nySide(375,'light',state,{userAgent:IPHONE}); const f=[];
-  if(await hsSynlig(page)) f.push('kortet synlig mens stegene er åpne');
-  await page.click('li[data-steg="story"] .fb-kryss'); await page.waitForTimeout(300);
-  if(!(await hsSynlig(page))) f.push('kortet kom ikke etter siste kryss');
-  push('siste kryss → kortet vises',f,errs); await ctx.close();
+
+// ── 5) Vekst-fanen ───────────────────────────────────────────────────────────────────────────────────
+const vekst=page=>page.evaluate(()=>{
+  const v=el=>!!el&&el.checkVisibility();
+  const ids=['vekstStats','vekstTrendH','trendSub','trend','vkDelH','vkAutoH','vkPersH'];
+  const y=id=>{const e=document.getElementById(id);return v(e)?Math.round(e.getBoundingClientRect().top+scrollY):null;};
+  const synlige=ids.filter(id=>v(document.getElementById(id)));
+  return {synlige, rekke:synlige.slice().sort((a,b)=>y(a)-y(b)), tekst:document.getElementById('vekst').innerText,
+    delEtterTrend:(()=>{const t=document.getElementById('trend'),d=document.getElementById('vkDelH').closest('.vk-sek');
+      let n=t.nextElementSibling; while(n&&!v(n)) n=n.nextElementSibling; return n===d;})(),
+    overflow:document.documentElement.scrollWidth-innerWidth};
+});
+for(const [navn,stats,bill] of [['vekst-uten',STATS_TOM,billing()],['vekst-med',STATS_MED,VEKST]]) for(const bredde of [320,375,1280]){
+  const {ctx,page,s}=await nySide(bredde,{akt:{har_bookingside_booking:false,har_booking:false},stats,billing:bill});
+  await page.evaluate(()=>switchPanel('vekst')); await page.waitForTimeout(600);
+  const t=await vekst(page), k=`${navn} ${bredde}`;
+  if(navn==='vekst-uten'){
+    sjekk(JSON.stringify(t.rekke)===JSON.stringify(['vkDelH','vkAutoH','vkPersH']),`${k}: Lag story → Automatikk → Personlig, ingen tall/diagram`,t.rekke.join(','));
+    sjekk(!/Her ser du kundene dine/.test(t.tekst),`${k}: tom-teksten er borte`);
+  }else{
+    sjekk(JSON.stringify(t.rekke)===JSON.stringify(['vekstStats','vekstTrendH','trendSub','trend','vkDelH','vkAutoH','vkPersH']),`${k}: tall → diagram → Lag story → Automatikk`,t.rekke.join(','));
+    sjekk(t.delEtterTrend,`${k}: «Lag story» rett under diagrammet`);
+  }
+  sjekk(t.overflow<=0&&s.errs.length===0,`${k}: ingen overflow / pageerror`,t.overflow+' '+s.errs.join(' | '));
+  await skudd(page,navn,bredde);
+  await ctx.close();
 }
 
 await browser.close(); server.close();
-rapport.push({sjekk:'prod-trafikk', resultat:(prodSluppet-prodAvbrutt)>0?`✗ ${prodSluppet-prodAvbrutt} sluppet`:'OK ✓ (0 sluppet)'});
+sjekk(prodSluppet===0,'ingen request forbi mocken (prod)',prodSluppet);
 console.table(rapport);
-if(rapport.some(r=>r.resultat.startsWith('✗'))) process.exitCode=1;
+console.log(feil?`✗ ${feil} avvik`:'OK ✓ — alle sjekker grønne'); console.log('Skjermbilder:',OUT);
+if(feil) process.exitCode=1;

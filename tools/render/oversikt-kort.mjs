@@ -1,7 +1,7 @@
 // tools/render/oversikt-kort.mjs — de midlertidige kortene på Oversikt i ny stil (Henrik 17.11.2026).
 //
-// Kortene: «Få din første booking» (.fb-kort), hjemskjerm-kortet (.hs-kort), «Fullfør siden» (.dv2-fullfor) og
-// SMS-tilbudet (.sms-tilbud). Funksjon og synlighetsregler er uendret — bare stilen:
+// Kortene: hjemskjerm-kortet (.hs-kort), «Fullfør siden» (.dv2-fullfor) og SMS-tilbudet (.sms-tilbud). «Få din første
+// booking» er ikke kort lenger (rammefri seksjon 27.11.2026 — vaktes av forste-booking.mjs), men står i K1-bildet. Funksjon og synlighetsregler er uendret — bare stilen:
 //   boks: --surface, 1px --ov-seg-line, radius 12, padding 18, ingen skygge · tittel 15/600/-0.01em ·
 //   brødtekst 13.5/400 --mut/1.5 · knapper 46px/r8 (primær = ink-fyll) · hjemskjerm: ÉN tekstlinje (ingen dobbeltekst).
 // Kortene utelukker hverandre delvis (hjemskjerm venter på «første booking», «Fullfør siden» krever upublisert side),
@@ -31,7 +31,7 @@ const bk = (id,name,service,z,min) => { const s=new Date(z); return { id,name,se
 const BOOK = [ bk(1,'Jonas Berg','Fade','2026-11-17T10:30:00Z',40), bk(2,'Karim Haddad','Fade','2026-11-18T09:00:00Z',40) ];
 
 const TILSTANDER = {
-  'K1-forste-booking-og-sms': { plan:'basis', status:'live', aktivering:{ har_booking:false, steg:{} }, ekstra:{ sms_pakke_kan_kjopes:true, sms_paaminnelser_sendes:false, sms_saldo:0 }, kort:['#forsteBooking','#smsTilbud'] },
+  'K1-forste-booking-og-sms': { plan:'basis', status:'live', aktivering:{ har_booking:false, steg:{} }, ekstra:{ sms_pakke_kan_kjopes:true, sms_paaminnelser_sendes:false, sms_saldo:0 }, kort:['#smsTilbud'] },
   'K2-hjemskjerm-iphone':     { plan:'vekst', status:'live', aktivering:{ har_booking:true }, ua:UA_IPHONE, kort:['#hsKort'] },
   'K3-hjemskjerm-android':    { plan:'vekst', status:'live', aktivering:{ har_booking:true }, ua:UA_ANDROID, installPrompt:true, kort:['#hsKort'] },
   'K4-fullfor-siden':         { plan:'basis', status:'forhandsvist', aktivering:{ har_booking:false }, ekstra:{ sidemal:'v2' }, kort:['#dv2Fullfor'] },
