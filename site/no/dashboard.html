@@ -1074,7 +1074,7 @@
      justify-center er en no-op uten slakk. */
   .trend{display:flex;align-items:flex-end;justify-content:center;gap:10px;padding:8px 0 0;border-bottom:1px solid var(--line);min-height:150px;width:100%}
   /* Tom-tilstand (0 måneder med data): ingen akselinje under forklaringsteksten. */
-  .trend.tom{border-bottom:0;min-height:0;padding:0}
+  .trend[hidden]{display:none}
   /* Vekst måneds-diagram: Oversikts gradient-stolpe-mekanikk, men TRE diskrete tilstander (blå/grønn/gull) */
   /* flex:1 → kolonnene deler containerbredden likt, men max-width:96px kapper dem på desktop
      (170px-stolper ble for fete) — resten blir luft via .trend justify-center. .mbar under har
@@ -2174,6 +2174,21 @@
     <p class="block-s" id="trendSub">Siste seks måneder.</p>
     <div class="trend" id="trend"></div>
 
+    <!-- DEL — «Lag story»-generatoren (ledige timer). Rett under «Kunder per måned», før Automatikk (Henrik 27.11.2026);
+         uten data (ingen fullførte klipp) er tallene og diagrammet borte, og fanen starter her. ÅPEN ØY: tilgjengelig på
+         BÅDE Gratis og Vekst (story-endepunktene svarer uten krevVekst). Utenfor skjoldVekstFlater-lista, så den låses
+         ALDRI. Én rad: tekst til venstre, knapp til høyre. -->
+    <section class="vk-sek" aria-labelledby="vkDelH">
+      <h2 class="ovs-etikett vk-etikett" id="vkDelH">Del</h2>
+      <div class="vk-rad" id="accStory">
+        <div class="vk-rad-tekst">
+          <span class="vk-rad-tittel">Ledige timer</span>
+          <span class="vk-rad-sub">Story til Instagram eller TikTok med de neste ledige timene.</span>
+        </div>
+        <button type="button" class="vk-knapp" id="storyOpen">Lag story</button>
+      </div>
+    </section>
+
     <!-- Momentum-kort: bonus-nudge, vises KUN ved lav forfalt-andel (loadMomentum). Ligger over
          både Automatikk (rebooking) og Personlig (verving); knappen åpner Verving i samme fane. -->
     <div class="momentum" id="momentumCard" hidden>
@@ -2412,18 +2427,6 @@
     </div>
     </section>
 
-    <!-- DEL — «Lag story»-generatoren (ledige timer). ÅPEN ØY: tilgjengelig på BÅDE Gratis og Vekst (story-endepunktene
-         svarer uten krevVekst). Utenfor skjoldVekstFlater-lista, så den låses ALDRI. Én rad: tekst til venstre, knapp til høyre. -->
-    <section class="vk-sek" aria-labelledby="vkDelH">
-      <h2 class="ovs-etikett vk-etikett" id="vkDelH">Del</h2>
-      <div class="vk-rad" id="accStory">
-        <div class="vk-rad-tekst">
-          <span class="vk-rad-tittel">Ledige timer</span>
-          <span class="vk-rad-sub">Story til Instagram eller TikTok med de neste ledige timene.</span>
-        </div>
-        <button type="button" class="vk-knapp" id="storyOpen">Lag story</button>
-      </div>
-    </section>
   </section>
 
   <!-- BILDER -->
@@ -5297,17 +5300,16 @@ function renderMonthChart(stats){
   var el=$("#trend"); if(!el)return;
   var data=(stats&&stats.months)||[];         // months[] er ASC, KUN måneder med data (backend-filter)
   var sub=$("#trendSub"), h1=$("#vekstTrendH");
-  // TOM KONFO (0 måneder med data): skjul diagram-overskrift + undertittel og vis én kort
-  // forklaring i stedet for en akse med bare tomrom. [oversettelse: sv/da/en]
+  // TOM KONTO (0 måneder med data): diagrammet, overskriften og undertittelen er borte helt — ingen forklaringstekst
+  // (Henrik 27.11.2026). Fanen starter da med «Lag story» (DEL), så Automatikk og Personlig.
   if(!data.length){
     if(h1)h1.hidden=true;
     if(sub)sub.hidden=true;
-    el.classList.add('tom');
-    el.innerHTML='<div class="empty" style="border:0"><p>Her ser du kundene dine per måned når de første bookingene kommer.</p></div>';
+    el.innerHTML=''; el.hidden=true;
     return;
   }
   if(h1)h1.hidden=false;
-  el.classList.remove('tom');
+  el.hidden=false;
   // 1+ måneder: vis ALLTID siste 6 KALENDERmåneder (t.o.m. inneværende), null-fyll tomme.
   // Ankeret er inneværende måned: completed_all_time teller kun fortid (ends_at < now), så ingen
   // datamåned kan ligge i framtiden → all data mapper naturlig inn i vinduet.
