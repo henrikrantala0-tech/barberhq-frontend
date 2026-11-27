@@ -84,7 +84,7 @@
   /* <button> arver IKKE font-family fra body (UA gir «MS Shell Dlg» i WebKit / «Arial» i Chromium →
      serif-aktig på enkelte systemer). ÉN felles grunnregel så ALLE knapper bruker Inter som resten av
      dashbordet — ikke per knapp. Fanget 22 knapper på UA-font (.tab, .svc-rm, .pub-copy, .crop-btn-*,
-     .slot-popup-btn, .pw-toggle, .fokus-x, .suksess-x, .plakat-kort m.fl.). Per-element-regler
+     .slot-popup-btn, .pw-toggle, .fokus-x, .plakat-kort m.fl.). Per-element-regler
      med egen font vinner på spesifisitet og beholdes bevisst. Samme
      rot-årsak som kom-i-gang .btn. */
   button{font-family:inherit}
@@ -277,7 +277,7 @@
   /* 44px trykkflate uten å endre visuell størrelse: usynlig ::after sentreres på knappen
      og tvinges til minst 44x44 (min-width/height) mens knappen beholder sin egen størrelse.
      Klikk på ::after bobler til knappen. Gjelder små ikon-/tekstknapper. WCAG 2.5.5. */
-  .slot-act-btn::after,.noshowbtn::after,.verv-btn::after,.suksess-x::after,.pause-modal-close::after,body.fokus .fokus-x::after{content:"";position:absolute;top:50%;left:50%;width:100%;height:100%;min-width:44px;min-height:44px;transform:translate(-50%,-50%)}
+  .slot-act-btn::after,.noshowbtn::after,.verv-btn::after,.pause-modal-close::after,body.fokus .fokus-x::after{content:"";position:absolute;top:50%;left:50%;width:100%;height:100%;min-width:44px;min-height:44px;transform:translate(-50%,-50%)}
   .slot-menu-btn:hover{background:var(--bad)}
   .slot-popup{position:fixed;z-index:300;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.55);min-width:136px;overflow:hidden;display:none}
   .slot-popup.open{display:block}
@@ -691,19 +691,8 @@
   .preset[aria-pressed=true]{border-color:var(--info)}
   .preset .pt{font-size:13px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
   .preset .pd{font-size:11.5px;color:var(--mut);margin-top:2px}
-  /* Publiser-CTA på «Din side» — vises kun i forhandsvist. */
-  .dinside-cta{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:12px 16px;background:var(--surface);border:1px solid var(--info);border-radius:12px;padding:15px 17px;margin:0 0 22px}
-  /* ⚠ display:flex over slår UA-ens [hidden]{display:none} — uten denne skjuler cta.hidden=true
-     ALDRI CTA-en visuelt (den ble stående i live-tilstand). Gjelder også .dinside-live for symmetri. */
-  .dinside-cta[hidden],.dinside-live[hidden]{display:none}
-  .dinside-cta-tekst{display:flex;flex-direction:column;gap:3px;min-width:0;flex:1 1 220px}
-  .dinside-cta-tekst strong{font-size:14px;font-weight:700;color:var(--ink)}
-  .dinside-cta-tekst span{font-size:12.5px;color:var(--mut);line-height:1.45}
-  .dinside-cta-handling{display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex:0 0 auto}
-  .dinside-cta-handling .btn{white-space:nowrap}
-  .dinside-cta-note{font-size:11.5px;color:var(--mut);line-height:1.4;text-align:right}
-  .dinside-cta-handling .pub-err{margin:0;text-align:right;max-width:260px}
-  @media(max-width:520px){.dinside-cta-handling{align-items:stretch;flex:1 1 100%}.dinside-cta-handling .btn{justify-content:center}.dinside-cta-note,.dinside-cta-handling .pub-err{text-align:center;max-width:none}}
+  /* ⚠ display:flex slår UA-ens [hidden]{display:none} — eksplisitt for .dinside-live. */
+  .dinside-live[hidden]{display:none}
   /* Live-tilstand på «Din side» (page_status==='live'): liten grønn prikk + «Live» i vanlig
      tekstfarge — ingen bakgrunn/kant/hover. Kopiering skjer via lenka i toppen (#headerLenke). */
   .dinside-live{display:flex;align-items:center;gap:8px;margin:0 0 22px;font-size:14px;font-weight:600;color:var(--ink)}
@@ -811,8 +800,6 @@
   /* Boksen er nestet i kortet: på 320 er det ~149px innvendig, mindre enn knappen trenger med vanlig
      padding (teksten brakk til to linjer). Fullbredde + smalere sidepadding på smale skjermer. */
   @media(max-width:480px){ .konto-opp .btn{width:100%;padding-left:10px;padding-right:10px;white-space:nowrap} }
-  .konto-avpub{margin-top:18px;padding-top:16px;border-top:1px solid var(--line)}
-  .subcard .konto-avpub p{margin-bottom:12px}
   /* SMS-påminnelser (Konto, Gratis) — tre nivåer: KONTROLL (trekkspill-headeren: tittel + bryter +
      undertekst, samme mønster som Vekst-fanens «SMS-påminnelse») · STATUS (saldo) · KJØP (fliser + knapp).
      Kun designsystemets farger via eksisterende tokens (--ink/--ink-2/--mut/--line/--info/--surface/--bg);
@@ -883,8 +870,7 @@
   .sms-tilbud-knapper .lnk-quiet{margin-top:0;flex-shrink:0}
   /* Publisering — egen blokk under abonnementskortet. Gjenbruker .subcard/.substatus. */
   .pubcard{margin-top:22px}
-  /* Container for lenkeblokka. Live-tilstand fyller den med .pub-field (URL-felt + kopi-ikon);
-     forhandsvist med en «Se forhåndsvisning»-lenke + .pub-note. .pub-link a dekker sistnevnte. */
+  /* Container for lenkeblokka: bare når siden er live — .pub-field (URL-felt + kopi-ikon). */
   .pub-link{font-size:13px;color:var(--ink-2);margin-top:12px}
   .pub-link a{color:var(--info);text-decoration:none}
   .pub-link a:hover{text-decoration:underline}
@@ -910,13 +896,11 @@
   .pub-copy.ok{color:var(--good)}   /* hake ved kopiert — grønn fra token */
   /* Tydelig tekstlig «Kopiert»-kvittering (i tillegg til hake-ikonet) — vises ~1,5 s mens .ok står.
      Under ikonet, høyrejustert så den ikke går utenfor skjermkanten på 320. Gjelder alle .pub-copy
-     (headerlenka, Konto-lenkeblokka, suksesskortet). */
+     (headerlenka, Konto-lenkeblokka). */
   .pub-copy.ok::after{content:"Kopiert";position:absolute;top:calc(100% + 5px);right:0;
     background:var(--ink);color:var(--bg);font-size:11px;font-weight:600;letter-spacing:-.01em;
     padding:3px 7px;border-radius:6px;white-space:nowrap;pointer-events:none;z-index:5}
-  .pub-note{font-size:12px;color:var(--mut);margin:8px 0 0;line-height:1.45}
-  /* Avpubliser er med vilje dempet til en tekstlenke, ikke en knapp: den er sjelden og
-     destruktiv-ish (tar sida ned), og skal ikke konkurrere visuelt med «Publiser siden». */
+  /* Dempet tekstlenke (Konto nederst: «Logg ut»; «Administrer abonnement»). */
   .lnk-quiet{appearance:none;border:0;background:0;font:inherit;font-size:12px;color:var(--mut);
              text-decoration:underline;cursor:pointer;padding:0;margin-top:14px;display:flex;align-items:center;min-height:44px}
   .lnk-quiet:hover{color:var(--ink-2)}
@@ -940,7 +924,6 @@
   .pw-toggle svg{width:18px;height:18px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
   .hjelp-p{font-size:13px;color:var(--ink-2);line-height:1.5;margin-bottom:14px}
   .hjelp-lenke{display:inline-block;text-decoration:none}
-  /* Tydelig luft over: avpubliser er destruktiv og skal ikke ligge inntil lenkefeltet/kopi. */
   /* row-gap 0: brekker lenkene til to linjer på mobil, bærer min-height:44px allerede trykkflaten —
      en ekstra 18px luke mellom radene ga et hull på ~60px. */
   .konto-lenker{display:flex;flex-wrap:wrap;gap:0 18px;margin-top:22px}
@@ -951,10 +934,8 @@
            margin-left:6px;vertical-align:middle}
   .nav-dot[hidden]{display:none}
   /* Samme rød som .sett-err (#paamErr). p.pub-err: .subcard p{color:var(--ink-2)} har høyere spesifisitet
-     enn en ren klasse og gjorde publiseringsfeilen i Konto grå. */
+     enn en ren klasse og gjorde feilen grå i kortene. */
   .pub-err,.subcard p.pub-err{display:none;color:#c0392b;font-size:13px;margin-top:12px;line-height:1.45;max-width:520px}
-  .pub-err button{appearance:none;border:0;background:0;font:inherit;font-size:13px;
-                  color:var(--info);text-decoration:underline;cursor:pointer;padding:0}
 
   .dlbl{font-size:12px;color:var(--mut);font-weight:600;margin:16px 0 4px;letter-spacing:-.01em}
   /* «Din side»: trekkspill venstre, preview høyre — begge på PANEL-nivå.
@@ -1779,25 +1760,22 @@
      Trigger: URL ?velkommen=1 + page_status='forhandsvist' (JS fjerner parameteren
      ved visning, ingen sessionStorage). Viser KUN «Din side», til barbereren
      publiserer eller trykker «Utforsk dashbordet» / X. Ingenting flyttes —
-     #design-panelet vises komplett; kun nav + øvrige paneler skjules. #dinsideCta
-     (topp-banner) og «Ideer & ønsker» skjules så flaten er ren.
+     #design-panelet vises komplett; kun nav + øvrige paneler skjules. «Ideer & ønsker» skjules så flaten er ren.
      Rekkefølge følger vanlig DOM: sjekkliste → Profil/Design/Bilder → preview →
      bunnknapper (STATISKE nederst, ikke sticky). Mobil-rekkefølgen på preview er
      uendret fra standard (preview under trekkspillene). Desktop: to-kolonne som ellers. */
   body.fokus{overscroll-behavior-y:contain} /* demper pull-to-refresh i Chrome mens man er i fokus */
   /* Fokusmodus skjuler NAVIGASJONEN — begge navene i én regel: topp-navet (desktop) og bunn-navet (≤719px, kom i
      75a7386 uten at denne regelen ble utvidet, så alle fem fanene sto synlige i fokusmodus på mobil). Panelets
-     bunnluft (--bunn-nav-h) beholdes med vilje: den gir fokus-baren luft mot skjermkanten. Ut av fokus: X eller Publiser. */
+     bunnluft (--bunn-nav-h) beholdes med vilje: den gir fokus-baren luft mot skjermkanten. Ut av fokus: X eller «Utforsk dashbordet». */
   body.fokus nav.nav, body.fokus .bunn-nav{display:none}
   body.fokus .header-lenke{display:none}   /* fokusmodus: skjul bookinglenka, behold butikknavnet + × */
-  body.fokus #dinsideCta{display:none}
   body.fokus .ideacard{display:none}
   .fokus-x{display:none}
   body.fokus .fokus-x{display:inline-flex;align-items:center;justify-content:center;width:36px;height:36px;border-radius:8px;border:1px solid var(--line-2);background:var(--surface);color:var(--ink);font-size:16px;line-height:1;cursor:pointer;position:relative}
   body.fokus .fokus-x:hover{border-color:var(--ink)}
   .fokus-bar{display:none}
   body.fokus .fokus-bar{display:flex;gap:10px;flex-wrap:wrap;margin-top:26px}
-  .fokus-bar .fokus-pub-err{flex:1 1 100%;margin:0}   /* publiseringsfeil over knappene, full bredde */
   .fokus-bar .btn,.fokus-bar .btn-outline{padding:12px 22px;font-size:14px}
   @media(max-width:520px){ .fokus-bar .btn,.fokus-bar .btn-outline{flex:1;justify-content:center;text-align:center} }
 
@@ -1821,7 +1799,6 @@
   .sjekk-rad-t{font-size:13.5px;font-weight:600}
   .sjekk-rad-s{font-size:12px;color:var(--mut)}
   .sjekk-rad.done .sjekk-rad-t{text-decoration:line-through;color:var(--mut);font-weight:500}
-  .sjekk-pub-err{margin:4px 14px 12px}
   .sjekk-pill-wrap{position:fixed;right:18px;bottom:18px;z-index:130}
   .sjekk-pill{display:inline-flex;align-items:center;gap:10px;background:var(--surface);border:1px solid var(--line-2);border-radius:99px;padding:8px 16px 8px 8px;box-shadow:0 6px 22px rgba(0,0,0,.22);cursor:pointer;font:inherit;color:var(--ink)}
   .sjekk-pill:hover{border-color:var(--ink)}
@@ -1841,10 +1818,9 @@
     body.har-sjekkpill .panel{padding-bottom:calc(var(--bunn-nav-h) + env(safe-area-inset-bottom) + 12px + 48px + 12px)}
   }
 
-  /* ── Live (COMMIT F): kompakt kopierbar lenke i headeren + suksesskort ────────────
-     Begge gjenbruker byggKopierbartLenkefelt (.pub-field + midtForkort + kopierLenke).
-     Headerlenka står under sjappenavnet i live-tilstand; suksesskortet vises ÉN gang
-     rett etter publisering (hendelses-drevet, ikke ved innlasting). */
+  /* ── Live (COMMIT F): kompakt kopierbar lenke i headeren ────────────
+     Gjenbruker byggKopierbartLenkefelt (.pub-field + midtForkort + kopierLenke). Headerlenka står under
+     sjappenavnet i live-tilstand. */
   /* Headeren viser en kompakt, avkuttet bookinglenke (midtForkort) + kopi-knapp til høyre, KUN i
      live. min-width:0 (ikke auto) så lenka KAN krympe forbi innholdsbredden når navnet tar plassen
      → url-en trunkerer (midt-ellipse), aldri linje to. Navnet font-krymper i tillegg (fitShopnavn). */
@@ -1941,18 +1917,6 @@
   .kt-feedback .block-h:first-child{margin-top:0!important}
   .kt-bunn{display:flex;flex-direction:column;align-items:flex-start;gap:4px;margin-top:14px}
   .kt-bunn .lnk-quiet{margin-top:0}
-  .kt-bunn .pub-err{margin:0 0 6px}
-  .suksess-overlay{position:fixed;inset:0;z-index:400;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:20px}
-  .suksess-overlay[hidden]{display:none}   /* author-display slår UA [hidden]{display:none} — må gjenopprettes eksplisitt */
-  .suksess-kort{position:relative;background:var(--surface);border:1px solid var(--line-2);border-radius:18px;padding:30px 26px 26px;max-width:380px;width:100%;text-align:center;box-shadow:0 20px 60px rgba(0,0,0,.4)}
-  .suksess-x{position:absolute;top:12px;right:12px;width:30px;height:30px;border-radius:8px;border:0;background:0;color:var(--mut);font-size:20px;line-height:1;cursor:pointer}
-  .suksess-x:hover{color:var(--ink);background:var(--bg)}
-  .suksess-emoji{font-size:38px;line-height:1;margin-bottom:8px}
-  .suksess-kort h3{font-size:20px;font-weight:800;letter-spacing:-.02em;margin-bottom:16px}
-  .suksess-lenke{margin-bottom:16px}
-  .suksess-lenke .pub-field{background:var(--bg)}
-  .suksess-linje{font-size:14px;color:var(--ink);margin-top:6px;font-weight:600}
-  .suksess-linje.sub{color:var(--mut);font-size:13px;font-weight:400}
 </style>
 <link rel="stylesheet" href="dinside-v2.css">
 </head>
@@ -2050,18 +2014,6 @@
     <span class="sjekk-ring" id="sjekkRing"><span class="sjekk-ring-num" id="sjekkRingNum">0/5</span></span>
     <span class="sjekk-pill-tekst">Fullfør siden din</span>
   </button>
-</div>
-<!-- Suksesskort — vises ÉN gang rett etter vellykket publisering (visSuksesskort fra
-     settSideStatus('live')-responsen, IKKE ved innlasting). Lukkes med X / klikk utenfor. -->
-<div class="suksess-overlay" id="suksessOverlay" hidden>
-  <div class="suksess-kort" role="dialog" aria-modal="true" aria-labelledby="suksessTittel">
-    <button class="suksess-x" id="suksessX" type="button" aria-label="Lukk">&times;</button>
-    <div class="suksess-emoji">🎉</div>
-    <h3 id="suksessTittel">Siden din er klar.</h3>
-    <div class="suksess-lenke" id="suksessLenke"></div>
-    <p class="suksess-linje">Legg lenka i bioen og del den på&nbsp;story</p>
-    <p class="suksess-linje sub">Nå får vi første booking gjennom&nbsp;den.</p>
-  </div>
 </div>
 <div class="wrap">
 
@@ -2714,22 +2666,7 @@
     <div id="dinsideV2"><p class="dv2-lasting" id="dv2Start" role="status">Laster Din side …</p></div>
     <p class="panel-h v1-kun">Din side</p>
     <p class="block-s v1-kun">Design siden din. Endringer vises i forhåndsvisningen.</p>
-    <!-- Publiser-CTA: KUN i forhandsvist (styres av renderDinsideCta via _billing.page_status).
-         Gjenbruker settSideStatus('live') — samme dispatch som Konto-knappens _kontoAksjon==='publiser'.
-         Konto-knappen er urørt. -->
-    <div class="dinside-cta v1-kun" id="dinsideCta" hidden>
-      <div class="dinside-cta-tekst">
-        <strong>Siden din er ikke publisert ennå</strong>
-      </div>
-      <!-- «Publiser siden» — på «Din side» ser han siden sin, ikke abonnementet. Publisering er gratis og
-           frikoblet planen (ingen prøveperiode for nye barbere); noten under sier det. -->
-      <div class="dinside-cta-handling">
-        <button class="btn" id="dinsidePubliser">Publiser siden</button>
-        <span class="dinside-cta-note">Publiser når du er fornøyd. Det er gratis, uten kort.</span>
-        <p class="pub-err" id="dinsidePubErr"></p>
-      </div>
-    </div>
-    <!-- Live-tilstand: erstatter CTA-en når page_status==='live'. Liten grønn prikk + «Live» i
+    <!-- Live-tilstand (v1): vises når page_status==='live'. Liten grønn prikk + «Live» i
          vanlig tekstfarge (ingen bakgrunn/kant/hover). Kopiering skjer via den permanente
          kopierbare lenka i headeren (#headerLenke/settHeaderLenke). -->
     <div class="dinside-live v1-kun" id="dinsideLive" hidden>
@@ -2859,12 +2796,9 @@
         <p class="ctx" style="margin-top:8px;text-align:center">Slik ser bookingsiden din ut.</p>
       </div>
     </div>
-    <!-- Bunnknapper — STATISKE nederst i «Din side», kun synlige i fokusmodus (body.fokus).
-         «Publiser siden» gjenbruker settSideStatus('live') (samme dispatch som #dinsidePubliser);
-         «Utforsk dashbordet» = X = avslutt fokus. -->
+    <!-- Bunnknapp — STATISK nederst i «Din side», kun synlig i fokusmodus (body.fokus). «Utforsk dashbordet» = X =
+         avslutt fokus. («Publiser siden» er fjernet 27.11.2026 — v1-publiseringen finnes ikke lenger.) -->
     <div class="fokus-bar v1-kun" id="fokusBar">
-      <p class="pub-err fokus-pub-err" id="fokusPubErr" role="alert"></p>
-      <button class="btn" id="fokusPubliser" type="button" data-pub-err="#fokusPubErr">Publiser siden</button>
       <button class="btn-outline" id="fokusUtforsk" type="button">Utforsk dashbordet</button>
     </div>
     <!-- #slotPopup står på PANEL-nivå, ikke inne i Bilder-trekkspillet: den er position:fixed
@@ -2910,7 +2844,7 @@
       <!-- ── ABONNEMENT OG PUBLISERING ── Alltid synlig. Innholdet er uendret: kontoTilstand(b) velger
            tilstanden, renderKonto tegner den. Prikken følger needs_attention (samme kilde som nav-prikkene). -->
       <section class="kt-seksjon" id="kontoAbonnement">
-        <h2 class="kt-h">Abonnement og publisering<span class="nav-dot" id="kontoAccDot" hidden></span></h2>
+        <h2 class="kt-h">Abonnement<span class="nav-dot" id="kontoAccDot" hidden></span></h2>
     <!-- ETT kort. Tilstanden velges av kontoTilstand(b) — en ren funksjon av billing-shapen — og
          tegnes av renderKonto. Ingen tilstandslogikk i markupen: nodene under er tomme flater som
          fylles eller skjules. Prismodell 09.10.2026: Gratis er standard, publisering er frikoblet
@@ -2927,26 +2861,19 @@
         <button class="btn" id="kontoOppBtn" type="button">Oppgrader til Vekst</button>
         <p class="konto-fin" id="kontoOppFin"></p>
       </div>
-      <!-- ÉN node for hovedhandlingen (publiser / oppgrader / oppdater betaling); _kontoAksjon sier hva. -->
+      <!-- ÉN node for hovedhandlingen (oppgrader / oppdater betaling); _kontoAksjon sier hva. -->
       <button class="btn" id="kontoAksjon" style="display:none"></button>
-      <p class="sub-micro" id="kontoMikro" style="display:none"></p>
       <p class="konto-fin" id="kontoFin" style="display:none"></p>
       <!-- Vekst/prøve med kjøpte SMS igjen: én dempet linje (pakkene vises kun på Gratis). -->
       <p class="sub-micro" id="kontoSmsRest" style="display:none"></p>
-      <!-- Prøve eller abonnement, men siden er avpublisert: plan-tilstanden står over, og
-           publisering tilbys her — over lenkeblokka. -->
-      <div class="konto-avpub" id="kontoAvpub" style="display:none">
-        <p>Siden din er ikke publisert.</p>
-        <button class="btn" id="kontoPubliser" type="button">Publiser bookingsiden</button>
-      </div>
-      <!-- <div>, ikke <p>: forhåndsvisnings-tilstanden legger en <p class="pub-note"> under
-           lenka, og <p> inne i <p> er ugyldig HTML. [oversettelse: sv/da/en] -->
+      <!-- Publiseringsblokka (ikke live: «Siden din er ikke publisert ennå.», «Fullfør siden din», forhåndsvisningslenka) er
+           fjernet 27.11.2026. Publisering skjer bare på siste steg i Din side («Fullfør siden din»-kortet på Oversikt). -->
+      <!-- Lenkeblokka (bare live). <div>, ikke <p>: lenkefeltet er blokk-markup. [oversettelse: sv/da/en] -->
       <div class="pub-link" id="pubLink" style="display:none"></div>
-      <!-- Sekundærhandling som dempet tekstlenke. «Avpubliser bookingside» står nederst på siden (.kt-bunn). -->
+      <!-- Sekundærhandling som dempet tekstlenke. -->
       <div class="konto-lenker">
         <button class="lnk-quiet" id="manageSub" style="display:none">Administrer abonnement</button>
       </div>
-      <p class="pub-err" id="pubErr"></p>
     </div>
       </section>
 
@@ -3156,11 +3083,9 @@
         </div>
       </section>
 
-      <!-- ── NEDERST ── adskilt med luft. Avpubliser står BARE her (renderKonto styrer synligheten, som før);
-           dempet, ikke rød. Logg ut under. -->
+      <!-- ── NEDERST ── adskilt med luft: Logg ut. («Avpubliser bookingside» er fjernet 27.11.2026 — en publisert side
+           tas ikke ned fra dashbordet.) -->
       <div class="kt-bunn">
-        <button class="lnk-quiet" id="unpublish" style="display:none">Avpubliser bookingside</button>
-        <p class="pub-err" id="avpubErr"></p>
         <button class="lnk-quiet" id="loggUt">Logg ut</button>
       </div>
     </div>
@@ -3754,8 +3679,8 @@ async function lagreRequest(path, payload, hva){
   return {ok:false, error:(j&&j.error) || ('Kunne ikke lagre '+hva+' (feil '+r.status+'). Prøv igjen.')};
 }
 
-// Felles knapp-/sikkerhetsnett for lagre- og opplastingshandlere (H2). Samme form som settSideStatus,
-// men med finally i stedet for duplisert reset. ROT-ÅRSAK til at lagre-knapper hang på «Lagrer …»:
+// Felles knapp-/sikkerhetsnett for lagre- og opplastingshandlere (H2). Knappen gjenopprettes
+// i finally i stedet for duplisert reset. ROT-ÅRSAK til at lagre-knapper hang på «Lagrer …»:
 // apiFetch KASTER ved nettverks-reject, og handlerne resatte knappen først på linja ETTER await — som
 // da aldri kjørte. Her settes knappen (valgfri) til «Lagrer …» og gjenopprettes ALLTID i finally, og
 // en kastet feil vises som synlig melding i stedet for en død knapp / stum opplasting. arbeid() eier
@@ -8616,7 +8541,7 @@ $("#saveDesign").addEventListener("click",function(){
 });
 
 /* ---- Konto: abonnement + publisering, ÉN blokk (ekte, aldri mock) ---- */
-// GET /billing/status, PUT /page-status og POST /api/billing/sync-checkout svarer med SAMME shape
+// GET /billing/status og POST /api/billing/sync-checkout svarer med SAMME shape
 // (backend: buildBillingShape). Feltene Konto leser:
 //   page_status           draft|forhandsvist|live|avslag — publisering er frikoblet billing
 //   subscription_status   null (aldri abonnert) | trialing|active|past_due|canceled|unpaid
@@ -8684,8 +8609,7 @@ function lastDinSide(){
   if(erV2()){ DinSideV2.last(); return; }
   loadProfil(); if(!_ulagret.design)loadDesign().then(loadBilder); else loadBilder();
 }
-// Er dette en FULL billing-shape? Delt vakt for alle tre veiene inn (loadBilling, PUT /page-status,
-// sync-checkout). Et svar med page_status men uten plan-feltene skal ALDRI overskrive _billing —
+// Er dette en FULL billing-shape? Delt vakt for veiene inn (loadBilling, sync-checkout, Din side-svaret). Et svar med page_status men uten plan-feltene skal ALDRI overskrive _billing —
 // renderKonto ville da falt til reserve-tilstanden og skjoldene til Gratis på et delvis svar.
 function erBillingShape(d){
   return !!(d && typeof d.page_status==='string'
@@ -8713,7 +8637,7 @@ function settBilling(d){
 }
 // Hovedhandlingen er ÉN knapp. `_kontoAksjon` sier hva et trykk gjør i nåværende tilstand —
 // knappen har ingen egen lytter per tilstand.
-var _kontoAksjon=null; // 'publiser' | 'checkout' | 'portal' | null
+var _kontoAksjon=null; // 'checkout' | 'portal' | null
 // true mens synken etter Stripe-retur pågår: oppgrader-knappene viser «Aktiverer Vekst …».
 var _aktivererVekst=false;
 // true mens synken etter et SMS-pakkekjøp (?sms_pakke=1) pågår: kjøpsknappen viser «Legger til SMS …».
@@ -8767,28 +8691,22 @@ function kontoTilstand(b){
               'Vil du beholde rebooking, verving og SMS-påminnelser?'],
        knapp:['Oppgrader til Vekst','checkout'], fin:true};
   }else if(grunn==='gratis'){
-    t=(b.page_status==='forhandsvist')
-      ? {id:0, tekst:['Siden din er ikke publisert ennå.'],
-         knapp:['Publiser bookingsiden','publiser'], mikro:'Gratis. Ingen kort.'}
-      : {id:1, merke:'Gratis', farge:'mut', tall:['0 kr','/ mnd'],
-         tekst:['Bookingsiden, kalenderen og dashbordet er gratis.'], opp:true};
+    // Samme kort om siden er live eller ikke: publisering hører til Din side, ikke abonnementet (27.11.2026).
+    t={id:1, merke:'Gratis', farge:'mut', tall:['0 kr','/ mnd'],
+       tekst:['Bookingsiden, kalenderen og dashbordet er gratis.'], opp:true};
   }
   if(!t) t={id:'reserve', merke:'Abonnementsstatus utilgjengelig', farge:'mut',
             tekst:['Vi får ikke vist abonnementet ditt akkurat nå. Tilgangen din er upåvirket.']};
-  // Publisering er frikoblet billing: avpubliser når siden står live, og tilby publisering over
-  // lenkeblokka når den er avpublisert i en plan-tilstand (tilstand 0 har publisering som hovedknapp).
-  t.avpubliser = b.page_status==='live';
-  t.publiserHer = b.page_status==='forhandsvist' && t.id!==0;
   return t;
 }
 
 function renderKonto(b){
   b=b||{};
   const status=$("#kontoStatus"); if(!status)return;
-  const tekst=$("#kontoTekst"),knapp=$("#kontoAksjon"),manage=$("#manageSub"),av=$("#unpublish"),
+  const tekst=$("#kontoTekst"),knapp=$("#kontoAksjon"),manage=$("#manageSub"),
         tall=$("#kontoTall"),tallStor=$("#kontoTallStor"),tallSuff=$("#kontoTallSuff"),tallSub=$("#kontoTallSub"),
-        mikro=$("#kontoMikro"),fin=$("#kontoFin"),opp=$("#kontoOpp"),oppH=$("#kontoOppH"),
-        oppBtn=$("#kontoOppBtn"),oppFin=$("#kontoOppFin"),avpub=$("#kontoAvpub"),dot=$("#kontoDot");
+        fin=$("#kontoFin"),opp=$("#kontoOpp"),oppH=$("#kontoOppH"),
+        oppBtn=$("#kontoOppBtn"),oppFin=$("#kontoOppFin"),dot=$("#kontoDot");
   // Hjemskjerm-kortet re-evalueres ved hver billing-render (demo/fokus kan ha endret seg).
   if(typeof oppdaterHjemskjermKort==='function') oppdaterHjemskjermKort();
   const t=kontoTilstand(b);
@@ -8805,11 +8723,8 @@ function renderKonto(b){
   vis(knapp,!!t.knapp);
   knapp.disabled=false; knapp.className='btn';
   if(t.knapp)knapp.textContent=t.knapp[0];
-  vis(mikro,!!t.mikro); mikro.textContent=t.mikro||'';
   vis(fin,!!t.fin); fin.textContent=t.fin?KONTO_FINSKRIFT:'';
-  vis(avpub,t.publiserHer);
   vis(manage,!!t.manage);
-  vis(av,t.avpubliser);
   // Synk etter Stripe-retur: oppgrader-handlingen (boksens knapp eller hovedknappen) byttes mot
   // «Aktiverer Vekst …» så barberen ikke trykker Oppgrader en gang til mens Vekst aktiveres.
   oppBtn.disabled=_aktivererVekst; oppBtn.textContent=_aktivererVekst?'Aktiverer Vekst …':'Oppgrader til Vekst';
@@ -9025,29 +8940,18 @@ $("#smsTilbudIkkeNaa").addEventListener("click",async function(){
     if(erBillingShape(d)) settBilling(d);
   }catch(e){}
 });
-// Publiser-CTA på «Din side»: synlig KUN i forhandsvist. Kalles fra renderKonto (hver
-// billing-lasting), så et vellykket publiser → loadBilling → page_status='live' skjuler den
-// uten reload. Egen node fra Konto-knappen; deler bare settSideStatus-dispatchen.
+// «Din side» (v1): «Live»-merket følger page_status. Kalles fra renderKonto (hver billing-lasting). Publiserings-CTA-en
+// er fjernet 27.11.2026 (v2 publiserer i Din side-oppsettet; v1-publiseringen finnes ikke lenger).
 function renderDinsideCta(b){
   b=b||_billing||{};
-  var cta=$("#dinsideCta"), live=$("#dinsideLive");
-  if(!cta||!live)return;
-  var st=b.page_status;
-  // Publisering er frikoblet billing: enhver barber kan publisere, uansett plan.
-  if(st==='forhandsvist'){
-    cta.hidden=false; live.hidden=true;
-  }else if(st==='live'){
-    // Live: skjul CTA, vis liten grønn prikk + «Live». Kopiering via headerlenka (settHeaderLenke).
-    cta.hidden=true; live.hidden=false;
-  }else{ // draft / avslag / nedtatt / ukjent — ingen av dem
-    cta.hidden=true; live.hidden=true;
-  }
-  applyFokusModus(); // fokus følger samme page_status — publisering (→live) slår den av selv
-  renderSjekkliste(); // synlighet + hake for «Publiser siden» følger page_status (dør ved live)
+  var live=$("#dinsideLive");
+  if(live) live.hidden=(b.page_status!=='live');   // liten grønn prikk + «Live»; kopiering via headerlenka (settHeaderLenke)
+  applyFokusModus(); // fokus følger samme page_status
+  renderSjekkliste(); // synligheten følger page_status
   settHeaderLenke(b); // permanent kopierbar lenke i headeren (kun live)
 }
 
-/* ── Live-lenke i header + suksesskort (COMMIT F) ────────────────────────────────── */
+/* ── Live-lenke i header (COMMIT F) ────────────────────────────────── */
 // Permanent kopierbar lenke ved siden av sjappenavnet, KUN i live: avkuttet URL (midtForkort
 // krymper sluggen til header-bredden) + kopi-knapp. Knappen får .header-kopi så kvitteringen
 // sier «Lenke kopiert». Logoen er fjernet fra headeren, men lenka beholdes (bruker-ønske 02.10).
@@ -9131,23 +9035,6 @@ if(document.fonts&&document.fonts.ready) document.fonts.ready.then(fitShopnavn);
 if('ResizeObserver' in window){ var _fitT,_fitW=-1;
   new ResizeObserver(function(e){ var w=e[0].contentRect.width; if(Math.abs(w-_fitW)<1)return; _fitW=w;
     clearTimeout(_fitT); _fitT=setTimeout(fitShopnavn,60); }).observe(document.documentElement); }
-// Suksesskort — HENDELSES-drevet: kalles kun fra settSideStatus('live')-suksess, ALDRI ved
-// innlasting. Derfor viser refresh i live-tilstand det ikke igjen (headerlenka dekker varig visning).
-function visSuksesskort(){
-  var ov=$('#suksessOverlay'); if(!ov)return;
-  var boks=$('#suksessLenke');
-  if(boks){
-    if(CONFIG.BARBER_SLUG) byggKopierbartLenkefelt(boks, CONFIG.SITE_BASE+'/'+CONFIG.BARBER_SLUG, CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+CONFIG.BARBER_SLUG);
-    else boks.textContent='';
-  }
-  ov.hidden=false;
-}
-function lukkSuksess(){ var ov=$('#suksessOverlay'); if(ov)ov.hidden=true; }
-(function(){
-  var ov=$('#suksessOverlay'), x=$('#suksessX');
-  if(x)x.addEventListener('click',lukkSuksess);
-  if(ov)ov.addEventListener('click',function(e){ if(e.target===ov) lukkSuksess(); }); // klikk utenfor kortet
-})();
 
 /* ── Fokusmodus ─────────────────────────────────────────────────────────────────
    Trigger: URL ?velkommen=1 OG page_status='forhandsvist'. Kun da vises fokus.
@@ -9202,8 +9089,6 @@ function avsluttFokus(){ document.body.classList.remove('fokus'); settFokusFlagg
   var x=document.getElementById('fokusX');        if(x)x.addEventListener('click',function(){ if(window.DinSideV2&&DinSideV2.erV2()){ DinSideV2.lukkOppsett(); return; } avsluttFokus(); });
   var fu=document.getElementById('dv2Fullfor');    if(fu)fu.addEventListener('click',function(){ if(window.DinSideV2)DinSideV2.startOppsett(); });
   var u=document.getElementById('fokusUtforsk');   if(u)u.addEventListener('click',avsluttFokus);
-  var p=document.getElementById('fokusPubliser');
-  if(p)p.addEventListener('click',function(){ if(IS_DEMO)return; settSideStatus('live',this); });
 })();
 
 /* ── «Fullfør siden»-guide (COMMIT D) ──────────────────────────────────────────────
@@ -9234,28 +9119,24 @@ function sjekkBildePunkt(){
   return p;
 }
 function sjekklisteItems(){
-  var b=_billing||{};
   return [
     sjekkBildePunkt(),
     {action:'tjenester', label:'Legg til tjenester',  sub:'Minst én med pris',                     done:_sjekkData.tjenesterMedPris>=1},
     {action:'tider',     label:'Sett åpningstider',   sub:'Minst én åpen dag',                     done:_sjekkData.apneDager>=1},
     {action:'profil',    label:'Fortell om deg selv', sub:'Minst 2 av: bio, spesialitet, adresse', done:_sjekkData.profilUtfylt>=2},
-    {action:'publiser',  label:'Publiser siden',      sub:'Gjør siden synlig for kunder',          done:b.page_status==='live'},
-  ].filter(Boolean);   // bildepunktet er null når layouten ikke har bilder → «X av 4»
+  ].filter(Boolean);   // bildepunktet er null når layouten ikke har bilder → «X av 3». («Publiser siden» fjernet 27.11.2026.)
 }
 function byggSjekkPanel(items,ferdig){
   var pct=Math.round(ferdig/items.length*100);
   var rader=items.map(function(it){
-    return '<button type="button" class="sjekk-rad'+(it.done?' done':'')+'" data-act="'+it.action+'"'
-      +(it.action==='publiser'?' data-pub-err="#sjekkPubErr"':'')+'>'
+    return '<button type="button" class="sjekk-rad'+(it.done?' done':'')+'" data-act="'+it.action+'">'
       +'<span class="sjekk-ikon'+(it.done?' done':'')+'">'+(it.done?SJEKK_CHECK:'')+'</span>'
       +'<span class="sjekk-rad-tekst"><span class="sjekk-rad-t">'+it.label+'</span><span class="sjekk-rad-s">'+it.sub+'</span></span></button>';
   }).join('');
   return '<div class="sjekk-panel"><div class="sjekk-panel-hd"><span class="sjekk-panel-t">Fullfør siden din</span>'
     +'<span class="sjekk-panel-teller">'+ferdig+' av '+items.length+'</span></div>'
     +'<div class="sjekk-bar"><span style="width:'+pct+'%"></span></div>'
-    +'<div class="sjekk-rader">'+rader+'</div>'
-    +'<p class="pub-err sjekk-pub-err" id="sjekkPubErr" role="alert"></p></div>';
+    +'<div class="sjekk-rader">'+rader+'</div></div>';
 }
 function renderSjekkliste(){
   var b=_billing||{};
@@ -9314,15 +9195,6 @@ function _sjekkAapneAkk(id){var h=document.querySelector('#'+id+' .acc-head');if
 function _sjekkScroll(sel){var el=document.querySelector(sel);if(el)el.scrollIntoView({behavior:'smooth',block:'center'});}
 function _sjekkPopoverLukk(){ _sjekkPopoverAapen=false; var p=$('#sjekkPopover'); if(p)p.hidden=true; var b=$('#sjekkPillBtn'); if(b)b.setAttribute('aria-expanded','false'); }
 function sjekkGaaTil(action){
-  if(action==='publiser'){
-    // Popoveren blir STÅENDE: før ble den lukket og en usynlig dummy-knapp sendt inn, så en 400 («Sett en pris …»)
-    // havnet i #pubErr i Konto-fanen og barberen så ingenting. Nå er raden selv knappen og feilen står i panelet.
-    if(IS_DEMO) return;
-    var rad=document.querySelector('#sjekkPopover .sjekk-rad[data-act="publiser"]');
-    if(rad){ _sjekkPopoverAapen=true; var pop=$('#sjekkPopover'); if(pop)pop.hidden=false; }
-    settSideStatus('live',rad||document.createElement('button'));
-    return;
-  }
   _sjekkPopoverLukk();
   if(action==='bilder'||action==='profil'){
     // Begge bor i «Din side» (#design) — synlig i fokus, så vi BLIR i fokus, åpner bare trekkspillet.
@@ -9358,10 +9230,9 @@ function sjekkGaaTil(action){
 // øyeblikket en betalingsgren tar over: en barberer med feilet betaling (past_due) har fortsatt en
 // LIVE side som kunder booker på, og skal kunne dele lenka mens han ordner kortet.
 //
-// Tre tilstander:
+// To tilstander:
 //   live          → hele URL-en synlig + «Kopier lenke»
-//   forhandsvist  → «Se forhåndsvisning» + hva som mangler før kunder slipper inn
-//   ellers        → ingenting
+//   ellers        → ingenting (også forhandsvist: publiseringsblokka er fjernet fra Konto 27.11.2026)
 //
 function settLenkeblokk(b){
   const boks=$("#pubLink"); if(!boks)return;
@@ -9371,9 +9242,7 @@ function settLenkeblokk(b){
   // tegner loadProfil blokka på nytt (den re-renderen er ikke betinget av live).
   if(!slug)return;
 
-  const st=b.page_status;
-  const forhandsvist=(st==='forhandsvist');
-  if(st!=='live'&&!forhandsvist)return;             // draft / avslag / ukjent
+  if(b.page_status!=='live')return;                 // forhandsvist / draft / avslag / ukjent
 
   // url = HELE https://… — det som KOPIERES og det <a href> peker på. visUrl = uten protokoll,
   // KUN visningstekst («trybarberhq.com/grand-barber»). To ulike verdier, ikke én kilde lenger:
@@ -9381,18 +9250,7 @@ function settLenkeblokk(b){
   const url=CONFIG.SITE_BASE+'/'+slug;
   const visUrl=CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+slug;
 
-  if(st==='live'){
-    byggKopierbartLenkefelt(boks,url,visUrl); // DELT med «Din side» live-tilstand (renderDinsideCta)
-  }else{ // forhandsvist: forhåndsvisnings-lenke + note, ingen kopi (sida er ikke live ennå)
-    const a=document.createElement('a');
-    a.href=url; a.target='_blank'; a.rel='noopener';
-    a.textContent='Se forhåndsvisning';
-    boks.appendChild(a);
-    const note=document.createElement('p');
-    note.className='pub-note';
-    note.textContent='Siden kan ses, men tar ikke imot bookinger før du publiserer.';
-    boks.appendChild(note);
-  }
+  byggKopierbartLenkefelt(boks,url,visUrl); // DELT med «Din side» live-tilstand (renderDinsideCta)
   boks.style.display='';
 }
 
@@ -9470,109 +9328,19 @@ function kopierLenke(knapp,url){
   }else{ if(kopierFallback(url))kvittering(); }
 }
 
-/* ---- Publisering (page_status) ---- */
-// PUT /api/dashboard/page-status er ENESTE vei mellom 'forhandsvist' og 'live'.
-// Tilstandsmaskinen bor på serveren (ALLOWED_TRANSITIONS): forhandsvist↔live, alt annet 400.
-// Vi speiler den ikke her — vi viser bare knappen som svarer til nåværende status, og lar
-// serveren avvise resten. Å duplisere maskinen i frontend ville gitt to sannheter.
-// (renderPubliser er FJERNET 08.08 — slått inn i renderKonto. Ett kort, én knapp.)
-// Greiner KUN på statuskode, aldri på feilteksten — ruta gir ingen maskinlesbar kode, og
-// tekst-matching ville røket stille hvis backend endret ordlyd. Serverteksten vises ordrett.
-// mål: feilflaten ved knappen som utløste kallet. Publisering → #pubErr i abonnementskortet;
-// avpublisering → #avpubErr rett under «Avpubliser bookingside» nederst.
-function settPubFeil(kode,tekst,maal){
-  const feil=$(maal||"#pubErr"); if(!feil)return;
-  const t=tekst||'Noe gikk galt. Prøv igjen.';
-  let handling='';
-  if(kode===400){
-    // De to 400-ene (pris=0 og ugyldig overgang) er ikke skillbare uten tekst-matching.
-    // Pris-tilfellet er det eneste barbereren kan gjøre noe med; det andre har allerede
-    // rettet seg selv via re-synken før denne meldinga vises.
-    handling='<button type="button" data-pub-act="tjenester">Gå til Tjenester &amp; tider</button>';
-  }
-  // Handlingslenka på EGEN linje. Serverteksten mangler punktum, så limt rett bak ble det
-  // én sammenhengende setning: «… kreves for å gå live Start abonnementet».
-  feil.innerHTML=esc(t)+(handling?'<br>'+handling:'');
-  // 'block', ikke '': .pub-err har display:none i KLASSEN, så å tømme inline-stilen faller
-  // tilbake på none og meldinga forblir usynlig. (Samme felle som .idea-err.)
-  feil.style.display='block';
-}
-function nullstillPubFeil(){["#pubErr","#avpubErr","#dinsidePubErr","#fokusPubErr","#sjekkPubErr"].forEach(function(sel){const f=$(sel);if(f){f.style.display='none';f.textContent='';}});}
-// Felles for begge retninger. nyStatus: 'live' | 'forhandsvist'.
-async function settSideStatus(nyStatus,btn){
-  nullstillPubFeil();
-  // Feilen står ved knappen som utløste den: avpubliser nederst i Konto, publiser på «Din side»,
-  // ellers abonnementskortet (tilstand 0 og «Publiser bookingsiden» i avpublisert plan-tilstand).
-  // data-pub-err på knappen vinner (fokusmodus, sjekklista) — feilen skal stå der barberen trykket.
-  const feilMaal=(btn&&btn.dataset&&btn.dataset.pubErr)||(nyStatus==='forhandsvist'?'#avpubErr':(btn&&btn.id==='dinsidePubliser')?'#dinsidePubErr':'#pubErr');
-  // En sjekkliste-rad har egen markup: bytt bare undertittelen, ikke hele knappeteksten.
-  const tekstEl=(btn.querySelector&&btn.querySelector('.sjekk-rad-s'))||btn;
-  const orig=tekstEl.textContent;btn.disabled=true;tekstEl.textContent='Lagrer …';
-  let r;
-  try{
-    r=await apiFetch('/api/dashboard/page-status',{method:'PUT',body:JSON.stringify({status:nyStatus})});
-  }catch(e){
-    btn.disabled=false;tekstEl.textContent=orig;
-    settPubFeil(0,kontaktFeil(e),feilMaal);
-    return;
-  }
-  btn.disabled=false;tekstEl.textContent=orig;
-  if(!r)return; // 401 → apiFetch har allerede sendt til login
-  const d=await r.json().catch(function(){return{};});
-  if(r.ok){
-    // Tilstanden oppdateres DIREKTE fra skrive-responsen (autoritativ): PUT-svaret er den FULLE
-    // billing-shapen, så _billing erstattes i sin helhet. Vi RE-FETCHER IKKE /billing/status her:
-    // i read-after-write-vinduet kan det svare utdatert og REVERTERE det vi nettopp satte.
-    // erBillingShape stopper både tom body og DELVIS shape (page_status uten plan-feltene) —
-    // da beholdes forrige _billing.
-    if(erBillingShape(d)){
-      settBilling(d);
-      // Suksess-feedback gates PÅ SAMME state-oppdatering: en tom/parse-feilet 200-body (uten
-      // page_status) skal ikke vise «Siden din er live!» mens renderKonto fortsatt sier «Ikke
-      // publisert». Publisering → suksesskort (hendelses-drevet, én gang). Avpublisering → toast.
-      if(nyStatus==='live') visSuksesskort();
-      else showToast('Bookingsiden er avpublisert');
-    }
-    return;
-  }
-  // RE-SYNK FØR MELDING. Var UI-en utdatert (400 «Ugyldig overgang»), retter den seg her.
-  // Motsatt rekkefølge ville latt renderKonto overskrive feilmeldinga vi nettopp skrev.
-  await loadBilling();
-  settPubFeil(r.status,d&&d.error,feilMaal);
-}
-// ÉN knapp, tre mulige handlinger. Hva den gjør bestemmes av _kontoAksjon, satt av
+/* ---- Publisering ----
+   Dashbordet publiserer bare i Din side-oppsettet (v2: POST /din-side/lagre med publiser:true, dinside-v2.js).
+   Sidestatus-ruta i backend (PUT), avpubliseringen og v1-publiseringen (Din side-CTA, fokuslinja, sjekklisteraden)
+   er fjernet 27.11.2026. */
+// ÉN knapp, to mulige handlinger. Hva den gjør bestemmes av _kontoAksjon, satt av
 // renderKonto — knappen har ingen kunnskap om tilstand, og tilstanden ingen om knappen.
 $("#kontoAksjon").addEventListener("click",function(){
   if(IS_DEMO)return;
-  if(_kontoAksjon==='publiser')      settSideStatus('live',this);
-  else if(_kontoAksjon==='checkout') startCheckout(this);
+  if(_kontoAksjon==='checkout')      startCheckout(this);
   else if(_kontoAksjon==='portal')   aapnePortal();
-});
-// «Din side»-CTA-en: samme publiser-dispatch som Konto-knappen over (_kontoAksjon==='publiser').
-// Ingen egen state-maskin; settSideStatus håndterer knappe-disabling og re-synk selv.
-$("#dinsidePubliser").addEventListener("click",function(){
-  if(IS_DEMO)return;
-  settSideStatus('live',this);
 });
 $("#manageSub").addEventListener("click",function(){ if(IS_DEMO)return; aapnePortal(); });
 $("#kontoOppBtn").addEventListener("click",function(){ if(IS_DEMO)return; startCheckout(this); });
-// Avpublisert i en plan-tilstand: samme publiser-dispatch som hovedknappen i tilstand 0.
-$("#kontoPubliser").addEventListener("click",function(){ if(IS_DEMO)return; settSideStatus('live',this); });
-$("#unpublish").addEventListener("click",function(){
-  if(IS_DEMO)return;
-  if(!confirm('Avpubliser bookingsiden? Kunder kommer ikke inn før du publiserer igjen.'))return;
-  settSideStatus('forhandsvist',this);
-});
-// Handlingslenkene i feilmeldinga — delegert, fordi innerHTML byttes ved hver feil.
-// På dokumentet, ikke per element: sjekklistens #sjekkPubErr tegnes på nytt ved hver render.
-document.addEventListener("click",function(e){
-  const b=e.target.closest('.pub-err [data-pub-act]'); if(!b)return;
-  if(b.dataset.pubAct==='tjenester'){
-    if(document.body.classList.contains('fokus')&&typeof avsluttFokus==='function')avsluttFokus();
-    _sjekkPopoverLukk();
-    switchPanel('tjenester');
-  }
-});
 
 
 // POST /billing/checkout {plan:'vekst'} → {url}. Kun Vekst kan kjøpes (backend KJOPBARE_PLANER;
@@ -9646,7 +9414,7 @@ function applyDemoMode(){
    'slotPopupFjern','slotPopupEndre','gcalBtn',
    'fbSend-side','fbSend-konto-ide','fbSend-konto-support',  // tre bokser, én handler
    // Konto: én hovedknapp + tekstlenker (startSub/goLive er slått sammen til kontoAksjon)
-   'kontoAksjon','kontoOppBtn','kontoPubliser','tog-smsPaam','smsKjop','smsTilbudSe','smsTilbudIkkeNaa','dinsidePubliser','manageSub','unpublish','savePw','loggUt','bkNyLagre'].forEach(function(id){
+   'kontoAksjon','kontoOppBtn','tog-smsPaam','smsKjop','smsTilbudSe','smsTilbudIkkeNaa','manageSub','savePw','loggUt','bkNyLagre'].forEach(function(id){
     var el=document.getElementById(id);
     if(el){el.disabled=true;el.title='Ikke tilgjengelig i forhåndsvisning';}
   });
@@ -9694,7 +9462,7 @@ anvendHash(); // åpne panelet fra location.hash (ukjent/tom → standardpanel).
    med en gang og telles ikke. Usikkerhet går alltid mot «ulagret»: da vises en stripe i stedet for en
    automatisk ny lasting, så ingenting barbereren har skrevet forsvinner. */
 var _ulagrede=new Set(), _sisteKlikk=null;
-var ULAGRET_SEKSJON='.kt-rad, .acc, .ideacard, .subcard, .dinside-cta, #plakatOverlay';
+var ULAGRET_SEKSJON='.kt-rad, .acc, .ideacard, .subcard, #plakatOverlay';
 document.addEventListener('input',function(e){
   var t=e.target;
   if(!e.isTrusted||!t||!t.matches)return;

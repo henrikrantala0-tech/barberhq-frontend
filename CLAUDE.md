@@ -859,23 +859,28 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
    flere kan være åpne; E-post uten «Endre» — ingen rute) → `#kontoUtseende` (tema som segmentert
    valg + hjemskjerm-rad `#kontoHjemskjerm` når relevant) → `#kontoSmsLogg` (antall denne måneden fra
    `forbruk.sendt_maaned`; ENESTE som foldes) → `#kontoHjelp` (Support/Vilkår/Personvern + de to
-   tilbakemeldingsboksene) → `.kt-bunn` (Avpubliser — KUN her — og Logg ut) → logo. Lenker hit
+   tilbakemeldingsboksene) → `.kt-bunn` (bare Logg ut — «Avpubliser» er fjernet 27.11.2026) → logo. Lenker hit
    (Vekst-lås, «Se SMS-pakker», Stripe-retur) går via `aapneKontoSeksjon(id)`, som scroller til seksjonen.
    Render: `tools/render/konto-innstillinger.mjs`.
 
-- **Konto «Abonnement og publisering» — prismodell 09.10.2026 (Gratis / prøveperiode / Vekst).**
+- **Konto «Abonnement» — prismodell 09.10.2026 (Gratis / prøveperiode / Vekst).**
   ÉN ren funksjon `kontoTilstand(b)` velger tilstand KUN fra billing-shapen; `renderKonto` tegner den
   (ingen tilstands-if-er i markup). Rekkefølge (semantikk): 5 `past_due` «Betalingen feilet» (→ portal) ·
   4 `active`+vekst+`cancel_at_period_end` «Vekst til [dato]» (dato fra `current_period_end`; null → reserve,
   aldri gjettet) · 3 `active`/`trialing`+vekst «Vekst er aktivt» (179 kr; `trialing` får «Første trekk
   [dato]» fra `trial_ends_at`, utelatt ved null) · 2 `trial_vindu` «Vekst, prøveperiode» (N =
-  `trial_days_left`, ALDRI regnet i frontend) · 0/1 `gratis` (0 = ikke publisert → «Publiser bookingsiden»,
-  1 = Gratis + oppgraderingsboks). Alt annet (anomali, gammel Basis-sub) → nøytral reserve. Avpublisert i
-  2–5 → plan-tilstanden + «Siden din er ikke publisert.»/«Publiser bookingsiden» over lenkeblokka.
+  `trial_days_left`, ALDRI regnet i frontend) · 1 `gratis` (Gratis + oppgraderingsboks). Alt annet (anomali,
+  gammel Basis-sub) → nøytral reserve.
+  **Ingen publiseringsblokk i Konto (27.11.2026):** kortet er det samme om siden er live eller ikke — ingen «ikke
+  publisert», ingen «Fullfør siden din», ingen «Se forhåndsvisning». Lenkeblokka (`#pubLink`) vises bare når siden er
+  live. Ingen avpublisering. Eneste publiseringsvei i dashbordet er siste steg i Din side (`POST /din-side/lagre` med
+  `publiser:true`), nådd via «Fullfør siden din»-kortet på Oversikt eller oppsettet Din side starter selv.
+  `PUT /page-status` er fjernet i backend, og v1-publiseringen (Din side-CTA, fokuslinja, sjekklisteraden,
+  suksesskortet) er slettet.
   **Basis kan ikke kjøpes:** checkout sender alltid `{plan:'vekst'}`; plan-velgeren, `_valgtPlan`,
   `#planFall`, 402-grenen og myk-periode/nedtaking-grenene er SLETTET (ikke skjult).
   **`erBillingShape(d)`** (page_status + effective_plan + effective_plan_grunn) vokter ALLE tre veiene
-  inn (`loadBilling`, PUT `/page-status`, synk) → delvis shape overskriver aldri `_billing`;
+  inn (`loadBilling`, synk, Din side-svaret) → delvis shape overskriver aldri `_billing`;
   `settBilling(d)` er ÉN setter (Konto + Vekst-ikon + skjold). **Stripe-retur:** `success_url`
   `?live=1&session_id={CHECKOUT_SESSION_ID}` → `applyBillingReturn` rydder URL-en FØR kallet, kaller
   `POST /api/billing/sync-checkout {session_id}` ÉN gang (knappen viser «Aktiverer Vekst …»), banner
@@ -935,7 +940,7 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   navigasjonen på ≤719px; topp-navet er `display:none` (knappene blir skjult i DOM så
   `switchPanel()` treffer dem). `__syncBunnNav()` speiler aktiv fane (`aria-current`) fra det
   sentrale klikk-handleret. **Varselprikk:** desktop-Konto bærer `#kontoDot`, bunn-navets Konto-fane
-  bærer `#kontoBunnDot`, og overskriften «Abonnement og publisering» `#kontoAccDot` — alle tre settes fra
+  bærer `#kontoBunnDot`, og overskriften «Abonnement» `#kontoAccDot` — alle tre settes fra
   `b.needs_attention` i `renderBilling` (samme kilde, aldri ute av synk). **Den gamle «Mer»-dropdownen
   (`#merDot`/`oppdaterMerPrikk`/`.nav-mer-*`) er FJERNET** — render-test `tools/render/nav-prikk.mjs`
   asserterer prikk kun ved `needs_attention`, på riktig flate per bredde, og at «Mer»-rester = 0.
@@ -1052,10 +1057,9 @@ Alle gjøremål står i C:\Users\henri\Desktop\barberhq-plan\PLAN.md.
   (179 kr), Gratis (internt `'basis'`) koster 0 og kjøpes ikke. SMS-pakker kjøpes fra Konto på Gratis.
   `effective_plan` leses av `erBasis()` (Vekst-skjoldet — låser Vekst-flatene når planen ikke er bekreftet
   Vekst); `effective_plan_grunn` leses av `kontoTilstand`/`renderKonto`. Se Konto-avsnittet under Fane-struktur.
-- **«Gå live»-publisering** — barbereren publiserer selv fra Konto
-  («Publiser bookingsiden» → `PUT /api/dashboard/page-status`), eneste vei `forhandsvist → live`.
-  Avpubliser er samme vei tilbake. (Den gamle knappen «Publiser og start gratis prøveperiode» er borte —
-  nye barbere får ingen prøveperiode.)
+- **«Gå live»-publisering** — barbereren publiserer selv på siste steg i Din side (`POST /din-side/lagre` med
+  `publiser:true`), eneste vei `forhandsvist → live`. Ingen avpublisering (fjernet 27.11.2026, sammen med
+  `PUT /api/dashboard/page-status`). Konto sin «Fullfør siden din» åpner Din side.
 - **Verving-kjeden (`?ref=`)** — fikset i backend (`referralForVisning()`), overlever refresh.
   Verving-raden på landingssida er dekket.
 - **Bytt/sett passord i Konto → Innlogging** — to tilstander fra `profile.hasPassword`, GJORT 26.08.

@@ -23,7 +23,7 @@
      · «Lagret ✓» i statuslinja; feil → rød melding ved feltet (med «Prøv igjen» når et nytt forsøk kan hjelpe), utkastet beholdes.
      · Live side: ingen lagreknapp. Side som ikke er live: siste steg har «Publiser siden» (POST /din-side/lagre med
        publiser:true — krav-sjekken og meldingen om hva som mangler er backendens). Forkast-dialogene vises bare når en
-       lagring har feilet eller ikke ble ferdig. v2 kaller aldri PUT /page-status og har ingen sjekkliste. */
+       lagring har feilet eller ikke ble ferdig. v2 har ingen sjekkliste. */
 (function () {
   'use strict';
 
@@ -811,7 +811,7 @@
      ALLTID 200 når lagringen gikk gjennom:
        { lagret:true, publisering:{ publisert, forste_gang, page_status, grunn, mangler[], melding? }, …din-side, …billing }
      publisert:true → bekreftelsen «Siden din er live». publisert:false med melding → meldingen vises som den er.
-     400 { error, felt } = valideringsfeil (ingenting skrevet). v2 kaller ALDRI PUT /page-status. */
+     400 { error, felt } = valideringsfeil (ingenting skrevet). Dette er eneste publiseringsvei i dashbordet. */
   function lokalValider() {
     var u = S.utkast.utseende;
     if (u.aksent === 'egen' && !normHex(u.custom_accent)) return { felt: 'custom_accent', tekst: 'Skriv en gyldig fargekode, for eksempel #1e40af.' };
