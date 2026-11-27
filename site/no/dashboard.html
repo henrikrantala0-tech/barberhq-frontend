@@ -68,7 +68,6 @@
     --ov-hair:#ebebeb;
     --tt-hair:rgba(0,0,0,.08);--tt-mut:rgba(0,0,0,.62);--tt-mut-2:rgba(0,0,0,.55);--tt-h2:rgba(0,0,0,.55);   /* Tjenester & tider (lys): kontrast ≥ 4,5 */
     --ov-seg-line:#e2e2e2;--ov-seg-sel:#e9e9e9;--ov-btn-line:#d4d4d4;--ov-null:#e2e2e2;
-    --ov-a1:#1a7a44;--ov-a2:rgba(26,122,68,.55);--ov-a3:rgba(26,122,68,.28);
     /* Enkeltdager (Tjenester & tider): statusprikkene + valgt dag. Mørk tema = designets verdier nøyaktig;
        her mørkere motstykker så prikkene bærer mot hvit flate (grønn 3,5:1, blå 5,2:1). */
     --ed-gronn:#1f9d55;--ed-blaa:#2563eb;
@@ -193,7 +192,7 @@
   @media(max-width:430px){
     .stats,.attrib{grid-template-columns:1fr}
   }
-  /* Periodevelgerne (.ovs-seg: #segs, #ovsAttrPeriod, #vkAttrPeriod) holdes på ÉN linje — voktet av
+  /* Periodevelgeren (.ovs-seg: #segs) holdes på ÉN linje — voktet av
      tools/render/periodepiller.mjs (rader===1 @320/360/375/390). .segs bærer bare verdi-pillene (#rebookPills/#vervRecipient). */
   .src{background:var(--surface);border:1px solid var(--line);border-radius:11px;padding:15px 17px}
   .src .sn{font-size:12px;color:var(--mut);font-weight:500;letter-spacing:-.01em}
@@ -578,7 +577,6 @@
     --ov-hair:#1a1a1a;
     --tt-hair:rgba(255,255,255,.08);--tt-mut:rgba(255,255,255,.55);--tt-mut-2:rgba(255,255,255,.4);--tt-h2:rgba(255,255,255,.45);
     --ov-seg-line:#1f1f1f;--ov-seg-sel:#262626;--ov-btn-line:#2a2a2a;--ov-null:#262626;
-    --ov-a1:#3ecf7e;--ov-a2:rgba(62,207,126,.55);--ov-a3:rgba(62,207,126,.28);
     --ed-gronn:#3ecf7e;--ed-blaa:#4d8bff;
     --ed-fyll-vanlig:rgba(62,207,126,.18);--ed-fyll-endret:rgba(77,139,255,.18);--ed-tall-fylt:#fff;   /* hvitt tall 14,8:1 / 16,1:1 */
   }
@@ -801,13 +799,9 @@
      (13px, margin-bottom 16px) har høyere spesifisitet enn en bar klasse — derfor .subcard-prefiks. */
   .subcard .konto-tekst p{margin-bottom:10px}
   .subcard .konto-tekst p:last-child{margin-bottom:16px}
-  .konto-opp{margin:0 0 4px;padding:16px 18px;border:1px solid var(--info);border-radius:12px;max-width:520px}
-  .subcard .konto-opp-h{font-size:14px;font-weight:700;color:var(--ink);margin:0 0 6px}
-  .subcard .konto-opp-t{margin:0 0 14px}
   .subcard .konto-fin{font-size:11.5px;color:var(--mut);line-height:1.45;margin:10px 0 0;max-width:520px}
   /* Boksen er nestet i kortet: på 320 er det ~149px innvendig, mindre enn knappen trenger med vanlig
      padding (teksten brakk til to linjer). Fullbredde + smalere sidepadding på smale skjermer. */
-  @media(max-width:480px){ .konto-opp .btn{width:100%;padding-left:10px;padding-right:10px;white-space:nowrap} }
   /* SMS-påminnelser (Konto, Gratis) — tre nivåer: KONTROLL (trekkspill-headeren: tittel + bryter +
      undertekst, samme mønster som Vekst-fanens «SMS-påminnelse») · STATUS (saldo) · KJØP (fliser + knapp).
      Kun designsystemets farger via eksisterende tokens (--ink/--ink-2/--mut/--line/--info/--surface/--bg);
@@ -878,10 +872,6 @@
   .sms-tilbud-knapper .lnk-quiet{margin-top:0;flex-shrink:0}
   /* Publisering — egen blokk under abonnementskortet. Gjenbruker .subcard/.substatus. */
   .pubcard{margin-top:22px}
-  /* Container for lenkeblokka: bare når siden er live — .pub-field (URL-felt + kopi-ikon). */
-  .pub-link{font-size:13px;color:var(--ink-2);margin-top:12px}
-  .pub-link a{color:var(--info);text-decoration:none}
-  .pub-link a:hover{text-decoration:underline}
   /* Bookinglenke som ETT dempet felt: bakgrunn ett hakk fra kortflata (--bg mot --surface),
      hårfin kant (--line), samme radius som .subcard (12px). Kopi som ikonknapp helt til høyre.
      min-width:0 på lenka er ikke pynt: uten den nekter flex-barnet å krympe under egen
@@ -1173,38 +1163,7 @@
     .chartbars.scanning .cbar-col{transition:none}
     .rekord-puls{animation:none}
   }
-  /* ----- Hvor kundene kommer fra ----- */
-  /* Hvor kundene kommer fra — hero-tall + tre rader (pengeverdien BarberHQ hentet inn) */
-  /* .drv-head + .drv-period er FJERNET — perioden bor nå i beskrivelsessetningen. */
-  #drivenBy{margin-top:2px}
-  .drv-hero{text-align:center;padding:22px 16px;border:1px solid var(--line);border-radius:12px;background:var(--surface);margin-bottom:16px}
-  .drv-hero-lbl{margin:0 0 8px;font-size:11.5px;letter-spacing:.06em;text-transform:uppercase;color:var(--mut)}
-  /* Søsken med «Estimert omsetning»-KPI (.stat .v): samme font (arvet Inter), vekt 800, spacing, grønn #35d07a — bare større */
-  .drv-hero-num{margin:0;font-size:44px;font-weight:800;color:#35d07a;line-height:1;letter-spacing:-.04em;font-variant-numeric:tabular-nums}
-  .drv-delta{margin:12px 0 0;font-size:12.5px;color:var(--info)}
-  .drv-rows{display:flex;flex-direction:column;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:var(--surface)}
-  .drv-row2{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:13px 15px}
-  .drv-row2+.drv-row2{border-top:1px solid var(--line)}
-  .drv-left{display:flex;align-items:center;gap:10px;min-width:0}
-  .drv-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
-  .drv-nm{font-size:14px;font-weight:600;color:var(--ink-2);letter-spacing:-.01em;white-space:nowrap}
-  .drv-right{display:flex;align-items:center;gap:14px;flex-shrink:0}
-  .drv-cuts{font-size:13px;color:var(--mut);min-width:52px;text-align:right;font-variant-numeric:tabular-nums}
-  .drv-val{font-size:15px;font-weight:700;color:var(--ink);min-width:64px;text-align:right;font-variant-numeric:tabular-nums}
-  .drv-trust{margin:14px 0 0;font-size:11.5px;color:var(--mut-2);text-align:center}
-  /* Totalrad (Vekst): kraftigere skillelinje enn radene over, så den leses som en sum
-     og ikke som en fjerde kategori. Må stå ETTER .drv-row2+.drv-row2 — samme spesifisitet. */
-  .drv-row2.attr-total{border-top:1px solid var(--line-2)}
-  .attr-total .drv-nm{color:var(--ink)}
-  .attr-note{margin:9px 2px 0;font-size:11.5px;color:var(--mut-2);line-height:1.5}
-  .drv-empty{text-align:center;padding:34px 24px;border:1px solid var(--line);border-radius:12px;background:var(--surface)}
-  .drv-empty-mark{width:40px;height:40px;border-radius:50%;background:var(--good-bg);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;font-size:20px;color:var(--good)}
-  .drv-empty-h{margin:0 0 8px;font-size:16px;font-weight:600;color:var(--ink-2)}
-  .drv-empty-p{margin:0 auto;max-width:280px;font-size:13px;color:var(--mut);line-height:1.55}
-  /* «SMS av»-badge på rebooking-raden når sms_rebooking_enabled=false: tallene vises normalt (opptjent
-     historikk), badgen viser at automatikken er av NÅ. Erstattet «Av»-maskeringen (14.09). ≈40 % blekk.
-     Brukes av Vekst (di-off-badge) OG Oversikt (.hi-navn .di-off-badge). */
-  .di-off-badge{display:inline-block;margin-left:8px;font-size:10px;font-weight:600;letter-spacing:.03em;text-transform:uppercase;color:var(--mut-2);border:1px solid var(--line-2);border-radius:5px;padding:1px 6px;vertical-align:middle}
+  .drv-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0}   /* SMS-loggens fargeprikk (navnet er arv fra «Drevet av») */
   html[data-theme="dark"] body{background:#0a0a0a}
   /* ══ Oversikt-redesign (17.11.2026) ══════════════════════════════════════════════════════════════════
      Kilde: oversikt-vekst / oversikt-gratis / hentet-inn-vekst-tom (.dc.html, Henrik). Fire RAMMEFRIE seksjoner
@@ -1220,7 +1179,7 @@
   .ovs-etikett-alene{margin-bottom:14px}
   .ovs-hode-tall{font-size:12.5px;color:var(--mut);white-space:nowrap}
   .ovs-hode-tall:empty{display:none}
-  /* Segmentert periodevelger — ÉN delt klasse for Nøkkeltall (#segs) og Hentet inn (#ovsAttrPeriod). Valgt =
+  /* Segmentert periodevelger — brukt av Nøkkeltall (#segs) og Arbeidstider-modusen. Valgt =
      nøytral flate (--ov-seg-sel), ALDRI blå fyll. Knappene er 36px; ::after strekker trykkflaten til 46px
      (dekker containerens 4px padding + rammen) uten å endre utseendet. */
   .ovs-seg{position:relative;display:flex;gap:4px;padding:4px;border:1px solid var(--ov-seg-line);border-radius:10px;margin-bottom:22px}
@@ -1242,51 +1201,6 @@
   /* «kr» ARVER tallets farge (Henrik 17.11): grønt tall → grønn «kr», gull tall → gull «kr» (gull-klassen står på hele
      .ovs-kpi-v, se applyRekord). Ekte mellomrom foran «kr» (ikke margin) → «9 850 kr» også i kopiert tekst/skjermleser. */
   .ovs-kpi-v .u{font-size:.53em;font-weight:300;letter-spacing:0;color:inherit}
-  /* Hentet inn — Vekst */
-  .hi-hode{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-bottom:14px}
-  #drivenBy .ovs-seg,#vekstHentet .ovs-seg{margin-bottom:20px}
-  .hi-total{font-size:46px;font-weight:800;letter-spacing:-.05em;line-height:1;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
-  .hi-total .u{font-size:22px;font-weight:300;letter-spacing:0;color:inherit}   /* «kr» arver tallets farge */
-  .hi-sub{margin:9px 0 0;font-size:13.5px;line-height:1.5;color:var(--mut)}
-  .hi-stripe{display:flex;gap:3px;height:6px;margin-top:22px}
-  .hi-stripe>span{border-radius:3px;min-width:3px}
-  .hi-rader{margin-top:14px}
-  .hi-rad{display:flex;align-items:flex-start;gap:12px;padding:15px 0;border-bottom:1px solid var(--ov-hair)}
-  .hi-rader.tom{margin-top:18px}
-  .hi-rader.tom .hi-rad{border-bottom:0;border-top:1px solid var(--ov-hair);align-items:center}
-  .hi-prikk{width:8px;height:8px;border-radius:50%;margin-top:6px;flex-shrink:0}
-  .hi-tekst{flex:1;min-width:0;display:flex;flex-direction:column;gap:4px}
-  .hi-navn{font-size:14.5px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
-  .hi-desc{font-size:12.5px;color:var(--mut);line-height:1.4}
-  .hi-tall{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
-  .hi-kr{font-size:14.5px;font-weight:600;font-variant-numeric:tabular-nums;color:var(--ink);white-space:nowrap}
-  .hi-klipp{font-size:12.5px;color:var(--mut);white-space:nowrap}
-  .hi-strek{font-size:14.5px;font-weight:600;color:var(--mut-2)}
-  .hi-tom-h{margin:0;font-size:20px;font-weight:600;letter-spacing:-.02em;line-height:1.2;color:var(--ink)}
-  .hi-tom-p{margin:10px 0 0;font-size:13.5px;line-height:1.5;color:var(--mut)}
-  .hi-feil{margin:0;font-size:13.5px;line-height:1.5;color:var(--mut)}
-  /* PÅ VEI (Vekst): kunder/datoer, ALDRI kroner. Etter tom rad-liste får blokka egen hårlinje over. */
-  .pv-blokk{margin-top:22px}
-  .pv-blokk.med-strek{margin-top:8px;padding-top:18px;border-top:1px solid var(--ov-hair)}
-  .pv-blokk .ovs-etikett{margin-bottom:4px}
-  .pv-rad{display:flex;justify-content:space-between;align-items:center;gap:12px;min-height:44px}
-  .pv-tekst{font-size:14px;color:var(--ink)}
-  .pv-dempet{display:block;font-size:13.5px;line-height:1.5;color:var(--mut)}
-  .pv-samtykke{display:block;margin-top:2px;font-size:12.5px;line-height:1.5;color:var(--mut)}
-  /* Hentet inn — Gratis (erBasis): fast tekst, ingen tall utenom prisen. */
-  .ovs-tagg{font-size:11.5px;font-weight:500;color:var(--mut);border:1px solid var(--ov-btn-line);border-radius:6px;padding:4px 8px;white-space:nowrap;line-height:1.2}
-  /* text-wrap:balance: «Flere klipp fra kundene du har.» er bredere enn kolonnen på mobil (også på designets 390) —
-     uten balance ble «har.» stående alene. Balance deler hver linje (før/etter <br>) jevnt. */
-  .gr-h{margin:16px 0 0;font-size:22px;font-weight:700;letter-spacing:-.03em;line-height:1.15;color:var(--ink);text-wrap:balance}
-  .gr-p{margin:10px 0 0;font-size:13.5px;line-height:1.5;color:var(--mut);text-wrap:pretty}   /* pretty: ikke «kroner.» alene på 320 */
-  .gr-rader{margin-top:18px}
-  .gr-rad{display:flex;flex-direction:column;gap:4px;padding:15px 0;border-top:1px solid var(--ov-hair)}
-  .gr-bunn{display:flex;justify-content:space-between;align-items:center;gap:12px;margin-top:8px;padding-top:18px;border-top:1px solid var(--ov-hair)}
-  .gr-pris{display:flex;flex-direction:column;gap:3px}
-  .gr-pris b{font-size:16px;font-weight:600;letter-spacing:-.02em;color:var(--ink)}
-  .gr-pris span{font-size:12.5px;color:var(--mut)}
-  .gr-cta{flex-shrink:0;height:44px;padding:0 20px;appearance:none;border:0;border-radius:8px;background:var(--ink);color:var(--bg);font-family:inherit;font-size:14px;font-weight:600;cursor:pointer}
-  .gr-cta:hover{opacity:.9}
   /* ══ Vekst-fanen: fra bokser til liste (Henrik 17.11.2026) ═══════════════════════════════════════════════════════
      Kilde: vekst-liste-aktiv / vekst-liste-gratis (.dc.html). ALT er avgrenset til #vekst — .acc/.acc-list/.acc-chev
      deles med «Din side» og Konto, som IKKE endres. Ingen bokser utenom KPI-boksene øverst (#vekstStats).
@@ -1322,10 +1236,13 @@
   #vekst .sw input:indeterminate + .sl:before{transform:translateX(9px);width:22px;height:22px;top:3px}
   #vekst .acc-sw{margin:18px 0 0}
   /* Lås (Gratis): grå hengelås 13px + «Vekst» 12.5/500 der bryteren/statusen ellers står. */
-  .laas-merke{display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:500;color:var(--mut);white-space:nowrap;flex-shrink:0}
+  .laas-merke{position:relative;display:inline-flex;align-items:center;gap:5px;font-size:12.5px;font-weight:500;color:var(--mut);white-space:nowrap;flex-shrink:0;cursor:pointer}
+  /* Trykkflaten er minst 44×44 (merket selv er lite): usynlig flate sentrert over merket. Tar barberen til Vekst-kortet på Konto. */
+  .laas-merke::after{content:"";position:absolute;top:50%;left:50%;width:max(100%,44px);height:max(100%,44px);transform:translate(-50%,-50%)}
+  @media(hover:hover){ .laas-merke:hover{color:var(--ink)} }
   .laas-merke svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:2;stroke-linecap:round;stroke-linejoin:round}
-  #vekst .acc-row > .laas-merke{margin-top:18px}
-  #vekst .acc-row:has(> .laas-merke) .acc-sw{display:none}
+  #vekst .acc-row:has(.laas-merke) .acc-sw{display:none}
+  #vekst .acc-row:has(.laas-merke) .acc-head{padding-right:0}   /* bryteren er borte → chevronen flukter med Personlig-radene */
   /* SMS-påminnelse på Gratis uten SMS: blå tekstlenke under beskrivelsen (ikke understreket). */
   #vekst .paam-kjop{margin:-10px 0 0;padding:0 0 12px}
   #vekst .paam-kjop a{display:inline-flex;align-items:center;min-height:32px;color:var(--info);text-decoration:none;font-size:13px;font-weight:500}
@@ -1879,6 +1796,53 @@
   .kt-h{font-size:11px;font-weight:600;color:var(--mut);letter-spacing:.06em;text-transform:uppercase;margin:0 0 8px 2px;display:flex;align-items:center}
   .kt-kort{background:var(--surface);border:1px solid var(--line);border-radius:12px;overflow:hidden}
   .kt-kort+.kt-kort{margin-top:12px}
+  /* ── Konto «Abonnement» (27.11.2026) ── Gratis: plan-linje + frittstående Vekst-salgskort (#kontoVekst) som svever
+     (translateY 0 → -6 px → 0 over 6 s) med blå glød i takt; prefers-reduced-motion: stille, med gløden. Andre tilstander:
+     statuskort (.ab-kort); Vekst aktiv = grønn ramme + svak glød, ingen animasjon. Farger via tokens, så lys tema følger. */
+  .ab-plan{margin:2px 2px 14px;font-size:12.5px;color:var(--tt-mut)}
+  .ab-plan[hidden],.ab-salg[hidden],.ab-kort[hidden],.ab-roi[hidden],.ab-hentet[hidden]{display:none}
+  .ab-salg{max-width:520px;margin:0 0 10px;padding:24px 20px 20px;background:var(--surface);border-radius:16px;
+    box-shadow:0 0 0 1px rgba(77,139,255,.55),0 10px 40px rgba(77,139,255,.22);animation:abSveve 6s ease-in-out infinite}
+  @keyframes abSveve{
+    0%,100%{transform:translateY(0);box-shadow:0 0 0 1px rgba(77,139,255,.55),0 10px 40px rgba(77,139,255,.22)}
+    50%{transform:translateY(-6px);box-shadow:0 0 0 1px rgba(77,139,255,.7),0 16px 56px rgba(77,139,255,.34)}}
+  @media (prefers-reduced-motion:reduce){ .ab-salg{animation:none} }
+  @media (max-width:359px){ .ab-salg{padding-left:16px;padding-right:16px} }   /* 320: mer plass til radnavnene */
+  .ab-salg-et{margin:0;font-size:11px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--info)}
+  .ab-salg-h{margin:8px 0 0;font-size:15px;font-weight:600;letter-spacing:-.01em;color:var(--ink)}
+  .ab-salg-pris{display:flex;align-items:baseline;gap:6px;margin:14px 0 0}
+  .ab-salg-pris b{font-size:34px;font-weight:800;letter-spacing:-.04em;line-height:1;color:var(--ink)}
+  .ab-salg-pris span{font-size:12.5px;color:var(--tt-mut)}
+  .ab-roi{display:flex;align-items:center;gap:6px;margin:12px 0 0;font-size:12.5px;line-height:1.4;color:var(--good)}
+  .ab-tabell{margin:20px 0 0}
+  .ab-tr{display:grid;grid-template-columns:minmax(0,1fr) 40px 64px;align-items:center;gap:4px;padding:10px 0;border-top:1px solid var(--tt-hair);font-size:14px;line-height:1.35;color:var(--ink)}
+  .ab-tr > :nth-child(2),.ab-tr > :nth-child(3){justify-self:center;text-align:center}
+  .ab-tr.ab-th{border-top:0;padding-top:0;font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--tt-mut)}
+  .ab-th .ab-vk{color:var(--info)}
+  .ab-sr{position:absolute;width:1px;height:1px;overflow:hidden;clip:rect(0 0 0 0);white-space:nowrap}
+  .ab-ja{color:var(--good)}
+  .ab-nei{color:var(--tt-mut)}
+  .ab-opp{display:block;width:100%;min-height:48px;margin:22px 0 0;padding:0 16px;appearance:none;border:0;border-radius:12px;background:#4d8bff;color:#fff;font:inherit;font-size:15px;font-weight:700;letter-spacing:-.01em;cursor:pointer}
+  html:not([data-theme="dark"]) .ab-opp{background:var(--info)}
+  .ab-opp:disabled{opacity:.6;cursor:default}
+  .ab-binding{margin:12px 0 0;font-size:12px;color:var(--tt-mut);text-align:center}
+  .ab-salg-fin{margin:4px 0 0;font-size:11px;line-height:1.45;color:var(--tt-mut-2);text-align:center}
+  .ab-kort{max-width:520px;padding:22px 20px 18px;background:var(--surface);border:1px solid var(--line);border-radius:16px}
+  .ab-kort.vekst{border-color:transparent;box-shadow:0 0 0 1px rgba(62,207,126,.35),0 8px 32px rgba(62,207,126,.12)}
+  .ab-kort .konto-tekst p{margin:0 0 10px;font-size:13px;line-height:1.5;color:var(--ink-2)}
+  .ab-kort .konto-tekst p:last-child{margin-bottom:16px}
+  .ab-hentet-l{margin:0;font-size:12.5px;color:var(--tt-mut)}
+  .ab-hentet-sum{margin:6px 0 0;font-size:32px;font-weight:800;letter-spacing:-.04em;line-height:1.05;color:var(--good);font-variant-numeric:tabular-nums}
+  .ab-hentet-tom{margin:8px 0 0;font-size:13.5px;line-height:1.5;color:var(--ink-2)}
+  .ab-rader{margin:16px 0 0}
+  .ab-rad{display:flex;align-items:center;justify-content:space-between;gap:12px;min-height:44px;border-top:1px solid var(--tt-hair);font-size:13.5px;color:var(--ink)}
+  .ab-kr{font-weight:600;color:var(--good);font-variant-numeric:tabular-nums;white-space:nowrap}
+  .ab-paa{color:var(--good);opacity:.65;white-space:nowrap}
+  .ab-slaa{appearance:none;min-height:44px;padding:0;background:none;border:0;font:inherit;font-size:13.5px;font-weight:600;color:var(--info);cursor:pointer;white-space:nowrap}
+  .ab-bunn{margin:16px 0 0;padding-top:14px;border-top:1px solid var(--tt-hair);font-size:13px;color:var(--ink-2)}
+  .ab-bunn[hidden],.ab-trekk[hidden]{display:none}
+  .ab-kort .konto-fin{margin:6px 0 0;font-size:11.5px;line-height:1.45;color:var(--mut);max-width:520px}
+  .ab-trekk{margin:6px 0 0;font-size:12.5px;color:var(--tt-mut)}
   .kt .subcard{max-width:none}
   .kt-rad{display:block;width:100%;padding:14px 16px;border-top:1px solid var(--line);text-align:left}
   .kt-rad:first-child{border-top:0}
@@ -2168,7 +2132,7 @@
     <!-- 3. NØKKELTALL — periodevelger (.ovs-seg, delt med Hentet inn) + to tall + ÉN dempet linje + diagram.
          Pillene styrer KPI/diagram (curPeriod/ym), ikke Kommende og ikke Hentet inn. Tredje pille er et
          nedtrekk (#maanedMeny): «Denne måneden» + historiske måneder (fillMonths). -->
-    <section class="ovs-sek" id="ovsTall" aria-labelledby="ovsTallH">
+    <section class="ovs-sek ovs-sek-sist" id="ovsTall" aria-labelledby="ovsTallH">
       <h2 class="ovs-etikett ovs-etikett-alene" id="ovsTallH">Nøkkeltall</h2>
       <div class="ovs-seg" id="segs" role="tablist" aria-label="Periode for nøkkeltall">
         <button class="ovs-seg-btn" role="tab" aria-selected="true" data-p="uke">Siste uke</button>
@@ -2195,12 +2159,6 @@
       </div>
     </section>
 
-    <!-- 4. HENTET INN AV BARBERHQ — renderDrivenBy tegner hele seksjonen (etikett, velger, innhold).
-         Vekst: periode-state ovsAttrPeriod (3/6/12 mnd, standard 3 mnd) — FELLES med Vekst-fanen (samme komponent).
-         Gratis (erBasis): fast tekst uten tall + hva Vekst gjør + pris (ingen /attribution-henting). -->
-    <section class="ovs-sek ovs-sek-sist" id="drivenByWrap" aria-labelledby="ovsHentetH">
-      <div id="drivenBy"></div>
-    </section>
   </section>
 
   <!-- Bookinger-panelet er slått sammen inn i #oversikt -->
@@ -2216,12 +2174,6 @@
     <p class="block-s" id="trendSub">Siste seks måneder.</p>
     <div class="trend" id="trend"></div>
 
-    <!-- HENTET INN AV BARBERHQ — SAMME komponent som på Oversikt (tegnHentetInn, Vekst- og Gratis-tilstand), uten
-         boks, med 3 | 6 | 12 mnd (felles periode-state ovsAttrPeriod). Den gamle Vekst-velgeren (2 uker / 30 dager / 3 mnd ▾),
-         forklaringsteksten og #attrKort/#attrRows er borte (Henrik 17.11). id-prefiks «vk» → ingen doble id-er med Oversikt. -->
-    <section class="vk-sek" id="vekstHentetWrap" aria-labelledby="vkHentetH">
-      <div id="vekstHentet"></div>
-    </section>
     <!-- Momentum-kort: bonus-nudge, vises KUN ved lav forfalt-andel (loadMomentum). Ligger over
          både Automatikk (rebooking) og Personlig (verving); knappen åpner Verving i samme fane. -->
     <div class="momentum" id="momentumCard" hidden>
@@ -2855,32 +2807,48 @@
            tilstanden, renderKonto tegner den. Prikken følger needs_attention (samme kilde som nav-prikkene). -->
       <section class="kt-seksjon" id="kontoAbonnement">
         <h2 class="kt-h">Abonnement<span class="nav-dot" id="kontoAccDot" hidden></span></h2>
-    <!-- ETT kort. Tilstanden velges av kontoTilstand(b) — en ren funksjon av billing-shapen — og
-         tegnes av renderKonto. Ingen tilstandslogikk i markupen: nodene under er tomme flater som
-         fylles eller skjules. Prismodell 09.10.2026: Gratis er standard, publisering er frikoblet
-         billing, Vekst kjøpes via «Oppgrader til Vekst». [oversettelse: sv/da/en] -->
-    <div class="subcard kt-kort">
-      <div class="substatus" id="kontoStatus">&#9679; Henter status …</div>
-      <div class="pln" id="kontoTall" style="display:none"><b id="kontoTallStor"></b><span id="kontoTallSuff"></span></div>
-      <p class="pln-sub" id="kontoTallSub" style="display:none"></p>
-      <div class="konto-tekst" id="kontoTekst"></div>
-      <!-- Oppgraderingsboks: KUN Gratis. Vekst-prisen fylles fra PLAN_INFO.vekst (én priskilde). -->
-      <div class="konto-opp" id="kontoOpp" style="display:none">
-        <p class="konto-opp-h" id="kontoOppH"></p>
-        <p class="konto-opp-t">Rebooking, vinn tilbake, verving, lojalitet og attribusjon. 100 SMS inkludert hver måned.</p>
-        <button class="btn" id="kontoOppBtn" type="button">Oppgrader til Vekst</button>
-        <p class="konto-fin" id="kontoOppFin"></p>
+    <!-- Abonnement (27.11.2026). Tilstanden velges av kontoTilstand(b) (ren funksjon av billing-shapen) og tegnes av
+         renderKonto. Gratis: plan-linje + frittstående Vekst-salgskort (#kontoVekst, svever; låse-merkene i Vekst-fanen
+         scroller hit). Alle andre tilstander: ett statuskort (#abKort) — Vekst aktiv med «Hentet inn» denne måneden
+         (lastKontoHentet), de andre med sin melding og knapp. Ingen bookinglenke her: den står i headeren. [oversettelse: sv/da/en] -->
+    <p class="ab-plan" id="abPlan" hidden>Du er på Gratis · 0 kr/mnd</p>
+    <div class="ab-salg" id="kontoVekst" hidden>
+      <p class="ab-salg-et">Vekst</p>
+      <p class="ab-salg-h">Det som fyller stolen.</p>
+      <p class="ab-salg-pris"><b id="abSalgPris">179 kr</b><span>/mnd eks.&nbsp;mva</span></p>
+      <p class="ab-roi" id="abRoi" hidden><svg class="ikon" aria-hidden="true" focusable="false"><use href="ikoner.svg#trend"></use></svg><span id="abRoiTekst"></span></p>
+      <div class="ab-tabell" role="table" aria-label="Det du har nå og med Vekst">
+        <div class="ab-tr ab-th" role="row"><span role="columnheader"><span class="ab-sr">Funksjon</span></span><span role="columnheader">Nå</span><span role="columnheader" class="ab-vk">Vekst</span></div>
+          <div class="ab-tr" role="row"><span role="cell">Bookingside og kalender</span><span role="cell"><svg class="ikon ab-nei" aria-hidden="true" focusable="false"><use href="ikoner.svg#hake"></use></svg></span><span role="cell"><svg class="ikon ab-ja" aria-hidden="true" focusable="false"><use href="ikoner.svg#hake"></use></svg></span></div>
+          <div class="ab-tr" role="row"><span role="cell">SMS-påminnelser</span><span role="cell"><span class="ab-nei">Pakke</span></span><span role="cell"><span class="ab-ja">100 inkl.</span></span></div>
+          <div class="ab-tr" role="row"><span role="cell">Rebooking</span><span role="cell"><span class="ab-nei" aria-label="Nei">–</span></span><span role="cell"><svg class="ikon ab-ja" aria-hidden="true" focusable="false"><use href="ikoner.svg#hake"></use></svg></span></div>
+          <div class="ab-tr" role="row"><span role="cell">Vinn tilbake</span><span role="cell"><span class="ab-nei" aria-label="Nei">–</span></span><span role="cell"><svg class="ikon ab-ja" aria-hidden="true" focusable="false"><use href="ikoner.svg#hake"></use></svg></span></div>
+          <div class="ab-tr" role="row"><span role="cell">Verving</span><span role="cell"><span class="ab-nei" aria-label="Nei">–</span></span><span role="cell"><svg class="ikon ab-ja" aria-hidden="true" focusable="false"><use href="ikoner.svg#hake"></use></svg></span></div>
+          <div class="ab-tr" role="row"><span role="cell">Lojalitetsprogram</span><span role="cell"><span class="ab-nei" aria-label="Nei">–</span></span><span role="cell"><svg class="ikon ab-ja" aria-hidden="true" focusable="false"><use href="ikoner.svg#hake"></use></svg></span></div>
+          <div class="ab-tr" role="row"><span role="cell">Hvor kundene kommer fra</span><span role="cell"><span class="ab-nei" aria-label="Nei">–</span></span><span role="cell"><svg class="ikon ab-ja" aria-hidden="true" focusable="false"><use href="ikoner.svg#hake"></use></svg></span></div>
       </div>
+      <button class="ab-opp" id="kontoOppBtn" type="button">Oppgrader til Vekst</button>
+      <p class="ab-binding">Ingen binding. Si opp når du vil.</p>
+      <p class="ab-salg-fin">Etter 100 SMS: 1,21 kr per SMS på neste faktura. Maks 400 kr i måneden.</p>
+    </div>
+    <div class="ab-kort" id="abKort">
+      <div class="substatus" id="kontoStatus">&#9679; Henter status …</div>
+      <!-- Vekst aktiv: «Hentet inn i <måned>» + total (attribution period=maaned) + rader. Tomt: tekst i stedet for tallet. -->
+      <div class="ab-hentet" id="abHentet" hidden>
+        <p class="ab-hentet-l" id="abHentetL">Hentet inn denne måneden</p>
+        <p class="ab-hentet-sum" id="abHentetSum" hidden></p>
+        <p class="ab-hentet-tom" id="abHentetTom" hidden>Tallene kommer når de første kundene kommer tilbake.</p>
+        <p class="ab-hentet-tom" id="abHentetFeil" hidden>Kunne ikke hente tallene akkurat nå.</p>
+        <div class="ab-rader" id="abRader"></div>
+      </div>
+      <div class="konto-tekst" id="kontoTekst"></div>
       <!-- ÉN node for hovedhandlingen (oppgrader / oppdater betaling); _kontoAksjon sier hva. -->
       <button class="btn" id="kontoAksjon" style="display:none"></button>
+      <p class="ab-bunn" id="abBunn" hidden></p>
       <p class="konto-fin" id="kontoFin" style="display:none"></p>
+      <p class="ab-trekk" id="abTrekk" hidden></p>
       <!-- Vekst/prøve med kjøpte SMS igjen: én dempet linje (pakkene vises kun på Gratis). -->
       <p class="sub-micro" id="kontoSmsRest" style="display:none"></p>
-      <!-- Publiseringsblokka (ikke live: «Siden din er ikke publisert ennå.», «Fullfør siden din», forhåndsvisningslenka) er
-           fjernet 27.11.2026. Publisering skjer bare på siste steg i Din side («Fullfør siden din»-kortet på Oversikt). -->
-      <!-- Lenkeblokka (bare live). <div>, ikke <p>: lenkefeltet er blokk-markup. [oversettelse: sv/da/en] -->
-      <div class="pub-link" id="pubLink" style="display:none"></div>
-      <!-- Sekundærhandling som dempet tekstlenke. -->
       <div class="konto-lenker">
         <button class="lnk-quiet" id="manageSub" style="display:none">Administrer abonnement</button>
       </div>
@@ -4015,7 +3983,6 @@ async function loadOversikt(){
     renderWeekInsight(payload); // batch 2: «X kr unna» / persentil — overstyrer fotnoten i SAMME linje (#rekordNote)
 
     renderBarChart(days,curPeriod);
-    renderDrivenBy(); // egen periode-state (ovsAttrPeriod) — frikoblet fra #segs/curPeriod
     loadUpcoming();
   }catch(e){
     feilMedRetry($("#stats"),'Klarte ikke å laste tallene.',loadOversikt);
@@ -4371,11 +4338,19 @@ function settHandlingsLaas(host){
   // Lås-merke (Henrik 17.11): grå hengelås + «Vekst» DER bryteren/statusen ellers står — ikke en blå pille i tittelen.
   // Personlig-rader (.vk-hoyre): foran chevronen. Automatikk-rader (.acc-row): i bryterens plass (CSS skjuler bryteren).
   if(!host.querySelector('.laas-merke')){
+    // Merket er en knapp til Vekst-kortet på Konto (27.11.2026). Står inne i radens .acc-head-knapp → <span role=button>
+    // (ikke <button> i <button>), og klikket stoppes her så raden ikke foldes ut samtidig.
     var m=document.createElement('span'); m.className='laas-merke'; m.title='Med i Vekst';
+    m.setAttribute('role','button'); m.tabIndex=0; m.setAttribute('aria-label','Med i Vekst. Se Vekst på Konto');
     m.innerHTML=VK_LAAS_SVG+'<span>Vekst</span>';
-    var hoyre=host.querySelector('.vk-hoyre'), rad=host.querySelector('.acc-row');
+    var tilKonto=function(e){ e.preventDefault(); e.stopPropagation(); aapneKontoSeksjon('kontoVekst'); };
+    m.addEventListener('click',tilKonto);
+    m.addEventListener('keydown',function(e){ if(e.key==='Enter'||e.key===' ') tilKonto(e); });
+    // Rekkefølgen er lik på alle radene (Henrik 27.11.2026): «Vekst»-merket med lås, SÅ chevronen. Automatikk-radene
+    // (.acc-row) har chevronen rett i knappen → pakkes i samme .vk-hoyre som Personlig-radene; bryteren skjules (CSS).
+    var hoyre=host.querySelector('.vk-hoyre'), chev=host.querySelector('.acc-head > .acc-chev');
+    if(!hoyre && chev){ hoyre=document.createElement('span'); hoyre.className='vk-hoyre'; chev.parentNode.insertBefore(hoyre, chev); hoyre.appendChild(chev); }
     if(hoyre) hoyre.insertBefore(m, hoyre.querySelector('.acc-chev'));
-    else if(rad) rad.appendChild(m);
     else host.appendChild(m);
   }
 }
@@ -4410,10 +4385,8 @@ function visSettingsLaas(errEl, prefix){
 // Re-render skjoldede flater etter at billing (effective_plan) er lastet — flatene kan ha rendret
 // før _billing kom (erBasis var false → ekte/tom sti). Kalles fra loadBilling.
 function oppdaterSkjoldFlater(){
-  if(document.getElementById('drivenBy') && typeof renderDrivenBy==='function')renderDrivenBy();
   // Vekst-flatene: kun hvis fanen faktisk er lastet (unngå unødig attribusjon-fetch før åpning).
   if(typeof aktivtPanel==='function' && aktivtPanel()==='vekst'){
-    if(typeof renderVekstHentet==='function')renderVekstHentet();
     if(typeof loadMomentum==='function')loadMomentum();
     // Re-kjør kundedata-loaderne med kjent plan (sikkerhetsnett + drenerer race-vinduets gate-utsettelse).
     if(typeof loadWinback==='function')loadWinback();
@@ -4423,157 +4396,8 @@ function oppdaterSkjoldFlater(){
   }
 }
 
-// Kontrakt /attribution (backend 46898fd+d9048ee): { paaVei, hentetInn? }. hentetInn MANGLER for Basis — fravær = signalet.
-// De gamle Vekst-byggerne (diTotalHtml/diArmRad/diRaderHtml/diBasis*/koblePaaVeiCta) er borte: Vekst-fanen bruker nå
-// SAMME «Hentet inn»-komponent som Oversikt (tegnHentetInn, Henrik 17.11).
-function pvDato(iso){ // 'YYYY-MM-DD' → «14. sep»; null/ugyldig → null
-  if(!iso) return null;
-  var d=new Date(iso+'T12:00:00'); if(isNaN(d.getTime())) return null;
-  return d.toLocaleDateString('nb-NO',{day:'numeric',month:'short'}).replace(/\.$/,'');
-}
-
-// ══ Oversikt «Hentet inn av BarberHQ» (Oversikt-redesign 17.11.2026) ═══════════════════════════════════════
-// Vekst: periodevelger (3/6/12 mnd → siste_3mnd/6mnd/12mnd, standard 3 mnd), felles for Oversikt og Vekst-fanen
-// (snur da564bd etter Henriks valg 5). Total + fordelingsstripe + tre rader + PÅ VEI.
-// Gratis (erBasis): fast overskrift + hva Vekst gjør + pris. Ingen tall, ingen /attribution-henting.
-var ovsAttrPeriod='siste_3mnd';
-// Periode-staten er FELLES for Oversikt og Vekst-fanen (Henrik 17.11: samme komponent på begge). Sekvensvakta er per vert
-// (wrap._seq), så de to vertene ikke forkaster hverandres svar.
-var OVS_ATTR_VALG=[['siste_3mnd','3 mnd'],['siste_6mnd','6 mnd'],['siste_12mnd','12 mnd']];
-// Tre armer i OVERSIKTENS rekkefølge (Henrik 17.11): Rebooking / Vinn tilbake / Verving. Vekst-fanen
-// (diRaderHtml) beholder sin egen rekkefølge. Lojalitet er fortsatt IKKE en arm (se diRaderHtml-noten).
-var OVS_ARMER=[
-  {nokkel:'rebooking',   navn:'Rebooking',    desc:'Booket igjen etter SMS',  farge:'var(--ov-a1)'},
-  {nokkel:'vinnTilbake', navn:'Vinn tilbake', desc:'Kom tilbake fra lista',   farge:'var(--ov-a2)'},
-  {nokkel:'vervet',      navn:'Verving',      desc:'Nye kunder via verving',  farge:'var(--ov-a3)'}
-];
-function klippTekst(n){ return n===1?'1 klipp':n+' klipp'; }
-function kunderTekst(n){ return n===1?'1 kunde':n+' kunder'; }
-// pfx = id-prefiks per vert («ovs» Oversikt, «vk» Vekst) → id-ene (…AttrPeriod, …HentetH) blir unike i DOM-en.
-function ovsAttrVelgerHtml(pfx){
-  return '<div class="ovs-seg" id="'+(pfx||'ovs')+'AttrPeriod" role="group" aria-label="Periode for Hentet inn">'
-    +OVS_ATTR_VALG.map(function(v){
-      return '<button type="button" class="ovs-seg-btn" data-ovs-attr="'+v[0]+'" aria-pressed="'+(v[0]===ovsAttrPeriod?'true':'false')+'">'+v[1]+'</button>';
-    }).join('')+'</div>';
-}
-// «SMS av»-merket (rebooking-bryteren av NÅ): tallene er opptjent historikk og vises likevel (14.09).
-function ovsSmsAvMerke(o){ return (o && o.aktivert===false)?'<span class="di-off-badge">SMS av</span>':''; }
-function ovsHentetRader(hi, tom){
-  return '<div class="hi-rader'+(tom?' tom':'')+'">'+OVS_ARMER.map(function(a){
-    var o=(hi&&hi[a.nokkel])||{count:0,revenue:0};
-    var tall = (!tom && o.count>0)
-      ? '<div class="hi-tall"><span class="hi-kr">'+krFmt(o.revenue||0)+'</span><span class="hi-klipp">'+klippTekst(o.count)+'</span></div>'
-      : '<div class="hi-tall"><span class="hi-strek" aria-label="ingen ennå">—</span></div>';
-    return '<div class="hi-rad">'
-      +(tom?'':'<span class="hi-prikk" style="background:'+a.farge+'" aria-hidden="true"></span>')
-      +'<div class="hi-tekst"><span class="hi-navn">'+a.navn+ovsSmsAvMerke(a.nokkel==='rebooking'?o:null)+'</span><span class="hi-desc">'+a.desc+'</span></div>'
-      +tall+'</div>';
-  }).join('')+'</div>';
-}
-// Fordelingsstripe: segmenter proporsjonale med KRONER per kilde. Arm med 0 kr får ingen bit; er alle 0 kr
-// (f.eks. bare gratis lojalitetsklipp) tegnes ingen stripe.
-function ovsStripe(hi){
-  var deler=OVS_ARMER.map(function(a){ return {farge:a.farge, kr:Math.max(0,((hi&&hi[a.nokkel])||{}).revenue||0)}; })
-                     .filter(function(d){return d.kr>0;});
-  if(!deler.length) return '';
-  return '<div class="hi-stripe" aria-hidden="true">'+deler.map(function(d){ return '<span style="flex:'+d.kr+';background:'+d.farge+'"></span>'; }).join('')+'</div>';
-}
-// «Kunder å hente inn» = borte + no_show fra backend (samme utvalg som /winback-lista, 0b). Mangler feltene
-// (eldre backend) → dagens tall (passerer_innen_30d) til backend er ute. null = ukjent.
-function ovsHenteInnAntall(wb){
-  if(wb && typeof wb.borte==='number' && typeof wb.no_show==='number') return wb.borte+wb.no_show;
-  return (wb && typeof wb.passerer_innen_30d==='number') ? wb.passerer_innen_30d : null;
-}
-// PÅ VEI (Vekst): kunder/datoer, ALDRI kroner. medStrek = egen hårlinje over (etter tom rad-liste).
-function ovsPaaVeiHtml(pv, medStrek){
-  var rb=(pv&&pv.rebooking)||{naar_vindu_30d:0,med_samtykke:0};
-  var wb=(pv&&pv.winback)||{};
-  var n=ovsHenteInnAntall(wb), dato=pvDato(wb.foerste_passerer_60);
-  var h='<div class="pv-blokk'+(medStrek?' med-strek':'')+'"><h3 class="ovs-etikett">På vei</h3>';
-  if(n>0){
-    h+='<div class="pv-rad"><span class="pv-tekst">'+kunderTekst(n)+' å hente inn</span><button type="button" class="ovs-lenke m-ikon" data-di-winback>Se lista'+ikonHtml('pil-h')+'</button></div>';
-  }else if(dato){   // ingen klare ennå, men en passerer snart (valg 6)
-    h+='<div class="pv-rad"><span class="pv-tekst">Første kunde passerer 60 dager '+dato+'</span><button type="button" class="ovs-lenke m-ikon" data-di-winback>Se lista'+ikonHtml('pil-h')+'</button></div>';
-  }else{
-    h+='<div class="pv-rad"><span class="pv-tekst">Ingen kunder å hente inn ennå</span></div>';
-  }
-  var rn=rb.naar_vindu_30d||0;
-  h+='<span class="pv-dempet">'+(rn>0?kunderTekst(rn)+' nærmer seg rebooking':'Ingen kunder nærmer seg rebooking ennå')+'</span>';
-  // Samtykkelinja bare når noen når vinduet: «0 av 0 har SMS-samtykke» sier ingenting.
-  if(rn>0) h+='<span class="pv-samtykke">'+(rb.med_samtykke||0)+' av '+rn+' har SMS-samtykke i dag</span>';
-  return h+'</div>';
-}
-// Overskrift + periodevelger (Vekst-tilstand og feiltilstand). Står alltid, så barbereren kan bytte periode = prøve igjen.
-function ovsHentetHodeHtml(pfx){
-  return '<h2 class="ovs-etikett ovs-etikett-alene" id="'+(pfx||'ovs')+'HentetH">Hentet inn av BarberHQ</h2>'+ovsAttrVelgerHtml(pfx);
-}
-// /attribution feilet (nett/5xx): overskrift + velger står, dempet linje der tallene skulle vært. Før ble hele
-// seksjonen tømt (høyde 0) — barbereren så ingenting og hadde ingen velger å prøve igjen med.
-function ovsHentetFeilHtml(pfx){
-  return ovsHentetHodeHtml(pfx)+'<p class="hi-feil">Kunne ikke hente tallene akkurat nå.</p>';
-}
-function ovsHentetVekstHtml(data, pfx){
-  var hi=data.hentetInn, total=(hi&&hi.total)||{count:0,revenue:0};
-  var h=ovsHentetHodeHtml(pfx);
-  if(!hi){
-    // Vekst/trial MEN hentetInn mangler → backend shape-drift. Ærlig feiltilstand, aldri oppsalg. PÅ VEI er ekte for begge planer.
-    console.warn('[hentet-inn] hentetInn mangler for ikke-Basis konto (effective_plan='+(_billing&&_billing.effective_plan)+', grunn='+(_billing&&_billing.effective_plan_grunn)+') — viser På vei uten beløp.');
-    return h+'<p class="hi-feil">Kunne ikke hente beløpet akkurat nå.</p>'+ovsPaaVeiHtml(data.paaVei,true);
-  }
-  if(!((total.count||0)>0)){
-    // Tomtilstand (total = 0) — hentet-inn-vekst-tom.dc.html.
-    return h+'<p class="hi-tom-h">Ingen kunder hentet inn ennå.</p>'
-      +'<p class="hi-tom-p">Når en kunde booker etter en rebooking-SMS, fra vinn tilbake-lista eller via verving, dukker beløpet opp her.</p>'
-      +ovsHentetRader(hi,true)+ovsPaaVeiHtml(data.paaVei,true);
-  }
-  return h+'<div class="hi-total">'+(total.revenue||0).toLocaleString('no-NO')+'<span class="u"> kr</span></div>'
-    +'<p class="hi-sub">'+klippTekst(total.count)+' fra kunder BarberHQ hentet tilbake</p>'
-    +ovsStripe(hi)+ovsHentetRader(hi,false)+ovsPaaVeiHtml(data.paaVei,false);
-}
-// Gratis: FAST overskrift uten tall (Henrik 17.11 — erstatter «{borte} kunder har sluttet å booke»). Gratis leser
-// IKKE paaVei.winback.borte og henter ingenting — tegnHentetInn tegner denne uten /attribution-kall.
-function ovsHentetGratisHtml(pfx){
-  var h='Flere klipp fra kundene du har.<br>Og nye i tillegg.';
-  var rader=[['Rebooking','SMS når kunden har gått over tiden sin'],['Vinn tilbake','Lista over hvem du bør ta kontakt med'],['Verving','Kundene dine skaffer deg nye kunder']];
-  return '<div class="hi-hode"><h2 class="ovs-etikett" id="'+(pfx||'ovs')+'HentetH">Hentet inn av BarberHQ</h2><span class="ovs-tagg">Med Vekst</span></div>'
-    +'<p class="gr-h">'+h+'</p>'
-    +'<p class="gr-p">Med Vekst ser du her hva det henter inn, i kroner.</p>'
-    +'<div class="gr-rader">'+rader.map(function(r){ return '<div class="gr-rad"><span class="hi-navn">'+r[0]+'</span><span class="hi-desc">'+r[1]+'</span></div>'; }).join('')+'</div>'
-    +'<div class="gr-bunn"><div class="gr-pris"><b>'+PLAN_INFO.vekst.pris+'/mnd</b><span>eks. mva</span></div>'
-    +'<button type="button" class="gr-cta" data-di-oppgrader>Se Vekst</button></div>';
-}
-// Oversikt og Vekst-fanen tegner SAMME komponent (Henrik 17.11) — bare verten og id-prefikset skiller.
-function renderDrivenBy(){ return tegnHentetInn($("#drivenBy"),'ovs'); }
-function renderVekstHentet(){ return tegnHentetInn($("#vekstHentet"),'vk'); }
-async function tegnHentetInn(wrap, pfx){
-  if(!wrap)return;
-  // Delegert ÉN gang (overlever innerHTML-rebuild): periodevelger, «Se lista →», «Se Vekst». Hele-panelet-klikket
-  // til Vekst er FJERNET (Henrik 17.11) — med en velger inni ville det vært en felle.
-  if(!wrap._navBound){ wrap._navBound=true;
-    wrap.addEventListener('click',function(e){
-      var p=e.target.closest('[data-ovs-attr]');
-      if(p){ var v=p.getAttribute('data-ovs-attr'); if(v!==ovsAttrPeriod){ ovsAttrPeriod=v; tegnHentetInn(wrap,pfx); } return; }
-      if(e.target.closest('[data-di-winback]')){ if(typeof aapneVekstAkkordion==='function')aapneVekstAkkordion('#accWinback'); return; }
-      if(e.target.closest('[data-di-oppgrader]')){ if(typeof aapneAbonnement==='function')aapneAbonnement(); }
-    });
-  }
-  if(billingUkjent())return; // behold vakt (e5aa245): ingen henting/render før planen er kjent
-  // Gratis: fast tekst uten tall (Henrik 17.11) → ingen /attribution-henting i det hele tatt. Teller sekvensen
-  // opp, så et Vekst-svar som fortsatt er i lufta (plan byttet underveis) ikke overskriver Gratis-blokka.
-  wrap._seq=(wrap._seq||0)+1;
-  if(erBasis()){ wrap.innerHTML=ovsHentetGratisHtml(pfx); return; }
-  // Valgt periode vises med en gang (før svaret), så velgeren ikke føles død på tregt nett.
-  [].forEach.call(wrap.querySelectorAll('[data-ovs-attr]'),function(b){ b.setAttribute('aria-pressed', b.getAttribute('data-ovs-attr')===ovsAttrPeriod?'true':'false'); });
-  var seq=wrap._seq;
-  var data=await api.attribution(ovsAttrPeriod);
-  if(seq!==wrap._seq) return;   // et nyere valg (eller plan-bytte) har overtatt mens kallet var i lufta
-  // Feil → overskrift + velger + dempet feillinje (begge verter). Bytte periode i velgeren henter på nytt.
-  // (401 redirigeres av apiFetch før vi kommer hit.)
-  if(!data){ wrap.innerHTML=ovsHentetFeilHtml(pfx); return; }
-  // Forsvar-i-dybden: Basis skal ALDRI vise ekte hentetInn-tall (backend gater: !krevVekst). erBasis() leses
-  // på nytt etter svaret — billing kan ha landet underveis.
-  wrap.innerHTML = erBasis() ? ovsHentetGratisHtml(pfx) : ovsHentetVekstHtml(data, pfx);
-}
+// «Hentet inn av BarberHQ» (Oversikt + Vekst) er fjernet 27.11.2026. /attribution (api.attribution) leses nå bare av
+// Konto-kortet for Vekst (lastKontoHentet): period=maaned, og siste_12mnd når måneden er 0.
 // I DAG + KOMMENDE (Oversikt-redesign 17.11.2026). Begge bygges av samme /bookings-svar (_bookingerKilde).
 // I DAG: dagens IKKE-passerte timer — den neste stort, resten som rader. «N igjen» til høyre. Passerte timer
 //   vises ikke; er alle passert: «Ingen flere bookinger i dag.» Nedtellingen («om 1 t 20 min») regnes klientside
@@ -5525,7 +5349,6 @@ async function loadVekst(){
   var stats=await api.statsDaily(); // EKTE /stats (months/record_customers_month/completed_all_time). Tom {daily:[]} ved feil → KPI 0 / tomt diagram, ingen krasj.
   renderVekstKpi(stats);
   renderMonthChart(stats);
-  renderVekstHentet();   // samme komponent som Oversikt (Gratis: fast tekst, ingen henting)
   loadMomentum();        // basis + synlig → skjold på #momentumCard
   skjoldVekstFlater();   // basis → skjold på rebooking/vinn tilbake/verving-accordionene
 }
@@ -5559,14 +5382,14 @@ async function loadMomentum(){
     var acc=$("#accVerv"); if(acc) acc.scrollIntoView({behavior:'smooth',block:'start'});
   });})();
 
-// Åpne et Vekst-trekkspill fra en annen fane (brukes av «Drevet av» → vinn tilbake).
+// Åpne et Vekst-trekkspill fra en annen fane (Konto-kortets «Slå på» → Rebooking / Lojalitetsprogram).
 function aapneVekstAkkordion(sel){
   function aapne(){
     var head=document.querySelector(sel+' .acc-head');
     if(head && head.getAttribute('aria-expanded')!=='true') head.click();
     var acc=document.querySelector(sel); if(acc) acc.scrollIntoView({behavior:'smooth',block:'start'});
   }
-  // Står vi allerede på Vekst («Se lista →» i Vekst-fanens egen Hentet inn): bare åpne og scrolle. switchPanel ville
+  // Står vi allerede på Vekst: bare åpne og scrolle. switchPanel ville
   // klikket nav-knappen igjen og lastet hele fanen på nytt (loadVekst + SMS/verving/vinn tilbake/lojalitet, ~8 GET-er).
   if(typeof aktivtPanel==='function' && aktivtPanel()==='vekst'){ aapne(); return; }
   if(typeof switchPanel==='function') switchPanel('vekst');
@@ -5574,8 +5397,6 @@ function aapneVekstAkkordion(sel){
   setTimeout(aapne,70);
 }
 
-/* ---- «Hentet inn» på Vekst-fanen = SAMME komponent som Oversikt (renderVekstHentet → tegnHentetInn, Henrik 17.11).
-   Den gamle renderAttribusjon + #attrPeriod (2 uker / 30 dager / 3 mnd ▾) er fjernet. ---- */
 
 let imgs=[];
 let _activeSlot=null;
@@ -6477,7 +6298,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   if(window.__syncBunnNav)window.__syncBunnNav();   // speil aktiv fane i bunn-nav (mobil)
   if(id==="oversikt"){loadOversikt();loadAktivering();}
   if(id==="vekst"){loadVekst();loadSmsInnstillinger();loadVerving();loadWinback();loadLoyalty();}
-  if(id==="abonnement"){loadSmsInnstillinger();}   // Konto-bryteren deler sms_paaminnelse_enabled med Vekst
+  if(id==="abonnement"){loadSmsInnstillinger(); if(typeof lastKontoHentet==='function')lastKontoHentet(true);}   // Konto-bryteren deler sms_paaminnelse_enabled med Vekst; Vekst-kortet henter månedens tall
   if(id==="tjenester"){ if(!_ulagret.svc)loadTjenester(); if(!_ulagret.timer)loadArbeidstider(); loadBookingInnst(); if(window.Enkeltdager)Enkeltdager.last(); }   // ulagret → behold det barberen har skrevet
   // «Din side» laster alle tre trekkspillene. loadProfil FØRST — den fyller Profil-feltene
   // (navn/adresse/bio/tagline) som bor i dette panelet, før vi bruker tid på design + bilder.
@@ -6491,7 +6312,7 @@ document.querySelectorAll(".nav button").forEach(t=>t.addEventListener("click",(
   if(PANEL_TO_HASH[id])location.hash=PANEL_TO_HASH[id];
 }));
 // ── Oversikt periodevelger: to rullende piller (uke/2uker) + tredje pille = måneds-nedtrekk ──
-// Egen state (curPeriod / valgt ym), uavhengig av «Hentet inn»-perioden (ovsAttrPeriod). Rullende pill →
+// Egen state (curPeriod / valgt ym). Rullende pill →
 // sliceDaily via loadOversikt. Meny «Denne måneden» = curPeriod 'maaned' (inneværende); historisk ym →
 // /stats/month (samme oppførsel som gamle #monthSel-handler). Kun ÉN aktiv om gangen → aldri to som ser
 // aktive ut: velgPill avmarkerer tredje pille + nullstiller meny; velgMaaned avmarkerer de rullende.
@@ -8274,7 +8095,7 @@ async function tjLagre(e){
   tjBruk(l,kand);
   if(sammeArk) tjLukk();
   tjVisLagret(l,idx); tjRender(l);
-  if(l!=='p') oppdaterSjekkliste();   // tjeneste-haken (≥1 med pris) kan ha endret seg
+  if(l!=='p'){ oppdaterSjekkliste(); if(typeof oppdaterKontoRoi==='function')oppdaterKontoRoi(); }   // tjeneste-haken (≥1 med pris) og ROI-linja kan ha endret seg
 }
 (function(){
   $("#tjArkLukk").addEventListener('click',tjLukk);
@@ -8306,7 +8127,7 @@ async function tjSlett(l,i){
   if(!res.ok){ if(res.feil)_tjRadFeil={l:l,i:i,tekst:res.feil}; tjRender(l); return; }
   tjBruk(l,kand); tjRender(l);
   var a=$(TJ_LEGG[l]); if(a&&!a.hidden)a.focus();
-  if(l!=='p') oppdaterSjekkliste();
+  if(l!=='p'){ oppdaterSjekkliste(); if(typeof oppdaterKontoRoi==='function')oppdaterKontoRoi(); }
 }
 ['h','t','p'].forEach(function(l){
   $(TJ_LISTE[l]).addEventListener('click',function(e){
@@ -8676,7 +8497,7 @@ function kontoDato(iso){
 //   3 Vekst — 'active' ELLER 'trialing' med plan vekst: kortet er lagt inn, Vekst fortsetter av seg
 //     selv. 'trialing' får «Første trekk [dato]» fra trial_ends_at (utelates når null).
 //   2 prøveperiode uten kort — trial_vindu, N = trial_days_left (aldri regnet her).
-//   0/1 Gratis — tilstand 0 KUN når grunnen er 'gratis' og siden ikke er publisert.
+//   1 Gratis — plan-linje + Vekst-salgskort (ingen statuskort).
 // Alt annet (anomali, gammel Basis-sub, ukjent grunn) → nøytral reserve. ALDRI «ingen abonnement».
 function kontoTilstand(b){
   b=b||{};
@@ -8695,18 +8516,16 @@ function kontoTilstand(b){
                  tekst:['Deretter går du over til Gratis, og siden blir stående.'], manage:true};
   }else if((sub==='active'||sub==='trialing')&&vekst){
     const trekk=sub==='trialing'?kontoDato(b.trial_ends_at):null;
-    t={id:3, merke:'Vekst er aktivt', farge:'good',
-       tall:[PLAN_INFO.vekst.pris,'/ mnd eks.\u00a0mva',trekk?'Første trekk '+trekk+'.':null],
-       tekst:['100 SMS inkludert hver måned.'], fin:true, manage:true};
+    // Vekst aktiv: «Hentet inn» + rader + bunnlinja (pris · 100 SMS) tegnes av renderKonto/lastKontoHentet.
+    t={id:3, merke:'Vekst er aktivt', farge:'good', trekk:trekk?'Første trekk '+trekk+'.':null, fin:true, manage:true};
   }else if(grunn==='trial_vindu'&&typeof n==='number'&&n>0){
     t={id:2, merke:'Vekst, prøveperiode', farge:'mut',
        tekst:[_dager(n)+' igjen. Deretter går du over til Gratis, og siden blir stående.',
               'Vil du beholde rebooking, verving og SMS-påminnelser?'],
        knapp:['Oppgrader til Vekst','checkout'], fin:true};
   }else if(grunn==='gratis'){
-    // Samme kort om siden er live eller ikke: publisering hører til Din side, ikke abonnementet (27.11.2026).
-    t={id:1, merke:'Gratis', farge:'mut', tall:['0 kr','/ mnd'],
-       tekst:['Bookingsiden, kalenderen og dashbordet er gratis.'], opp:true};
+    // Gratis: plan-linja + Vekst-salgskortet (#kontoVekst) — samme om siden er live eller ikke (27.11.2026).
+    t={id:1};
   }
   if(!t) t={id:'reserve', merke:'Abonnementsstatus utilgjengelig', farge:'mut',
             tekst:['Vi får ikke vist abonnementet ditt akkurat nå. Tilgangen din er upåvirket.']};
@@ -8716,42 +8535,100 @@ function kontoTilstand(b){
 function renderKonto(b){
   b=b||{};
   const status=$("#kontoStatus"); if(!status)return;
-  const tekst=$("#kontoTekst"),knapp=$("#kontoAksjon"),manage=$("#manageSub"),
-        tall=$("#kontoTall"),tallStor=$("#kontoTallStor"),tallSuff=$("#kontoTallSuff"),tallSub=$("#kontoTallSub"),
-        fin=$("#kontoFin"),opp=$("#kontoOpp"),oppH=$("#kontoOppH"),
-        oppBtn=$("#kontoOppBtn"),oppFin=$("#kontoOppFin"),dot=$("#kontoDot");
+  const kort=$("#abKort"),tekst=$("#kontoTekst"),knapp=$("#kontoAksjon"),manage=$("#manageSub"),fin=$("#kontoFin"),
+        oppBtn=$("#kontoOppBtn"),dot=$("#kontoDot");
   // Hjemskjerm-kortet re-evalueres ved hver billing-render (demo/fokus kan ha endret seg).
   if(typeof oppdaterHjemskjermKort==='function') oppdaterHjemskjermKort();
   const t=kontoTilstand(b);
   const vis=(el,ja)=>{ if(el)el.style.display=ja?'':'none'; };
-
+  // Gratis: plan-linje + salgskort, ikke statuskortet. Alle andre: statuskortet.
+  const gratis=t.id===1;
+  $("#abPlan").hidden=!gratis; $("#kontoVekst").hidden=!gratis; kort.hidden=gratis;
+  $("#abSalgPris").textContent=PLAN_INFO.vekst.pris;
+  if(gratis) oppdaterKontoRoi();
+  kort.className='ab-kort'+(t.id===3?' vekst':'');
   if(t.merke){ status.className='substatus'+(t.farge==='good'?'':' '+t.farge); status.innerHTML='&#9679; '+esc(t.merke); }
   vis(status,!!t.merke);
-  vis(tall,!!t.tall); vis(tallSub,!!(t.tall&&t.tall[2]));
-  if(t.tall){ tallStor.textContent=t.tall[0]; tallSuff.textContent=t.tall[1]; tallSub.textContent=t.tall[2]||''; }
   tekst.innerHTML=(t.tekst||[]).map(function(l){ return '<p>'+esc(l)+'</p>'; }).join('');
-  vis(opp,!!t.opp);
-  if(t.opp){ oppH.textContent='Vekst · '+PLAN_INFO.vekst.pris+' / mnd eks.\u00a0mva'; oppFin.textContent=KONTO_FINSKRIFT; }
   _kontoAksjon=t.knapp?t.knapp[1]:null;
   vis(knapp,!!t.knapp);
   knapp.disabled=false; knapp.className='btn';
   if(t.knapp)knapp.textContent=t.knapp[0];
+  // Vekst aktiv: «Hentet inn» denne måneden + bunnlinja (pris · 100 SMS), SMS-vilkårene, ev. «Første trekk».
+  $("#abHentet").hidden=t.id!==3;
+  const bunn=$("#abBunn"); bunn.hidden=t.id!==3; bunn.textContent=PLAN_INFO.vekst.pris+'/mnd eks.\u00a0mva · 100 SMS inkludert';
+  const trekk=$("#abTrekk"); trekk.hidden=!t.trekk; trekk.textContent=t.trekk||'';
   vis(fin,!!t.fin); fin.textContent=t.fin?KONTO_FINSKRIFT:'';
   vis(manage,!!t.manage);
-  // Synk etter Stripe-retur: oppgrader-handlingen (boksens knapp eller hovedknappen) byttes mot
+  if(t.id===3 && aktivtPanel()==='abonnement') lastKontoHentet(false);   // ellers: switchPanel('abonnement') henter når Konto åpnes
+  // Synk etter Stripe-retur: oppgrader-handlingen (salgskortets knapp eller hovedknappen) byttes mot
   // «Aktiverer Vekst …» så barberen ikke trykker Oppgrader en gang til mens Vekst aktiveres.
   oppBtn.disabled=_aktivererVekst; oppBtn.textContent=_aktivererVekst?'Aktiverer Vekst …':'Oppgrader til Vekst';
   if(_aktivererVekst&&_kontoAksjon==='checkout'){ knapp.disabled=true; knapp.textContent='Aktiverer Vekst …'; }
-  // Adressen: egen funksjon, kalt UTENFOR tilstandsvalget. Se settLenkeblokk.
-  settLenkeblokk(b);
   // Prikkene følger needs_attention fra serveren — ALDRI «har besøkt fanen». TRE prikker, samme
   // kilde: desktop-nav (#kontoDot), bunn-navets Konto-fane (#kontoBunnDot) og seksjonsoverskriften.
   if(dot)dot.hidden=!b.needs_attention;
   const accDot=$("#kontoAccDot"); if(accDot)accDot.hidden=!b.needs_attention;
   const bunnDot=$("#kontoBunnDot"); if(bunnDot)bunnDot.hidden=!b.needs_attention;
   renderSmsKonto(b);
-  renderDinsideCta(b); // publiser-CTA på «Din side» følger page_status — forsvinner ved publisering
+  renderDinsideCta(b); // «Live»-merket på «Din side» (v1) følger page_status
 }
+
+// ROI-linja på salgskortet: n = ceil(223,75 / billigste hovedtjeneste med pris > 0). 223,75 = Vekst inkl. mva
+// (179 × 1,25). n 1–3 → «én kunde» / «to kunder» / «tre kunder»; n > 3 eller ingen pris → linja skjules.
+// Prisene: tjenestelista hvis den er hentet (Tjenester & tider), ellers GET /services.
+function minsteHovedpris(liste){ var p=(liste||[]).map(function(s){ return Number(s.price)||0; }).filter(function(x){ return x>0; }); return p.length?Math.min.apply(null,p):null; }
+var _roiSeq=0;
+async function oppdaterKontoRoi(){
+  var el=$("#abRoi"); if(!el)return;
+  var seq=++_roiSeq, pris=null;
+  if(typeof _svcHentet!=='undefined' && _svcHentet) pris=minsteHovedpris(hoved);
+  else { try{ var r=await apiFetch('/api/dashboard/services'); if(r&&r.ok){ var d=await r.json(); pris=minsteHovedpris(d.hoved); } }catch(e){} }
+  if(seq!==_roiSeq)return;
+  var n=pris?Math.ceil(223.75/pris):null, ord={1:'én kunde',2:'to kunder',3:'tre kunder'}[n];
+  el.hidden=!ord;
+  if(ord) $("#abRoiTekst").textContent='Får du tilbake '+ord+' i måneden, har Vekst betalt seg.';
+}
+
+// Vekst aktiv: «Hentet inn i <måned>» fra /attribution?period=maaned (samme kilde som den fjernede «Hentet inn»-seksjonen).
+// Måneden er 0 → siste_12mnd: også 0 → «Tallene kommer …»; ellers 0 kr. Rader: Rebooking (kr, eller «Slå på» når
+// sms_rebooking_enabled er av — rebooking.aktivert), Vinn tilbake og Verving (alltid kr — ingen av-bryter), Lojalitetsprogram
+// («På» / «Slå på» fra GET /loyalty). «Slå på» → trekkspillet i Vekst-fanen. Maks én henting per 60 s med mindre tving.
+var _abSeq=0, _abSist=0;
+function abSlaaPaa(sel){ return '<button type="button" class="ab-slaa m-ikon" data-ab-til="'+sel+'">Slå på'+ikonHtml('pil-h')+'</button>'; }
+async function lastKontoHentet(tving){
+  if(!_billing || kontoTilstand(_billing).id!==3) return;
+  if(!tving && Date.now()-_abSist<60000) return;
+  _abSist=Date.now();
+  var seq=++_abSeq;
+  var mnd=new Date().toLocaleDateString('nb-NO',{month:'long',timeZone:'Europe/Oslo'});
+  $("#abHentetL").textContent='Hentet inn i '+mnd;
+  var svar=await Promise.all([api.attribution('maaned'), api.loyalty().catch(function(){ return null; })]);
+  if(seq!==_abSeq) return;
+  var hi=svar[0]&&svar[0].hentetInn, loy=svar[1];
+  var sum=$("#abHentetSum"), tom=$("#abHentetTom"), feil=$("#abHentetFeil"), rader=$("#abRader");
+  if(!hi){ sum.hidden=true; tom.hidden=true; feil.hidden=false; rader.innerHTML=''; return; }
+  feil.hidden=true;
+  var total=hi.total||{count:0,revenue:0}, ingenHistorikk=false;
+  if(!((total.count||0)>0) && !((total.revenue||0)>0)){
+    var aar=await api.attribution('siste_12mnd'); if(seq!==_abSeq) return;
+    var t12=aar&&aar.hentetInn&&aar.hentetInn.total;
+    ingenHistorikk=!!t12 && !((t12.count||0)>0);   // feilet 12-mnd-kall → vis 0 kr, ikke en løfte-tekst
+  }
+  sum.hidden=ingenHistorikk; tom.hidden=!ingenHistorikk;
+  sum.textContent=krFmt(total.revenue||0);
+  var kr=function(o){ return '<span class="ab-kr">'+krFmt((o&&o.revenue)||0)+'</span>'; };
+  var rb=hi.rebooking||{};
+  rader.innerHTML=[
+    ['Rebooking', rb.aktivert===false ? abSlaaPaa('#accRebook') : kr(rb)],
+    ['Vinn tilbake', kr(hi.vinnTilbake)],
+    ['Verving', kr(hi.vervet)],
+    ['Lojalitetsprogram', loy ? (loy.enabled ? '<span class="ab-paa">På</span>' : abSlaaPaa('#accLoyal')) : '<span class="ab-nei">–</span>']
+  ].map(function(r){ return '<div class="ab-rad"><span>'+r[0]+'</span>'+r[1]+'</div>'; }).join('');
+}
+(function(){ var r=$("#abRader"); if(!r)return;
+  r.addEventListener('click',function(e){ var b=e.target.closest('[data-ab-til]'); if(b) aapneVekstAkkordion(b.dataset.abTil); });
+})();
 
 // ── SMS-påminnelser (Konto) ──────────────────────────────────────────────────────────────
 // Kontrakt (billing-shape): sms_saldo, sms_paaminnelser_sendes (sendes påminnelser faktisk nå),
@@ -9237,38 +9114,8 @@ function sjekkGaaTil(action){
   });
 })();
 
-// Lenke-blokka styres av page_status ALENE, og ligger derfor utenfor if/else-kjeden i
-// renderKonto. Billing-grenen svarer på «hva må jeg gjøre nå?»; adressen svarer på «hvor bor
-// sida mi?» — to ulike spørsmål. Legges den inne i kjeden, forsvinner adressen i det
-// øyeblikket en betalingsgren tar over: en barberer med feilet betaling (past_due) har fortsatt en
-// LIVE side som kunder booker på, og skal kunne dele lenka mens han ordner kortet.
-//
-// To tilstander:
-//   live          → hele URL-en synlig + «Kopier lenke»
-//   ellers        → ingenting (også forhandsvist: publiseringsblokka er fjernet fra Konto 27.11.2026)
-//
-function settLenkeblokk(b){
-  const boks=$("#pubLink"); if(!boks)return;
-  boks.textContent=''; boks.style.display='none';   // full nullstilling: ingen rester fra forrige tilstand
-  const slug=CONFIG.BARBER_SLUG;
-  // Uten slug fra /profile gjetter vi ALDRI en adresse. Lander den etter dette kallet,
-  // tegner loadProfil blokka på nytt (den re-renderen er ikke betinget av live).
-  if(!slug)return;
 
-  if(b.page_status!=='live')return;                 // forhandsvist / draft / avslag / ukjent
-
-  // url = HELE https://… — det som KOPIERES og det <a href> peker på. visUrl = uten protokoll,
-  // KUN visningstekst («trybarberhq.com/grand-barber»). To ulike verdier, ikke én kilde lenger:
-  // vises kort og pent, men limes inn komplett (Instagram-bio/SMS autolinker ikke uten https).
-  const url=CONFIG.SITE_BASE+'/'+slug;
-  const visUrl=CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+slug;
-
-  byggKopierbartLenkefelt(boks,url,visUrl); // DELT med «Din side» live-tilstand (renderDinsideCta)
-  boks.style.display='';
-}
-
-// Bygger et kopierbart lenkefelt (URL-tekst + kopi-ikonknapp) i container — DELT mellom Konto-
-// lenkeblokka (settLenkeblokk) og «Din side» live-tilstand (renderDinsideCta). Gjenbruker
+// Bygger et kopierbart lenkefelt (URL-tekst + kopi-ikonknapp) i container — brukt av headerlenka (settHeaderLenke). Gjenbruker
 // .pub-field/.pub-url/.pub-copy, settLenketekst (midt-ellipse) og kopierLenke.
 function byggKopierbartLenkefelt(container,url,visUrl){
   container.textContent='';
@@ -9329,7 +9176,7 @@ function kopierFallback(text){
   }catch(e){return false;}
 }
 // Kvittering i knappen selv, ikke alert()/toast: bytt ikonet til en hake i ~1,5 s, så tilbake.
-// url er ALLTID den fulle https-URL-en (fra settLenkeblokk), både i clipboard og fallback.
+// url er ALLTID den fulle https-URL-en, både i clipboard og fallback.
 function kopierLenke(knapp,url){
   const kvittering=function(){
     knapp.classList.add('ok'); knapp.innerHTML=IKON_HAKE;

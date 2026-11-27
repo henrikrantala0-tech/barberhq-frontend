@@ -7,4 +7,7 @@
   <symbol id="pil-h" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></symbol>
   <symbol id="pil-v" viewBox="0 0 24 24"><path d="M19 12H5M12 19l-7-7 7-7"/></symbol>
   <symbol id="chevron" viewBox="0 0 24 24"><path d="M9 6l6 6-6 6"/></symbol>
+  <!-- Konto-kortet (27.11.2026): trend (ROI-linja) og hake (sammenligningen Nå | Vekst). -->
+  <symbol id="trend" viewBox="0 0 24 24"><path d="M3 17l6-6 4 4 8-8"/><path d="M15 7h6v6"/></symbol>
+  <symbol id="hake" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
 </svg>

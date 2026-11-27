@@ -546,14 +546,15 @@ Datoavvik i dashbordet (backend 089, `GET/PUT/DELETE /api/dashboard/date-overrid
 ### Oversikt-fanen (redesign 17.11.2026)
 Kilde: Henriks `oversikt-vekst` / `oversikt-gratis` / `hentet-inn-vekst-tom` (.dc.html). Render + vakter:
 `tools/render/oversikt-redesign.mjs` (320/375/1280 × mørk/lys; `… gratis` = bare den tilstandens bilder).
-- **Fire RAMMEFRIE seksjoner** (`.ovs-sek`, 1px `--ov-hair`, 28px): I DAG (`#ovsIdag`) → KOMMENDE (`#ovsKommende`) →
-  NØKKELTALL (`#ovsTall`) → HENTET INN AV BARBERHQ (`#drivenByWrap`). Etiketter `.ovs-etikett` (11.5/600/.08em/versaler).
+- **Tre RAMMEFRIE seksjoner** (`.ovs-sek`, 1px `--ov-hair`, 28px): I DAG (`#ovsIdag`) → KOMMENDE (`#ovsKommende`) →
+  NØKKELTALL (`#ovsTall`, siste: `.ovs-sek-sist`). «Hentet inn av BarberHQ» er FJERNET (27.11.2026) — tallene bor i
+  Vekst-kortet på Konto. Etiketter `.ovs-etikett` (11.5/600/.08em/versaler).
   Midlertidige kort (første booking, hjemskjerm, «Fullfør siden») står over seksjonene, uendret.
-- **Tokens `--ov-*`** (hårlinje, segment, knappramme, 0-stolpe, Hentet inn-stripa): mørk = designets hex nøyaktig,
+- **Tokens `--ov-*`** (hårlinje, segment, knappramme, 0-stolpe): mørk = designets hex nøyaktig,
   lys = egne motstykker. Ingen gradienter på Oversikt.
 - **Vekt-regel på Oversikt (Henrik 17.11 — gjelder header, Oversikt-panelet og bunnmenyen):**
-  - **800:** bare de store tallene (neste time, nøkkeltallene, Hentet inn-totalen)
-  - **700:** butikknavnet og Gratis-overskriften i Hentet inn
+  - **800:** bare de store tallene (neste time, nøkkeltallene)
+  - **700:** butikknavnet
   - **600:** korttitler, tomtilstander, etiketter, radnavn, tall i rader (klokkeslett, beløp per rad, pris), knapper,
     valgt tilstand (periode, fane), merker og stegnumre, uthevede ord
   - **500/400:** resten · **300:** bare «kr» etter de store tallene
@@ -576,7 +577,7 @@ Kilde: Henriks `oversikt-vekst` / `oversikt-gratis` / `hentet-inn-vekst-tom` (.d
   dagens `/ledige`-regel uendret) + «Du har N ledige timer …» og SMS-tilbudet bor her. Feil → «Prøv igjen» i I DAG.
 - **KOMMENDE:** dagene ETTER i dag, rullende 7 døgn, maks 20 rader, «N neste 7 dager», «Onsdag 18. nov». `_upcoming` er
   ikke lenger kappet på 20 (I DAG skal ha alle dagens). Scroll-beholderen (`#upcomingList`, max-height) er uendret.
-- **NØKKELTALL:** `.ovs-seg` (delt med Hentet inn; valgt = `--ov-seg-sel`, ALDRI blå; 36px knapp, `::after` gir 46px
+- **NØKKELTALL:** `.ovs-seg` (valgt = `--ov-seg-sel`, ALDRI blå; 36px knapp, `::after` gir 46px
   trykkflate). `.perbar` er SLETTET (Vekst bruker også `.ovs-seg`). To kolonner (`kpiCardsHtml`), tallfargene arvet (Kunder `.info`,
   omsetning `#35d07a`, gull ved rekord); `fitKpi()` krymper store beløp. ÉN linje under (`#rekordNote`) — se Oversikt-diagram.
 - **Bunn-nav:** Oversikt-ikonet er fire fliser (`#ic-oversikt`), strek 1.75 som de andre.
@@ -611,22 +612,10 @@ Ett stolpediagram + KPI, én motor. `sliceDaily(daily[], period)` / `sliceMonth(
 - **Uke-rekord (lag 4) — KUN pill-modus inneværende uke:** `current_week_revenue`/`best_week_revenue`/`best_week_start` fra `/stats` (backend-beregnet, on-read/Oslo, best = MAX ferdige uker). Gull-KPI (`#estRevValue` gull-gradient + drop-shadow-glow + puls) tenner kun ved `current > best` OG `curPeriod==="uke"`. Dempet «Beste uke: X kr · [mnd]»-fotnote ellers.
 - **Persentil + «X kr unna» — KUN pill-modus inneværende uke, MAKS ÉN LINJE (17.11):** fra `/stats.weekly_revenue` (`[{week_start,revenue}]`, all-time ferdige uker, on-read/Oslo, `max==best_week_revenue` per konstruksjon). `renderWeekInsight` skriver i SAMME `#rekordNote` som `applyRekord`. Prioritet: rekord slått → «Ny rekord denne uka» (gull, `applyRekord`) · ≥80 % av beste → «X kr unna din beste uke noensinne» · ≥6 uker og pct≥50 → «Bedre enn X % av dine egne uker» · ellers fotnoten «Beste uke: X kr · [mnd]». Fremdriftsstripa (`#weekInsight`/`.wi-*`) er FJERNET. 2uker/måned: bare fotnoten; historisk måned: tom.
 - **Merk (aldri sett live):** mot volum-test er `current_week` (~10 550) « `best` (13 950 = 76%) → persentil + rekord-bar naturlig SKJULT. «unna»/«rekord»-tilstand kun Playwright/deterministisk verifisert. `gull-demo.cjs`-fixtur (backend-repo) kan heve `current` over tersklene for å se dem live.
-- **«Hentet inn av BarberHQ» (Oversikt) — NÅTILSTAND (17.11), erstatter bulleten under der de motsier hverandre:**
-  `renderDrivenBy` tegner hele seksjonen. **Vekst:** egen periode `ovsAttrPeriod` (3/6/12 mnd → `siste_3mnd/6mnd/12mnd`,
-  standard 3 mnd, DELT med Vekst-fanens Hentet inn — snur `da564bd`), sekvensvakt per vert (`wrap._seq`). Total (46px) + «N klipp
-  fra kunder BarberHQ hentet tilbake» + fordelingsstripe (kroner per arm) + rader i rekkefølgen **Rebooking / Vinn
-  tilbake / Verving** (`OVS_ARMER`; Vekst-fanen beholder Verving først) med «SMS av»-merket. Total 0 → «Ingen kunder hentet
-  inn ennå.» + rader med «—». PÅ VEI: «N kunder å hente inn» = `paaVei.winback.borte + no_show` (samme utvalg som
-  `/winback`-lista); mangler feltene (backend før borte/no_show) → reserve `passerer_innen_30d`. 0 → dato-prognose
-  «Første kunde passerer 60 dager …». «N kunder nærmer seg rebooking» + samtykkelinja. Klikk på hele panelet bytter
-  IKKE lenger fane. **Gratis (`erBasis`):** FAST tekst «Flere klipp fra kundene du har. Og nye i tillegg.» + tre rader
-  uten tall + «179 kr/mnd · eks. mva» + «Se Vekst» (`aapneAbonnement`). INGEN `/attribution`-kall på Gratis, ingen
-  maskerte rader, ingen PÅ VEI. De gamle Oversikt-byggerne (`diTitle`, `diHentetInnHtml`, `diPaaVeiHtml`, `.di-card`/
-  `.di-pv-*`) er SLETTET. Vekst-fanens byggere (`diRaderHtml`/`diTotalHtml`/`diArmRad`/`diBasis*`/`koblePaaVeiCta`) og
-  `renderAttribusjon` er OGSÅ SLETTET (17.11) — Vekst tegner samme komponent (`tegnHentetInn`). Bare `.di-off-badge` lever.
-  **Feil fra `/attribution`** → overskrift + periodevelger står, dempet «Kunne ikke hente tallene akkurat nå.» (`.hi-feil`)
-  der tallene skulle vært; periodebytte henter på nytt. Gjelder begge verter. Vakt: `tools/render/hentet-inn-feil.mjs`.
-- **«Drevet av BarberHQ» (Oversikt) — historikk før 17.11:** `renderDrivenBy` henter ekte `GET /api/dashboard/attribution?period=uke|2uker|maaned` (session) via `api.attribution` for ikke-basis — mock (`MOCK_ATTRIBUTION` + `USE_MOCK`) fjernet i `fa02e3f`. Ved Basis-plan vises eksempeltall bak lås i stedet (Basis-visning, INGEN API-kall — lekker aldri ekte tall). Totalen kommer fra backendens autoritative `data.total {count,revenue}` (efaa553), gjort til ENESTE kilde i `46701a3` (klient-sum `attribSum` fjernet; mangler total → feilstate, aldri klient-sum). Tre rader (rebooking/verving/vinn tilbake); 0-rad «0 klipp · 0 kr», alle tre 0 → «Her bygger verdien seg opp». Delta «fra forrige uke» kun på uke-pill (2uker−uke), aldri på eksempeldata. Skjult på historisk måned. **✅ ATTRIBUSJONSSAKEN LUKKET (14.09.2026):** lojalitet er fjernet som attribusjonskategori i BÅDE frontend og backend — begge repos pushet og prod-verifisert (backend `67e2826` «lojalitet er ingen arm — kategori fjernet, rabatt beholdt», som bygger på `98ae355`; frontend `25faaa5`). **Ikke flagg `98ae355`/`67e2826` som upushet — de ER på origin/main.** Totalen summerer nå de TRE armene panelet viser (verving/vinn tilbake/rebooking); lojalitet-noden står igjen i API-et men teller IKKE. `renderDrivenBy` henter hardkodet `siste_maaned` (frikoblet fra #segs). Rebooking-raden viser ekte tall + dempet «SMS av»-badge når `sms_rebooking_enabled=false` (`3372d19`) → synlige rader summerer alltid til vist total. **Tom total (`count===0`) → én dempet linje «Ingenting hentet inn ennå.» (`25faaa5`)** — ERSTATTER de eldre «0 klipp · 0 kr»/«Her bygger verdien seg opp» nevnt tidligere i denne bulleten.
+- **«Hentet inn av BarberHQ» er FJERNET fra Oversikt og Vekst (27.11.2026, Henrik).** Komponenten (`tegnHentetInn`,
+  `renderDrivenBy`, `renderVekstHentet`, `ovs*`-byggerne, `ovsAttrPeriod`, `.hi-*`/`.pv-*`/`.gr-*`, PÅ VEI) og testene
+  (`hentet-inn-feil`, `attribusjon-kr`, `attribusjon-aktivert`, `drevet-av-panel`, `oversikt-drivenby-basis`) er slettet.
+  `api.attribution` lever: Vekst-kortet på Konto (`lastKontoHentet`) leser `period=maaned`. Oversikt/Vekst kaller den aldri.
 
 ### Lojalitetsprogram (Vekst-fanen)
 Ett trekkspill (`#accLoyal`) nederst i «Personlig»-lista, under Verving — speiler Vervings struktur:
@@ -776,7 +765,6 @@ pushet er testrunde-fiksene (bug 3 / beslutning 4–7 / kamerarull / miniatyr-ca
 
 ### Desktop-bredde (dashbordet)
 - Alle fem paneler er **680px SENTRERT** fra 720px viewport (`b7882e80`): `@media(min-width:720px){ #oversikt,#vekst,#tjenester,#design,#abonnement{max-width:680px;margin-left:auto;margin-right:auto} .topband>.wrap{max-width:728px} }`. Headeren er 728 (= 680 + 2×24 `.wrap`-padding), så streker og innhold flukter. `#design` er med (2-kolonne-gridet får ~369px til trekkspillene). Alle fem har samme bredde, så fanebytte hopper ikke. Mobil er uendret.
-- «Drevet av»-radene er kappet med `#drivenBy .di-rows{max-width:320px}` (`3a28a65`), så tallene ikke står langt fra etikettene.
 
 ### SMS-blokka (Konto + Oversikt) — låst design, bygget 09.10 (`f3a1e05`, tekster `5e98f18`)
 Flyttet hit fra `bugjakt-ut/rapport-2026-10-09.md` (slettet).
@@ -836,13 +824,10 @@ og fem `<section class="panel" id=…>`, i denne rekkefølgen i DOM-en. Her sto 
 riktig fram til Profil-fanen ble slått inn i «Din side». To sammenslåinger har skjedd:
 Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet ikke bar en egen fane.
 
-1. **Oversikt** = I DAG → KOMMENDE → NØKKELTALL (KPI + graf) → HENTET INN AV BARBERHQ (redesign 17.11.2026 —
+1. **Oversikt** = I DAG → KOMMENDE → NØKKELTALL (KPI + graf) (redesign 17.11.2026, «Hentet inn» ut 27.11.2026 —
    se «Oversikt-fanen (redesign 17.11.2026)» under Systemtilstand). Vinn tilbake-lista bor i Vekst (`#accWinback`).
 2. **Vekst** — LISTE-stil siden 17.11.2026 (Henrik; `vekst-liste-aktiv/-gratis.dc.html`, vakt `tools/render/vekst-liste.mjs`):
-   KPI-boksene (`#vekstStats`, de ENESTE boksene) → månedsdiagram (felles `.stolpe`) → **Hentet inn** = SAMME
-   komponent som Oversikt (`renderVekstHentet` → `tegnHentetInn`, vert `#vekstHentet`, id-prefiks `vk`, periode
-   `ovsAttrPeriod` delt med Oversikt; den gamle `#attrKort`/`#attrPeriod`/`renderAttribusjon` og `di*`-byggerne er
-   SLETTET) → momentum (uten boks) → seksjonene **AUTOMATIKK** (SMS-påminnelse, Rebooking — bryter 46×28) /
+   KPI-boksene (`#vekstStats`, de ENESTE boksene) → månedsdiagram (felles `.stolpe`) → momentum (uten boks) → seksjonene **AUTOMATIKK** (SMS-påminnelse, Rebooking — bryter 46×28) /
    **PERSONLIG** (Vinn tilbake med antall = lista, Verving, Lojalitetsprogram — chevron) / **DEL** («Ledige timer» +
    «Lag story», `#accStory`/`#storyOpen`), `.ovs-etikett`-etiketter og 32px mellom. Rad = `.acc` uten boks, 16px
    padding, hårlinje under; navn 15/600, beskrivelse 13/400. All stil er avgrenset til `#vekst` (`.acc*` deles med
@@ -875,14 +860,27 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
   4 `active`+vekst+`cancel_at_period_end` «Vekst til [dato]» (dato fra `current_period_end`; null → reserve,
   aldri gjettet) · 3 `active`/`trialing`+vekst «Vekst er aktivt» (179 kr; `trialing` får «Første trekk
   [dato]» fra `trial_ends_at`, utelatt ved null) · 2 `trial_vindu` «Vekst, prøveperiode» (N =
-  `trial_days_left`, ALDRI regnet i frontend) · 1 `gratis` (Gratis + oppgraderingsboks). Alt annet (anomali,
+  `trial_days_left`, ALDRI regnet i frontend) · 1 `gratis` (plan-linje + Vekst-salgskortet, se under). Alt annet (anomali,
   gammel Basis-sub) → nøytral reserve.
   **Ingen publiseringsblokk i Konto (27.11.2026):** kortet er det samme om siden er live eller ikke — ingen «ikke
-  publisert», ingen «Fullfør siden din», ingen «Se forhåndsvisning». Lenkeblokka (`#pubLink`) vises bare når siden er
-  live. Ingen avpublisering. Eneste publiseringsvei i dashbordet er siste steg i Din side (`POST /din-side/lagre` med
+  publisert», ingen «Fullfør siden din», ingen «Se forhåndsvisning». Ingen bookinglenke i Konto (den står i headeren;
+  `#pubLink`/`settLenkeblokk` er slettet). Ingen avpublisering. Eneste publiseringsvei i dashbordet er siste steg i Din side (`POST /din-side/lagre` med
   `publiser:true`), nådd via «Fullfør siden din»-kortet på Oversikt eller oppsettet Din side starter selv.
   `PUT /page-status` er fjernet i backend, og v1-publiseringen (Din side-CTA, fokuslinja, sjekklisteraden,
   suksesskortet) er slettet.
+  **Vekst-kortet (27.11.2026, Henrik):** Gratis = `#abPlan` «Du er på Gratis · 0 kr/mnd» + frittstående salgskort
+  `#kontoVekst` (VEKST · «Det som fyller stolen.» · 179 kr · ROI-linje · sammenligning Nå | Vekst · «Oppgrader til Vekst»
+  = `#kontoOppBtn` → `startCheckout` · «Ingen binding. Si opp når du vil.» · SMS-vilkår). Kortet svever (`abSveve`, 6 s,
+  translateY 0 → -6 px, blå glød i takt); reduced-motion: stille med glød. **ROI:** n = ceil(223,75 / billigste hovedtjeneste
+  med pris > 0) (223,75 = 179 inkl. mva); 1/2/3 → «én kunde»/«to kunder»/«tre kunder», ellers skjult (`oppdaterKontoRoi`).
+  Alle andre tilstander: statuskortet `#abKort` (radius 16). **Vekst aktiv** (id 3): grønn ramme + svak glød, ingen
+  animasjon; «Hentet inn i <måned>» + total (32/800 grønn) fra `/attribution?period=maaned`; måneden 0 → `siste_12mnd`,
+  også 0 → «Tallene kommer når de første kundene kommer tilbake.», ellers «0 kr». Rader: Rebooking (kr, eller «Slå på» når
+  `rebooking.aktivert===false`), Vinn tilbake og Verving (ALLTID kr), Lojalitetsprogram («På» / «Slå på» fra `/loyalty`).
+  «Slå på» → `aapneVekstAkkordion`. Bunnlinje «179 kr/mnd eks. mva · 100 SMS inkludert», SMS-vilkårene, «Første trekk
+  [dato].» (trialing) under, så «Administrer abonnement». Henting bare når Konto er åpen (`switchPanel`), maks 1/min ellers.
+  **Låse-merket** (`.laas-merke`, Vekst-fanen på Gratis) er en knapp (`role=button`, trykkflate ≥ 44×44 via `::after`) →
+  `aapneKontoSeksjon('kontoVekst')`; bare merket, ikke hele raden. Vakt: `tools/render/konto-vekst.mjs`.
   **Basis kan ikke kjøpes:** checkout sender alltid `{plan:'vekst'}`; plan-velgeren, `_valgtPlan`,
   `#planFall`, 402-grenen og myk-periode/nedtaking-grenene er SLETTET (ikke skjult).
   **`erBillingShape(d)`** (page_status + effective_plan + effective_plan_grunn) vokter ALLE tre veiene
@@ -912,7 +910,6 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
     (`#momentumCard`) beholder `settSkjold` — halvgjennomsiktig overlay + `pointer-events:none`. **Lett
     skjold:** overlegg `.48` + `blur(1px)`; lås-ikon + «Oppgrader til Vekst» med skygge for å leses først.
     ⚠ I praksis vises skjoldet INGEN steder i dag: eneste kaller er momentum, og det kortet er skjult på Gratis.
-    Kun de to «Drevet av»/attribusjons-flatene viser eksempeltall (`VEKST_EKSEMPEL`, 6 850 kr) + «Eksempel»-merke.
   - **HANDLING (lesbar, men låst):** funksjons-seksjonene rebooking (`#accRebook`), vinn-tilbake
     (`#accWinback`), verving (`#accVerv`) og lojalitet (`#accLoyal`) bruker `settHandlingsLaas`/`fjernHandlingsLaas`
     — INGEN overlay, innholdet er lesbart. Kontrollene disables (`data-laas-disabled`, ALDRI `.acc-head`, så
@@ -1079,7 +1076,7 @@ Alle gjøremål står i C:\Users\henri\Desktop\barberhq-plan\PLAN.md.
 - **Full mobil-gjennomgang av dashbordet** — kjørt (0 brukne flater); funn fikset (periodepiller
   `9ee04ca`, pris-0 `5fe012d`). Verktøy: `tools/render/mobil-gjennomgang.mjs`.
 - **Bunn-nav på mobil** — BYGGET (`75a7386`), innhold klarer baren (`4abe4a1`). Ikke lenger «vurder».
-- **Like periode-piller på 320** — `#segs` + `#ovsAttrPeriod` (Oversikt) + `#vkAttrPeriod` (Vekst) står på ÉN linje,
+- **Like periode-piller på 320** — `#segs` (Oversikt) står på ÉN linje (`#ovsAttrPeriod`/`#vkAttrPeriod` forsvant med «Hentet inn»),
   like segmenter, uten klipp/overflow (målt 320–430). **Mekanismen er `.ovs-seg`/`.ovs-seg-btn`** (17.11)
   (`.ovs-seg{display:flex}` + `.ovs-seg-btn{flex:1;min-width:0;white-space:nowrap}`, 12px under 360px). `.perbar` er
   SLETTET (var Veksts gamle `#attrPeriod`), og `.segs` bærer BARE verdi-pillene (`#rebookPills`/`#vervRecipient`, som skal
