@@ -66,7 +66,7 @@
     /* Oversikt-redesign (17.11.2026): hårlinjer, segmentvelger, knappramme, 0-stolpe og Hentet inn-stripa.
        Mørk tema = designets verdier nøyaktig (under html[data-theme="dark"]); her lyse motstykker. */
     --ov-hair:#ebebeb;
-    --tt-hair:rgba(0,0,0,.08);--tt-mut:rgba(0,0,0,.62);--tt-mut-2:rgba(0,0,0,.55);   /* Tjenester & tider (lys): kontrast ≥ 4,5 */
+    --tt-hair:rgba(0,0,0,.08);--tt-mut:rgba(0,0,0,.62);--tt-mut-2:rgba(0,0,0,.55);--tt-h2:rgba(0,0,0,.55);   /* Tjenester & tider (lys): kontrast ≥ 4,5 */
     --ov-seg-line:#e2e2e2;--ov-seg-sel:#e9e9e9;--ov-btn-line:#d4d4d4;--ov-null:#e2e2e2;
     --ov-a1:#1a7a44;--ov-a2:rgba(26,122,68,.55);--ov-a3:rgba(26,122,68,.28);
     /* Enkeltdager (Tjenester & tider): statusprikkene + valgt dag. Mørk tema = designets verdier nøyaktig;
@@ -319,7 +319,7 @@
   .pause-btn{appearance:none;display:block;margin-top:12px;background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 15px;font:inherit;font-size:13px;font-weight:500;color:var(--ink);cursor:pointer}
   .pause-btn:hover{border-color:var(--line-2)}
   /* Bookingregler under arbeidstidene: etikett venstre, bryter/select høyre. Lagres ved endring. */
-  .bk-regler{margin-top:26px;padding-top:22px;border-top:1px solid var(--line)}
+  .bk-regler{margin-top:28px;padding-top:28px;border-top:1px solid var(--line)}   /* samme luft som .svc-divider: 28 over, 28 under */
   .bk-rad{display:flex;align-items:center;gap:12px}
   .bk-lbl{font-size:13.5px;font-weight:600;letter-spacing:-.01em;cursor:pointer}
   .bk-sw,.bk-select{margin-left:auto}
@@ -396,7 +396,6 @@
   .ed-fk-stengt{color:var(--mut-2)}
   .ed-hint{margin:2px 0 0;font-size:13px;color:var(--mut);line-height:1.5}
   .ed-horisont{margin:8px 0 0;font-size:12.5px;color:var(--mut);line-height:1.5}
-  .ed-liste-h{margin:26px 0 2px;font-size:13.5px;font-weight:600;letter-spacing:-.01em}
   .ed-rad{appearance:none;display:flex;align-items:center;gap:10px;width:100%;min-height:48px;padding:0 4px;border:0;background:transparent;font:inherit;color:var(--ink);text-align:left;cursor:pointer;border-radius:0}
   .ed-rad+.ed-rad{border-top:1px solid var(--ov-hair)}   /* linje bare mellom rader — ingen under siste (seksjonsskillet følger) */
   .ed-rad-dato{flex:1;min-width:0;font-size:14px;font-weight:500;letter-spacing:-.01em}
@@ -578,7 +577,7 @@
     --warn:#f5d93a;   /* sitron-/løvetann-gul for påminnelse-prikk; ~14:1 på mørk --surface/#0a0a0a */
     --violet:#b18cf0;--sky:#5cc4f0;   /* tjeneste-posisjon 5/6, lysere på mørk tema */
     --ov-hair:#1a1a1a;
-    --tt-hair:rgba(255,255,255,.08);--tt-mut:rgba(255,255,255,.55);--tt-mut-2:rgba(255,255,255,.4);
+    --tt-hair:rgba(255,255,255,.08);--tt-mut:rgba(255,255,255,.55);--tt-mut-2:rgba(255,255,255,.4);--tt-h2:rgba(255,255,255,.45);
     --ov-seg-line:#1f1f1f;--ov-seg-sel:#262626;--ov-btn-line:#2a2a2a;--ov-null:#262626;
     --ov-a1:#3ecf7e;--ov-a2:rgba(62,207,126,.55);--ov-a3:rgba(62,207,126,.28);
     --ed-gronn:#3ecf7e;--ed-blaa:#4d8bff;
@@ -638,9 +637,15 @@
   .fld-at{position:relative}
   .fld-at-sym{position:absolute;left:12px;top:50%;transform:translateY(-50%);color:var(--mut);font-size:14px;font-weight:600;line-height:1;pointer-events:none}
   .fld-at input{padding-left:27px}
-  .svc-group-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);margin:22px 0 4px}
-  .svc-group-s{font-size:11.5px;color:var(--mut);margin-bottom:10px}
-  .svc-divider{height:1px;background:var(--line);margin:26px 0 0}
+  /* ── Tjenester & tider: overskriftsnivåer — ÉN klasse per nivå i hele fanen, ingen overstyring per seksjon ──
+     Nivå 1 (.tt-h1 + undertekst .tt-s): Hovedtjenester, Tillegg, Betaling, Arbeidstider — står alltid rett under en
+     .svc-divider, som eier luften (28 over, 28 under). Nivå 2 (.tt-h2): Faste tider, Enkeltdager, Kommende endringer —
+     mindre og mer dempet, så de leses som en del av Arbeidstider. Før sto Betaling/Arbeidstider på .block-h (13px, ikke
+     versaler) og Faste tider/Enkeltdager på samme klasse som Hovedtjenester. */
+  .tt-h1{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);margin:0 0 4px}
+  .tt-s{font-size:11.5px;color:var(--mut);margin:0 0 10px}
+  .tt-h2{font-size:10.5px;font-weight:600;text-transform:uppercase;letter-spacing:.06em;color:var(--tt-h2);margin:22px 0 6px}
+  .svc-divider{height:1px;background:var(--line);margin:28px 0}
   /* ── Tjenester + betaling som LISTE (27.11.2026) ── rad uten boks, hårlinje under hver rad.
      Linje 1: navn (brytes, kuttes aldri) + «Rediger» / «Slett» (tekstknapper, 44×44 trykkflate — negativ marg så de ikke
      gjør raden høyere). Linje 2: «1 000 kr · 30 min». Linje 3: beskrivelsen, én linje med ellipsis. */
@@ -2593,36 +2598,38 @@
     <!-- Vises KUN når kalenderen IKKE er tilkoblet (loadGoogleStatus toggler display). Er den
          tilkoblet — også i scope-varsel-tilstanden — skjules teksten helt. Default skjult så den
          ikke blinker før statusen er hentet. [oversettelse: sv/da/en] -->
-    <p class="ctx" id="gcalCtx" style="margin-top:10px;display:none">Sperrer også avtalene dine utenfor BarberHQ.</p>
+    <p class="ctx" id="gcalCtx" style="margin:10px 2px 0;display:none">Sperrer også avtalene dine utenfor BarberHQ.</p>
 
-    <!-- Tjenester og betaling er LISTER (.tj-rad); «Rediger» / «+ Legg til» åpner arket #tjArk (samme skall som «Legg til
+    <!-- Overskrifter i hele fanen: .tt-h1 + .tt-s (Hovedtjenester, Tillegg, Betaling, Arbeidstider) og .tt-h2 under
+         Arbeidstider (Faste tider, Enkeltdager, Kommende endringer). Én klasse per nivå — ingen overstyring per seksjon.
+         Tjenester og betaling er LISTER (.tj-rad); «Rediger» / «+ Legg til» åpner arket #tjArk (samme skall som «Legg til
          booking»), og hver lagring går rett til backend med hele lista (se «Tjenester + betaling» i JS). -->
     <div class="svc-divider"></div>
 
-    <p class="svc-group-h">Hovedtjenester</p>
-    <p class="svc-group-s">Kunden velger én. Minst én kreves.</p>
+    <p class="tt-h1">Hovedtjenester</p>
+    <p class="tt-s">Kunden velger én. Minst én kreves.</p>
     <div class="tj-liste" id="hovedList"></div>
     <button type="button" class="tj-legg" id="addHoved">+ Legg til hovedtjeneste</button>
 
     <div class="svc-divider"></div>
 
-    <p class="svc-group-h">Tillegg</p>
-    <p class="svc-group-s">Kunden kan huke av flere. Valgfritt.</p>
+    <p class="tt-h1">Tillegg</p>
+    <p class="tt-s">Kunden kan huke av flere. Valgfritt.</p>
     <div class="tj-liste" id="tilleggList"></div>
     <button type="button" class="tj-legg" id="addTillegg">+ Legg til tillegg</button>
 
     <div class="svc-divider"></div>
 
     <!-- BETALING (valgfri): tom liste → ingen betalingsseksjon på bookingsiden. Lagres til PUT /api/dashboard/payment-methods. -->
-    <p class="block-h">Betaling</p>
-    <p class="block-s">Hvordan betaler kundene deg? Valgfritt — legger du ikke inn noe, vises ingen betalingsseksjon.</p>
+    <p class="tt-h1">Betaling</p>
+    <p class="tt-s">Hvordan betaler kundene deg? Valgfritt — legger du ikke inn noe, vises ingen betalingsseksjon.</p>
     <div class="tj-liste" id="payList"></div>
     <button type="button" class="tj-legg" id="addPay">+ Legg til betalingsmetode</button>
 
     <div class="svc-divider"></div>
 
-    <p class="block-h">Arbeidstider</p>
-    <p class="block-s">Kunder kan bare booke i tidene du slår på. Endringer gjelder nye luker — eksisterende bookinger står.</p>
+    <p class="tt-h1">Arbeidstider</p>
+    <p class="tt-s">Kunder kan bare booke i tidene du slår på. Endringer gjelder nye luker — eksisterende bookinger står.</p>
     <!-- Modus: UTLEDES av sist lagrede ukedagstider (alle stengt = «Tidene mine varierer»), ingen egen kolonne.
          «varierer» mens noen ukedager er åpne → bekreftelsesark (#atBekreft) → PUT /hours med alle stengt.
          Skjult til arbeidstidene er lastet. -->
@@ -2631,7 +2638,7 @@
       <button type="button" class="ovs-seg-btn" data-modus="varierer" aria-pressed="false">Tidene mine varierer</button>
     </div>
     <div id="fasteTider">
-      <p class="svc-group-h">Faste tider</p>
+      <p class="tt-h2">Faste tider</p>
       <div class="card" id="hoursList"><div class="loading">Laster …</div></div>
       <!-- Åpner pause-modalen. Teksten blir «Endre pauser» når minst én dag har pause. -->
       <button class="pause-btn" id="pauseBtn" type="button">Legg til pause</button>
@@ -2648,7 +2655,7 @@
          (eller ukenummer) bygger et utvalg; arket (#edArk, før hovedskriptet) glir opp når minst én dag er valgt.
          Ingenting lagres før «Lagre N dager» (eller tilbakestillingen). Se Enkeltdager i JS. -->
     <div class="ed" id="enkeltdager">
-      <p class="svc-group-h">Enkeltdager</p>
+      <p class="tt-h2">Enkeltdager</p>
       <p class="ed-varier" id="edVarier" hidden>Ingen dager er åpne før du åpner dem her.</p>
       <p class="ed-hint">Trykk på dagene du vil endre.</p>
       <div class="ed-kal">
@@ -2662,7 +2669,7 @@
       </div>
       <div class="ed-forkl" aria-hidden="true"><span><i class="ed-fk ed-fk-vanlig">8</i>Vanlig</span><span class="ed-fk-skille">·</span><span><i class="ed-fk ed-fk-endret">8</i>Endret</span><span class="ed-fk-skille">·</span><span><i class="ed-fk ed-fk-stengt">8</i>Stengt</span></div>
       <p class="ed-horisont" id="edHorisont"></p>
-      <p class="ed-liste-h">Kommende endringer</p>
+      <p class="tt-h2">Kommende endringer</p>
       <div class="ed-liste" id="edListe"></div>
     </div>
 
