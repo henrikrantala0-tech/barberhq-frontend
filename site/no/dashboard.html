@@ -1086,7 +1086,7 @@
   /* Gull-tallet gjenbruker .rekord-gull (samme gradient + glød som Oversikts rekord-KPI) — se renderMonthChart */
   /* ----- Stolpediagram (omsetning) ----- */
   /* Oversikt-redesign (17.11): diagrammet står uten kort og uten egen overskrift. 110px stolpeområde (.cbar-spor).
-     Selve stolpen er den FELLES .stolpe (stolpeHtml, delt med Vekst): ett fyll fra colorForRatio, radius 4 i toppen,
+     Selve stolpen er den FELLES .stolpe (stolpeHtml, delt med Vekst): grunnfarge fra colorForRatio, myk 3D, radius 4 i toppen,
      0-dager 3px i --ov-null. Gap 8px (7 stolper) → 4px (14) → 2px (måned), så 31 stolper får plass på 320. */
   .chart-wrap{position:relative;margin:26px 0 0}
   .chartbars{display:flex;gap:8px}
@@ -1098,10 +1098,23 @@
      hvert stolpe-lag en iOS-repaint-feil ved temabytte. transform-origin:bottom → vokser opp fra aksen. */
   .cbar-bar{width:100%;max-width:56px;transform-origin:bottom;transition:transform .25s ease}   /* fyll/radius/0-strek: .stolpe */
   /* ══ FELLES STOLPE (Henrik 17.11) — Oversikt (#chartBars) OG Vekst-fanens månedsdiagram (#trend) bruker samme
-     renderer (stolpeHtml) og samme klasse. Ett fyll fra colorForRatio (ingen gradient), radius 4 i toppen / 0 i bunnen,
+     renderer (stolpeHtml) og samme klasse. Grunnfarge fra colorForRatio + myk 3D (under), radius 4 i toppen / 0 i bunnen,
      0-verdi = 3px flat strek i --ov-null (#262626 mørk), rekord = gull med DEMPET glød (bare den stolpen). Høyden og
      etikettene (tall over / ukedag under) styres per fane. Vakt: tools/render/stolper-felles.mjs. ══ */
   .stolpe{border-radius:4px 4px 0 0;background:var(--stolpe-farge)}
+  /* Dybde — «myk 3D» (Henrik 27.11.2026, valgt blant A–G): vannrett gradient i stolpens EGEN farge — kantene 75 % farge +
+     svart, midten 75 % farge + hvitt — blandet fra grunnfargen (--stolpe-farge) med color-mix, aldri en hardkodet farge per
+     stolpe. Indre skygger (lys venstre, mørk høyre) og en myk skygge mot bunnlinja. Gjelder også gullstolpen (gløden står).
+     Skyggene er statiske — bare transform/opacity animeres. background-color = grunnfargen (reserve, og den testene måler).
+     Uten color-mix-støtte: ensfarget som før. */
+  @supports (background:color-mix(in srgb,red 50%,white)){
+    .stolpe{background:linear-gradient(90deg,
+        color-mix(in srgb,var(--stolpe-farge) 75%,black),
+        color-mix(in srgb,var(--stolpe-farge) 75%,white) 50%,
+        color-mix(in srgb,var(--stolpe-farge) 75%,black));
+      background-color:var(--stolpe-farge)}
+  }
+  .stolpe:not(.null){box-shadow:inset 3px 0 6px rgba(255,255,255,.18),inset -4px 0 8px rgba(0,0,0,.35),0 8px 12px -6px rgba(0,0,0,.6)}
   .stolpe.null{height:3px!important;background:var(--ov-null)}
   .stolpe.rekord{filter:drop-shadow(0 0 2px rgba(255,224,138,.55)) drop-shadow(0 0 6px rgba(240,194,75,.28))}
   .cbar-lbl{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:11px;font-weight:600;color:var(--mut);text-transform:uppercase;letter-spacing:0;white-space:nowrap;text-align:center;line-height:1.2}
