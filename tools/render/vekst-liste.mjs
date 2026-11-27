@@ -5,7 +5,7 @@
 //   - Etiketter AUTOMATIKK / PERSONLIG / DEL (11.5/600/.08em/versaler/dempet), 32px mellom seksjonene.
 //   - Rader: navn 15/600, beskrivelse 13/400 dempet/1.45, 16px vertikal padding.
 //   - Høyre side: bryter 46×28 (Automatikk), chevron (Personlig, antall foran på Vinn tilbake), «Lag story» (Del).
-//   - Gratis: lås + «Vekst» (ingen blå pille), «Kjøp SMS for å sende påminnelser →» som blå lenke.
+//   - Gratis: lås + «Vekst» (ingen blå pille), «Kjøp SMS for å sende påminnelser» + pil-ikon som blå lenke.
 //   - Hentet inn = SAMME komponent som Oversikt (3/6/12 mnd), ingen gammel velger (#attrPeriod), ingen doble id-er.
 //   - Nye tekster: Vinn tilbake / Lojalitet / Ledige timer.
 // Skjermbilder → .render-ut/vekst-liste/: hele fanen (Gratis/Vekst × 320/375 × mørk/lys) + hver utfoldet rad @375 mørk
@@ -99,7 +99,8 @@ const MAAL = () => {
     bryter: swR && getComputedStyle(sw).display!=='none' ? Math.round(swR.width)+'×'+Math.round(swR.height) : 'skjult',
     laas: qa('#vekst .laas-merke').map(m => m.closest('.acc').id), blaaPille: qa('#vekst .laas-badge').length,
     teller: (q('#wbBadge')||{}).hidden===false ? q('#wbBadge').textContent : null,
-    kjop: q('#paamKjop') && !q('#paamKjop').hidden ? q('#paamKjop').innerText : null,
+    kjop: q('#paamKjop') && !q('#paamKjop').hidden ? q('#paamKjop').innerText.trim() : null,
+    kjopIkon: q('#paamKjop use') ? q('#paamKjop use').getAttribute('href') : null,
     kjopFarge: cs(q('#paamKjopLenke'),'color'), kjopDekor: cs(q('#paamKjopLenke'),'textDecorationLine'),
     tekster: { vinn: q('#accWinback .acc-sub').textContent, loyal: q('#accLoyal .acc-sub').textContent, story: q('#accStory').innerText.replace(/\s+/g,' ') },
     storyKnapp: (() => { const b = q('#storyOpen'); return b ? Math.round(b.getBoundingClientRect().height)+'/'+cs(b,'borderTopLeftRadius') : null; })(),
@@ -127,7 +128,7 @@ for (const plan of ['vekst','basis']) for (const tema of ['dark','light']) for (
     sjekk(`${tag}: Vinn tilbake viser antallet (5 = borte 3 + no_show 2)`, m.teller==='5', m.teller);
   } else {
     sjekk(`${tag}: lås + «Vekst» på Rebooking, Vinn tilbake, Verving, Lojalitet (bryteren skjult)`, JSON.stringify(m.laas.sort())==='["accLoyal","accRebook","accVerv","accWinback"]' && m.bryter==='skjult', JSON.stringify(m.laas)+' '+m.bryter);
-    sjekk(`${tag}: «Kjøp SMS for å sende påminnelser →» blå, ikke understreket`, m.kjop==='Kjøp SMS for å sende påminnelser →' && m.kjopFarge===rgb(m.info) && m.kjopDekor==='none', m.kjop+' '+m.kjopFarge+' '+m.kjopDekor);
+    sjekk(`${tag}: «Kjøp SMS for å sende påminnelser» (+ pil-ikon) blå, ikke understreket`, m.kjop==='Kjøp SMS for å sende påminnelser' && m.kjopIkon==='ikoner.svg#pil-h' && m.kjopFarge===rgb(m.info) && m.kjopDekor==='none', m.kjop+' '+m.kjopFarge+' '+m.kjopDekor);
   }
   const h = await page.evaluate(() => document.documentElement.scrollHeight);
   await page.setViewportSize({ width:bredde, height:h }); await page.waitForTimeout(150);

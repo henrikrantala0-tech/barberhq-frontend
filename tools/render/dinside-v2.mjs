@@ -643,7 +643,7 @@ for (const bredde of [320, 375]) for (const tema of ['dark', 'light']) for (cons
   await fr.click('body', { position: { x: 20, y: 20 } }).catch(() => {}); await page.keyboard.press('Escape'); await page.waitForTimeout(300);
   const e = await page.evaluate(() => ({ apen: document.getElementById('dv2Pv').classList.contains('apen'), fokus: document.activeElement && document.activeElement.id }));
   sjekk(!e.apen && e.fokus === 'dv2SeSiden', 'Escape inne i forhåndsvisningen lukker flaten, fokus til «Forhåndsvis»', JSON.stringify(e));
-  sjekk(await page.$eval('#dv2PvLukk', b => b.textContent) === '← Tilbake', 'Fullskjerm: «← Tilbake»');
+  sjekk(await page.$eval('#dv2PvLukk', b => b.textContent.trim() === 'Tilbake' && b.querySelector('use') && b.querySelector('use').getAttribute('href') === 'ikoner.svg#pil-v'), 'Fullskjerm: «Tilbake» med pil-ikon (ikoner.svg#pil-v), ingen tekstpil');
   sjekk(!errs.length, 'Escape: pageerror', errs.join('; '));
   await ctx.close();
 }

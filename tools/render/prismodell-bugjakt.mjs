@@ -82,7 +82,8 @@ for(const w of [320,375]){
     if(linje!==c.vent.linje) f.push(`linje synlig=${linje}`);
     if(c.vent.linje){
       const t=await page.$eval('#paamKjop',e=>e.innerText.trim());
-      if(t!=='Kjøp SMS for å sende påminnelser →') f.push(`linjetekst «${t}»`);   // Vekst-liste (17.11): pil + blå lenke
+      const ik=await page.$eval('#paamKjop use',e=>e.getAttribute('href')).catch(()=>null);
+      if(t!=='Kjøp SMS for å sende påminnelser'||ik!=='ikoner.svg#pil-h') f.push(`linjetekst «${t}» / ikon ${ik}`);   // Vekst-liste (17.11): pil (ikoner.svg, 27.11) + blå lenke
       // Ingen aksentfarge: lenka arver den dempede fargen fra linja.
       // Vekst-liste (Henrik 17.11): lenka er BLÅ (--info) og ikke understreket — ikke lenger dempet som linja rundt.
       const farger=await page.$eval('#paamKjopLenke',a=>[getComputedStyle(a).color,getComputedStyle(a).textDecorationLine,getComputedStyle(document.documentElement).getPropertyValue('--info').trim()]);
