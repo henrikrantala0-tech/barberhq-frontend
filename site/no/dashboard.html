@@ -65,7 +65,9 @@
     --violet:#7c4dd6;--sky:#2b93c9;
     /* Oversikt-redesign (17.11.2026): hårlinjer, segmentvelger, knappramme, 0-stolpe og Hentet inn-stripa.
        Mørk tema = designets verdier nøyaktig (under html[data-theme="dark"]); her lyse motstykker. */
-    --ov-hair:#ebebeb;--ov-seg-line:#e2e2e2;--ov-seg-sel:#e9e9e9;--ov-btn-line:#d4d4d4;--ov-null:#e2e2e2;
+    --ov-hair:#ebebeb;
+    --tt-hair:rgba(0,0,0,.08);--tt-mut:rgba(0,0,0,.62);--tt-mut-2:rgba(0,0,0,.55);   /* Tjenester & tider (lys): kontrast ≥ 4,5 */
+    --ov-seg-line:#e2e2e2;--ov-seg-sel:#e9e9e9;--ov-btn-line:#d4d4d4;--ov-null:#e2e2e2;
     --ov-a1:#1a7a44;--ov-a2:rgba(26,122,68,.55);--ov-a3:rgba(26,122,68,.28);
     /* Enkeltdager (Tjenester & tider): statusprikkene + valgt dag. Mørk tema = designets verdier nøyaktig;
        her mørkere motstykker så prikkene bærer mot hvit flate (grønn 3,5:1, blå 5,2:1). */
@@ -275,7 +277,7 @@
   /* 44px trykkflate uten å endre visuell størrelse: usynlig ::after sentreres på knappen
      og tvinges til minst 44x44 (min-width/height) mens knappen beholder sin egen størrelse.
      Klikk på ::after bobler til knappen. Gjelder små ikon-/tekstknapper. WCAG 2.5.5. */
-  .slot-act-btn::after,.noshowbtn::after,.verv-btn::after,.suksess-x::after,.pause-modal-close::after,body.fokus .fokus-x::after,.svc-rm::after{content:"";position:absolute;top:50%;left:50%;width:100%;height:100%;min-width:44px;min-height:44px;transform:translate(-50%,-50%)}
+  .slot-act-btn::after,.noshowbtn::after,.verv-btn::after,.suksess-x::after,.pause-modal-close::after,body.fokus .fokus-x::after{content:"";position:absolute;top:50%;left:50%;width:100%;height:100%;min-width:44px;min-height:44px;transform:translate(-50%,-50%)}
   .slot-menu-btn:hover{background:var(--bad)}
   .slot-popup{position:fixed;z-index:300;background:var(--surface);border:1px solid var(--line);border-radius:10px;box-shadow:0 4px 24px rgba(0,0,0,.55);min-width:136px;overflow:hidden;display:none}
   .slot-popup.open{display:block}
@@ -533,7 +535,7 @@
   .btn-outline.connected{color:var(--good);border-color:var(--good-bg);background:var(--good-bg)}
   /* Touch-mål ≥44px på mobil: base-knappene (padding ga ~39px) løftes til 44px min-høyde. Kun mobil
      (desktop uendret, muspeker). min-height vokser bare korte knapper → ingen bredde-/flyt-endring. */
-  @media(max-width:719px){ .btn,.btn-outline,.addbtn,.pause-btn{min-height:44px} }
+  @media(max-width:719px){ .btn,.btn-outline,.pause-btn{min-height:44px} }
   .gcal{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-top:26px;padding:18px 20px;background:var(--surface);border:1px solid var(--line);border-radius:12px}
   /* Tredje tilstand: tilkoblet, men skriving når ikke fram (scope_ok:false).
      Ser annerledes ut enn både «tilkoblet» og «ikke tilkoblet» — ellers drukner den.
@@ -575,7 +577,9 @@
     --good:#3ecf7e;--good-bg:#10241a;--bad:#ff6b5e;--bad-bg:#2c1512;--info:#4d8bff;--info-bg:#11203b;
     --warn:#f5d93a;   /* sitron-/løvetann-gul for påminnelse-prikk; ~14:1 på mørk --surface/#0a0a0a */
     --violet:#b18cf0;--sky:#5cc4f0;   /* tjeneste-posisjon 5/6, lysere på mørk tema */
-    --ov-hair:#1a1a1a;--ov-seg-line:#1f1f1f;--ov-seg-sel:#262626;--ov-btn-line:#2a2a2a;--ov-null:#262626;
+    --ov-hair:#1a1a1a;
+    --tt-hair:rgba(255,255,255,.08);--tt-mut:rgba(255,255,255,.55);--tt-mut-2:rgba(255,255,255,.4);
+    --ov-seg-line:#1f1f1f;--ov-seg-sel:#262626;--ov-btn-line:#2a2a2a;--ov-null:#262626;
     --ov-a1:#3ecf7e;--ov-a2:rgba(62,207,126,.55);--ov-a3:rgba(62,207,126,.28);
     --ed-gronn:#3ecf7e;--ed-blaa:#4d8bff;
     --ed-fyll-vanlig:rgba(62,207,126,.18);--ed-fyll-endret:rgba(77,139,255,.18);--ed-tall-fylt:#fff;   /* hvitt tall 14,8:1 / 16,1:1 */
@@ -636,73 +640,47 @@
   .fld-at input{padding-left:27px}
   .svc-group-h{font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;color:var(--ink-2);margin:22px 0 4px}
   .svc-group-s{font-size:11.5px;color:var(--mut);margin-bottom:10px}
-  /* Tjeneste-rad: INNHOLDSSTYRT brekking, ikke breakpoint. Navnefeltet får bredden fra sitt eget
-     innhold (size-attributt = navnelengde, oppdatert live i svcInput) med et min-width-gulv, og
-     pris/min/slett er gruppert i .svc-tall. Når navnet trenger mer enn ledig plass, brekker HELE
-     tall-gruppa til linje 2 — men bare på de radene der navnet faktisk krever det. Korte navn står
-     på én linje (kolonner, som før). Én regel dekker 320 OG 402 → det gamle
-     @media(max-width:379px)-oppsettet er borte. text-overflow = siste utvei. */
-  .svc-head-h,.svc-row-h,.svc-head-t,.svc-row-t{display:flex;flex-wrap:wrap;gap:8px;align-items:center}
-  .svc-head-h,.svc-head-t{font-size:10.5px;color:var(--mut);text-transform:uppercase;letter-spacing:.03em;padding:0 2px 5px}
-  .svc-row-h,.svc-row-t{padding:8px 0;border-bottom:1px solid var(--line)}
-  .svc-row-h:last-of-type,.svc-row-t:last-of-type{border-bottom:0}
-  .svc-row-h input,.svc-row-t input{font:inherit;min-height:44px;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink)}
-  .svc-row-h input:focus,.svc-row-t input:focus{outline:none;border-color:var(--info)}
-  /* Navnefeltet: basis fra size-attributtet, vokser for å fylle linja, kan krympe til gulvet.
-     min-width 140 tvinger brekking på 320 (140 + tall-gruppa > rada) og holder feltet lesbart; på
-     402 er gulvet lavt nok til at korte navn blir på én linje. */
-  .svc-navn{flex:1 1 auto;min-width:140px;text-overflow:ellipsis}
-  /* Tall-gruppa brekker som ÉN enhet til linje 2. EKSPLISITT flex-basis (78+56+34 + 2×8 gap = 184px),
-     IKKE auto. ⚠ iOS/WebKit-felle: med flex-basis:auto regner WebKit gruppas bredde av barnas
-     MAX-CONTENT — tekst-inputene (pris/min, uten size-attributt) rapporterer default tekstfelt-bredde
-     (~20 tegn ≈ 170px hver) → gruppa ballonerte til 508px og sprengte viewporten; og lar man den
-     krympe (min-width:0), klemmes barna i stedet ut av boksen i header-raden. Begge forsvinner med en
-     fast basis lik barnas sum. (Chromium respekterer barnas flex-basis i auto-beregningen → kun iOS-bug.) */
-  .svc-tall{display:flex;gap:8px;align-items:center;flex:0 0 218px;min-width:0}   /* 88 + 80 + 34 + 2×8 */
-  /* Faste, men strammet ~24px fra 96/66: pris rommer 4-sifret (1500), min. 3-sifret (120) uten klem.
-     min-width:0 er PÅKREVD: number-inputs har stor min-content, og flex-defaulten min-width:auto
-     gulver dem der (målt 201px) → tall-gruppa blåser opp og alt brekker. */
-  .svc-pris{flex:0 0 78px;min-width:0}
-  .svc-min{flex:0 0 56px;min-width:0}
-  /* Fast enhet inni feltet («kr»/«min», ikke redigerbar) når feltet har en verdi; tomt felt viser bare plassholderen. Wrapperen eier flex-basisen (88/80 rommer
-     «1200 kr» og «120 min» på 320 uten klem); inputen fyller den og har padding-right forbi enheten, så tallet aldri går under. */
-  .svc-enhet{position:relative;display:block;min-width:0}
-  .svc-enhet-pris{flex:0 0 88px}
-  .svc-enhet-min{flex:0 0 80px}
-  .svc-enhet>input{width:100%}
-  .svc-enhet-pris>input{padding-right:2em}     /* «kr»: plass til 4 siffer (1200) uten intern scroll */
-  .svc-enhet-min>input{padding-right:2.6em}    /* «min»: plass til 3 siffer (120) */
-  .svc-enhet-tekst{position:absolute;right:10px;top:50%;transform:translateY(-50%);font-size:13px;color:var(--mut);pointer-events:none}
-  /* Tomt felt: bare plassholderen («Pris»/«Min»). Enheten kommer først når feltet har en verdi — ren CSS, ingen JS. */
-  .svc-enhet>input:placeholder-shown+.svc-enhet-tekst{display:none}
-  .svc-head-h .svc-pris,.svc-head-t .svc-pris{flex-basis:88px}
-  .svc-head-h .svc-min,.svc-head-t .svc-min{flex-basis:80px}
-  /* Overskriftsraden står bare når den faktisk står over kolonnene: skjules (oppdaterSvcHode) når en rad har brukket. */
-  .svc-head-h[hidden],.svc-head-t[hidden]{display:none}
-  /* Pris-0-markør: navngitt tjeneste uten pris → rød pris-kant + full-bredde «Sett pris»-linje
-     under raden. Parallell til kundesidens prisTekst-vern; gå-live blokkeres uansett server-side.
-     .svc-flag ligger som eget flex-barn (flex-basis:100%) → egen linje under tall-gruppa. */
-  .svc-pris.pris-0{border-color:#c0594a}
-  .svc-min.min-0{border-color:#c0594a}
-  .svc-flag{flex:1 0 100%;font-size:12px;color:#c0594a;margin:2px 0 0 2px;letter-spacing:-.01em}
-  .svc-flag[hidden]{display:none}
-  .svc-rm-h{flex:0 0 34px}   /* usynlig header-avstandsholder over slett-knappen */
-  /* Number-spinneren spiser ~15px til høyre og klipper varigheten — skjules. */
-  .svc-row-h input[type=number]::-webkit-inner-spin-button,
-  .svc-row-t input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
-  .svc-row-h input[type=number],.svc-row-t input[type=number]{-moz-appearance:textfield}
-  /* Betaling — rad = én betalingsmetode (tekstfelt + ×), samme uttrykk som tjeneste-radene */
-  .pay-row{display:grid;grid-template-columns:1fr 34px;gap:8px;align-items:center;padding:8px 0;border-bottom:1px solid var(--line);max-width:440px}
-  .pay-row:last-of-type{border-bottom:0}
-  .pay-row input{font:inherit;min-height:44px;padding:8px 10px;border:1px solid var(--line-2);border-radius:7px;background:var(--surface);color:var(--ink);width:100%}   /* min-height:44px = touch-mål (som .svc-row-h input) */
-  .pay-row input:focus{outline:none;border-color:var(--info)}
   .svc-divider{height:1px;background:var(--line);margin:26px 0 0}
-  .svc-err{font-size:12px;color:#c0392b;margin-top:8px;min-height:15px}
+  /* ── Tjenester + betaling som LISTE (27.11.2026) ── rad uten boks, hårlinje under hver rad.
+     Linje 1: navn (brytes, kuttes aldri) + «Rediger» / «Slett» (tekstknapper, 44×44 trykkflate — negativ marg så de ikke
+     gjør raden høyere). Linje 2: «1 000 kr · 30 min». Linje 3: beskrivelsen, én linje med ellipsis. */
+  .tj-rad{padding:14px 0;border-bottom:1px solid var(--tt-hair)}
+  @media(hover:hover){ .tj-rad{cursor:pointer} }
+  .tj-topp{display:flex;align-items:flex-start;gap:8px}
+  .tj-navn{flex:1 1 auto;min-width:0;font-size:15px;font-weight:600;line-height:20px;color:var(--ink);letter-spacing:-.01em;overflow-wrap:anywhere}
+  .tj-knapper{flex:none;display:flex;margin:-12px -10px -12px 0}
+  .tj-knapp{appearance:none;background:none;border:0;font:inherit;font-size:14px;font-weight:500;line-height:20px;color:var(--tt-mut);min-width:44px;min-height:44px;padding:0 10px;cursor:pointer;letter-spacing:-.01em}
+  @media(hover:hover){ .tj-knapp:hover{color:var(--ink)} }
+  .tj-knapp:disabled{opacity:.5;cursor:default}
+  .tj-meta{margin-top:3px;font-size:13px;line-height:18px;color:var(--tt-mut)}
+  .tj-mangler{color:var(--bad)}   /* «Sett pris» — navngitt tjeneste uten pris (samme signal som før, nå i meta-linja) */
+  .tj-besk{margin-top:3px;font-size:13px;line-height:18px;color:var(--tt-mut-2);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  .tj-lagret{display:none;margin-left:10px;font-size:13px;font-weight:500;color:var(--good)}
+  .tj-lagret.show{display:inline}
+  .tj-topp .tj-lagret{flex:none;line-height:20px;margin-left:0}
+  .tj-rad-feil{margin-top:8px;font-size:13px;line-height:1.45;color:var(--bad)}
+  /* Legg til / rediger (tjeneste, tillegg, betalingsmetode) i ARKET (#tjArk) — samme skall som «Legg til booking»
+     (.pause-modal-backdrop / .pause-modal: bunnark på mobil, dialog fra 561px), labels via .fld, Lagre = .btn.ark-lagre.
+     Feltene er de samme som før (.tj-inp: 16px, 44px, radius 8). .tj-ark foran slår .fld input/textarea (font:inherit,
+     padding, resize), så feltene ikke endres av at de står i en .fld. «kr»/«min» står alltid i feltet, også tomt. */
+  .tj-ark .fld{max-width:none;margin-bottom:14px}
+  .tj-to{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);gap:10px}
+  .tj-to[hidden]{display:none}
+  .tj-ark .tj-inp{display:block;width:100%;min-width:0;box-sizing:border-box;height:44px;margin:0;padding:0 12px;font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:1px solid var(--line-2);border-radius:8px}
+  .tj-ark .tj-inp:focus{outline:none;border-color:var(--info)}
+  .tj-ark .tj-inp::placeholder{color:var(--mut)}
+  .tj-ark textarea.tj-inp{height:auto;min-height:68px;padding:10px 12px;line-height:1.4;resize:none;overflow:hidden}   /* vokser med teksten (tjBeskVoks) */
+  .tj-enhet{position:relative;display:block}
+  .tj-ark .tj-enhet .tj-inp{padding-right:44px}
+  .tj-enhet-tekst{position:absolute;right:12px;top:22px;transform:translateY(-50%);font-size:14px;color:var(--mut);pointer-events:none}
+  .tj-besk-lenke{appearance:none;display:inline-flex;align-items:center;min-height:44px;margin:-8px 0 6px;padding:0;background:none;border:0;font:inherit;font-size:13px;color:var(--tt-mut);cursor:pointer}
+  .tj-besk-lenke[hidden]{display:none}
+  @media(hover:hover){ .tj-besk-lenke:hover{color:var(--ink)} }
+  /* «+ Legg til …»: ren venstrestilt tekstknapp i aksentblått, skjult mens legg til-skjemaet i samme liste er åpent. */
+  .tj-legg{appearance:none;display:block;height:44px;margin-top:4px;padding:0;background:none;border:0;font:inherit;font-size:15px;font-weight:600;color:var(--info);text-align:left;letter-spacing:-.01em;cursor:pointer}
+  .tj-legg[hidden]{display:none}
+  .tj-legg:disabled{opacity:.4;cursor:default}
   .btn:disabled{opacity:.4;cursor:default}
-  .svc-rm{appearance:none;flex:0 0 34px;width:34px;border:1px solid var(--line-2);background:var(--surface);color:var(--mut);height:36px;border-radius:7px;cursor:pointer;font-size:16px;position:relative}
-  .svc-rm:hover{color:var(--bad);border-color:var(--bad)}
-  .addbtn{appearance:none;border:1px dashed var(--line-2);background:0;color:var(--mut);border-radius:8px;padding:10px;width:100%;max-width:440px;cursor:pointer;font:inherit;font-size:13px;margin-top:10px}
-  .addbtn:hover{border-color:var(--info);color:var(--ink)}
   .preset-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:11px;margin:6px 0 24px;max-width:680px}
   .preset{text-align:left;border:1.5px solid var(--line);border-radius:11px;padding:13px 14px;cursor:pointer;background:var(--surface);font:inherit;transition:border-color .12s}
   .preset[aria-pressed=true]{border-color:var(--info)}
@@ -1970,10 +1948,6 @@
   .suksess-lenke .pub-field{background:var(--bg)}
   .suksess-linje{font-size:14px;color:var(--ink);margin-top:6px;font-weight:600}
   .suksess-linje.sub{color:var(--mut);font-size:13px;font-weight:400}
-/* v2: beskrivelse under hovedtjenesten — tydelig underordnet navnefeltet: mindre tekst, dempet farge, svak kant, tett på raden
-   (radens egen 8px-gap, ingen ekstra luft). Relative enheter og dashbordets farge-tokens. */
-#hovedList .svc-description{flex:1 0 100%;width:100%;font-size:.875em;color:var(--ink-2);border-color:var(--line);background:transparent}
-#hovedList .svc-description::placeholder{color:var(--mut)}
 </style>
 <link rel="stylesheet" href="dinside-v2.css">
 </head>
@@ -2621,33 +2595,29 @@
          ikke blinker før statusen er hentet. [oversettelse: sv/da/en] -->
     <p class="ctx" id="gcalCtx" style="margin-top:10px;display:none">Sperrer også avtalene dine utenfor BarberHQ.</p>
 
+    <!-- Tjenester og betaling er LISTER (.tj-rad); «Rediger» / «+ Legg til» åpner arket #tjArk (samme skall som «Legg til
+         booking»), og hver lagring går rett til backend med hele lista (se «Tjenester + betaling» i JS). -->
     <div class="svc-divider"></div>
 
     <p class="svc-group-h">Hovedtjenester</p>
     <p class="svc-group-s">Kunden velger én. Minst én kreves.</p>
-    <div class="svc-head-h" id="svcHodeH"><span class="svc-navn">Tjeneste</span><div class="svc-tall"><span class="svc-pris">Pris (kr)</span><span class="svc-min">Min.</span><span class="svc-rm-h"></span></div></div>
-    <div id="hovedList"></div>
-    <button class="addbtn" id="addHoved">+ Legg til hovedtjeneste</button>
+    <div class="tj-liste" id="hovedList"></div>
+    <button type="button" class="tj-legg" id="addHoved">+ Legg til hovedtjeneste</button>
 
     <div class="svc-divider"></div>
 
     <p class="svc-group-h">Tillegg</p>
     <p class="svc-group-s">Kunden kan huke av flere. Valgfritt.</p>
-    <div class="svc-head-t" id="svcHodeT"><span class="svc-navn">Tillegg</span><div class="svc-tall"><span class="svc-pris">Pris (kr)</span><span class="svc-min">Min.</span><span class="svc-rm-h"></span></div></div>
-    <div id="tilleggList"></div>
-    <button class="addbtn" id="addTillegg">+ Legg til tillegg</button>
-
-    <div class="svc-err" id="svcErr"></div>
-    <div class="savebar"><button class="btn" id="saveSvc">Lagre tjenester</button><span class="saved" id="svcSaved">Lagret &#10003;</span></div>
+    <div class="tj-liste" id="tilleggList"></div>
+    <button type="button" class="tj-legg" id="addTillegg">+ Legg til tillegg</button>
 
     <div class="svc-divider"></div>
 
-    <!-- BETALING (valgfri): 0–1 metode → ingen betalingsseksjon på bookingsiden; ≥2 → pills. Lagres til PUT /api/dashboard/payment-methods. -->
+    <!-- BETALING (valgfri): tom liste → ingen betalingsseksjon på bookingsiden. Lagres til PUT /api/dashboard/payment-methods. -->
     <p class="block-h">Betaling</p>
     <p class="block-s">Hvordan betaler kundene deg? Valgfritt — legger du ikke inn noe, vises ingen betalingsseksjon.</p>
-    <div id="payList"></div>
-    <button class="addbtn" id="addPay">+ Legg til betalingsmetode</button>
-    <div class="savebar"><button class="btn" id="savePay">Lagre betaling</button><span class="saved" id="paySaved">Lagret &#10003;</span></div>
+    <div class="tj-liste" id="payList"></div>
+    <button type="button" class="tj-legg" id="addPay">+ Legg til betalingsmetode</button>
 
     <div class="svc-divider"></div>
 
@@ -3363,8 +3333,8 @@
   .bkn-rad.kollisjon .bkn-tid,.bkn-rad.kollisjon .bkn-hva{color:var(--bad)}
   .bkn-dag-tom{padding:8px 0 10px;border-top:1px solid var(--line);font-size:13px;color:var(--mut)}
   .bkn-dag .wb-empty{padding:8px 0 10px;border-top:1px solid var(--line);font-size:13px}
-  #bkNyFeil{margin:-2px 0 12px}
-  #bkNyLagre{width:100%;min-height:46px;font-size:14px}
+  #bkNyFeil,#tjArkFeil{margin:-2px 0 12px}
+  .ark-lagre{width:100%;min-height:46px;font-size:14px}   /* Lagre-knappen i arkene: «Legg til booking» + tjenestearket (#tjArk) */
   /* Bekreftelse etter lagring: samme mørke flate som .toast, men med handling («Vis i kalender» fra
      Oversikt) → pointer-events på. Over kalenderen (500), under modalene (600) — og skjult når en av dem
      åpnes (detaljflaten). På mobil løftet over bunn-navet; over kalenderen (ingen bunn-nav) nede ved kanten. */
@@ -3572,7 +3542,44 @@
         <p class="fld-hint">Uten nummer får kunden ingen påminnelse eller rebooking.</p>
       </div>
       <p class="fld-err" id="bkNyFeil" role="alert" hidden></p>
-      <button class="btn" id="bkNyLagre" type="submit" disabled>Legg til booking</button>
+      <button class="btn ark-lagre" id="bkNyLagre" type="submit" disabled>Legg til booking</button>
+    </form>
+  </div>
+</div>
+
+<!-- Tjenester & tider: legg til / rediger hovedtjeneste, tillegg og betalingsmetode. SAMME skall og oppførsel som «Legg til
+     booking» over (pause-modalens ark: bunnark på mobil, dialog fra 561px; × / trykk utenfor / Esc lukker; fokus på arket ved
+     åpning; Enter lagrer). Lukkes arket uten lagring, forkastes endringene. Arket lukkes først når backend har svart ok. -->
+<div class="pause-modal-backdrop tj-ark" id="tjArk" role="dialog" aria-modal="true" aria-labelledby="tjArkH" hidden>
+  <div class="pause-modal" tabindex="-1">
+    <button class="pause-modal-close" id="tjArkLukk" type="button" aria-label="Lukk">×</button>
+    <p class="pause-modal-h" id="tjArkH" style="margin-bottom:14px">Ny hovedtjeneste</p>
+    <form id="tjArkForm" novalidate autocomplete="off">
+      <div class="fld">
+        <label for="tjArkNavn">Navn</label>
+        <input class="tj-inp" id="tjArkNavn" data-f="name" type="text" maxlength="80" autocomplete="off" aria-describedby="tjArkNavnFeil">
+        <p class="fld-err" id="tjArkNavnFeil" hidden></p>
+      </div>
+      <div class="tj-to" id="tjArkTall">
+        <div class="fld">
+          <label for="tjArkPris">Pris</label>
+          <div class="tj-enhet"><input class="tj-inp" id="tjArkPris" data-f="price" type="text" inputmode="decimal" autocomplete="off" aria-describedby="tjArkPrisFeil"><span class="tj-enhet-tekst" aria-hidden="true">kr</span></div>
+          <p class="fld-err" id="tjArkPrisFeil" hidden></p>
+        </div>
+        <div class="fld">
+          <label for="tjArkMin">Varighet</label>
+          <div class="tj-enhet"><input class="tj-inp" id="tjArkMin" data-f="min" type="text" inputmode="numeric" autocomplete="off" aria-describedby="tjArkMinFeil"><span class="tj-enhet-tekst" aria-hidden="true">min</span></div>
+          <p class="fld-err" id="tjArkMinFeil" hidden></p>
+        </div>
+      </div>
+      <button type="button" class="tj-besk-lenke" id="tjArkBeskLenke" hidden>+ Legg til beskrivelse</button>
+      <div class="fld" id="tjArkBesk" hidden>
+        <label for="tjArkBeskFelt">Beskrivelse</label>
+        <textarea class="tj-inp" id="tjArkBeskFelt" data-f="description" rows="2" maxlength="120" placeholder="F.eks. klipp på sidene og kort på toppen" aria-describedby="tjArkBeskFeil"></textarea>
+        <p class="fld-err" id="tjArkBeskFeil" hidden></p>
+      </div>
+      <p class="fld-err" id="tjArkFeil" role="alert" hidden></p>
+      <button class="btn ark-lagre" id="tjArkLagre" type="submit">Lagre</button>
     </form>
   </div>
 </div>
@@ -6806,8 +6813,7 @@ $("#saveHours").addEventListener("click",async()=>{const btn=$("#saveHours");btn
 // klikk, ikke input — begge falt ut av den sporingen.
 var _ulagret={svc:false,timer:false,design:false,profil:false,navn:false};
 function merkUlagret(k){ _ulagret[k]=true; }
-["#hovedList","#tilleggList"].forEach(function(s){ $(s).addEventListener('input',function(){ merkUlagret('svc'); }); });
-$("#tjenester").addEventListener('click',function(e){ if(e.target.closest('.svc-rm,#addHoved,#addTillegg')) merkUlagret('svc'); },true);
+// Tjenester: et åpent tjenesteark setter _ulagret.svc (tjSettUlagret) — se «Tjenester + betaling».
 $("#hoursList").addEventListener('input',function(){ merkUlagret('timer'); });
 $("#pauseModalList").addEventListener('change',function(){ merkUlagret('timer'); });
 $("#design").addEventListener('click',function(e){ if(e.target.closest('.preset,.modebtn')) merkUlagret('design'); },true);
@@ -8169,160 +8175,230 @@ function wbToggleEldre(){
   });
 })();
 
-/* ---- Tjenester ---- */
-// Tomt til en EKTE GET /services har lyktes. Her sto demotjenester (Skinnfade/Klipp/Skjegg/Hårvask): feilet
-// hentingen, ble de stående i skjemaet, og ett «Lagre» overskrev barberens ekte tjenester med dem.
+/* ---- Tjenester + betaling: LISTER + ett ark for legg til / rediger (27.11.2026) ----
+   Lagrede tjenester og betalingsmetoder vises som rader (navn, «1 000 kr · 30 min», ev. beskrivelse) med «Rediger» og «Slett».
+   «Rediger» (eller trykk på raden) åpner ARKET (#tjArk) med verdiene fylt inn; «+ Legg til …» åpner det tomt. Arket er
+   «Legg til booking»-arket sitt skall (pause-modalen) med samme lukking (× / trykk utenfor / Esc), fokus og Enter = Lagre.
+   Hver «Lagre» og «Slett» går rett til backend med HELE den oppdaterte lista, mot de samme endepunktene som før:
+   PUT /api/dashboard/services {hoved,tillegg} (backend erstatter lista) og PUT /api/dashboard/payment-methods {methods}.
+   FAIL-CLOSED: hoved/tillegg/payMethods (og dermed lista) endres først når backend har svart ok; arket lukkes først da, og
+   «Lagret» vises ved raden. Feiler lagringen, står arket med verdiene og feilen. Lukkes arket uten lagring, forkastes endringene.
+   Lagring er av til GET har lyktes (M-6): tomt til en EKTE GET /services — her sto demotjenester som ett «Lagre» kunne
+   skrive over barberens ekte tjenester med. */
 let hoved=[];
 let tillegg=[];
-// true først når GET /services har lyktes. Lagring er umulig før (samme vern som arbeidstidene, M-6).
 var _svcHentet=false;
-// size-attributtet driver navnefeltets innholdsbredde → brekk-terskelen. Gulv 6 (nytt/tomt felt
-// blir ikke absurd smalt), tak 28 (superlange navn brekker uansett, ellipsis tar resten).
-function svcSize(n){return Math.min(Math.max((n||'').length+1,6),28);}
-// Markør vises KUN for navngitte tjenester uten pris — blanke/navnløse rader filtreres uansett
-// bort ved lagring, så et rødt varsel der er bare støy.
-function svcMangler(s){return (s.name||'').trim()!=='' && !(Number(s.price)>0);}
-// Varighet kreves KUN for hovedtjenester (tillegg kan ha 0 min, f.eks. et produkt). L-12.
-function svcMinMangler(s){return (s.name||'').trim()!=='' && !(Number(s.min)>0);}
-function svcFlagTxt(mp,mm){return mp&&mm?'Sett pris og varighet':mp?'Sett pris':mm?'Sett varighet':'';}
-// Beskrivelsen vises bare på v2-bookingsiden → feltet bare for v2 (erV2 = billing.sidemal). v1 beholder verdien urørt i dataene.
-// Felles felt. Pris/min: fast enhet inni boksen («kr»/«min», .svc-enhet-tekst, aria-hidden) + aria-label; tomt felt viser bare plassholderen.
-// Verdien er alltid bare tallet — enheten er CSS, aldri en del av value (lagring sender rene tall, se #saveSvc).
-function svcVerdi(v){return v===''||v==null?'':String(v);}
-function svcNavnFelt(s,l,i){return '<input class="svc-navn" size="'+svcSize(s.name)+'" value="'+esc(s.name)+'" data-l="'+l+'" data-i="'+i+'" data-f="name" placeholder="Navn på tjenesten" aria-label="Navn på tjenesten">';}
-function svcTallFelt(s,l,i,prisKl,minKl){return '<div class="svc-tall">'
-  +'<span class="svc-enhet svc-enhet-pris"><input class="svc-pris'+prisKl+'" type="text" inputmode="decimal" value="'+esc(svcVerdi(s.price))+'" data-l="'+l+'" data-i="'+i+'" data-f="price" placeholder="Pris" aria-label="Pris i kroner"><span class="svc-enhet-tekst" aria-hidden="true">kr</span></span>'
-  +'<span class="svc-enhet svc-enhet-min"><input class="svc-min'+minKl+'" type="text" inputmode="decimal" value="'+esc(svcVerdi(s.min))+'" data-l="'+l+'" data-i="'+i+'" data-f="min" placeholder="Min" aria-label="Varighet i minutter"><span class="svc-enhet-tekst" aria-hidden="true">min</span></span>'
-  +'<button class="svc-rm" data-l="'+l+'" data-i="'+i+'" aria-label="Fjern">&times;</button></div>';}
-function hovedRow(s,i){var mp=svcMangler(s),mm=svcMinMangler(s),ft=svcFlagTxt(mp,mm);return '<div class="svc-row-h">'+svcNavnFelt(s,'h',i)+svcTallFelt(s,'h',i,mp?' pris-0':'',mm?' min-0':'')+'<span class="svc-flag"'+(ft?'':' hidden')+'>'+ft+'</span>'+(erV2()?'<input class="svc-description" data-l="h" data-i="'+i+'" data-f="description" maxlength="120" aria-label="Kort beskrivelse av '+esc((s.name||'').trim()||'tjenesten')+'" placeholder="Hva inngår? (valgfritt)" value="'+esc(s.description||'')+'">':'')+'</div>';}
-function tilleggRow(s,i){var mp=svcMangler(s);return '<div class="svc-row-t">'+svcNavnFelt(s,'t',i)+svcTallFelt(s,'t',i,mp?' pris-0':'','')+'<span class="svc-flag"'+(mp?'':' hidden')+'>Sett pris</span></div>';}
-function renderSvc(){$("#hovedList").innerHTML=hoved.map(hovedRow).join("");$("#tilleggList").innerHTML=tillegg.map(tilleggRow).join("");validateSvc();oppdaterSvcHode();}
-// Overskriftsraden (Tjeneste / Pris / Min.) står bare når den faktisk står over kolonnene: skjules når lista er tom eller
-// minst én rad har brukket tall-gruppa til linje 2 (innholdsstyrt — avhenger av navnelengde, ikke av en breakpoint).
-// Måles kun når lista er synlig; ResizeObserver tar fanebytte, bredde og navn som får raden til å brekke.
-function oppdaterSvcHode(){[['#svcHodeH','#hovedList'],['#svcHodeT','#tilleggList']].forEach(function(p){
-  var hode=$(p[0]),liste=$(p[1]); if(!hode||!liste||liste.offsetParent===null)return;
-  var rader=liste.children, brukket=!rader.length;
-  for(var k=0;k<rader.length&&!brukket;k++){var n=rader[k].querySelector('.svc-navn'),t=rader[k].querySelector('.svc-tall'); if(n&&t&&t.offsetTop>n.offsetTop+2)brukket=true;}
-  hode.hidden=brukket; });}
-if(window.ResizeObserver){var _svcHodeRO=new ResizeObserver(function(){oppdaterSvcHode();}); ['#hovedList','#tilleggList'].forEach(function(s){var e=$(s); if(e)_svcHodeRO.observe(e);});}
-function validateSvc(){
-  const named=hoved.filter(s=>s.name.trim());
-  const btn=$("#saveSvc"),err=$("#svcErr");
-  if(!named.length){btn.disabled=true;err.textContent="Du må ha minst én hovedtjeneste før du kan lagre.";return false;}
-  // Varighet er påkrevd for hovedtjenester (bestemmer slot-lengden). Manglende → blokkér lagring med
-  // synlig melding, ikke stille 30 (L-12). Pris-0 er fortsatt kun en myk markør, som før.
-  if(named.some(s=>!(Number(s.min)>0))){btn.disabled=true;err.textContent="Alle hovedtjenester må ha en varighet i minutter.";return false;}
-  btn.disabled=false;err.textContent="";return true;
+let payMethods=[];
+var _payHentet=false;
+var _tjArk=null;                   // åpent ark: { l:'h'|'t'|'p', i:indeks (-1 = nytt) }
+var _tjRadFeil=null;               // { l, i, tekst } — inline under raden (siste hovedtjeneste, mislykket sletting)
+var _tjLagret=null, _tjLagretT=0;  // { l, i } — grønn «Lagret» ved raden i ~2 s
+var _tjOpptatt=false;              // en lagring/sletting er underveis → ingen nye handlinger før den har svart
+var TJ_LISTE={h:'#hovedList',t:'#tilleggList',p:'#payList'};
+var TJ_LEGG={h:'#addHoved',t:'#addTillegg',p:'#addPay'};
+var TJ_TITTEL={h:['Ny hovedtjeneste','Rediger tjeneste'],t:['Nytt tillegg','Rediger tillegg'],p:['Ny betalingsmetode','Rediger betalingsmetode']};
+var TJ_PLASS={h:'F.eks. Skinfade',t:'F.eks. Skjegg',p:'F.eks. Vipps'};
+// Grenser = backend (tjeneste-grenser.js: SVC_NAME_MAX 80, MAX_PRIS 100000, MAX_MIN 600; beskrivelse 120; PM_MAX_METHODS 6, PM_MAX_LEN 30).
+var TJ_NAVN_MAKS=80, TJ_PRIS_MAKS=100000, TJ_MIN_MAKS=600, PAY_MAKS=6, PAY_LEN=30;
+var TJ_FELT={name:'#tjArkNavn',price:'#tjArkPris',min:'#tjArkMin',description:'#tjArkBeskFelt'};
+var TJ_FEIL={name:'#tjArkNavnFeil',price:'#tjArkPrisFeil',min:'#tjArkMinFeil',description:'#tjArkBeskFeil',_:'#tjArkFeil'};
+function tjArr(l){ return l==='h'?hoved:l==='t'?tillegg:payMethods; }
+function tjHentet(l){ return l==='p'?_payHentet:_svcHentet; }
+// Beskrivelse: bare hovedtjenester, og bare på v2-bookingsiden (erV2 = billing.sidemal). Tillegg har kolonnen i databasen, men
+// bookingsiden viser den ikke for tillegg → ikke noe felt der; en eventuell verdi følger urørt med i lista.
+function tjHarBesk(l){ return l==='h'&&erV2(); }
+// Pris/varighet fra råtekst: «1 200» / «45,5» → hele tall (kr har ingen øre). Tomt → 0. Ugyldig tekst → NaN (feil under feltet).
+function tjTall(raw){ raw=String(raw==null?'':raw).trim(); if(raw==='')return 0;
+  var n=Number(raw.replace(/\s+/g,'').replace(',','.')); return Number.isFinite(n)?Math.round(n):NaN; }
+// Linje 2: «1 000 kr · 30 min». Navngitt tjeneste uten pris → «Sett pris» (samme pris-0-signal som før). Tillegg med 0 min: bare prisen.
+function tjMeta(s){ var pris=Number(s.price)||0, min=Number(s.min)||0;
+  return [pris>0?esc(krFmt(pris)):'<span class="tj-mangler">Sett pris</span>'].concat(min>0?[min+' min']:[]).join(' · '); }
+function tjRadHtml(l,s,i){
+  var navn=l==='p'?s:s.name, vis=_tjLagret&&_tjLagret.l===l&&_tjLagret.i===i;
+  var lagret='<span class="tj-lagret'+(vis?' show':'')+'">Lagret</span>';
+  var h='<div class="tj-rad" data-i="'+i+'"><div class="tj-topp"><span class="tj-navn">'+esc(navn)+'</span>'+(l==='p'?lagret:'')
+    +'<span class="tj-knapper"><button type="button" class="tj-knapp" data-tj="rediger" aria-label="Rediger '+esc(navn)+'">Rediger</button>'
+    +'<button type="button" class="tj-knapp" data-tj="slett" aria-label="Slett '+esc(navn)+'">Slett</button></span></div>';
+  if(l!=='p'){
+    h+='<p class="tj-meta">'+tjMeta(s)+lagret+'</p>';
+    if(tjHarBesk(l)&&s.description) h+='<p class="tj-besk">'+esc(s.description)+'</p>';
+  }
+  if(_tjRadFeil&&_tjRadFeil.l===l&&_tjRadFeil.i===i) h+='<p class="tj-rad-feil" role="alert">'+esc(_tjRadFeil.tekst)+'</p>';
+  return h+'</div>';
 }
-// Samme vern som loadArbeidstider (M-6): «Lagre» og «+ Legg til» er av til hentingen har lyktes. Ved feil
-// (500, nett, tidsavbrudd): feilstate + «Prøv igjen» — aldri et skjema som kan lagres over ekte data.
-function settSvcKontroller(på){ ['#saveSvc','#addHoved','#addTillegg'].forEach(function(s){ var b=$(s); if(b)b.disabled=!på; }); }
+function tjRender(l){
+  var el=$(TJ_LISTE[l]); if(!el)return;
+  el.innerHTML=tjArr(l).map(function(s,i){ return tjRadHtml(l,s,i); }).join('');
+  var add=$(TJ_LEGG[l]); if(add) add.hidden=(l==='p'&&payMethods.length>=PAY_MAKS);
+}
+function renderSvc(){ tjRender('h'); tjRender('t'); }
+function renderPay(){ tjRender('p'); }
+// Et åpent tjenesteark teller som ulagret (fanebytte henter da ikke tjenestene på nytt under det).
+function tjSettUlagret(){ _ulagret.svc=!!(_tjArk&&_tjArk.l!=='p'); }
+
+/* ---- Arket ---- */
+function tjFeil(k,tekst){
+  var p=$(TJ_FEIL[k]); p.textContent=tekst||''; p.hidden=!tekst;
+  var f=TJ_FELT[k]&&$(TJ_FELT[k]); if(f){ if(tekst)f.setAttribute('aria-invalid','true'); else f.removeAttribute('aria-invalid'); }
+}
+function tjFeilNull(){ Object.keys(TJ_FEIL).forEach(function(k){ tjFeil(k,''); }); }
+function tjBeskVoks(){ var t=$("#tjArkBeskFelt"); t.style.height='auto'; t.style.height=(t.scrollHeight+2)+'px'; }   // +2 = rammen (border-box)
+function tjBeskVis(vis){
+  $("#tjArkBesk").hidden=!vis;
+  $("#tjArkBeskLenke").hidden=vis||!(_tjArk&&tjHarBesk(_tjArk.l));
+  if(vis) tjBeskVoks();
+}
+function tjAapne(l,i){
+  if(_tjOpptatt||!tjHentet(l))return;
+  var s=i>=0?tjArr(l)[i]:null;
+  if(_tjRadFeil){ var rl=_tjRadFeil.l; _tjRadFeil=null; tjRender(rl); }
+  _tjArk={l:l,i:i};
+  $("#tjArkH").textContent=TJ_TITTEL[l][i>=0?1:0];
+  $("#tjArkForm").reset(); tjFeilNull();
+  var navn=$("#tjArkNavn");
+  navn.value=l==='p'?(s||''):(s?s.name:''); navn.placeholder=TJ_PLASS[l]; navn.maxLength=l==='p'?PAY_LEN:TJ_NAVN_MAKS;
+  $("#tjArkTall").hidden=(l==='p');
+  $("#tjArkPris").value=s&&l!=='p'&&Number(s.price)>0?String(s.price):'';
+  $("#tjArkMin").value=s&&l!=='p'&&Number(s.min)>0?String(s.min):'';
+  $("#tjArkBeskFelt").value=s&&l!=='p'?(s.description||''):'';
+  var lagre=$("#tjArkLagre"); lagre.textContent='Lagre'; lagre.disabled=false;
+  var ark=$("#tjArk"), m=ark.querySelector('.pause-modal');
+  ark.hidden=false; document.body.style.overflow='hidden';
+  tjBeskVis(!!(tjHarBesk(l)&&s&&s.description));   // har tjenesten beskrivelse, står feltet åpent med en gang
+  m.scrollTop=0; m.focus({preventScroll:true});
+  tjSettUlagret();
+}
+function tjLukk(){
+  if(!_tjArk)return;
+  $("#tjArk").hidden=true; _tjArk=null;
+  if(!CAL.open)document.body.style.overflow='';
+  // Det som sto i feltene forkastes ved lukking (fylles på nytt ved neste åpning) → ikke «ulagret» for versjonssjekken.
+  if(typeof _ulagrede!=='undefined')_ulagrede.forEach(function(el){ if($("#tjArk").contains(el))_ulagrede.delete(el); });
+  tjSettUlagret();
+}
+function tjValider(a){
+  var feil={}, navn=$("#tjArkNavn").value.trim();
+  if(a.l==='p'){ if(!navn)feil.name='Skriv inn en betalingsmetode.'; return {feil:feil,verdi:navn}; }
+  if(!navn) feil.name='Skriv inn navnet på tjenesten.';
+  var pris=tjTall($("#tjArkPris").value), min=tjTall($("#tjArkMin").value);
+  if(Number.isNaN(pris)) feil.price='Skriv prisen som et tall.';
+  else if(pris<0||pris>TJ_PRIS_MAKS) feil.price='Prisen må være mellom 0 og '+krFmt(TJ_PRIS_MAKS)+'.';
+  if(Number.isNaN(min)) feil.min='Skriv varigheten som et tall.';
+  else if(a.l==='h'&&!(min>0)) feil.min='Hovedtjenesten må ha en varighet i minutter.';   // bestemmer slot-lengden (L-12)
+  else if(min<0||min>TJ_MIN_MAKS) feil.min='Varigheten kan være maks '+TJ_MIN_MAKS+' minutter.';
+  var orig=a.i>=0?tjArr(a.l)[a.i]:null;
+  var besk=tjHarBesk(a.l)?($("#tjArkBesk").hidden?'':$("#tjArkBeskFelt").value.trim()):(orig?(orig.description||''):'');
+  return {feil:feil,verdi:{name:navn,description:besk,price:pris,min:min}};
+}
+// Ren form til backend (samme payload som før): {name, description, price, min} med tall.
+function tjUt(s){ return {name:s.name,description:s.description||'',price:Number(s.price)||0,min:Number(s.min)||0}; }
+async function tjSend(l,kand,standardFeil){
+  try{
+    var r=l==='p'
+      ? await apiFetch('/api/dashboard/payment-methods',{method:'PUT',body:JSON.stringify({methods:kand})})
+      : await apiFetch('/api/dashboard/services',{method:'PUT',body:JSON.stringify({hoved:kand.h.map(tjUt),tillegg:kand.t.map(tjUt)})});
+    if(!r) return {ok:false,feil:''};   // 401 → apiFetch sender til logg-inn
+    if(!r.ok){ var d=await r.json().catch(function(){ return null; }); return {ok:false,feil:(d&&d.error)||standardFeil}; }
+    return {ok:true};
+  }catch(e){ return {ok:false,feil:e&&e.tidsavbrudd?KONTAKT_TIDSAVBRUDD:'Fikk ikke kontakt med serveren. Sjekk nettet og prøv igjen.'}; }
+}
+function tjBruk(l,kand){ if(l==='p') payMethods=kand; else { hoved=kand.h; tillegg=kand.t; } }
+function tjVisLagret(l,i){
+  _tjLagret={l:l,i:i}; clearTimeout(_tjLagretT);
+  _tjLagretT=setTimeout(function(){ var x=_tjLagret; _tjLagret=null; if(!x)return;
+    var el=$(TJ_LISTE[x.l]), s=el&&el.querySelector('.tj-rad[data-i="'+x.i+'"] .tj-lagret'); if(s)s.classList.remove('show'); },2000);
+}
+async function tjLagre(e){
+  if(e)e.preventDefault();
+  var a=_tjArk; if(!a||_tjOpptatt)return;
+  var l=a.l; if(!tjHentet(l))return;   // aldri lagre over en liste som ikke er hentet
+  tjFeilNull();
+  var r=tjValider(a), nokler=Object.keys(r.feil);
+  if(nokler.length){ nokler.forEach(function(k){ tjFeil(k,r.feil[k]); }); $(TJ_FELT[nokler[0]]).focus(); return; }
+  if(IS_DEMO){ tjFeil('_','Ikke tilgjengelig i forhåndsvisning.'); return; }
+  var kand, idx;
+  if(l==='p'){ kand=payMethods.slice(); if(a.i<0)kand.push(r.verdi); else kand[a.i]=r.verdi; idx=a.i<0?kand.length-1:a.i; }
+  else{ kand={h:hoved.slice(),t:tillegg.slice()}; var arr=kand[l]; if(a.i<0)arr.push(r.verdi); else arr[a.i]=r.verdi; idx=a.i<0?arr.length-1:a.i;
+    if(!kand.h.length){ tjFeil('_','Du må ha minst én hovedtjeneste før du kan lagre.'); return; } }
+  var knapp=$("#tjArkLagre"); knapp.disabled=true; knapp.textContent='Lagrer …'; _tjOpptatt=true;
+  var res=await tjSend(l,kand,'Kunne ikke lagre. Prøv igjen.');
+  _tjOpptatt=false;
+  var sammeArk=(_tjArk===a);   // arket kan være lukket med × mens kallet gikk
+  if(sammeArk){ knapp.disabled=false; knapp.textContent='Lagre'; }
+  if(!res.ok){ if(sammeArk&&res.feil)tjFeil('_',res.feil); return; }
+  tjBruk(l,kand);
+  if(sammeArk) tjLukk();
+  tjVisLagret(l,idx); tjRender(l);
+  if(l!=='p') oppdaterSjekkliste();   // tjeneste-haken (≥1 med pris) kan ha endret seg
+}
+(function(){
+  $("#tjArkLukk").addEventListener('click',tjLukk);
+  $("#tjArk").addEventListener('click',function(e){ if(e.target===e.currentTarget)tjLukk(); });
+  $("#tjArk").addEventListener('keydown',function(e){ if(e.key!=='Escape')return; e.stopPropagation(); tjLukk(); });
+  $("#tjArkForm").addEventListener('submit',tjLagre);
+  $("#tjArkForm").addEventListener('input',function(e){
+    var k=e.target.dataset&&e.target.dataset.f; if(!k)return;
+    tjFeil(k,''); tjFeil('_','');                   // feilen under feltet forsvinner når feltet endres
+    if(k==='description') tjBeskVoks();
+  });
+  $("#tjArkBeskLenke").addEventListener('click',function(){ tjBeskVis(true); $("#tjArkBeskFelt").focus(); });
+})();
+
+/* ---- Lista ---- */
+async function tjSlett(l,i){
+  if(_tjOpptatt||!tjHentet(l))return;
+  if(l==='h'&&hoved.length<=1){ _tjRadFeil={l:l,i:i,tekst:'Du må ha minst én hovedtjeneste. Legg til en ny før du sletter denne.'}; tjRender(l); return; }
+  if(IS_DEMO){ _tjRadFeil={l:l,i:i,tekst:'Ikke tilgjengelig i forhåndsvisning.'}; tjRender(l); return; }
+  _tjRadFeil=null; _tjLagret=null;
+  var uten=function(a){ return a.filter(function(_,k){ return k!==i; }); };
+  var kand=l==='p'?uten(payMethods):{h:l==='h'?uten(hoved):hoved.slice(),t:l==='t'?uten(tillegg):tillegg.slice()};
+  tjRender(l);
+  var el=$(TJ_LISTE[l]), rad=el&&el.querySelector('.tj-rad[data-i="'+i+'"]');
+  if(rad) rad.querySelectorAll('button').forEach(function(b){ b.disabled=true; });
+  _tjOpptatt=true;
+  var res=await tjSend(l,kand,'Kunne ikke slette. Prøv igjen.');
+  _tjOpptatt=false;
+  if(!res.ok){ if(res.feil)_tjRadFeil={l:l,i:i,tekst:res.feil}; tjRender(l); return; }
+  tjBruk(l,kand); tjRender(l);
+  var a=$(TJ_LEGG[l]); if(a&&!a.hidden)a.focus();
+  if(l!=='p') oppdaterSjekkliste();
+}
+['h','t','p'].forEach(function(l){
+  $(TJ_LISTE[l]).addEventListener('click',function(e){
+    var b=e.target.closest('[data-tj]'), rad=e.target.closest('.tj-rad'); if(!rad)return;
+    if(b){ if(b.dataset.tj==='rediger')tjAapne(l,+rad.dataset.i); else if(b.dataset.tj==='slett')tjSlett(l,+rad.dataset.i); return; }
+    if(!e.target.closest('a,button,input,textarea')) tjAapne(l,+rad.dataset.i);   // trykk på raden = «Rediger»
+  });
+  $(TJ_LEGG[l]).addEventListener('click',function(){ tjAapne(l,-1); });
+});
+// «+ Legg til» er av til hentingen har lyktes. Ved feil (500, nett, tidsavbrudd): feilstate + «Prøv igjen» — aldri en liste
+// som kan lagres over ekte data.
+function settSvcKontroller(på){ ['#addHoved','#addTillegg'].forEach(function(s){ var b=$(s); if(b)b.disabled=!på; }); }
 async function loadTjenester(){
   _svcHentet=false; settSvcKontroller(false);
+  if(_tjRadFeil&&_tjRadFeil.l!=='p') _tjRadFeil=null;
   var r, d=null;
   try{ r=await apiFetch('/api/dashboard/services'); if(r&&r.ok) d=await r.json(); }catch(e){ r=undefined; d=null; }
   if(r===null) return;                             // 401 → apiFetch sender til logg-inn (kastet feil gir undefined)
   if(!d){ $("#tilleggList").innerHTML=''; feilMedRetry($("#hovedList"),'Klarte ikke å laste tjenestene.',loadTjenester); return; }
-  // L-3: tving pris/min til tall (fallback 0) allerede ved innlasting — en ikke-numerisk verdi fra
-  // backend kan ellers nå value="…"-attributtet uendret (attributt-injeksjon). esc() i radene er
-  // andrelinjeforsvar; Number()||0 kutter kilden.
-  hoved=(d.hoved||[]).map(function(s){return{name:s.name,description:s.description||'',price:Number(s.price)||0,min:Number(s.min)||0};});
-  tillegg=(d.tillegg||[]).map(function(s){return{name:s.name,description:s.description||'',price:Number(s.price)||0,min:Number(s.min)||0};});
-  _svcHentet=true; settSvcKontroller(true); _ulagret.svc=false;
+  // L-3: tving pris/min til tall (fallback 0) allerede ved innlasting — esc() i radene er andrelinjeforsvar.
+  var tilRad=function(s){ return {name:String(s.name||''),description:s.description||'',price:Number(s.price)||0,min:Number(s.min)||0}; };
+  hoved=(d.hoved||[]).map(tilRad).filter(function(s){ return s.name.trim(); });
+  tillegg=(d.tillegg||[]).map(tilRad).filter(function(s){ return s.name.trim(); });
+  _svcHentet=true; settSvcKontroller(true); tjSettUlagret();
   renderSvc();
 }
-// Ny rad starter tom (plassholderne «Pris»/«Min» synes); lagring gjør tomt til 0 (rene tall).
-$("#addHoved").addEventListener("click",()=>{hoved.push({name:"",description:"",price:"",min:""});renderSvc();});
-$("#addTillegg").addEventListener("click",()=>{tillegg.push({name:"",description:"",price:"",min:""});renderSvc();});
-$("#hovedList").addEventListener("input",svcInput);
-$("#tilleggList").addEventListener("input",svcInput);
-function svcInput(e){const l=e.target.dataset.l,i=+e.target.dataset.i,f=e.target.dataset.f;if(f==null)return;const arr=l==="h"?hoved:tillegg;
-  if(f==="name"){arr[i].name=e.target.value;e.target.size=svcSize(e.target.value);}
-  else if(f==="description"){arr[i].description=e.target.value;}
-  else if(f==="price"){
-    // Prisfeltet er type=text inputmode=decimal → JS ser råstrengen, også kommaet (type=number avviste
-    // det til value="" før JS så det). Norske brukere taster «45,5»: komma→punktum, rund til nærmeste
-    // hele krone (kr har ingen øre her → 45,5 blir 46). Klamp negativ→0 (backend avviser negativ
-    // fail-closed uansett). Tomt felt → 0 («Sett pris»-markøren er det SYNLIGE signalet, ikke et stille
-    // tilbakefall). Ugyldig råtekst («abc») → behold forrige verdi i stedet for å nulle den.
-    var raw=e.target.value.trim();
-    if(raw===""){arr[i].price=0;}
-    else{var n=parseFloat(raw.replace(/\s+/g,'').replace(',','.'));if(Number.isFinite(n))arr[i].price=Math.max(0,Math.round(n));}
-  }
-  else{
-    // Varighet: samme komma-parsing som pris (L-12) — type=text ser råstrengen (type=number avviste
-    // «1,5» til value="" før JS så det). Tomt → 0 (fanges av markør/validering for hovedtjenester,
-    // ikke stille 30). Ugyldig råtekst → behold forrige verdi i stedet for å nulle den.
-    var raw=e.target.value.trim();
-    if(raw===""){arr[i].min=0;}
-    else{var n=parseFloat(raw.replace(/\s+/g,'').replace(',','.'));if(Number.isFinite(n))arr[i].min=Math.max(0,Math.round(n));}
-  }
-  // Markørene avhenger av navn+pris (og navn+varighet for hovedtjenester) → oppdater raden live uten
-  // re-render (bevarer fokus). isHoved styrer om varighet-markøren gjelder (tillegg krever ikke min).
-  if(f==="price"||f==="min"||f==="name"){var row=e.target.closest(".svc-row-h,.svc-row-t");if(row)markPris0(row,arr[i],l==="h");}
-  validateSvc();}
-function markPris0(row,s,isHoved){
-  var mp=svcMangler(s), mm=!!(isHoved&&svcMinMangler(s));
-  var pris=row.querySelector(".svc-pris");if(pris)pris.classList.toggle("pris-0",mp);
-  var min=row.querySelector(".svc-min");if(min)min.classList.toggle("min-0",mm);
-  var flag=row.querySelector(".svc-flag");if(flag){var ft=svcFlagTxt(mp,mm);flag.textContent=ft;flag.hidden=!ft;}
-}
-$("#hovedList").addEventListener("click",svcRemove);
-$("#tilleggList").addEventListener("click",svcRemove);
-function svcRemove(e){const b=e.target.closest(".svc-rm");if(!b)return;const l=b.dataset.l,i=+b.dataset.i;(l==="h"?hoved:tillegg).splice(i,1);renderSvc();}
-$("#saveSvc").addEventListener("click",function(){
-  if(!_svcHentet)return;   // aldri lagre et skjema som ikke er fylt fra en vellykket henting
-  if(!validateSvc())return;
-  medLagreKnapp(async()=>{
-    const r=await apiFetch('/api/dashboard/services',{method:'PUT',body:JSON.stringify({
-      // Rene tall til backend: enheten er CSS, og en tom ny rad har '' → 0.
-      hoved:   hoved.filter(s=>s.name.trim()).map(s=>({...s,price:Number(s.price)||0,min:Number(s.min)||0})),
-      tillegg: tillegg.filter(s=>s.name.trim()).map(s=>({...s,price:Number(s.price)||0,min:Number(s.min)||0})),
-    })});
-    if(!r)return;
-    if(!r.ok){const d=await r.json().catch(()=>{});alert(d?.error||'Kunne ikke lagre tjenester. Prøv igjen.');return;}
-    await loadTjenester(); // refetch: tomme (ufiltrerte) rader forsvinner lokalt + backend-normalisering (min/pris/rekkefølge) speiles. Samme mønster som loyalty/design.
-    savedFlash("#svcSaved");
-    oppdaterSjekkliste(); // tjeneste-haken (≥1 med pris) kan ha endret seg
-  }, {btn:$("#saveSvc"), feil:'Kunne ikke lagre tjenester. Prøv igjen.'});
-});
-
-/* ---- Betaling (valgfri): rader = betalingsmetoder. Lastes fra innstillings-loaderen ved init. ---- */
-let payMethods=[];
-function payRow(v,i){return '<div class="pay-row"><input value="'+esc(v)+'" data-i="'+i+'" placeholder="Cash" aria-label="Betalingsmetode"><button class="svc-rm" data-pi="'+i+'" aria-label="Fjern betalingsmetode">&times;</button></div>';}
-function renderPay(){var el=$("#payList");if(!el)return;el.innerHTML=payMethods.map(payRow).join("");var add=$("#addPay");if(add)add.style.display=payMethods.length>=6?'none':'';}
-// Samme vern som tjenestene: api.settings() gir {_hentFeilet:true} ved feil — da ble lista tom, og «Lagre
-// betaling» sendte {methods:[]} og slettet Vipps/Kort. Nå: feilstate + «Prøv igjen», lagring av til GET har lyktes.
-var _payHentet=false;
-async function loadPayment(){                       // innstillings-loaderen (api.settings) → payment_methods
-  _payHentet=false; ['#savePay','#addPay'].forEach(function(s){ var b=$(s); if(b)b.disabled=true; });
+// Betaling (valgfri): lastes fra innstillings-loaderen ved init. Samme vern som tjenestene: api.settings() gir
+// {_hentFeilet:true} ved feil — da ble lista tom, og en lagring sendte {methods:[]} og slettet Vipps/Kort.
+async function loadPayment(){
+  _payHentet=false; var add=$("#addPay"); if(add)add.disabled=true;
   var s=null;
   try{ s=await api.settings(); }catch(e){ s=null; }
   if(!s||s._hentFeilet){ feilMedRetry($("#payList"),'Klarte ikke å laste betalingsmetodene.',loadPayment); return; }
-  _payHentet=true; ['#savePay','#addPay'].forEach(function(s){ var b=$(s); if(b)b.disabled=false; });
-  payMethods=((s&&s.payment_methods)||[]).slice();
-  if(!payMethods.length)payMethods=['']; // seed én tom rad så «Cash»-placeholderen vises
+  _payHentet=true; if(add)add.disabled=false;
+  payMethods=((s&&s.payment_methods)||[]).map(function(m){ return String(m==null?'':m).trim(); }).filter(Boolean);
   renderPay();
 }
-$("#payList").addEventListener('input',function(e){var inp=e.target.closest('input[data-i]');if(!inp)return;payMethods[+inp.dataset.i]=inp.value;});
-$("#payList").addEventListener('click',function(e){var b=e.target.closest('[data-pi]');if(!b)return;payMethods.splice(+b.dataset.pi,1);renderPay();});
-$("#addPay").addEventListener('click',function(){
-  if(payMethods.length>=6)return;
-  payMethods.push('');renderPay();
-  var inputs=$("#payList").querySelectorAll('input');if(inputs.length)inputs[inputs.length-1].focus();
-});
-$("#savePay").addEventListener('click',function(){
-  if(!_payHentet)return;   // aldri lagre en liste som ikke er fylt fra en vellykket henting
-  var methods=payMethods.map(function(m){return (m||'').trim();}).filter(function(m){return m;}); // trimmet, ikke-tom, radrekkefølge
-  medLagreKnapp(async function(){
-    var r=await apiFetch('/api/dashboard/payment-methods',{method:'PUT',body:JSON.stringify({methods:methods})});
-    if(!r)return;
-    if(!r.ok){var d=await r.json().catch(function(){});alert((d&&d.error)||'Kunne ikke lagre betaling. Prøv igjen.');return;}
-    await loadPayment(); // refetch: tomme rader forsvinner lokalt + backend speiles (samme som loadTjenester over)
-    savedFlash("#paySaved");
-  }, {btn:$("#savePay"), feil:'Kunne ikke lagre betaling. Prøv igjen.'});
-});
 
 /* ---- Design (ferdige presets) ---- */
 const FONTS=[
@@ -9559,7 +9635,7 @@ async function applyBillingReturn(){
 
 function applyDemoMode(){
   document.getElementById('demoBanner').classList.add('show');
-  ['saveProfil','saveNavn','saveSvc','savePay','saveDesign','saveHours','cropSave',
+  ['saveProfil','saveNavn','saveDesign','saveHours','cropSave',
    'slotPopupFjern','slotPopupEndre','gcalBtn',
    'fbSend-side','fbSend-konto-ide','fbSend-konto-support',  // tre bokser, én handler
    // Konto: én hovedknapp + tekstlenker (startSub/goLive er slått sammen til kontoAksjon)
