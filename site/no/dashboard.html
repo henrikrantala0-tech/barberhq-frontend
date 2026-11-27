@@ -1354,43 +1354,30 @@
   .hs-lenke{width:100%;box-sizing:border-box;font:inherit;font-size:16px;color:var(--ink);background:var(--bg);
     border:1px solid var(--line-2);border-radius:8px;padding:10px 12px}
   .hs-lenke-hjelp{font-size:12.5px;color:var(--mut);margin:6px 0 0}
-  /* «Få din første booking» (Oversikt, øverst). Samme kortflate som hjemskjerm-kortet. Hvert steg er
-     [kryss][innhold]; krysset er en 44px trykkflate rundt en 20px sirkel. Ingen teller, ingen prosent. */
-  .fb-kort{background:var(--surface);border:1px solid var(--ov-seg-line);border-radius:12px;padding:18px;margin:18px 0}
-  .fb-kort[hidden],.fb-kort [hidden]{display:none}
-  .fb-h{font-size:15px;font-weight:600;letter-spacing:-.01em;color:var(--ink);margin:0 0 4px;line-height:1.3}
-  .fb-s{font-size:13.5px;font-weight:400;color:var(--mut);line-height:1.5;margin:0 0 6px}
-  .fb-steg{list-style:none;margin:0;padding:0}
-  .fb-steg li{display:grid;grid-template-columns:28px minmax(0,1fr);column-gap:6px;align-items:start;padding:12px 0 0}
-  .fb-steg li + li{border-top:1px solid var(--line);margin-top:12px}
-  .fb-kryss{appearance:none;position:relative;width:44px;height:44px;margin:-12px 0 0 -12px;padding:0;border:0;background:0;
-    cursor:pointer;display:flex;align-items:center;justify-content:center;color:var(--surface)}
-  .fb-kryss::before{content:'';width:20px;height:20px;border-radius:50%;border:1.8px solid var(--line-2);box-sizing:border-box}
-  .fb-kryss svg{position:absolute;width:12px;height:12px;fill:none;stroke:currentColor;stroke-width:2.4;
-    stroke-linecap:round;stroke-linejoin:round;opacity:0}
-  .fb-kryss[aria-checked="true"]::before{background:var(--ink);border-color:var(--ink)}
-  .fb-kryss[aria-checked="true"] svg{opacity:1}
-  html.tastatur .fb-kryss:focus{outline:2px solid var(--info);outline-offset:-6px;border-radius:12px}
-  .fb-tittel{font-size:14px;font-weight:600;color:var(--ink);margin:0;line-height:20px}   /* stegnavn = radnavn → 600 */
-  li[data-ferdig] .fb-tittel{color:var(--mut)}
-  .fb-tekst{font-size:13.5px;font-weight:400;color:var(--mut);line-height:1.5;margin:4px 0 0}
-  .fb-melding{font-size:13px;color:var(--ink-2);line-height:1.45;margin:8px 0 0;padding:8px 10px;border-radius:8px;
-    background:var(--bg);overflow-wrap:anywhere}
-  .fb-knapp{margin-top:10px}
+  /* «Få din første booking» (Oversikt, rett under I DAG, 27.11.2026). RAMMEFRI seksjon som de andre (.ovs-sek):
+     hårlinje under, ingen kort. Tre nummererte steg skilt med hårlinje. Ingen kryss, ingen lagring. */
+  #oversikt > .ovs-sek[hidden],#forsteBooking [hidden]{display:none}
+  .fb-h{font-size:17px;font-weight:600;letter-spacing:-.015em;color:var(--ink);margin:0;line-height:1.3}
+  .fb-s{font-size:13.5px;font-weight:400;color:var(--mut);line-height:1.5;margin:4px 0 0}
+  .fb-steg{list-style:none;margin:16px 0 0;padding:0}
+  .fb-steg li{display:grid;grid-template-columns:20px minmax(0,1fr);column-gap:10px;align-items:start;padding:16px 0;border-top:1px solid var(--ov-hair)}
+  .fb-steg li:last-child{padding-bottom:0}
+  .fb-nr{font-size:14px;font-weight:600;color:var(--mut);line-height:20px;font-variant-numeric:tabular-nums}   /* stegnummer → 600 */
+  .fb-tittel{font-size:15px;font-weight:600;letter-spacing:-.01em;color:var(--ink);margin:0;line-height:20px}   /* radnavn → 600 */
+  .fb-melding{font-size:13.5px;font-weight:400;color:var(--mut);line-height:1.5;margin:4px 0 0;overflow-wrap:anywhere}
+  .fb-knapp{display:inline-flex;align-items:center;justify-content:center;height:40px;margin-top:12px;padding:0 16px;appearance:none;
+    border-radius:8px;background:transparent;border:1px solid var(--ov-btn-line);color:var(--ink);font-family:inherit;font-size:13.5px;
+    font-weight:600;letter-spacing:-.01em;cursor:pointer;white-space:nowrap}
+  .fb-knapp:hover{border-color:var(--mut)}
+  /* Første booking via bookingsiden kom: én grønn linje med hake, ÉN gang (fbTegn). */
+  .fb-inne{display:flex;align-items:center;gap:8px;margin:0;font-size:14px;font-weight:600;letter-spacing:-.01em;color:var(--good);line-height:20px}
+  .fb-inne .ikon{width:18px;height:18px;flex-shrink:0;stroke-width:2.4}
   /* Knapper i de midlertidige kortene = Oversiktens knapper: 46px, radius 8, 14/600. Primær = ink-fyll (hvit i mørk). */
-  .fb-kort .fb-knapp,.hs-kort .btn,#oversikt .sms-tilbud #smsTilbudSe{display:inline-flex;align-items:center;justify-content:center;height:46px;min-height:46px;padding:0 18px;border-radius:8px;font-size:14px;font-weight:600;letter-spacing:-.01em}
-  .fb-kort .fb-knapp{background:transparent;border:1px solid var(--ov-btn-line);color:var(--ink)}
-  .fb-kort .fb-knapp:hover{border-color:var(--mut)}
+  .hs-kort .btn,#oversikt .sms-tilbud #smsTilbudSe{display:inline-flex;align-items:center;justify-content:center;height:46px;min-height:46px;padding:0 18px;border-radius:8px;font-size:14px;font-weight:600;letter-spacing:-.01em}
   .hs-kort .btn,#oversikt .sms-tilbud #smsTilbudSe{width:100%;background:var(--ink);color:var(--bg);border:1px solid var(--ink)}
   .hs-kort .btn:hover,#oversikt .sms-tilbud #smsTilbudSe:hover{opacity:.9}
-  /* Krympet (alle tre krysset, ingen booking ennå): én linje + «Vis stegene». Kortet beholder flaten,
-     men med mindre luft — det skal ikke ta plass fra resten av Oversikt. */
-  .fb-kort.fb-krympet{padding:12px 18px}
-  .fb-krympet-rad{display:flex;align-items:center;justify-content:space-between;gap:4px 12px;flex-wrap:wrap}
-  .fb-krympet-rad p{font-size:13.5px;font-weight:400;line-height:1.5;color:var(--mut);margin:0;flex:1 1 220px}
-  .fb-vis{appearance:none;font:inherit;font-size:13px;font-weight:600;color:var(--info);background:0;border:0;
-    padding:12px 0;margin:-12px 0;cursor:pointer;text-decoration:underline;text-underline-offset:3px;white-space:nowrap}
-  .fb-vis:hover{color:var(--ink)}
+  /* Mens stegene vises, bor story-inngangen bare i steg 3 — den vanlige i I DAG skjules (Henrik 27.11). */
+  #oversikt.fb-aktiv #storyLedigeLinje,#oversikt.fb-aktiv #storyOpenOversikt,#oversikt.fb-aktiv #storyFullt{display:none}
   .hs-kort-tekst + .hs-steg{margin-top:12px}
   .hs-installer{margin-top:14px}
 
@@ -1998,48 +1985,6 @@
          på siste steg i oppsettet (autolagring, ingen lagreknapp). Synlighet: DinSideV2.tegnFullfor (fra billing). Stil: dinside-v2.css. -->
     <button type="button" class="dv2-fullfor" id="dv2Fullfor" hidden><span><strong>Fullfør siden din</strong><span class="under">Fortsett oppsettet der du slapp.</span></span><svg class="ikon pil" aria-hidden="true" focusable="false"><use href="ikoner.svg#chevron"></use></svg></button>
 
-    <!-- «Få din første booking» (13.10). Vises KUN når page_status==='live' og GET /aktivering gir
-         har_booking===false — feiler kallet eller mangler feltet, vises ingenting. Forsvinner av seg selv
-         ved første booking (avledet i backend, intet skjult-flagg). Kryssene lagres per barber på serveren
-         (POST /aktivering/steg). Ingen priser og ingen Vekst-salg her. renderForsteBooking. [oversettelse: sv/da/en] -->
-    <section class="fb-kort" id="forsteBooking" hidden aria-label="Få din første booking">
-      <!-- Krympet: alle tre steg krysset, har_booking fortsatt false. «Vis stegene» åpner dem igjen. -->
-      <div class="fb-krympet-rad" id="fbKrympet" hidden>
-        <p>Lenka er delt. Første booking kommer når en kunde bruker den.</p>
-        <button type="button" class="fb-vis" id="fbVis">Vis stegene</button>
-      </div>
-      <div id="fbFull">
-      <p class="fb-h" id="fbTittel">Få din første booking</p>
-      <p class="fb-s">Siden din er live. Nå gjelder det å få kundene dit.</p>
-      <ol class="fb-steg">
-        <li data-steg="svarmelding">
-          <button type="button" class="fb-kryss" role="checkbox" aria-checked="false" aria-label="Ferdig: Svar kundene med lenka"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 6.4 4.8 9 9.8 3.2"/></svg></button>
-          <div>
-            <p class="fb-tittel">Svar kundene med lenka</p>
-            <p class="fb-tekst">Når noen spør om time på Snap eller Instagram: send dette i stedet for å avtale tiden selv.</p>
-            <p class="fb-melding" id="fbMelding"></p>
-            <button type="button" class="btn-outline fb-knapp" data-fb-handling="svarmelding">Kopier svarmelding</button>
-          </div>
-        </li>
-        <li data-steg="bio">
-          <button type="button" class="fb-kryss" role="checkbox" aria-checked="false" aria-label="Ferdig: Legg lenka i Instagram-bioen"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 6.4 4.8 9 9.8 3.2"/></svg></button>
-          <div>
-            <p class="fb-tittel">Legg lenka i Instagram-bioen</p>
-            <button type="button" class="btn-outline fb-knapp" data-fb-handling="bio">Kopier lenke</button>
-          </div>
-        </li>
-        <li data-steg="story">
-          <button type="button" class="fb-kryss" role="checkbox" aria-checked="false" aria-label="Ferdig: Legg ut en story"><svg viewBox="0 0 12 12" aria-hidden="true"><path d="M2.2 6.4 4.8 9 9.8 3.2"/></svg></button>
-          <div>
-            <p class="fb-tittel">Legg ut en story</p>
-            <p class="fb-tekst">Vis ledige timer i dag eller i morgen, med lenka til siden din.</p>
-            <button type="button" class="btn-outline fb-knapp" data-fb-handling="story">Lag story</button>
-          </div>
-        </li>
-      </ol>
-      </div>
-    </section>
-
     <!-- Hjemskjerm-kortet (13.10). Erstatter topplinje-stripa og Konto-raden: ÉN flate. Skjult i markup;
          oppdaterHjemskjermKort() viser kortet på telefon (iOS/Android) når dashbordet ikke kjører som app,
          ikke er installert og ikke er lukket, og avslører NØYAKTIG én [data-hs]-variant. Ikonene er egne
@@ -2120,6 +2065,42 @@
           <button type="button" class="lnk-quiet" id="smsTilbudIkkeNaa">Ikke nå</button>
         </div>
       </div>
+    </section>
+
+    <!-- «Få din første booking» (27.11.2026, bygget om fra kortet 13.10). Rammefri seksjon rett under I DAG. Vises KUN når
+         page_status==='live' og GET /aktivering gir har_bookingside_booking===false (reserve: har_booking) — feiler kallet
+         eller mangler feltene, vises ingenting. «Legg til booking» teller ikke. Ingen kryss, ingen lagring, ingen pris/Vekst.
+         Når første bookingside-booking kommer: #fbInne én gang. fbTegn. [oversettelse: sv/da/en] -->
+    <section class="ovs-sek" id="forsteBooking" hidden aria-label="Få din første booking">
+      <div id="fbFull">
+        <h2 class="fb-h">Få din første booking</h2>
+        <p class="fb-s">Siden din er klar. Tre ting som får kundene til å bruke den.</p>
+        <ol class="fb-steg">
+          <li>
+            <span class="fb-nr" aria-hidden="true">1</span>
+            <div>
+              <p class="fb-tittel">Svar med lenka når noen spør om time</p>
+              <p class="fb-melding" id="fbMelding"></p>
+              <button type="button" class="fb-knapp" data-fb-handling="svarmelding">Kopier svar</button>
+            </div>
+          </li>
+          <li>
+            <span class="fb-nr" aria-hidden="true">2</span>
+            <div>
+              <p class="fb-tittel">Legg lenka i Instagram-bioen</p>
+              <button type="button" class="fb-knapp" data-fb-handling="bio">Kopier lenke</button>
+            </div>
+          </li>
+          <li>
+            <span class="fb-nr" aria-hidden="true">3</span>
+            <div>
+              <p class="fb-tittel">Del ledige timer på story</p>
+              <button type="button" class="fb-knapp" data-fb-handling="story">Lag story</button>
+            </div>
+          </li>
+        </ol>
+      </div>
+      <p class="fb-inne" id="fbInne" role="status" hidden><svg class="ikon" aria-hidden="true" focusable="false"><use href="ikoner.svg#hake"></use></svg>Første booking er inne.</p>
     </section>
 
     <!-- 2. KOMMENDE — dag-gruppert, rullende 7 dager etter i dag (maks 20 rader). Rammefri scroll-beholder
@@ -3944,14 +3925,25 @@ async function hentHarLedige(){
     return d.har_ledige;
   }catch(e){ return null; }
 }
+// Linja venter (_storyLinjeVent) til «Få din første booking» er avgjort, og står ikke mens stegene vises — da bor
+// story-inngangen i steg 3. Viktig fordi visning MELDES til backend (meldVist → frekvensvernet): en linje som aldri
+// ble sett, skal ikke bruke opp ukas visning. slippStoryLinje kalles også fra renderForsteBooking.
+var _storyLinjeVent=null;
+function slippStoryLinje(){
+  var v=_storyLinjeVent; if(!v || !fbAvgjort() || fbStegeneApne()) return;
+  _storyLinjeVent=null; v();
+}
 async function loadStoryLedigeLinje(){
   var linje=$("#storyLedigeLinje"), knapp=$("#storyOpenOversikt"), fullt=$("#storyFullt"); if(!linje||!knapp) return;
   var harLedige=hentHarLedige();   // parallelt med /ledige
-  function skjul(){ linje.hidden=true; linje.textContent=''; knapp.hidden=true; if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud(); }
+  function skjul(){ _storyLinjeVent=null; linje.hidden=true; linje.textContent=''; knapp.hidden=true; if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud(); }
   if(fullt) fullt.hidden=true;
   // Fullt de neste dagene → ingen knapp (en story uten ledige tider lages aldri), dempet linje i stedet.
   if((await harLedige)===false){ skjul(); if(fullt) fullt.hidden=false; return; }
-  function vis(d,naar,dato){ linje.textContent='Du har '+ledigTekst(d.antall)+' '+naar; linje.hidden=false; knapp.hidden=false; meldVist(dato); if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud(); }
+  function vis(d,naar,dato){
+    _storyLinjeVent=function(){ linje.textContent='Du har '+ledigTekst(d.antall)+' '+naar; linje.hidden=false; knapp.hidden=false; meldVist(dato); if(typeof oppdaterSmsTilbud==='function')oppdaterSmsTilbud(); };
+    slippStoryLinje();
+  }
   var tz='Europe/Oslo';
   var iDag=new Date().toLocaleDateString('en-CA',{timeZone:tz});
   var m=new Date(iDag+'T12:00:00Z'); m.setUTCDate(m.getUTCDate()+1); var iMorgen=m.toISOString().slice(0,10);
@@ -3968,6 +3960,9 @@ async function loadOversikt(){
   // Speiler winback/verving/loyalty-loaderne: kast → synlig feil + «Prøv igjen».
   try{
     const payload=await api.statsDaily();
+    // Nøkkeltall skjules til minst én fullført booking (27.11.2026). Settes FØR tallene tegnes (fitKpi måler).
+    _ovsFullforte = (payload && typeof payload.completed_all_time==='number') ? payload.completed_all_time : null;
+    oppdaterOversiktSeksjoner();
     fillMonths(payload.months_with_data); // sync "Tidligere"-dropdown med ekte måneder
     const days=sliceDaily(payload.daily||[],curPeriod);
     const totalRev=days.reduce(function(a,d){return a+d.kr;},0);
@@ -3988,6 +3983,7 @@ async function loadOversikt(){
     renderBarChart(days,curPeriod);
     loadUpcoming();
   }catch(e){
+    _ovsFullforte=null; oppdaterOversiktSeksjoner();   // feil → seksjonen står med «Prøv igjen»
     feilMedRetry($("#stats"),'Klarte ikke å laste tallene.',loadOversikt);
     loadUpcoming(); // egen feilhåndtering → setter #upcomingList til sin egen feilstate
   }
@@ -4485,6 +4481,7 @@ function renderUpcoming(){
   var today=osloTodayKey();
   var kommende=_upcoming.filter(function(x){return osloDayKey(x.start)>today;});
   var ant=$("#kommendeAntall"); if(ant) ant.textContent=kommende.length+' neste 7 dager';
+  _kommendeAntall=kommende.length; oppdaterOversiktSeksjoner();
   var byKey={}, keys=[];
   kommende.slice(0,20).forEach(function(x){var k=osloDayKey(x.start); if(!byKey[k]){byKey[k]=[];keys.push(k);} byKey[k].push(x);});
   $("#upcomingList").innerHTML = keys.length
@@ -8417,7 +8414,8 @@ function billingUkjent(){ return !_billingKjent; }
 // «Prøv igjen» som re-kjører loadBilling. Ikke fail-open til ugatet fetch.
 function visBillingFeil(el){ if(el) el.innerHTML='<p class="wb-empty">Kunne ikke laste akkurat nå. <button type="button" class="retry-lenke" data-billing-retry>Prøv igjen</button></p>'; }
 function billingFeilRender(){ if(window.DinSideV2)DinSideV2.billingFeilet(); ['#wbList','#vervSendList','#loyalOversikt'].forEach(function(s){ visBillingFeil($(s)); });
-  if(typeof oppdaterHjemskjermKort==='function') oppdaterHjemskjermKort(); }   // første booking avgjort (skjult) → kortet kan vises
+  if(typeof oppdaterHjemskjermKort==='function') oppdaterHjemskjermKort();   // første booking avgjort (skjult) → kortet kan vises
+  if(typeof slippStoryLinje==='function') slippStoryLinje(); }               // … og ledige-linja i I DAG kan vises
 document.addEventListener('click',function(e){ var b=e.target.closest('[data-billing-retry]'); if(!b)return; e.preventDefault();
   ['#wbList','#vervSendList','#loyalOversikt'].forEach(function(s){ var el=$(s); if(el)el.innerHTML='<p class="wb-empty">Laster …</p>'; });
   loadBilling(); // suksess → oppdaterSkjoldFlater re-kjører loaderne; ny feil → billingFeilRender igjen
@@ -9287,7 +9285,7 @@ initTheme();
 initChartTouch(); // lag 2: koble pointer-events på #chartBars (én gang; overlever innerHTML-rebuild)
 loadProfil(); // fyller header-navn + profil-fane ved sideload
 loadOversikt();
-loadAktivering(); // «Få din første booking»: har_booking + kryss (vises først når billing sier live)
+loadAktivering(); // «Få din første booking»: har_bookingside_booking (reserve har_booking); vises først når billing sier live
 loadPayment(); // betalingsmetoder (Tjenester-fanen) fra innstillings-loaderen
 // Oversikt-nudgen (ferske no-shows) fylles av loadWinback — men FØRST etter at plan er kjent, så
 // erBasis()-guarden virker og basis ikke henter kundedata ved sideload (init-race lukket).
@@ -9393,112 +9391,92 @@ function erStandalone(){
          || window.navigator.standalone===true;
 }
 
-/* ---- «Få din første booking» (Oversikt) ----
-   Kontrakt (backend 1647f62): GET /api/dashboard/aktivering → { har_booking, steg:{svarmelding,bio,story} };
-   POST /api/dashboard/aktivering/steg { steg, ferdig } → { steg }. Demo → 403 på POST.
-   Vises KUN når billing sier page_status==='live' OG har_booking===false. Alt annet — kallet feiler, feltet
-   mangler, billing ukjent, ingen slug — gir INGENTING (fail-closed: aldri vist på mistanke).
-   Kryss: oppdateres lokalt med en gang, POST sendes; feiler POST (også 403 i demo), rulles krysset
-   tilbake uten melding. Kopier/«Lag story» krysser av steget selv (kun hvis det ikke alt er ferdig). */
-const FB_STEG=['svarmelding','bio','story'];
-var _aktivering=null;   // null = ukjent/feilet → seksjonen skjult
+/* ---- «Få din første booking» (Oversikt, rett under I DAG) — bygget om 27.11.2026 ----
+   Kontrakt: GET /api/dashboard/aktivering → { har_bookingside_booking, har_booking }. har_bookingside_booking teller
+   BARE bookinger fra bookingsiden (bookings.kilde='bookingside'), så «Legg til booking» (kilde 'manuell') skjuler ikke
+   stegene. Mangler feltet (eldre backend), brukes har_booking som før — det virker uansett hvilken deploy som kommer først.
+   Stegene vises KUN når billing sier page_status==='live' OG feltet er false. Kallet feiler, feltene mangler, billing
+   ukjent, ingen slug → ingenting (fail-closed: aldri vist på mistanke). Ingen kryss og ingen lagring på serveren.
+   Første bookingside-booking: stegene forsvinner, og «Første booking er inne.» står ÉN gang — bare i en nettleser som
+   har vist stegene (FB_SETT), og aldri igjen etter at linja er vist (FB_INNE). Linja står resten av denne sidevisningen.
+   Mens stegene vises: hjemskjerm-kortet venter, story-inngangen i I DAG skjules (#oversikt.fb-aktiv), Kommende vises
+   bare med kommende bookinger (oppdaterOversiktSeksjoner). */
+var _aktivering=null;   // null = ukjent/feilet → seksjonen skjult; ellers {har_booking} (bookingsiden, eller reserve)
 var _aktiveringKjent=false;   // true når GET /aktivering har svart (eller feilet)
-// Alle tre krysset → seksjonen krympes til én linje. «Vis stegene» setter _fbApnet. Den nullstilles
-// først når SERVEREN bekrefter at et steg mangler kryss (fbNullstillApnet) — ikke på det optimistiske
-// trykket, ellers ville en tilbakerulling (403/500) klappe stegene sammen midt i bruk.
-var _fbApnet=false;
+var _fbInneNaa=false;   // «Første booking er inne.» vises i denne sidevisningen
+var FB_SETT='bhq-fb-sett', FB_INNE='bhq-fb-inne-vist';
+function fbLes(k){ try{ return localStorage.getItem(k); }catch(_){ return null; } }
+function fbSkriv(k){ try{ localStorage.setItem(k,'1'); }catch(_){} }
 async function loadAktivering(){
   var d=null;
   try{
     var r=await apiFetch('/api/dashboard/aktivering');
     if(r&&r.ok) d=await r.json();
   }catch(_){ d=null; }
-  _aktivering=(d&&typeof d.har_booking==='boolean'&&d.steg&&typeof d.steg==='object')
-    ? {har_booking:d.har_booking, steg:fbStegFra(d.steg)} : null;
+  var har = !d ? null
+    : typeof d.har_bookingside_booking==='boolean' ? d.har_bookingside_booking
+    : typeof d.har_booking==='boolean' ? d.har_booking : null;
+  _aktivering = har===null ? null : {har_booking:har};
   _aktiveringKjent=true;
-  fbNullstillApnet();
   renderForsteBooking();
 }
-function fbNullstillApnet(){ if(_aktivering&&!FB_STEG.every(function(k){ return _aktivering.steg[k]===true; })) _fbApnet=false; }
-function fbStegFra(o){ var s={}; FB_STEG.forEach(function(k){ s[k]=!!(o&&o[k]===true); }); return s; }
 function fbLenke(){ return CONFIG.BARBER_SLUG ? CONFIG.SITE_BASE+'/'+CONFIG.BARBER_SLUG : null; }
 // Låst copy (Henrik 13.10): uten https:// — slik barbereren skriver den selv i en DM.
 function fbSvarmelding(){ return 'Yes 👌 Se ledige tider og book her: '+CONFIG.SITE_BASE.replace(/^https?:\/\//,'')+'/'+CONFIG.BARBER_SLUG; }
-// Hjemskjerm-kortet og stegene vises ALDRI samtidig: kortet venter mens stegene står åpne.
+// Hjemskjerm-kortet og stegene vises ALDRI samtidig: kortet venter mens stegene står.
 // avgjort = både /aktivering og billing har svart (eller feilet) — før det vet vi ikke om stegene
 // kommer, og kortet holdes tilbake så det ikke blinker inn og ut for en ny barber.
 function fbAvgjort(){ return _aktiveringKjent && (_billingKjent||_billingFeilet); }
-function fbStegeneApne(){ var k=$("#forsteBooking"); return !!(k && !k.hidden && !k.classList.contains('fb-krympet')); }
+function fbStegeneApne(){ var k=$("#forsteBooking"), f=$("#fbFull"); return !!(k && !k.hidden && f && !f.hidden); }
+function fbVisStegene(){ var a=_aktivering; return !!(a && a.har_booking===false && _billing && _billing.page_status==='live' && fbLenke()); }
 function renderForsteBooking(){
   var kort=$("#forsteBooking"); if(!kort)return;
   fbTegn(kort);
   if(typeof oppdaterHjemskjermKort==='function') oppdaterHjemskjermKort();
+  slippStoryLinje();   // ledige-linja i I DAG venter på at seksjonen er avgjort
 }
 function fbTegn(kort){
-  var a=_aktivering;
-  var vis=!!(a && a.har_booking===false && _billing && _billing.page_status==='live' && fbLenke());
-  kort.hidden=!vis;
-  if(!vis)return;
-  $("#fbMelding").textContent=fbSvarmelding();
-  var alle=FB_STEG.every(function(k){ return a.steg[k]===true; });
-  var krymp=alle&&!_fbApnet;
-  kort.classList.toggle('fb-krympet',krymp);
-  $("#fbKrympet").hidden=!krymp;
-  $("#fbFull").hidden=krymp;
-  FB_STEG.forEach(function(k){
-    var li=kort.querySelector('li[data-steg="'+k+'"]'); if(!li)return;
-    var f=a.steg[k]===true;
-    li.querySelector('.fb-kryss').setAttribute('aria-checked',f?'true':'false');
-    if(f) li.setAttribute('data-ferdig',''); else li.removeAttribute('data-ferdig');
-  });
+  var a=_aktivering, steg=fbVisStegene();
+  if(steg){ fbSkriv(FB_SETT); $("#fbMelding").textContent=fbSvarmelding(); }
+  else if(a && a.har_booking===true && !_fbInneNaa && fbLes(FB_SETT)==='1' && fbLes(FB_INNE)!=='1'){ _fbInneNaa=true; fbSkriv(FB_INNE); }
+  var inne=!steg && _fbInneNaa && !!a && a.har_booking===true;
+  $("#fbFull").hidden=!steg;
+  $("#fbInne").hidden=!inne;
+  kort.hidden=!(steg||inne);
+  var ov=$("#oversikt"); if(ov) ov.classList.toggle('fb-aktiv',steg);
+  oppdaterOversiktSeksjoner();
 }
-// Optimistisk: lokalt først, så POST. Feil (nettverk, 4xx/5xx, 403 i demo) → rull tilbake, ingen melding.
-// _fbSekv per steg: et eldre svar skal ikke overskrive et nyere trykk.
-var _fbSekv={};
-async function settFbSteg(k,ferdig){
-  if(!_aktivering||FB_STEG.indexOf(k)<0)return;
-  var forrige=_aktivering.steg[k];
-  if(forrige===ferdig)return;
-  _aktivering.steg[k]=ferdig; renderForsteBooking();
-  var n=_fbSekv[k]=(_fbSekv[k]||0)+1;
-  var d=null;
-  try{
-    var r=await apiFetch('/api/dashboard/aktivering/steg',{method:'POST',body:JSON.stringify({steg:k,ferdig:ferdig})});
-    if(r&&r.ok) d=await r.json();
-  }catch(_){ d=null; }
-  if(n!==_fbSekv[k]||!_aktivering)return;
-  if(d&&d.steg&&typeof d.steg==='object'){ _aktivering.steg[k]=d.steg[k]===true; fbNullstillApnet(); }
-  else _aktivering.steg[k]=forrige;
-  renderForsteBooking();
+// Hvilke Oversikt-seksjoner som står (27.11.2026). KOMMENDE: mens stegene vises, bare når det finnes kommende bookinger
+// (alle kilder, også «Legg til booking»). NØKKELTALL: skjult til minst én fullført booking (/stats.completed_all_time;
+// ukjent/feil → vist som før). Siste synlige seksjon får .ovs-sek-sist (ingen hårlinje under).
+var _kommendeAntall=null;   // satt av renderUpcoming
+var _ovsFullforte=null;     // completed_all_time fra /stats (loadOversikt)
+function oppdaterOversiktSeksjoner(){
+  var ov=$("#oversikt"); if(!ov) return;
+  var steg=ov.classList.contains('fb-aktiv');
+  var kom=$("#ovsKommende"); if(kom) kom.hidden = steg && !(_kommendeAntall>0);
+  var tall=$("#ovsTall"); if(tall) tall.hidden = (_ovsFullforte===0);
+  var sek=[].filter.call(ov.children,function(x){ return x.classList.contains('ovs-sek') && !x.hidden; });
+  sek.forEach(function(x,i){ x.classList.toggle('ovs-sek-sist', i===sek.length-1); });
 }
 (function(){
   var kort=$("#forsteBooking"); if(!kort)return;
+  // Kopiering gir meldingen nederst på skjermen, som ellers i dashbordet. «Lag story» åpner generatoren direkte.
   kort.addEventListener('click',async function(e){
-    if(e.target.closest('#fbVis')){ _fbApnet=true; renderForsteBooking(); return; }
-    var kryss=e.target.closest('.fb-kryss');
-    if(kryss){
-      settFbSteg(kryss.closest('li').dataset.steg, kryss.getAttribute('aria-checked')!=='true');
-      return;
-    }
     var b=e.target.closest('[data-fb-handling]'); if(!b)return;
     var h=b.dataset.fbHandling;
-    if(h==='story'){
-      if(window.aapneStory) window.aapneStory();
-      settFbSteg('story',true);
-      return;
-    }
+    if(h==='story'){ if(window.aapneStory) window.aapneStory(); return; }
     var tekst = h==='svarmelding' ? fbSvarmelding() : fbLenke();
     if(!tekst)return;
     var ok=await kopierTekst(tekst);
-    showToast(ok ? (h==='svarmelding'?'Svarmelding kopiert':'Lenke kopiert') : 'Kunne ikke kopiere');
-    if(ok) settFbSteg(h,true);
+    showToast(ok ? (h==='svarmelding'?'Svar kopiert':'Lenke kopiert') : 'Kunne ikke kopiere');
   });
 })();
 
 /* ---- Hjemskjerm-kortet (Oversikt) ----
    Vises når ALT stemmer: telefon (iOS/Android), ikke kjørende som app (erStandalone), ikke installert
    (permanent flagg), ikke lukket nylig, ikke demo og ikke fokusmodus — OG «Få din første booking» er
-   avgjort og viser ikke stegene (fbAvgjort/fbStegeneApne; krympet eller skjult seksjon slipper kortet fram). Lukk (×) → borte i 14 dager;
+   avgjort og viser ikke stegene (fbAvgjort/fbStegeneApne; skjult seksjon eller «Første booking er inne.» slipper kortet fram). Lukk (×) → borte i 14 dager;
    lukket to ganger → borte for godt. Android: Chromes beforeinstallprompt fanges → «Installer»-knapp
    som åpner Chromes egen dialog; avvist = som lukking, godtatt/appinstalled = installert for godt.
    Lagring i try/catch: blokkert localStorage gir et kort som vises, aldri en feil.
