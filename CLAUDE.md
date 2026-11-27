@@ -549,7 +549,16 @@ Kilde: Henriks `oversikt-vekst` / `oversikt-gratis` / `hentet-inn-vekst-tom` (.d
 - **Tre RAMMEFRIE seksjoner** (`.ovs-sek`, 1px `--ov-hair`, 28px): I DAG (`#ovsIdag`) → KOMMENDE (`#ovsKommende`) →
   NØKKELTALL (`#ovsTall`, siste: `.ovs-sek-sist`). «Hentet inn av BarberHQ» er FJERNET (27.11.2026) — tallene bor i
   Vekst-kortet på Konto. Etiketter `.ovs-etikett` (11.5/600/.08em/versaler).
-  Midlertidige kort (første booking, hjemskjerm, «Fullfør siden») står over seksjonene, uendret.
+  Midlertidige kort (hjemskjerm, «Fullfør siden») står over seksjonene, uendret.
+- **«Få din første booking» (27.11.2026, Henrik)** — RAMMEFRI seksjon (`#forsteBooking.ovs-sek`) rett under I DAG, ikke kort.
+  Tittel 17/600, undertekst, tre nummererte steg (Kopier svar / Kopier lenke / Lag story → `aapneStory`), kopiering gir toast.
+  Ingen kryss, ingen lagring (`POST /aktivering/steg` er borte). Vises når live og `GET /aktivering`
+  `har_bookingside_booking===false` — bare bookingsiden teller, «Legg til booking» (`kilde='manuell'`) ikke; mangler feltet →
+  `har_booking`. Mens stegene står: hjemskjerm-kortet venter, story-inngangen i I DAG er skjult OG meldes ikke (`slippStoryLinje`
+  — `meldVist` bruker ellers opp ukas visning), Kommende vises bare med kommende bookinger. Nøkkeltall er skjult til minst én
+  fullført booking (`completed_all_time`, alle barbere). Første bookingside-booking → «Første booking er inne.» (grønn, hake)
+  ÉN gang, bare i en nettleser som har vist stegene (`bhq-fb-sett` / `bhq-fb-inne-vist`). `oppdaterOversiktSeksjoner` setter
+  `.ovs-sek-sist` på siste synlige seksjon. Vakt: `tools/render/forste-booking.mjs` (også Vekst-rekkefølgen).
 - **Tokens `--ov-*`** (hårlinje, segment, knappramme, 0-stolpe): mørk = designets hex nøyaktig,
   lys = egne motstykker. Ingen gradienter på Oversikt.
 - **Vekt-regel på Oversikt (Henrik 17.11 — gjelder header, Oversikt-panelet og bunnmenyen):**
@@ -559,7 +568,7 @@ Kilde: Henriks `oversikt-vekst` / `oversikt-gratis` / `hentet-inn-vekst-tom` (.d
     valgt tilstand (periode, fane), merker og stegnumre, uthevede ord
   - **500/400:** resten · **300:** bare «kr» etter de store tallene
   Kartlegging av faktiske vekter: `node tools/render/oversikt-kort.mjs` skriver en VEKT-KARTLEGGING (feiler ikke testen).
-- **Midlertidige kort** (første booking, hjemskjerm, «Fullfør siden», SMS-tilbud): boks i ny stil — `--surface`, 1px
+- **Midlertidige kort** (hjemskjerm, «Fullfør siden», SMS-tilbud): boks i ny stil — `--surface`, 1px
   `--ov-seg-line`, radius 12, padding 18, ingen skygge; tittel 15/600, brødtekst 13.5/400 dempet, knapper 46px/r8.
   Hjemskjerm-kortet har ÉN tekstlinje bare i Android-Installer-varianten («Ett trykk, så ligger dashbordet på
   hjemskjermen.»); iPhone/innebygd/meny viser tittel + steg (ikke «ett trykk» — det er flere steg der). Vakt: `oversikt-kort.mjs`.
@@ -827,9 +836,11 @@ Innstillinger → Konto (06.08), og Profil → Din side. Begge fordi innholdet i
 1. **Oversikt** = I DAG → KOMMENDE → NØKKELTALL (KPI + graf) (redesign 17.11.2026, «Hentet inn» ut 27.11.2026 —
    se «Oversikt-fanen (redesign 17.11.2026)» under Systemtilstand). Vinn tilbake-lista bor i Vekst (`#accWinback`).
 2. **Vekst** — LISTE-stil siden 17.11.2026 (Henrik; `vekst-liste-aktiv/-gratis.dc.html`, vakt `tools/render/vekst-liste.mjs`):
-   KPI-boksene (`#vekstStats`, de ENESTE boksene) → månedsdiagram (felles `.stolpe`) → momentum (uten boks) → seksjonene **AUTOMATIKK** (SMS-påminnelse, Rebooking — bryter 46×28) /
-   **PERSONLIG** (Vinn tilbake med antall = lista, Verving, Lojalitetsprogram — chevron) / **DEL** («Ledige timer» +
-   «Lag story», `#accStory`/`#storyOpen`), `.ovs-etikett`-etiketter og 32px mellom. Rad = `.acc` uten boks, 16px
+   KPI-boksene (`#vekstStats`, de ENESTE boksene) → månedsdiagram (felles `.stolpe`) → **DEL** («Ledige timer» + «Lag story»,
+   `#accStory`/`#storyOpen` — rett under diagrammet siden 27.11.2026) → momentum (uten boks) → **AUTOMATIKK** (SMS-påminnelse,
+   Rebooking — bryter 46×28) / **PERSONLIG** (Vinn tilbake med antall = lista, Verving, Lojalitetsprogram — chevron).
+   Uten data (ingen fullførte klipp): KPI-boksene, diagrammet og overskriftene er borte, ingen tom-tekst — fanen starter
+   med DEL. `.ovs-etikett`-etiketter og 32px mellom. Rad = `.acc` uten boks, 16px
    padding, hårlinje under; navn 15/600, beskrivelse 13/400. All stil er avgrenset til `#vekst` (`.acc*` deles med
    «Din side»/Konto). Utfoldet innhold uten bokser; «Vis flere» 44px. SMS-knottene: ekte `GET/PUT /api/dashboard/settings`.
    Lojalitetsprogram: se egen seksjon. Gratis: se Basis-visning.
