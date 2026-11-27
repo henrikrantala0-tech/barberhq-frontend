@@ -5101,7 +5101,7 @@ function toggleMonthpick(forceClose){var mp=$("#calMonthpick");if(!mp)return;
 function renderMonthpick(){
   var mp=$("#calMonthpick"),y=mpYm.y,m=mpYm.m,startWd=(new Date(y,m,1).getDay()+6)%7,dim=new Date(y,m+1,0).getDate();
   var todayKey=osloTodayKey();
-  var html='<div class="cal-mp-head"><button class="ed-pil" data-mp="-1" aria-label="Forrige måned">'+ikonHtml('chevron','venstre')+'</button><span class="cal-mp-title">'+MONTHS[m]+' '+y+'</span><button class="ed-pil" data-mp="1" aria-label="Neste måned">'+ikonHtml('chevron')+'</button></div><div class="cal-mp-grid">';
+  var html='<div class="cal-mp-head"><button class="ed-pil" data-mp="-1" aria-label="Forrige måned">'+ikonHtml('chevron','venstre')+'</button><span class="cal-mp-title">'+MONTHS[m].charAt(0).toUpperCase()+MONTHS[m].slice(1)+' '+y+'</span><button class="ed-pil" data-mp="1" aria-label="Neste måned">'+ikonHtml('chevron')+'</button></div><div class="cal-mp-grid">';
   ['M','T','O','T','F','L','S'].forEach(function(w){html+='<span class="cal-mp-wd">'+w+'</span>';});
   for(var i=0;i<startWd;i++)html+='<span></span>';
   for(var dd=1;dd<=dim;dd++){var k=new Date(y,m,dd);k.setHours(0,0,0,0);k=k.getTime();var dis=(k<CAL.minKey||k>CAL.maxKey);
