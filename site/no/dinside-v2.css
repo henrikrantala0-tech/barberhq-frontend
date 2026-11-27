@@ -126,7 +126,7 @@ body.fokus #dinsideV2 .fld input,body.fokus #dinsideV2 .fld textarea{scroll-marg
 
 /* Font: nedtrekksliste med seks fonter, sjappenavnet vist i valgt font rett under. */
 #dinsideV2 .dv2-fontvalg{width:100%;min-height:var(--dv2-trykk)}
-#dinsideV2 .dv2-fontprove{margin-top:var(--dv2-s2);padding:var(--dv2-s3) var(--dv2-s2);border:1px solid var(--line);border-radius:var(--dv2-radius);background:var(--surface);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:1.875rem;font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+#dinsideV2 .dv2-fontprove{margin-top:var(--dv2-s2);padding:var(--dv2-s3) var(--dv2-s2);border:1px solid var(--line);border-radius:var(--dv2-radius);background:var(--surface);color:var(--ink);font-family:Inter,system-ui,sans-serif;font-size:calc(1.875rem * var(--dv2-font-skala, 1));font-weight:700;line-height:1.3;overflow-wrap:anywhere}   /* --dv2-font-skala = valg.fonter[].skala (backend V2_NAVN_FONTER), settes av tegnFonter */
 .dv2-fontstatus{font-size:var(--dv2-liten);color:var(--mut);margin:var(--dv2-s2) 0 0;line-height:1.6}
 .dv2-fontstatus:empty{display:none}
 

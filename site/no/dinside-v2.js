@@ -6,7 +6,7 @@
    Kontrakt (backend redesign-v2):
      GET  /api/dashboard/din-side          → { sidemal, profil{shop,tagline,address,bio,om}, utseende{aksent,custom_accent,
                                                color_mode,font}, kontakt{instagram,tiktok,snapchat,contact_phone}, publisert_at,
-                                               valg{aksenter[{key,hex}], fonter[{key,navn,family,url,vekt}], maks{…,bilder{…}}} }
+                                               valg{aksenter[{key,hex}], fonter[{key,navn,family,url,vekt,skala}], maks{…,bilder{…}}} }
      POST /api/dashboard/preview           → text/html. Body { side:'forside'|'book', profil?, utseende?, kontakt? }
      POST /api/dashboard/din-side/preview  → text/html. Multipart (draft + bildeutkast)
      PUT  /api/dashboard/din-side          → delvis { profil?, utseende?, kontakt? } — bare feltene som sendes, skrives.
@@ -739,6 +739,10 @@
     navn.textContent = S.shop || 'Sjappenavnet ditt';
     navn.style.fontFamily = st === 'klar' ? "'" + famNavn(f) + "', Inter, system-ui, sans-serif" : '';
     navn.style.fontWeight = st === 'klar' ? String(f.vekt || 400) : '';
+    // Størrelsesfaktor fra backend (V2_NAVN_FONTER.skala via valg.fonter) — samme som bookingsiden. Mangler den, eller er
+    // fonten ikke lastet (prøven står i Inter), brukes 1.
+    var skala = st === 'klar' && Number(f.skala) > 0 ? Number(f.skala) : 1;
+    navn.style.setProperty('--dv2-font-skala', String(skala));
     $('#dv2FontStatus').textContent = st === 'laster' ? 'Laster skrift …' : st === 'feil' ? 'Skriften kunne ikke lastes. Forhåndsvisningen bruker standardskriften.' : '';
   }
 
